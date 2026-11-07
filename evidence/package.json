@@ -1,0 +1,11 @@
+{
+  "architecture": "arm64",
+  "adHocSignatureVerification": "passed",
+  "fixtureSymbols": 25,
+  "fixtureRelationships": 26,
+  "restrictedPath": "/usr/bin:/bin",
+  "sha256": {
+    "dist/CodeGraph.app/Contents/MacOS/CodeGraph": "c4b080787bd9d5e601c9d4e8a3836057087bf43a3cf82693b59f314b3edf8680",
+    "dist/CodeGraph.zip": "30f580dd93519aec5b0c30d3e30613f15c7a1c6689ba9e239659290c4d72c3ef"
+  }
+}

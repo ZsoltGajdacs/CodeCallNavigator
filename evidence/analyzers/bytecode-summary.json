@@ -1,0 +1,421 @@
+{
+  "fixture": {
+    "passed": true,
+    "engine": "java-callgraph2",
+    "engineVersion": "4.1.0",
+    "bcelVersion": "6.13.0",
+    "methodInfoDeclarations": 13,
+    "rawRelationships": 21,
+    "projectInputRelationships": 14,
+    "relationshipTypes": {
+      "STA": 8,
+      "SPE": 1,
+      "_ACT_I": 1,
+      "INT": 1,
+      "_LM": 1,
+      "_ITF": 2
+    },
+    "endpointCoverage": {
+      "reportedCallerPlaceholders": 0,
+      "reportedTargetPlaceholders": 0,
+      "targetPlaceholdersWithEngineInheritanceLinks": 0,
+      "terminalTargetPlaceholders": 0,
+      "relationshipsWithUndeclaredEndpoints": 0
+    },
+    "checkedRelationships": [
+      {
+        "from": [
+          "fixture.Flow:main(java.lang.String[])",
+          "void"
+        ],
+        "to": [
+          "fixture.Flow:overloaded(int)",
+          "void"
+        ],
+        "engineType": "STA",
+        "callIds": [
+          7
+        ]
+      },
+      {
+        "from": [
+          "fixture.Flow:main(java.lang.String[])",
+          "void"
+        ],
+        "to": [
+          "fixture.Flow:overloaded(java.lang.String)",
+          "void"
+        ],
+        "engineType": "STA",
+        "callIds": [
+          8
+        ]
+      },
+      {
+        "from": [
+          "fixture.Flow:main(java.lang.String[])",
+          "void"
+        ],
+        "to": [
+          "fixture.Flow:identity(java.lang.Object)",
+          "java.lang.Object"
+        ],
+        "engineType": "STA",
+        "callIds": [
+          10
+        ]
+      },
+      {
+        "from": [
+          "fixture.Flow:main(java.lang.String[])",
+          "void"
+        ],
+        "to": [
+          "fixture.Flow:recurse(int)",
+          "void"
+        ],
+        "engineType": "STA",
+        "callIds": [
+          11
+        ]
+      },
+      {
+        "from": [
+          "fixture.Flow:recurse(int)",
+          "void"
+        ],
+        "to": [
+          "fixture.Flow:recurse(int)",
+          "void"
+        ],
+        "engineType": "STA",
+        "callIds": [
+          16
+        ]
+      },
+      {
+        "from": [
+          "fixture.Flow:disconnected()",
+          "void"
+        ],
+        "to": [
+          "fixture.Flow:helper()",
+          "void"
+        ],
+        "engineType": "STA",
+        "callIds": [
+          17
+        ]
+      },
+      {
+        "from": [
+          "fixture.Flow:main(java.lang.String[])",
+          "void"
+        ],
+        "to": [
+          "fixture.Flow:helper()",
+          "void"
+        ],
+        "engineType": "_LM",
+        "callIds": [
+          14
+        ]
+      },
+      {
+        "from": [
+          "fixture.Flow:main(java.lang.String[])",
+          "void"
+        ],
+        "to": [
+          "fixture.Work:run()",
+          "void"
+        ],
+        "engineType": "INT",
+        "callIds": [
+          6
+        ]
+      },
+      {
+        "from": [
+          "fixture.Work:run()",
+          "void"
+        ],
+        "to": [
+          "fixture.First:run()",
+          "void"
+        ],
+        "engineType": "_ITF",
+        "callIds": [
+          20
+        ]
+      },
+      {
+        "from": [
+          "fixture.Work:run()",
+          "void"
+        ],
+        "to": [
+          "fixture.Second:run()",
+          "void"
+        ],
+        "engineType": "_ITF",
+        "callIds": [
+          21
+        ]
+      }
+    ],
+    "frameSnapshotLimitMethods": 0
+  },
+  "fixtureJava21": {
+    "passed": true,
+    "engine": "java-callgraph2",
+    "engineVersion": "4.1.0",
+    "bcelVersion": "6.13.0",
+    "methodInfoDeclarations": 13,
+    "rawRelationships": 21,
+    "projectInputRelationships": 14,
+    "relationshipTypes": {
+      "STA": 8,
+      "SPE": 1,
+      "_ACT_I": 1,
+      "INT": 1,
+      "_LM": 1,
+      "_ITF": 2
+    },
+    "endpointCoverage": {
+      "reportedCallerPlaceholders": 0,
+      "reportedTargetPlaceholders": 0,
+      "targetPlaceholdersWithEngineInheritanceLinks": 0,
+      "terminalTargetPlaceholders": 0,
+      "relationshipsWithUndeclaredEndpoints": 0
+    },
+    "checkedRelationships": [
+      {
+        "from": [
+          "fixture.Flow:main(java.lang.String[])",
+          "void"
+        ],
+        "to": [
+          "fixture.Flow:overloaded(int)",
+          "void"
+        ],
+        "engineType": "STA",
+        "callIds": [
+          7
+        ]
+      },
+      {
+        "from": [
+          "fixture.Flow:main(java.lang.String[])",
+          "void"
+        ],
+        "to": [
+          "fixture.Flow:overloaded(java.lang.String)",
+          "void"
+        ],
+        "engineType": "STA",
+        "callIds": [
+          8
+        ]
+      },
+      {
+        "from": [
+          "fixture.Flow:main(java.lang.String[])",
+          "void"
+        ],
+        "to": [
+          "fixture.Flow:identity(java.lang.Object)",
+          "java.lang.Object"
+        ],
+        "engineType": "STA",
+        "callIds": [
+          10
+        ]
+      },
+      {
+        "from": [
+          "fixture.Flow:main(java.lang.String[])",
+          "void"
+        ],
+        "to": [
+          "fixture.Flow:recurse(int)",
+          "void"
+        ],
+        "engineType": "STA",
+        "callIds": [
+          11
+        ]
+      },
+      {
+        "from": [
+          "fixture.Flow:recurse(int)",
+          "void"
+        ],
+        "to": [
+          "fixture.Flow:recurse(int)",
+          "void"
+        ],
+        "engineType": "STA",
+        "callIds": [
+          16
+        ]
+      },
+      {
+        "from": [
+          "fixture.Flow:disconnected()",
+          "void"
+        ],
+        "to": [
+          "fixture.Flow:helper()",
+          "void"
+        ],
+        "engineType": "STA",
+        "callIds": [
+          17
+        ]
+      },
+      {
+        "from": [
+          "fixture.Flow:main(java.lang.String[])",
+          "void"
+        ],
+        "to": [
+          "fixture.Flow:helper()",
+          "void"
+        ],
+        "engineType": "_LM",
+        "callIds": [
+          14
+        ]
+      },
+      {
+        "from": [
+          "fixture.Flow:main(java.lang.String[])",
+          "void"
+        ],
+        "to": [
+          "fixture.Work:run()",
+          "void"
+        ],
+        "engineType": "INT",
+        "callIds": [
+          6
+        ]
+      },
+      {
+        "from": [
+          "fixture.Work:run()",
+          "void"
+        ],
+        "to": [
+          "fixture.First:run()",
+          "void"
+        ],
+        "engineType": "_ITF",
+        "callIds": [
+          20
+        ]
+      },
+      {
+        "from": [
+          "fixture.Work:run()",
+          "void"
+        ],
+        "to": [
+          "fixture.Second:run()",
+          "void"
+        ],
+        "engineType": "_ITF",
+        "callIds": [
+          21
+        ]
+      }
+    ],
+    "frameSnapshotLimitMethods": 0
+  },
+  "storyengine": {
+    "passed": true,
+    "engine": "java-callgraph2",
+    "engineVersion": "4.1.0",
+    "bcelVersion": "6.13.0",
+    "methodInfoDeclarations": 13987,
+    "rawRelationships": 65014,
+    "projectInputRelationships": 26246,
+    "relationshipTypes": {
+      "SPE": 2928,
+      "STA": 2529,
+      "VIR": 17456,
+      "_ACT_C": 121,
+      "INT": 539,
+      "_LM": 2100,
+      "DYN": 61,
+      "_CCS_SPE": 11,
+      "_ACT_I": 6,
+      "_CCS_I": 2,
+      "_CCID": 296,
+      "_CCS": 22,
+      "_SCC": 20,
+      "_ITF": 155
+    },
+    "endpointCoverage": {
+      "reportedCallerPlaceholders": 320,
+      "reportedTargetPlaceholders": 242,
+      "targetPlaceholdersWithEngineInheritanceLinks": 45,
+      "terminalTargetPlaceholders": 197,
+      "relationshipsWithUndeclaredEndpoints": 777
+    },
+    "checkedRelationships": [
+      {
+        "from": [
+          "eu.zsgw.storyengine.extraction.flow.AdvancedExtractionJobFlow:execute(eu.zsgw.storyengine.extraction.flow.AdvancedExtractionJobFlowContext)",
+          "reactor.core.publisher.Mono"
+        ],
+        "to": [
+          "eu.zsgw.storyengine.extraction.flow.AdvancedExtractionJobFlow:lambda$execute$0(eu.zsgw.storyengine.extraction.flow.AdvancedExtractionJobFlowContext)",
+          "reactor.core.publisher.Mono"
+        ],
+        "engineType": "_LM",
+        "callIds": [
+          27339
+        ]
+      },
+      {
+        "from": [
+          "eu.zsgw.storyengine.extraction.flow.AdvancedExtractionJobFlow:lambda$execute$0(eu.zsgw.storyengine.extraction.flow.AdvancedExtractionJobFlowContext)",
+          "reactor.core.publisher.Mono"
+        ],
+        "to": [
+          "eu.zsgw.storyengine.extraction.flow.AdvancedExtractionJobFlow:executeSharedStep(java.lang.String,eu.zsgw.storyengine.common.FlowStep,eu.zsgw.storyengine.extraction.flow.AdvancedExtractionJobFlowContext)",
+          "reactor.core.publisher.Mono"
+        ],
+        "engineType": "VIR",
+        "callIds": [
+          27454
+        ]
+      },
+      {
+        "from": [
+          "eu.zsgw.storyengine.extraction.flow.AdvancedExtractionJobFlow:execute(eu.zsgw.storyengine.extraction.flow.AdvancedExtractionJobFlowContext)",
+          "reactor.core.publisher.Mono"
+        ],
+        "to": [
+          "eu.zsgw.storyengine.extraction.flow.AdvancedExtractionJobFlow:logCompletion(eu.zsgw.storyengine.extraction.flow.AdvancedExtractionJobFlowContext)",
+          "void"
+        ],
+        "engineType": "_LM",
+        "callIds": [
+          27371
+        ]
+      }
+    ],
+    "frameSnapshotLimitMethods": 0
+  },
+  "status": "checks-passed-with-documented-limitations",
+  "limitations": [
+    "_LM denotes an engine-reported lambda/method reference, not proof that the callback runs.",
+    "INT/VIR retain static JVM targets; _ITF/_ACT_I/_ACT_C and Spring types retain engine candidate provenance.",
+    "Bytecode line numbers lack source columns; compiled synthetic and bridge methods are retained.",
+    "Engine-reported endpoints absent from method declarations require body-unavailable placeholders, not name-based resolution.",
+    "No adapter inference of DI, reflection, framework execution or cross-language calls."
+  ]
+}

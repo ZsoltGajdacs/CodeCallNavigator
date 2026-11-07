@@ -1,0 +1,5 @@
+   Compiling codegraph v0.1.0 (/Users/zsolt.gajdacs/Zs/Programming/CodeGraph)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 1.10s
+     Running `target/debug/codegraph --native --scene fixture --script evidence/ui/native-interactions.json --trace evidence/ui/native-fixture.jsonl --frames 600`
+display link creation failed: -6661
+rune: first frame took 2454 ms (setup 2212 ms, init 2 ms, first view 19 ms, window and GPU 222 ms); the slowest is setup in `main` before `run`: start slow work from `on_ready`. (debug builds only; RUNE_PERF_WARN=0 silences)

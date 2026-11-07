@@ -1,0 +1,8 @@
+{
+  "activeDisplays": 0,
+  "coreGraphicsQueryStatus": 0,
+  "nativeWindowValidation": "blocked-no-active-display",
+  "displayLinkError": -6661,
+  "headlessGPUValidation": "passed",
+  "physicalTrackpadValidation": "not-verified"
+}

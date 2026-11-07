@@ -1,0 +1,18 @@
+{
+  "events": [
+    {"t":0.2,"type":"tap","key":"graph-node-0"},
+    {"t":0.5,"type":"tap","key":"path-from"},
+    {"t":0.8,"type":"tap","key":"graph-node-3"},
+    {"t":1.1,"type":"tap","key":"path-to"},
+    {"t":1.4,"type":"tap","key":"find-path"},
+    {"t":1.7,"type":"wheel","key":"graph-canvas","dx":30,"dy":35,"precise":true},
+    {"t":2.0,"type":"magnify","key":"graph-canvas","delta":0.2},
+    {"t":2.3,"type":"tap","key":"fit"},
+    {"t":2.6,"type":"key","name":"Tab"},
+    {"t":2.9,"type":"resize","dw":-370,"dh":-200,"dur":0.3},
+    {"t":3.4,"type":"resize","dw":370,"dh":200,"dur":0.3},
+    {"t":3.9,"type":"tap","key":"overview"},
+    {"t":4.2,"type":"tap","key":"back"},
+    {"t":4.5,"type":"mark","name":"end"}
+  ]
+}

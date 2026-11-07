@@ -1,0 +1,60 @@
+// Build-tool metadata only. This init script performs no Java parsing or call resolution.
+import groovy.json.JsonOutput
+import org.gradle.api.tasks.testing.Test
+
+def taskSourceInputs = { first ->
+    def files = new LinkedHashSet()
+    def visited = new HashSet()
+    def visit
+    visit = { task ->
+        if (visited.add(task.path)) {
+            def outputRoot = task.project.layout.buildDirectory.get().asFile.toPath()
+            task.inputs.files.files.findAll {
+                it.isFile() && !it.name.endsWith('.jar') && !it.name.endsWith('.class') && !it.toPath().startsWith(outputRoot)
+            }.each { files.add(it.canonicalPath) }
+            task.taskDependencies.getDependencies(task).each { visit(it) }
+        }
+    }
+    visit(first)
+    files.toList()
+}
+
+gradle.projectsEvaluated {
+    def root = gradle.rootProject
+    def javaProjects = root.allprojects.findAll { it.extensions.findByName('sourceSets') != null }
+    root.tasks.register('codegraphCompileSources') {
+        def compileTasks = javaProjects.collectMany { project ->
+            project.sourceSets.collect { sources -> project.tasks.named(sources.compileJavaTaskName) }
+        }
+        dependsOn(compileTasks)
+    }
+    root.tasks.register('codegraphExportMetadata') {
+        doLast {
+            def destination = root.findProperty('codegraphMetadataFile')
+            if (!destination) { throw new GradleException('codegraphMetadataFile is required') }
+            def entries = javaProjects.collectMany { project ->
+                def testClassDirs = project.tasks.withType(Test).collectMany {
+                    it.testClassesDirs.files.collect { directory -> directory.canonicalPath }
+                }.toSet()
+                project.sourceSets.collect { sources ->
+                    def compile = project.tasks.findByName(sources.compileJavaTaskName)
+                    def generated = compile?.options?.generatedSourceOutputDirectory?.orNull?.asFile
+                    def generatedRoots = sources.allJava.srcDirs.findAll {
+                        it.toPath().startsWith(project.layout.buildDirectory.get().asFile.toPath())
+                    }
+                    if (generated) { generatedRoots.add(generated) }
+                    def testOwned = sources.name in ['test', 'testFixtures'] || sources.output.classesDirs.files.any {
+                        testClassDirs.contains(it.canonicalPath)
+                    }
+                    [project: project.path, projectDir: project.projectDir.canonicalPath,
+                     sourceSet: sources.name, isTest: testOwned,
+                     sourceRoots: sources.allJava.srcDirs.collect { it.canonicalPath },
+                     generatedRoots: generatedRoots.collect { it.canonicalPath }.unique(),
+                     buildInputs: compile ? taskSourceInputs(compile) : [],
+                     classDirs: sources.output.classesDirs.files.collect { it.canonicalPath }]
+                }
+            }
+            new File(destination.toString()).setText(JsonOutput.prettyPrint(JsonOutput.toJson(entries)), 'UTF-8')
+        }
+    }
+}

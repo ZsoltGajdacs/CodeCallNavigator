@@ -1,0 +1,31 @@
+{
+  "callatlas": {
+    "repository": "https://github.com/castorhrio/callatlas.git",
+    "revision": "916c2419c0cdb91b5b86b84df4842dadb17bb6b4",
+    "patch": "patches/callatlas-assembly-identity.patch",
+    "patch_sha256": "ec723795ee841b98c2efbf49a7f010cd3f22652889c0e5c34866461b0137c574"
+  },
+  "jdtls": {
+    "version": "1.63.0",
+    "url": "https://download.eclipse.org/jdtls/milestones/1.63.0/jdt-language-server-1.63.0-202610191322.tar.gz",
+    "sha256": "b1f2abe0b3cccb462cf64fb4a5587c7d09df60cf8be7748b152cbd89d018bdc4"
+  },
+  "rune": {
+    "repository": "https://github.com/anomalyco/rune.git",
+    "revision": "5526e3fce196a05a78d26996e60458635a764b65"
+  },
+  "lombok": {
+    "version": "1.18.48",
+    "url": "https://repo.maven.apache.org/maven2/org/projectlombok/lombok/1.18.48/lombok-1.18.48.jar",
+    "sha256": "85477a4655ebb2c074a9099cfb749be454449fee564d4282610df1b85f7c508b"
+  },
+  "java-callgraph2": {
+    "repository": "https://github.com/Adrninistrator/java-callgraph2.git",
+    "revision": "77f566d0878958bab929b4cdeafcc2c762ff555e",
+    "version": "4.1.0",
+    "bcel_version": "6.13.0"
+  },
+  "graphviz": {
+    "version": "16.1.0"
+  }
+}

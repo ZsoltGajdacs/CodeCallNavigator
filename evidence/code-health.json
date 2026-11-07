@@ -1,0 +1,11 @@
+{
+  "quality_gates": "passed",
+  "results": [],
+  "metadata": {
+    "checked-file-count": 45,
+    "code-health-eligible-file-count": 45,
+    "status": "no-issues-found",
+    "total-modified-file-count": 119
+  },
+  "note": "Staged application checked against metadata-only initial commit 8892ea9. The initial unborn-HEAD check could not run; after initialization, all introduced findings were refactored and the gate passed."
+}

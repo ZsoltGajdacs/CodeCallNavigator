@@ -1,0 +1,83 @@
+{
+  "fixture": {
+    "passed": true,
+    "declarations": 15,
+    "authoredMethods": 10,
+    "edges": 11,
+    "checkedRelationships": [
+      {
+        "from": "main(String[])",
+        "to": "overloaded(int)",
+        "fromFile": "src/main/java/fixture/Flow.java",
+        "toFile": "src/main/java/fixture/Flow.java",
+        "certainty": "analyzer-reported",
+        "callSites": 1
+      },
+      {
+        "from": "main(String[])",
+        "to": "overloaded(String)",
+        "fromFile": "src/main/java/fixture/Flow.java",
+        "toFile": "src/main/java/fixture/Flow.java",
+        "certainty": "analyzer-reported",
+        "callSites": 1
+      },
+      {
+        "from": "main(String[])",
+        "to": "identity(T) <T>",
+        "fromFile": "src/main/java/fixture/Flow.java",
+        "toFile": "src/main/java/fixture/Flow.java",
+        "certainty": "analyzer-reported",
+        "callSites": 1
+      },
+      {
+        "from": "main(String[])",
+        "to": "recurse(int)",
+        "fromFile": "src/main/java/fixture/Flow.java",
+        "toFile": "src/main/java/fixture/Flow.java",
+        "certainty": "analyzer-reported",
+        "callSites": 1
+      },
+      {
+        "from": "main(String[])",
+        "to": "helper()",
+        "fromFile": "src/main/java/fixture/Flow.java",
+        "toFile": "src/main/java/fixture/Flow.java",
+        "certainty": "analyzer-reported",
+        "callSites": 1
+      },
+      {
+        "from": "recurse(int)",
+        "to": "recurse(int)",
+        "fromFile": "src/main/java/fixture/Flow.java",
+        "toFile": "src/main/java/fixture/Flow.java",
+        "certainty": "analyzer-reported",
+        "callSites": 1
+      },
+      {
+        "from": "disconnected()",
+        "to": "helper()",
+        "fromFile": "src/main/java/fixture/Flow.java",
+        "toFile": "src/main/java/fixture/Flow.java",
+        "certainty": "analyzer-reported",
+        "callSites": 1
+      },
+      {
+        "from": "main(String[])",
+        "to": "First",
+        "fromFile": "src/main/java/fixture/Flow.java",
+        "toFile": "src/main/java/fixture/Flow.java",
+        "certainty": "analyzer-reported",
+        "callSites": 1
+      }
+    ],
+    "limitations": [
+      "Method reference Flow::helper is reported without a reference/call distinction.",
+      "Implicit constructor target is the class declaration, not a separate callable symbol."
+    ]
+  },
+  "storyengine": {
+    "passed": false,
+    "failure": "Analyzer marked the extraction incomplete"
+  },
+  "status": "gate-failed"
+}

@@ -1,0 +1,65 @@
+{
+  "status": "checks-passed-with-documented-limitations",
+  "fixture": {
+    "nodes": 12,
+    "edges": 12,
+    "checks": [
+      "overload binding",
+      "cross-project direct calls",
+      "constructor",
+      "generic binding",
+      "recursion",
+      "disconnected method retained",
+      "method reference distinguished",
+      "delegate uncertainty preserved",
+      "interface dispatch distinguished"
+    ],
+    "dispatchCandidatesReported": [],
+    "limitations": [
+      "Cross-project interface dispatch reports its static target but no implementation candidates, although two project implementations exist."
+    ]
+  },
+  "collisions": {
+    "nodes": 26,
+    "edges": 20,
+    "assemblies": [
+      "EntryA",
+      "EntryB",
+      "TopA",
+      "TopB"
+    ],
+    "identityScheme": "[compiler AssemblyName]::compiler symbol identity",
+    "checks": [
+      "same named entry methods stay separate",
+      "same named fields/accessors/initializers stay separate",
+      "delegate/operator/local-function identities stay separate",
+      "both top-level roots retained",
+      "independent assemblies have no false cross-project edges"
+    ]
+  },
+  "pacificfate": {
+    "nodes": 20494,
+    "edges": 75296,
+    "linkedCoreDeclarations": 7355,
+    "applicationToCoreDirectCalls": 130,
+    "lifecycleMethod": {
+      "id": "[PacificFate]::MainGameController::_Ready()",
+      "kind": "method",
+      "container": "MainGameController",
+      "name": "_Ready",
+      "location": "scripts/main/map/MainGameController.cs:36"
+    },
+    "checkedCrossProjectCall": {
+      "from": "[PacificFate]::CampaignPersistenceController::CreateDocument(IGameSession,System.String,System.Boolean)",
+      "to": "[PacificFate.Core]::CampaignCheckpointCodec::Encode(CampaignCheckpoint,ScenarioDefinition)",
+      "kind": "call",
+      "count": 1,
+      "tier": "direct",
+      "callerLocation": "scripts/main/ui/CampaignPersistenceController.cs:93",
+      "targetLocation": "core/campaign/persistence/CampaignCheckpointCodec.cs:9"
+    },
+    "diagnosticsTotal": 0,
+    "bodyErrorCount": 0,
+    "unresolvedCalls": 0
+  }
+}

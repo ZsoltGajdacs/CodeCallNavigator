@@ -1,0 +1,18 @@
+{
+  "build": "release",
+  "cacheDirectory": "evidence/performance/cache-final",
+  "cachedOpenSeconds": 0.633454875,
+  "edges": 2000000,
+  "nodes": 250000,
+  "publishSeconds": 2.653459041,
+  "queries": {
+    "longPathMs": 18.729083,
+    "longPathNodes": 31251,
+    "neighborsP95Ms": 0.005,
+    "queriesPerKind": 100,
+    "searchMaxMs": 102.504792,
+    "searchP95Ms": 99.000084,
+    "searchWorkload": "90 specific method prefixes and 10 prefixes matching all methods"
+  },
+  "targetsPassed": true
+}
