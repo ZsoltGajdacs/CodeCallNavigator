@@ -1,0 +1,14 @@
+/vendor/
+/target/
+/dist/
+**/bin/
+**/obj/
+**/.gradle/
+**/build/
+**/__pycache__/
+/evidence/analyzers/*-callatlas.json
+/evidence/analyzers/*-jdt.json
+/evidence/analyzers/*.log
+/evidence/analyzers/workspaces/
+/evidence/performance/cache*/
+/.serena/
