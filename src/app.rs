@@ -25,6 +25,7 @@ pub struct State {
     pub query: TextEdit,
     pub targets: Vec<TargetChoice>,
     pub saved_builds: Vec<PathBuf>,
+    pub saved_targets: Option<Vec<crate::discovery::BuildIdentity>>,
     pub graph: Option<Arc<GraphIndex>>,
     pub store: Option<Arc<SqliteStore>>,
     pub runtime: Option<Arc<AnalyzerRuntime>>,
@@ -71,6 +72,7 @@ impl State {
             query: TextEdit::new(""),
             targets: Vec::new(),
             saved_builds: Vec::new(),
+            saved_targets: None,
             graph: None,
             store: None,
             runtime: None,
@@ -265,6 +267,13 @@ impl State {
                 .filter(|choice| choice.selected)
                 .map(|choice| choice.target.path.clone())
                 .collect(),
+            selected_targets: Some(
+                self.targets
+                    .iter()
+                    .filter(|choice| choice.selected)
+                    .map(|choice| choice.target.identity())
+                    .collect(),
+            ),
             navigation: self.nav.clone(),
             presentation: self.ui.preferences(),
         }
@@ -280,6 +289,7 @@ impl State {
         self.jobs.discovery.cancel();
         self.targets.clear();
         self.saved_builds.clear();
+        self.saved_targets = None;
         self.dirty_session = true;
         self.status = if self.graph.is_some() {
             "Folder changed · the last successful graph remains until refresh"

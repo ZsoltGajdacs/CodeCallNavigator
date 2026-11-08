@@ -54,38 +54,19 @@ fn analyze_cli() -> anyhow::Result<()> {
         let path = PathBuf::from(argument).canonicalize()?;
         if path.is_dir() {
             let found = discovery::discover(&path)?;
-            let has_solution = found.iter().any(|target| target.kind == "solution");
+            let selected = discovery::default_selection(&found);
             targets.extend(
                 found
                     .into_iter()
-                    .filter(|target| target.kind != "project" || !has_solution),
+                    .filter(|target| selected.contains(&target.identity())),
             );
         } else {
-            let language = "csharp".to_string();
-            let kind = if path
-                .extension()
-                .is_some_and(|extension| extension == "csproj")
-            {
-                "project"
-            } else {
-                "solution"
-            }
-            .into();
-            targets.push(discovery::BuildTarget {
-                label: path
-                    .file_name()
-                    .unwrap_or_default()
-                    .to_string_lossy()
-                    .into(),
-                path,
-                language,
-                kind,
-            });
+            targets.push(discovery::target_from_file(&path)?);
         }
     }
     anyhow::ensure!(
         !targets.is_empty(),
-        "Usage: codegraph analyze SOLUTION_OR_PROJECT_OR_GRADLE_ROOT..."
+        "Usage: codegraph analyze SOLUTION_OR_PROJECT_OR_POM_OR_BUILD_ROOT..."
     );
     let runtime = analyzers::AnalyzerRuntime::discover()?;
     let cancelled = AtomicBool::new(false);

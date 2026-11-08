@@ -78,7 +78,7 @@ fn repository(state: &State, k: &Kit) -> El {
             if state.jobs.discovery.is_pending() {
                 "Looking for build files…"
             } else {
-                "Solutions, C# projects and Gradle builds appear here."
+                "Solutions, C# projects, Gradle and Maven builds appear here."
             },
             k,
         ));

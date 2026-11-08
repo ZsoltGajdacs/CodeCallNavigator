@@ -22,3 +22,16 @@ Do not edit Backlog task, draft, document, decision, or milestone markdown files
 
 </CRITICAL_INSTRUCTION>
 <!-- BACKLOG.MD GUIDELINES END -->
+
+## CodeScene Code Health
+
+Check AI-modified source files with the CodeScene MCP `code_health_review` tool.
+Use its findings to make small, behavior-preserving refactorings, then review the
+affected files again. Keep build-tool adapters separate from graph analysis and
+avoid duplicating logic between the UI and CLI.
+
+Before committing, run `pre_commit_code_health_safeguard` and resolve reported
+regressions. Before opening a pull request, run `analyze_change_set` against the
+intended base branch. If a check cannot run, report the limitation instead of
+claiming it passed. Code Health checks complement the project's tests and do not
+replace compiler, analyzer-acceptance, or packaging verification.

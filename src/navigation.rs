@@ -100,6 +100,7 @@ impl Navigation {
 pub struct SavedSession {
     pub root: String,
     pub selected_builds: Vec<PathBuf>,
+    pub selected_targets: Option<Vec<crate::discovery::BuildIdentity>>,
     pub navigation: Navigation,
     pub presentation: crate::presentation::Preferences,
 }

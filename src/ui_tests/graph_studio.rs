@@ -411,7 +411,7 @@ fn empty_workspace_shows_discovery_progress_and_a_real_directory_error() {
     settle(&mut runtime);
     assert_eq!(
         element(&runtime, "status-message").text.as_deref(),
-        Some("Finding solutions and Gradle builds…")
+        Some("Finding solutions, Gradle and Maven builds…")
     );
     runtime.poll = Some(jobs::poll);
     super::wait_for(&mut runtime, |state| !state.warning.is_empty());

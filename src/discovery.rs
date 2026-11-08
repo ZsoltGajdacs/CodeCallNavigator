@@ -14,6 +14,21 @@ pub struct BuildTarget {
     pub label: String,
 }
 
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
+pub struct BuildIdentity {
+    pub path: PathBuf,
+    pub kind: String,
+}
+
+impl BuildTarget {
+    pub fn identity(&self) -> BuildIdentity {
+        BuildIdentity {
+            path: self.path.clone(),
+            kind: self.kind.clone(),
+        }
+    }
+}
+
 pub(crate) fn excluded_directory(name: &str) -> bool {
     matches!(
         name,
@@ -50,6 +65,57 @@ pub fn discover(root: &Path) -> Result<Vec<BuildTarget>> {
     }
     targets.sort_by(|a, b| a.path.cmp(&b.path));
     Ok(targets)
+}
+
+/// Shared UI/CLI defaults: solutions own C# projects; outer Maven POMs own nested selections.
+pub fn default_selection(targets: &[BuildTarget]) -> BTreeSet<BuildIdentity> {
+    let has_solution = targets.iter().any(|target| target.kind == "solution");
+    targets
+        .iter()
+        .filter(|target| {
+            if target.kind == "project" {
+                return !has_solution;
+            }
+            target.kind != "maven"
+                || !targets.iter().any(|other| {
+                    (other.kind == "maven"
+                        && other.path != target.path
+                        && target.path.starts_with(&other.path))
+                        || (other.kind == "gradle" && other.path == target.path)
+                })
+        })
+        .map(BuildTarget::identity)
+        .collect()
+}
+
+pub fn target_from_file(path: &Path) -> Result<BuildTarget> {
+    let path = path
+        .canonicalize()
+        .context("Cannot open selected build file")?;
+    let name = path.file_name().unwrap_or_default().to_string_lossy();
+    if name == "pom.xml" {
+        let root = path
+            .parent()
+            .context("POM has no parent directory")?
+            .to_path_buf();
+        return Ok(BuildTarget {
+            label: format!("{} (Maven)", display_name(&root)),
+            path: root,
+            language: "java".into(),
+            kind: "maven".into(),
+        });
+    }
+    let kind = match path.extension().and_then(|extension| extension.to_str()) {
+        Some("csproj") => "project",
+        Some("sln" | "slnx") => "solution",
+        _ => anyhow::bail!("Unsupported build file: {}", path.display()),
+    };
+    Ok(BuildTarget {
+        label: name.into(),
+        path,
+        language: "csharp".into(),
+        kind: kind.into(),
+    })
 }
 
 fn has_gradle_settings(path: &Path) -> bool {
@@ -111,6 +177,15 @@ fn discover_file(
             label: name.into(),
         });
     }
+    if name == "pom.xml" {
+        let root = path.parent().unwrap_or(Path::new("."));
+        targets.push(BuildTarget {
+            path: root.into(),
+            language: "java".into(),
+            kind: "maven".into(),
+            label: format!("{} (Maven)", root.display()),
+        });
+    }
     if matches!(
         name,
         "settings.gradle" | "settings.gradle.kts" | "build.gradle" | "build.gradle.kts"
@@ -144,7 +219,7 @@ mod tests {
         fs::create_dir(directory.path().join("vendor")).unwrap();
         fs::write(directory.path().join("vendor/Hidden.csproj"), "").unwrap();
         let targets = discover(directory.path()).unwrap();
-        assert_eq!(targets.len(), 3);
+        assert_eq!(targets.len(), 4);
         assert_eq!(
             targets
                 .iter()
@@ -157,6 +232,58 @@ mod tests {
                 .iter()
                 .all(|target| !target.path.ends_with("Hidden.csproj"))
         );
+    }
+
+    #[test]
+    fn maven_discovery_and_selection_keep_nested_projects_available() {
+        let directory = tempfile::tempdir().unwrap();
+        fs::create_dir_all(directory.path().join("module")).unwrap();
+        for name in ["pom.xml", "module/pom.xml", "App.csproj", "App.sln"] {
+            fs::write(directory.path().join(name), "").unwrap();
+        }
+        let targets = discover(directory.path()).unwrap();
+        let selected = default_selection(&targets);
+        let maven: Vec<_> = targets
+            .iter()
+            .filter(|target| target.kind == "maven")
+            .collect();
+        assert_eq!(maven.len(), 2);
+        assert!(selected.contains(&BuildIdentity {
+            path: directory.path().canonicalize().unwrap(),
+            kind: "maven".into()
+        }));
+        assert!(!selected.contains(&BuildIdentity {
+            path: directory.path().join("module"),
+            kind: "maven".into()
+        }));
+        assert!(!selected.contains(&BuildIdentity {
+            path: directory.path().join("App.csproj"),
+            kind: "project".into()
+        }));
+        assert_eq!(
+            target_from_file(&directory.path().join("pom.xml"))
+                .unwrap()
+                .kind,
+            "maven"
+        );
+        assert!(target_from_file(&directory.path().join("unknown.xml")).is_err());
+    }
+
+    #[test]
+    fn mixed_tool_defaults_distinguish_same_directory_targets() {
+        let root = tempfile::tempdir().unwrap();
+        fs::create_dir(root.path().join("nested")).unwrap();
+        for file in ["pom.xml", "nested/pom.xml", "nested/build.gradle"] {
+            fs::write(root.path().join(file), "").unwrap();
+        }
+        let targets = discover(root.path()).unwrap();
+        let selected = default_selection(&targets);
+        assert_eq!(selected.len(), 2);
+        assert!(selected.iter().any(|identity| identity.kind == "gradle"));
+        assert!(!selected.contains(&BuildIdentity {
+            path: root.path().join("nested"),
+            kind: "maven".into()
+        }));
     }
 
     #[test]

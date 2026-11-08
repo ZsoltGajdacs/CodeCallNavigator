@@ -1,0 +1,20 @@
+allprojects { repositories { mavenCentral() } }
+subprojects {
+    apply plugin: 'java'
+    java { toolchain { languageVersion = JavaLanguageVersion.of(25) } }
+    tasks.withType(Test).configureEach { doFirst { rootProject.file('tests-executed').text = 'unexpected' } }
+}
+project(':app') {
+    dependencies { implementation project(':library') }
+    def generated = layout.buildDirectory.dir('generated/sources/fixture')
+    tasks.register('generateFixture') {
+        outputs.dir(generated)
+        doLast {
+            def source = generated.get().file('fixture/GeneratedThing.java').asFile
+            source.parentFile.mkdirs()
+            source.text = 'package fixture; public class GeneratedThing { public static void generated() {} }'
+        }
+    }
+    sourceSets.main.java.srcDir(generated)
+    compileJava.dependsOn(generateFixture)
+}

@@ -364,3 +364,64 @@ fn legacy_navigation_directions_and_method_sessions_roundtrip() {
         assert_eq!(restored.navigation.grouping, Grouping::Method);
     }
 }
+
+#[test]
+fn saved_build_choices_distinguish_legacy_gradle_from_new_maven_selections() {
+    use crate::{discovery::BuildIdentity, navigation::SavedSession};
+    let directory = tempfile::tempdir().unwrap();
+    let root = directory.path().canonicalize().unwrap();
+    for file in ["build.gradle", "pom.xml"] {
+        std::fs::write(root.join(file), "").unwrap();
+    }
+    let legacy: SavedSession = serde_json::from_value(serde_json::json!({
+        "root": root,
+        "selected_builds": [root]
+    }))
+    .unwrap();
+    let mut runtime = runtime();
+    restore_discovered_builds(&mut runtime, &legacy);
+    let selected = |runtime: &Runtime<State>| {
+        runtime
+            .state
+            .targets
+            .iter()
+            .filter(|choice| choice.selected)
+            .map(|choice| choice.target.kind.clone())
+            .collect::<Vec<_>>()
+    };
+    assert_eq!(selected(&runtime), vec!["gradle"]);
+
+    let mut modern = legacy;
+    modern.selected_targets = Some(vec![BuildIdentity {
+        path: root,
+        kind: "maven".into(),
+    }]);
+    restore_discovered_builds(&mut runtime, &modern);
+    assert_eq!(selected(&runtime), vec!["maven"]);
+    let round_trip: SavedSession =
+        serde_json::from_value(serde_json::to_value(runtime.state.session()).unwrap()).unwrap();
+    restore_discovered_builds(&mut runtime, &round_trip);
+    assert_eq!(selected(&runtime), vec!["maven"]);
+
+    modern.selected_targets = Some(Vec::new());
+    restore_discovered_builds(&mut runtime, &modern);
+    assert!(selected(&runtime).is_empty());
+}
+
+fn restore_discovered_builds(
+    runtime: &mut Runtime<State>,
+    session: &crate::navigation::SavedSession,
+) {
+    runtime.state.root = rune::TextEdit::new(&session.root);
+    runtime.state.saved_builds = session.selected_builds.clone();
+    runtime.state.saved_targets = session.selected_targets.clone();
+    runtime.state.discover_root();
+    for _ in 0..100 {
+        runtime.frame(1.0 / 60.0);
+        if runtime.state.targets.len() == 2 {
+            return;
+        }
+        std::thread::sleep(std::time::Duration::from_millis(1));
+    }
+    panic!("Maven and Gradle targets were not discovered");
+}

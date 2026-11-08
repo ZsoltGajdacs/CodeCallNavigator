@@ -1,0 +1,10 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent><groupId>codegraph.fixture</groupId><artifactId>external-parent</artifactId><version>1.0</version><relativePath>../parent/pom.xml</relativePath></parent>
+  <artifactId>reactor</artifactId><packaging>pom</packaging>
+  <modules><module>../library</module><module>app</module></modules>
+  <profiles>
+    <profile><id>fixture-default</id><activation><activeByDefault>true</activeByDefault></activation><modules><module>../profile-library</module></modules></profile>
+    <profile><id>inactive</id><modules><module>../inactive-library</module></modules></profile>
+  </profiles>
+</project>

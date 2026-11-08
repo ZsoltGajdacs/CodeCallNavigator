@@ -74,6 +74,8 @@ def build_java_adapter():
     environment = {**os.environ, "JAVA_HOME": java_home}
     subprocess.run([str(ROOT / "fixtures/gradle/gradlew"), "--project-dir", str(ROOT / "tools/java-bytecode"),
                     "installDist", "--console=plain", "--no-configuration-cache"], env=environment, check=True)
+    subprocess.run([str(ROOT / "fixtures/gradle/gradlew"), "--project-dir", str(ROOT / "tools/maven-metadata"),
+                    "jar", "--console=plain", "--no-configuration-cache"], env=environment, check=True)
 
 
 def jdt_present(destination):

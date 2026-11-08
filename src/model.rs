@@ -48,6 +48,12 @@ pub struct FileFingerprint {
     pub size: u64,
     pub modified_ns: u64,
     pub hash: String,
+    /// Build-owned child names omitted from this directory's listing hash.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub excluded_children: Vec<String>,
+    /// An explicit input that did not exist when the snapshot was captured.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub missing: bool,
 }
 
 /// Analyzer-owned entry candidates and compiler/bytecode-verified executable starts.

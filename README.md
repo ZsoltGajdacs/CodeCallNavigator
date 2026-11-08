@@ -1,9 +1,9 @@
 # CodeGraph
 
 A native Apple Silicon macOS call-graph explorer built with Rune. Select a repository
-folder, select discovered .NET solutions/projects or Gradle builds, and refresh.
+folder, select discovered .NET solutions/projects, Gradle builds or Maven projects, and refresh.
 The complete analyzed graph stays indexed; the canvas shows bounded aggregates or
-method neighborhoods. Maven, diffs, source previews/editing, runtime tracing,
+method neighborhoods. Diffs, source previews/editing, runtime tracing,
 cross-service connections and AI features are outside this MVP.
 
 ## Run the local app
@@ -26,6 +26,11 @@ certification and Intel support are deferred.
 Installed toolchains remain prerequisites: .NET 10 to run CallAtlas, the SDKs and
 reference packs needed by your .NET projects, and JDK 25 to run the Java analyzer.
 Gradle projects need a working wrapper and their configured Java toolchains.
+Maven projects need Maven 3.9+ or Maven 4, preferably through their Maven Wrapper.
+CodeGraph honors existing project/user settings, profiles and toolchains. Maven
+analysis compiles through `test-compile` with standard test execution skipped;
+normal plugins bound to earlier phases still run. Kotlin, Scala, Android and
+specialized packaging requiring later phases are outside this Java integration.
 CodeGraph reports missing toolchains; it does not install SDKs. Analysis can
 restore dependencies and compile all configured source sets, including tests,
 but does not run applications or test-execution tasks.
@@ -84,7 +89,7 @@ cargo run --locked --bin codegraph
 python3.13 tools/package.py
 ```
 
-`analyzers.lock.json`, Cargo.lock and the Java dependency lock pin the source and
+`analyzers.lock.json`, Cargo.lock and the Java adapter dependency locks pin the source and
 dependency versions. Bootstrap verifies the checked-in CallAtlas patch and refuses
 to overwrite incompatible dirty checkouts. Packaging verifies the pinned sources,
 bundles the analyzer artifacts, relocates Graphviz and its required dylibs, collects
@@ -94,7 +99,7 @@ No Homebrew installation is needed to run the packaged Graphviz.
 The same production analyzer pipeline is available without opening a window:
 
 ```sh
-cargo run --bin codegraph -- analyze fixtures/dotnet/Fixture.sln fixtures/gradle
+cargo run --bin codegraph -- analyze fixtures/dotnet/Fixture.sln fixtures/gradle fixtures/maven/standalone/pom.xml
 ```
 
 ## Engines and accuracy
@@ -102,9 +107,17 @@ cargo run --bin codegraph -- analyze fixtures/dotnet/Fixture.sln fixtures/gradle
 C# uses compiler-backed CallAtlas. A small checked-in patch qualifies its serialized
 symbol identities by compiler assembly identity and exports entry candidates plus
 compiler-verified application starts; it changes no call binding.
-Java uses existing java-callgraph2 4.1.0 with BCEL 6.13.0 over real Gradle compilation
+Java uses existing java-callgraph2 4.1.0 with BCEL 6.13.0 over real Gradle or Maven compilation
 output. The planned JDT LS integration failed the StoryEngine acceptance gate and
 was replaced before UI implementation. No heuristic call resolver was substituted.
+
+Java build adapters provide evaluated module/source ownership to the shared bytecode
+pipeline. Maven reactors retain cross-module calls and production/test/generated
+classification. Parent-only aggregators contribute module ownership and build
+inputs. Nested POMs remain selectable, with outermost projects selected by default;
+when both build tools share a directory, Gradle is selected initially. Overlapping
+selected modules are rejected before compilation. The CLI accepts POM files and
+repository folders. Profile/property controls are not added to the app.
 
 Only project-owned symbols are indexed. Framework-invoked declarations remain
 visible even without project callers. Possible targets and callback references
@@ -126,8 +139,11 @@ python3.13 -m unittest discover -s tests -v
 cargo run --release --bin benchmark -- evidence/performance/cache-local
 ```
 
-The ignored compiler regression requires bootstrapped artifacts and installed
-JDK 25. Headless Rune GPU screenshots and interaction checks are under
+The ignored compiler/build regressions require bootstrapped artifacts, installed
+JDK 25 and working Maven/Gradle toolchains. To test a pinned Maven distribution,
+set `CODEGRAPH_TEST_MAVEN=/absolute/path/to/bin/mvn` when running
+`cargo test --test java_builds maven_ -- --ignored --test-threads=1`.
+See [Maven acceptance](evidence/analyzers/maven.md) for the compatibility matrix. Headless Rune GPU screenshots and interaction checks are under
 `evidence/ui`; `--scene fixture` is an explicit synthetic test scene, never normal
 startup data. Real-project results and scale measurements are summarized in
 [evidence/VALIDATION.md](evidence/VALIDATION.md). Live physical trackpad/window

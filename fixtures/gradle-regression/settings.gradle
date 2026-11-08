@@ -1,0 +1,2 @@
+rootProject.name = 'gradle-regression'
+include 'app', 'library'

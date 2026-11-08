@@ -133,6 +133,26 @@ pub fn analyze(
         entry_points: Some(EntryPoints::default()),
         ..GraphData::default()
     };
+    let mut prepared = Vec::with_capacity(builds.len());
+    for (index, build) in builds.iter().enumerate() {
+        check_cancel(cancel)?;
+        let workspace = job.path.join(index.to_string());
+        fs::create_dir_all(&workspace)?;
+        let context = AnalysisJob {
+            runtime,
+            path: &workspace,
+            cancel,
+            progress,
+        };
+        prepared.push(if build.language == "java" {
+            Some(java::prepare(build, &context).with_context(|| {
+                format!("Build preparation failed. Logs: {}", workspace.display())
+            })?)
+        } else {
+            None
+        });
+    }
+    java::reject_overlaps(&builds, &prepared)?;
     for (index, build) in builds.iter().enumerate() {
         check_cancel(cancel)?;
         progress(format!(
@@ -149,7 +169,7 @@ pub fn analyze(
             cancel,
             progress,
         };
-        let part = analyze_build(build, &context)
+        let part = analyze_build(build, &context, prepared[index].take())
             .with_context(|| format!("Analysis failed. Logs: {}", workspace.display()))?;
         append_graph(&mut graph, part)?;
     }
@@ -173,10 +193,18 @@ struct AnalysisJob<'a> {
     progress: &'a dyn Fn(String),
 }
 
-fn analyze_build(build: &BuildTarget, context: &AnalysisJob<'_>) -> Result<GraphData> {
+fn analyze_build(
+    build: &BuildTarget,
+    context: &AnalysisJob<'_>,
+    prepared: Option<java::PreparedJava>,
+) -> Result<GraphData> {
     match build.language.as_str() {
         "csharp" => csharp::analyze_csharp(build, context),
-        "java" => java::analyze_java(build, context),
+        "java" => java::analyze_java(
+            build,
+            context,
+            prepared.context("Java preparation is missing")?,
+        ),
         other => bail!("Unsupported language: {other}"),
     }
 }

@@ -1,12 +1,11 @@
 use super::process::run_process;
-use super::{AnalysisJob, choose_artifact, ensure_unchanged, find_tool, source_snapshot};
+use super::{AnalysisJob, ensure_unchanged};
 use crate::{
     discovery::BuildTarget,
     fingerprint,
     model::{Edge, EntryPoints, FileFingerprint, GraphData, Node},
 };
-use anyhow::{Context, Result, bail, ensure};
-use serde::Deserialize;
+use anyhow::{Context, Result, ensure};
 use std::{
     collections::{BTreeMap, HashMap, HashSet},
     fs,
@@ -14,103 +13,63 @@ use std::{
     process::Command,
 };
 
-#[derive(Clone, Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct JavaSourceSet {
-    project: String,
-    is_test: bool,
-    source_roots: Vec<PathBuf>,
-    generated_roots: Vec<PathBuf>,
-    class_dirs: Vec<PathBuf>,
-    #[serde(default)]
-    build_inputs: Vec<PathBuf>,
-}
+mod build;
+mod gradle;
+mod maven;
+use build::JavaSourceSet;
+pub(super) use build::{PreparedJava, prepare, reject_overlaps};
+
 #[derive(Clone)]
 struct JavaInput {
     path: PathBuf,
     source_set: JavaSourceSet,
 }
 
-pub(super) fn analyze_java(build: &BuildTarget, context: &AnalysisJob<'_>) -> Result<GraphData> {
-    let AnalysisJob {
-        runtime,
-        path: job,
-        cancel,
-        progress,
-    } = context;
-    let java_home = runtime.java_home.as_ref().context(
-        "Java analysis requires an installed JDK 25; configure JAVA_HOME or install JDK 25",
-    )?;
-    let before_metadata = source_snapshot(std::slice::from_ref(&build.path))?;
-    let source_sets = gradle_metadata(build, context)?;
-    ensure_unchanged(&before_metadata)?;
-    let authored_roots = authored_java_roots(build, &source_sets);
-    let before_compile = source_snapshot(&authored_roots)?;
+pub(super) fn analyze_java(
+    build: &BuildTarget,
+    context: &AnalysisJob<'_>,
+    prepared: PreparedJava,
+) -> Result<GraphData> {
+    let java_home = context
+        .runtime
+        .java_home
+        .as_ref()
+        .context("Java analysis requires an installed JDK 25")?;
+    ensure_unchanged(&prepared.authored_before)?;
     (context.progress)(format!(
         "Compiling all Java source sets for {} (no tests run)…",
         build.label
     ));
-    gradle_task(build, context, "codegraphCompileSources")?;
-    ensure_unchanged(&before_compile)?;
-    let inputs = java_inputs(&source_sets)?;
+    let metadata = build::compile(build, context)?;
+    prepared.verify_compiled(&metadata)?;
+    let source_sets = &metadata.source_sets;
+    let inputs = java_inputs(source_sets)?;
     ensure!(
         !inputs.is_empty(),
-        "Gradle emitted no Java class directories"
+        "Build emitted no Java class directories"
     );
     let bytecode_before = compiled_snapshot(&inputs)?;
-    let source_roots = java_source_roots(build, &source_sets);
-    let before_engine = source_snapshot(&source_roots)?;
-    let output = job.join("bytecode");
-    progress(format!("Reading compiled call graph for {}…", build.label));
+    let before_engine = build::snapshot(build, &metadata, true)?;
+    let output = context.path.join("bytecode");
+    (context.progress)(format!("Reading compiled call graph for {}…", build.label));
     let mut command = Command::new(java_home.join("bin/java"));
     command
         .arg("-Xmx8g")
         .arg("-cp")
-        .arg(runtime.bytecode_lib()?.join("*"))
+        .arg(context.runtime.bytecode_lib()?.join("*"))
         .arg("codegraph.bytecode.Analyzer")
         .arg(&output)
         .arg("25");
     for input in &inputs {
         command.arg(&input.path);
     }
-    run_process(&mut command, job, "bytecode", cancel)?;
-    ensure_unchanged(&before_compile)?;
+    run_process(&mut command, context.path, "bytecode", context.cancel)?;
+    ensure_unchanged(&prepared.authored_before)?;
     ensure_unchanged(&before_engine)?;
     ensure_unchanged(&bytecode_before)?;
     let mut graph = normalize_bytecode(build, &output, &inputs)?;
     graph.fingerprints = before_engine;
     Ok(graph)
-}
-
-fn java_source_roots(build: &BuildTarget, sets: &[JavaSourceSet]) -> Vec<PathBuf> {
-    let mut roots = vec![build.path.clone()];
-    roots.extend(sets.iter().flat_map(|source| source.source_roots.clone()));
-    roots.extend(
-        sets.iter()
-            .flat_map(|source| source.generated_roots.clone()),
-    );
-    roots.extend(sets.iter().flat_map(|source| source.build_inputs.clone()));
-    roots
-}
-
-fn authored_java_roots(build: &BuildTarget, sets: &[JavaSourceSet]) -> Vec<PathBuf> {
-    let mut roots = vec![build.path.clone()];
-    for source in sets {
-        roots.extend(
-            source
-                .source_roots
-                .iter()
-                .filter(|path| {
-                    !source
-                        .generated_roots
-                        .iter()
-                        .any(|generated| path.starts_with(generated))
-                })
-                .cloned(),
-        );
-        roots.extend(source.build_inputs.clone());
-    }
-    roots
 }
 
 fn compiled_snapshot(inputs: &[JavaInput]) -> Result<Vec<FileFingerprint>> {
@@ -136,69 +95,6 @@ fn compiled_paths(root: &Path, paths: &mut Vec<PathBuf>) -> Result<()> {
         }
     }
     Ok(())
-}
-
-fn gradle_metadata(build: &BuildTarget, context: &AnalysisJob<'_>) -> Result<Vec<JavaSourceSet>> {
-    (context.progress)(format!(
-        "Reading Gradle source-set ownership for {}…",
-        build.label
-    ));
-    gradle_task(build, context, "codegraphExportMetadata")?;
-    Ok(serde_json::from_slice(&fs::read(
-        context.path.join("gradle-metadata.json"),
-    )?)?)
-}
-
-fn gradle_task(build: &BuildTarget, context: &AnalysisJob<'_>, task: &str) -> Result<()> {
-    let runtime = context.runtime;
-    let java_home = runtime
-        .java_home
-        .as_ref()
-        .context("Java analysis requires an installed JDK 25")?;
-    let metadata = context.path.join("gradle-metadata.json");
-    let script = choose_artifact(
-        &runtime.bundle_root,
-        &[
-            "tools/gradle-metadata.gradle",
-            "analyzers/gradle-metadata.gradle",
-        ],
-    )?;
-    run_process(
-        Command::new(gradle_command(&build.path)?)
-            .current_dir(&build.path)
-            .env("JAVA_HOME", java_home)
-            .arg("--no-daemon")
-            .arg("--console=plain")
-            .arg("-I")
-            .arg(script)
-            .arg(format!("-PcodegraphMetadataFile={}", metadata.display()))
-            .arg(task),
-        context.path,
-        task,
-        context.cancel,
-    )?;
-    Ok(())
-}
-
-fn gradle_command(root: &Path) -> Result<PathBuf> {
-    let wrapper = root.join("gradlew");
-    if wrapper.is_file() {
-        return Ok(wrapper);
-    }
-    if let Some(path) = find_tool("gradle") {
-        return Ok(path);
-    }
-    let home = std::env::var_os("HOME")
-        .map(PathBuf::from)
-        .context("No home folder for Gradle discovery")?;
-    let versions = home.join(".gradle/wrapper/dists/gradle-9.4.0-bin");
-    for entry in fs::read_dir(versions).context("No Gradle wrapper or installed Gradle found")? {
-        let path = entry?.path().join("gradle-9.4.0/bin/gradle");
-        if path.is_file() {
-            return Ok(path);
-        }
-    }
-    bail!("No Gradle wrapper or installed Gradle found")
 }
 
 fn java_inputs(source_sets: &[JavaSourceSet]) -> Result<Vec<JavaInput>> {
@@ -498,11 +394,7 @@ impl<'a> BytecodeCollector<'a> {
                 self.build.path.display(),
                 method_key(&row[5], &row[6])
             ),
-            project: if source.project == ":" {
-                self.build.label.clone()
-            } else {
-                format!("{}{}", self.build.label, source.project)
-            },
+            project: source.project.clone(),
             build: self.build.path.to_string_lossy().into_owned(),
             language: "java".into(),
             kind: if unavailable {
@@ -709,7 +601,8 @@ mod tests {
         JavaInput {
             path: classes.clone(),
             source_set: JavaSourceSet {
-                project: ":".into(),
+                project: "fixture".into(),
+                project_dir: root.into(),
                 is_test: false,
                 source_roots: vec![source_root],
                 generated_roots: Vec::new(),

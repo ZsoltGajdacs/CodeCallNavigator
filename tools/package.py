@@ -208,6 +208,8 @@ def make_app(app):
     copy_tree(ROOT / "vendor/callatlas/src/CallAtlas.Cli/bin/Release/net10.0", analyzers / "callatlas")
     copy_tree(ROOT / "tools/java-bytecode/build/install/codegraph-bytecode", analyzers / "java-bytecode")
     shutil.copy2(ROOT / "tools/gradle-metadata.gradle", analyzers)
+    shutil.copy2(ROOT / "tools/maven-metadata/build/libs/codegraph-maven-metadata.jar",
+                 analyzers / "maven-metadata.jar")
     graphviz_prefix = bundle_graphviz(analyzers / "graphviz")
     dependency_notices(resources, graphviz_prefix)
     shutil.copy2(ROOT / "analyzers.lock.json", resources)

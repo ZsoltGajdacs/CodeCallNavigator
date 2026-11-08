@@ -96,6 +96,7 @@ impl State {
             Ok(Some(path)) => {
                 state.root = rune::TextEdit::new(path.to_string_lossy());
                 state.saved_builds.clear();
+                state.saved_targets = None;
                 state.discover_root();
             }
             Ok(None) => {}
@@ -106,7 +107,7 @@ impl State {
     pub fn discover_root(&mut self) {
         let root = PathBuf::from(self.root.text.trim());
         self.targets.clear();
-        self.status = "Finding solutions and Gradle builds…".into();
+        self.status = "Finding solutions, Gradle and Maven builds…".into();
         self.jobs.discovery.request(root, |path| {
             let root = path.to_string_lossy().into_owned();
             DiscoveryOutput {
@@ -130,7 +131,7 @@ impl State {
             return;
         };
         if targets.is_empty() {
-            self.warning = "Select at least one solution, project or Gradle build.".into();
+            self.warning = "Select at least one solution, project, Gradle or Maven build.".into();
             return;
         }
         self.cancel = Arc::new(std::sync::atomic::AtomicBool::new(false));
@@ -307,6 +308,7 @@ fn poll_boot(state: &mut State) -> bool {
             if let Some(session) = boot.session.filter(|_| !state.root_was_edited) {
                 state.root = rune::TextEdit::new(session.root);
                 state.saved_builds = session.selected_builds;
+                state.saved_targets = session.selected_targets;
                 state.nav = session.navigation;
                 state.ui.restore(session.presentation);
                 state.auto_fit = false;
@@ -337,14 +339,16 @@ fn poll_discovery(state: &mut State) -> bool {
     }
     match output.result {
         Ok(targets) => {
-            let has_solution = targets.iter().any(|target| target.kind == "solution");
+            let defaults = discovery::default_selection(&targets);
             state.targets = targets
                 .into_iter()
                 .map(|target| {
-                    let selected = if state.saved_builds.is_empty() {
-                        target.kind != "project" || !has_solution
+                    let selected = if let Some(saved) = &state.saved_targets {
+                        saved.contains(&target.identity())
+                    } else if state.saved_builds.is_empty() {
+                        defaults.contains(&target.identity())
                     } else {
-                        state.saved_builds.contains(&target.path)
+                        target.kind != "maven" && state.saved_builds.contains(&target.path)
                     };
                     TargetChoice { target, selected }
                 })
