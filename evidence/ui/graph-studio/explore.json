@@ -1,0 +1,51 @@
+{
+  "events": [
+    {
+      "t": 0.1,
+      "type": "tap",
+      "key": "grouping/segment3"
+    },
+    {
+      "t": 0.2,
+      "type": "tap",
+      "key": "drawer-search"
+    },
+    {
+      "t": 0.5,
+      "type": "type",
+      "text": "ResolveNoDemandTerrainMode",
+      "every": 0.01
+    },
+    {
+      "t": 4.0,
+      "type": "tap",
+      "key": "search-results/scroll/group0/item0"
+    },
+    {
+      "t": 6.0,
+      "type": "tap",
+      "key": "depth-trigger"
+    },
+    {
+      "t": 6.5,
+      "type": "tap",
+      "key": "option1"
+    },
+    {
+      "t": 8.0,
+      "type": "tap",
+      "key": "fit"
+    },
+    {
+      "t": 8.2,
+      "type": "move",
+      "x": 800,
+      "y": 600
+    },
+    {
+      "t": 8.5,
+      "type": "mark",
+      "name": "ready"
+    }
+  ]
+}

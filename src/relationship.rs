@@ -1,48 +1,48 @@
-use crate::{
-    app::{RESULT_PAGE_SIZE, State},
-    view::{button, section_label},
-};
-use rune::tok::{self, TextStyle};
+//! Relationship details and paged, selectable Kit rows.
+use crate::app::{RESULT_PAGE_SIZE, State};
 use rune::{El, col, row, text};
+use rune_kit::{Button, ButtonVariant, Kit, List, ListItem};
 
-pub fn list(state: &State, dark: bool) -> El {
-    let mut list = col().w_full().gap(5.0).child(section_label(
-        format!("RELATIONSHIPS · {}", state.relationships.len()),
-        dark,
-    ));
-    list = list.child(pager(state, dark));
-    let Some(graph) = &state.graph else {
-        return list;
-    };
-    let selected = state.selected();
-    for &id in state
-        .relationships
-        .iter()
-        .skip(state.relationship_page * RESULT_PAGE_SIZE)
-        .take(RESULT_PAGE_SIZE)
-    {
-        let edge = &graph.data.edges[id as usize];
-        let other = if selected == Some(edge.from) {
-            edge.to
-        } else {
-            edge.from
-        };
-        let label = format!(
-            "{} · {} ×{} · {}",
-            edge.kind, edge.certainty, edge.count, graph.data.nodes[other as usize].label
-        );
-        list = list.child(
-            button(label, format!("relationship-{id}"), dark, move |state| {
-                state.selected_edge = Some(id)
-            })
-            .w_full(),
-        );
+pub fn list(state: &State, k: &Kit) -> El {
+    let mut rows = List::new()
+        .active(None)
+        .divider()
+        .empty_message("No relationships reported.");
+    if let Some(graph) = &state.graph {
+        let selected = state.selected();
+        for &id in state
+            .relationships
+            .iter()
+            .skip(state.relationship_page * RESULT_PAGE_SIZE)
+            .take(RESULT_PAGE_SIZE)
+        {
+            let edge = &graph.data.edges[id as usize];
+            let other = if selected == Some(edge.from) {
+                edge.to
+            } else {
+                edge.from
+            };
+            let label = format!(
+                "{} · {} ×{} · {}",
+                edge.kind, edge.certainty, edge.count, graph.data.nodes[other as usize].label
+            );
+            rows = rows.item(
+                ListItem::new(label)
+                    .selected(state.selected_edge == Some(id))
+                    .on_select(move |state: &mut State, _| state.selected_edge = Some(id)),
+            );
+        }
     }
-    list
+    col()
+        .w_full()
+        .gap(8.0)
+        .child(pager(state, k))
+        .child(rows.build(k).key("relationship-list"))
+        .child(selected(state, k))
 }
 
-pub fn selected(state: &State, dark: bool) -> El {
-    let mut panel = col().w_full().gap(5.0);
+pub fn selected(state: &State, k: &Kit) -> El {
+    let mut panel = col().w_full().gap(6.0);
     let Some(graph) = &state.graph else {
         return panel;
     };
@@ -54,7 +54,11 @@ pub fn selected(state: &State, dark: bool) -> El {
     };
     let from = &graph.data.nodes[edge.from as usize];
     let to = &graph.data.nodes[edge.to as usize];
-    panel = panel.child(section_label("SELECTED RELATIONSHIP", dark));
+    panel = panel.child(
+        text("Selected relationship")
+            .font(k.ty.ui_medium)
+            .color(k.c.text_base),
+    );
     for line in [
         format!("From: {}", from.signature),
         format!("To: {}", to.signature),
@@ -69,33 +73,38 @@ pub fn selected(state: &State, dark: bool) -> El {
                 .w_full()
                 .wrap_anywhere()
                 .selectable(true)
-                .font(TextStyle::new(11.0, 400.0))
-                .color(tok::theme(dark).text_secondary),
+                .font(k.ty.text_xsmall)
+                .color(k.c.text_muted),
         );
     }
     panel
 }
 
-fn pager(state: &State, dark: bool) -> El {
+fn pager(state: &State, k: &Kit) -> El {
     let pages = state.relationships.len().div_ceil(RESULT_PAGE_SIZE).max(1);
     row()
         .w_full()
-        .gap(5.0)
+        .gap(8.0)
+        .center_y()
         .child(
-            button("←", "relationships-prev", dark, |state| {
-                state.step_relationships(false)
-            })
-            .disabled(state.relationship_page == 0),
+            Button::new("Previous")
+                .variant(ButtonVariant::Ghost)
+                .disabled(state.relationship_page == 0)
+                .on_press(|state: &mut State| state.step_relationships(false))
+                .build(k)
+                .key("relationships-prev"),
         )
         .child(
             text(format!("{} / {pages}", state.relationship_page + 1))
-                .font(tok::type_::LABEL)
-                .color(tok::theme(dark).text_secondary),
+                .font(k.ty.small)
+                .color(k.c.text_muted),
         )
         .child(
-            button("→", "relationships-next", dark, |state| {
-                state.step_relationships(true)
-            })
-            .disabled(state.relationship_page + 1 >= pages),
+            Button::new("Next")
+                .variant(ButtonVariant::Ghost)
+                .disabled(state.relationship_page + 1 >= pages)
+                .on_press(|state: &mut State| state.step_relationships(true))
+                .build(k)
+                .key("relationships-next"),
         )
 }

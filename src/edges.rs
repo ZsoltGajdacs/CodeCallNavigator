@@ -1,9 +1,11 @@
 //! Paint Graphviz's reported geometry through Rune; no layout or call inference.
+use crate::theme;
 use crate::{
     camera::Camera,
     projection::{GraphView, ViewEdge},
 };
 use rune::{Color, LineCap, Shape};
+use rune_kit::Kit;
 
 #[derive(Clone, Copy)]
 struct Style {
@@ -12,7 +14,7 @@ struct Style {
     dashed: bool,
 }
 
-pub fn render(view: &GraphView, camera: &Camera, viewport: [f32; 2], dark: bool) -> Shape {
+pub fn render(view: &GraphView, camera: &Camera, viewport: [f32; 2], k: &Kit) -> Shape {
     let mut shape = Shape::new();
     for edge in &view.edges {
         let points: Vec<_> = edge
@@ -23,23 +25,23 @@ pub fn render(view: &GraphView, camera: &Camera, viewport: [f32; 2], dark: bool)
         if !visible(&points, viewport) {
             continue;
         }
-        shape = stroke(shape, &points, style(edge, dark));
+        shape = stroke(shape, &points, style(edge, k));
     }
     shape
 }
 
-fn style(edge: &ViewEdge, dark: bool) -> Style {
+fn style(edge: &ViewEdge, k: &Kit) -> Style {
     let reference = matches!(
         edge.kind.as_str(),
         "methodgroup" | "_LM" | "reference" | "callback"
     );
     let direct = matches!(edge.certainty.as_str(), "direct" | "proven-direct");
     let color = if reference {
-        rune::oklch(if dark { 0.76 } else { 0.5 }, 0.13, 300.0)
+        theme::callback(k)
     } else if direct {
-        rune::tok::theme(dark).text_secondary.alpha(0.7)
+        k.c.text_muted.alpha(0.7)
     } else {
-        rune::oklch(if dark { 0.76 } else { 0.5 }, 0.12, 75.0)
+        theme::uncertain(k)
     };
     Style {
         color,

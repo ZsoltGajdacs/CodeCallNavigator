@@ -101,4 +101,5 @@ pub struct SavedSession {
     pub root: String,
     pub selected_builds: Vec<PathBuf>,
     pub navigation: Navigation,
+    pub presentation: crate::presentation::Preferences,
 }

@@ -29,6 +29,7 @@ pub struct State {
     pub store: Option<Arc<SqliteStore>>,
     pub runtime: Option<Arc<AnalyzerRuntime>>,
     pub nav: Navigation,
+    pub ui: crate::presentation::Presentation,
     pub back: Vec<Navigation>,
     pub forward: Vec<Navigation>,
     pub graph_view: GraphView,
@@ -74,6 +75,7 @@ impl State {
             store: None,
             runtime: None,
             nav: Navigation::default(),
+            ui: crate::presentation::Presentation::default(),
             back: Vec::new(),
             forward: Vec::new(),
             graph_view: GraphView::default(),
@@ -264,6 +266,7 @@ impl State {
                 .map(|choice| choice.target.path.clone())
                 .collect(),
             navigation: self.nav.clone(),
+            presentation: self.ui.preferences(),
         }
     }
 

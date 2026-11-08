@@ -1,0 +1,51 @@
+test_bad_patch_checksum_is_refused (test_bootstrap.PatchBootstrapTests.test_bad_patch_checksum_is_refused) ... ok
+test_current_patch_is_idempotent (test_bootstrap.PatchBootstrapTests.test_current_patch_is_idempotent) ... ok
+test_exact_legacy_patch_upgrades_without_resetting_checkout (test_bootstrap.PatchBootstrapTests.test_exact_legacy_patch_upgrades_without_resetting_checkout) ... ok
+test_failed_upgrade_restores_the_legacy_patch (test_bootstrap.PatchBootstrapTests.test_failed_upgrade_restores_the_legacy_patch) ... error: No valid patches in input (allow with "--allow-empty")
+ok
+test_fresh_checkout_applies_current_patch (test_bootstrap.PatchBootstrapTests.test_fresh_checkout_applies_current_patch) ... ok
+test_unrelated_tracked_change_is_preserved_and_refused (test_bootstrap.PatchBootstrapTests.test_unrelated_tracked_change_is_preserved_and_refused) ... ok
+test_unrelated_untracked_source_is_preserved_and_refused (test_bootstrap.PatchBootstrapTests.test_unrelated_untracked_source_is_preserved_and_refused) ... ok
+test_dirty_existing_checkout_is_preserved_when_pin_differs (test_bootstrap.RepositoryBootstrapTests.test_dirty_existing_checkout_is_preserved_when_pin_differs) ... ok
+test_fresh_clone_checks_out_pin_when_upstream_has_advanced (test_bootstrap.RepositoryBootstrapTests.test_fresh_clone_checks_out_pin_when_upstream_has_advanced) ... Cloning into '/var/folders/9t/j3qnf2cn5fx1tqgq8gm50vf80000gq/T/codegraph-bootstrap-test-bxb8ker1/workspace/vendor/fixture'...
+done.
+HEAD is now at e5efc79 Pinned dependency
+ok
+test_disconnected_method_survives_empty_outgoing_list (test_jdt_extract.CollectionTests.test_disconnected_method_survives_empty_outgoing_list) ... Document symbols: 0/1
+Call hierarchy: 0/1
+ok
+test_error_diagnostics_prevent_complete_result (test_jdt_extract.CollectionTests.test_error_diagnostics_prevent_complete_result) ... Document symbols: 0/1
+Call hierarchy: 0/1
+ok
+test_external_targets_are_counted_but_not_connected (test_jdt_extract.CollectionTests.test_external_targets_are_counted_but_not_connected) ... Document symbols: 0/1
+Call hierarchy: 0/1
+ok
+test_failed_build_stops_before_source_or_call_collection (test_jdt_extract.CollectionTests.test_failed_build_stops_before_source_or_call_collection) ... ok
+test_null_document_symbols_are_recorded (test_jdt_extract.CollectionTests.test_null_document_symbols_are_recorded) ... Document symbols: 0/1
+ok
+test_null_hierarchy_is_incomplete (test_jdt_extract.CollectionTests.test_null_hierarchy_is_incomplete) ... Document symbols: 0/1
+Call hierarchy: 0/1
+ok
+test_null_outgoing_calls_are_not_treated_as_no_calls (test_jdt_extract.CollectionTests.test_null_outgoing_calls_are_not_treated_as_no_calls) ... Document symbols: 0/1
+Call hierarchy: 0/1
+ok
+test_only_analyzer_owned_source_roots_are_scanned (test_jdt_extract.CollectionTests.test_only_analyzer_owned_source_roots_are_scanned) ... Document symbols: 0/1
+Call hierarchy: 0/1
+ok
+test_server_errors_prevent_complete_result (test_jdt_extract.CollectionTests.test_server_errors_prevent_complete_result) ... Document symbols: 0/1
+Call hierarchy: 0/1
+ok
+test_oversized_payload_is_rejected_before_reading (test_jdt_extract.FramingTests.test_oversized_payload_is_rejected_before_reading) ... ok
+test_truncated_payload_raises_instead_of_returning_partial_json (test_jdt_extract.FramingTests.test_truncated_payload_raises_instead_of_returning_partial_json) ... ok
+test_utf8_frame_length_counts_bytes (test_jdt_extract.FramingTests.test_utf8_frame_length_counts_bytes) ... ok
+test_flat_or_incomplete_symbol_responses_are_rejected (test_jdt_extract.SymbolMappingTests.test_flat_or_incomplete_symbol_responses_are_rejected) ... ok
+test_nested_parent_identity_and_overloads_are_preserved (test_jdt_extract.SymbolMappingTests.test_nested_parent_identity_and_overloads_are_preserved) ... ok
+test_uri_ownership_uses_path_boundaries (test_jdt_extract.SymbolMappingTests.test_uri_ownership_uses_path_boundaries) ... ok
+test_matching_but_unlocked_patch_is_rejected (test_package.SourceProvenanceTests.test_matching_but_unlocked_patch_is_rejected) ... ok
+test_staged_dependency_edit_is_rejected_without_altering_it (test_package.SourceProvenanceTests.test_staged_dependency_edit_is_rejected_without_altering_it) ... ok
+test_truncated_empty_patch_cannot_ship_unpatched_engine (test_package.SourceProvenanceTests.test_truncated_empty_patch_cannot_ship_unpatched_engine) ... ok
+
+----------------------------------------------------------------------
+Ran 27 tests in 2.385s
+
+OK

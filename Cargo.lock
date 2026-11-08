@@ -557,6 +557,7 @@ dependencies = [
  "libc",
  "petgraph",
  "rune",
+ "rune-kit",
  "rusqlite",
  "serde",
  "serde_json",
@@ -2678,6 +2679,15 @@ dependencies = [
  "xkbcommon",
  "zbus 6.2.1",
  "zeroize",
+]
+
+[[package]]
+name = "rune-kit"
+version = "0.0.1"
+dependencies = [
+ "rune",
+ "rune-motion",
+ "unicode-segmentation",
 ]
 
 [[package]]

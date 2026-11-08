@@ -1,6 +1,8 @@
+use crate::theme;
 use crate::{app::State, projection::ViewNode};
-use rune::tok::{self, TextStyle};
+use rune::TextStyle;
 use rune::{Cx, Drag, El, MagnifyEvent, Phase, WheelEvent, canvas, col, el, text};
+use rune_kit::Kit;
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -80,17 +82,16 @@ impl Camera {
     }
 }
 
-pub fn graph_canvas(state: &State, _: &mut Cx<State>, dark: bool) -> El {
-    let theme = tok::theme(dark);
+pub fn graph_canvas(state: &State, _: &mut Cx<State>, k: &Kit) -> El {
     let mut content = el().key("graph-world").w_full().h_full();
-    let shapes = crate::edges::render(&state.graph_view, &state.nav.camera, state.viewport, dark);
+    let shapes = crate::edges::render(&state.graph_view, &state.nav.camera, state.viewport, k);
     content = content.child(canvas(shapes).w_full().h_full().inert());
     if !state.view_is_current() {
         content = content.inert().opacity(0.45);
     }
     for (index, node) in state.graph_view.nodes.iter().enumerate() {
         if state.nav.camera.shows(node, state.viewport) {
-            let card = node_card(state, node, index, dark);
+            let card = node_card(state, node, index, k);
             content = content.child(if state.view_is_current() {
                 card
             } else {
@@ -99,14 +100,14 @@ pub fn graph_canvas(state: &State, _: &mut Cx<State>, dark: bool) -> El {
         }
     }
     if state.graph_view.nodes.is_empty() {
-        content = content.child(empty_canvas(state, dark));
+        content = content.child(empty_canvas(state, k));
     }
     el().key("graph-canvas")
         .grow(1.0)
         .min_w(0.0)
         .h_full()
         .clip_soft(0.0)
-        .fill(theme.bg)
+        .fill(theme::canvas(k))
         .on_layout(|state: &mut State, rect| state.viewport = [rect[2], rect[3]])
         .on_wheel(|state: &mut State, event: WheelEvent, _| {
             if event.mods.cmd {
@@ -136,10 +137,10 @@ pub fn graph_canvas(state: &State, _: &mut Cx<State>, dark: bool) -> El {
         .child(content)
 }
 
-fn empty_canvas(state: &State, dark: bool) -> El {
-    let theme = tok::theme(dark);
+fn empty_canvas(state: &State, k: &Kit) -> El {
     let (title, description) = empty_message(state);
     col()
+        .absolute(0.0, 0.0)
         .w_full()
         .h_full()
         .center()
@@ -148,14 +149,14 @@ fn empty_canvas(state: &State, dark: bool) -> El {
         .child(
             text(title)
                 .font(TextStyle::new(20.0, 600.0))
-                .color(theme.text)
+                .color(k.c.text_base)
                 .max_w(580.0)
                 .wrap(),
         )
         .child(
             text(description)
-                .font(tok::type_::BODY)
-                .color(theme.text_secondary)
+                .font(k.ty.ui)
+                .color(k.c.text_muted)
                 .max_w(580.0)
                 .wrap(),
         )
@@ -186,18 +187,17 @@ fn empty_message(state: &State) -> (&str, &str) {
     )
 }
 
-fn node_card(state: &State, node: &ViewNode, index: usize, dark: bool) -> El {
-    let theme = tok::theme(dark);
+fn node_card(state: &State, node: &ViewNode, index: usize, k: &Kit) -> El {
     let selected = node
         .member
         .is_some_and(|member| state.selected() == Some(member));
-    let accent = tok::accent(0, dark);
+    let accent = k.c.text_accent;
     let border = if node.cyclic {
-        rune::color::hex("#d3904b").unwrap()
+        theme::uncertain(k)
     } else if selected {
         accent
     } else {
-        theme.text_secondary.alpha(0.3)
+        k.c.text_muted.alpha(0.3)
     };
     let point = state.nav.camera.screen(node.position);
     let scale = state.nav.camera.zoom;
@@ -215,7 +215,7 @@ fn node_card(state: &State, node: &ViewNode, index: usize, dark: bool) -> El {
         } else if node.application_start {
             accent.alpha(0.10)
         } else {
-            theme.card
+            k.c.layer_01
         })
         .padding((10.0 * scale).max(3.0))
         .gap(3.0)
@@ -231,14 +231,14 @@ fn node_card(state: &State, node: &ViewNode, index: usize, dark: bool) -> El {
         })
         .child(
             text(&node.label)
-                .font(TextStyle::new((14.0 * scale).max(8.0), 600.0))
-                .color(theme.text)
+                .font(theme::mono((14.0 * scale).max(8.0), 600.0))
+                .color(k.c.text_base)
                 .truncate(),
         )
         .child(
             text(detail)
                 .font(TextStyle::new((11.0 * scale).max(7.0), 400.0))
-                .color(theme.text_secondary)
+                .color(k.c.text_muted)
                 .truncate(),
         )
 }

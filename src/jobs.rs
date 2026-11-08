@@ -248,6 +248,7 @@ pub fn poll(state: &mut State, time: f64, tx: &mut Tx) -> bool {
         | poll_search_input(state)
         | poll_persistence(state)
         | poll_staleness(state, time, tx);
+    changed |= state.constrain_panes(state.ui.window_width);
     if state.needs_layout {
         state.request_layout();
         changed = true;
@@ -307,6 +308,7 @@ fn poll_boot(state: &mut State) -> bool {
                 state.root = rune::TextEdit::new(session.root);
                 state.saved_builds = session.selected_builds;
                 state.nav = session.navigation;
+                state.ui.restore(session.presentation);
                 state.auto_fit = false;
             }
             if let Some(graph) = boot.graph {

@@ -1,6 +1,8 @@
 use crate::{app::State, jobs, scenes, view};
 use rune::{Env, Runtime};
 
+mod graph_studio;
+
 fn runtime() -> Runtime<State> {
     let mut state = State::new();
     scenes::install(&mut state);
@@ -121,38 +123,6 @@ fn native_command_shortcuts_focus_search_and_open_the_folder_sheet() {
     runtime.frame(1.0 / 60.0);
     assert!(runtime.file_dialog().is_some());
     runtime.resolve_file_dialog(None).unwrap();
-}
-
-#[test]
-fn a_narrow_window_can_scroll_to_every_toolbar_control() {
-    let mut state = State::new();
-    scenes::install(&mut state);
-    let mut runtime = Runtime::new(state, view::view, (1050.0, 680.0), Env::new(true, 1.0));
-    runtime.poll = Some(jobs::poll);
-    runtime.frame(0.0);
-    let (x, y) = runtime.find("toolbar-scroll").unwrap();
-    runtime.wheel_event(rune::WheelEvent::new(-600.0, 0.0).at(x, y).precise(true));
-    for _ in 0..60 {
-        runtime.frame(1.0 / 60.0);
-    }
-    let zoom = runtime
-        .elements()
-        .into_iter()
-        .find(|element| element.key.as_deref() == Some("zoom-in"))
-        .unwrap();
-    assert!(
-        zoom.visible[2] > 20.0,
-        "Zoom control remains reachable through horizontal scrolling"
-    );
-    let before = runtime.state.nav.camera.zoom;
-    let (x, y) = (
-        zoom.visible[0] + zoom.visible[2] / 2.0,
-        zoom.visible[1] + zoom.visible[3] / 2.0,
-    );
-    runtime.pointer_down(x, y);
-    runtime.pointer_up(x, y);
-    runtime.frame(1.0 / 60.0);
-    assert!(runtime.state.nav.camera.zoom > before);
 }
 
 #[test]
@@ -295,7 +265,7 @@ fn method_control_starts_at_entries_and_overview_restores_them() {
     let mut runtime = runtime();
     runtime.state.nav.direction = FlowDirection::Callers;
     runtime.state.nav.page = 7;
-    click(&mut runtime, "group-Method");
+    click(&mut runtime, "grouping/segment3");
     assert_eq!(runtime.state.nav.grouping, Grouping::Method);
     assert_eq!(runtime.state.nav.direction, FlowDirection::Callees);
     assert_eq!(runtime.state.nav.page, 0);
@@ -351,7 +321,7 @@ fn changing_flow_resets_page_refits_and_history_restores_previous_flow() {
     runtime.state.select(2, true);
     runtime.frame(1.0 / 60.0);
     runtime.state.nav.page = 3;
-    click(&mut runtime, "direction-Callers");
+    click(&mut runtime, "direction/segment0");
     assert_eq!(runtime.state.nav.direction, FlowDirection::Callers);
     assert_eq!(runtime.state.nav.page, 0);
     assert_eq!(

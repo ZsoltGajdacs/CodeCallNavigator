@@ -1,0 +1,30 @@
+{
+  "events": [
+    {
+      "t": 0.2,
+      "type": "tap",
+      "key": "fit"
+    },
+    {
+      "t": 0.5,
+      "type": "tap",
+      "key": "graph-node-0"
+    },
+    {
+      "t": 0.8,
+      "type": "tap",
+      "key": "drawer-search"
+    },
+    {
+      "t": 1.0,
+      "type": "move",
+      "x": 800,
+      "y": 600
+    },
+    {
+      "t": 1.2,
+      "type": "mark",
+      "name": "ready"
+    }
+  ]
+}

@@ -1,0 +1,123 @@
+   Compiling codegraph v0.1.0 (/Users/zsolt.gajdacs/Zs/Programming/CodeGraph)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.47s
+     Running unittests src/lib.rs (target/debug/deps/codegraph-4e1b002d75f3892c)
+
+running 13 tests
+test analyzers::csharp::tests::unpatched_symbol_identities_are_rejected ... ok
+test analyzers::java::tests::return_types_distinguish_bridge_methods_and_references_stay_uncertain ... ok
+test analyzers::process::tests::already_cancelled_process_never_starts ... ok
+test analyzers::tests::edits_after_the_pre_analysis_snapshot_are_rejected ... ok
+test fingerprint::tests::creating_ignored_build_outputs_does_not_stale_sources ... ok
+test analyzers::tests::configured_java_home_requires_a_full_jdk25 ... ok
+test discovery::tests::finds_solution_projects_and_deduplicates_gradle_files ... ok
+test analyzers::csharp::tests::linked_glob_root_detects_new_files_outside_the_project_directory ... ok
+test fingerprint::tests::detects_edits_additions_and_deletions ... ok
+test discovery::tests::groups_subprojects_under_settings_but_keeps_independent_nested_builds ... ok
+test analyzers::java::tests::authored_lambda_flow_survives_the_default_production_filter ... ok
+test analyzers::java::tests::real_bytecode_distinguishes_application_start_from_uncalled_and_invalid_main ... ok
+test analyzers::process::tests::cancellation_stops_descendants_in_the_owned_process_group ... ok
+
+test result: ok. 13 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.42s
+
+     Running unittests src/bin/analyzer_check.rs (target/debug/deps/analyzer_check-6a7a51dae0371170)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/bin/benchmark.rs (target/debug/deps/benchmark-958b5e2da842fc51)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/main.rs (target/debug/deps/codegraph-b62a1af66f428b57)
+
+running 36 tests
+test camera::tests::zoom_keeps_the_world_point_under_the_pointer ... ok
+test presentation::tests::restore_clamps_widths_and_keeps_factory_reset_widths ... ok
+test presentation::tests::restoring_preferences_keeps_actual_window_width ... ok
+test presentation::tests::legacy_session_opens_default_graph_studio_panes ... ok
+test edges::tests::culling_keeps_crossing_splines_and_drops_offscreen_geometry ... ok
+test presentation::tests::narrowing_window_reserves_canvas_and_preserves_graph_state ... ok
+test presentation::tests::presentation_changes_do_not_change_graph_camera_or_history ... ok
+test presentation::tests::pane_constraint_leaves_closed_pane_preference_untouched ... ok
+test presentation::tests::preferences_round_trip_without_transient_overlay_or_disclosures ... ok
+test presentation::tests::polling_constrains_panes_expanded_after_initial_layout ... ok
+test ui_tests::corrupt_session_is_recoverable_while_the_cached_graph_still_opens ... ok
+test ui_tests::graph_studio::disabled_kit_analysis_control_does_not_start_work ... ok
+test ui_tests::cancelling_the_folder_sheet_preserves_the_current_workspace ... ok
+test ui_tests::a_late_discovery_result_cannot_populate_builds_for_a_different_root ... ok
+test ui_tests::changing_flow_resets_page_refits_and_history_restores_previous_flow ... ok
+test ui_tests::graph_studio::activity_rail_switches_and_collapses_drawers_without_navigating_the_graph ... ok
+test ui_tests::graph_studio::kit_pane_drag_and_visibility_preserve_camera_and_persist_preferences ... ok
+test ui_tests::legacy_navigation_directions_and_method_sessions_roundtrip ... ok
+test ui_tests::graph_studio::command_f_reopens_search_and_focuses_the_actual_editor ... ok
+test ui_tests::graph_studio::a_search_result_reveals_a_method_hidden_by_graph_filters ... ok
+test ui_tests::graph_studio::empty_workspace_shows_discovery_progress_and_a_real_directory_error ... ok
+test ui_tests::native_command_shortcuts_focus_search_and_open_the_folder_sheet ... ok
+test ui_tests::graph_studio::segmented_grouping_supports_keyboard_navigation_and_activation ... ok
+test ui_tests::graph_studio::drawer_fields_and_long_inspector_signatures_stay_inside_their_panes ... ok
+test ui_tests::restored_navigation_keeps_exact_ids_and_discards_missing_symbols ... ok
+test ui_tests::graph_studio::depth_select_changes_real_neighborhood_and_escape_dismisses_before_overview ... ok
+test ui_tests::method_control_starts_at_entries_and_overview_restores_them ... ok
+test ui_tests::native_node_selection_and_history_restore_focus_and_camera ... ok
+test ui_tests::graph_studio::reduced_motion_pane_collapse_snaps_width_and_keeps_controls_reachable ... ok
+test ui_tests::stale_worker_result_updates_the_native_status_text ... ok
+test ui_tests::graph_studio::kit_checkbox_changes_graph_filter_and_inspector_disclosure_hides_only_its_section ... ok
+test ui_tests::native_path_controls_show_a_real_directed_path_and_filter_can_reveal_tests ... ok
+test ui_tests::graph_studio::live_pane_drags_keep_controls_inside_the_minimum_window ... ok
+test ui_tests::graph_studio::system_appearance_switch_rethemes_the_live_workspace_without_losing_search ... ok
+test ui_tests::graph_studio::minimum_window_keeps_graph_controls_visible_without_toolbar_scrolling ... ok
+test ui_tests::search_and_neighbor_pages_can_reach_every_indexed_match ... ok
+
+test result: ok. 36 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.13s
+
+     Running tests/core.rs (target/debug/deps/core-2028d2c35980d5b6)
+
+running 5 tests
+test directed_path_cycles_and_filters_use_the_same_graph ... ok
+test reference_and_uncertain_edges_remain_distinct ... ok
+test canvas_budget_keeps_omitted_nodes_reachable_by_identity ... ok
+test search_pins_generation_while_a_new_analysis_is_published ... ok
+test sqlite_roundtrip_search_session_and_failed_refresh_preserve_active_graph ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+
+     Running tests/entry_metadata.rs (target/debug/deps/entry_metadata-d88502e20001e0f1)
+
+running 3 tests
+test metadata_rejects_unknown_or_duplicate_entry_identities ... ok
+test entry_metadata_survives_sqlite_and_old_graphs_remain_readable ... ok
+test real_csharp_entries_keep_uncalled_methods_and_verify_executable_starts ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 6.12s
+
+     Running tests/multi_root.rs (target/debug/deps/multi_root-13702107e5bef098)
+
+running 2 tests
+test multi_root_traversal_deduplicates_roots_and_shared_descendants ... ok
+test multi_root_budget_keeps_roots_before_descendants_in_stable_identity_order ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/projection.rs (target/debug/deps/projection-2ba4a3ec91dc642d)
+
+running 14 tests
+test legacy_directions_deserialize_to_the_two_presentation_choices ... ok
+test method_recursion_stays_visible_when_group_internals_are_summarized ... ok
+test cycles_without_candidates_have_an_actionable_empty_method_overview ... ok
+test path_view_respects_uncertainty_and_reports_absence_instead_of_inventing_a_bridge ... ok
+test method_overview_falls_back_to_uncalled_methods_in_legacy_graphs ... ok
+test hierarchy_expansion_partitions_members_without_losing_global_namespace_methods ... ok
+test method_entry_filters_depth_and_manual_focus_are_independent ... ok
+test aggregate_overview_uses_directional_component_roots_even_for_cycles ... ok
+test traversal_remains_stable_when_storage_order_changes ... ok
+test page_reports_cross_page_relationships_in_omitted_counts ... ok
+test aggregate_pagination_follows_traversal_instead_of_symbol_names ... ok
+test real_graphviz_layout_keeps_explicit_relationship_identity ... ok
+test multiple_roots_shared_methods_cycles_and_start_highlighting_keep_stable_branches ... ok
+test callers_read_downward_but_real_call_arrows_point_upward ... ok
+
+test result: ok. 14 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.06s
+

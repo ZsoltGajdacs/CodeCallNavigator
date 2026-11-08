@@ -2,14 +2,17 @@ pub use codegraph::{analyzers, discovery, fingerprint};
 mod app;
 mod camera;
 mod edges;
+mod icons;
 mod inspector;
 mod jobs;
 mod method_scenes;
 mod navigation;
+mod presentation;
 mod projection;
 mod relationship;
 mod scenes;
 mod search;
+mod theme;
 #[cfg(test)]
 mod ui_tests;
 mod view;
