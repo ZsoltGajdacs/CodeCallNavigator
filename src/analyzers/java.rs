@@ -3,7 +3,7 @@ use super::{AnalysisJob, choose_artifact, ensure_unchanged, find_tool, source_sn
 use crate::{
     discovery::BuildTarget,
     fingerprint,
-    model::{Edge, FileFingerprint, GraphData, Node},
+    model::{Edge, EntryPoints, FileFingerprint, GraphData, Node},
 };
 use anyhow::{Context, Result, bail, ensure};
 use serde::Deserialize;
@@ -310,6 +310,7 @@ struct BytecodeCollector<'a> {
     declared: HashSet<String>,
     placeholder_count: usize,
     excluded_edges: usize,
+    application_starts: Vec<String>,
 }
 
 impl<'a> BytecodeCollector<'a> {
@@ -326,6 +327,7 @@ impl<'a> BytecodeCollector<'a> {
             declared: HashSet::new(),
             placeholder_count: 0,
             excluded_edges: 0,
+            application_starts: Vec::new(),
         }
     }
 
@@ -357,6 +359,9 @@ impl<'a> BytecodeCollector<'a> {
                 "Duplicate method identity in compiled project"
             );
             let node = self.java_node(&values, false)?;
+            if is_application_start(&values)? {
+                self.application_starts.push(node.id.clone());
+            }
             self.insert_node(key, node)?;
         }
         Ok(())
@@ -523,11 +528,40 @@ impl<'a> BytecodeCollector<'a> {
     }
 
     fn finish(mut self) -> Result<GraphData> {
+        let called: HashSet<_> = self.graph.edges.iter().map(|edge| edge.to).collect();
+        let mut candidates: Vec<_> = self
+            .graph
+            .nodes
+            .iter()
+            .enumerate()
+            .filter(|(index, node)| {
+                !node.body_unavailable
+                    && !node.signature.contains(":<clinit>()")
+                    && !called.contains(&(*index as u32))
+            })
+            .map(|(_, node)| node.id.clone())
+            .collect();
+        candidates.sort();
+        self.application_starts.sort();
+        self.graph.entry_points = Some(EntryPoints {
+            candidates,
+            application_starts: self.application_starts,
+        });
         self.graph.diagnostics.push(format!("Java: {} inherited/reference symbols have no declared body; {} external relationships excluded. These references are engine-reported, not resolved by name.", self.placeholder_count, self.excluded_edges));
         self.graph.diagnostics.push("Java DI, reflection, framework callback ordering and dynamic runtime targets are supported only where reported by java-callgraph2. Bytecode source columns are unavailable.".into());
         self.graph.validate()?;
         Ok(self.graph)
     }
+}
+
+/// BCEL access flags and descriptor, rather than a method-name heuristic.
+fn is_application_start(row: &[String]) -> Result<bool> {
+    let flags: u32 = row[7].parse().context("Invalid method access flags")?;
+    Ok(flags & 0x0009 == 0x0009
+        && row[6] == "void"
+        && row[5]
+            .split_once(':')
+            .is_some_and(|(_, method)| method == "main(java.lang.String[])"))
 }
 
 fn method_key(signature: &str, return_type: &str) -> String {
@@ -617,11 +651,49 @@ mod tests {
         );
     }
 
+    #[test]
+    #[ignore = "requires the pinned bytecode distribution and installed JDK 25"]
+    fn real_bytecode_distinguishes_application_start_from_uncalled_and_invalid_main() {
+        let directory = tempfile::tempdir().unwrap();
+        let runtime = AnalyzerRuntime::discover().unwrap();
+        let input = compile_callback_fixture(&runtime, directory.path());
+        let output = run_callback_engine(&runtime, directory.path(), &input.path);
+        let build = BuildTarget {
+            path: directory.path().into(),
+            language: "java".into(),
+            kind: "gradle".into(),
+            label: "entries".into(),
+        };
+        let graph = normalize_bytecode(&build, &output, &[input]).unwrap();
+        let entries = graph.entry_points.unwrap();
+        assert_eq!(entries.application_starts.len(), 1);
+        assert!(
+            !entries
+                .candidates
+                .iter()
+                .any(|id| id.contains(":<clinit>()"))
+        );
+        assert!(entries.candidates.iter().any(|id| id.contains(":<init>()")));
+        assert!(entries.application_starts[0].contains(":main(java.lang.String[])|void"));
+        assert!(
+            entries
+                .candidates
+                .iter()
+                .any(|id| id.contains(":uncalled()|void"))
+        );
+        assert!(
+            !entries
+                .application_starts
+                .iter()
+                .any(|id| id.contains("Invalid"))
+        );
+    }
+
     fn compile_callback_fixture(runtime: &AnalyzerRuntime, root: &Path) -> JavaInput {
         let source_root = root.join("src");
         let source_file = source_root.join("fixture/Flow.java");
         fs::create_dir_all(source_file.parent().unwrap()).unwrap();
-        fs::write(&source_file, "package fixture; public final class Flow { public void start() { Runnable callback = () -> leaf(); callback.run(); } private void leaf() {} }").unwrap();
+        fs::write(&source_file, "package fixture; public final class Flow { public static void main(String[] args) { new Flow().start(); } public void start() { Runnable callback = () -> leaf(); callback.run(); } private void leaf() {} public void uncalled() {} } class StaticInit { static int value = initialize(); static int initialize() { return 1; } } class InvalidPrivate { private static void main(String[] args) {} } class InvalidInstance { public void main(String[] args) {} } class InvalidReturn { public static int main(String[] args) { return 0; } } class InvalidArgs { public static void main(String arg) {} }").unwrap();
         let classes = root.join("classes");
         run_process(
             Command::new(runtime.java_home.as_ref().unwrap().join("bin/javac"))

@@ -203,14 +203,7 @@ fn node_card(state: &State, node: &ViewNode, index: usize, dark: bool) -> El {
     let scale = state.nav.camera.zoom;
     let key = node.key.clone();
     let member = node.member;
-    let detail = if node.member.is_none() {
-        format!(
-            "{} symbols · {} links inside",
-            node.count, node.internal_edges
-        )
-    } else {
-        node.detail.clone()
-    };
+    let detail = node_detail(node);
     col()
         .key(format!("graph-node-{index}"))
         .absolute(point[0], point[1])
@@ -219,6 +212,8 @@ fn node_card(state: &State, node: &ViewNode, index: usize, dark: bool) -> El {
         .border(if selected { 2.0 } else { 1.0 }, border)
         .fill(if selected {
             accent.alpha(0.16)
+        } else if node.application_start {
+            accent.alpha(0.10)
         } else {
             theme.card
         })
@@ -246,6 +241,19 @@ fn node_card(state: &State, node: &ViewNode, index: usize, dark: bool) -> El {
                 .color(theme.text_secondary)
                 .truncate(),
         )
+}
+
+fn node_detail(node: &ViewNode) -> String {
+    if node.member.is_none() {
+        format!(
+            "{} symbols · {} links inside",
+            node.count, node.internal_edges
+        )
+    } else if node.application_start {
+        format!("Application start · {}", node.detail)
+    } else {
+        node.detail.clone()
+    }
 }
 
 #[cfg(test)]

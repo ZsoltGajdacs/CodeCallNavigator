@@ -10,7 +10,9 @@ cross-service connections and AI features are outside this MVP.
 
 Run `./dev.sh` to bootstrap dependencies, build and launch directly from the
 repository without installing the app. App arguments are forwarded, for example
-`./dev.sh --scene fixture`. Both scripts work when called from another directory.
+`./dev.sh --scene fixture`. The `method-callees` and `method-callers` scenes show a
+branching fixture using the production Graphviz layout. Both scripts work when
+called from another directory.
 
 Run `./prod.sh` to build the release app and create `dist/CodeGraph.dmg`. Open the
 image and drag CodeGraph to Applications. The `.app` and ZIP are also kept in `dist`.
@@ -28,10 +30,22 @@ CodeGraph reports missing toolchains; it does not install SDKs. Analysis can
 restore dependencies and compile all configured source sets, including tests,
 but does not run applications or test-execution tasks.
 
-Use Project, Namespace or Folder grouping (including global-namespace C# code).
-Click groups to expand; double-click a method to focus. Search covers the entire
-index with pagination, including currently filtered symbols. Explore callers,
-callees, depth, shortest directed paths and history. Drag to pan, scroll/pinch to
+Use Project, Namespace, Folder or Method grouping (including global-namespace C# code).
+Method opens all entry-point candidates, including uncalled methods, with verified
+C# and Java application starts highlighted. C# starts come from the compiler;
+Java starts are public static void main(String[]). Framework handlers can appear
+as uncalled candidates without application-start highlighting. Older cached graphs
+still open; refresh them to enable verified-start highlighting.
+
+Click groups to expand; double-click a method to focus. Overview restores the
+entry roots in Method view. Search covers the entire index with pagination,
+including currently filtered symbols. Choose Callees to read from the focus down
+to its callees, or Callers to read from the focus down to its callers. All views
+use top-down branch grouping; arrows always retain caller-to-callee direction,
+so arrows point upward in Callers view. Shared methods appear once with cross-links,
+and cycles remain visible. Depth bounds the neighborhood; entry-rooted Callers
+views can contain only their roots. Shortest paths retain execution order.
+Explore depth, shortest directed paths and history. Drag to pan, scroll/pinch to
 navigate, or use Fit and zoom buttons. Cmd-O opens the folder chooser; Cmd-F focuses
 search. The inspector shows signatures, project ownership, locations, relationship
 certainty and analyzer provenance. No source code is displayed.
@@ -76,7 +90,8 @@ cargo run --bin codegraph -- analyze fixtures/dotnet/Fixture.sln fixtures/gradle
 ## Engines and accuracy
 
 C# uses compiler-backed CallAtlas. A small checked-in patch qualifies its serialized
-symbol identities by compiler assembly identity; it changes no call binding.
+symbol identities by compiler assembly identity and exports entry candidates plus
+compiler-verified application starts; it changes no call binding.
 Java uses existing java-callgraph2 4.1.0 with BCEL 6.13.0 over real Gradle compilation
 output. The planned JDT LS integration failed the StoryEngine acceptance gate and
 was replaced before UI implementation. No heuristic call resolver was substituted.

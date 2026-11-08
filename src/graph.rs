@@ -59,6 +59,14 @@ pub struct Neighborhood<'a> {
     pub filter: &'a Filter,
 }
 
+/// Bounded traversal rooted at one or more methods.
+pub struct MultiNeighborhood<'a> {
+    pub roots: &'a [u32],
+    pub direction: Direction,
+    pub depth: u32,
+    pub filter: &'a Filter,
+}
+
 #[derive(Clone, Debug, Default)]
 pub struct GraphSlice {
     pub nodes: Vec<u32>,
@@ -78,13 +86,11 @@ struct Frontier {
 }
 
 impl Frontier {
-    fn new(node_count: usize, start: u32) -> Self {
-        let mut frontier = Self {
+    fn new(node_count: usize) -> Self {
+        Self {
             visited: vec![false; node_count],
             queue: VecDeque::new(),
-        };
-        frontier.enqueue(start, 0);
-        frontier
+        }
     }
 
     fn enqueue(&mut self, node: u32, distance: u32) {
@@ -250,33 +256,58 @@ impl GraphIndex {
     }
 
     pub fn neighborhood(&self, request: &Neighborhood<'_>) -> GraphSlice {
-        let Neighborhood {
-            node,
+        self.multi_neighborhood(&MultiNeighborhood {
+            roots: &[request.node],
+            direction: request.direction,
+            depth: request.depth,
+            filter: request.filter,
+        })
+    }
+
+    /// Breadth-first union of neighborhoods, with roots and siblings ordered by identity.
+    pub fn multi_neighborhood(&self, request: &MultiNeighborhood<'_>) -> GraphSlice {
+        let MultiNeighborhood {
+            roots,
             direction,
             depth,
             filter,
         } = *request;
-        if !self.visible(node, filter) {
-            return GraphSlice::default();
+        let mut frontier = Frontier::new(self.data.nodes.len());
+        for root in self.identity_order(
+            roots
+                .iter()
+                .copied()
+                .filter(|&id| self.visible(id, filter))
+                .collect(),
+        ) {
+            frontier.enqueue(root, 0);
         }
-        let mut frontier = Frontier::new(self.data.nodes.len(), node);
         let mut reached = Vec::new();
         while let Some((current, distance)) = frontier.queue.pop_front() {
             reached.push(current);
             if distance >= depth {
                 continue;
             }
-            for next in self.neighbors(current, direction, filter) {
+            for next in self.identity_order(self.neighbors(current, direction, filter)) {
                 frontier.enqueue(next, distance + 1);
             }
         }
         self.slice_reached(reached, &frontier.visited, filter)
     }
 
+    fn identity_order(&self, mut nodes: Vec<u32>) -> Vec<u32> {
+        nodes.sort_unstable_by(|&a, &b| {
+            self.data.nodes[a as usize]
+                .id
+                .cmp(&self.data.nodes[b as usize].id)
+        });
+        nodes.dedup();
+        nodes
+    }
+
     fn slice_reached(&self, reached: Vec<u32>, visited: &[bool], filter: &Filter) -> GraphSlice {
         let omitted_nodes = reached.len().saturating_sub(MAX_CANVAS_NODES);
-        let mut nodes: Vec<u32> = reached.into_iter().take(MAX_CANVAS_NODES).collect();
-        nodes.sort_unstable();
+        let nodes: Vec<u32> = reached.into_iter().take(MAX_CANVAS_NODES).collect();
         let mut shown = vec![false; self.data.nodes.len()];
         for &id in &nodes {
             shown[id as usize] = true;

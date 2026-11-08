@@ -1,0 +1,106 @@
+diff --git a/src/CallAtlas.Core/CallGraphBuilder.cs b/src/CallAtlas.Core/CallGraphBuilder.cs
+index bf14b1d..c394889 100644
+--- a/src/CallAtlas.Core/CallGraphBuilder.cs
++++ b/src/CallAtlas.Core/CallGraphBuilder.cs
+@@ -664,7 +664,7 @@ public sealed partial class CallGraphBuilder
+         List<string> degraded,
+         bool referencesResolved)
+     {
+-        var hasTopLevel = false;
++        var topLevelIds = new HashSet<string>(StringComparer.Ordinal);
+ 
+         // ── 阶段一（全部文件）：一遍句法遍历，登记节点 + 收集待绑定函数体 ──────────
+         // 旧实现把整棵树走两遍：第二遍要重新 GetDeclaredSymbol 才能算出 fromId，
+@@ -752,19 +752,19 @@ public sealed partial class CallGraphBuilder
+                         Site(sites, SymbolId.ForFieldInitializer(f), [v.Initializer!.Value]);
+                         break;
+                     case GlobalStatementSyntax gs:
+-                        if (!hasTopLevel)
++                        var topLevelId = SymbolId.ForTopLevel(model.Compilation);
++                        if (topLevelIds.Add(topLevelId))
+                         {
+-                            hasTopLevel = true;
+-                            nodes[SymbolId.TopLevelId] = new Node
++                            nodes[topLevelId] = new Node
+                             {
+-                                Id = SymbolId.TopLevelId,
++                                Id = topLevelId,
+                                 Kind = "toplevel",
+                                 Container = "Program",
+                                 Name = "<top-level>",
+                                 Location = Rel(root, file) + ":1",
+                             };
+                         }
+-                        Site(sites, SymbolId.TopLevelId, [gs.Statement]);
++                        Site(sites, topLevelId, [gs.Statement]);
+                         break;
+                 }
+             }
+@@ -1755,7 +1755,7 @@ public sealed partial class CallGraphBuilder
+     /// 但"谁读了这个字段"是架构事实，值得有个落点。</summary>
+     private static string FieldNodeId(Dictionary<string, Node> sink, IFieldSymbol field)
+     {
+-        var id = $"{field.ContainingType.ToDisplayString(SymbolId.QualifiedFormat)}::{field.Name}#field";
++        var id = SymbolId.ForField(field);
+         sink.TryAdd(id, new Node
+         {
+             Id = id,
+diff --git a/src/CallAtlas.Core/CodeMap.cs b/src/CallAtlas.Core/CodeMap.cs
+index a720920..a39a367 100644
+--- a/src/CallAtlas.Core/CodeMap.cs
++++ b/src/CallAtlas.Core/CodeMap.cs
+@@ -306,27 +306,38 @@ public static class SymbolId
+     public static string Canonical(IMethodSymbol method)
+     {
+         var s = (method.ReducedFrom ?? method).OriginalDefinition;
+-        return s.MethodKind switch
++        if (s.MethodKind == MethodKind.LocalFunction && s.ContainingSymbol is IMethodSymbol enclosing)
++            return $"{Canonical(enclosing)}::{s.Name}#local";
++        return InAssembly(s, s.MethodKind switch
+         {
+             MethodKind.StaticConstructor => $"{s.ContainingType.ToDisplayString(QualifiedFormat)}::.cctor",
+             MethodKind.Constructor => $"{s.ContainingType.ToDisplayString(QualifiedFormat)}::..ctor({Params(s)})",
+-            MethodKind.LocalFunction when s.ContainingSymbol is IMethodSymbol enclosing =>
+-                $"{Canonical(enclosing)}::{s.Name}#local",
+             _ => $"{s.ContainingType.ToDisplayString(QualifiedFormat)}::{s.Name}({Params(s)})",
+-        };
++        });
+     }
+ 
+     /// <summary>字段初始化器的伪节点 id：T::field#init（初始化表达式里的调用归到这里）。</summary>
+     public static string ForFieldInitializer(IFieldSymbol field) =>
+-        $"{field.ContainingType.ToDisplayString(QualifiedFormat)}::{field.Name}#init";
++        InAssembly(field, $"{field.ContainingType.ToDisplayString(QualifiedFormat)}::{field.Name}#init");
+ 
+     /// <summary>属性初始化器的伪节点 id：T::Prop#init（<c>public B P { get; set; } = new B();</c>）。
+     /// 没有对应的字段声明语法，因此按属性自己的名字登记。</summary>
+     public static string ForPropertyInitializer(IPropertySymbol property) =>
+-        $"{property.ContainingType.ToDisplayString(QualifiedFormat)}::{property.Name}#init";
++        InAssembly(property, $"{property.ContainingType.ToDisplayString(QualifiedFormat)}::{property.Name}#init");
+ 
+     /// <summary>顶层语句的伪节点 id（整个入口一个节点）。</summary>
+-    public const string TopLevelId = "Program::<top-level>";
++    public static string ForTopLevel(Compilation compilation) =>
++        InAssembly(compilation.Assembly, "Program::<top-level>");
++
++    public static string ForField(IFieldSymbol field) =>
++        InAssembly(field, $"{field.ContainingType.ToDisplayString(QualifiedFormat)}::{field.Name}#field");
++
++    // Identity serialization only: retain the compiler-owned assembly boundary.
++    public static string InAssembly(ISymbol symbol, string localId)
++    {
++        var assembly = symbol as IAssemblySymbol ?? symbol.ContainingAssembly;
++        return $"[{assembly?.Identity.Name ?? "<unknown>"}]::{localId}";
++    }
+ 
+     /// <summary>
+     /// 委托调用的落点 id：<c>Action#delegate</c>（用委托类型本身命名）。
+@@ -337,7 +348,7 @@ public static class SymbolId
+     /// 后缀 <c>#delegate</c> 与字段初始化器的 <c>#init</c> 同族，一眼可辨其为伪节点。
+     /// </summary>
+     public static string ForDelegate(ITypeSymbol delegateType) =>
+-        $"{delegateType.ToDisplayString(QualifiedFormat)}#delegate";
++        InAssembly(delegateType, $"{delegateType.ToDisplayString(QualifiedFormat)}#delegate");
+ 
+     private static string Params(IMethodSymbol method) =>
+         string.Join(",", method.Parameters.Select(p => p.Type.ToDisplayString(QualifiedFormat)));

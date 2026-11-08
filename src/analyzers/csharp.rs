@@ -2,7 +2,7 @@ use super::process::run_process;
 use super::{AnalysisJob, ensure_unchanged, find_tool, source_snapshot};
 use crate::{
     discovery::BuildTarget,
-    model::{Edge, GraphData, Node},
+    model::{Edge, EntryPoints, GraphData, Node},
 };
 use anyhow::{Context, Result, ensure};
 use serde::Deserialize;
@@ -25,6 +25,15 @@ struct AtlasMap {
     body_errors: u64,
     #[serde(default)]
     unresolved: Vec<serde_json::Value>,
+    #[serde(default, rename = "entryPoints")]
+    entry_points: Option<AtlasEntries>,
+}
+
+#[derive(Deserialize)]
+struct AtlasEntries {
+    candidates: Vec<String>,
+    #[serde(rename = "applicationStarts")]
+    application_starts: Vec<String>,
 }
 #[derive(Deserialize)]
 struct AtlasNode {
@@ -300,6 +309,17 @@ fn normalize_atlas(
         roots: vec![build.path.to_string_lossy().into_owned()],
         ..GraphData::default()
     };
+    graph.entry_points = map.entry_points.map(|entries| {
+        let qualify = |ids: Vec<String>| {
+            ids.into_iter()
+                .map(|id| format!("{}|{id}", build.path.display()))
+                .collect()
+        };
+        EntryPoints {
+            candidates: qualify(entries.candidates),
+            application_starts: qualify(entries.application_starts),
+        }
+    });
     let mut indices = HashMap::new();
     for node in map.nodes {
         ensure!(

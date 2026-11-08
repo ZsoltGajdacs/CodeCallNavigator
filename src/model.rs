@@ -50,6 +50,14 @@ pub struct FileFingerprint {
     pub hash: String,
 }
 
+/// Analyzer-owned entry candidates and compiler/bytecode-verified executable starts.
+/// Identities are stable across graph composition and independent of node offsets.
+#[derive(Clone, Debug, Default, PartialEq, Eq, Deserialize, Serialize)]
+pub struct EntryPoints {
+    pub candidates: Vec<String>,
+    pub application_starts: Vec<String>,
+}
+
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
 pub struct GraphData {
     pub nodes: Vec<Node>,
@@ -58,6 +66,8 @@ pub struct GraphData {
     pub roots: Vec<String>,
     pub fingerprints: Vec<FileFingerprint>,
     pub engine_versions: String,
+    #[serde(default)]
+    pub entry_points: Option<EntryPoints>,
 }
 
 impl GraphData {
@@ -79,6 +89,10 @@ impl GraphData {
                 node.id
             );
         }
+        if let Some(entries) = &self.entry_points {
+            validate_entries(&entries.candidates, &identities)?;
+            validate_entries(&entries.application_starts, &identities)?;
+        }
         for edge in &self.edges {
             ensure!(
                 (edge.from as usize) < self.nodes.len() && (edge.to as usize) < self.nodes.len(),
@@ -88,4 +102,19 @@ impl GraphData {
         }
         Ok(())
     }
+}
+
+fn validate_entries(entries: &[String], identities: &HashSet<&str>) -> Result<()> {
+    let mut seen = HashSet::new();
+    for entry in entries {
+        ensure!(
+            identities.contains(entry.as_str()),
+            "Entry point references a missing graph symbol: {entry}"
+        );
+        ensure!(
+            seen.insert(entry),
+            "Duplicate entry point identity: {entry}"
+        );
+    }
+    Ok(())
 }

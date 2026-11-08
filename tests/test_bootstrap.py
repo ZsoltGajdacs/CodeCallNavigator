@@ -1,5 +1,6 @@
 """Exercise pinned dependency checkout against real local Git repositories."""
 
+import hashlib
 import importlib.util
 from pathlib import Path
 import subprocess
@@ -64,6 +65,86 @@ class RepositoryBootstrapTests(unittest.TestCase):
         self.assertEqual(git(self.checkout, "rev-parse", "HEAD"), self.newer)
         self.assertEqual(edited.read_text(), "uncommitted user change\n")
         self.assertIn("dependency.txt", git(self.checkout, "status", "--porcelain"))
+
+
+class PatchBootstrapTests(unittest.TestCase):
+    def setUp(self):
+        self.temporary = tempfile.TemporaryDirectory(prefix="codegraph-patch-test-")
+        self.addCleanup(self.temporary.cleanup)
+        self.original_root = bootstrap.ROOT
+        bootstrap.ROOT = Path(self.temporary.name)
+        self.addCleanup(setattr, bootstrap, "ROOT", self.original_root)
+        self.repository = bootstrap.ROOT / "vendor/callatlas"
+        self.repository.mkdir(parents=True)
+        git(self.repository, "init", "--initial-branch=main")
+        self.source = self.repository / "dependency.txt"
+        self.source.write_text("upstream\n")
+        (self.repository / "other.txt").write_text("unchanged\n")
+        git(self.repository, "add", ".")
+        git(self.repository, "-c", "user.name=CodeGraph test", "-c",
+            "user.email=codegraph-test@example.invalid", "commit", "-m", "Pinned")
+        self.spec = {}
+        self.save_patch("legacy_", "assembly identities\n")
+        self.save_patch("", "assembly identities\nentry metadata\n")
+        self.source.write_text("upstream\n")
+
+    def save_patch(self, prefix, content):
+        self.source.write_text(content)
+        difference = subprocess.check_output(["git", "-C", str(self.repository), "diff", "--binary", "HEAD"])
+        name = f"{prefix}identity.patch"
+        (bootstrap.ROOT / name).write_bytes(difference)
+        self.spec[f"{prefix}patch"] = name
+        self.spec[f"{prefix}patch_sha256"] = hashlib.sha256(difference).hexdigest()
+
+    def assert_current(self):
+        self.assertEqual(self.source.read_text(), "assembly identities\nentry metadata\n")
+
+    def test_fresh_checkout_applies_current_patch(self):
+        bootstrap.apply_patch(self.spec)
+        self.assert_current()
+
+    def test_current_patch_is_idempotent(self):
+        self.source.write_text("assembly identities\nentry metadata\n")
+        bootstrap.apply_patch(self.spec)
+        bootstrap.apply_patch(self.spec)
+        self.assert_current()
+
+    def test_exact_legacy_patch_upgrades_without_resetting_checkout(self):
+        self.source.write_text("assembly identities\n")
+        bootstrap.apply_patch(self.spec)
+        self.assert_current()
+
+    def test_unrelated_tracked_change_is_preserved_and_refused(self):
+        self.source.write_text("assembly identities\n")
+        other = self.repository / "other.txt"
+        other.write_text("user modification\n")
+        with self.assertRaisesRegex(RuntimeError, "differs from the supported"):
+            bootstrap.apply_patch(self.spec)
+        self.assertEqual(other.read_text(), "user modification\n")
+        self.assertEqual(self.source.read_text(), "assembly identities\n")
+
+    def test_unrelated_untracked_source_is_preserved_and_refused(self):
+        untracked = self.repository / "user.txt"
+        untracked.write_text("user content\n")
+        with self.assertRaisesRegex(RuntimeError, "unrelated untracked"):
+            bootstrap.apply_patch(self.spec)
+        self.assertEqual(untracked.read_text(), "user content\n")
+        self.assertEqual(self.source.read_text(), "upstream\n")
+
+    def test_failed_upgrade_restores_the_legacy_patch(self):
+        self.source.write_text("assembly identities\n")
+        patch = bootstrap.ROOT / self.spec["patch"]
+        patch.write_text("invalid patch\n")
+        self.spec["patch_sha256"] = hashlib.sha256(patch.read_bytes()).hexdigest()
+        with self.assertRaises(subprocess.CalledProcessError):
+            bootstrap.apply_patch(self.spec)
+        self.assertEqual(self.source.read_text(), "assembly identities\n")
+
+    def test_bad_patch_checksum_is_refused(self):
+        (bootstrap.ROOT / self.spec["patch"]).write_text("tampered")
+        with self.assertRaisesRegex(RuntimeError, "checksum mismatch"):
+            bootstrap.apply_patch(self.spec)
+        self.assertEqual(self.source.read_text(), "upstream\n")
 
 
 if __name__ == "__main__":

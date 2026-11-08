@@ -3,20 +3,22 @@
 `callatlas-assembly-identity.patch` applies only to upstream revision
 `916c2419c0cdb91b5b86b84df4842dadb17bb6b4`.
 
-SHA-256: `ec723795ee841b98c2efbf49a7f010cd3f22652889c0e5c34866461b0137c574`.
+SHA-256: `aeb8b8b664e21331e7815466746ec482a63407e4ae05ce8275e2810f552ff405`.
 
 The pinned analyzer combines every solution compilation in one node dictionary,
 while its original symbol IDs omit assembly ownership. Two independent projects
 with `Program.Main` or the same qualified type/method can therefore silently merge.
 Top-level statements additionally use one global ID and registration flag.
 
-This patch changes **identity serialization only**:
+This patch preserves call binding and adds identity and entry-point metadata:
 
 - Prefix method, field, property-initializer and delegate identities with the
   Roslyn-owned assembly name: `[AssemblyName]::original-symbol-id`.
 - Preserve a single assembly prefix through local-function identity recursion.
 - Register top-level entry points per compiler assembly rather than once per solution.
 - Keep the existing JSON schema and every call binding/classification unchanged.
+- Export `entryPoints.candidates` using the existing `CodeMapQuery.EntryPoints` query, including uncalled declarations.
+- Export `entryPoints.applicationStarts` from `Compilation.GetEntryPoint`, mapping synthesized top-level starts to the existing top-level graph identity. These verified starts are distinct from ordinary entry candidates.
 
 The application must reject independent projects sharing an evaluated
 `AssemblyName` within one selected solution, because this identity format cannot
@@ -30,9 +32,12 @@ git -C vendor/callatlas apply ../../patches/callatlas-assembly-identity.patch
 dotnet build vendor/callatlas/src/CallAtlas.Cli/CallAtlas.Cli.csproj -c Release
 ```
 
-Bootstrap should verify the exact revision and patch hash, and accept an already
-applied patch only when a reverse `git apply --check` succeeds. It must not reset
-unrelated local dependency edits.
+Bootstrap verifies the exact revision and patch hash. It accepts only a clean
+checkout, the exact current patch, or the exact previously shipped identity-only
+patch preserved in `callatlas-assembly-identity-legacy.patch` with its pinned hash.
+The legacy patch is reversed and replaced automatically; failure restores it.
+Unrelated tracked or untracked source edits are refused and preserved. Ignored
+build outputs do not affect this check.
 
 Regression fixture: `fixtures/dotnet-collisions/Collisions.sln` contains four
 independent applications with duplicate entry/type/member names and two top-level

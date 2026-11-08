@@ -5,7 +5,7 @@ mod process;
 use crate::{
     discovery::BuildTarget,
     fingerprint,
-    model::{FileFingerprint, GraphData},
+    model::{EntryPoints, FileFingerprint, GraphData},
 };
 use anyhow::{Context, Result, bail, ensure};
 use process::check_cancel;
@@ -129,7 +129,10 @@ pub fn analyze(
 ) -> Result<GraphData> {
     ensure!(!builds.is_empty(), "Select at least one build");
     let mut job = JobDirectory::new()?;
-    let mut graph = GraphData::default();
+    let mut graph = GraphData {
+        entry_points: Some(EntryPoints::default()),
+        ..GraphData::default()
+    };
     for (index, build) in builds.iter().enumerate() {
         check_cancel(cancel)?;
         progress(format!(
@@ -190,6 +193,18 @@ fn append_graph(graph: &mut GraphData, mut part: GraphData) -> Result<()> {
             .checked_add(offset)
             .context("Graph exceeds node limit")?;
     }
+    graph.entry_points = match (graph.entry_points.take(), part.entry_points) {
+        (Some(mut entries), Some(part)) => {
+            entries.candidates.extend(part.candidates);
+            entries.application_starts.extend(part.application_starts);
+            entries.candidates.sort();
+            entries.candidates.dedup();
+            entries.application_starts.sort();
+            entries.application_starts.dedup();
+            Some(entries)
+        }
+        _ => None,
+    };
     graph.nodes.extend(part.nodes);
     graph.edges.extend(part.edges);
     graph.diagnostics.extend(part.diagnostics);

@@ -4,6 +4,8 @@ mod camera;
 mod edges;
 mod inspector;
 mod jobs;
+mod method_scenes;
+mod navigation;
 mod projection;
 mod relationship;
 mod scenes;
@@ -25,6 +27,8 @@ fn main() {
         min_size: Some((1050.0, 680.0)),
         scenes: &[
             ("fixture", scenes::install),
+            ("method-callees", method_scenes::callees),
+            ("method-callers", method_scenes::callers),
             ("cached", scenes::cached),
             ("cached-focus", scenes::cached_focus),
         ],

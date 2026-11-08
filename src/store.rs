@@ -138,7 +138,8 @@ impl SqliteStore {
         write_nodes(&transaction, graph, cancelled)?;
         write_edges(&transaction, graph, cancelled)?;
         let metadata = serde_json::json!({ "diagnostics": graph.diagnostics, "roots": graph.roots,
-            "fingerprints": graph.fingerprints, "engine_versions": graph.engine_versions });
+            "fingerprints": graph.fingerprints, "engine_versions": graph.engine_versions,
+            "entry_points": graph.entry_points });
         transaction.execute(
             "INSERT INTO metadata VALUES ('graph', ?1)",
             [metadata.to_string()],
@@ -184,6 +185,7 @@ impl SqliteStore {
             roots: serde_json::from_value(metadata["roots"].clone())?,
             fingerprints: serde_json::from_value(metadata["fingerprints"].clone())?,
             engine_versions: serde_json::from_value(metadata["engine_versions"].clone())?,
+            entry_points: serde_json::from_value(metadata["entry_points"].clone())?,
             ..Default::default()
         };
         graph.nodes = connection

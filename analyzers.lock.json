@@ -3,7 +3,9 @@
     "repository": "https://github.com/castorhrio/callatlas.git",
     "revision": "916c2419c0cdb91b5b86b84df4842dadb17bb6b4",
     "patch": "patches/callatlas-assembly-identity.patch",
-    "patch_sha256": "ec723795ee841b98c2efbf49a7f010cd3f22652889c0e5c34866461b0137c574"
+    "patch_sha256": "aeb8b8b664e21331e7815466746ec482a63407e4ae05ce8275e2810f552ff405",
+    "legacy_patch": "patches/callatlas-assembly-identity-legacy.patch",
+    "legacy_patch_sha256": "ec723795ee841b98c2efbf49a7f010cd3f22652889c0e5c34866461b0137c574"
   },
   "jdtls": {
     "version": "1.63.0",

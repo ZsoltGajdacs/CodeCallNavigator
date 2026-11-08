@@ -26,18 +26,47 @@ def fetch_repository(name, spec):
     subprocess.run(["git", "-C", str(destination), "checkout", "--detach", spec["revision"]], check=True)
 
 
-def apply_patch(spec):
-    patch = ROOT / spec["patch"]
-    if hashlib.sha256(patch.read_bytes()).hexdigest() != spec["patch_sha256"]:
+def verified_patch(spec, prefix=""):
+    patch = ROOT / spec[f"{prefix}patch"]
+    if hashlib.sha256(patch.read_bytes()).hexdigest() != spec[f"{prefix}patch_sha256"]:
         raise RuntimeError("CallAtlas identity patch checksum mismatch")
-    command = ["git", "-C", str(ROOT / "vendor/callatlas"), "apply"]
-    check = subprocess.run([*command, "--check", str(patch)], capture_output=True)
-    if check.returncode == 0:
-        subprocess.run([*command, str(patch)], check=True)
+    return patch
+
+
+def apply_patch(spec):
+    patch = verified_patch(spec)
+    repository = ROOT / "vendor/callatlas"
+    command = ["git", "-C", str(repository)]
+    difference = checkout_patch(command)
+    if difference == patch.read_bytes():
         return
-    reverse = subprocess.run([*command, "--reverse", "--check", str(patch)], capture_output=True)
-    if reverse.returncode != 0:
+    if not difference:
+        subprocess.run([*command, "apply", str(patch)], check=True)
+        return
+    upgrade_legacy_patch(command, spec, difference, patch)
+
+
+def checkout_patch(command):
+    untracked = subprocess.check_output([*command, "ls-files", "--others", "--exclude-standard"])
+    if untracked:
+        raise RuntimeError("CallAtlas source has unrelated untracked files; inspect vendor/callatlas")
+    return subprocess.check_output([*command, "diff", "--binary", "HEAD"])
+
+
+def upgrade_legacy_patch(command, spec, difference, patch):
+    if "legacy_patch" not in spec:
         raise RuntimeError("CallAtlas source differs from the supported identity patch; inspect vendor/callatlas")
+    legacy = verified_patch(spec, "legacy_")
+    if difference != legacy.read_bytes():
+        raise RuntimeError("CallAtlas source differs from the supported identity patch; inspect vendor/callatlas")
+    # Upgrade only the exact previously shipped patch. git apply checks every hunk
+    # before writing; restore the legacy patch if applying its replacement fails.
+    subprocess.run([*command, "apply", "--reverse", str(legacy)], check=True)
+    try:
+        subprocess.run([*command, "apply", str(patch)], check=True)
+    except subprocess.CalledProcessError:
+        subprocess.run([*command, "apply", str(legacy)], check=True)
+        raise
 
 
 def build_java_adapter():

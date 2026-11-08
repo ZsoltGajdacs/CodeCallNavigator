@@ -288,3 +288,109 @@ fn wait_for(runtime: &mut Runtime<State>, ready: impl Fn(&State) -> bool) {
     }
     panic!("The background UI result did not arrive");
 }
+
+#[test]
+fn method_control_starts_at_entries_and_overview_restores_them() {
+    use crate::projection::{FlowDirection, Grouping, Scope};
+    let mut runtime = runtime();
+    runtime.state.nav.direction = FlowDirection::Callers;
+    runtime.state.nav.page = 7;
+    click(&mut runtime, "group-Method");
+    assert_eq!(runtime.state.nav.grouping, Grouping::Method);
+    assert_eq!(runtime.state.nav.direction, FlowDirection::Callees);
+    assert_eq!(runtime.state.nav.page, 0);
+    assert!(matches!(
+        runtime.state.request().unwrap().scope,
+        Scope::Overview
+    ));
+    assert!(runtime.find("direction-Both").is_none());
+    assert!(
+        runtime
+            .state
+            .graph_view
+            .nodes
+            .iter()
+            .any(|node| node.application_start)
+    );
+    assert!(runtime.elements().iter().any(|element| {
+        element
+            .label
+            .as_deref()
+            .is_some_and(|text| text.contains("Application start"))
+    }));
+    runtime.state.select(1, true);
+    runtime.frame(1.0 / 60.0);
+    assert!(matches!(
+        runtime.state.request().unwrap().scope,
+        Scope::Focus(1)
+    ));
+    click(&mut runtime, "overview");
+    assert!(matches!(
+        runtime.state.request().unwrap().scope,
+        Scope::Overview
+    ));
+    assert!(
+        runtime
+            .state
+            .graph_view
+            .nodes
+            .iter()
+            .any(|node| node.member == Some(0))
+    );
+    click(&mut runtime, "back");
+    assert!(matches!(
+        runtime.state.request().unwrap().scope,
+        Scope::Focus(1)
+    ));
+}
+
+#[test]
+fn changing_flow_resets_page_refits_and_history_restores_previous_flow() {
+    use crate::projection::FlowDirection;
+    let mut runtime = runtime();
+    runtime.state.select(2, true);
+    runtime.frame(1.0 / 60.0);
+    runtime.state.nav.page = 3;
+    click(&mut runtime, "direction-Callers");
+    assert_eq!(runtime.state.nav.direction, FlowDirection::Callers);
+    assert_eq!(runtime.state.nav.page, 0);
+    assert_eq!(
+        runtime.state.nav.focus.as_deref(),
+        Some("fixture/project/ValidateOrder")
+    );
+    assert!(
+        runtime
+            .state
+            .graph_view
+            .nodes
+            .iter()
+            .any(|node| node.member == Some(1))
+    );
+    click(&mut runtime, "back");
+    assert_eq!(runtime.state.nav.direction, FlowDirection::Callees);
+    assert_eq!(runtime.state.nav.page, 3);
+}
+
+#[test]
+fn legacy_navigation_directions_and_method_sessions_roundtrip() {
+    use crate::{
+        app::SavedSession,
+        projection::{FlowDirection, Grouping},
+    };
+    for (legacy, expected) in [
+        ("Both", FlowDirection::Callees),
+        ("Incoming", FlowDirection::Callers),
+        ("Outgoing", FlowDirection::Callees),
+    ] {
+        let session: SavedSession = serde_json::from_value(serde_json::json!({
+            "navigation": {"direction": legacy, "grouping": "Method"}
+        }))
+        .unwrap();
+        assert_eq!(session.navigation.direction, expected);
+        assert_eq!(session.navigation.grouping, Grouping::Method);
+        let restored: SavedSession =
+            serde_json::from_value(serde_json::to_value(&session).unwrap()).unwrap();
+        assert_eq!(restored.navigation.direction, expected);
+        assert_eq!(restored.navigation.grouping, Grouping::Method);
+    }
+}

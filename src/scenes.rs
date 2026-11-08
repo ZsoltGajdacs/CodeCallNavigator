@@ -5,7 +5,7 @@ use crate::{
 };
 use codegraph::{
     graph::GraphIndex,
-    model::{Edge, GraphData, Node},
+    model::{Edge, EntryPoints, GraphData, Node},
 };
 use std::sync::Arc;
 
@@ -29,6 +29,13 @@ pub fn install(state: &mut State) {
 
 fn fixture_data() -> GraphData {
     GraphData {
+        entry_points: Some(EntryPoints {
+            candidates: vec![
+                "fixture/project/Start".into(),
+                "fixture/project/OrderTest".into(),
+            ],
+            application_starts: vec!["fixture/project/Start".into()],
+        }),
         nodes: fixture_nodes(),
         edges: fixture_edges(),
         engine_versions: "Deterministic fixture · no analyzer executed".into(),
@@ -177,7 +184,7 @@ fn select_cached_method(state: &mut State) {
     if let Some(target) = target {
         state.nav.selected = Some(target.id.clone());
         state.nav.focus = Some(target.id.clone());
-        state.nav.direction = codegraph::graph::Direction::Outgoing;
+        state.nav.direction = crate::projection::FlowDirection::Callees;
         state.nav.depth = 2;
         state.refresh_neighbors();
     }

@@ -1,5 +1,8 @@
-use crate::{app::State, camera, inspector, projection::Grouping};
-use codegraph::graph::Direction;
+use crate::{
+    app::State,
+    camera, inspector,
+    projection::{FlowDirection, Grouping},
+};
 use rune::tok::{self, TextStyle};
 use rune::{Cx, El, Key, KeyEvent, ScrollSpec, Tx, col, el, row, text, text_input};
 
@@ -476,15 +479,12 @@ fn navigation_tools(ui: &ViewContext<'_>) -> El {
                 .disabled(state.forward.is_empty()),
         )
         .child(button("Overview", "overview", dark, State::overview))
-        .child(button("Collapse", "collapse-all", dark, |state| {
-            state.checkpoint();
-            state.nav.expanded.clear();
-            state.nav.focus = None;
-            state.nav.show_path = false;
-            state.nav.page = 0;
-            state.auto_fit = true;
-            state.changed();
-        }))
+        .child(button(
+            "Collapse",
+            "collapse-all",
+            dark,
+            State::collapse_all,
+        ))
 }
 
 fn grouping_tools(ui: &ViewContext<'_>, mut tools: El) -> El {
@@ -493,17 +493,11 @@ fn grouping_tools(ui: &ViewContext<'_>, mut tools: El) -> El {
         ("Project", Grouping::Project),
         ("Namespace", Grouping::Namespace),
         ("Folder", Grouping::Folder),
+        ("Method", Grouping::Method),
     ] {
         tools = tools.child(
             button(label, format!("group-{label}"), dark, move |state| {
-                state.checkpoint();
-                state.nav.grouping = grouping;
-                state.nav.expanded.clear();
-                state.nav.focus = None;
-                state.nav.show_path = false;
-                state.nav.page = 0;
-                state.auto_fit = true;
-                state.changed();
+                state.set_grouping(grouping);
             })
             .checked(state.nav.grouping == grouping)
             .fill(if state.nav.grouping == grouping {
@@ -550,16 +544,12 @@ fn canvas_footer(ui: &ViewContext<'_>) -> El {
         .center_y()
         .fill(tok::theme(dark).card);
     for (label, direction) in [
-        ("Callers", Direction::Incoming),
-        ("Callees", Direction::Outgoing),
-        ("Both", Direction::Both),
+        ("Callers", FlowDirection::Callers),
+        ("Callees", FlowDirection::Callees),
     ] {
         footer = footer.child(
             button(label, format!("direction-{label}"), dark, move |state| {
-                state.checkpoint();
-                state.nav.direction = direction;
-                state.nav.show_path = false;
-                state.changed();
+                state.set_direction(direction);
             })
             .checked(state.nav.direction == direction)
             .fill(if state.nav.direction == direction {

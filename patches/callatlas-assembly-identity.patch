@@ -1,5 +1,5 @@
 diff --git a/src/CallAtlas.Core/CallGraphBuilder.cs b/src/CallAtlas.Core/CallGraphBuilder.cs
-index bf14b1d..c394889 100644
+index bf14b1d..d7df33e 100644
 --- a/src/CallAtlas.Core/CallGraphBuilder.cs
 +++ b/src/CallAtlas.Core/CallGraphBuilder.cs
 @@ -664,7 +664,7 @@ public sealed partial class CallGraphBuilder
@@ -36,7 +36,24 @@ index bf14b1d..c394889 100644
                          break;
                  }
              }
-@@ -1755,7 +1755,7 @@ public sealed partial class CallGraphBuilder
+@@ -999,7 +999,15 @@ public sealed partial class CallGraphBuilder
+                 $"[callatlas] {"symbol cache",-22} hits {h,8}  misses {m,8}  ({rate,5:F1}% hit)");
+         }
+ 
+-        return map;
++        var applicationStarts = compilations.Select(compilation =>
++        {
++            var entry = compilation.GetEntryPoint(default);
++            if (entry is null) return null;
++            var topLevelId = SymbolId.ForTopLevel(compilation);
++            return nodes.ContainsKey(topLevelId) ? topLevelId : SymbolId.Canonical(entry);
++        }).Where(id => id is not null && nodes.ContainsKey(id))
++          .Select(id => id!).Distinct(StringComparer.Ordinal).OrderBy(id => id, StringComparer.Ordinal).ToList();
++        return map with { ApplicationStarts = applicationStarts };
+     }
+ 
+     /// <summary>
+@@ -1755,7 +1763,7 @@ public sealed partial class CallGraphBuilder
      /// 但"谁读了这个字段"是架构事实，值得有个落点。</summary>
      private static string FieldNodeId(Dictionary<string, Node> sink, IFieldSymbol field)
      {
@@ -46,10 +63,19 @@ index bf14b1d..c394889 100644
          {
              Id = id,
 diff --git a/src/CallAtlas.Core/CodeMap.cs b/src/CallAtlas.Core/CodeMap.cs
-index a720920..a39a367 100644
+index a720920..55e968d 100644
 --- a/src/CallAtlas.Core/CodeMap.cs
 +++ b/src/CallAtlas.Core/CodeMap.cs
-@@ -306,27 +306,38 @@ public static class SymbolId
+@@ -10,6 +10,8 @@ public sealed record CodeMap
+ 
+     public required string Schema { get; init; }
+     public required string Root { get; init; }
++    /// <summary>Compiler-selected executable starts, using the existing graph identities.</summary>
++    public IReadOnlyList<string> ApplicationStarts { get; init; } = [];
+     public required IReadOnlyList<Node> Nodes { get; init; }
+     public required IReadOnlyList<Edge> Edges { get; init; }
+     public required IReadOnlyList<ExternalCall> External { get; init; }
+@@ -306,27 +308,38 @@ public static class SymbolId
      public static string Canonical(IMethodSymbol method)
      {
          var s = (method.ReducedFrom ?? method).OriginalDefinition;
@@ -95,7 +121,7 @@ index a720920..a39a367 100644
  
      /// <summary>
      /// 委托调用的落点 id：<c>Action#delegate</c>（用委托类型本身命名）。
-@@ -337,7 +348,7 @@ public static class SymbolId
+@@ -337,7 +350,7 @@ public static class SymbolId
      /// 后缀 <c>#delegate</c> 与字段初始化器的 <c>#init</c> 同族，一眼可辨其为伪节点。
      /// </summary>
      public static string ForDelegate(ITypeSymbol delegateType) =>
@@ -104,3 +130,25 @@ index a720920..a39a367 100644
  
      private static string Params(IMethodSymbol method) =>
          string.Join(",", method.Parameters.Select(p => p.Type.ToDisplayString(QualifiedFormat)));
+diff --git a/src/CallAtlas.Core/CodeMapJson.cs b/src/CallAtlas.Core/CodeMapJson.cs
+index 9555cb4..884bc2b 100644
+--- a/src/CallAtlas.Core/CodeMapJson.cs
++++ b/src/CallAtlas.Core/CodeMapJson.cs
+@@ -24,6 +24,17 @@ public static class CodeMapJson
+             writer.WriteString("schema", map.Schema);
+             writer.WriteString("root", map.Root);
+ 
++            writer.WriteStartObject("entryPoints");
++            writer.WriteStartArray("candidates");
++            foreach (var entry in CodeMapQuery.EntryPoints(map))
++                writer.WriteStringValue(entry.Id);
++            writer.WriteEndArray();
++            writer.WriteStartArray("applicationStarts");
++            foreach (var identity in map.ApplicationStarts)
++                writer.WriteStringValue(identity);
++            writer.WriteEndArray();
++            writer.WriteEndObject();
++
+             writer.WriteStartArray("nodes");
+             foreach (var n in map.Nodes)
+             {
