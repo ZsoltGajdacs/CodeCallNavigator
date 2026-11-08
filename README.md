@@ -8,7 +8,16 @@ cross-service connections and AI features are outside this MVP.
 
 ## Run the local app
 
-Open `dist/CodeGraph.app` (or unzip `dist/CodeGraph.zip`). This local build is ad hoc
+Run `./dev.sh` to bootstrap dependencies, build and launch directly from the
+repository without installing the app. App arguments are forwarded, for example
+`./dev.sh --scene fixture`. Both scripts work when called from another directory.
+
+Run `./prod.sh` to build the release app and create `dist/CodeGraph.dmg`. Open the
+image and drag CodeGraph to Applications. The `.app` and ZIP are also kept in `dist`.
+The scripts use Python 3.13 by default; set `PYTHON=python3.12` to use another
+installed Python 3.12+ interpreter.
+
+You can also open `dist/CodeGraph.app` directly. This local build is ad hoc
 signed, not notarized. The packaged minimum macOS version is 27.0; broader OS
 certification and Intel support are deferred.
 
