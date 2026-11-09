@@ -21,6 +21,8 @@ pub(super) struct SourceInventory {
     lambdas: HashMap<String, Vec<SourceLambda>>,
     pub architecture: Vec<crate::architecture::FileFacts>,
     pub has_architecture: bool,
+    pub has_flow: bool,
+    pub flows: Vec<super::flow_inventory::SourceFlow>,
 }
 
 impl SourceInventory {
@@ -28,9 +30,14 @@ impl SourceInventory {
         let mut inventory = Self::default();
         let mut rows = tsv_rows(path)?;
         let mut header = rows.next().transpose()?;
-        inventory.has_architecture = header
+        inventory.has_flow = header
             .as_ref()
-            .is_some_and(|fields| fields.first().is_some_and(|field| field == "kind_v3"));
+            .is_some_and(|fields| fields.first().is_some_and(|field| field == "kind_v4"));
+        inventory.has_architecture = header.as_ref().is_some_and(|fields| {
+            fields
+                .first()
+                .is_some_and(|field| field == "kind_v3" || field == "kind_v4")
+        });
         if inventory.has_architecture {
             header.as_mut().unwrap()[0] = "kind_v2".into();
         }
@@ -59,6 +66,9 @@ impl SourceInventory {
                     inventory
                         .declarations
                         .insert(method_key(&fields[1], &fields[2]));
+                }
+                "flow" => {
+                    inventory.flows.push(serde_json::from_str(&fields[3])?);
                 }
                 "architecture" => {
                     inventory.architecture.push(architecture_row(&fields)?);

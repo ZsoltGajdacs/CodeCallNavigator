@@ -35,5 +35,9 @@ pub fn prune(graph: &mut GraphData, excluded: &HashSet<String>) -> Result<()> {
             list.retain(|id| !excluded.contains(id));
         }
     }
+    if let Some(inventory) = &mut graph.flow_inventory {
+        let symbols = graph.nodes.iter().map(|node| node.id.as_str()).collect();
+        inventory.retain_symbols(&symbols);
+    }
     graph.validate()
 }

@@ -2,6 +2,7 @@ use crate::{app::State, jobs, scenes, view};
 use rune::{Env, Runtime};
 
 mod architectural_layers;
+mod function_flows;
 mod graph_studio;
 mod lambda_names;
 mod source_popup;

@@ -32,7 +32,7 @@ public final class SourceInventory {
         if (args.length < 3) throw new IllegalArgumentException("Usage: SourceInventory OUTPUT CLASSPATH CLASS_DIRS SOURCE_ROOT...");
         var sources = CompiledSources.collect(args[2], java.util.Arrays.copyOfRange(args, 3, args.length));
         try (var writer = Files.newBufferedWriter(Path.of(args[0]))) {
-            ContextTsv.write(writer, "kind_v3", "signature", "return_type", "start_line", "end_line",
+            ContextTsv.write(writer, "kind_v4", "signature", "return_type", "start_line", "end_line",
                     "start_column", "end_column", "context", "assigned_name");
             if (sources.isEmpty()) return;
             inventory(sources, args[1], writer);
@@ -59,6 +59,7 @@ public final class SourceInventory {
             var trees = Trees.instance(task);
             writeMethods(declarations, task, compiled, writer);
             SourceArchitecture.write(types, declarations, trees, writer);
+            new SourceFlow(task, compiled, writer).write(declarations, lambdas);
             for (TreePath path : lambdas) SourceLambda.write(path, trees, task.getElements(), writer);
         }
     }
@@ -100,27 +101,11 @@ public final class SourceInventory {
         var elements = task.getElements();
         String owner = elements.getBinaryName((TypeElement) method.getEnclosingElement()).toString();
         try {
-            var arguments = new ArrayList<String>();
-            for (var parameter : method.getParameters()) arguments.add(typeName(parameter.asType(), types, elements, compiled));
-            ContextTsv.write(writer, "method", owner + ":" + method.getSimpleName() + "(" + String.join(",", arguments) + ")",
-                    typeName(method.getReturnType(), types, elements, compiled), 0, 0, 0, 0, "", "");
+            var signature = SourceSignatures.method(method, task, compiled);
+            ContextTsv.write(writer, "method", signature.signature(), signature.returns(), 0, 0, 0, 0, "", "");
         } catch (IOException error) {
             throw new IOException("Cannot inventory " + owner + ":" + method + ": " + error.getMessage(), error);
         }
     }
 
-    private static String typeName(TypeMirror original, Types types, Elements elements, CompiledTypes compiled) throws IOException {
-        TypeMirror type = types.erasure(original);
-        if (type.getKind() == TypeKind.ERROR) return compiled.binaryName(errorTypeName(type));
-        if (type instanceof ArrayType array) return typeName(array.getComponentType(), types, elements, compiled) + "[]";
-        if (type instanceof DeclaredType declared) return elements.getBinaryName((TypeElement) declared.asElement()).toString();
-        return type.toString();
-    }
-
-    private static String errorTypeName(TypeMirror type) {
-        if (type instanceof DeclaredType declared && declared.asElement() instanceof TypeElement element) {
-            return element.getQualifiedName().toString();
-        }
-        return type.toString();
-    }
 }

@@ -124,9 +124,13 @@ impl Camera {
     }
 
     pub fn shows(&self, node: &ViewNode, viewport: [f32; 2]) -> bool {
-        let origin = self.screen(node.position);
-        origin[0] + node.size[0] * self.zoom >= 0.0
-            && origin[1] + node.size[1] * self.zoom >= 0.0
+        self.shows_box(node.position, node.size, viewport)
+    }
+
+    pub fn shows_box(&self, position: [f32; 2], size: [f32; 2], viewport: [f32; 2]) -> bool {
+        let origin = self.screen(position);
+        origin[0] + size[0] * self.zoom >= 0.0
+            && origin[1] + size[1] * self.zoom >= 0.0
             && origin[0] <= viewport[0]
             && origin[1] <= viewport[1]
     }

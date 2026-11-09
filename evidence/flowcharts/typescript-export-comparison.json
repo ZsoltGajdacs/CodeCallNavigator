@@ -1,0 +1,14 @@
+{
+  "fixture": "200 authored functions with branches/finally and 200 anonymous callbacks, plus200 leaves",
+  "nodes": 602,
+  "edges": 800,
+  "flowFunctions": 601,
+  "sourceBytes": 29470,
+  "compilerPrepareMs": 280.283792,
+  "baselineExtractMedianMs": 92.11350000000004,
+  "flowExtractMedianMs": 155.20825000000002,
+  "baselineJsonBytes": 625477,
+  "flowJsonBytes": 1560581,
+  "flowInventoryBytes": 935086,
+  "nodeEdgeEntryDiagnosticEquality": true
+}

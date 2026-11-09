@@ -32,6 +32,7 @@ impl GraphComposition {
         self.append_edges(std::mem::take(&mut part.edges), &remap, shared)?;
         self.graph.entry_points = merge_entries(self.graph.entry_points.take(), part.entry_points);
         super::architecture::merge(&mut self.graph.architecture, part.architecture)?;
+        crate::flow::merge_inventory(&mut self.graph.flow_inventory, part.flow_inventory)?;
         self.graph.diagnostics.extend(part.diagnostics);
         self.graph.roots.extend(part.roots);
         self.graph.fingerprints.extend(part.fingerprints);

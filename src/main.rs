@@ -4,6 +4,9 @@ mod architecture_workspace;
 mod camera;
 mod cli;
 mod edges;
+mod flow_scenes;
+mod flow_view;
+mod flow_workspace;
 mod icons;
 mod inspector;
 mod jobs;
@@ -17,6 +20,7 @@ mod scenes;
 mod search;
 mod source;
 mod source_popup;
+mod source_view;
 mod theme;
 #[cfg(test)]
 mod ui_tests;
@@ -35,6 +39,7 @@ fn main() {
         min_size: Some((1050.0, 680.0)),
         scenes: &[
             ("fixture", scenes::install),
+            ("function-flow", flow_scenes::install),
             ("source-preview", source_popup::scenes::source),
             ("source-files", source_popup::scenes::files),
             ("method-callees", method_scenes::callees),

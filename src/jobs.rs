@@ -72,6 +72,7 @@ impl Default for Jobs {
 pub fn setup(state: &mut State, waker: Waker) {
     state.jobs.boot.set_waker(waker.clone());
     state.jobs.source.set_waker(waker.clone());
+    state.flow_workspace.job.set_waker(waker.clone());
     state.architecture_workspace.job.set_waker(waker.clone());
     state.jobs.discovery.set_waker(waker.clone());
     state.jobs.analysis.set_waker(waker.clone());
@@ -281,7 +282,8 @@ pub fn poll(state: &mut State, time: f64, tx: &mut Tx) -> bool {
         | poll_search_input(state)
         | poll_persistence(state)
         | poll_staleness(state, time, tx)
-        | crate::architecture_workspace::poll(state, time, tx);
+        | crate::architecture_workspace::poll(state, time, tx)
+        | crate::flow_workspace::poll(state, tx);
     changed |= state.constrain_panes(state.ui.window_width);
     if state.needs_layout {
         state.request_layout();

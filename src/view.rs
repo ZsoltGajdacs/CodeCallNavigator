@@ -15,6 +15,13 @@ use rune_kit::{
 };
 
 pub fn view(state: &State, cx: &mut Cx<State>) -> El {
+    if state.flow_workspace.current.is_some() {
+        return crate::flow_view::view(state, cx);
+    }
+    graph_workspace(state, cx)
+}
+
+fn graph_workspace(state: &State, cx: &mut Cx<State>) -> El {
     let k = theme::kit(cx.system_dark());
     let mut layer = Vec::new();
     let main = col()
@@ -261,6 +268,9 @@ fn status_bar(state: &State, k: &Kit) -> El {
 }
 
 pub fn key(state: &mut State, event: &KeyEvent, tx: &mut Tx) -> bool {
+    if state.flow_workspace.current.is_some() {
+        return crate::flow_view::key(state, event);
+    }
     if event.is_command('f') {
         state.open_search();
         return true;

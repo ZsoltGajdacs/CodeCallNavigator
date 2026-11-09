@@ -80,6 +80,8 @@ pub struct EntryPoints {
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
 pub struct GraphData {
     #[serde(default)]
+    pub flow_inventory: Option<crate::flow::FlowInventory>,
+    #[serde(default)]
     pub architecture: Option<crate::architecture::ArchitectureFacts>,
     pub nodes: Vec<Node>,
     pub edges: Vec<Edge>,

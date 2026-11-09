@@ -43,7 +43,11 @@ fn selection(state: &State, k: &Kit) -> El {
             k,
         );
     };
-    let mut content = method_summary(node, k)
+    let mut content = method_summary(node, k);
+    if ["java", "typescript"].contains(&node.language.as_str()) {
+        content = content.child(flow_action(k));
+    }
+    let mut content = content
         .child(
             Collapsible::new(
                 "Shortest directed path",
@@ -336,4 +340,13 @@ fn neighbor_pager(state: &State, incoming: bool, count: usize, k: &Kit) -> El {
                 .build(k)
                 .key(format!("neighbors-next-{incoming}")),
         )
+}
+
+fn flow_action(k: &Kit) -> El {
+    Button::new("Open flowchart")
+        .help("Open this method's analyzed source and function flow")
+        .variant(ButtonVariant::Outline)
+        .on_press(State::open_selected_flow)
+        .build(k)
+        .key("open-flowchart")
 }

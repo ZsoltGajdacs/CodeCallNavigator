@@ -48,7 +48,7 @@ fn style(edge: &ViewEdge, k: &Kit) -> Style {
     }
 }
 
-fn visible(points: &[[f32; 2]], viewport: [f32; 2]) -> bool {
+pub(crate) fn visible(points: &[[f32; 2]], viewport: [f32; 2]) -> bool {
     if points.len() < 2 {
         return false;
     }
@@ -185,6 +185,22 @@ fn arrow(shape: Shape, points: &[[f32; 2]], color: Color) -> Shape {
             [rear[0] - 3.0 * angle.sin(), rear[1] + 3.0 * angle.cos()],
         ],
         color,
+    )
+}
+
+/// Draw an already-laid-out connector using the shared spline and arrow renderer.
+pub fn route(shape: Shape, points: &[[f32; 2]], color: Color, dashed: bool) -> Shape {
+    if points.len() < 2 {
+        return shape;
+    }
+    stroke(
+        shape,
+        points,
+        Style {
+            color,
+            width: 1.5,
+            dashed,
+        },
     )
 }
 

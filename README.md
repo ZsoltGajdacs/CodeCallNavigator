@@ -3,7 +3,7 @@
 A native Apple Silicon macOS call-graph explorer built with Rune. Select a repository
 folder, select discovered .NET solutions/projects, Gradle builds, Maven projects or TypeScript configurations, and refresh.
 The complete analyzed graph stays indexed; the canvas shows bounded aggregates or
-method neighborhoods. Diffs, source previews/editing, runtime tracing,
+method neighborhoods. Diffs, source editing, runtime tracing,
 cross-service connections and AI features are outside this MVP.
 
 ## Run the local app
@@ -66,7 +66,7 @@ views can contain only their roots. Shortest paths retain execution order.
 Explore depth, shortest directed paths and history. Drag to pan, scroll or pinch to
 zoom, or use Fit and zoom buttons. Cmd-O opens the folder chooser; Cmd-F focuses
 search. The inspector shows signatures, project ownership, locations, relationship
-certainty and analyzer provenance. No source code is displayed.
+certainty and analyzer provenance. Source previews and function flowcharts open separately.
 
 Graphs retain source-declared methods and authored functions, callbacks, accessors,
 and top-level execution at every visibility level. Constructors, initializer
@@ -138,6 +138,15 @@ The native app uses the same measurements through its initial layout. Stage time
 can nest and must not be summed; the CLI report covers its headless pipeline.
 See [analysis performance evidence](evidence/performance/analysis.md) for the
 release benchmark protocol, complete graph comparisons and measured results.
+
+## Function flowcharts
+
+Select a Java or TypeScript method and choose **Open flowchart** to explore its
+source-derived branches beside the analyzed source snapshot. Follow known project
+calls, inspect uncertain targets, and return to the unchanged call graph. Recognized
+Mono/Flux stages distinguish assembly from deferred callbacks. Refresh older caches
+to collect flow metadata. See [function flowcharts](docs/function-flowcharts.md) for
+supported semantics and limitations.
 
 ## Architectural layers
 

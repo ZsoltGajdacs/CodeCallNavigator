@@ -21,6 +21,7 @@ pub struct TargetChoice {
 }
 
 pub struct State {
+    pub flow_workspace: crate::flow_workspace::Workspace,
     pub root: TextEdit,
     pub query: TextEdit,
     pub targets: Vec<TargetChoice>,
@@ -75,6 +76,7 @@ pub struct State {
 impl State {
     pub fn new() -> Self {
         Self {
+            flow_workspace: crate::flow_workspace::Workspace::default(),
             root: TextEdit::new(""),
             query: TextEdit::new(""),
             targets: Vec::new(),

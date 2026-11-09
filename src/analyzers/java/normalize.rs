@@ -403,6 +403,19 @@ impl<'a> BytecodeCollector<'a> {
 
     fn finish(mut self) -> Result<GraphData> {
         self.collect_architecture();
+        let flows = super::flow_inventory::bind(
+            super::flow_inventory::BindingContext {
+                build: self.build,
+                inputs: self.inputs,
+                owner: self.owner.as_deref(),
+            },
+            &self.graph,
+            &self.source_inventory,
+        );
+        self.graph.flow_inventory = flows.inventory;
+        if flows.ambiguous_callbacks > 0 {
+            self.graph.diagnostics.push(format!("{} Java callback flow(s) remain unavailable because source-to-bytecode attribution is ambiguous", flows.ambiguous_callbacks));
+        }
         self.graph.entry_points = Some(EntryPoints {
             framework_entries: Vec::new(),
             candidates: Vec::new(),

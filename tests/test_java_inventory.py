@@ -70,7 +70,7 @@ record Data(String value) {}
         result = self.inventory(source, classes, [classes])
         self.assertEqual(result.returncode, 0, result.stderr)
         rows = (self.root / "inventory.tsv").read_text().splitlines()
-        self.assertTrue(rows[0].startswith("kind_v3\t"))
+        self.assertTrue(rows[0].startswith("kind_v4\t"))
         row = next(row.split("\t") for row in rows if row.startswith("architecture\t"))
         self.assertEqual(Path(row[1]), source.resolve())
         self.assertIn("Flow", row[3].split(","))
@@ -80,6 +80,33 @@ record Data(String value) {}
         self.assertIn("Layer", row[6].split(","))
         self.assertIn("fixture.Contract", row[7].split(","))
         self.assertIn("Layer", row[8].split(","))
+
+    def test_flow_inventory_uses_compiler_targets_and_utf8_source_offsets(self):
+        source, classes = self.compile("project", "fixture/Flow.java", """package fixture;
+public class Flow {
+  static int leaf(int x) { return x; }
+  static int leaf(String x) { return x.length(); }
+  int run(int x) { String text = "é😀"; try { if (x > 0) return leaf(x); else throw new IllegalStateException(); } finally { leaf(0); } }
+}
+""")
+        result = self.inventory(source, classes, [classes])
+        self.assertEqual(result.returncode, 0, result.stderr)
+        import json
+        rows = (self.root / "inventory.tsv").read_text().splitlines()
+        flow_rows = [row.split("\t") for row in rows if row.startswith("flow\t")]
+        self.assertTrue(flow_rows, "Source inventory must export source flow IR")
+        from test_java_context import tsv
+        flows = [json.loads(row["start_line"]) for row in tsv(self.root / "inventory.tsv") if row["kind_v4"] == "flow"]
+        flow = next(flow for flow in flows if flow["symbol"] == "fixture.Flow:run(int)|int")
+        body = flow["body"]
+        self.assertEqual(body[1]["kind"], "try")
+        branch = body[1]["body"][0]
+        self.assertEqual(branch["kind"], "if")
+        call = branch["then_branch"][0]["value"]["items"][-1]["calls"][0]
+        self.assertEqual(call["targets"][0]["symbol"], "fixture.Flow:leaf(int)|int")
+        span = call["span"]
+        self.assertEqual(source.read_bytes()[span["start"]:span["end"]].decode(), "leaf(x)")
+        self.assertTrue(body[1]["finally"])
 
     def resolve(self, classpath, qualified_name):
         source = self.root / "probe/codegraph/bytecode/Resolve.java"
