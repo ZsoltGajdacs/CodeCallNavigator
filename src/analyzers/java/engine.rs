@@ -1,12 +1,16 @@
 //! Sequential JVM engine execution, sharing the application's cancellation policy.
 use super::{JavaInput, metadata::unescape};
-use crate::analyzers::{AnalysisJob, process::run_process};
+use crate::analyzers::{
+    AnalysisJob,
+    process::{check_cancel, run_process},
+};
 use anyhow::{Context, Result};
 use std::{
     collections::HashMap,
     fs,
     path::{Path, PathBuf},
     process::Command,
+    sync::atomic::AtomicBool,
 };
 
 pub(super) fn run(
@@ -77,14 +81,14 @@ pub(super) fn source_inventories(
         .to_hex()
         .to_string();
         let inventory = cache.join(format!("{key}.tsv"));
-        if !inventory.is_file() {
+        cached_inventory(&inventory, job.cancel, |temporary| {
             run_process(
                 Command::new(java.join("bin/java"))
                     .arg("-Xmx2g")
                     .arg("-cp")
                     .arg(job.runtime.bytecode_lib()?.join("*"))
                     .arg("codegraph.bytecode.SourceInventory")
-                    .arg(&inventory)
+                    .arg(temporary)
                     .arg(classpath)
                     .arg(std::env::join_paths(&source.class_dirs)?)
                     .args(source.source_roots.iter().chain(&source.generated_roots)),
@@ -92,9 +96,32 @@ pub(super) fn source_inventories(
                 &format!("source-inventory-{}", index + 1),
                 job.cancel,
             )?;
-        }
+            Ok(())
+        })?;
         fs::copy(inventory, output.join(format!("source-{}.tsv", index + 1)))?;
     }
+    Ok(())
+}
+
+fn cached_inventory(
+    inventory: &Path,
+    cancel: &AtomicBool,
+    generate: impl FnOnce(&Path) -> Result<()>,
+) -> Result<()> {
+    check_cancel(cancel)?;
+    if inventory.is_file() {
+        return Ok(());
+    }
+    let temporary = tempfile::NamedTempFile::new_in(
+        inventory
+            .parent()
+            .context("Inventory cache requires a parent directory")?,
+    )?;
+    generate(temporary.path())?;
+    check_cancel(cancel)?;
+    temporary
+        .persist(inventory)
+        .map_err(|failure| failure.error)?;
     Ok(())
 }
 
@@ -106,4 +133,120 @@ pub(super) fn status(path: &Path) -> Result<HashMap<String, String>> {
         .filter_map(|line| line.split_once('='))
         .map(|(key, value)| (key.to_owned(), unescape(value)))
         .collect())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::sync::{Arc, atomic::Ordering};
+
+    fn assert_empty(directory: &Path) {
+        assert_eq!(fs::read_dir(directory).unwrap().count(), 0);
+    }
+
+    #[test]
+    fn failed_inventory_is_cleaned_and_retry_is_cached() {
+        let directory = tempfile::tempdir().unwrap();
+        let inventory = directory.path().join("inventory.tsv");
+        let cancel = AtomicBool::new(false);
+        let failure = cached_inventory(&inventory, &cancel, |temporary| {
+            fs::write(temporary, "partial")?;
+            anyhow::bail!("source attribution failed");
+        });
+        assert!(failure.is_err());
+        assert_empty(directory.path());
+        cached_inventory(&inventory, &cancel, |temporary| {
+            assert!(!inventory.exists());
+            fs::write(temporary, "complete")?;
+            Ok(())
+        })
+        .unwrap();
+        cached_inventory(&inventory, &cancel, |_| {
+            panic!("valid cache must be reused")
+        })
+        .unwrap();
+        assert_eq!(fs::read_to_string(inventory).unwrap(), "complete");
+        assert_eq!(fs::read_dir(directory.path()).unwrap().count(), 1);
+    }
+
+    #[test]
+    fn cancellation_after_generation_does_not_publish() {
+        let directory = tempfile::tempdir().unwrap();
+        let inventory = directory.path().join("inventory.tsv");
+        let cancel = AtomicBool::new(false);
+        let result = cached_inventory(&inventory, &cancel, |temporary| {
+            fs::write(temporary, "complete")?;
+            cancel.store(true, Ordering::Relaxed);
+            Ok(())
+        });
+        assert!(result.is_err());
+        assert_empty(directory.path());
+    }
+
+    #[test]
+    fn publication_failure_cleans_temporary_before_error_is_dropped() {
+        let directory = tempfile::tempdir().unwrap();
+        let inventory = directory.path().join("inventory.tsv");
+        let cancel = AtomicBool::new(false);
+        let failure = cached_inventory(&inventory, &cancel, |temporary| {
+            fs::write(temporary, "complete")?;
+            fs::create_dir(&inventory)?;
+            Ok(())
+        })
+        .unwrap_err();
+        assert!(inventory.is_dir());
+        assert_eq!(fs::read_dir(directory.path()).unwrap().count(), 1);
+        drop(failure);
+    }
+
+    #[test]
+    fn interrupted_inventory_process_does_not_poison_retry() {
+        let directory = tempfile::tempdir().unwrap();
+        let cache = directory.path().join("cache");
+        fs::create_dir(&cache).unwrap();
+        let inventory = cache.join("inventory.tsv");
+        let cancel = Arc::new(AtomicBool::new(false));
+        let started = directory.path().join("started");
+        let trigger = cancel.clone();
+        let marker = started.clone();
+        let cancellation = std::thread::spawn(move || {
+            for _ in 0..200 {
+                if marker.exists() {
+                    break;
+                }
+                std::thread::sleep(std::time::Duration::from_millis(10));
+            }
+            trigger.store(true, Ordering::Relaxed);
+        });
+        let result = cached_inventory(&inventory, &cancel, |temporary| {
+            run_process(
+                Command::new("/bin/sh")
+                    .args([
+                        "-c",
+                        "printf partial > \"$1\"; touch \"$2\"; sleep 30",
+                        "inventory",
+                    ])
+                    .arg(temporary)
+                    .arg(&started),
+                directory.path(),
+                "interrupted-inventory",
+                &cancel,
+            )?;
+            Ok(())
+        });
+        cancellation.join().unwrap();
+        assert!(result.is_err());
+        assert!(
+            started.exists(),
+            "cancellation must interrupt a running writer"
+        );
+        assert_empty(&cache);
+        cancel.store(false, Ordering::Relaxed);
+        cached_inventory(&inventory, &cancel, |temporary| {
+            fs::write(temporary, "complete")?;
+            Ok(())
+        })
+        .unwrap();
+        assert_eq!(fs::read_to_string(inventory).unwrap(), "complete");
+    }
 }

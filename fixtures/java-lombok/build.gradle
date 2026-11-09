@@ -1,0 +1,6 @@
+plugins { id 'java' }
+java { toolchain { languageVersion = JavaLanguageVersion.of(25) } }
+dependencies {
+    compileOnly files('lombok.jar')
+    annotationProcessor files('lombok.jar')
+}

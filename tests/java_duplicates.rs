@@ -301,6 +301,20 @@ fn recurring_billing_retains_duplicate_generated_declarations() {
         std::env::var_os("CODEGRAPH_RECURRING_BILLING").expect("Set CODEGRAPH_RECURRING_BILLING"),
     );
     let graph = run(vec![target(&root, "maven")]).unwrap();
+    graph.validate().unwrap();
+    let defaults = graph
+        .nodes
+        .iter()
+        .find(|node| {
+            node.container
+                == "se.fortnox.recurringbilling.external.f3.defaults.F3DefaultsServiceImpl"
+                && node.signature.contains(":buildCommonDefaults(")
+                && !node.is_test
+        })
+        .expect("Authored method referencing the Lombok-generated builder must survive");
+    assert!(defaults.signature.ends_with(
+        " -> se.fortnox.recurringbilling.external.f3.defaults.F3Defaults$F3DefaultsBuilder"
+    ));
     for module in ["recurring-billing-impl", "recurring-billing-test-utils"] {
         assert_recurring_generated(&graph, module);
     }

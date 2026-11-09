@@ -40,7 +40,8 @@ public final class SourceInventory {
     private static void inventory(TreeSet<Path> sources, String classpath, java.io.BufferedWriter writer) throws IOException {
         var compiler = ToolProvider.getSystemJavaCompiler();
         if (compiler == null) throw new IOException("Source inventory requires a full JDK");
-        try (var manager = compiler.getStandardFileManager(null, null, null)) {
+        try (var manager = compiler.getStandardFileManager(null, null, null);
+                var compiled = new CompiledTypes(compiler, classpath)) {
             var diagnostics = new javax.tools.DiagnosticCollector<javax.tools.JavaFileObject>();
             var task = (JavacTask) compiler.getTask(null, manager, diagnostics,
                     List.of("-proc:none", "-implicit:none", "-classpath", classpath), null,
@@ -53,7 +54,7 @@ public final class SourceInventory {
             if (parseError.isPresent()) throw new IOException("Cannot parse project source: " + parseError.get());
             task.analyze();
             var trees = Trees.instance(task);
-            writeMethods(declarations, task, writer);
+            writeMethods(declarations, task, compiled, writer);
             for (TreePath path : lambdas) writeLambda(path, trees, task.getElements(), writer);
         }
     }
@@ -74,20 +75,29 @@ public final class SourceInventory {
         }
     }
 
-    private static void writeMethods(List<TreePath> declarations, JavacTask task,
+    private static void writeMethods(List<TreePath> declarations, JavacTask task, CompiledTypes compiled,
             java.io.BufferedWriter writer) throws IOException {
         var trees = Trees.instance(task);
-        var types = task.getTypes();
-        var elements = task.getElements();
         for (TreePath path : declarations) {
             if (!(trees.getElement(path) instanceof ExecutableElement method)) {
                 throw new IOException("Cannot attribute source declaration " + path.getLeaf());
             }
+            writeMethod(method, task, compiled, writer);
+        }
+    }
+
+    private static void writeMethod(ExecutableElement method, JavacTask task, CompiledTypes compiled,
+            java.io.BufferedWriter writer) throws IOException {
+        var types = task.getTypes();
+        var elements = task.getElements();
+        String owner = elements.getBinaryName((TypeElement) method.getEnclosingElement()).toString();
+        try {
             var arguments = new ArrayList<String>();
-            for (var parameter : method.getParameters()) arguments.add(typeName(parameter.asType(), types, elements));
-            String owner = elements.getBinaryName((TypeElement) method.getEnclosingElement()).toString();
+            for (var parameter : method.getParameters()) arguments.add(typeName(parameter.asType(), types, elements, compiled));
             ContextTsv.write(writer, "method", owner + ":" + method.getSimpleName() + "(" + String.join(",", arguments) + ")",
-                    typeName(method.getReturnType(), types, elements), 0, 0);
+                    typeName(method.getReturnType(), types, elements, compiled), 0, 0);
+        } catch (IOException error) {
+            throw new IOException("Cannot inventory " + owner + ":" + method + ": " + error.getMessage(), error);
         }
     }
 
@@ -104,11 +114,18 @@ public final class SourceInventory {
                 unit.getLineMap().getLineNumber(Math.max(start, end - 1)));
     }
 
-    private static String typeName(TypeMirror original, Types types, Elements elements) throws IOException {
+    private static String typeName(TypeMirror original, Types types, Elements elements, CompiledTypes compiled) throws IOException {
         TypeMirror type = types.erasure(original);
-        if (type.getKind() == TypeKind.ERROR) throw new IOException("Cannot resolve source declaration type " + original);
-        if (type instanceof ArrayType array) return typeName(array.getComponentType(), types, elements) + "[]";
+        if (type.getKind() == TypeKind.ERROR) return compiled.binaryName(errorTypeName(type));
+        if (type instanceof ArrayType array) return typeName(array.getComponentType(), types, elements, compiled) + "[]";
         if (type instanceof DeclaredType declared) return elements.getBinaryName((TypeElement) declared.asElement()).toString();
+        return type.toString();
+    }
+
+    private static String errorTypeName(TypeMirror type) {
+        if (type instanceof DeclaredType declared && declared.asElement() instanceof TypeElement element) {
+            return element.getQualifiedName().toString();
+        }
         return type.toString();
     }
 }
