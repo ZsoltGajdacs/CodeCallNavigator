@@ -1,8 +1,10 @@
 'use strict';
 const path=require('node:path');
 const {canonical,declarationKey}=require('./paths.js');
-const {isCallable,isCallback,isWrapper,label}=require('./syntax.js');
+const {isCallable,isWrapper,label}=require('./syntax.js');
 const {reactImport}=require('./react-import.js');
+const {callableKind,objectMember,initializerScope}=require('./source-facts.js');
+const {excludedMethod}=require('./method-policy.js');
 class Bindings {
   constructor(context,graph) {
     this.context=context; this.ts=context.ts; this.graph=graph;
@@ -27,14 +29,24 @@ class Bindings {
     this.files.push({file,checker,module,owner});
   }
   collectDeclaration(node,owner,checker) {
-    if(isCallable(this.ts,node)) {
-      const kind=isCallback(this.ts,node)?'callback':'function';
-      const index=this.graph.node(node,owner,kind,{label:label(this.ts,node),checker});
-      this.declarations.set(declarationKey(node),index); this.byIndex.set(index,node);
+    if(isCallable(this.ts,node)) this.collectCallable(node,owner,checker);
+    if(initializerScope(this.ts,node)) {
+      this.registerDeclaration(node,owner,checker,{kind:'initializer',label:'<initializer>'});
     }
     if(!this.ts.isClassLike(node)) return;
     if(node.members.some(member=>this.ts.isConstructorDeclaration(member))) return;
-    this.declarations.set(declarationKey(node),this.graph.node(node,owner,'class',{label:node.name?.text || '<class>',checker}));
+    this.registerDeclaration(node,owner,checker,{kind:'implicit-constructor',label:node.name?.text || '<class>'});
+  }
+  collectCallable(node,owner,checker) {
+    const facts={kind:callableKind(this.ts,node),label:label(this.ts,node),objectMember:objectMember(this.ts,checker,node)};
+    const index=this.registerDeclaration(node,owner,checker,facts);
+    this.byIndex.set(index,node);
+  }
+  registerDeclaration(node,owner,checker,facts) {
+    const index=this.graph.node(node,owner,facts.kind,{label:facts.label,checker});
+    this.declarations.set(declarationKey(node),index);
+    if(excludedMethod(facts)) this.graph.excluded.add(index);
+    return index;
   }
   index(node) { return node && this.declarations.get(declarationKey(node)); }
   unalias(checker,symbol) { return symbol && (symbol.flags & this.ts.SymbolFlags.Alias ? checker.getAliasedSymbol(symbol) : symbol); }

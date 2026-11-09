@@ -1,3 +1,4 @@
+mod policy;
 use super::process::run_process;
 use super::{AnalysisJob, ensure_unchanged, find_tool, source_snapshot};
 use crate::{
@@ -17,6 +18,8 @@ use std::{
 #[derive(Deserialize)]
 struct AtlasMap {
     schema: String,
+    #[serde(rename = "declarationFactsVersion")]
+    declaration_facts_version: String,
     nodes: Vec<AtlasNode>,
     edges: Vec<AtlasEdge>,
     #[serde(default)]
@@ -42,6 +45,15 @@ struct AtlasNode {
     container: String,
     name: String,
     location: String,
+    declaration: Option<DeclarationFacts>,
+}
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct DeclarationFacts {
+    has_source_declaration: bool,
+    is_implicit: bool,
+    callable_kind: String,
+    is_object_member: bool,
 }
 #[derive(Deserialize)]
 struct AtlasEdge {
@@ -296,15 +308,7 @@ fn normalize_atlas(
     map: AtlasMap,
     owners: &HashMap<PathBuf, SourceOwner>,
 ) -> Result<GraphData> {
-    ensure!(
-        map.schema == "callatlas.ir.v3",
-        "Unsupported CallAtlas schema: {}",
-        map.schema
-    );
-    ensure!(
-        map.body_errors == 0 && map.diagnostics.is_empty(),
-        "CallAtlas reported incomplete compilation"
-    );
+    validate_atlas(&map)?;
     let mut graph = GraphData {
         roots: vec![build.path.to_string_lossy().into_owned()],
         ..GraphData::default()
@@ -322,10 +326,17 @@ fn normalize_atlas(
         }
     });
     let mut indices = HashMap::new();
+    let mut excluded = HashSet::new();
     for node in map.nodes {
         ensure!(
             qualified_identity(&node.id),
             "CallAtlas is missing the pinned assembly identity patch; run tools/bootstrap.py before analyzing solutions"
+        );
+        ensure!(
+            node.declaration.is_some()
+                || matches!(node.kind.as_str(), "fieldinit" | "field" | "delegate"),
+            "CallAtlas omitted declaration facts for {}",
+            node.id
         );
         let index = u32::try_from(graph.nodes.len())?;
         ensure!(
@@ -333,6 +344,9 @@ fn normalize_atlas(
             "Duplicate CallAtlas identity: {}",
             node.id
         );
+        if policy::excluded(&node) {
+            excluded.insert(format!("{}|{}", build.path.display(), node.id));
+        }
         graph.nodes.push(atlas_node(build, root, node, owners));
     }
     for edge in map.edges {
@@ -346,7 +360,27 @@ fn normalize_atlas(
         ));
     }
     graph.validate()?;
+    crate::method_policy::prune(&mut graph, &excluded)?;
+    policy::finalize_entries(&mut graph);
+    graph.validate()?;
     Ok(graph)
+}
+
+fn validate_atlas(map: &AtlasMap) -> Result<()> {
+    ensure!(
+        map.schema == "callatlas.ir.v3",
+        "Unsupported CallAtlas schema: {}",
+        map.schema
+    );
+    ensure!(
+        map.declaration_facts_version == "1",
+        "CallAtlas declaration facts are missing or unsupported; run tools/bootstrap.py"
+    );
+    ensure!(
+        map.body_errors == 0 && map.diagnostics.is_empty(),
+        "CallAtlas reported incomplete compilation"
+    );
+    Ok(())
 }
 
 fn qualified_identity(identity: &str) -> bool {
@@ -466,5 +500,111 @@ mod tests {
         fs::create_dir_all(core.join("new-domain")).unwrap();
         fs::write(core.join("new-domain/Added.cs"), "class Added {}").unwrap();
         assert!(ensure_unchanged(&before).is_err());
+    }
+}
+
+#[cfg(test)]
+mod acceptance {
+    use super::*;
+    #[test]
+    #[ignore = "requires pinned CallAtlas and installed .NET SDK"]
+    fn real_roslyn_folder_declarations_are_pruned_and_entries_recomputed() {
+        let root = tempfile::tempdir().unwrap();
+        let source = root.path().join("Program.cs");
+        fs::write(
+            &source,
+            include_str!("../../fixtures/dotnet-policy/Program.cs"),
+        )
+        .unwrap();
+        let runtime = super::super::AnalyzerRuntime::discover().unwrap();
+        let output = root.path().join("graph.json");
+        run_process(
+            Command::new(find_tool("dotnet").unwrap())
+                .arg(runtime.callatlas().unwrap())
+                .arg("map")
+                .arg(root.path())
+                .arg("-o")
+                .arg(&output),
+            root.path(),
+            "callatlas",
+            &AtomicBool::new(false),
+        )
+        .unwrap();
+        let map = serde_json::from_slice(&fs::read(output).unwrap()).unwrap();
+        let build = BuildTarget {
+            path: root.path().into(),
+            language: "csharp".into(),
+            kind: "project".into(),
+            label: "policy".into(),
+        };
+        let owners = HashMap::from([(
+            source,
+            SourceOwner {
+                project: "policy".into(),
+                is_test: false,
+                is_generated: false,
+            },
+        )]);
+        let graph = normalize_atlas(&build, root.path(), map, &owners).unwrap();
+        assert_policy_graph(&graph);
+    }
+
+    fn assert_policy_graph(graph: &GraphData) {
+        assert!(graph.nodes.iter().all(|node| !matches!(
+            node.kind.as_str(),
+            "constructor" | "cctor" | "fieldinit" | "field" | "delegate"
+        )));
+        for suffix in [
+            "IObjectLike::ToString(System.Int32)",
+            "Explicit::IObjectLike.ToString(System.Int32)",
+            "Entry::Authored()",
+            "Worker::Private()",
+            "Worker::Package()",
+            "Worker::Protected()",
+            "Worker::ToString(System.Int32)",
+            "Worker::GetHashCode(System.Int32)",
+            "Worker::Equals(System.Int32)",
+            "Worker::get_Value()",
+            "Worker::get_Automatic()",
+            "Worker::set_Automatic(System.Int32)",
+        ] {
+            assert!(
+                graph.nodes.iter().any(|node| node.id.ends_with(suffix)),
+                "Missing {suffix}"
+            );
+        }
+        for suffix in [
+            "IObjectLike::ToString()",
+            "IObjectLike::GetHashCode()",
+            "IObjectLike::Equals(System.Object)",
+            "Explicit::IObjectLike.ToString()",
+            "Explicit::IObjectLike.GetHashCode()",
+            "Explicit::IObjectLike.Equals(System.Object)",
+            "Entry::get_Number()",
+            "Entry::Equals(Entry)",
+            "Entry::ToString()",
+            "Entry::GetHashCode()",
+            "Worker::ToString()",
+            "Worker::GetHashCode()",
+            "Worker::Equals(System.Object)",
+        ] {
+            assert!(
+                !graph.nodes.iter().any(|node| node.id.ends_with(suffix)),
+                "Unexpected {suffix}"
+            );
+        }
+        let only = graph
+            .nodes
+            .iter()
+            .find(|node| node.id.ends_with("Worker::ConstructorOnly()"))
+            .unwrap();
+        assert!(
+            graph
+                .entry_points
+                .as_ref()
+                .unwrap()
+                .candidates
+                .contains(&only.id)
+        );
     }
 }

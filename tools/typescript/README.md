@@ -2,7 +2,7 @@
 
 The Rust coordinator invokes `node analyze.js prepare CONFIG OUTPUT` to evaluate
 configuration and input ownership, then `node analyze.js analyze CONFIG OUTPUT`
-to obtain the `codegraph.typescript.v1` graph. The project must already have
+to obtain the `codegraph.typescript.v2` graph. The project must already have
 TypeScript 6.0.x installed and Node must be version 24 or newer. No packages,
 project scripts, application code, compiler plugins or framework configs run.
 
@@ -18,6 +18,14 @@ uses the origin of a synthesized call signature as a runtime target.
 callable argument references. Conditional and propagated prop targets are possible.
 `react.js` and `props.js` add versioned static framework rules.
 `next.js` recognizes standard App Router exports and server actions.
+`source-facts.js` discovers callable kinds and matches instance member parameter
+signatures against the compiler's standard Object type. `method-policy.js` owns
+which facts exclude a symbol; `graph.js` serializes the excluded identity list
+alongside the complete graph. The Rust adapter validates that graph, invokes the
+shared pruning transformation, then recalculates TypeScript entry candidates.
+Constructors and field/static initializer scopes remain distinct during extraction,
+so excluding their nodes never assigns their calls to a module or enclosing method.
+Authored nested callbacks retain their own callable scopes.
 `graph.js` owns identities, edge aggregation and serialization.
 
 Framework relationships are static possibilities. Generic callback arguments are

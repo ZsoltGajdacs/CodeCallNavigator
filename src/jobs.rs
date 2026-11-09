@@ -320,6 +320,11 @@ fn poll_boot(state: &mut State) -> bool {
             if let Some(graph) = boot.graph {
                 install_graph(state, graph);
             } else {
+                state.nav.selected = None;
+                state.nav.focus = None;
+                state.nav.path_from = None;
+                state.nav.path_to = None;
+                state.nav.show_path = false;
                 state.status = "Choose a project folder to begin".into();
             }
             if !state.root_was_edited && !state.root.text.is_empty() {

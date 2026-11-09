@@ -1,11 +1,19 @@
 # Existing Java bytecode analyzer adapter
 
 This driver configures `java-callgraph2` 4.1.0 and respects its boolean result.
-It adds no call-resolution, DI, framework or source-parsing logic. BCEL is pinned
+The bytecode driver adds no call-resolution, DI or framework logic. A separate
+`SourceInventory` helper uses the JDK compiler APIs to inventory source declarations
+in their owning compile context, before compiler-created declarations are inserted.
+BCEL is pinned
 to 6.13.0 to support Java 25 class files. Both raw and engine-reported actual
 targets are retained in the engine output.
 The engine's default equals/hashCode omission is disabled using its existing
-`ECE_PARSE_IGNORE_METHOD` configuration so project overrides remain visible.
+`ECE_PARSE_IGNORE_METHOD` configuration so completeness validation includes project
+overrides. CodeGraph subsequently excludes Object-method signatures, constructors,
+initializers, inherited placeholders and members without source declarations.
+Authored lambda implementations survive synthetic-bytecode filtering, including
+builds without debug line tables. Generated source files remain eligible for the
+existing generated-source visibility toggle.
 
 Build with an existing Gradle 9.4 installation and JDK 25:
 
@@ -59,3 +67,15 @@ Upstream output documentation:
 - https://github.com/Adrninistrator/java-callgraph2/blob/main/docs/file_format.md
 - https://github.com/Adrninistrator/java-callgraph2/blob/main/docs/call_type.md
 - https://commons.apache.org/proper/commons-bcel/changes.html
+
+Source discovery selects files represented by compiled class metadata, so files
+excluded by the build do not enter attribution. Without `SourceFile` debug
+attributes (or with nonstandard source layouts), a separate parse-only pass
+matches top-level declaration names to compiled types; exact dollar-containing
+class names take precedence over nested-class prefixes. Package metadata does
+not declare methods. Unmatched stale/processor outputs have no source declaration
+and are excluded. Ambiguous ownership, malformed selected sources, and unresolved
+method signature types fail inventory explicitly. Body-only attribution errors
+from disabled annotation processing do not change successfully resolved source
+method identities; the actual build and bytecode completeness checks remain
+mandatory.

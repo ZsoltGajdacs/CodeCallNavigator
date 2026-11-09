@@ -351,3 +351,75 @@ fn packaged_resource_layout_runs_without_development_adapter_fallback() {
     .unwrap();
     assert!(graph.nodes.iter().any(|node| node.label == "main"));
 }
+
+#[test]
+#[ignore = "requires Node 24+ and installed TypeScript 6.0.x"]
+fn source_method_policy_applies_before_storage_search_and_traversal() {
+    let fixture = fixture();
+    write(
+        fixture.path(),
+        "src/main.ts",
+        r#"
+function leaf() {}
+export function toString() { leaf(); }
+export class Base {
+  constructor() { leaf(); }
+  toString() { return ''; }
+  valueOf() { return this; }
+  hasOwnProperty(key: PropertyKey) { return false; }
+}
+export class Other {
+  toString(value: string) { return value; }
+  static toString() { return 'static'; }
+  private hidden() { leaf(); }
+  protected guarded() { leaf(); }
+  shown() { leaf(); }
+  get value() { leaf(); return 1; }
+}
+export class Implicit {
+  instance = leaf();
+  static field = leaf();
+  static { leaf(); }
+  callback = () => leaf();
+}
+export function start() { toString(); new Base(); new Implicit(); new Other().toString('x'); }
+"#,
+    );
+    let graph = run(vec![target(fixture.path(), "tsconfig.json")]).unwrap();
+    graph.validate().unwrap();
+    assert!(graph.nodes.iter().all(|node| !matches!(
+        node.kind.as_str(),
+        "constructor" | "implicit-constructor" | "initializer"
+    )));
+    assert_eq!(
+        graph
+            .nodes
+            .iter()
+            .filter(|node| node.label == "toString")
+            .count(),
+        3
+    );
+    assert!(
+        !graph
+            .nodes
+            .iter()
+            .any(|node| matches!(node.label.as_str(), "valueOf" | "hasOwnProperty"))
+    );
+    for label in ["hidden", "guarded", "shown", "value", "callback"] {
+        assert!(has_edge(&graph, label, "leaf"), "lost authored {label}");
+    }
+    assert!(!has_edge(&graph, "start", "leaf"));
+    assert!(
+        !graph
+            .edges
+            .iter()
+            .any(|edge| graph.nodes[edge.from as usize].kind == "module"
+                && graph.nodes[edge.to as usize].label == "leaf")
+    );
+    let cache = tempfile::tempdir().unwrap();
+    let store = SqliteStore::open(cache.path()).unwrap();
+    store.publish(&graph, &AtomicBool::new(false)).unwrap();
+    let loaded = store.load_active().unwrap().unwrap();
+    assert_eq!(loaded.nodes.len(), graph.nodes.len());
+    assert_eq!(loaded.entry_points, graph.entry_points);
+}

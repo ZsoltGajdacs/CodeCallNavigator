@@ -34,6 +34,7 @@ pub(super) fn normalize_bytecode(
             .context("Bytecode analyzer omitted its output directory")?,
     );
     let mut collector = BytecodeCollector::new(build, inputs, owner);
+    collector.source_inventory = super::source_inventory::inventories(output, inputs)?;
     collector.classes(&read_tsv(&output.join("class_metadata.tsv"))?)?;
     collector.methods(&read_tsv(&output.join("method_metadata.tsv"))?)?;
     collector.validate_methods(&read_tsv(&raw.join("method_info.txt"))?)?;
@@ -52,6 +53,8 @@ struct BytecodeCollector<'a> {
     excluded_edges: usize,
     application_starts: Vec<String>,
     owner: Option<String>,
+    source_inventory: HashMap<usize, super::source_inventory::SourceInventory>,
+    excluded: HashSet<String>,
 }
 
 impl<'a> BytecodeCollector<'a> {
@@ -70,6 +73,8 @@ impl<'a> BytecodeCollector<'a> {
             excluded_edges: 0,
             application_starts: Vec::new(),
             owner: owner.map(|source| identity_prefix(build, source)),
+            source_inventory: HashMap::new(),
+            excluded: HashSet::new(),
         }
     }
 
@@ -98,6 +103,13 @@ impl<'a> BytecodeCollector<'a> {
                 );
             }
             let node = self.java_node(&method, false)?;
+            let inventory = self
+                .source_inventory
+                .get(&method.class.input)
+                .context("Java source declaration inventory is missing")?;
+            if super::policy::excluded(&method, inventory) {
+                self.excluded.insert(node.id.clone());
+            }
             if method.is_application_start() {
                 self.application_starts.push(node.id.clone());
             }
@@ -200,6 +212,7 @@ impl<'a> BytecodeCollector<'a> {
         }
         let method = MethodMetadata::inherited(class.clone(), signature, return_type);
         let node = self.java_node(&method, true)?;
+        self.excluded.insert(node.id.clone());
         self.placeholder_count += 1;
         Ok(Some(self.insert_node(key, node)?))
     }
@@ -295,19 +308,18 @@ impl<'a> BytecodeCollector<'a> {
             candidates: Vec::new(),
             application_starts: self.application_starts,
         });
+        crate::method_policy::prune(&mut self.graph, &self.excluded)?;
         if self.owner.is_none() {
             super::compose::finalize_entries(&mut self.graph);
         }
-        self.graph.diagnostics.push(format!("Java: {} inherited/reference symbols have no declared body; {} external relationships excluded. These references are engine-reported, not resolved by name.", self.placeholder_count, self.excluded_edges));
+        self.graph.diagnostics.push(format!("Java: {} inherited/reference symbols without declared bodies excluded; {} external relationships excluded. These references are engine-reported, not resolved by name.", self.placeholder_count, self.excluded_edges));
         self.graph.diagnostics.push("Java DI, reflection, framework callback ordering and dynamic runtime targets are supported only where reported by java-callgraph2. Bytecode source columns are unavailable.".into());
         self.graph.validate()?;
         Ok(self.graph)
     }
 }
 
-pub(super) fn method_key(signature: &str, return_type: &str) -> String {
-    format!("{signature}|{return_type}")
-}
+pub(super) use super::metadata::method_key;
 pub(super) fn java_certainty(kind: &str) -> &'static str {
     match kind {
         "STA" | "SPE" => "direct",

@@ -8,7 +8,7 @@ use crate::{
 use anyhow::{Context, Result, bail, ensure};
 use serde::Deserialize;
 use std::{
-    collections::{BTreeMap, BTreeSet},
+    collections::{BTreeMap, BTreeSet, HashSet},
     fs,
     path::PathBuf,
     process::Command,
@@ -122,6 +122,7 @@ pub(super) fn reject_overlaps<'a>(
 #[derive(Deserialize)]
 struct Output {
     schema: String,
+    excluded_methods: HashSet<String>,
     #[serde(flatten)]
     graph: GraphData,
     versions: serde_json::Value,
@@ -136,7 +137,7 @@ pub(super) fn analyze(
     let output = invoke(build, context, "analyze")?;
     let result: Output = serde_json::from_slice(&fs::read(output)?)?;
     ensure!(
-        result.schema == "codegraph.typescript.v1",
+        result.schema == "codegraph.typescript.v2",
         "Unsupported TypeScript adapter schema"
     );
     ensure!(
@@ -149,7 +150,31 @@ pub(super) fn analyze(
         bail!("TypeScript adapter emitted a foreign language symbol");
     }
     graph.validate()?;
+    crate::method_policy::prune(&mut graph, &result.excluded_methods)?;
+    finalize_candidates(&mut graph);
+    graph.validate()?;
     graph.fingerprints = prepared.before;
     graph.engine_versions = result.versions.to_string();
     Ok(graph)
+}
+
+/// TypeScript reference relationships do not make a callable an execution target.
+fn finalize_candidates(graph: &mut GraphData) {
+    let called = graph
+        .edges
+        .iter()
+        .filter(|edge| edge.kind != "reference")
+        .map(|edge| edge.to)
+        .collect::<HashSet<_>>();
+    let candidates = graph
+        .nodes
+        .iter()
+        .enumerate()
+        .filter(|(index, node)| !called.contains(&(*index as u32)) && !node.body_unavailable)
+        .map(|(_, node)| node.id.clone())
+        .collect::<Vec<_>>();
+    if let Some(entries) = &mut graph.entry_points {
+        entries.candidates = candidates;
+        entries.candidates.sort();
+    }
 }

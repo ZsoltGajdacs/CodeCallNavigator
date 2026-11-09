@@ -103,10 +103,6 @@ impl SqliteStore {
             .map_err(|_| anyhow::anyhow!("Graph writer lock poisoned"))?;
         check_cancelled(cancelled)?;
         graph.validate()?;
-        ensure!(
-            !graph.nodes.is_empty(),
-            "Refusing to publish an empty analysis"
-        );
         let stamp = SystemTime::now().duration_since(UNIX_EPOCH)?.as_nanos();
         let sequence = NEXT_GENERATION.fetch_add(1, Ordering::Relaxed);
         let name = format!(
@@ -139,7 +135,7 @@ impl SqliteStore {
         write_edges(&transaction, graph, cancelled)?;
         let metadata = serde_json::json!({ "diagnostics": graph.diagnostics, "roots": graph.roots,
             "fingerprints": graph.fingerprints, "engine_versions": graph.engine_versions,
-            "entry_points": graph.entry_points,
+            "entry_points": graph.entry_points, "method_policy": crate::method_policy::VERSION,
             "edge_provenance": graph.edges.iter().map(|edge| &edge.provenance).collect::<Vec<_>>() });
         transaction.execute(
             "INSERT INTO metadata VALUES ('graph', ?1)",
@@ -173,14 +169,7 @@ impl SqliteStore {
     }
 
     pub fn load_generation(&self, generation: &str) -> Result<GraphData> {
-        let path = self.generation_path(generation)?;
-        let connection =
-            Connection::open_with_flags(path, rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY)?;
-        let metadata: String =
-            connection.query_row("SELECT value FROM metadata WHERE key='graph'", [], |row| {
-                row.get(0)
-            })?;
-        let metadata: Value = serde_json::from_str(&metadata)?;
+        let (connection, metadata) = self.read_generation(generation)?;
         let mut graph = GraphData {
             diagnostics: serde_json::from_value(metadata["diagnostics"].clone())?,
             roots: serde_json::from_value(metadata["roots"].clone())?,
@@ -220,6 +209,23 @@ impl SqliteStore {
         Ok(graph)
     }
 
+    /// All generation readers enforce the same persisted graph policy.
+    fn read_generation(&self, generation: &str) -> Result<(Connection, Value)> {
+        let path = self.generation_path(generation)?;
+        let connection =
+            Connection::open_with_flags(path, rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY)?;
+        let metadata: String =
+            connection.query_row("SELECT value FROM metadata WHERE key='graph'", [], |row| {
+                row.get(0)
+            })?;
+        let metadata: Value = serde_json::from_str(&metadata)?;
+        ensure!(
+            metadata["method_policy"].as_u64() == Some(crate::method_policy::VERSION.into()),
+            "Refresh this workspace: its cached method graph uses an older policy"
+        );
+        Ok((connection, metadata))
+    }
+
     pub fn search(&self, request: &SymbolSearch<'_>) -> Result<Vec<u32>> {
         let Some(generation) = self.active_generation()? else {
             return Ok(Vec::new());
@@ -241,9 +247,7 @@ impl SqliteStore {
         let Some(query) = prefix_query(prefix) else {
             return Ok(Vec::new());
         };
-        let path = self.generation_path(generation)?;
-        let connection =
-            Connection::open_with_flags(path, rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY)?;
+        let (connection, _) = self.read_generation(generation)?;
         let mut statement = connection.prepare(
             "SELECT n.idx FROM node_search JOIN nodes n ON n.idx=node_search.rowid-1
             WHERE node_search MATCH ?1 AND (?2 OR NOT n.is_test) AND (?3 OR NOT n.is_generated)

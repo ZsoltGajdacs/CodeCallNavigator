@@ -101,11 +101,6 @@ fn sqlite_roundtrip_search_session_and_failed_refresh_preserve_active_graph() {
     assert!(store.publish(&invalid, &AtomicBool::new(false)).is_err());
     assert!(
         store
-            .publish(&GraphData::default(), &AtomicBool::new(false))
-            .is_err()
-    );
-    assert!(
-        store
             .publish(&GraphData::default(), &AtomicBool::new(true))
             .is_err()
     );

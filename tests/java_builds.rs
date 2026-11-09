@@ -31,6 +31,29 @@ fn assert_project_graph(graph: &GraphData) {
     let generated = method(graph, "GeneratedThing", "generated");
     let test = method(graph, "AppTest", "testOnly");
     let disconnected = method(graph, "App", "disconnected");
+    for name in [
+        "constructorOnly",
+        "packageMethod",
+        "protectedMethod",
+        "toString",
+    ] {
+        method(graph, "App", name);
+    }
+    for fragment in [
+        ":<init>(",
+        ":<clinit>(",
+        ":toString()",
+        ":hashCode()",
+        ":equals(java.lang.Object)",
+    ] {
+        assert!(
+            graph
+                .nodes
+                .iter()
+                .all(|node| !node.signature.contains(fragment)),
+            "Unexpected {fragment}"
+        );
+    }
     assert_ne!(main.project, service.project);
     assert_eq!(main.project, generated.project);
     assert_eq!(main.project, test.project);

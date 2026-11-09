@@ -51,8 +51,8 @@ C# and Java application starts highlighted. C# starts come from the compiler;
 Java starts are public static void main(String[]). TypeScript module initializers and
 uncalled functions remain candidates; recognized Next.js App Router exports are
 labeled framework entries separately from verified executable starts. Framework handlers can appear
-as uncalled candidates without application-start highlighting. Older cached graphs
-still open; refresh them to enable verified-start highlighting.
+as uncalled candidates without application-start highlighting. Cached graphs from
+an older method policy require a refresh before they can be opened.
 
 Click an element to center it and highlight its direct connections; double-click a
 group to expand it or a method to focus its neighborhood. Overview restores the
@@ -67,6 +67,15 @@ Explore depth, shortest directed paths and history. Drag to pan, scroll or pinch
 zoom, or use Fit and zoom buttons. Cmd-O opens the folder chooser; Cmd-F focuses
 search. The inspector shows signatures, project ownership, locations, relationship
 certainty and analyzer provenance. No source code is displayed.
+
+Graphs retain source-declared methods and authored functions, callbacks, accessors,
+and top-level execution at every visibility level. Constructors, initializer
+scaffolding, compiler-created helpers, inherited reference placeholders and Object
+method signatures (including explicit overrides) are excluded from the index.
+Unrelated overloads remain. Removing a symbol removes its incident relationships;
+paths are not reconnected through excluded code. Methods declared in generated
+source files remain available through the generated-code filter. A project with
+only excluded symbols produces a valid empty graph.
 
 Production code is the default. Test, generated and body-unavailable filters are
 explicit, with hidden/omitted counts. Gold dashed edges mean possible/uncertain

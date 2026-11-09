@@ -33,19 +33,14 @@ function visitSite(bindings,react,{checker,node,current}) {
   if(isJsxSite(bindings.ts,node)) react.jsx(checker,node,current);
   if(isAccess(bindings.ts,node)) accessorCalls(bindings,checker,node,current);
 }
-function fieldInitializer(bindings,node) {
-  if(!bindings.ts.isPropertyDeclaration(node)) return undefined;
-  const modifiers=bindings.ts.getModifiers(node)||[];
-  if(modifiers.some(modifier=>modifier.kind===bindings.ts.SyntaxKind.StaticKeyword)) return undefined;
-  return bindings.constructorTargets(node.parent)[0];
-}
 function walkFile(bindings,react,{file,checker,module}) {
   function visit(node,from) {
-    const current=isCallable(bindings.ts,node)?bindings.index(node):from;
+    const scoped=isCallable(bindings.ts,node)||bindings.ts.isClassStaticBlockDeclaration(node);
+    const current=scoped?bindings.index(node):from;
     visitSite(bindings,react,{checker,node,current});
-    const constructor=fieldInitializer(bindings,node);
+    const field=bindings.ts.isPropertyDeclaration(node);
     bindings.ts.forEachChild(node,child=>{
-      const owner=child===node.initializer && constructor!==undefined ? constructor : current;
+      const owner=field&&child===node.initializer ? bindings.index(node) : current;
       visit(child,owner);
     });
   }

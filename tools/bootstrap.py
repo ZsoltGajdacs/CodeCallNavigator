@@ -55,10 +55,10 @@ def checkout_patch(command):
 
 
 def upgrade_legacy_patch(command, spec, difference, patch):
-    if "legacy_patch" not in spec:
-        raise RuntimeError("CallAtlas source differs from the supported identity patch; inspect vendor/callatlas")
-    legacy = verified_patch(spec, "legacy_")
-    if difference != legacy.read_bytes():
+    candidates = [verified_patch(spec, prefix) for prefix in ("previous_", "legacy_")
+                  if f"{prefix}patch" in spec]
+    legacy = next((candidate for candidate in candidates if difference == candidate.read_bytes()), None)
+    if legacy is None:
         raise RuntimeError("CallAtlas source differs from the supported identity patch; inspect vendor/callatlas")
     # Upgrade only the exact previously shipped patch. git apply checks every hunk
     # before writing; restore the legacy patch if applying its replacement fails.

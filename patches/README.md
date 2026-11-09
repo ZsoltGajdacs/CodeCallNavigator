@@ -3,7 +3,7 @@
 `callatlas-assembly-identity.patch` applies only to upstream revision
 `916c2419c0cdb91b5b86b84df4842dadb17bb6b4`.
 
-SHA-256: `aeb8b8b664e21331e7815466746ec482a63407e4ae05ce8275e2810f552ff405`.
+SHA-256: `a3981a0c07ef932a498f58113994c7858bd53242e0f0860355af9df56704e810`.
 
 The pinned analyzer combines every solution compilation in one node dictionary,
 while its original symbol IDs omit assembly ownership. Two independent projects
@@ -16,7 +16,10 @@ This patch preserves call binding and adds identity and entry-point metadata:
   Roslyn-owned assembly name: `[AssemblyName]::original-symbol-id`.
 - Preserve a single assembly prefix through local-function identity recursion.
 - Register top-level entry points per compiler assembly rather than once per solution.
-- Keep the existing JSON schema and every call binding/classification unchanged.
+- Keep existing call binding unchanged. Export `declarationFactsVersion: "1"` and
+  per-method source-declaration, implicitness, callable-kind and Object-signature
+  facts from Roslyn. CodeGraph owns inclusion policy and prunes after validation.
+- Preserve those facts when reading and writing CallAtlas snapshots.
 - Export `entryPoints.candidates` using the existing `CodeMapQuery.EntryPoints` query, including uncalled declarations.
 - Export `entryPoints.applicationStarts` from `Compilation.GetEntryPoint`, mapping synthesized top-level starts to the existing top-level graph identity. These verified starts are distinct from ordinary entry candidates.
 
@@ -33,7 +36,8 @@ dotnet build vendor/callatlas/src/CallAtlas.Cli/CallAtlas.Cli.csproj -c Release
 ```
 
 Bootstrap verifies the exact revision and patch hash. It accepts only a clean
-checkout, the exact current patch, or the exact previously shipped identity-only
+checkout, the exact current patch, the previously shipped entry-metadata patch in
+`callatlas-assembly-identity-entries.patch`, or the exact identity-only
 patch preserved in `callatlas-assembly-identity-legacy.patch` with its pinned hash.
 The legacy patch is reversed and replaced automatically; failure restores it.
 Unrelated tracked or untracked source edits are refused and preserved. Ignored

@@ -101,13 +101,13 @@ test('propagated callback invocations are possible, ordinary direct bindings sta
   assert.equal(g.edges.find(e=>e.kind==='call'&&g.nodes[e.from].label==='Page'&&g.nodes[e.to].label==='leaf').certainty,'direct');
 });
 
-test('instance field initializers belong to explicit or implicit constructors, static fields to module', t => {
+test('instance and static field initializer scopes are excluded independently of module execution', t => {
   const root=fixture(t, {'tsconfig.json':config,'src/main.ts':'function leaf(){} class Explicit{x=leaf(); constructor(){}} class Implicit{x=leaf();static y=leaf()} export function start(){new Explicit();new Implicit()}'});
   const g=run(root);
-  assert.ok(edges(g,'Explicit').includes('leaf'));
-  assert.ok(edges(g,'Implicit').includes('leaf'));
-  assert.ok(g.nodes.filter(n=>n.kind==='module').some(n=>edges(g,n.label).includes('leaf')));
-  assert.equal(g.nodes.find(n=>n.label==='Implicit').body_unavailable,false);
+  const removed=new Set(g.excluded_methods);
+  assert.equal(g.nodes.filter(n=>n.kind==='initializer').length,3);
+  assert.ok(g.nodes.filter(n=>n.kind==='initializer').every(n=>removed.has(n.id)&&edges(g,n.label).includes('leaf')));
+  assert.equal(g.nodes.filter(n=>n.kind==='module').some(n=>edges(g,n.label).includes('leaf')),false);
 });
 
 test('conditional function values preserve possible targets instead of arbitrary signature origins', t => {
@@ -165,4 +165,22 @@ test('explicit source directories inside compiler output roots retain membership
   const metadata=run(root,'tsconfig.json','prepare');
   assert.ok(metadata.watch_roots.includes(path.join(fs.realpathSync(root),'dist/types')));
   assert.ok(metadata.watch_roots.includes(path.join(fs.realpathSync(root),'dist/types/empty')));
+});
+
+test('source policy marks boilerplate without removing overloads or authored callables', t => {
+  const root=fixture(t, {'tsconfig.json':config,'src/main.ts':`function leaf(){} function toString(){leaf()}
+class Base { constructor(){leaf()} toString(){return ''} valueOf(){return this} hasOwnProperty(v:PropertyKey){return false} }
+class Other { toString(v:string){return v} private hidden(){leaf()} protected guarded(){leaf()} public shown(){leaf()} get value(){leaf();return 1} }
+class Implicit { x=leaf(); static y=leaf(); static { leaf() } callback=()=>leaf() }
+export function start(){toString();new Base();new Implicit();new Other().toString('x');}`});
+  const g=run(root);
+  const removed=new Set(g.excluded_methods);
+  const excluded=g.nodes.filter(n=>removed.has(n.id));
+  assert.ok(excluded.some(n=>n.kind==='constructor'));
+  assert.ok(excluded.some(n=>n.kind==='implicit-constructor'));
+  assert.ok(excluded.some(n=>n.kind==='initializer'));
+  assert.equal(g.nodes.filter(n=>n.label==='toString'&&removed.has(n.id)).length,1);
+  assert.ok(['hidden','guarded','shown','value','callback'].every(label=>g.nodes.some(n=>n.label===label&&!removed.has(n.id))));
+  assert.equal(g.nodes.filter(n=>n.kind==='module').flatMap(n=>edges(g,n.label)).includes('leaf'),false);
+  assert.equal(edges(g,'start').includes('leaf'),false);
 });

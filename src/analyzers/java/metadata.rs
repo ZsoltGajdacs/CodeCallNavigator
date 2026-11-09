@@ -118,3 +118,7 @@ pub(super) fn unescape(value: &str) -> String {
     }
     output
 }
+
+pub(super) fn method_key(signature: &str, return_type: &str) -> String {
+    format!("{signature}|{return_type}")
+}

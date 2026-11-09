@@ -174,10 +174,6 @@ pub fn analyze(
     }
     graph.engine_versions = engines.to_string();
     graph.validate()?;
-    ensure!(
-        !graph.nodes.is_empty(),
-        "Analyzers emitted no project symbols"
-    );
     check_cancel(cancel)?;
     job.remove_on_drop = true;
     Ok(graph)
