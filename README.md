@@ -108,6 +108,10 @@ bundles the analyzer artifacts, relocates Graphviz and its required dylibs, coll
 third-party notices, ad hoc signs and verifies the app, and produces the ZIP.
 No Homebrew installation is needed to run the packaged Graphviz.
 
+One-shot build/analyzer subprocesses receive closed standard input, so launching
+through a terminal cannot suspend Gradle on background terminal reads. TypeScript's
+internal worker keeps its dedicated protocol pipe.
+
 Analysis reuses classpath and source inventories only within the current refresh.
 Gradle ownership discovery remains separate; compilation and final metadata export
 share one invocation. TypeScript retains its compiler for a single selected target;

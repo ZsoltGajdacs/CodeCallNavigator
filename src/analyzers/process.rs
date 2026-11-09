@@ -27,6 +27,7 @@ pub(super) fn run_process(
     let stdout = job.join(format!("{name}.stdout"));
     let stderr = job.join(format!("{name}.stderr"));
     command
+        .stdin(Stdio::null())
         .stdout(Stdio::from(fs::File::create(&stdout)?))
         .stderr(Stdio::from(fs::File::create(&stderr)?))
         .process_group(0);
@@ -94,6 +95,44 @@ fn log_tail(path: &Path) -> String {
 mod tests {
     use super::*;
     use std::sync::Arc;
+    #[test]
+    fn analyzer_children_receive_eof_instead_of_the_controlling_terminal() {
+        if let Some(directory) = std::env::var_os("CODEGRAPH_TEST_PROCESS_TTY") {
+            assert_noninteractive_child(Path::new(&directory));
+            return;
+        }
+        let directory = tempfile::tempdir().unwrap();
+        let status = Command::new("python3")
+            .arg(Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/process_tty.py"))
+            .arg(std::env::current_exe().unwrap())
+            .arg("analyzers::process::tests::analyzer_children_receive_eof_instead_of_the_controlling_terminal")
+            .arg(directory.path())
+            .status()
+            .unwrap();
+        assert!(
+            status.success(),
+            "Analyzer child inherited the controlling terminal"
+        );
+    }
+
+    fn assert_noninteractive_child(directory: &Path) {
+        assert_eq!(
+            unsafe { libc::isatty(0) },
+            1,
+            "Helper must have a controlling terminal"
+        );
+        let marker = directory.join("stdin-child.pid");
+        let output = run_process(
+            Command::new("python3")
+                .args(["-c", "import os,sys; from pathlib import Path; Path(sys.argv[1]).write_text(str(os.getpid())); data=os.read(0,1); assert data==b''; assert not os.isatty(0); print('stdin EOF')"])
+                .arg(marker),
+            directory,
+            "stdin-child",
+            &AtomicBool::new(false),
+        ).unwrap();
+        assert_eq!(fs::read_to_string(output).unwrap().trim(), "stdin EOF");
+    }
+
     #[test]
     fn already_cancelled_process_never_starts() {
         let directory = tempfile::tempdir().unwrap();

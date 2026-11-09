@@ -1,0 +1,26 @@
+{
+  "symptom": "Native dev launch stuck at Reading Gradle source-set ownership for backend",
+  "running_app_pid": 76817,
+  "gradle_client_pid": 77084,
+  "stdin": "/dev/ttys005",
+  "client_process_group": 77084,
+  "terminal_foreground_process_group": 76817,
+  "gradle_log": "BUILD SUCCESSFUL in 5s",
+  "controlled_reproduction": {
+    "inherited_stdin": {
+      "status": "stopped",
+      "signal": "SIGTTIN",
+      "seconds": 5.459,
+      "metadata_exported": true
+    },
+    "closed_stdin": {
+      "status": "exited",
+      "exit_code": 0,
+      "seconds": 4.232,
+      "metadata_exported": true
+    }
+  },
+  "jdk": "SDKMAN 25.0.2-jbr",
+  "previous_benchmark_jdk": "Microsoft JDK 25.0.3",
+  "previous_benchmarks_had_terminal_stdin": false
+}

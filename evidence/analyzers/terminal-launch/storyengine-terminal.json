@@ -1,0 +1,97 @@
+{
+  "exit_code": 0,
+  "seconds": 42.18793041599565,
+  "controlling_terminal": true,
+  "jdk": "SDKMAN 25.0.2-jbr",
+  "build": "debug",
+  "published": true,
+  "timings": {
+    "schema": "codegraph.performance.v1",
+    "complete": true,
+    "elapsed_milliseconds": 41067.958625,
+    "stages": {
+      "analysis": {
+        "calls": 1,
+        "milliseconds": 40745.14525
+      },
+      "composition": {
+        "calls": 1,
+        "milliseconds": 29.995541
+      },
+      "discovery": {
+        "calls": 1,
+        "milliseconds": 11.221916
+      },
+      "fingerprints.capture": {
+        "calls": 4,
+        "milliseconds": 2165.253791
+      },
+      "fingerprints.discover": {
+        "calls": 7,
+        "milliseconds": 48.28408400000001
+      },
+      "fingerprints.verify": {
+        "calls": 7,
+        "milliseconds": 4289.566751
+      },
+      "java.build_preparation": {
+        "calls": 1,
+        "milliseconds": 5408.306707999999
+      },
+      "java.bytecode": {
+        "calls": 2,
+        "milliseconds": 4220.048666
+      },
+      "java.classpath_staging": {
+        "calls": 2,
+        "milliseconds": 4856.369166
+      },
+      "java.compilation": {
+        "calls": 1,
+        "milliseconds": 11020.31575
+      },
+      "java.normalization": {
+        "calls": 2,
+        "milliseconds": 978.176792
+      },
+      "java.source_attribution": {
+        "calls": 2,
+        "milliseconds": 7644.557459000001
+      },
+      "preparation": {
+        "calls": 1,
+        "milliseconds": 5408.412292
+      },
+      "publication": {
+        "calls": 1,
+        "milliseconds": 303.010917
+      },
+      "subprocess": {
+        "calls": 8,
+        "milliseconds": 32773.734876
+      },
+      "verification": {
+        "calls": 7,
+        "milliseconds": 4289.581416999999
+      }
+    },
+    "counters": {
+      "fingerprint.bytes_hashed": 430604782,
+      "fingerprint.directories_visited": 741,
+      "fingerprint.directory_scan_reuses": 7,
+      "fingerprint.files_hashed": 11952,
+      "java.artifact_bytes_read": 243812793,
+      "java.artifact_hits": 278,
+      "java.artifact_index_bytes": 13128445,
+      "java.artifact_reads": 303,
+      "java.artifact_retained_bytes": 7697158,
+      "java.classes_indexed": 66511,
+      "java.source_inventories": 2,
+      "java.source_inventory_hits": 1,
+      "java.staged_bytes": 12758798,
+      "relationships": 11112,
+      "subprocesses": 8,
+      "symbols": 8136
+    }
+  }
+}
