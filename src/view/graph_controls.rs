@@ -19,13 +19,24 @@ const GROUPS: [Grouping; 4] = [
 ];
 const DIRECTIONS: [FlowDirection; 2] = [FlowDirection::Callers, FlowDirection::Callees];
 
+fn filter_help(kind: FilterKind, label: &str) -> &str {
+    match kind {
+        FilterKind::VirtualCalls => {
+            "Calls to declared virtual or interface methods. An override may execute at runtime."
+        }
+        _ => label,
+    }
+}
+
 pub fn filters(state: &State, k: &Kit) -> El {
     let f = &state.nav.filter;
-    let compact = state.viewport[0] < 930.0;
+    let compact = state.viewport[0] < 1150.0;
     let mut controls = row()
         .key("graph-filters")
         .absolute(8.0, 8.0)
         .padding(8.0)
+        .max_w((state.viewport[0] - 16.0).max(0.0))
+        .flex_wrap()
         .gap(8.0)
         .center_y()
         .radius(k.radius.sm)
@@ -53,6 +64,13 @@ pub fn filters(state: &State, k: &Kit) -> El {
             FilterKind::Unavailable,
         ),
         (
+            "Virtual / interface calls",
+            "Virtual calls",
+            "filter-virtual-calls",
+            f.include_virtual_calls,
+            FilterKind::VirtualCalls,
+        ),
+        (
             "Possible / uncertain targets",
             "Uncertain",
             "filter-uncertain",
@@ -73,7 +91,7 @@ pub fn filters(state: &State, k: &Kit) -> El {
                 .on_toggle(move |s: &mut State| s.toggle_filter(kind))
                 .build(k)
                 .label(label)
-                .help(label)
+                .help(filter_help(kind, label))
                 .key(key),
         );
     }
@@ -255,7 +273,7 @@ pub fn legend(k: &Kit) -> El {
         .py(6.0)
         .gap(2.0)
         .child(
-            text("Solid · direct     Amber dashes · uncertain")
+            text("Solid · direct     Amber dashes · virtual/interface or uncertain")
                 .font(k.ty.small)
                 .color(k.c.text_muted),
         )

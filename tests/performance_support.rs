@@ -30,6 +30,7 @@ fn graph() -> GraphData {
         (0, 3, "reference", "direct"),
         (3, 0, "call", "direct"),
         (4, 4, "call", "direct"),
+        (4, 0, "call", "dispatch"),
     ]
     .into_iter()
     .map(|(from, to, kind, certainty)| Edge {
@@ -55,6 +56,7 @@ fn filter(bits: u8) -> Filter {
         include_unavailable: bits & 4 != 0,
         include_uncertain: bits & 8 != 0,
         include_references: bits & 16 != 0,
+        include_virtual_calls: bits & 32 != 0,
     }
 }
 
@@ -100,7 +102,7 @@ fn summaries_preserve_all_filter_combinations_and_do_not_cross_generations() {
     let index = GraphIndex::new(data.clone()).unwrap();
     let first = index.filter_summary(&filter(0));
     assert!(Arc::ptr_eq(&first, &index.filter_summary(&filter(0))));
-    for bits in 0..32 {
+    for bits in 0..64 {
         let filter = filter(bits);
         let summary = index.filter_summary(&filter);
         assert_eq!(
@@ -133,14 +135,14 @@ fn summaries_preserve_all_filter_combinations_and_do_not_cross_generations() {
     next.edges.clear();
     let next = GraphIndex::new(Arc::new(next)).unwrap();
     assert!(
-        next.filter_summary(&filter(31))
+        next.filter_summary(&filter(63))
             .cyclic
             .iter()
             .all(|cyclic| !cyclic)
     );
     assert!(
         index
-            .filter_summary(&filter(31))
+            .filter_summary(&filter(63))
             .cyclic
             .iter()
             .all(|cyclic| *cyclic)
@@ -206,7 +208,7 @@ fn scalar_and_legacy_policy_paths_preserve_search_order_paging_and_filters() {
     let directory = tempfile::tempdir().unwrap();
     let store = SqliteStore::open(directory.path()).unwrap();
     let generation = store.publish(&graph(), &AtomicBool::new(false)).unwrap();
-    let all = filter(31);
+    let all = filter(63);
     let full = search(&store, &generation, &all, 0..10);
     assert_eq!(full.len(), 5);
     let pages: Vec<_> = (0..5)

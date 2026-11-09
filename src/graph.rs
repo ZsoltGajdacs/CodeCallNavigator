@@ -25,8 +25,14 @@ pub struct Filter {
     pub include_tests: bool,
     pub include_generated: bool,
     pub include_unavailable: bool,
+    #[serde(default = "virtual_calls_default")]
+    pub include_virtual_calls: bool,
     pub include_uncertain: bool,
     pub include_references: bool,
+}
+
+fn virtual_calls_default() -> bool {
+    true
 }
 
 impl Default for Filter {
@@ -35,6 +41,7 @@ impl Default for Filter {
             include_tests: false,
             include_generated: false,
             include_unavailable: false,
+            include_virtual_calls: true,
             include_uncertain: true,
             include_references: true,
         }
@@ -49,8 +56,12 @@ impl Filter {
     }
 
     pub fn accepts_edge(&self, edge: &Edge) -> bool {
-        (self.include_uncertain || !edge.is_uncertain())
-            && (self.include_references || !edge.is_reference())
+        let category_visible = if edge.certainty == "dispatch" {
+            self.include_virtual_calls
+        } else {
+            self.include_uncertain || !edge.is_uncertain()
+        };
+        category_visible && (self.include_references || !edge.is_reference())
     }
 }
 

@@ -122,7 +122,7 @@ fn reference_and_uncertain_edges_remain_distinct() {
         Some(vec![0, 1, 2])
     );
     let mut uncertain = sample();
-    uncertain.edges[0].certainty = "dispatch".into();
+    uncertain.edges[0].certainty = "framework-possible".into();
     let uncertain = GraphIndex::new(Arc::new(uncertain)).unwrap();
     let filter = Filter {
         include_uncertain: false,

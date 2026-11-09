@@ -96,16 +96,36 @@ fn hierarchy_expansion_partitions_members_without_losing_global_namespace_method
 }
 
 #[test]
-fn path_view_respects_uncertainty_and_reports_absence_instead_of_inventing_a_bridge() {
+fn path_view_respects_virtual_calls_and_reports_absence_instead_of_inventing_a_bridge() {
     let graph = sample();
     let mut query = request();
     query.scope = Scope::Path(0, 2);
     assert_eq!(project(&graph, &query).nodes.len(), 3);
     query.filter.include_uncertain = false;
+    assert_eq!(project(&graph, &query).nodes.len(), 3);
+    query.filter.include_virtual_calls = false;
     let hidden = project(&graph, &query);
     assert!(hidden.nodes.is_empty());
     assert!(hidden.message.starts_with("No directed path"));
     assert_eq!(hidden.hidden_edges, 1);
+}
+
+#[test]
+fn virtual_calls_filter_updates_grouped_counts_and_focused_neighborhoods() {
+    let graph = sample();
+    let mut query = request();
+    query.filter.include_uncertain = false;
+    assert_eq!(project(&graph, &query).collapsed_edges, 2);
+    query.filter.include_virtual_calls = false;
+    let hidden = project(&graph, &query);
+    assert_eq!((hidden.collapsed_edges, hidden.hidden_edges), (1, 1));
+    query.grouping = Grouping::Method;
+    query.scope = Scope::Focus(0);
+    assert_eq!(project(&graph, &query).nodes.len(), 2);
+    query.filter.include_virtual_calls = true;
+    let visible = project(&graph, &query);
+    assert_eq!((visible.nodes.len(), visible.edges.len()), (3, 2));
+    assert_eq!(visible.edges[1].certainty, "dispatch");
 }
 
 #[test]

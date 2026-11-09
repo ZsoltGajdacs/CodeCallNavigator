@@ -3,6 +3,13 @@ use crate::app::{RESULT_PAGE_SIZE, State};
 use rune::{El, col, row, text};
 use rune_kit::{Button, ButtonVariant, Kit, List, ListItem};
 
+fn certainty_label(certainty: &str) -> &str {
+    match certainty {
+        "dispatch" => "Virtual / interface call",
+        other => other,
+    }
+}
+
 pub fn list(state: &State, k: &Kit) -> El {
     let mut rows = List::new()
         .active(None)
@@ -24,7 +31,10 @@ pub fn list(state: &State, k: &Kit) -> El {
             };
             let label = format!(
                 "{} · {} ×{} · {}",
-                edge.kind, edge.certainty, edge.count, graph.data.nodes[other as usize].label
+                edge.kind,
+                certainty_label(&edge.certainty),
+                edge.count,
+                graph.data.nodes[other as usize].label
             );
             rows = rows.item(
                 ListItem::new(label)
@@ -63,7 +73,7 @@ pub fn selected(state: &State, k: &Kit) -> El {
         format!("From: {}", from.signature),
         format!("To: {}", to.signature),
         format!("Kind: {}", edge.kind),
-        format!("Certainty: {}", edge.certainty),
+        format!("Certainty: {}", certainty_label(&edge.certainty)),
         format!("Provenance: {}", edge.provenance),
         format!("Occurrences: {}", edge.count),
         format!("Build: {}", from.build),

@@ -31,6 +31,7 @@ pub enum FilterKind {
     Tests,
     Generated,
     Unavailable,
+    VirtualCalls,
     Uncertain,
     References,
 }
@@ -212,6 +213,7 @@ impl State {
             FilterKind::Tests => &mut filter.include_tests,
             FilterKind::Generated => &mut filter.include_generated,
             FilterKind::Unavailable => &mut filter.include_unavailable,
+            FilterKind::VirtualCalls => &mut filter.include_virtual_calls,
             FilterKind::Uncertain => &mut filter.include_uncertain,
             FilterKind::References => &mut filter.include_references,
         };

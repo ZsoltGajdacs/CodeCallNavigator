@@ -78,7 +78,10 @@ source files remain available through the generated-code filter. A project with
 only excluded symbols produces a valid empty graph.
 
 Production code is the default. Test, generated and body-unavailable filters are
-explicit, with hidden/omitted counts. Gold dashed edges mean possible/uncertain
+explicit, with hidden/omitted counts. Virtual / interface calls have their own
+filter, enabled by default even for older saved views, independently of other
+uncertain targets. These calls identify a declared method; an override may execute
+at runtime. Gold dashed edges mean virtual/interface calls or other uncertain
 targets; purple dashed edges mean callbacks/references. Amber outlines mark cycles.
 A canvas is capped at 1,500 nodes and 6,000 edges; full search, refocusing and
 paged neighborhoods keep the remaining indexed methods reachable.
