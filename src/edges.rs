@@ -1,6 +1,6 @@
 //! Paint Graphviz's reported geometry through Rune; no layout or call inference.
 use crate::theme;
-use crate::{app::State, camera::Emphasis, projection::ViewEdge};
+use crate::{app::State, projection::ViewEdge};
 use rune::{Color, LineCap, Shape};
 use rune_kit::Kit;
 
@@ -11,7 +11,7 @@ struct Style {
     dashed: bool,
 }
 
-pub fn render(state: &State, emphasis: &Emphasis, k: &Kit) -> Shape {
+pub fn render(state: &State, k: &Kit) -> Shape {
     let mut shape = Shape::new();
     for edge in &state.graph_view.edges {
         let points: Vec<_> = edge
@@ -22,10 +22,7 @@ pub fn render(state: &State, emphasis: &Emphasis, k: &Kit) -> Shape {
         if !visible(&points, state.viewport) {
             continue;
         }
-        let mut edge_style = style(edge, k);
-        if emphasis.edge_dimmed(edge) {
-            edge_style.color = edge_style.color.alpha(0.3);
-        }
+        let edge_style = style(edge, k);
         shape = stroke(shape, &points, edge_style);
     }
     shape

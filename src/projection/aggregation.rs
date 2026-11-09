@@ -1,7 +1,7 @@
 //! Aggregate analyzed relationships, order them, then select a bounded page.
 use super::{
-    EDGE_LIMIT, GraphView, Grouping, NODE_LIMIT, NodeOrder, Request, Scope, Selection, SourcePath,
-    ViewEdge, ViewNode,
+    EDGE_LIMIT, FocusTarget, GraphView, GroupKind, Grouping, MethodRow, NODE_LIMIT, NodeOrder,
+    Request, Scope, Selection, SourcePath, ViewEdge, ViewNode,
 };
 use super::{
     groups::{groups, relative_file},
@@ -58,21 +58,12 @@ fn aggregate_nodes(graph: &GraphIndex, request: &Request, selection: &Selection)
         node.application_start = node.member.is_some() && starts.contains(&node.key);
         members.insert(index, node.key.clone());
         let representative = representatives.entry(node.key.clone()).or_insert(node);
-        if representative.group_kind.is_some() && !graph.data.nodes[index as usize].file.is_empty()
-        {
-            let source = &graph.data.nodes[index as usize];
-            representative.files.push(SourcePath {
-                label: relative_file(source).to_string_lossy().into_owned(),
-                path: source.file.clone(),
-                language: source.language.clone(),
-            });
-        }
+        add_member_metadata(representative, &graph.data.nodes[index as usize], index);
         representative.count += 1;
         representative.cyclic |= summary.cyclic[index as usize];
     }
     for node in representatives.values_mut() {
-        node.files.sort();
-        node.files.dedup_by(|a, b| a.path == b.path);
+        finish_metadata(node);
     }
     let indices: HashMap<_, _> = representatives
         .keys()
@@ -88,6 +79,40 @@ fn aggregate_nodes(graph: &GraphIndex, request: &Request, selection: &Selection)
             .map(|(member, key)| (member, indices[&key]))
             .collect(),
     }
+}
+
+fn add_member_metadata(representative: &mut ViewNode, source: &Node, index: u32) {
+    if representative.group_kind.is_some() && !source.file.is_empty() {
+        representative.files.push(SourcePath {
+            label: relative_file(source).to_string_lossy().into_owned(),
+            path: source.file.clone(),
+            language: source.language.clone(),
+        });
+    }
+    if representative.group_kind == Some(GroupKind::Class) {
+        let label = if source.signature.is_empty() {
+            &source.label
+        } else {
+            &source.signature
+        };
+        representative.methods.push(MethodRow {
+            member: index,
+            id: source.id.clone(),
+            label: label.clone(),
+        });
+    }
+}
+
+fn finish_metadata(node: &mut ViewNode) {
+    node.methods
+        .sort_by(|a, b| (&a.label, &a.id).cmp(&(&b.label, &b.id)));
+    let rows = node.methods.len().min(12) as f32;
+    node.size = [
+        237.6,
+        61.2 + if rows > 0.0 { 24.0 * rows + 8.0 } else { 0.0 },
+    ];
+    node.files.sort();
+    node.files.dedup_by(|a, b| a.path == b.path);
 }
 
 fn aggregate_edges(graph: &GraphIndex, selection: &Selection, aggregates: &mut Aggregates) {
@@ -142,7 +167,7 @@ pub(super) fn project_page(
         selection.direction,
     );
     let ordered = layers::order(&aggregates.nodes, ordered, request);
-    let mut view = page(aggregates, ordered, request.page);
+    let mut view = page(aggregates, ordered, request.page, &[]);
     view.layer_bands = layers::bands(request);
     let summary = graph.filter_summary(&request.filter);
     (view.hidden_nodes, view.hidden_edges) = (summary.hidden_nodes, summary.hidden_edges);
@@ -152,13 +177,84 @@ pub(super) fn project_page(
     view
 }
 
-fn page(aggregates: Aggregates, ordered: Vec<(usize, NodeOrder)>, page: usize) -> GraphView {
-    let pages = ordered.len().div_ceil(NODE_LIMIT).max(1);
-    let selected: Vec<_> = ordered
-        .into_iter()
-        .skip(page.min(pages - 1) * NODE_LIMIT)
-        .take(NODE_LIMIT)
+pub(super) fn focused(graph: &GraphIndex, request: &Request, target: &FocusTarget) -> GraphView {
+    let mut all_request = request.clone();
+    all_request.scope = Scope::Overview;
+    all_request.focus_target = None;
+    let mut selection = super::selection::all(graph, &all_request);
+    layers::select(graph, &all_request, &mut selection);
+    let method_view = matches!(
+        target,
+        FocusTarget::Method(_) | FocusTarget::ClassMethods(_)
+    );
+    if method_view {
+        all_request.grouping = Grouping::Method;
+    }
+    let mut aggregates = aggregate_nodes(graph, &all_request, &selection);
+    aggregate_edges(graph, &selection, &mut aggregates);
+    let mut roots: Vec<_> = selection
+        .nodes
+        .iter()
+        .filter(|&&index| target_contains(graph, index, request, target))
+        .filter_map(|index| aggregates.members.get(index).copied())
         .collect();
+    roots.sort_unstable();
+    roots.dedup();
+    if roots.is_empty() {
+        let mut fallback = request.clone();
+        fallback.focus_target = None;
+        fallback.scope = Scope::Overview;
+        return super::project(graph, &fallback);
+    }
+    let focus_keys = roots
+        .iter()
+        .map(|&i| aggregates.nodes[i].key.clone())
+        .collect();
+    let ordered = if matches!(target, FocusTarget::ClassMethods(_)) {
+        super::focus::class_methods(&aggregates.nodes, &aggregates.edges, &roots, request.depth)
+    } else {
+        super::focus::traversal(&aggregates.nodes, &aggregates.edges, &roots, request.depth)
+    };
+    let visible: HashSet<_> = ordered.iter().map(|(node, _)| *node).collect();
+    aggregates
+        .edges
+        .retain(|edge| visible.contains(&edge.from) && visible.contains(&edge.to));
+    aggregates.collapsed_edges = visible
+        .iter()
+        .map(|&index| aggregates.nodes[index].internal_edges)
+        .sum();
+    let mut view = page(aggregates, ordered, request.page, &roots);
+    view.focus_keys = focus_keys;
+    view.focus_valid = true;
+    view.message = format!("Callers above · Callees below · depth {}", request.depth);
+    let summary = graph.filter_summary(&request.filter);
+    (view.hidden_nodes, view.hidden_edges) = (summary.hidden_nodes, summary.hidden_edges);
+    view
+}
+
+fn target_contains(
+    graph: &GraphIndex,
+    index: u32,
+    request: &Request,
+    target: &FocusTarget,
+) -> bool {
+    let node = &graph.data.nodes[index as usize];
+    match target {
+        FocusTarget::Method(id) => &node.id == id,
+        FocusTarget::Group(key) | FocusTarget::ClassMethods(key) => {
+            groups(node, request).iter().any(|(id, _, _)| id == key)
+        }
+    }
+}
+
+fn page(
+    aggregates: Aggregates,
+    ordered: Vec<(usize, NodeOrder)>,
+    page: usize,
+    roots: &[usize],
+) -> GraphView {
+    let total_nodes = ordered.len();
+    let (selected, pages) = select_page(&ordered, page, roots);
     let positions: HashMap<_, _> = selected
         .iter()
         .enumerate()
@@ -189,13 +285,54 @@ fn page(aggregates: Aggregates, ordered: Vec<(usize, NodeOrder)>, page: usize) -
     GraphView {
         nodes,
         ordering,
-        omitted_nodes: aggregates.nodes.len().saturating_sub(positions.len()),
+        omitted_nodes: total_nodes.saturating_sub(positions.len()),
         omitted_edges: total_edges.saturating_sub(edges.len()),
         edges,
         collapsed_edges: aggregates.collapsed_edges,
         pages,
         ..Default::default()
     }
+}
+
+fn select_page(
+    ordered: &[(usize, NodeOrder)],
+    page: usize,
+    roots: &[usize],
+) -> (Vec<(usize, NodeOrder)>, usize) {
+    let pinned: HashSet<_> = roots.iter().copied().take(NODE_LIMIT - 1).collect();
+    let capacity = NODE_LIMIT - pinned.len();
+    let pages = ordered
+        .len()
+        .saturating_sub(pinned.len())
+        .div_ceil(capacity)
+        .max(1);
+    let mut selected: Vec<_> = ordered
+        .iter()
+        .filter(|(node, _)| pinned.contains(node))
+        .cloned()
+        .collect();
+    let roots: HashSet<_> = roots.iter().copied().collect();
+    let mut remaining: Vec<_> = ordered
+        .iter()
+        .filter(|(node, _)| !pinned.contains(node))
+        .collect();
+    // All selected class methods take precedence over external context, including
+    // the final method when a class exactly fills the canvas node budget.
+    remaining.sort_by_key(|(node, _)| !roots.contains(node));
+    selected.extend(
+        remaining
+            .into_iter()
+            .skip(page.min(pages - 1) * capacity)
+            .take(capacity)
+            .cloned(),
+    );
+    let sequence: HashMap<_, _> = ordered
+        .iter()
+        .enumerate()
+        .map(|(i, (node, _))| (*node, i))
+        .collect();
+    selected.sort_by_key(|(node, _)| sequence[node]);
+    (selected, pages)
 }
 
 #[cfg(test)]
@@ -234,6 +371,7 @@ mod file_tests {
         }))
         .unwrap();
         let mut request = Request {
+            focus_target: None,
             grouping: Grouping::Folder,
             expanded: HashSet::new(),
             scope: Scope::Overview,
@@ -284,6 +422,7 @@ mod file_tests {
         }))
         .unwrap();
         let request = Request {
+            focus_target: None,
             grouping: Grouping::Namespace,
             expanded: HashSet::new(),
             scope: Scope::Overview,

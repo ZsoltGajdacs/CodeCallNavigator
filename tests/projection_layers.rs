@@ -10,6 +10,7 @@ use std::{collections::HashSet, path::Path, sync::Arc};
 
 fn request() -> Request {
     Request {
+        focus_target: None,
         grouping: Grouping::Layer,
         expanded: HashSet::new(),
         scope: Scope::Overview,
@@ -137,7 +138,7 @@ fn layer_expansion_and_graphviz_bands_preserve_reverse_relationships_and_cycles(
 }
 
 #[test]
-fn layer_tabs_report_cross_tab_relationships_and_do_not_restrict_focused_methods() {
+fn layer_tabs_restrict_focused_methods_and_report_cross_tab_relationships() {
     let (graph, assignments) = architecture_graph();
     let mut assignments = (*assignments).clone();
     assignments.layers[2].tab = Some("Database".into());
@@ -165,10 +166,15 @@ fn layer_tabs_report_cross_tab_relationships_and_do_not_restrict_focused_methods
         (1, 0, 3)
     );
     assert_eq!(database.nodes[0].label, "Entity");
-    query.scope = Scope::Focus(1);
+    query.scope = Scope::Focus(2);
     let focused = project(&graph, &query);
-    assert_eq!((focused.nodes.len(), focused.edges.len()), (3, 3));
+    assert_eq!((focused.nodes.len(), focused.edges.len()), (1, 0));
+    assert!(focused.focus_valid);
     assert!(focused.layer_bands.is_empty());
+    query.scope = Scope::Focus(1);
+    let removed = project(&graph, &query);
+    assert!(!removed.focus_valid);
+    assert_eq!(removed.nodes[0].label, "Entity");
 }
 
 #[test]

@@ -170,7 +170,7 @@ fn apply_result(state: &mut State, output: Output) -> bool {
                 state.architecture_workspace.signature = output.signature;
                 state.architecture = assignments.map(Arc::new);
                 retain_tab(state);
-                state.auto_fit = true;
+                state.auto_fit = !state.has_graph_focus();
                 state.changed();
             }
         }

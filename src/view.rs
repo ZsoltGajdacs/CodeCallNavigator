@@ -1,10 +1,11 @@
 //! Graph Studio shell. Content and application actions live in focused modules.
 mod drawer;
+mod graph_canvas;
 mod graph_controls;
 
 use crate::{
     app::State,
-    camera, icons, inspector,
+    icons, inspector,
     presentation::{self, Drawer},
     theme,
 };
@@ -102,7 +103,7 @@ fn graph_with_filters(state: &State, cx: &mut Cx<State>, k: &Kit) -> El {
         .grow(1.0)
         .min_w(0.0)
         .min_h(0.0)
-        .child(camera::graph_canvas(state, cx, k))
+        .child(graph_canvas::graph_canvas(state, cx, k))
         .child(graph_controls::filters(state, k))
 }
 

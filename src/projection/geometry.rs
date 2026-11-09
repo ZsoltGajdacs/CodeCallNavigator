@@ -9,6 +9,13 @@ fn dot_input(view: &GraphView) -> String {
     let mut source = String::from(
         "digraph G { graph [rankdir=TB,nodesep=0.35,ranksep=0.8]; node [label=\"\",shape=box,fixedsize=true,width=3.3,height=0.85];\n",
     );
+    for (index, node) in view.nodes.iter().enumerate() {
+        source.push_str(&format!(
+            "n{index} [width={},height={}];\n",
+            node.size[0].max(237.6) / 72.0,
+            node.size[1].max(61.2) / 72.0
+        ));
+    }
     if view.layer_bands.is_empty() {
         traversal_constraints(view, &mut source);
     } else {
@@ -25,14 +32,17 @@ fn dot_input(view: &GraphView) -> String {
 }
 
 fn traversal_constraints(view: &GraphView, source: &mut String) {
-    let mut ranks: BTreeMap<usize, Vec<usize>> = BTreeMap::new();
+    let mut ranks: BTreeMap<i32, Vec<usize>> = BTreeMap::new();
     for (index, order) in view.ordering.iter().enumerate() {
         source.push_str(&format!("n{index};\n"));
         ranks.entry(order.rank).or_default().push(index);
         if let Some(parent) = order.parent {
-            source.push_str(&format!(
-                "n{parent} -> n{index} [style=invis,weight=100];\n"
-            ));
+            let (above, below) = if view.ordering[parent].rank < order.rank {
+                (parent, index)
+            } else {
+                (index, parent)
+            };
+            source.push_str(&format!("n{above} -> n{below} [style=invis,weight=100];\n"));
         }
     }
     // Explicit same-rank order keeps each parent's children adjacent even when
@@ -98,7 +108,7 @@ pub fn layout(mut view: GraphView, dot: &Path) -> Result<GraphView> {
         if position.len() != 2 {
             bail!("Invalid node position")
         }
-        node.size = [237.6, 61.2];
+        node.size = [node.size[0].max(237.6), node.size[1].max(61.2)];
         node.position = [
             position[0] - node.size[0] / 2.0 + 16.0,
             bounds[3] - position[1] - node.size[1] / 2.0 + 16.0,

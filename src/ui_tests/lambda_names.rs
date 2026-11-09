@@ -71,7 +71,9 @@ fn friendly_lambda_name_is_drawn_and_searchable_by_either_name() {
 #[test]
 fn neighbors_and_relationships_use_friendly_names_and_inspector_keeps_signature() {
     let mut runtime = runtime();
-    runtime.update(|state, _| state.select(1, false));
+    runtime.update(|state, _| {
+        state.select_method(1, crate::graph_interaction::SelectionAction::Inspect)
+    });
     settle(&mut runtime);
     assert!(
         has_option(&runtime, NAME),
@@ -86,7 +88,9 @@ fn neighbors_and_relationships_use_friendly_names_and_inspector_keeps_signature(
         }),
         "Relationship list must show the source name"
     );
-    runtime.update(|state, _| state.select(2, false));
+    runtime.update(|state, _| {
+        state.select_method(2, crate::graph_interaction::SelectionAction::Inspect)
+    });
     settle(&mut runtime);
     assert!(
         runtime
@@ -106,7 +110,7 @@ fn neighbors_and_relationships_use_friendly_names_and_inspector_keeps_signature(
 fn virtual_call_details_explain_the_declared_target_without_reclassifying_it() {
     let mut runtime = runtime();
     runtime.update(|state, _| {
-        state.select(1, false);
+        state.select_method(1, crate::graph_interaction::SelectionAction::Inspect);
         let edge = state
             .graph
             .as_ref()

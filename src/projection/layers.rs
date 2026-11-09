@@ -119,7 +119,7 @@ pub(super) fn order(
             .as_ref()
             .and_then(|layer| ranks.get(layer))
             .copied()
-            .unwrap_or(ranks.len());
+            .unwrap_or(ranks.len()) as i32;
         order.parent = None;
     }
     ordered

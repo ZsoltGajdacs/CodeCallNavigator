@@ -11,6 +11,7 @@ use std::{collections::HashSet, path::Path, sync::Arc};
 
 fn request() -> Request {
     Request {
+        focus_target: None,
         grouping: Grouping::Folder,
         expanded: HashSet::new(),
         scope: Scope::Overview,
@@ -214,7 +215,7 @@ fn method_overview_falls_back_to_uncalled_methods_in_legacy_graphs() {
 }
 
 #[test]
-fn callers_read_downward_but_real_call_arrows_point_upward() {
+fn focused_callers_appear_above_with_real_call_arrows_pointing_downward() {
     let graph = sample();
     let mut query = request();
     query.scope = Scope::Focus(2);
@@ -228,10 +229,10 @@ fn callers_read_downward_but_real_call_arrows_point_upward() {
             .unwrap()
             .position[1]
     };
-    assert!(y(2) < y(1));
-    assert!(y(1) < y(0));
+    assert!(y(0) < y(1));
+    assert!(y(1) < y(2));
     for edge in &view.edges {
-        assert!(edge.points[0][1] > edge.points.last().unwrap()[1]);
+        assert!(edge.points[0][1] < edge.points.last().unwrap()[1]);
     }
 }
 
@@ -367,7 +368,10 @@ fn method_entry_filters_depth_and_manual_focus_are_independent() {
     query.filter.include_tests = true;
     assert_eq!(project(&graph, &query).nodes.len(), 5);
     query.scope = Scope::Focus(5);
-    assert_eq!(project(&graph, &query).nodes[0].key, "B1");
+    let focused = project(&graph, &query);
+    assert_eq!(focused.focus_keys, ["B1"]);
+    assert_eq!(focused.nodes[0].key, "B");
+    assert_eq!(focused.ordering[0].rank, -1);
 }
 
 #[test]
@@ -497,6 +501,7 @@ fn framework_entry_is_a_method_root_without_verified_start_highlighting() {
     });
     let graph = GraphIndex::new(Arc::new(data)).unwrap();
     let request = Request {
+        focus_target: None,
         grouping: Grouping::Method,
         ..request()
     };

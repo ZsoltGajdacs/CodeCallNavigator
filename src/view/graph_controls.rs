@@ -33,11 +33,11 @@ fn filter_help(kind: FilterKind, label: &str) -> &str {
 }
 
 pub fn filters(state: &State, k: &Kit) -> El {
-    let f = &state.nav.filter;
     let compact = state.viewport[0] < 1150.0;
     let mut controls = row()
         .key("graph-filters")
         .absolute(8.0, 8.0)
+        .on_layout(|state: &mut State, rect| state.graph_overlay_height = rect[3] + 16.0)
         .padding(8.0)
         .max_w((state.viewport[0] - 16.0).max(0.0))
         .flex_wrap()
@@ -45,7 +45,25 @@ pub fn filters(state: &State, k: &Kit) -> El {
         .center_y()
         .radius(k.radius.sm)
         .fill(k.c.bg_base);
-    for (label, short, key, checked, kind) in [
+    for (label, short, key, checked, kind) in filter_items(state) {
+        controls = controls.child(
+            Checkbox::new(checked)
+                .label(if compact { short } else { label })
+                .on_toggle(move |s: &mut State| s.toggle_filter(kind))
+                .build(k)
+                .label(label)
+                .help(filter_help(kind, label))
+                .key(key),
+        );
+    }
+    controls
+}
+
+type FilterItem = (&'static str, &'static str, &'static str, bool, FilterKind);
+
+fn filter_items(state: &State) -> [FilterItem; 6] {
+    let f = &state.nav.filter;
+    [
         (
             "Test code",
             "Tests",
@@ -88,18 +106,7 @@ pub fn filters(state: &State, k: &Kit) -> El {
             f.include_references,
             FilterKind::References,
         ),
-    ] {
-        controls = controls.child(
-            Checkbox::new(checked)
-                .label(if compact { short } else { label })
-                .on_toggle(move |s: &mut State| s.toggle_filter(kind))
-                .build(k)
-                .label(label)
-                .help(filter_help(kind, label))
-                .key(key),
-        );
-    }
-    controls
+    ]
 }
 
 pub fn toolbar(state: &State, k: &Kit) -> El {
@@ -184,15 +191,7 @@ fn navigation_controls(state: &State, k: &Kit) -> El {
 }
 
 pub fn footer(state: &State, k: &Kit, layer: &mut Vec<El>) -> El {
-    let direction = SegmentedControl::new(
-        &["Callers", "Callees"],
-        DIRECTIONS.iter().position(|d| *d == state.nav.direction),
-    )
-    .label("Relationship direction")
-    .width(Some(166.0))
-    .on_pick(|s: &mut State, i, _| s.set_direction(DIRECTIONS[i]))
-    .build(k)
-    .key("direction");
+    let direction = direction_control(state, k);
     let depth = state.nav.depth.to_string();
     let values = (1..=64).map(|v| v.to_string()).collect::<Vec<_>>();
     let depth_select = Select::new("depth", &values)
@@ -248,6 +247,24 @@ pub fn footer(state: &State, k: &Kit, layer: &mut Vec<El>) -> El {
             .child(el().grow(1.0))
             .child(zoom)
     }
+}
+
+fn direction_control(state: &State, k: &Kit) -> El {
+    if state.has_graph_focus() && !state.nav.show_path {
+        return text("Callers above · Callees below")
+            .key("direction")
+            .font(k.ty.small)
+            .color(k.c.text_muted);
+    }
+    SegmentedControl::new(
+        &["Callers", "Callees"],
+        DIRECTIONS.iter().position(|d| *d == state.nav.direction),
+    )
+    .label("Relationship direction")
+    .width(Some(166.0))
+    .on_pick(|s: &mut State, i, _| s.set_direction(DIRECTIONS[i]))
+    .build(k)
+    .key("direction")
 }
 
 fn zoom(state: &State, k: &Kit) -> El {

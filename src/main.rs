@@ -7,6 +7,8 @@ mod edges;
 mod flow_scenes;
 mod flow_view;
 mod flow_workspace;
+mod graph_interaction;
+mod graph_layout;
 mod icons;
 mod inspector;
 mod jobs;
@@ -22,6 +24,7 @@ mod source;
 mod source_popup;
 mod source_view;
 mod theme;
+mod traversal_scenes;
 #[cfg(test)]
 mod ui_tests;
 mod view;
@@ -39,6 +42,8 @@ fn main() {
         min_size: Some((1050.0, 680.0)),
         scenes: &[
             ("fixture", scenes::install),
+            ("class-tree", traversal_scenes::classes),
+            ("method-tree", traversal_scenes::methods),
             ("function-flow", flow_scenes::install),
             ("source-preview", source_popup::scenes::source),
             ("source-files", source_popup::scenes::files),

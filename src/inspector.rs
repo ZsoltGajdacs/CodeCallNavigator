@@ -39,7 +39,7 @@ fn selection(state: &State, k: &Kit) -> El {
         .and_then(|id| state.graph.as_ref()?.data.nodes.get(id as usize))
     else {
         return detail(
-            "Select a method to inspect its callers, callees and provenance. Double-click a group to expand it; double-click a method to focus its neighborhood.",
+            "Click an element to center its caller/callee tree. Double-click groups to reach classes, then click a method row or double-click the class header to explore methods.",
             k,
         );
     };
@@ -134,7 +134,10 @@ fn method_summary(node: &codegraph::model::Node, k: &Kit) -> El {
                 .variant(ButtonVariant::Outline)
                 .on_press(|state: &mut State| {
                     if let Some(selected) = state.selected() {
-                        state.select(selected, true);
+                        state.select_method(
+                            selected,
+                            crate::graph_interaction::SelectionAction::Focus,
+                        );
                     }
                 })
                 .build(k)
@@ -301,7 +304,9 @@ fn neighbor_list(state: &State, incoming: bool, ids: &[u32], k: &Kit) -> El {
             rows = rows.item(
                 ListItem::new(graph.data.nodes[id as usize].label.clone())
                     .selected(state.selected() == Some(id))
-                    .on_select(move |state: &mut State, _| state.select(id, true)),
+                    .on_select(move |state: &mut State, _| {
+                        state.select_method(id, crate::graph_interaction::SelectionAction::Focus)
+                    }),
             );
         }
     }

@@ -8,29 +8,7 @@ pub(super) fn resolve(graph: &GraphIndex, request: &Request) -> Selection {
         Scope::Path(from, to) => path(graph, from, to, &request.filter),
         Scope::Focus(node) => neighborhood(graph, request, vec![node], "Focused neighborhood"),
         Scope::Overview if request.grouping == Grouping::Method => methods(graph, request),
-        Scope::Overview => Selection {
-            nodes: graph
-                .data
-                .nodes
-                .iter()
-                .enumerate()
-                .filter(|(_, n)| request.filter.accepts_node(n))
-                .map(|(i, _)| i as u32)
-                .collect(),
-            edges: graph
-                .data
-                .edges
-                .iter()
-                .enumerate()
-                .filter(|(_, e)| request.filter.accepts_edge(e))
-                .map(|(i, _)| i as u32)
-                .collect(),
-            roots: Vec::new(),
-            direction: request.direction,
-            message: "Whole workspace · expand groups to explore methods".into(),
-            omitted_nodes: 0,
-            omitted_edges: 0,
-        },
+        Scope::Overview => all(graph, request),
     }
 }
 
@@ -145,6 +123,32 @@ fn path(graph: &GraphIndex, from: u32, to: u32, filter: &Filter) -> Selection {
         roots: vec![from],
         direction: FlowDirection::Callees,
         message,
+        omitted_nodes: 0,
+        omitted_edges: 0,
+    }
+}
+
+pub(super) fn all(graph: &GraphIndex, request: &Request) -> Selection {
+    Selection {
+        nodes: graph
+            .data
+            .nodes
+            .iter()
+            .enumerate()
+            .filter(|(_, n)| request.filter.accepts_node(n))
+            .map(|(i, _)| i as u32)
+            .collect(),
+        edges: graph
+            .data
+            .edges
+            .iter()
+            .enumerate()
+            .filter(|(_, e)| request.filter.accepts_edge(e))
+            .map(|(i, _)| i as u32)
+            .collect(),
+        roots: Vec::new(),
+        direction: request.direction,
+        message: "Whole workspace · expand groups to explore methods".into(),
         omitted_nodes: 0,
         omitted_edges: 0,
     }

@@ -1,7 +1,7 @@
 use super::{Contents, Hover, Preview};
 use crate::{
     app::State,
-    projection::{Grouping, ViewNode},
+    projection::{GroupKind, Grouping, ViewNode},
     source,
 };
 use rune::{Drag, Phase, Tx};
@@ -13,7 +13,7 @@ pub struct SourceOutput {
 }
 
 fn eligible(node: &ViewNode, grouping: Grouping) -> bool {
-    if node.member.is_some() {
+    if node.member.is_some() || node.group_kind == Some(GroupKind::Class) {
         return true;
     }
     node.group_kind.is_some()

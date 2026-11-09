@@ -54,19 +54,31 @@ labeled framework entries separately from verified executable starts. Framework 
 as uncalled candidates without application-start highlighting. Cached graphs from
 an older method policy require a refresh before they can be opened.
 
-Click an element to center it and highlight its direct connections; double-click a
-group to expand it or a method to focus its neighborhood. Overview restores the
-entry roots in Method view. Search covers the entire index with pagination,
-including currently filtered symbols. Choose Callees to read from the focus down
-to its callees, or Callers to read from the focus down to its callers. All views
-use top-down branch grouping; arrows always retain caller-to-callee direction,
-so arrows point upward in Callers view. Shared methods appear once with cross-links,
-and cycles remain visible. Depth bounds the neighborhood; entry-rooted Callers
-views can contain only their roots. Shortest paths retain execution order.
-Explore depth, shortest directed paths and history. Drag to pan, scroll or pinch to
-zoom, or use Fit and zoom buttons. Cmd-O opens the folder chooser; Cmd-F focuses
-search. The inspector shows signatures, project ownership, locations, relationship
-certainty and analyzer provenance. Source previews and function flowcharts open separately.
+Click an element to center its call tree: callers appear above, callees below,
+and unrelated elements are omitted. Depth applies independently to both sides;
+click a neighbor to continue walking the tree. A single-click waits for the system
+double-click interval before moving the graph, so the second click can land reliably.
+Double-click a group to drill through its hierarchy to classes. Each class box
+lists its filtered methods, with up to 12 rows visible and independent scrolling
+for longer lists. Click a method row to enter that method's tree, or double-click
+the class header to see its methods as individual nodes with external call context.
+Double-clicking a method keeps the call-tree view; use the inspector's explicit
+function-flowchart action to inspect its internal execution.
+
+Overview restores the active grouping overview, including entry roots in Method
+view. Search covers the entire index with pagination, including currently filtered
+symbols. Overview's Callers/Callees controls choose its top-down traversal; focused
+trees always show both sides. Arrows retain caller-to-callee direction. Shared
+methods appear once with cross-links, and cycles remain visible. A node reachable
+on both sides appears on the nearer side, with ties above the focus. Shortest paths
+retain execution order. Back/Forward restores exploration context and camera.
+
+Drag to pan, scroll or pinch to zoom, or use Fit and zoom buttons. Scrolling inside
+a class method list scrolls that list. Focus changes preserve zoom and center the
+selected element; Fit frames the visible graph. Cmd-O opens the folder chooser;
+Cmd-F focuses search. The inspector shows signatures, project ownership, locations,
+relationship certainty and analyzer provenance. Source previews and function
+flowcharts open separately.
 
 Graphs retain source-declared methods and authored functions, callbacks, accessors,
 and top-level execution at every visibility level. Constructors, initializer
