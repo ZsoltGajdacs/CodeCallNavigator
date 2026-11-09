@@ -162,6 +162,11 @@ fn minimum_window_keeps_graph_controls_visible_without_toolbar_scrolling() {
         runtime.update(|s, _| s.graph_view.pages = 3);
         settle(&mut runtime);
         for key in [
+            "filter-tests",
+            "filter-generated",
+            "filter-unavailable",
+            "filter-uncertain",
+            "filter-references",
             "overview",
             "collapse-all",
             "grouping",
@@ -192,10 +197,6 @@ fn activity_rail_switches_and_collapses_drawers_without_navigating_the_graph() {
     click(&mut runtime, "drawer-search");
     settle(&mut runtime);
     assert!(!runtime.state.ui.sidebar.is_open());
-    click(&mut runtime, "drawer-filters");
-    settle(&mut runtime);
-    assert!(runtime.state.ui.sidebar.is_open());
-    assert_eq!(runtime.state.ui.drawer, Drawer::Filters);
     assert!(runtime.find("filter-tests").is_some());
     assert_eq!(serde_json::to_value(&runtime.state.nav).unwrap(), nav);
     assert_eq!(runtime.state.revision, revision);
@@ -235,8 +236,6 @@ fn command_f_reopens_search_and_focuses_the_actual_editor() {
 #[test]
 fn kit_checkbox_changes_graph_filter_and_inspector_disclosure_hides_only_its_section() {
     let mut runtime = runtime();
-    click(&mut runtime, "drawer-filters");
-    settle(&mut runtime);
     assert!(!runtime.state.nav.filter.include_tests);
     click(&mut runtime, "filter-tests");
     assert!(runtime.state.nav.filter.include_tests);
@@ -251,6 +250,109 @@ fn kit_checkbox_changes_graph_filter_and_inspector_disclosure_hides_only_its_sec
     click(&mut runtime, "path-section/trigger");
     settle(&mut runtime);
     assert!(runtime.find("path-from").is_some());
+}
+
+#[test]
+fn overlay_filters_toggle_without_moving_camera() {
+    let mut runtime = narrow_runtime(true);
+    let before = runtime.state.nav.filter.clone();
+    let pan = runtime.state.nav.camera.pan;
+    let zoom = runtime.state.nav.camera.zoom;
+    for key in [
+        "filter-tests",
+        "filter-generated",
+        "filter-unavailable",
+        "filter-uncertain",
+        "filter-references",
+    ] {
+        click(&mut runtime, key);
+        settle(&mut runtime);
+    }
+    let after = &runtime.state.nav.filter;
+    assert_eq!(
+        [
+            after.include_tests,
+            after.include_generated,
+            after.include_unavailable,
+            after.include_uncertain,
+            after.include_references
+        ],
+        [
+            !before.include_tests,
+            !before.include_generated,
+            !before.include_unavailable,
+            !before.include_uncertain,
+            !before.include_references
+        ]
+    );
+    assert_eq!(
+        (runtime.state.nav.camera.pan, runtime.state.nav.camera.zoom),
+        (pan, zoom)
+    );
+    let saved: crate::navigation::SavedSession =
+        serde_json::from_str(&serde_json::to_string(&runtime.state.session()).unwrap()).unwrap();
+    assert_eq!(
+        serde_json::to_value(saved.navigation.filter).unwrap(),
+        serde_json::to_value(&runtime.state.nav.filter).unwrap()
+    );
+}
+
+#[test]
+fn overlay_filters_fit_one_row_and_expose_full_names_in_both_themes() {
+    for dark in [false, true] {
+        for (width, height) in [(1050.0, 680.0), (1420.0, 900.0)] {
+            let mut state = State::new();
+            scenes::install(&mut state);
+            state.ui.sidebar.set_width(400.0);
+            state.ui.inspector.set_width(420.0);
+            let mut runtime = Runtime::new(state, view::view, (width, height), Env::new(dark, 1.0));
+            runtime.poll = Some(jobs::poll);
+            settle(&mut runtime);
+            let elements = runtime.elements();
+            let canvas = elements
+                .iter()
+                .find(|e| e.key.as_deref() == Some("graph-canvas"))
+                .unwrap();
+            let mut last_right = canvas.rect[0];
+            let mut row_y = None;
+            for (key, label) in [
+                ("filter-tests", "Test code"),
+                ("filter-generated", "Generated code"),
+                ("filter-unavailable", "Unavailable bodies"),
+                ("filter-uncertain", "Possible / uncertain targets"),
+                ("filter-references", "Callbacks / references"),
+            ] {
+                let control = elements
+                    .iter()
+                    .find(|e| e.key.as_deref() == Some(key))
+                    .unwrap();
+                assert_eq!(
+                    (
+                        control.role,
+                        control.label.as_deref(),
+                        control.help.as_deref(),
+                        control.focusable
+                    ),
+                    ("checkbox", Some(label), Some(label), true),
+                    "{key} accessibility"
+                );
+                assert!(
+                    control.rect[0] >= last_right - 0.5
+                        && control.rect[0] + control.rect[2]
+                            <= canvas.rect[0] + canvas.rect[2] + 0.5
+                        && control.visible[2] >= control.rect[2] - 0.5,
+                    "{key} overlaps, exceeds the graph, or is clipped: {:?}",
+                    control.rect
+                );
+                let y = *row_y.get_or_insert(control.rect[1]);
+                assert!(
+                    (control.rect[1] - y).abs() < 0.5,
+                    "{key} is not in the same row"
+                );
+                last_right = control.rect[0] + control.rect[2];
+            }
+        }
+    }
 }
 
 #[test]

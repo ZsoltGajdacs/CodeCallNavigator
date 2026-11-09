@@ -7,7 +7,6 @@ use serde::{Deserialize, Serialize};
 #[serde(rename_all = "snake_case")]
 pub enum Drawer {
     Search,
-    Filters,
     #[default]
     #[serde(other)]
     Repository,
@@ -227,13 +226,6 @@ impl State {
         }
     }
 
-    pub fn collapse_group(&mut self, key: &str) {
-        self.checkpoint();
-        self.nav.expanded.remove(key);
-        self.auto_fit = true;
-        self.changed();
-    }
-
     pub fn zoom(&mut self, factor: f32) {
         self.pending_center = None;
         let center = [self.viewport[0] / 2.0, self.viewport[1] / 2.0];
@@ -365,6 +357,14 @@ mod tests {
         assert_eq!(restored.preferences(), state.ui.preferences());
         assert_eq!(restored.overlay, None);
         assert!(restored.section_open(Section::Analysis));
+    }
+
+    #[test]
+    fn legacy_filter_drawer_restores_repository() {
+        let prefs: Preferences = serde_json::from_str(r#"{"drawer":"filters"}"#).unwrap();
+        let mut ui = Presentation::default();
+        ui.restore(prefs);
+        assert_eq!(ui.drawer, Drawer::Repository);
     }
 
     #[test]

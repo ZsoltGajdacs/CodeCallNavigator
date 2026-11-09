@@ -8,7 +8,7 @@ use crate::{
     presentation::{self, Drawer},
     theme,
 };
-use rune::{Cx, El, Key, KeyEvent, Tx, col, row, text};
+use rune::{Cx, El, Key, KeyEvent, Tx, col, el, row, text};
 use rune_kit::{
     Button, ButtonVariant, IconButton, IconButtonVariant, Kit,
     shell::{SplitView, Toolbar},
@@ -24,7 +24,7 @@ pub fn view(state: &State, cx: &mut Cx<State>) -> El {
         .min_h(0.0)
         .child(graph_controls::toolbar(state, &k))
         .child(active_analysis(state, &k))
-        .child(camera::graph_canvas(state, cx, &k))
+        .child(graph_with_filters(state, cx, &k))
         .child(graph_controls::legend(&k))
         .child(graph_controls::footer(state, &k, &mut layer));
     let split = SplitView::new(main)
@@ -81,6 +81,15 @@ pub fn view(state: &State, cx: &mut Cx<State>) -> El {
     rune_kit::root(body, layer)
 }
 
+fn graph_with_filters(state: &State, cx: &mut Cx<State>, k: &Kit) -> El {
+    el().key("graph-canvas-wrapper")
+        .grow(1.0)
+        .min_w(0.0)
+        .min_h(0.0)
+        .child(camera::graph_canvas(state, cx, k))
+        .child(graph_controls::filters(state, k))
+}
+
 fn activity_rail(state: &State, k: &Kit) -> El {
     let width = theme::RAIL_WIDTH;
     let mut rail = col()
@@ -99,12 +108,6 @@ fn activity_rail(state: &State, k: &Kit) -> El {
             "drawer-repository",
         ),
         (Drawer::Search, k.glyph.search, "Search", "drawer-search"),
-        (
-            Drawer::Filters,
-            &icons::OUTLINE_SLIDERS,
-            "Graph filters",
-            "drawer-filters",
-        ),
     ] {
         rail = rail.child(
             IconButton::new(glyph)

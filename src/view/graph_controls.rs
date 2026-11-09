@@ -2,13 +2,13 @@
 use crate::{
     app::State,
     icons,
-    presentation::Overlay,
+    presentation::{FilterKind, Overlay},
     projection::{FlowDirection, Grouping},
     theme,
 };
 use rune::{El, col, el, row, text};
 use rune_kit::{
-    Button, ButtonVariant, IconButton, IconButtonVariant, Kit, SegmentedControl, Select,
+    Button, ButtonVariant, Checkbox, IconButton, IconButtonVariant, Kit, SegmentedControl, Select,
 };
 
 const GROUPS: [Grouping; 4] = [
@@ -18,6 +18,67 @@ const GROUPS: [Grouping; 4] = [
     Grouping::Method,
 ];
 const DIRECTIONS: [FlowDirection; 2] = [FlowDirection::Callers, FlowDirection::Callees];
+
+pub fn filters(state: &State, k: &Kit) -> El {
+    let f = &state.nav.filter;
+    let compact = state.viewport[0] < 930.0;
+    let mut controls = row()
+        .key("graph-filters")
+        .absolute(8.0, 8.0)
+        .padding(8.0)
+        .gap(8.0)
+        .center_y()
+        .radius(k.radius.sm)
+        .fill(k.c.bg_base);
+    for (label, short, key, checked, kind) in [
+        (
+            "Test code",
+            "Tests",
+            "filter-tests",
+            f.include_tests,
+            FilterKind::Tests,
+        ),
+        (
+            "Generated code",
+            "Gen",
+            "filter-generated",
+            f.include_generated,
+            FilterKind::Generated,
+        ),
+        (
+            "Unavailable bodies",
+            "No body",
+            "filter-unavailable",
+            f.include_unavailable,
+            FilterKind::Unavailable,
+        ),
+        (
+            "Possible / uncertain targets",
+            "Uncertain",
+            "filter-uncertain",
+            f.include_uncertain,
+            FilterKind::Uncertain,
+        ),
+        (
+            "Callbacks / references",
+            "Refs",
+            "filter-references",
+            f.include_references,
+            FilterKind::References,
+        ),
+    ] {
+        controls = controls.child(
+            Checkbox::new(checked)
+                .label(if compact { short } else { label })
+                .on_toggle(move |s: &mut State| s.toggle_filter(kind))
+                .build(k)
+                .label(label)
+                .help(label)
+                .key(key),
+        );
+    }
+    controls
+}
 
 pub fn toolbar(state: &State, k: &Kit) -> El {
     let navigation = row()

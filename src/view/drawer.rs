@@ -1,9 +1,5 @@
-//! Repository, paginated symbol search and graph-filter drawer content.
-use crate::{
-    app::State,
-    presentation::{Drawer, FilterKind},
-    theme,
-};
+//! Repository and paginated symbol search drawer content.
+use crate::{app::State, presentation::Drawer, theme};
 use rune::{El, ScrollSpec, col, text};
 use rune_kit::{Button, Checkbox, Kit, List, ListItem, ScrollBar, ScrollBarStyle, TextInput};
 
@@ -11,7 +7,6 @@ pub fn view(state: &State, k: &Kit) -> El {
     let (title, content) = match state.ui.drawer {
         Drawer::Repository => ("Repository", repository(state, k)),
         Drawer::Search => ("Search", search(state, k)),
-        Drawer::Filters => ("Graph filters", filters(state, k)),
     };
     let content = content
         .w(state.ui.sidebar.width() - 2.0 * theme::SPACE)
@@ -194,71 +189,6 @@ fn search_pager(state: &State, k: &Kit) -> El {
                 .build(k)
                 .key("search-next"),
         )
-}
-
-fn filters(state: &State, k: &Kit) -> El {
-    let f = &state.nav.filter;
-    let mut content = col().child(note("Show in graph", k));
-    for (label, key, checked, kind) in [
-        (
-            "Test code",
-            "filter-tests",
-            f.include_tests,
-            FilterKind::Tests,
-        ),
-        (
-            "Generated code",
-            "filter-generated",
-            f.include_generated,
-            FilterKind::Generated,
-        ),
-        (
-            "Unavailable bodies",
-            "filter-unavailable",
-            f.include_unavailable,
-            FilterKind::Unavailable,
-        ),
-        (
-            "Possible / uncertain targets",
-            "filter-uncertain",
-            f.include_uncertain,
-            FilterKind::Uncertain,
-        ),
-        (
-            "Callbacks / references",
-            "filter-references",
-            f.include_references,
-            FilterKind::References,
-        ),
-    ] {
-        content = content.child(
-            Checkbox::new(checked)
-                .label(label)
-                .on_toggle(move |s: &mut State| s.toggle_filter(kind))
-                .build(k)
-                .key(key)
-                .w_full(),
-        );
-    }
-    if !state.nav.expanded.is_empty() {
-        content = content.child(note("Expanded groups", k));
-        let mut keys = state.nav.expanded.iter().collect::<Vec<_>>();
-        keys.sort();
-        for key in keys.into_iter().take(20) {
-            let label = serde_json::from_str::<Vec<String>>(key)
-                .ok()
-                .and_then(|parts| parts.last().cloned())
-                .unwrap_or_else(|| "Group".into());
-            let key = key.clone();
-            content = content.child(
-                Button::new(format!("Collapse {label}"))
-                    .on_press(move |s: &mut State| s.collapse_group(&key))
-                    .build(k)
-                    .w_full(),
-            );
-        }
-    }
-    content
 }
 
 fn note(value: &str, k: &Kit) -> El {
