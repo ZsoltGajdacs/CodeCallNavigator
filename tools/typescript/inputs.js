@@ -59,12 +59,12 @@ function metadata(context, inputs) {
   const versions = {typescript:ts.version,node:process.versions.node,adapter:'2',react_rules:'1',next_rules:'1'};
   for (const {config} of projects.values()) {
     projectInputs(config,inputs);
-    for (const name of ['typescript','react','next']) packageVersion(config,name,inputs,versions);
+    for (const name of ['typescript','react','next']) packageVersion(config,name,inputs,{versions,observations:context.observations});
   }
   for (const {program} of programs) {
     for (const source of program.getSourceFiles()) inputs.add(canonical(source.fileName));
   }
   return {configs:[...projects.keys()].sort(),sources:[...owners.keys()].sort(),owners:Object.fromEntries(owners),
-    inputs:[...inputs].sort(),watch_roots:watchRoots(projects,owners),output_roots:outputRoots(projects),versions};
+    inputs:[...inputs].sort(),watch_roots:context.observations.observe('watch-roots',()=>watchRoots(projects,owners)),output_roots:outputRoots(projects),versions};
 }
 module.exports = {metadata};

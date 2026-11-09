@@ -1,5 +1,5 @@
 //! Installed TypeScript compiler bridge. Ownership and binding belong to the Node adapter.
-use super::{AnalysisJob, ensure_unchanged, find_tool, process::run_process};
+use super::{AnalysisJob, ensure_unchanged, find_tool, process::worker::Worker};
 use crate::{
     discovery::BuildTarget,
     fingerprint,
@@ -14,7 +14,7 @@ use std::{
     process::Command,
 };
 
-#[derive(Deserialize)]
+#[derive(Deserialize, PartialEq, Eq)]
 struct Metadata {
     configs: Vec<PathBuf>,
     sources: Vec<PathBuf>,
@@ -29,6 +29,7 @@ struct Metadata {
 pub(super) struct PreparedTypeScript {
     metadata: Metadata,
     before: Vec<FileFingerprint>,
+    worker: Option<Worker>,
 }
 
 fn adapter(context: &AnalysisJob<'_>) -> Result<PathBuf> {
@@ -41,28 +42,34 @@ fn adapter(context: &AnalysisJob<'_>) -> Result<PathBuf> {
     )
 }
 
-fn invoke(build: &BuildTarget, context: &AnalysisJob<'_>, mode: &str) -> Result<PathBuf> {
+fn start_worker(build: &BuildTarget, context: &AnalysisJob<'_>) -> Result<(Worker, PathBuf)> {
     let node = find_tool("node")
         .context("TypeScript analysis requires installed Node 24+ and project TypeScript 6.0.x")?;
-    let output = context.path.join(format!("typescript-{mode}.json"));
-    run_process(
+    let output = context.path.join("typescript-prepare.json");
+    // Re-preparation must wait for this worker's atomic output, never the prior file.
+    if output.exists() {
+        fs::remove_file(&output)?;
+    }
+    let mut worker = Worker::start(
         Command::new(node)
             .arg(adapter(context)?)
-            .arg(mode)
+            .arg("worker")
             .arg(&build.path)
             .arg(&output),
         context.path,
-        &format!("typescript-{mode}"),
+        "typescript-worker",
         context.cancel,
     )?;
-    Ok(output)
+    worker.wait_for_output(&output, context.cancel)?;
+    Ok((worker, output))
 }
 
 pub(super) fn prepare(
     build: &BuildTarget,
     context: &AnalysisJob<'_>,
 ) -> Result<PreparedTypeScript> {
-    let output = invoke(build, context, "prepare")?;
+    let _timing = crate::metrics::stage("typescript.prepare");
+    let (worker, output) = start_worker(build, context)?;
     let metadata: Metadata = serde_json::from_slice(&fs::read(output)?)?;
     ensure!(
         !metadata.configs.is_empty(),
@@ -97,7 +104,34 @@ pub(super) fn prepare(
         .cloned()
         .collect::<BTreeSet<_>>();
     let before = fingerprint::capture_excluding(paths, &metadata.output_roots)?;
-    Ok(PreparedTypeScript { metadata, before })
+    Ok(PreparedTypeScript {
+        metadata,
+        before,
+        worker: Some(worker),
+    })
+}
+
+impl PreparedTypeScript {
+    /// Multi-target analyses retain only metadata while other targets are prepared/run.
+    pub(super) fn release_worker(&mut self) {
+        self.worker.take();
+    }
+
+    fn resume(&mut self, build: &BuildTarget, context: &AnalysisJob<'_>) -> Result<Worker> {
+        if let Some(worker) = self.worker.take() {
+            return Ok(worker);
+        }
+        let _timing = crate::metrics::stage("typescript.reprepare");
+        ensure_unchanged(&self.before)?;
+        let (worker, output) = start_worker(build, context)?;
+        let metadata: Metadata = serde_json::from_slice(&fs::read(output)?)?;
+        ensure!(
+            metadata == self.metadata,
+            "TypeScript preparation changed before extraction"
+        );
+        ensure_unchanged(&self.before)?;
+        Ok(worker)
+    }
 }
 
 /// Identical referenced configurations share ownership; different configurations cannot own a file.
@@ -131,10 +165,15 @@ struct Output {
 pub(super) fn analyze(
     build: &BuildTarget,
     context: &AnalysisJob<'_>,
-    prepared: PreparedTypeScript,
+    mut prepared: PreparedTypeScript,
 ) -> Result<GraphData> {
     ensure_unchanged(&prepared.before)?;
-    let output = invoke(build, context, "analyze")?;
+    let mut worker = prepared.resume(build, context)?;
+    let _timing = crate::metrics::stage("typescript.extract");
+    let output = context.path.join("typescript-analyze.json");
+    worker.request(&serde_json::json!({"command":"analyze","output":output}).to_string())?;
+    worker.wait_for_output(&output, context.cancel)?;
+    worker.finish(context.cancel)?;
     let result: Output = serde_json::from_slice(&fs::read(output)?)?;
     ensure!(
         result.schema == "codegraph.typescript.v2",

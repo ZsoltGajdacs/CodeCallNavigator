@@ -152,6 +152,8 @@ impl State {
         }
         .into();
         self.jobs.analysis.request(targets, move |targets| {
+            let metrics = codegraph::metrics::Metrics::default();
+            let _scope = metrics.enter();
             let report = |message| {
                 let _ = progress.send(message);
                 if let Some(wake) = &wake {
@@ -160,9 +162,19 @@ impl State {
             };
             let result = (|| {
                 let data = Arc::new(analyzers::analyze(targets, &runtime, &cancel, &report)?);
-                let graph = Arc::new(GraphIndex::new(data.clone())?);
-                let generation = store.publish(&data, &cancel)?;
-                Ok::<_, anyhow::Error>(LoadedGraph { graph, generation })
+                let graph = {
+                    let _timer = codegraph::metrics::stage("indexing");
+                    Arc::new(GraphIndex::new(data.clone())?)
+                };
+                let generation = {
+                    let _timer = codegraph::metrics::stage("publication");
+                    store.publish(&data, &cancel)?
+                };
+                Ok::<_, anyhow::Error>(LoadedGraph {
+                    graph,
+                    generation,
+                    metrics: Some(metrics),
+                })
             })();
             result.map_err(|error| format!("{error:#}"))
         });
@@ -190,7 +202,17 @@ impl State {
         let dot = runtime.dot.clone();
         let epoch = self.epoch;
         let revision = self.revision;
+        let first_layout = self.visible_revision.is_none();
+        let metrics = first_layout
+            .then(|| self.analysis_metrics.clone())
+            .flatten();
         self.jobs.layout.request(request, move |request| {
+            let _scope = metrics.as_ref().map(codegraph::metrics::Metrics::enter);
+            let _timer = codegraph::metrics::stage(if first_layout {
+                "initial_layout"
+            } else {
+                "layout"
+            });
             let result = projection::layout(projection::project(&graph, &request), &dot)
                 .map_err(|error| error.to_string());
             (epoch, revision, result)
@@ -401,6 +423,7 @@ fn install_graph(state: &mut State, loaded: LoadedGraph) {
     state.epoch += 1;
     state.nav.retain_known(&loaded.graph);
     state.graph = Some(loaded.graph);
+    state.analysis_metrics = loaded.metrics;
     state.generation = Some(loaded.generation);
     state.next_stale_check = 0.0;
     state.hits.clear();
@@ -409,6 +432,7 @@ fn install_graph(state: &mut State, loaded: LoadedGraph) {
     state.selected_edge = None;
     state.last_query.clear();
     state.graph_view = projection::GraphView::default();
+    state.visible_revision = None;
     state.visual_selection = None;
     state.pending_center = None;
     state.status = format!(
@@ -432,6 +456,11 @@ fn poll_layout(state: &mut State) -> bool {
     };
     if epoch != state.epoch || revision != state.revision {
         return false;
+    }
+    if state.visible_revision.is_none()
+        && let Some(metrics) = &state.analysis_metrics
+    {
+        metrics.finish();
     }
     match result {
         Ok(view) => {

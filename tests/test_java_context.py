@@ -185,6 +185,89 @@ class JavaContextTests(unittest.TestCase):
         self.assertEqual((selected / entry).read_bytes(), base)
         self.assertEqual(tsv(output / "shadows.tsv"), [])
 
+    def test_job_inventory_reuses_artifacts_without_changing_context_order(self):
+        first = self.choice("cached first", 1)
+        second = self.choice("cached second", 2)
+        cache = self.root / "job artifact inventories"
+        entry = "sample/Choice.class"
+        outputs = []
+        for name, entries in [("initial", [first, second]), ("reversed", [second, first])]:
+            output = self.root / name
+            run(self.java, "-cp", LIB / "*", "codegraph.bytecode.ContextStager", output,
+                "--project-inputs", "1,2", "--artifact-cache", cache, *entries)
+            outputs.append(output)
+            selected = Path(tsv(output / "inputs.tsv")[0]["staged_path"])
+            self.assertEqual((selected / entry).read_bytes(), (entries[0] / entry).read_bytes())
+            shadow = tsv(output / "shadows.tsv")[0]
+            self.assertEqual(shadow["selected_path"], str(entries[0]))
+            self.assertEqual(shadow["shadowed_path"], str(entries[1]))
+            self.assertEqual(shadow["identical"], "false")
+        statistics = [dict(line.split("=", 1) for line in
+                          (output / "artifact-stats.properties").read_text().splitlines()) for output in outputs]
+        self.assertEqual(statistics[0]["artifact_reads"], "2")
+        self.assertEqual(statistics[1]["artifact_reads"], "0")
+        self.assertEqual(statistics[1]["artifact_hits"], "2")
+        self.assertEqual(statistics[1]["classes_indexed"], "0")
+        self.assertEqual(statistics[1]["artifact_bytes_read"], "0")
+        self.assertEqual(statistics[1]["artifact_retained_bytes"], "0")
+
+    def test_prefetch_duplicate_inputs_remain_ordered_and_are_indexed_once(self):
+        first = self.choice("prefetched first", 1)
+        second = self.choice("prefetched second", 2)
+        entry = "sample/Choice.class"
+        for iteration in range(3):
+            output = self.root / f"prefetch-{iteration}"
+            run(self.java, "-cp", LIB / "*", "codegraph.bytecode.ContextStager", output,
+                first, first, second)
+            selected = Path(tsv(output / "inputs.tsv")[0]["staged_path"])
+            self.assertEqual((selected / entry).read_bytes(), (first / entry).read_bytes())
+            shadows = tsv(output / "shadows.tsv")
+            self.assertEqual([row["identical"] for row in shadows], ["true", "false"])
+            self.assertEqual([row["selected_path"] for row in shadows], [str(first), str(first)])
+            statistics = dict(line.split("=", 1) for line in
+                              (output / "artifact-stats.properties").read_text().splitlines())
+            self.assertEqual(statistics["artifact_reads"], "2")
+            self.assertEqual(statistics["artifact_hits"], "1")
+            self.assertEqual(statistics["classes_indexed"], "2")
+            self.assertEqual(int(statistics["artifact_bytes_read"]),
+                             (first / entry).stat().st_size + (second / entry).stat().st_size)
+
+    def test_shared_inventory_can_promote_external_artifact_without_reindexing(self):
+        classes = self.choice("shared dependency", 1)
+        archive = self.archive("shared dependency.jar", {
+            "sample/Choice.class": (classes / "sample/Choice.class").read_bytes()})
+        project = self.choice("other project", 2)
+        cache = self.root / "shared cache"
+        external_output = self.root / "external context"
+        run(self.java, "-cp", LIB / "*", "codegraph.bytecode.ContextStager", external_output,
+            "--project-inputs", "1", "--artifact-cache", cache, project, archive)
+        project_output = self.root / "project context"
+        run(self.java, "-cp", LIB / "*", "codegraph.bytecode.ContextStager", project_output,
+            "--project-inputs", "1", "--artifact-cache", cache, archive)
+        selected = Path(tsv(project_output / "inputs.tsv")[0]["staged_path"])
+        self.assertEqual((selected / "sample/Choice.class").read_bytes(), (classes / "sample/Choice.class").read_bytes())
+        statistics = dict(line.split("=", 1) for line in
+                          (project_output / "artifact-stats.properties").read_text().splitlines())
+        self.assertEqual(statistics["artifact_reads"], "0")
+        self.assertEqual(statistics["artifact_hits"], "1")
+        self.assertEqual(statistics["classes_indexed"], "0")
+        self.assertGreater(int(statistics["artifact_retained_bytes"]), 0)
+
+    def test_failed_artifact_inventory_does_not_poison_the_job_cache(self):
+        classes = self.root / "invalid/classes"
+        classes.mkdir(parents=True)
+        (classes / "Invalid.class").write_bytes(b"not bytecode")
+        cache = self.root / "job inventory"
+        with self.assertRaises(subprocess.CalledProcessError):
+            run(self.java, "-cp", LIB / "*", "codegraph.bytecode.ContextStager", self.root / "failed",
+                "--project-inputs", "1", "--artifact-cache", cache, classes)
+        self.assertEqual(list(cache.iterdir()), [])
+        shutil.rmtree(classes)
+        valid = self.choice("valid retry", 3)
+        run(self.java, "-cp", LIB / "*", "codegraph.bytecode.ContextStager", self.root / "retry",
+            "--project-inputs", "1", "--artifact-cache", cache, valid)
+        self.assertEqual(len(list(cache.iterdir())), 1)
+
     def test_standalone_analyzer_filter_keeps_dependency_inheritance_and_project_overrides(self):
         external = self.compile("external", {
             "sample/Contract.java": "package sample; public interface Contract { void act(); }",

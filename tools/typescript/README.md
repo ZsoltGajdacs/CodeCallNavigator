@@ -1,10 +1,19 @@
 # TypeScript compiler adapter
 
-The Rust coordinator invokes `node analyze.js prepare CONFIG OUTPUT` to evaluate
-configuration and input ownership, then `node analyze.js analyze CONFIG OUTPUT`
-to obtain the `codegraph.typescript.v2` graph. The project must already have
-TypeScript 6.0.x installed and Node must be version 24 or newer. No packages,
-project scripts, application code, compiler plugins or framework configs run.
+The Rust coordinator starts `node analyze.js worker CONFIG METADATA_OUTPUT` and
+requests extraction over its stdin after validating ownership and fingerprints.
+For one selected target the worker retains compiler programs between phases.
+For multiple or mixed targets, preparation workers are released immediately;
+each target reopens one worker for extraction and checks its complete metadata
+against the original snapshot. This bounds live compiler workers to one and
+keeps compiler heaps out of unrelated Java/C# analysis. No cache survives the job.
+The standalone `prepare` and `analyze` modes remain available for adapter checks.
+
+The worker verifies the file contents, missing resolution probes and directory
+queries observed while constructing its programs before and after extraction.
+The project must already have TypeScript 6.0.x installed and Node must be version
+24 or newer. No packages, project scripts, application code, compiler plugins or
+framework configs run.
 
 `config.js` evaluates the configuration-reference closure and ownership.
 `compiler.js` loads the project compiler and constructs its programs. A closed,
@@ -36,7 +45,7 @@ are not reconstructed. Counts for unresolved bindings remain in graph diagnostic
 Run the real-compiler fixture suite with:
 
 ```sh
-CODEGRAPH_TEST_TYPESCRIPT_ROOT=/path/to/node_modules/typescript node --test tools/typescript/adapter.test.js
+CODEGRAPH_TEST_TYPESCRIPT_ROOT=/path/to/node_modules/typescript node --test tools/typescript/*.test.js
 ```
 
 The fixture suite uses the installed TypeScript, React types and Next.js package;

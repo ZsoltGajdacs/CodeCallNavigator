@@ -141,6 +141,10 @@ impl SqliteStore {
             "INSERT INTO metadata VALUES ('graph', ?1)",
             [metadata.to_string()],
         )?;
+        transaction.execute(
+            "INSERT INTO metadata VALUES ('method_policy', ?1)",
+            [crate::method_policy::VERSION.to_string()],
+        )?;
         check_cancelled(cancelled)?;
         transaction.commit()?;
         connection.close().map_err(|(_, error)| error)?;
@@ -211,9 +215,7 @@ impl SqliteStore {
 
     /// All generation readers enforce the same persisted graph policy.
     fn read_generation(&self, generation: &str) -> Result<(Connection, Value)> {
-        let path = self.generation_path(generation)?;
-        let connection =
-            Connection::open_with_flags(path, rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY)?;
+        let connection = self.open_generation(generation)?;
         let metadata: String =
             connection.query_row("SELECT value FROM metadata WHERE key='graph'", [], |row| {
                 row.get(0)
@@ -224,6 +226,43 @@ impl SqliteStore {
             "Refresh this workspace: its cached method graph uses an older policy"
         );
         Ok((connection, metadata))
+    }
+
+    fn open_generation(&self, generation: &str) -> Result<Connection> {
+        let path = self.generation_path(generation)?;
+        let connection =
+            Connection::open_with_flags(path, rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY)?;
+        let policy: Option<String> = connection
+            .query_row(
+                "SELECT value FROM metadata WHERE key='method_policy'",
+                [],
+                |row| row.get(0),
+            )
+            .optional()?;
+        let policy = match policy {
+            Some(value) => {
+                crate::metrics::count("storage.policy_scalar_reads", 1);
+                value.parse::<u32>().ok()
+            }
+            None => {
+                crate::metrics::count("storage.policy_legacy_reads", 1);
+                #[derive(serde::Deserialize)]
+                struct LegacyPolicy {
+                    method_policy: Option<u32>,
+                }
+                let metadata: String = connection.query_row(
+                    "SELECT value FROM metadata WHERE key='graph'",
+                    [],
+                    |row| row.get(0),
+                )?;
+                serde_json::from_str::<LegacyPolicy>(&metadata)?.method_policy
+            }
+        };
+        ensure!(
+            policy == Some(crate::method_policy::VERSION),
+            "Refresh this workspace: its cached method graph uses an older policy"
+        );
+        Ok(connection)
     }
 
     pub fn search(&self, request: &SymbolSearch<'_>) -> Result<Vec<u32>> {
@@ -238,6 +277,7 @@ impl SqliteStore {
         generation: &str,
         request: &SymbolSearch<'_>,
     ) -> Result<Vec<u32>> {
+        let _stage = crate::metrics::stage("storage.search");
         let SymbolSearch {
             prefix,
             filter,
@@ -247,7 +287,7 @@ impl SqliteStore {
         let Some(query) = prefix_query(prefix) else {
             return Ok(Vec::new());
         };
-        let (connection, _) = self.read_generation(generation)?;
+        let connection = self.open_generation(generation)?;
         let mut statement = connection.prepare(
             "SELECT n.idx FROM node_search JOIN nodes n ON n.idx=node_search.rowid-1
             WHERE node_search MATCH ?1 AND (?2 OR NOT n.is_test) AND (?3 OR NOT n.is_generated)

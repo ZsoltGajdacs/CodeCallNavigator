@@ -7,13 +7,13 @@ use crate::{
     model::FileFingerprint,
 };
 use anyhow::{Context, Result, bail, ensure};
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use std::{
     collections::{BTreeMap, BTreeSet},
     path::PathBuf,
 };
 
-#[derive(Clone, Deserialize)]
+#[derive(Clone, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub(super) struct JavaSourceSet {
     pub project: String,
@@ -48,6 +48,7 @@ pub(in crate::analyzers) fn prepare(
     build: &BuildTarget,
     context: &AnalysisJob<'_>,
 ) -> Result<PreparedJava> {
+    let _stage = crate::metrics::stage("java.build_preparation");
     ensure!(
         context.runtime.java_home.is_some(),
         "Java analysis requires an installed JDK 25; configure JAVA_HOME or install JDK 25"
@@ -68,6 +69,7 @@ pub(in crate::analyzers) fn prepare(
 }
 
 pub(super) fn compile(build: &BuildTarget, context: &AnalysisJob<'_>) -> Result<JavaBuildMetadata> {
+    let _stage = crate::metrics::stage("java.compilation");
     let metadata = match build.kind.as_str() {
         "gradle" => gradle::compile(build, context)?,
         "maven" => maven::compile(build, context)?,

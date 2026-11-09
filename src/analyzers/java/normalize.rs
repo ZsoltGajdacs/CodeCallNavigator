@@ -2,7 +2,8 @@
 use super::{
     JavaInput,
     build::JavaSourceSet,
-    metadata::{ClassMetadata, MethodMetadata, read_tsv},
+    metadata::{ClassMetadata, MethodMetadata},
+    tables::{tsv_rows, tsv_table},
 };
 use crate::{
     discovery::BuildTarget,
@@ -13,12 +14,36 @@ use std::{
     collections::{BTreeMap, HashMap, HashSet},
     path::{Path, PathBuf},
 };
+#[cfg(test)]
 pub(super) fn normalize_bytecode(
     build: &BuildTarget,
     output: &Path,
     inputs: &[JavaInput],
     owner: Option<&JavaSourceSet>,
 ) -> Result<GraphData> {
+    with_inventories(
+        build,
+        output,
+        CompiledContext {
+            inputs,
+            owner,
+            inventories: super::source_inventory::inventories(output, inputs)?,
+        },
+    )
+}
+
+pub(super) struct CompiledContext<'a> {
+    pub inputs: &'a [JavaInput],
+    pub owner: Option<&'a JavaSourceSet>,
+    pub inventories: super::source_inventory::Inventories,
+}
+
+pub(super) fn with_inventories(
+    build: &BuildTarget,
+    output: &Path,
+    context: CompiledContext<'_>,
+) -> Result<GraphData> {
+    let _stage = crate::metrics::stage("java.normalization");
     let status = super::engine::status(&output.join("analysis-status.properties"))?;
     ensure!(
         status.get("analysisComplete").map(String::as_str) == Some("true"),
@@ -33,12 +58,38 @@ pub(super) fn normalize_bytecode(
             .get("outputDirectory")
             .context("Bytecode analyzer omitted its output directory")?,
     );
-    let mut collector = BytecodeCollector::new(build, inputs, owner);
-    collector.source_inventory = super::source_inventory::inventories(output, inputs)?;
-    collector.classes(&read_tsv(&output.join("class_metadata.tsv"))?)?;
-    collector.methods(&read_tsv(&output.join("method_metadata.tsv"))?)?;
-    collector.validate_methods(&read_tsv(&raw.join("method_info.txt"))?)?;
-    collector.edges(&read_tsv(&raw.join("method_call.txt"))?)?;
+    let mut collector = BytecodeCollector::new(build, context.inputs, context.owner);
+    collector.source_inventory = context.inventories;
+    collector.classes(tsv_table(
+        &output.join("class_metadata.tsv"),
+        &[
+            "input_index",
+            "input_path",
+            "class_entry",
+            "class_name",
+            "source_file",
+            "flags",
+            "annotations",
+        ],
+    )?)?;
+    collector.methods(tsv_table(
+        &output.join("method_metadata.tsv"),
+        &[
+            "input_index",
+            "input_path",
+            "class_entry",
+            "class_name",
+            "source_file",
+            "method",
+            "return_type",
+            "flags",
+            "start_line",
+            "end_line",
+            "annotations",
+        ],
+    )?)?;
+    collector.validate_methods(tsv_rows(&raw.join("method_info.txt"))?)?;
+    collector.edges(tsv_rows(&raw.join("method_call.txt"))?)?;
     collector.finish()
 }
 
@@ -48,12 +99,14 @@ struct BytecodeCollector<'a> {
     graph: GraphData,
     classes: HashMap<String, ClassMetadata>,
     indices: HashMap<String, u32>,
+    class_facts: HashMap<String, super::class_facts::ClassFacts>,
+    prefixes: Vec<Option<String>>,
     declared: HashSet<String>,
     placeholder_count: usize,
     excluded_edges: usize,
     application_starts: Vec<String>,
     owner: Option<String>,
-    source_inventory: HashMap<usize, super::source_inventory::SourceInventory>,
+    source_inventory: super::source_inventory::Inventories,
     excluded: HashSet<String>,
 }
 
@@ -68,6 +121,16 @@ impl<'a> BytecodeCollector<'a> {
             },
             classes: HashMap::new(),
             indices: HashMap::new(),
+            class_facts: HashMap::new(),
+            prefixes: inputs
+                .iter()
+                .map(|input| {
+                    input
+                        .source_set
+                        .as_ref()
+                        .map(|source| identity_prefix(build, source))
+                })
+                .collect(),
             declared: HashSet::new(),
             placeholder_count: 0,
             excluded_edges: 0,
@@ -78,9 +141,16 @@ impl<'a> BytecodeCollector<'a> {
         }
     }
 
-    fn classes(&mut self, rows: &[Vec<String>]) -> Result<()> {
-        for row in rows.iter().skip(1) {
-            let class = ClassMetadata::parse(row)?;
+    fn classes(&mut self, rows: impl Iterator<Item = Result<Vec<String>>>) -> Result<()> {
+        for row in rows {
+            let row = row?;
+            let class = ClassMetadata::parse(&row)?;
+            if let Some(source) = self.source(&class)? {
+                self.class_facts.insert(
+                    class.name.clone(),
+                    super::class_facts::ClassFacts::new(source, &class),
+                );
+            }
             ensure!(
                 self.classes.insert(class.name.clone(), class).is_none(),
                 "Duplicate selected class identity"
@@ -89,9 +159,10 @@ impl<'a> BytecodeCollector<'a> {
         Ok(())
     }
 
-    fn methods(&mut self, rows: &[Vec<String>]) -> Result<()> {
-        for row in rows.iter().skip(1) {
-            let method = MethodMetadata::parse(row)?;
+    fn methods(&mut self, rows: impl Iterator<Item = Result<Vec<String>>>) -> Result<()> {
+        for row in rows {
+            let row = row?;
+            let method = MethodMetadata::parse(&row)?;
             if self.source(&method.class)?.is_none() {
                 continue;
             }
@@ -118,9 +189,10 @@ impl<'a> BytecodeCollector<'a> {
         Ok(())
     }
 
-    fn validate_methods(&self, rows: &[Vec<String>]) -> Result<()> {
+    fn validate_methods(&self, rows: impl Iterator<Item = Result<Vec<String>>>) -> Result<()> {
         let mut reported = HashSet::new();
         for row in rows {
+            let row = row?;
             ensure!(row.len() >= 8, "Malformed method_info output");
             let name = row[0]
                 .split_once(':')
@@ -146,10 +218,10 @@ impl<'a> BytecodeCollector<'a> {
         Ok(())
     }
 
-    fn edges(&mut self, rows: &[Vec<String>]) -> Result<()> {
+    fn edges(&mut self, rows: impl Iterator<Item = Result<Vec<String>>>) -> Result<()> {
         let mut aggregate = BTreeMap::<(u32, u32, String, String), u32>::new();
         for row in rows {
-            self.collect_edge(row, &mut aggregate)?;
+            self.collect_edge(&row?, &mut aggregate)?;
         }
         self.graph.edges = aggregate
             .into_iter()
@@ -244,38 +316,32 @@ impl<'a> BytecodeCollector<'a> {
         let Some(class) = self.classes.get(name) else {
             return Ok(false);
         };
-        let Some(source) = self.source(class)? else {
-            return Ok(false);
-        };
-        Ok(self
-            .owner
+        let prefix = self
+            .prefixes
+            .get(class.input - 1)
+            .context("Analyzer input provenance is missing")?;
+        Ok(prefix
             .as_ref()
-            .is_none_or(|owner| *owner == identity_prefix(self.build, source)))
+            .is_some_and(|prefix| self.owner.as_ref().is_none_or(|owner| owner == prefix)))
     }
 
     fn java_node(&self, row: &MethodMetadata, unavailable: bool) -> Result<Node> {
         let source = self
             .source(&row.class)?
             .context("Project provenance is missing")?;
-        let namespace = row
-            .class
-            .name
-            .rsplit_once('.')
-            .map(|(namespace, _)| namespace)
-            .unwrap_or("");
-        let file = source_location(source, namespace, &row.class.source_file);
-        let generated = row.annotations.contains("/Generated;")
-            || source
-                .generated_roots
-                .iter()
-                .any(|root| Path::new(&file).starts_with(root));
+        let facts = self
+            .class_facts
+            .get(&row.class.name)
+            .context("Class source facts are missing")?;
+        let prefix = self
+            .prefixes
+            .get(row.class.input - 1)
+            .and_then(Option::as_ref)
+            .context("Class identity prefix is missing")?;
+        let generated = row.annotations.contains("/Generated;") || facts.generated_file;
         let signature = format!("{} -> {}", row.signature, row.return_type);
         Ok(Node {
-            id: format!(
-                "{}{}",
-                identity_prefix(self.build, source),
-                method_key(&row.signature, &row.return_type)
-            ),
+            id: format!("{}{}", prefix, method_key(&row.signature, &row.return_type)),
             project: source.project.clone(),
             build: self.build.path.to_string_lossy().into_owned(),
             language: "java".into(),
@@ -291,9 +357,9 @@ impl<'a> BytecodeCollector<'a> {
                 .map(|inventory| inventory.lambda_label(row))
                 .unwrap_or_else(|| super::lambda_names::method_name(&row.signature).into()),
             signature,
-            namespace: namespace.into(),
+            namespace: facts.namespace.clone(),
             container: row.class.name.clone(),
-            file,
+            file: facts.file.clone(),
             line: row.start_line,
             is_test: source.is_test,
             is_generated: generated,
@@ -326,21 +392,6 @@ pub(super) fn java_certainty(kind: &str) -> &'static str {
         "_LM" => "reference",
         _ => "analyzer-reported",
     }
-}
-
-fn source_location(source: &JavaSourceSet, namespace: &str, file: &str) -> String {
-    if file.is_empty() || file == "<Unknown>" {
-        return String::new();
-    }
-    let relative = PathBuf::from(namespace.replace('.', "/")).join(file);
-    source
-        .source_roots
-        .iter()
-        .chain(&source.generated_roots)
-        .map(|root| root.join(&relative))
-        .find(|path| path.is_file())
-        .map(|path| path.to_string_lossy().into_owned())
-        .unwrap_or_default()
 }
 
 /// JSON tuple encoding prevents separators in project paths or names from colliding.

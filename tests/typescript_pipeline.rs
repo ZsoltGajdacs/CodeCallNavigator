@@ -423,3 +423,77 @@ export function start() { toString(); new Base(); new Implicit(); new Other().to
     assert_eq!(loaded.nodes.len(), graph.nodes.len());
     assert_eq!(loaded.entry_points, graph.entry_points);
 }
+
+#[test]
+#[ignore = "requires Node 24+ and installed TypeScript 6.0.x"]
+fn multiple_selected_configs_bound_live_compiler_workers_and_preserve_graphs() {
+    use std::{sync::atomic::Ordering, thread, time::Duration};
+    let fixture = fixture();
+    write(
+        fixture.path(),
+        "src/main.ts",
+        "export function leafOne() {} export function startOne() { leafOne(); }",
+    );
+    write(
+        fixture.path(),
+        "other/tsconfig.json",
+        r#"{"compilerOptions":{"strict":true,"target":"ES2022","module":"NodeNext","moduleResolution":"NodeNext","skipLibCheck":true},"include":["*.ts"]}"#,
+    );
+    write(
+        fixture.path(),
+        "other/main.ts",
+        "export function leafTwo() {} export function startTwo() { leafTwo(); }",
+    );
+    let scope = fixture
+        .path()
+        .canonicalize()
+        .unwrap()
+        .to_string_lossy()
+        .into_owned();
+    let done = std::sync::Arc::new(AtomicBool::new(false));
+    let finished = done.clone();
+    let sampler_scope = scope.clone();
+    let sampler = thread::spawn(move || {
+        let mut maximum = 0;
+        while !finished.load(Ordering::Acquire) {
+            maximum = maximum.max(live_typescript_workers(&sampler_scope));
+            thread::sleep(Duration::from_millis(10));
+        }
+        maximum
+    });
+    let result = run(vec![
+        target(fixture.path(), "tsconfig.json"),
+        target(fixture.path(), "other/tsconfig.json"),
+    ]);
+    done.store(true, Ordering::Release);
+    let maximum = sampler.join().unwrap();
+    let graph = result.unwrap();
+    assert!(has_edge(&graph, "startOne", "leafOne"));
+    assert!(has_edge(&graph, "startTwo", "leafTwo"));
+    assert!(maximum > 0, "Sampler never observed a real compiler worker");
+    assert!(
+        maximum <= 1,
+        "Observed {maximum} live TypeScript compiler workers"
+    );
+    assert_eq!(
+        live_typescript_workers(&scope),
+        0,
+        "Compiler worker leaked after completion"
+    );
+}
+
+fn live_typescript_workers(scope: &str) -> usize {
+    let processes = std::process::Command::new("/bin/ps")
+        .args(["-axo", "command="])
+        .output()
+        .unwrap();
+    assert!(
+        processes.status.success(),
+        "Cannot inspect worker lifecycle"
+    );
+    String::from_utf8(processes.stdout)
+        .unwrap()
+        .lines()
+        .filter(|line| line.contains("analyze.js worker ") && line.contains(scope))
+        .count()
+}

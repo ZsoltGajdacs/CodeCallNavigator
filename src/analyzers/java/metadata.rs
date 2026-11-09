@@ -1,6 +1,5 @@
 //! Validated boundary for the bytecode adapter's escaped TSV metadata.
 use anyhow::{Context, Result, ensure};
-use std::{fs, path::Path};
 
 #[derive(Clone)]
 pub(super) struct ClassMetadata {
@@ -92,15 +91,6 @@ impl MethodMetadata {
             end_line: 0,
         }
     }
-}
-
-pub(super) fn read_tsv(path: &Path) -> Result<Vec<Vec<String>>> {
-    Ok(fs::read_to_string(path)
-        .with_context(|| format!("Cannot read analyzer output {}", path.display()))?
-        .lines()
-        .filter(|line| !line.is_empty())
-        .map(|line| line.split('\t').map(str::to_owned).collect())
-        .collect())
 }
 
 pub(super) fn unescape(value: &str) -> String {

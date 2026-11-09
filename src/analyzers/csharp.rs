@@ -79,43 +79,56 @@ pub(super) fn analyze_csharp(build: &BuildTarget, context: &AnalysisJob<'_>) -> 
         path: job,
         cancel,
         progress,
+        ..
     } = context;
     let dotnet = find_tool("dotnet")
         .context("Install the .NET SDK required by this solution; dotnet was not found")?;
     progress(format!("Restoring {}…", build.label));
-    run_process(
-        Command::new(&dotnet)
-            .arg("restore")
-            .arg(&build.path)
-            .arg("--nologo")
-            .env("DOTNET_CLI_TELEMETRY_OPTOUT", "1"),
-        job,
-        "restore",
-        cancel,
-    )?;
+    {
+        let _timer = crate::metrics::stage("csharp.restore");
+        run_process(
+            Command::new(&dotnet)
+                .arg("restore")
+                .arg(&build.path)
+                .arg("--nologo")
+                .env("DOTNET_CLI_TELEMETRY_OPTOUT", "1"),
+            job,
+            "restore",
+            cancel,
+        )?;
+    }
     let root = build.path.parent().context("Build has no parent folder")?;
     let before_metadata = source_snapshot(&[root.into()])?;
-    let (owners, mut inputs) = csharp_sources(build, &dotnet, job, cancel)?;
+    let (owners, mut inputs) = {
+        let _timer = crate::metrics::stage("csharp.metadata");
+        csharp_sources(build, &dotnet, job, cancel)?
+    };
     ensure_unchanged(&before_metadata)?;
     inputs.push(root.into());
     let before_engine = source_snapshot(&inputs)?;
     let output = job.join("callatlas.json");
     progress(format!("Reading compiler call graph for {}…", build.label));
-    run_process(
-        Command::new(&dotnet)
-            .arg(runtime.callatlas()?)
-            .arg("map")
-            .arg(&build.path)
-            .arg("-o")
-            .arg(&output),
-        job,
-        "callatlas",
-        cancel,
-    )?;
+    {
+        let _timer = crate::metrics::stage("csharp.engine");
+        run_process(
+            Command::new(&dotnet)
+                .arg(runtime.callatlas()?)
+                .arg("map")
+                .arg(&build.path)
+                .arg("-o")
+                .arg(&output),
+            job,
+            "callatlas",
+            cancel,
+        )?;
+    }
     let map: AtlasMap = serde_json::from_slice(&fs::read(output)?)?;
     ensure_unchanged(&before_metadata)?;
     ensure_unchanged(&before_engine)?;
-    let mut graph = normalize_atlas(build, root, map, &owners)?;
+    let mut graph = {
+        let _timer = crate::metrics::stage("csharp.normalization");
+        normalize_atlas(build, root, map, &owners)?
+    };
     graph.fingerprints = before_engine;
     Ok(graph)
 }

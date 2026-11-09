@@ -1,4 +1,5 @@
 //! Orchestrates existing analyzers; language adapters never resolve calls themselves.
+mod compose;
 mod csharp;
 mod java;
 mod process;
@@ -6,7 +7,7 @@ mod typescript;
 use crate::{
     discovery::BuildTarget,
     fingerprint,
-    model::{EntryPoints, FileFingerprint, GraphData},
+    model::{FileFingerprint, GraphData},
 };
 use anyhow::{Context, Result, bail, ensure};
 use process::check_cancel;
@@ -128,19 +129,21 @@ pub fn analyze(
     cancel: &AtomicBool,
     progress: &dyn Fn(String),
 ) -> Result<GraphData> {
+    let _timer = crate::metrics::stage("analysis");
     ensure!(!builds.is_empty(), "Select at least one build");
     let mut job = JobDirectory::new()?;
-    let mut graph = GraphData {
-        entry_points: Some(EntryPoints::default()),
-        ..GraphData::default()
-    };
+    let mut composition = compose::GraphComposition::default();
     let context = AnalysisJob {
         runtime,
         path: &job.path,
+        shared_path: &job.path,
         cancel,
         progress,
     };
-    let jobs = prepare_jobs(builds, &context)?;
+    let jobs = {
+        let _timer = crate::metrics::stage("preparation");
+        prepare_jobs(builds, &context)?
+    };
     let total = jobs.len();
     let mut versions = serde_json::Map::new();
     for (index, prepared) in jobs.into_iter().enumerate() {
@@ -153,6 +156,7 @@ pub fn analyze(
         let context = AnalysisJob {
             runtime,
             path: &prepared.path,
+            shared_path: &job.path,
             cancel,
             progress,
         };
@@ -164,8 +168,12 @@ pub fn analyze(
                 serde_json::from_str(&part.engine_versions)?,
             );
         }
-        append_graph(&mut graph, part)?;
+        {
+            let _timer = crate::metrics::stage("composition");
+            composition.append(part)?;
+        }
     }
+    let mut graph = composition.finish();
     progress("Verifying source state…".into());
     ensure_unchanged(&graph.fingerprints)?;
     let mut engines: serde_json::Value = serde_json::from_str(&engine_versions()?)?;
@@ -174,12 +182,15 @@ pub fn analyze(
     }
     graph.engine_versions = engines.to_string();
     graph.validate()?;
+    crate::metrics::count("symbols", graph.nodes.len() as u64);
+    crate::metrics::count("relationships", graph.edges.len() as u64);
     check_cancel(cancel)?;
     job.remove_on_drop = true;
     Ok(graph)
 }
 
 fn prepare_jobs(builds: Vec<BuildTarget>, context: &AnalysisJob<'_>) -> Result<Vec<PreparedJob>> {
+    let retain_worker = builds.len() == 1;
     let mut jobs = Vec::with_capacity(builds.len());
     for (index, build) in builds.into_iter().enumerate() {
         check_cancel(context.cancel)?;
@@ -189,8 +200,11 @@ fn prepare_jobs(builds: Vec<BuildTarget>, context: &AnalysisJob<'_>) -> Result<V
             path: &path,
             ..*context
         };
-        let preparation = prepare_build(&build, &context)
+        let mut preparation = prepare_build(&build, &context)
             .with_context(|| format!("Build preparation failed. Logs: {}", path.display()))?;
+        if !retain_worker && let Preparation::TypeScript(prepared) = &mut preparation {
+            prepared.release_worker();
+        }
         jobs.push(PreparedJob {
             build,
             path,
@@ -211,6 +225,8 @@ fn prepare_jobs(builds: Vec<BuildTarget>, context: &AnalysisJob<'_>) -> Result<V
 struct AnalysisJob<'a> {
     runtime: &'a AnalyzerRuntime,
     path: &'a Path,
+    /// Shared immutable intermediates live for the complete selected-build analysis.
+    shared_path: &'a Path,
     cancel: &'a AtomicBool,
     progress: &'a dyn Fn(String),
 }
@@ -246,98 +262,6 @@ fn analyze_build(
         Preparation::Java(prepared) => java::analyze_java(build, context, prepared),
         Preparation::TypeScript(prepared) => typescript::analyze(build, context, prepared),
     }
-}
-
-fn append_graph(graph: &mut GraphData, mut part: GraphData) -> Result<()> {
-    let shared = part.nodes.iter().all(|node| node.language == "typescript");
-    let remap = append_nodes(graph, std::mem::take(&mut part.nodes))?;
-    append_edges(graph, std::mem::take(&mut part.edges), &remap, shared)?;
-    graph.entry_points = match (graph.entry_points.take(), part.entry_points) {
-        (Some(mut entries), Some(part)) => {
-            entries.framework_entries.extend(part.framework_entries);
-            entries.framework_entries.sort();
-            entries.framework_entries.dedup();
-            entries.candidates.extend(part.candidates);
-            entries.application_starts.extend(part.application_starts);
-            entries.candidates.sort();
-            entries.candidates.dedup();
-            entries.application_starts.sort();
-            entries.application_starts.dedup();
-            Some(entries)
-        }
-        _ => None,
-    };
-    graph.diagnostics.extend(part.diagnostics);
-    graph.roots.extend(part.roots);
-    graph.fingerprints.extend(part.fingerprints);
-    Ok(())
-}
-
-fn append_nodes(graph: &mut GraphData, nodes: Vec<crate::model::Node>) -> Result<Vec<u32>> {
-    let mut identities: std::collections::HashMap<_, _> = graph
-        .nodes
-        .iter()
-        .enumerate()
-        .map(|(index, node)| (node.id.clone(), index as u32))
-        .collect();
-    let mut remap = Vec::with_capacity(nodes.len());
-    for node in nodes {
-        let index = match identities.get(&node.id) {
-            Some(&index) => {
-                ensure!(
-                    node.language == "typescript"
-                        && serde_json::to_value(&node)?
-                            == serde_json::to_value(&graph.nodes[index as usize])?,
-                    "Duplicate graph identity: {}",
-                    node.id
-                );
-                index
-            }
-            None => {
-                let index = u32::try_from(graph.nodes.len())?;
-                identities.insert(node.id.clone(), index);
-                graph.nodes.push(node);
-                index
-            }
-        };
-        remap.push(index);
-    }
-    Ok(remap)
-}
-
-fn append_edges(
-    graph: &mut GraphData,
-    edges: Vec<crate::model::Edge>,
-    remap: &[u32],
-    shared: bool,
-) -> Result<()> {
-    let key = |edge: &crate::model::Edge| {
-        (
-            edge.from,
-            edge.to,
-            edge.kind.clone(),
-            edge.certainty.clone(),
-            edge.provenance.clone(),
-            edge.count,
-        )
-    };
-    let mut existing: std::collections::HashSet<_> = if shared {
-        graph.edges.iter().map(key).collect()
-    } else {
-        Default::default()
-    };
-    for mut edge in edges {
-        edge.from = *remap
-            .get(edge.from as usize)
-            .context("Adapter emitted missing caller")?;
-        edge.to = *remap
-            .get(edge.to as usize)
-            .context("Adapter emitted missing target")?;
-        if !shared || existing.insert(key(&edge)) {
-            graph.edges.push(edge);
-        }
-    }
-    Ok(())
 }
 
 static JOB_SEQUENCE: AtomicU64 = AtomicU64::new(0);
@@ -378,6 +302,7 @@ fn engine_versions() -> Result<String> {
 }
 
 fn ensure_unchanged(before: &[FileFingerprint]) -> Result<()> {
+    let _timer = crate::metrics::stage("verification");
     ensure!(
         !fingerprint::is_stale(before)?,
         "Project inputs changed during analysis. Refresh again after editing stops; the previous graph is preserved."

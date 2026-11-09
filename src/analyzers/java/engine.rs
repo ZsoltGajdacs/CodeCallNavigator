@@ -10,7 +10,7 @@ use std::{
     fs,
     path::{Path, PathBuf},
     process::Command,
-    sync::atomic::AtomicBool,
+    sync::{Arc, atomic::AtomicBool},
 };
 
 pub(super) fn run(
@@ -19,6 +19,7 @@ pub(super) fn run(
     root: &Path,
     job: &AnalysisJob<'_>,
 ) -> Result<PathBuf> {
+    let _stage = crate::metrics::stage("java.bytecode");
     fs::create_dir_all(root)?;
     let java = job
         .runtime
@@ -52,15 +53,50 @@ pub(super) fn run(
         "bytecode",
         job.cancel,
     )?;
-    source_inventories(inputs, &output, job)?;
     Ok(output)
 }
 
-pub(super) fn source_inventories(
-    inputs: &[JavaInput],
+#[derive(Default)]
+pub(super) struct SourceInventories {
+    parsed: HashMap<String, Arc<super::source_inventory::SourceInventory>>,
+}
+
+impl SourceInventories {
+    pub(super) fn load(
+        &mut self,
+        inputs: &[JavaInput],
+        output: &Path,
+        job: &AnalysisJob<'_>,
+    ) -> Result<super::source_inventory::Inventories> {
+        let _stage = crate::metrics::stage("java.source_attribution");
+        let mut result = HashMap::new();
+        for (index, input) in inputs.iter().enumerate() {
+            let Some(source) = &input.source_set else {
+                continue;
+            };
+            let key = blake3::hash(&serde_json::to_vec(source)?)
+                .to_hex()
+                .to_string();
+            if !self.parsed.contains_key(&key) {
+                let path = generate_inventory(source, &key, output, job)?;
+                let inventory = super::source_inventory::SourceInventory::read(&path)?;
+                self.parsed.insert(key.clone(), Arc::new(inventory));
+                crate::metrics::count("java.source_inventories", 1);
+            } else {
+                crate::metrics::count("java.source_inventory_hits", 1);
+            }
+            result.insert(index + 1, self.parsed[&key].clone());
+        }
+        Ok(result)
+    }
+}
+
+fn generate_inventory(
+    source: &super::build::JavaSourceSet,
+    key: &str,
     output: &Path,
     job: &AnalysisJob<'_>,
-) -> Result<()> {
+) -> Result<PathBuf> {
     let java = job
         .runtime
         .java_home
@@ -68,37 +104,43 @@ pub(super) fn source_inventories(
         .context("Source inventory requires JDK 25")?;
     let cache = job.path.join("source-inventories");
     fs::create_dir_all(&cache)?;
+    let inventory = cache.join(format!("{key}.tsv"));
+    cached_inventory(&inventory, job.cancel, |temporary| {
+        run_process(
+            Command::new(java.join("bin/java"))
+                .arg("-Xmx2g")
+                .arg("-cp")
+                .arg(job.runtime.bytecode_lib()?.join("*"))
+                .arg("codegraph.bytecode.SourceInventory")
+                .arg(temporary)
+                .arg(std::env::join_paths(
+                    source.class_dirs.iter().chain(&source.compile_classpath),
+                )?)
+                .arg(std::env::join_paths(&source.class_dirs)?)
+                .args(source.source_roots.iter().chain(&source.generated_roots)),
+            output,
+            &format!("source-inventory-{key}"),
+            job.cancel,
+        )?;
+        Ok(())
+    })?;
+    Ok(inventory)
+}
+
+#[cfg(test)]
+pub(super) fn source_inventories(
+    inputs: &[JavaInput],
+    output: &Path,
+    job: &AnalysisJob<'_>,
+) -> Result<()> {
     for (index, input) in inputs.iter().enumerate() {
         let Some(source) = &input.source_set else {
             continue;
         };
-        let classpath =
-            std::env::join_paths(source.class_dirs.iter().chain(&source.compile_classpath))?;
-        let key = blake3::hash(&serde_json::to_vec(&serde_json::json!([
-            "source-inventory-v2",
-            source.project_dir,
-            source.source_set
-        ]))?)
-        .to_hex()
-        .to_string();
-        let inventory = cache.join(format!("{key}.tsv"));
-        cached_inventory(&inventory, job.cancel, |temporary| {
-            run_process(
-                Command::new(java.join("bin/java"))
-                    .arg("-Xmx2g")
-                    .arg("-cp")
-                    .arg(job.runtime.bytecode_lib()?.join("*"))
-                    .arg("codegraph.bytecode.SourceInventory")
-                    .arg(temporary)
-                    .arg(classpath)
-                    .arg(std::env::join_paths(&source.class_dirs)?)
-                    .args(source.source_roots.iter().chain(&source.generated_roots)),
-                output,
-                &format!("source-inventory-{}", index + 1),
-                job.cancel,
-            )?;
-            Ok(())
-        })?;
+        let key = blake3::hash(&serde_json::to_vec(source)?)
+            .to_hex()
+            .to_string();
+        let inventory = generate_inventory(source, &key, output, job)?;
         fs::copy(inventory, output.join(format!("source-{}.tsv", index + 1)))?;
     }
     Ok(())

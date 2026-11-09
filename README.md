@@ -108,12 +108,29 @@ bundles the analyzer artifacts, relocates Graphviz and its required dylibs, coll
 third-party notices, ad hoc signs and verifies the app, and produces the ZIP.
 No Homebrew installation is needed to run the packaged Graphviz.
 
+Analysis reuses classpath and source inventories only within the current refresh.
+Gradle ownership discovery remains separate; compilation and final metadata export
+share one invocation. TypeScript retains its compiler for a single selected target;
+multi-target analysis bounds memory by recreating one verified worker at a time.
+All content snapshots and per-context classpath rules remain enforced.
+
 The same production analyzer pipeline is available without opening a window:
 
 ```sh
 cargo run --bin codegraph -- analyze fixtures/dotnet/Fixture.sln fixtures/gradle fixtures/maven/standalone/pom.xml
 cargo run --bin codegraph -- analyze /path/to/project/tsconfig.json
 ```
+
+Collect stage timings and work counters with an optional JSON report:
+
+```sh
+cargo run --release --bin codegraph -- analyze --timings /tmp/codegraph-timings.json /path/to/build
+```
+
+The native app uses the same measurements through its initial layout. Stage times
+can nest and must not be summed; the CLI report covers its headless pipeline.
+See [analysis performance evidence](evidence/performance/analysis.md) for the
+release benchmark protocol, complete graph comparisons and measured results.
 
 ## Reading source on the graph
 
@@ -200,7 +217,7 @@ The ignored compiler/build regressions require bootstrapped artifacts, installed
 JDK 25 and working Maven/Gradle toolchains. To test a pinned Maven distribution,
 set `CODEGRAPH_TEST_MAVEN=/absolute/path/to/bin/mvn` when running
 `cargo test --test java_builds maven_ -- --ignored --test-threads=1`.
-TypeScript compiler fixtures run with `node --test tools/typescript/adapter.test.js`;
+TypeScript compiler fixtures run with `node --test tools/typescript/*.test.js`;
 set `CODEGRAPH_TEST_TYPESCRIPT_ROOT` to an installed TypeScript package if needed.
 The Rust TypeScript integration regressions are ignored by default alongside other
 real-toolchain tests; run `cargo test --test typescript_pipeline -- --ignored --test-threads=1`.

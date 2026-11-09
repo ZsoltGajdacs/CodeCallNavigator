@@ -1,14 +1,19 @@
 //! Validated source declaration inventory, independent of graph inclusion policy.
+#[cfg(test)]
+use super::JavaInput;
 use super::{
-    JavaInput,
     lambda_names::SourceLambda,
-    metadata::{method_key, read_tsv, unescape},
+    metadata::{method_key, unescape},
+    tables::tsv_rows,
 };
 use anyhow::{Result, ensure};
 use std::{
     collections::{HashMap, HashSet},
     path::Path,
+    sync::Arc,
 };
+
+pub(super) type Inventories = HashMap<usize, Arc<SourceInventory>>;
 
 #[derive(Default)]
 pub(super) struct SourceInventory {
@@ -19,9 +24,11 @@ pub(super) struct SourceInventory {
 impl SourceInventory {
     pub fn read(path: &Path) -> Result<Self> {
         let mut inventory = Self::default();
-        let rows = read_tsv(path)?;
+        let mut rows = tsv_rows(path)?;
+        let header = rows.next().transpose()?;
         ensure!(
-            rows.first()
+            header
+                .as_ref()
                 .is_some_and(|row| row.iter().map(String::as_str).eq([
                     "kind_v2",
                     "signature",
@@ -35,7 +42,8 @@ impl SourceInventory {
                 ])),
             "Unsupported Java source inventory format; rebuild the Java adapter"
         );
-        for row in rows.iter().skip(1) {
+        for row in rows {
+            let row = row?;
             ensure!(row.len() == 9, "Malformed Java source inventory");
             let fields: Vec<_> = row.iter().map(|field| unescape(field)).collect();
             match fields[0].as_str() {
@@ -84,10 +92,8 @@ impl SourceInventory {
     }
 }
 
-pub(super) fn inventories(
-    output: &Path,
-    inputs: &[JavaInput],
-) -> Result<HashMap<usize, SourceInventory>> {
+#[cfg(test)]
+pub(super) fn inventories(output: &Path, inputs: &[JavaInput]) -> Result<Inventories> {
     inputs
         .iter()
         .enumerate()
@@ -95,7 +101,9 @@ pub(super) fn inventories(
         .map(|(index, _)| {
             Ok((
                 index + 1,
-                SourceInventory::read(&output.join(format!("source-{}.tsv", index + 1)))?,
+                Arc::new(SourceInventory::read(
+                    &output.join(format!("source-{}.tsv", index + 1)),
+                )?),
             ))
         })
         .collect()

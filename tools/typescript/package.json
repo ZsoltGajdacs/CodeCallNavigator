@@ -1,1 +1,1 @@
-{"private":true,"type":"commonjs","scripts":{"test":"node --test adapter.test.js"}}
+{"private":true,"type":"commonjs","scripts":{"test":"node --test *.test.js"}}

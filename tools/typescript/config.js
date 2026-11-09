@@ -2,6 +2,7 @@
 const {failDiagnostics,toolchain,trackingSystem,createPrograms}=require('./compiler.js');
 const {canonical,isProjectSource} = require('./paths.js');
 const {metadata} = require('./inputs.js');
+const {Observations}=require('./observations.js');
 function parseProject(ts,file,system) {
   const parsed = ts.getParsedCommandLineOfConfigFile(file, {}, {...system,onUnRecoverableConfigFileDiagnostic:d=>failDiagnostics(ts,[d])});
   if (!parsed) throw new Error(`Cannot parse TypeScript configuration ${file}`);
@@ -38,13 +39,14 @@ function ownedSources(projects) {
 }
 function prepare(config) {
   config = canonical(config);
-  const {ts,entry,localRequire} = toolchain(config);
+  const observations=new Observations();
+  const {ts,entry,localRequire} = toolchain(config,observations);
   const inputs = new Set([entry]);
-  const system = trackingSystem(ts,inputs);
+  const system = trackingSystem(ts,inputs,observations);
   const projects = configuredProjects(ts,config,system);
   const owners = ownedSources(projects);
   const programs = createPrograms(ts,projects,system);
-  const context = {ts,config,projects,owners,programs,localRequire};
+  const context = {ts,config,projects,owners,programs,localRequire,observations};
   context.metadata = metadata(context,inputs);
   return context;
 }

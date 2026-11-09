@@ -1,9 +1,6 @@
 //! Context planning and staging; original paths remain the source of ownership.
 use super::{
-    JavaInput,
-    build::JavaSourceSet,
-    compiled_paths,
-    metadata::{read_tsv, unescape},
+    JavaInput, build::JavaSourceSet, compiled_paths, metadata::unescape, tables::read_tsv,
 };
 use crate::{
     analyzers::{AnalysisJob, process::run_process},
@@ -112,6 +109,7 @@ pub(super) fn stage(
     root: &Path,
     job: &AnalysisJob<'_>,
 ) -> Result<StagedContext> {
+    let _stage = crate::metrics::stage("java.classpath_staging");
     fs::create_dir_all(root)?;
     let java = job
         .runtime
@@ -140,11 +138,29 @@ pub(super) fn stage(
             .arg(root)
             .arg("--project-inputs")
             .arg(projects)
+            .arg("--artifact-cache")
+            .arg(job.shared_path.join("artifact-inventories"))
             .args(&existing),
         root,
         "staging",
         job.cancel,
     )?;
+    let statistics = super::engine::status(&root.join("artifact-stats.properties"))?;
+    for (key, counter) in [
+        ("artifact_reads", "java.artifact_reads"),
+        ("artifact_hits", "java.artifact_hits"),
+        ("classes_indexed", "java.classes_indexed"),
+        ("artifact_bytes_read", "java.artifact_bytes_read"),
+        ("artifact_retained_bytes", "java.artifact_retained_bytes"),
+        ("artifact_index_bytes", "java.artifact_index_bytes"),
+        ("staged_bytes", "java.staged_bytes"),
+    ] {
+        let value = statistics
+            .get(key)
+            .context("Missing artifact inventory statistics")?
+            .parse()?;
+        crate::metrics::count(counter, value);
+    }
     Ok(StagedContext {
         inputs: staged_inputs(root, context, &ownership)?,
         diagnostics: shadow_diagnostics(root, &context.owner)?,
@@ -251,5 +267,50 @@ mod tests {
         fs::create_dir(&absent).unwrap();
         fs::write(absent.join("New.class"), b"new definition").unwrap();
         assert!(fingerprint::is_stale(&before).unwrap());
+    }
+
+    #[test]
+    #[ignore = "requires the pinned bytecode distribution and installed JDK 25"]
+    fn selected_builds_share_artifact_indexes_but_keep_separate_context_ownership() {
+        let root = tempfile::tempdir().unwrap();
+        let runtime = crate::analyzers::AnalyzerRuntime::discover().unwrap();
+        let source = "package fixture; public class Flow { public void run() {} }";
+        let external = super::super::tests::compile_source_fixture(
+            &runtime,
+            &root.path().join("external"),
+            source,
+            "-g",
+        );
+        let metrics = crate::metrics::Metrics::default();
+        let _scope = metrics.enter();
+        let cancel = std::sync::atomic::AtomicBool::new(false);
+        let progress = |_| {};
+        for name in ["first", "second"] {
+            let build_root = root.path().join(name);
+            let mut input =
+                super::super::tests::compile_source_fixture(&runtime, &build_root, source, "-g");
+            let source = input.source_set.as_mut().unwrap();
+            source.compile_classpath.push(external.path.clone());
+            let sources = [source.clone()];
+            let planned = plan(&sources).unwrap();
+            let before = snapshot(&planned).unwrap();
+            let job = AnalysisJob {
+                runtime: &runtime,
+                path: &build_root,
+                shared_path: root.path(),
+                cancel: &cancel,
+                progress: &progress,
+            };
+            let staged = stage(&planned[0], &sources, &build_root.join("context"), &job).unwrap();
+            assert_eq!(staged.inputs.len(), 1);
+            assert_eq!(
+                staged.inputs[0].source_set.as_ref().unwrap().project_dir,
+                build_root
+            );
+            assert!(!fingerprint::is_stale(&before).unwrap());
+        }
+        let report = metrics.report();
+        assert_eq!(report.counters["java.artifact_reads"], 3);
+        assert_eq!(report.counters["java.artifact_hits"], 1);
     }
 }

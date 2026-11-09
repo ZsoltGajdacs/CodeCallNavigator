@@ -114,6 +114,10 @@ fn old_cached_policy_requires_refresh_without_deleting_data() {
     let store = SqliteStore::open(directory.path()).unwrap();
     let generation = store.publish(&graph(), &AtomicBool::new(false)).unwrap();
     let connection = rusqlite::Connection::open(directory.path().join(&generation)).unwrap();
+    // Emulate a legacy generation, which has no separate scalar policy entry.
+    connection
+        .execute("DELETE FROM metadata WHERE key='method_policy'", [])
+        .unwrap();
     connection
         .execute(
             "UPDATE metadata SET value=json_remove(value, '$.method_policy') WHERE key='graph'",

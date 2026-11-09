@@ -13,15 +13,19 @@ function projectInputs(config, inputs) {
     directory = parent;
   }
 }
-function packageVersion(config, name, inputs, versions) {
-  const resolver = createRequire(path.join(path.dirname(config),'__codegraph__.js'));
-  try {
-    const manifest = canonical(resolver.resolve(`${name}/package.json`));
-    inputs.add(manifest);
-    versions[`${name}:${config}`] = JSON.parse(fs.readFileSync(manifest,'utf8')).version;
-  } catch (error) {
-    if (['MODULE_NOT_FOUND','ERR_PACKAGE_PATH_NOT_EXPORTED'].includes(error.code)) return;
+function resolveManifest(config,name) {
+  const resolver=createRequire(path.join(path.dirname(config),'__codegraph__.js'));
+  try { return canonical(resolver.resolve(`${name}/package.json`)); }
+  catch(error) {
+    if (['MODULE_NOT_FOUND','ERR_PACKAGE_PATH_NOT_EXPORTED'].includes(error.code)) return null;
     throw error;
   }
+}
+function packageVersion(config, name, inputs, {versions,observations}) {
+  const manifest=observations.observe(`package:${config}:${name}`,()=>resolveManifest(config,name));
+  if (!manifest) return;
+  inputs.add(manifest);
+  const contents=observations.observe(`manifest:${manifest}`,()=>fs.readFileSync(manifest,'utf8'));
+  versions[`${name}:${config}`]=JSON.parse(contents).version;
 }
 module.exports={projectInputs,packageVersion};

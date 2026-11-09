@@ -4,10 +4,7 @@ use super::{
     EDGE_LIMIT, GraphView, GroupKind, Grouping, NODE_LIMIT, NodeOrder, Request, Scope, Selection,
     SourcePath, ViewEdge, ViewNode,
 };
-use codegraph::{
-    graph::{Filter, GraphIndex},
-    model::Node,
-};
+use codegraph::{graph::GraphIndex, model::Node};
 use std::{
     collections::{BTreeMap, HashMap, HashSet},
     path::{Path, PathBuf},
@@ -99,11 +96,7 @@ struct Aggregates {
 }
 
 fn aggregate_nodes(graph: &GraphIndex, request: &Request, selection: &Selection) -> Aggregates {
-    let cyclic: HashSet<u32> = graph
-        .cycles(&request.filter)
-        .into_iter()
-        .flatten()
-        .collect();
+    let summary = graph.filter_summary(&request.filter);
     let starts: HashSet<_> = graph
         .data
         .entry_points
@@ -128,7 +121,7 @@ fn aggregate_nodes(graph: &GraphIndex, request: &Request, selection: &Selection)
             });
         }
         representative.count += 1;
-        representative.cyclic |= cyclic.contains(&index);
+        representative.cyclic |= summary.cyclic[index as usize];
     }
     for node in representatives.values_mut() {
         node.files.sort();
@@ -202,7 +195,8 @@ pub(super) fn project_page(
         selection.direction,
     );
     let mut view = page(aggregates, ordered, request.page);
-    (view.hidden_nodes, view.hidden_edges) = hidden_counts(graph, &request.filter);
+    let summary = graph.filter_summary(&request.filter);
+    (view.hidden_nodes, view.hidden_edges) = (summary.hidden_nodes, summary.hidden_edges);
     view.omitted_nodes += selection.omitted_nodes;
     view.omitted_edges += selection.omitted_edges;
     view.message = selection.message;
@@ -255,30 +249,10 @@ fn page(aggregates: Aggregates, ordered: Vec<(usize, NodeOrder)>, page: usize) -
     }
 }
 
-fn hidden_counts(graph: &GraphIndex, filter: &Filter) -> (usize, usize) {
-    let nodes = graph
-        .data
-        .nodes
-        .iter()
-        .filter(|n| !filter.accepts_node(n))
-        .count();
-    let edges = graph
-        .data
-        .edges
-        .iter()
-        .filter(|e| {
-            !filter.accepts_edge(e)
-                || !filter.accepts_node(&graph.data.nodes[e.from as usize])
-                || !filter.accepts_node(&graph.data.nodes[e.to as usize])
-        })
-        .count();
-    (nodes, edges)
-}
-
 #[cfg(test)]
 mod file_tests {
     use super::*;
-    use codegraph::model::GraphData;
+    use codegraph::{graph::Filter, model::GraphData};
     use std::sync::Arc;
 
     #[test]

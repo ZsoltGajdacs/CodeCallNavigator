@@ -1,5 +1,8 @@
+mod filter_summary;
 use crate::model::{Edge, GraphData, Node};
 use anyhow::Result;
+pub use filter_summary::FilterSummary;
+use filter_summary::SummaryCache;
 use petgraph::{algo::kosaraju_scc, graph::DiGraph};
 use serde::{Deserialize, Serialize};
 use std::{
@@ -17,7 +20,7 @@ pub enum Direction {
     Both,
 }
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Deserialize, Serialize)]
 pub struct Filter {
     pub include_tests: bool,
     pub include_generated: bool,
@@ -138,6 +141,7 @@ pub struct GraphIndex {
     identities: HashMap<String, u32>,
     incoming: Adjacency,
     outgoing: Adjacency,
+    summaries: SummaryCache,
 }
 
 impl GraphIndex {
@@ -156,6 +160,7 @@ impl GraphIndex {
             identities,
             incoming,
             outgoing,
+            summaries: SummaryCache::default(),
         })
     }
 
@@ -331,7 +336,17 @@ impl GraphIndex {
         }
     }
 
+    pub fn filter_summary(&self, filter: &Filter) -> Arc<FilterSummary> {
+        self.summaries.get(filter, || {
+            FilterSummary::new(&self.data, filter, self.compute_cycles(filter))
+        })
+    }
+
     pub fn cycles(&self, filter: &Filter) -> Vec<Vec<u32>> {
+        self.filter_summary(filter).cycles.clone()
+    }
+
+    fn compute_cycles(&self, filter: &Filter) -> Vec<Vec<u32>> {
         let mut graph = DiGraph::<u32, ()>::new();
         let indices: Vec<_> = self
             .data

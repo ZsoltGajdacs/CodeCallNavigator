@@ -5,6 +5,7 @@ use std::{path::PathBuf, sync::Arc};
 pub struct LoadedGraph {
     pub graph: Arc<GraphIndex>,
     pub generation: String,
+    pub metrics: Option<codegraph::metrics::Metrics>,
 }
 pub struct Boot {
     pub store: Arc<SqliteStore>,
@@ -68,7 +69,11 @@ fn read_cached_graph(store: &SqliteStore) -> anyhow::Result<Option<LoadedGraph>>
             let graph = Arc::new(GraphIndex::new(Arc::new(
                 store.load_generation(&generation)?,
             ))?);
-            Ok(LoadedGraph { graph, generation })
+            Ok(LoadedGraph {
+                graph,
+                generation,
+                metrics: None,
+            })
         })
         .transpose()
 }

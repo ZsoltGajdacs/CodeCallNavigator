@@ -20,6 +20,10 @@ pub(super) fn metadata(
         build.label
     ));
     task(build, context, "codegraphExportMetadata")?;
+    read_metadata(build, context)
+}
+
+fn read_metadata(build: &BuildTarget, context: &AnalysisJob<'_>) -> Result<JavaBuildMetadata> {
     let mut sets: Vec<JavaSourceSet> =
         serde_json::from_slice(&fs::read(context.path.join("gradle-metadata.json"))?)?;
     for source in &mut sets {
@@ -95,6 +99,10 @@ fn gradle_command(root: &Path) -> Result<PathBuf> {
 }
 
 pub(super) fn compile(build: &BuildTarget, context: &AnalysisJob<'_>) -> Result<JavaBuildMetadata> {
-    task(build, context, "codegraphCompileSources")?;
-    metadata(build, context)
+    let metadata = context.path.join("gradle-metadata.json");
+    if metadata.exists() {
+        fs::remove_file(&metadata)?;
+    }
+    task(build, context, "codegraphCompileAndExport")?;
+    read_metadata(build, context)
 }

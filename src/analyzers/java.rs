@@ -11,6 +11,7 @@ use std::{
 };
 
 mod build;
+mod class_facts;
 mod compose;
 mod contexts;
 mod engine;
@@ -23,10 +24,12 @@ mod metadata;
 mod normalize;
 mod policy;
 mod source_inventory;
+mod tables;
 use build::JavaSourceSet;
 pub(super) use build::{PreparedJava, prepare, reject_overlaps};
 #[cfg(test)]
 use metadata::unescape as tsv_unescape;
+#[cfg(test)]
 use normalize::normalize_bytecode;
 #[cfg(test)]
 use normalize::{java_certainty, method_key};
@@ -66,6 +69,8 @@ fn analyze_compiled(
         roots: vec![build.path.to_string_lossy().into_owned()],
         ..GraphData::default()
     };
+    let mut composer = compose::Composer::default();
+    let mut inventories = engine::SourceInventories::default();
     for (index, planned) in contexts.iter().enumerate() {
         (context.progress)(format!(
             "Reading Java context {} / {} ({}/{})…",
@@ -77,8 +82,17 @@ fn analyze_compiled(
         let root = context.path.join(format!("context-{index}"));
         let staged = contexts::stage(planned, &metadata.source_sets, &root, context)?;
         let output = engine::run(&staged.inputs, &planned.owner, &root, context)?;
-        let part = normalize_bytecode(build, &output, &staged.inputs, Some(&planned.owner))?;
-        compose::append(&mut graph, part)?;
+        let sources = inventories.load(&staged.inputs, &output, context)?;
+        let part = normalize::with_inventories(
+            build,
+            &output,
+            normalize::CompiledContext {
+                inputs: &staged.inputs,
+                owner: Some(&planned.owner),
+                inventories: sources,
+            },
+        )?;
+        composer.append(&mut graph, part)?;
         graph.diagnostics.extend(staged.diagnostics);
         // Successful contexts carry no persisted temporary paths. Bound disk use to
         // one context; retain a failing context's files for diagnosis.
@@ -438,6 +452,7 @@ mod tests {
         let job = AnalysisJob {
             runtime,
             path: root,
+            shared_path: root,
             cancel: &cancel,
             progress: &progress,
         };
@@ -477,6 +492,7 @@ mod compiled_acceptance {
         let context = AnalysisJob {
             runtime: &runtime,
             path: root.path(),
+            shared_path: root.path(),
             cancel: &cancel,
             progress: &progress,
         };

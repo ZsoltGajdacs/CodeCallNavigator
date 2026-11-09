@@ -29,7 +29,13 @@ gradle.projectsEvaluated {
         }
         dependsOn(compileTasks)
     }
+    def compileSources = root.tasks.named('codegraphCompileSources')
+    root.tasks.register('codegraphCompileAndExport') {
+        dependsOn(compileSources)
+        finalizedBy('codegraphExportMetadata')
+    }
     root.tasks.register('codegraphExportMetadata') {
+        mustRunAfter(compileSources)
         doLast {
             def destination = root.findProperty('codegraphMetadataFile')
             if (!destination) { throw new GradleException('codegraphMetadataFile is required') }

@@ -3,5 +3,6 @@ pub mod discovery;
 pub mod fingerprint;
 pub mod graph;
 pub mod method_policy;
+pub mod metrics;
 pub mod model;
 pub mod store;

@@ -9,6 +9,7 @@ use std::{
 };
 
 pub fn capture(paths: impl IntoIterator<Item = PathBuf>) -> Result<Vec<FileFingerprint>> {
+    let _stage = crate::metrics::stage("fingerprints.capture");
     paths
         .into_iter()
         .collect::<BTreeSet<_>>()
@@ -23,6 +24,7 @@ pub fn capture_excluding(
     paths: impl IntoIterator<Item = PathBuf>,
     output_roots: &[PathBuf],
 ) -> Result<Vec<FileFingerprint>> {
+    let _stage = crate::metrics::stage("fingerprints.capture");
     paths
         .into_iter()
         .collect::<BTreeSet<_>>()
@@ -35,6 +37,7 @@ pub fn capture_excluding(
 }
 
 pub fn is_stale(items: &[FileFingerprint]) -> Result<bool> {
+    let _stage = crate::metrics::stage("fingerprints.verify");
     for item in items {
         let path = Path::new(&item.path);
         let current = fingerprint(path, &item.excluded_children, true)?;
@@ -72,7 +75,12 @@ fn collect_roots(
     include_missing: bool,
     all_files: bool,
 ) -> Result<Vec<PathBuf>> {
-    let mut paths = BTreeSet::new();
+    let _stage = crate::metrics::stage("fingerprints.discover");
+    let mut collector = SourceCollector {
+        paths: BTreeSet::new(),
+        visited: BTreeSet::new(),
+        all_files,
+    };
     for root in roots {
         let descendant_outputs: Vec<_> = output_roots
             .iter()
@@ -80,38 +88,53 @@ fn collect_roots(
             .cloned()
             .collect();
         if root.is_dir() {
-            collect_sources(root, &descendant_outputs, all_files, &mut paths)?;
+            collector.visit(root, &descendant_outputs)?;
         } else if root.is_file() || include_missing {
-            paths.insert(root.clone());
+            collector.paths.insert(root.clone());
         }
     }
-    Ok(paths.into_iter().collect())
+    Ok(collector.paths.into_iter().collect())
 }
 
-fn collect_sources(
-    root: &Path,
-    output_roots: &[PathBuf],
+struct SourceCollector {
+    paths: BTreeSet<PathBuf>,
+    visited: BTreeSet<(PathBuf, Vec<PathBuf>)>,
     all_files: bool,
-    paths: &mut BTreeSet<PathBuf>,
-) -> Result<()> {
-    paths.insert(root.into());
-    for entry in fs::read_dir(root)? {
-        let entry = entry?;
-        let kind = entry.file_type()?;
-        let name = entry.file_name().to_string_lossy().into_owned();
-        if output_roots
+}
+
+impl SourceCollector {
+    fn visit(&mut self, root: &Path, output_roots: &[PathBuf]) -> Result<()> {
+        let exclusions: Vec<_> = output_roots
             .iter()
-            .any(|output| entry.path().starts_with(output))
-        {
-            continue;
+            .filter(|output| output.starts_with(root))
+            .cloned()
+            .collect::<BTreeSet<_>>()
+            .into_iter()
+            .collect();
+        // Distinct exclusion policies must still visit explicit generated roots.
+        // Keep lexical paths: aliases may carry distinct source ownership.
+        if !self.visited.insert((root.into(), exclusions)) {
+            crate::metrics::count("fingerprint.directory_scan_reuses", 1);
+            return Ok(());
         }
-        if kind.is_dir() && !excluded_directory(&name) {
-            collect_sources(&entry.path(), output_roots, all_files, paths)?;
-        } else if kind.is_file() && tracked_file(&entry.path(), all_files) {
-            paths.insert(entry.path());
+        crate::metrics::count("fingerprint.directories_visited", 1);
+        self.paths.insert(root.into());
+        for entry in fs::read_dir(root)? {
+            let entry = entry?;
+            let kind = entry.file_type()?;
+            let path = entry.path();
+            let name = entry.file_name().to_string_lossy().into_owned();
+            if output_roots.iter().any(|output| path.starts_with(output)) {
+                continue;
+            }
+            if kind.is_dir() && !excluded_directory(&name) {
+                self.visit(&path, output_roots)?;
+            } else if kind.is_file() && tracked_file(&path, self.all_files) {
+                self.paths.insert(path);
+            }
         }
+        Ok(())
     }
-    Ok(())
 }
 
 fn tracked_file(path: &Path, all_files: bool) -> bool {
@@ -246,13 +269,17 @@ fn file_hash(path: &Path) -> Result<String> {
     let mut file = fs::File::open(path)?;
     let mut hasher = blake3::Hasher::new();
     let mut buffer = [0u8; 65536];
+    let mut bytes = 0;
     loop {
         let count = file.read(&mut buffer)?;
         if count == 0 {
             break;
         }
         hasher.update(&buffer[..count]);
+        bytes += count as u64;
     }
+    crate::metrics::count("fingerprint.files_hashed", 1);
+    crate::metrics::count("fingerprint.bytes_hashed", bytes);
     Ok(hasher.finalize().to_hex().to_string())
 }
 

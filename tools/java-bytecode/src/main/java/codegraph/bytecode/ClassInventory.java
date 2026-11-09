@@ -25,6 +25,40 @@ final class ClassInventory {
         }
     }
 
+    @FunctionalInterface
+    interface EntryReader {
+        byte[] read(String entry) throws IOException;
+    }
+
+    @FunctionalInterface
+    interface ReadAction {
+        void accept(EntryReader reader) throws IOException;
+    }
+
+    static void withReader(Path input, ReadAction action) throws IOException {
+        if (Files.isDirectory(input)) {
+            action.accept(entry -> directoryBytes(input, entry));
+        } else {
+            try (var jar = new JarFile(input.toFile(), false, ZipFile.OPEN_READ, Runtime.Version.parse("25"))) {
+                action.accept(entry -> archiveBytes(jar, entry));
+            }
+        }
+    }
+
+    private static byte[] directoryBytes(Path input, String entry) throws IOException {
+        Path file = input.resolve(entry).normalize();
+        if (!file.startsWith(input)) throw new IOException("Invalid class entry: " + entry);
+        return Files.readAllBytes(file);
+    }
+
+    private static byte[] archiveBytes(JarFile jar, String entry) throws IOException {
+        var selected = jar.getJarEntry(entry);
+        if (selected == null) throw new IOException("Class entry disappeared: " + entry);
+        try (var stream = jar.getInputStream(selected)) {
+            return stream.readAllBytes();
+        }
+    }
+
     private static void directory(Path input, Visitor visitor) throws IOException {
         try (var files = Files.walk(input)) {
             for (Path file : files.filter(Files::isRegularFile)

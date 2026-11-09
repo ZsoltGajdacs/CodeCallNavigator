@@ -1,0 +1,65 @@
+{
+  "rust": {
+    "command": "cargo test --all-targets -- --include-ignored --test-threads=1 --skip recurring_billing",
+    "exit_code": 0,
+    "passed": 187,
+    "failed": 0,
+    "ignored": 0,
+    "filtered": 2,
+    "log": "rust-all-targets-including-toolchains.log"
+  },
+  "node": {
+    "command": "node --test tools/typescript/adapter.test.js tools/typescript/observations.test.js tools/typescript/worker.test.js",
+    "exit_code": 0,
+    "passed": 30,
+    "failed": 0,
+    "skipped": 0,
+    "log": "node-all-adapters.log"
+  },
+  "exceptions": [
+    {
+      "test": "analyzers::java::compiled_acceptance::recurring_billing_successful_build_outputs_preserve_both_generated_copies",
+      "reason": "CODEGRAPH_COMPILED_METADATA and CODEGRAPH_RECURRING_BILLING are unset"
+    },
+    {
+      "test": "recurring_billing_retains_duplicate_generated_declarations",
+      "reason": "CODEGRAPH_RECURRING_BILLING is unset; private Maven dependencies required"
+    }
+  ],
+  "independent_review": "No actionable findings. New behavioral tests compare filter summaries against independent graph reachability, verify same-size timestamp-preserved input edits, search policy backward compatibility/order/pagination, process lifecycle, classpath order, and semantic equivalence beyond counts.",
+  "focused_after_review": {
+    "shared_analysis_cache": {
+      "passed": 1,
+      "command": "cargo test --lib selected_builds_share_artifact_indexes -- --ignored"
+    },
+    "completed_metrics": {
+      "passed": 1,
+      "command": "cargo test --lib metrics::tests"
+    },
+    "python": {
+      "passed": 46,
+      "command": "python3.13 -m unittest discover -s tests -v"
+    },
+    "clippy": {
+      "passed": true,
+      "command": "cargo clippy --all-targets --no-deps -- -D warnings"
+    },
+    "packaging": {
+      "passed": true,
+      "command": "python3.13 tools/package.py",
+      "signature": "deep strict ad hoc signature verified"
+    },
+    "post_prefetch_duplicates": {
+      "passed": 2,
+      "command": "cargo test --test java_duplicates -- --ignored --test-threads=1 --skip recurring_billing"
+    },
+    "post_prefetch_jvm": {
+      "passed": 9,
+      "command": "python3.13 -m unittest discover -s tests -p test_java_context.py -v"
+    }
+  },
+  "review": {
+    "final": "No actionable findings after TSV, worker retention, fingerprint comparison and completed-metrics fixes.",
+    "vendor_formatting": "A broad formatter touched vendor/rune; all 1171 deltas were verified against rustfmt(HEAD) and restored. Pinned dependency verification and packaging passed afterward."
+  }
+}

@@ -1,3 +1,4 @@
+pub(super) mod worker;
 use anyhow::{Context, Result, bail, ensure};
 use std::os::unix::process::CommandExt;
 use std::{
@@ -21,6 +22,8 @@ pub(super) fn run_process(
     cancel: &AtomicBool,
 ) -> Result<PathBuf> {
     check_cancel(cancel)?;
+    let _timing = crate::metrics::stage("subprocess");
+    crate::metrics::count("subprocesses", 1);
     let stdout = job.join(format!("{name}.stdout"));
     let stderr = job.join(format!("{name}.stderr"));
     command
