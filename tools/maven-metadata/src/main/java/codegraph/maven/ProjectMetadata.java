@@ -27,7 +27,7 @@ final class ProjectMetadata {
     Set<String> inputs() { return inputs; }
     Set<String> outputs() { return outputs; }
 
-    Map<String, Object> sourceSet(boolean test) throws IOException {
+    Map<String, Object> sourceSet(boolean test, boolean evaluated) throws IOException {
         Set<String> roots = paths(test ? project.getTestCompileSourceRoots() : project.getCompileSourceRoots());
         Set<String> generated = generatedRoots(test);
         for (String root : roots) {
@@ -40,11 +40,47 @@ final class ProjectMetadata {
         result.put("project", project.getGroupId() + ":" + project.getArtifactId());
         result.put("projectDir", BuildMetadata.path(project.getBasedir()));
         result.put("isTest", test);
+        result.put("sourceSet", test ? "test" : "main");
+        result.put("compileClasspath", evaluated ? compileClasspath(test) : List.of());
+        result.put("classpathAliases", classpathAliases(test));
         result.put("sourceRoots", roots);
         result.put("generatedRoots", generated);
         result.put("classDirs", List.of(BuildMetadata.path(resolve(test
                 ? project.getBuild().getTestOutputDirectory() : project.getBuild().getOutputDirectory()))));
         result.put("buildInputs", inputs);
+        return result;
+    }
+
+    private Set<String> compileClasspath(boolean test) throws IOException {
+        try {
+            return paths(test ? project.getTestClasspathElements() : project.getCompileClasspathElements());
+        } catch (org.apache.maven.artifact.DependencyResolutionRequiredException exception) {
+            throw new IOException("Compile classpath is unresolved for " + project.getId(), exception);
+        }
+    }
+
+    private Set<String> classpathAliases(boolean test) throws IOException {
+        if (test) {
+            return testArtifactAliases();
+        }
+        Set<String> result = new LinkedHashSet<>();
+        if (project.getArtifact() != null) {
+            BuildMetadata.add(result, project.getArtifact().getFile());
+        }
+        if ("jar".equals(project.getPackaging())) {
+            BuildMetadata.add(result, resolve(project.getBuild().getDirectory() + "/"
+                    + project.getBuild().getFinalName() + ".jar"));
+        }
+        return result;
+    }
+
+    private Set<String> testArtifactAliases() throws IOException {
+        Set<String> result = new LinkedHashSet<>();
+        for (var artifact : project.getAttachedArtifacts()) {
+            if ("tests".equals(artifact.getClassifier())) {
+                BuildMetadata.add(result, artifact.getFile());
+            }
+        }
         return result;
     }
 

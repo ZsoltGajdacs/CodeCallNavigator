@@ -7,6 +7,8 @@ import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.IntSummaryStatistics;
 import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.jar.JarFile;
 import java.util.stream.Collectors;
 import org.apache.bcel.classfile.AnnotationEntry;
@@ -21,6 +23,7 @@ import org.apache.bcel.generic.Type;
 final class BytecodeMetadata implements AutoCloseable {
     private final BufferedWriter classes;
     private final BufferedWriter methods;
+    private final Set<Integer> inputsWithMethods = new HashSet<>();
 
     private BytecodeMetadata(Path outputRoot) throws IOException {
         classes = Files.newBufferedWriter(outputRoot.resolve("class_metadata.tsv"));
@@ -29,11 +32,12 @@ final class BytecodeMetadata implements AutoCloseable {
         methods.write("input_index\tinput_path\tclass_entry\tclass_name\tsource_file\tmethod\treturn_type\tflags\tstart_line\tend_line\tannotations\n");
     }
 
-    static void write(Path outputRoot, List<String> inputs) throws IOException {
+    static Set<Integer> write(Path outputRoot, List<String> inputs) throws IOException {
         try (BytecodeMetadata metadata = new BytecodeMetadata(outputRoot)) {
             for (int index = 0; index < inputs.size(); index++) {
                 metadata.writeInput(new Input(index + 1, Path.of(inputs.get(index))));
             }
+            return Set.copyOf(metadata.inputsWithMethods);
         }
     }
 
@@ -70,6 +74,9 @@ final class BytecodeMetadata implements AutoCloseable {
     }
 
     private void writeClass(Input input, String entry, JavaClass javaClass) throws IOException {
+        if (javaClass.getMethods().length > 0) {
+            inputsWithMethods.add(input.index());
+        }
         String sourceFile = javaClass.getSourceFileName();
         writeRow(classes, List.of(input.index(), input.path(), entry, javaClass.getClassName(),
                 sourceFile, javaClass.getAccessFlags(), annotations(javaClass.getAnnotationEntries())));
@@ -102,12 +109,7 @@ final class BytecodeMetadata implements AutoCloseable {
     }
 
     private static void writeRow(BufferedWriter writer, List<?> fields) throws IOException {
-        writer.write(fields.stream().map(Object::toString).map(BytecodeMetadata::escape).collect(Collectors.joining("\t")));
-        writer.newLine();
-    }
-
-    private static String escape(String field) {
-        return field.replace("\\", "\\\\").replace("\t", "\\t").replace("\n", "\\n").replace("\r", "\\r");
+        ContextTsv.write(writer, fields.toArray());
     }
 
     @Override

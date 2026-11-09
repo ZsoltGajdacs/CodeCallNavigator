@@ -15,7 +15,7 @@ import org.apache.maven.project.MavenProject;
 final class BuildMetadata {
     private BuildMetadata() {}
 
-    static Map<String, Object> collect(MavenSession session) throws IOException {
+    static Map<String, Object> collect(MavenSession session, boolean evaluated) throws IOException {
         Set<String> modules = new LinkedHashSet<>();
         Set<String> inputs = sessionInputs(session.getRequest());
         Set<String> outputs = new LinkedHashSet<>();
@@ -27,8 +27,8 @@ final class BuildMetadata {
             outputs.addAll(metadata.outputs());
             // Aggregators retain ownership but have no compilation output of their own.
             if (!"pom".equals(project.getPackaging())) {
-                sourceSets.add(metadata.sourceSet(false));
-                sourceSets.add(metadata.sourceSet(true));
+                sourceSets.add(metadata.sourceSet(false, evaluated));
+                sourceSets.add(metadata.sourceSet(true, evaluated));
             }
         }
         Map<String, Object> result = new LinkedHashMap<>();

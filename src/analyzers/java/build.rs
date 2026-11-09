@@ -17,6 +17,10 @@ use std::{
 #[serde(rename_all = "camelCase")]
 pub(super) struct JavaSourceSet {
     pub project: String,
+    pub source_set: String,
+    pub compile_classpath: Vec<PathBuf>,
+    #[serde(default)]
+    pub classpath_aliases: Vec<PathBuf>,
     pub project_dir: PathBuf,
     pub is_test: bool,
     pub source_roots: Vec<PathBuf>,
@@ -97,7 +101,7 @@ fn validate(metadata: &JavaBuildMetadata) -> Result<()> {
             "Source-set module ownership is missing"
         );
         ensure!(
-            !source.project.is_empty(),
+            !source.project.is_empty() && !source.source_set.is_empty(),
             "Source-set project name is missing"
         );
         for path in source
@@ -187,11 +191,15 @@ impl PreparedJava {
                 .iter()
                 .any(|path| path.extension().is_some_and(|ext| ext == "java"));
             if java {
-                let complete = source
-                    .class_dirs
-                    .iter()
-                    .map(|path| super::contains_class(path))
-                    .collect::<Result<Vec<_>>>()?;
+                let complete =
+                    source
+                        .class_dirs
+                        .iter()
+                        .map(|path| {
+                            Ok(path.join("module-info.class").is_file()
+                                || super::contains_class(path)?)
+                        })
+                        .collect::<Result<Vec<_>>>()?;
                 ensure!(
                     complete.iter().any(|found| *found),
                     "No compiled Java output for {} ({})",

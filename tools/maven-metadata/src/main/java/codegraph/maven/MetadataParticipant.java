@@ -42,7 +42,8 @@ public final class MetadataParticipant extends AbstractMavenLifecycleParticipant
         }
         try {
             Path target = Path.of(destination);
-            Files.writeString(target, Json.write(BuildMetadata.collect(session)), StandardCharsets.UTF_8);
+            Files.writeString(target, Json.write(BuildMetadata.collect(session, property.endsWith(".final")
+                    && session.getRequest().getGoals().contains("test-compile"))), StandardCharsets.UTF_8);
         } catch (IOException | RuntimeException exception) {
             throw new MavenExecutionException("Cannot export CodeGraph Maven metadata", exception);
         }

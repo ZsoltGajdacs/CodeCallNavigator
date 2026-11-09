@@ -1,6 +1,7 @@
 // Build-tool metadata only. This init script performs no Java parsing or call resolution.
 import groovy.json.JsonOutput
 import org.gradle.api.tasks.testing.Test
+import org.gradle.jvm.tasks.Jar
 
 def taskSourceInputs = { first ->
     def files = new LinkedHashSet()
@@ -48,6 +49,13 @@ gradle.projectsEvaluated {
                     }
                     [project: project.path, projectDir: project.projectDir.canonicalPath,
                      sourceSet: sources.name, isTest: testOwned,
+                     compileClasspath: sources.compileClasspath.files.collect { it.canonicalPath },
+                     classpathAliases: project.tasks.withType(Jar).findAll { archive ->
+                         def classes = archive.source.files.findAll { it.name.endsWith('.class') }
+                         !classes.isEmpty() && classes.every { file -> sources.output.classesDirs.files.any { directory ->
+                             file.toPath().startsWith(directory.toPath())
+                         } }
+                     }.collect { it.archiveFile.get().asFile.canonicalPath },
                      sourceRoots: sources.allJava.srcDirs.collect { it.canonicalPath },
                      generatedRoots: generatedRoots.collect { it.canonicalPath }.unique(),
                      buildInputs: compile ? taskSourceInputs(compile) : [],

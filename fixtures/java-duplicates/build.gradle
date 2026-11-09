@@ -1,0 +1,19 @@
+subprojects {
+    apply plugin: 'java'
+    java { toolchain { languageVersion = JavaLanguageVersion.of(25) } }
+    tasks.withType(Test).configureEach { doFirst { throw new GradleException('Tests must not run') } }
+}
+project(':consumer') {
+    dependencies { implementation project(':left'); implementation project(':right') }
+    sourceSets { moduleMetadata }
+    sourceSets { integrationTest { compileClasspath += sourceSets.main.output + configurations.testCompileClasspath } }
+    tasks.register('integrationTest', Test) { testClassesDirs = sourceSets.integrationTest.output.classesDirs }
+}
+
+// Mixed archives must not become aliases for either entire source set.
+project(':consumer') {
+    tasks.register('mixedArchive', Jar) {
+        from sourceSets.main.output
+        from sourceSets.test.output
+    }
+}

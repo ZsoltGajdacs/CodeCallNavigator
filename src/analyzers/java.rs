@@ -1,28 +1,35 @@
+#[cfg(test)]
 use super::process::run_process;
 use super::{AnalysisJob, ensure_unchanged};
-use crate::{
-    discovery::BuildTarget,
-    fingerprint,
-    model::{Edge, EntryPoints, FileFingerprint, GraphData, Node},
-};
-use anyhow::{Context, Result, ensure};
+use crate::{discovery::BuildTarget, model::GraphData};
+use anyhow::Result;
+#[cfg(test)]
+use std::process::Command;
 use std::{
-    collections::{BTreeMap, HashMap, HashSet},
     fs,
     path::{Path, PathBuf},
-    process::Command,
 };
 
 mod build;
+mod compose;
+mod contexts;
+mod engine;
 mod gradle;
 mod maven;
+mod metadata;
+mod normalize;
 use build::JavaSourceSet;
 pub(super) use build::{PreparedJava, prepare, reject_overlaps};
+#[cfg(test)]
+use metadata::unescape as tsv_unescape;
+use normalize::normalize_bytecode;
+#[cfg(test)]
+use normalize::{java_certainty, method_key};
 
 #[derive(Clone)]
 struct JavaInput {
     path: PathBuf,
-    source_set: JavaSourceSet,
+    source_set: Option<JavaSourceSet>,
 }
 
 pub(super) fn analyze_java(
@@ -30,11 +37,6 @@ pub(super) fn analyze_java(
     context: &AnalysisJob<'_>,
     prepared: PreparedJava,
 ) -> Result<GraphData> {
-    let java_home = context
-        .runtime
-        .java_home
-        .as_ref()
-        .context("Java analysis requires an installed JDK 25")?;
     ensure_unchanged(&prepared.authored_before)?;
     (context.progress)(format!(
         "Compiling all Java source sets for {} (no tests run)…",
@@ -42,42 +44,60 @@ pub(super) fn analyze_java(
     ));
     let metadata = build::compile(build, context)?;
     prepared.verify_compiled(&metadata)?;
-    let source_sets = &metadata.source_sets;
-    let inputs = java_inputs(source_sets)?;
-    ensure!(
-        !inputs.is_empty(),
-        "Build emitted no Java class directories"
-    );
-    let bytecode_before = compiled_snapshot(&inputs)?;
-    let before_engine = build::snapshot(build, &metadata, true)?;
-    let output = context.path.join("bytecode");
-    (context.progress)(format!("Reading compiled call graph for {}…", build.label));
-    let mut command = Command::new(java_home.join("bin/java"));
-    command
-        .arg("-Xmx8g")
-        .arg("-cp")
-        .arg(context.runtime.bytecode_lib()?.join("*"))
-        .arg("codegraph.bytecode.Analyzer")
-        .arg(&output)
-        .arg("25");
-    for input in &inputs {
-        command.arg(&input.path);
-    }
-    run_process(&mut command, context.path, "bytecode", context.cancel)?;
+    let graph = analyze_compiled(build, context, &metadata)?;
     ensure_unchanged(&prepared.authored_before)?;
-    ensure_unchanged(&before_engine)?;
-    ensure_unchanged(&bytecode_before)?;
-    let mut graph = normalize_bytecode(build, &output, &inputs)?;
-    graph.fingerprints = before_engine;
     Ok(graph)
 }
 
-fn compiled_snapshot(inputs: &[JavaInput]) -> Result<Vec<FileFingerprint>> {
-    let mut paths = Vec::new();
-    for input in inputs {
-        compiled_paths(&input.path, &mut paths)?;
+fn analyze_compiled(
+    build: &BuildTarget,
+    context: &AnalysisJob<'_>,
+    metadata: &build::JavaBuildMetadata,
+) -> Result<GraphData> {
+    let contexts = contexts::plan(&metadata.source_sets)?;
+    let bytecode_before = contexts::snapshot(&contexts)?;
+    let before_engine = build::snapshot(build, metadata, true)?;
+    let mut graph = GraphData {
+        roots: vec![build.path.to_string_lossy().into_owned()],
+        ..GraphData::default()
+    };
+    for (index, planned) in contexts.iter().enumerate() {
+        (context.progress)(format!(
+            "Reading Java context {} / {} ({}/{})…",
+            planned.owner.project,
+            planned.owner.source_set,
+            index + 1,
+            contexts.len()
+        ));
+        let root = context.path.join(format!("context-{index}"));
+        let staged = contexts::stage(planned, &metadata.source_sets, &root, context)?;
+        let output = engine::run(&staged.inputs, &planned.owner, &root, context)?;
+        let part = normalize_bytecode(build, &output, &staged.inputs, Some(&planned.owner))?;
+        compose::append(&mut graph, part)?;
+        graph.diagnostics.extend(staged.diagnostics);
+        // Successful contexts carry no persisted temporary paths. Bound disk use to
+        // one context; retain a failing context's files for diagnosis.
+        let _ = fs::remove_dir_all(&root);
     }
-    fingerprint::capture(paths)
+    ensure_unchanged(&before_engine)?;
+    ensure_unchanged(&bytecode_before)?;
+    compose::finish(&mut graph)?;
+    graph.fingerprints = before_engine;
+    graph.fingerprints.extend(bytecode_before);
+    let visibility = contexts
+        .iter()
+        .map(|planned| {
+            serde_json::json!({
+                "project": planned.owner.project_dir, "sourceSet": planned.owner.source_set,
+                "classpath": planned.classpath,
+            })
+        })
+        .collect::<Vec<_>>();
+    let order_hash = blake3::hash(&serde_json::to_vec(&visibility)?)
+        .to_hex()
+        .to_string();
+    graph.engine_versions = serde_json::json!({"java_context_protocol": 1, "compile_contexts": visibility, "classpath_order_hash": order_hash}).to_string();
+    Ok(graph)
 }
 
 fn compiled_paths(root: &Path, paths: &mut Vec<PathBuf>) -> Result<()> {
@@ -97,392 +117,29 @@ fn compiled_paths(root: &Path, paths: &mut Vec<PathBuf>) -> Result<()> {
     Ok(())
 }
 
-fn java_inputs(source_sets: &[JavaSourceSet]) -> Result<Vec<JavaInput>> {
-    let mut inputs = Vec::new();
-    let mut seen = HashSet::new();
-    for source in source_sets {
-        for path in &source.class_dirs {
-            if seen.insert(path.clone()) && contains_class(path)? {
-                inputs.push(JavaInput {
-                    path: path.clone(),
-                    source_set: source.clone(),
-                });
-            }
-        }
-    }
-    Ok(inputs)
+fn contains_class(root: &Path) -> Result<bool> {
+    contains_project_class(root, root)
 }
 
-fn contains_class(path: &Path) -> Result<bool> {
-    if !path.is_dir() {
+fn contains_project_class(root: &Path, path: &Path) -> Result<bool> {
+    if !path.is_dir() || path.strip_prefix(root)?.starts_with("META-INF/versions") {
         return Ok(false);
     }
     for entry in fs::read_dir(path)? {
         let entry = entry?;
-        if entry.file_type()?.is_dir() && contains_class(&entry.path())? {
+        let path = entry.path();
+        if entry.file_type()?.is_dir() && contains_project_class(root, &path)? {
             return Ok(true);
         }
-        if entry
-            .path()
+        if path
             .extension()
             .is_some_and(|extension| extension == "class")
+            && entry.file_name() != "module-info.class"
         {
             return Ok(true);
         }
     }
     Ok(false)
-}
-
-fn read_tsv(path: &Path) -> Result<Vec<Vec<String>>> {
-    Ok(fs::read_to_string(path)
-        .with_context(|| format!("Cannot read analyzer output {}", path.display()))?
-        .lines()
-        .filter(|line| !line.is_empty())
-        .map(|line| line.split('\t').map(str::to_owned).collect())
-        .collect())
-}
-
-fn tsv_unescape(value: &str) -> String {
-    let mut output = String::new();
-    let mut chars = value.chars();
-    while let Some(character) = chars.next() {
-        if character != '\\' {
-            output.push(character);
-            continue;
-        }
-        output.push(match chars.next() {
-            Some('t') => '\t',
-            Some('n') => '\n',
-            Some('r') => '\r',
-            Some(value) => value,
-            None => '\\',
-        });
-    }
-    output
-}
-
-fn properties(path: &Path) -> Result<HashMap<String, String>> {
-    Ok(fs::read_to_string(path)?
-        .lines()
-        .filter(|line| !line.starts_with('#'))
-        .filter_map(|line| line.split_once('='))
-        .map(|(key, value)| (key.to_owned(), tsv_unescape(value)))
-        .collect())
-}
-
-fn normalize_bytecode(
-    build: &BuildTarget,
-    output: &Path,
-    inputs: &[JavaInput],
-) -> Result<GraphData> {
-    let status = properties(&output.join("analysis-status.properties"))?;
-    ensure!(
-        status.get("analysisComplete").map(String::as_str) == Some("true"),
-        "Bytecode analyzer reported incomplete output"
-    );
-    ensure!(
-        status.get("frameSnapshotLimitMethods").map(String::as_str) == Some("0"),
-        "Bytecode analyzer exceeded its analysis limit"
-    );
-    let raw = PathBuf::from(
-        status
-            .get("outputDirectory")
-            .context("Bytecode analyzer omitted its output directory")?,
-    );
-    let mut collector = BytecodeCollector::new(build, inputs);
-    collector.classes(&read_tsv(&output.join("class_metadata.tsv"))?)?;
-    collector.methods(&read_tsv(&output.join("method_metadata.tsv"))?)?;
-    collector.validate_methods(&read_tsv(&raw.join("method_info.txt"))?)?;
-    collector.edges(&read_tsv(&raw.join("method_call.txt"))?)?;
-    collector.finish()
-}
-
-struct BytecodeCollector<'a> {
-    build: &'a BuildTarget,
-    inputs: &'a [JavaInput],
-    graph: GraphData,
-    classes: HashMap<String, Vec<String>>,
-    indices: HashMap<String, u32>,
-    declared: HashSet<String>,
-    placeholder_count: usize,
-    excluded_edges: usize,
-    application_starts: Vec<String>,
-}
-
-impl<'a> BytecodeCollector<'a> {
-    fn new(build: &'a BuildTarget, inputs: &'a [JavaInput]) -> Self {
-        Self {
-            build,
-            inputs,
-            graph: GraphData {
-                roots: vec![build.path.to_string_lossy().into_owned()],
-                ..GraphData::default()
-            },
-            classes: HashMap::new(),
-            indices: HashMap::new(),
-            declared: HashSet::new(),
-            placeholder_count: 0,
-            excluded_edges: 0,
-            application_starts: Vec::new(),
-        }
-    }
-
-    fn classes(&mut self, rows: &[Vec<String>]) -> Result<()> {
-        for row in rows.iter().skip(1) {
-            ensure!(row.len() == 7, "Malformed class metadata");
-            let values = row
-                .iter()
-                .map(|value| tsv_unescape(value))
-                .collect::<Vec<_>>();
-            ensure!(
-                self.classes.insert(values[3].clone(), values).is_none(),
-                "Duplicate project class identity across class directories"
-            );
-        }
-        Ok(())
-    }
-
-    fn methods(&mut self, rows: &[Vec<String>]) -> Result<()> {
-        for row in rows.iter().skip(1) {
-            ensure!(row.len() == 11, "Malformed method metadata");
-            let values = row
-                .iter()
-                .map(|value| tsv_unescape(value))
-                .collect::<Vec<_>>();
-            let key = method_key(&values[5], &values[6]);
-            ensure!(
-                self.declared.insert(key.clone()),
-                "Duplicate method identity in compiled project"
-            );
-            let node = self.java_node(&values, false)?;
-            if is_application_start(&values)? {
-                self.application_starts.push(node.id.clone());
-            }
-            self.insert_node(key, node)?;
-        }
-        Ok(())
-    }
-
-    fn validate_methods(&self, rows: &[Vec<String>]) -> Result<()> {
-        let mut reported = HashSet::new();
-        for row in rows {
-            ensure!(row.len() >= 8, "Malformed method_info output");
-            let dimensions: usize = row[3].parse()?;
-            ensure!(dimensions <= 255, "Invalid JVM array dimensions");
-            reported.insert(method_key(
-                &row[0],
-                &format!("{}{}", row[2], "[]".repeat(dimensions)),
-            ));
-        }
-        ensure!(
-            !reported.is_empty() && reported == self.declared,
-            "Analyzer method declarations differ from compiled input metadata"
-        );
-        Ok(())
-    }
-
-    fn edges(&mut self, rows: &[Vec<String>]) -> Result<()> {
-        let mut aggregate = BTreeMap::<(u32, u32, String, String), u32>::new();
-        for row in rows {
-            self.collect_edge(row, &mut aggregate)?;
-        }
-        self.graph.edges = aggregate
-            .into_iter()
-            .map(|((from, to, kind, certainty), count)| Edge {
-                provenance: String::new(),
-                from,
-                to,
-                kind,
-                certainty,
-                count,
-            })
-            .collect();
-        Ok(())
-    }
-
-    fn collect_edge(
-        &mut self,
-        row: &[String],
-        aggregate: &mut BTreeMap<(u32, u32, String, String), u32>,
-    ) -> Result<()> {
-        ensure!(row.len() >= 12, "Malformed method_call output");
-        if row[1] != "1" {
-            return Ok(());
-        }
-        let (kind, target) = row[3]
-            .strip_prefix('(')
-            .and_then(|value| value.split_once(')'))
-            .context("Malformed analyzer call type")?;
-        let from = self.endpoint(&row[2], &row[5])?;
-        let to = self.endpoint(target, &row[8])?;
-        let (Some(from), Some(to)) = (from, to) else {
-            self.excluded_edges += 1;
-            return Ok(());
-        };
-        let key = (from, to, kind.to_owned(), java_certainty(kind).to_owned());
-        let count = aggregate.entry(key).or_default();
-        *count = count
-            .checked_add(1)
-            .context("Too many repeated call sites")?;
-        Ok(())
-    }
-
-    fn endpoint(&mut self, signature: &str, return_type: &str) -> Result<Option<u32>> {
-        let key = method_key(signature, return_type);
-        if let Some(index) = self.indices.get(&key) {
-            return Ok(Some(*index));
-        }
-        let class_name = signature
-            .split_once(':')
-            .map(|(class, _)| class)
-            .context("Malformed bytecode method signature")?;
-        let Some(class) = self.classes.get(class_name) else {
-            return Ok(None);
-        };
-        let values = vec![
-            class[0].clone(),
-            class[1].clone(),
-            class[2].clone(),
-            class_name.into(),
-            class[4].clone(),
-            signature.into(),
-            return_type.into(),
-            "0".into(),
-            "0".into(),
-            "0".into(),
-            class[6].clone(),
-        ];
-        let node = self.java_node(&values, true)?;
-        self.placeholder_count += 1;
-        Ok(Some(self.insert_node(key, node)?))
-    }
-
-    fn insert_node(&mut self, key: String, node: Node) -> Result<u32> {
-        let index = u32::try_from(self.graph.nodes.len())?;
-        ensure!(
-            self.indices.insert(key, index).is_none(),
-            "Duplicate normalized method identity"
-        );
-        self.graph.nodes.push(node);
-        Ok(index)
-    }
-
-    fn java_node(&self, row: &[String], unavailable: bool) -> Result<Node> {
-        let input_index: usize = row[0].parse()?;
-        let input = self
-            .inputs
-            .get(
-                input_index
-                    .checked_sub(1)
-                    .context("Invalid analyzer input index")?,
-            )
-            .context("Analyzer input provenance is missing")?;
-        let source = &input.source_set;
-        let namespace = row[3]
-            .rsplit_once('.')
-            .map(|(namespace, _)| namespace)
-            .unwrap_or("");
-        let file = source_location(source, namespace, &row[4]);
-        let generated = row[10].contains("/Generated;")
-            || source
-                .generated_roots
-                .iter()
-                .any(|root| Path::new(&file).starts_with(root));
-        let signature = format!("{} -> {}", row[5], row[6]);
-        Ok(Node {
-            id: format!(
-                "{}|{}",
-                self.build.path.display(),
-                method_key(&row[5], &row[6])
-            ),
-            project: source.project.clone(),
-            build: self.build.path.to_string_lossy().into_owned(),
-            language: "java".into(),
-            kind: if unavailable {
-                "inherited-reference"
-            } else {
-                "method"
-            }
-            .into(),
-            label: row[5]
-                .split_once(':')
-                .map(|(_, method)| method.split('(').next().unwrap_or(method))
-                .unwrap_or(&row[5])
-                .into(),
-            signature,
-            namespace: namespace.into(),
-            container: row[3].clone(),
-            file,
-            line: row[8].parse()?,
-            is_test: source.is_test,
-            is_generated: generated,
-            body_unavailable: unavailable,
-        })
-    }
-
-    fn finish(mut self) -> Result<GraphData> {
-        let called: HashSet<_> = self.graph.edges.iter().map(|edge| edge.to).collect();
-        let mut candidates: Vec<_> = self
-            .graph
-            .nodes
-            .iter()
-            .enumerate()
-            .filter(|(index, node)| {
-                !node.body_unavailable
-                    && !node.signature.contains(":<clinit>()")
-                    && !called.contains(&(*index as u32))
-            })
-            .map(|(_, node)| node.id.clone())
-            .collect();
-        candidates.sort();
-        self.application_starts.sort();
-        self.graph.entry_points = Some(EntryPoints {
-            framework_entries: Vec::new(),
-            candidates,
-            application_starts: self.application_starts,
-        });
-        self.graph.diagnostics.push(format!("Java: {} inherited/reference symbols have no declared body; {} external relationships excluded. These references are engine-reported, not resolved by name.", self.placeholder_count, self.excluded_edges));
-        self.graph.diagnostics.push("Java DI, reflection, framework callback ordering and dynamic runtime targets are supported only where reported by java-callgraph2. Bytecode source columns are unavailable.".into());
-        self.graph.validate()?;
-        Ok(self.graph)
-    }
-}
-
-/// BCEL access flags and descriptor, rather than a method-name heuristic.
-fn is_application_start(row: &[String]) -> Result<bool> {
-    let flags: u32 = row[7].parse().context("Invalid method access flags")?;
-    Ok(flags & 0x0009 == 0x0009
-        && row[6] == "void"
-        && row[5]
-            .split_once(':')
-            .is_some_and(|(_, method)| method == "main(java.lang.String[])"))
-}
-
-fn method_key(signature: &str, return_type: &str) -> String {
-    format!("{signature}|{return_type}")
-}
-fn java_certainty(kind: &str) -> &'static str {
-    match kind {
-        "STA" | "SPE" => "direct",
-        "VIR" | "INT" => "dispatch",
-        "_LM" => "reference",
-        _ => "analyzer-reported",
-    }
-}
-
-fn source_location(source: &JavaSourceSet, namespace: &str, file: &str) -> String {
-    if file.is_empty() || file == "<Unknown>" {
-        return String::new();
-    }
-    let relative = PathBuf::from(namespace.replace('.', "/")).join(file);
-    source
-        .source_roots
-        .iter()
-        .chain(&source.generated_roots)
-        .map(|root| root.join(&relative))
-        .find(|path| path.is_file())
-        .map(|path| path.to_string_lossy().into_owned())
-        .unwrap_or_default()
 }
 
 #[cfg(test)]
@@ -515,7 +172,7 @@ mod tests {
             kind: "gradle".into(),
             label: "callback".into(),
         };
-        let graph = normalize_bytecode(&build, &output, &[input]).unwrap();
+        let graph = normalize_bytecode(&build, &output, &[input], None).unwrap();
         let start = graph
             .nodes
             .iter()
@@ -558,7 +215,7 @@ mod tests {
             kind: "gradle".into(),
             label: "entries".into(),
         };
-        let graph = normalize_bytecode(&build, &output, &[input]).unwrap();
+        let graph = normalize_bytecode(&build, &output, &[input], None).unwrap();
         let entries = graph.entry_points.unwrap();
         assert_eq!(entries.application_starts.len(), 1);
         assert!(
@@ -602,15 +259,18 @@ mod tests {
         .unwrap();
         JavaInput {
             path: classes.clone(),
-            source_set: JavaSourceSet {
+            source_set: Some(JavaSourceSet {
                 project: "fixture".into(),
+                source_set: "main".into(),
+                compile_classpath: Vec::new(),
+                classpath_aliases: Vec::new(),
                 project_dir: root.into(),
                 is_test: false,
                 source_roots: vec![source_root],
                 generated_roots: Vec::new(),
                 class_dirs: vec![classes],
                 build_inputs: Vec::new(),
-            },
+            }),
         }
     }
 
@@ -630,5 +290,70 @@ mod tests {
         )
         .unwrap();
         output
+    }
+}
+
+#[cfg(test)]
+mod compiled_acceptance {
+    use super::*;
+    use crate::analyzers::AnalyzerRuntime;
+    use std::sync::atomic::AtomicBool;
+
+    #[test]
+    #[ignore = "requires successful real-build metadata via CODEGRAPH_COMPILED_METADATA"]
+    fn recurring_billing_successful_build_outputs_preserve_both_generated_copies() {
+        let manifest = std::env::var_os("CODEGRAPH_COMPILED_METADATA")
+            .expect("Set CODEGRAPH_COMPILED_METADATA");
+        let metadata: build::JavaBuildMetadata =
+            serde_json::from_slice(&fs::read(manifest).unwrap()).unwrap();
+        let build = BuildTarget {
+            path: PathBuf::from(std::env::var_os("CODEGRAPH_RECURRING_BILLING").unwrap())
+                .canonicalize()
+                .unwrap(),
+            language: "java".into(),
+            kind: "maven".into(),
+            label: "recurring-billing compiled acceptance".into(),
+        };
+        let root = tempfile::Builder::new()
+            .prefix("codegraph compiled acceptance ")
+            .tempdir()
+            .unwrap();
+        let runtime = AnalyzerRuntime::discover().unwrap();
+        let cancel = AtomicBool::new(false);
+        let progress = |message| eprintln!("{message}");
+        let context = AnalysisJob {
+            runtime: &runtime,
+            path: root.path(),
+            cancel: &cancel,
+            progress: &progress,
+        };
+        let graph = analyze_compiled(&build, &context, &metadata).unwrap();
+        assert!(graph.nodes.iter().all(|node| !node.file.is_empty() && Path::new(&node.file).starts_with(&build.path)), "Every declaration must belong to an actual selected-project source file");
+        for module in ["recurring-billing-impl", "recurring-billing-test-utils"] {
+            let classes = graph
+                .nodes
+                .iter()
+                .filter(|node| {
+                    node.project.ends_with(module)
+                        && node.is_generated
+                        && (node.namespace == "se.fortnox.messages.v1"
+                            || node.namespace == "se.fortnox.notices.v1")
+                })
+                .map(|node| &node.container)
+                .collect::<std::collections::BTreeSet<_>>();
+            assert_eq!(
+                classes.len(),
+                10,
+                "Missing generated declarations for {module}"
+            );
+        }
+        if let Some(path) = std::env::var_os("CODEGRAPH_GRAPH_EVIDENCE") {
+            fs::write(path, serde_json::to_vec(&graph).unwrap()).unwrap();
+        }
+        eprintln!(
+            "Recurring-billing: {} declarations, {} relationships",
+            graph.nodes.len(),
+            graph.edges.len()
+        );
     }
 }

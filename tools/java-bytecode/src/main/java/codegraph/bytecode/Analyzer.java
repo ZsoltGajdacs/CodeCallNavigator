@@ -15,6 +15,7 @@ import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
+import java.util.Set;
 
 /** Only configures the existing analyzer and reports its result; it resolves no calls. */
 public final class Analyzer {
@@ -31,12 +32,13 @@ public final class Analyzer {
 
     private static int analyze(Options options) throws IOException {
         Files.createDirectories(options.outputRoot());
-        BytecodeMetadata.write(options.outputRoot(), options.inputs());
+        Set<Integer> inputsWithMethods = BytecodeMetadata.write(options.outputRoot(), options.inputs());
+        boolean expectsMethods = ProjectMethodFilter.expectsMethods(options.projectInputs(), inputsWithMethods);
         JavaCG2Entry engine = new JavaCG2Entry(configuration(options));
         boolean succeeded = engine.run();
         JavaCG2OutputInfo output = engine.getJavaCG2InputAndOutput().getJavaCG2OutputInfo();
-        boolean hasMethods = hasMethodDeclarations(output);
-        writeStatus(options.outputRoot(), output, succeeded, hasMethods);
+        boolean declarationsComplete = hasMethodDeclarations(output) || !expectsMethods;
+        writeStatus(options.outputRoot(), output, succeeded, declarationsComplete);
         if (!succeeded || output == null) {
             return 1;
         }
@@ -45,7 +47,7 @@ public final class Analyzer {
                     + output.getFrameSnapshotNumExceedMethodSetReadOnly().size() + " methods");
             return 3;
         }
-        if (!hasMethods) {
+        if (!declarationsComplete) {
             System.err.println("Incomplete analysis: no project method declarations were emitted");
             return 1;
         }
@@ -61,28 +63,30 @@ public final class Analyzer {
         return Files.isRegularFile(methodInfo) && Files.size(methodInfo) > 0;
     }
 
-    private static JavaCG2ConfigureWrapper configuration(Options options) {
+    private static JavaCG2ConfigureWrapper configuration(Options options) throws IOException {
         JavaCG2ConfigureWrapper configuration = new JavaCG2ConfigureWrapper(true);
         configuration.setOtherConfigList(JavaCG2OtherConfigFileUseListEnum.OCFULE_JAR_DIR, options.inputs());
         configuration.setMainConfig(JavaCG2ConfigKeyEnum.CKE_OUTPUT_ROOT_PATH, options.outputRoot().toString());
         configuration.setMainConfig(JavaCG2ConfigKeyEnum.CKE_JDK_RUNTIME_MAJOR_VERSION, options.runtimeMajor());
         configuration.setMainConfig(JavaCG2ConfigKeyEnum.CKE_CONTINUE_WHEN_ERROR, "false");
         configuration.setMainConfig(JavaCG2ConfigKeyEnum.CKE_PARSE_METHOD_CALL_TYPE_VALUE, "true");
+        configuration.setMainConfig(JavaCG2ConfigKeyEnum.CKE_EL_IGNORE_DATA_MAX_LINE_NUM, "0");
         // The engine otherwise excludes project equals/hashCode overrides by default.
-        configuration.setElConfigFixedFalse(JavaCG2ElConfigEnum.ECE_PARSE_IGNORE_METHOD);
+        configuration.setElConfigText(JavaCG2ElConfigEnum.ECE_PARSE_IGNORE_METHOD,
+                ProjectMethodFilter.expression(options.inputs(), options.projectInputs()));
         String bothTargets = JavaCG2CalleeRawActualEnum.CRAE_RAW_ACTUAL.getType();
         configuration.setMainConfig(JavaCG2ConfigKeyEnum.CKE_HANDLE_CALLEE_NEW_RAW_ACTUAL, bothTargets);
         configuration.setMainConfig(JavaCG2ConfigKeyEnum.CKE_HANDLE_CALLEE_SPRING_BEAN_RAW_ACTUAL, bothTargets);
         return configuration;
     }
 
-    private static void writeStatus(Path outputRoot, JavaCG2OutputInfo output, boolean succeeded, boolean hasMethods) throws IOException {
+    private static void writeStatus(Path outputRoot, JavaCG2OutputInfo output, boolean succeeded, boolean declarationsComplete) throws IOException {
         Properties status = new Properties();
         status.setProperty("engine", "java-callgraph2");
         status.setProperty("engineVersion", "4.1.0");
         status.setProperty("bcelVersion", "6.13.0");
         status.setProperty("engineSucceeded", Boolean.toString(succeeded));
-        status.setProperty("analysisComplete", Boolean.toString(succeeded && hasMethods));
+        status.setProperty("analysisComplete", Boolean.toString(succeeded && declarationsComplete));
         if (output != null) {
             status.setProperty("outputDirectory", output.getOutputDirPath());
             status.setProperty("frameSnapshotLimitMethods",
@@ -96,7 +100,7 @@ public final class Analyzer {
         }
     }
 
-    private record Options(Path outputRoot, String runtimeMajor, List<String> inputs) {
+    private record Options(Path outputRoot, String runtimeMajor, List<String> inputs, Set<Integer> projectInputs) {
         static Options parse(String[] arguments) {
             if (arguments.length < 3) {
                 throw new IllegalArgumentException("Usage: codegraph-bytecode OUTPUT_ROOT JAVA_MAJOR CLASS_DIR_OR_JAR...");
@@ -105,8 +109,11 @@ public final class Analyzer {
             if (!List.of("21", "25").contains(runtimeMajor)) {
                 throw new IllegalArgumentException("JAVA_MAJOR must be 21 or 25");
             }
-            List<String> inputs = Arrays.stream(arguments).skip(2).map(Options::validatedInput).toList();
-            return new Options(Path.of(arguments[0]).toAbsolutePath().normalize(), runtimeMajor, inputs);
+            boolean filtered = arguments.length > 3 && arguments[2].equals("--project-inputs");
+            int firstInput = filtered ? 4 : 2;
+            List<String> inputs = Arrays.stream(arguments).skip(firstInput).map(Options::validatedInput).toList();
+            Set<Integer> projectInputs = filtered ? InputSelection.parse(arguments[3], inputs.size()) : null;
+            return new Options(Path.of(arguments[0]).toAbsolutePath().normalize(), runtimeMajor, inputs, projectInputs);
         }
 
         private static String validatedInput(String value) {
