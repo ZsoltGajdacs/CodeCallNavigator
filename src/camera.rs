@@ -1,9 +1,59 @@
 use crate::theme;
-use crate::{app::State, projection::ViewNode};
+use crate::{
+    app::State,
+    projection::{GraphView, ViewEdge, ViewNode},
+};
 use rune::TextStyle;
 use rune::{Cx, Drag, El, MagnifyEvent, Phase, WheelEvent, canvas, col, el, text};
 use rune_kit::Kit;
 use serde::{Deserialize, Serialize};
+use std::time::Duration;
+
+pub struct PendingCenter {
+    pub deadline: Option<f64>,
+    pub interval: f64,
+}
+
+#[cfg(all(target_os = "macos", not(test)))]
+fn double_click_interval() -> f64 {
+    // SAFETY: Called by the UI event handler on the main thread, as in Rune.
+    unsafe { objc2_app_kit::NSEvent::doubleClickInterval() }
+}
+
+#[cfg(any(not(target_os = "macos"), test))]
+fn double_click_interval() -> f64 {
+    0.5
+}
+
+pub fn poll_center(state: &mut State, time: f64, tx: &mut rune::Tx) -> bool {
+    let Some(pending) = &mut state.pending_center else {
+        return false;
+    };
+    let deadline = *pending.deadline.get_or_insert(time + pending.interval);
+    if time < deadline {
+        tx.wake_after(Duration::from_secs_f64(deadline - time));
+        return false;
+    }
+    state.pending_center = None;
+    let Some(node) = state
+        .graph_view
+        .nodes
+        .iter()
+        .find(|node| Some(&node.key) == state.visual_selection.as_ref())
+    else {
+        return false;
+    };
+    let center = [
+        node.position[0] + node.size[0] / 2.0,
+        node.position[1] + node.size[1] / 2.0,
+    ];
+    state.nav.camera.pan = [
+        state.viewport[0] / 2.0 - center[0] * state.nav.camera.zoom,
+        state.viewport[1] / 2.0 - center[1] * state.nav.camera.zoom,
+    ];
+    state.dirty_session = true;
+    true
+}
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Camera {
@@ -83,15 +133,81 @@ impl Camera {
 }
 
 pub fn graph_canvas(state: &State, _: &mut Cx<State>, k: &Kit) -> El {
+    el().key("graph-canvas")
+        .grow(1.0)
+        .min_w(0.0)
+        .h_full()
+        .clip_soft(0.0)
+        .fill(theme::canvas(k))
+        .on_layout(|state: &mut State, rect| state.viewport = [rect[2], rect[3]])
+        .on_wheel(|state: &mut State, event: WheelEvent, _| {
+            state.pending_center = None;
+            state
+                .nav
+                .camera
+                .zoom_at([event.x, event.y], (-event.dy / 240.0).exp());
+            state.dirty_session = true;
+            true
+        })
+        .on_magnify(|state: &mut State, event: MagnifyEvent, _| {
+            state.pending_center = None;
+            state
+                .nav
+                .camera
+                .zoom_at([event.x, event.y], 1.0 + event.delta);
+            state.dirty_session = true;
+            true
+        })
+        .on_drag(|state: &mut State, drag: &mut Drag, _| {
+            state.pending_center = None;
+            state.nav.camera.drag(drag);
+            state.dirty_session = true;
+        })
+        .child(graph_content(state, k))
+}
+
+pub(crate) struct Emphasis {
+    selected: Option<usize>,
+    related: Vec<bool>,
+}
+
+impl Emphasis {
+    fn new(view: &GraphView, key: Option<&str>) -> Self {
+        let selected = key.and_then(|key| view.nodes.iter().position(|node| node.key == key));
+        let mut related = vec![false; view.nodes.len()];
+        if let Some(index) = selected {
+            related[index] = true;
+            for edge in &view.edges {
+                if edge.from == index || edge.to == index {
+                    related[edge.from] = true;
+                    related[edge.to] = true;
+                }
+            }
+        }
+        Self { selected, related }
+    }
+
+    fn node_dimmed(&self, index: usize) -> bool {
+        self.selected.is_some() && !self.related[index]
+    }
+
+    pub(crate) fn edge_dimmed(&self, edge: &ViewEdge) -> bool {
+        self.selected
+            .is_some_and(|index| edge.from != index && edge.to != index)
+    }
+}
+
+fn graph_content(state: &State, k: &Kit) -> El {
     let mut content = el().key("graph-world").w_full().h_full();
-    let shapes = crate::edges::render(&state.graph_view, &state.nav.camera, state.viewport, k);
+    let emphasis = Emphasis::new(&state.graph_view, state.visual_selection.as_deref());
+    let shapes = crate::edges::render(state, &emphasis, k);
     content = content.child(canvas(shapes).w_full().h_full().inert());
     if !state.view_is_current() {
         content = content.inert().opacity(0.45);
     }
     for (index, node) in state.graph_view.nodes.iter().enumerate() {
         if state.nav.camera.shows(node, state.viewport) {
-            let card = node_card(state, node, index, k);
+            let card = node_card(state, index, &emphasis, k);
             content = content.child(if state.view_is_current() {
                 card
             } else {
@@ -102,39 +218,7 @@ pub fn graph_canvas(state: &State, _: &mut Cx<State>, k: &Kit) -> El {
     if state.graph_view.nodes.is_empty() {
         content = content.child(empty_canvas(state, k));
     }
-    el().key("graph-canvas")
-        .grow(1.0)
-        .min_w(0.0)
-        .h_full()
-        .clip_soft(0.0)
-        .fill(theme::canvas(k))
-        .on_layout(|state: &mut State, rect| state.viewport = [rect[2], rect[3]])
-        .on_wheel(|state: &mut State, event: WheelEvent, _| {
-            if event.mods.cmd {
-                state
-                    .nav
-                    .camera
-                    .zoom_at([event.x, event.y], (-event.dy / 240.0).exp());
-            } else {
-                state.nav.camera.pan[0] += event.dx;
-                state.nav.camera.pan[1] += event.dy;
-            }
-            state.dirty_session = true;
-            true
-        })
-        .on_magnify(|state: &mut State, event: MagnifyEvent, _| {
-            state
-                .nav
-                .camera
-                .zoom_at([event.x, event.y], 1.0 + event.delta);
-            state.dirty_session = true;
-            true
-        })
-        .on_drag(|state: &mut State, drag: &mut Drag, _| {
-            state.nav.camera.drag(drag);
-            state.dirty_session = true;
-        })
-        .child(content)
+    content
 }
 
 fn empty_canvas(state: &State, k: &Kit) -> El {
@@ -187,10 +271,9 @@ fn empty_message(state: &State) -> (&str, &str) {
     )
 }
 
-fn node_card(state: &State, node: &ViewNode, index: usize, k: &Kit) -> El {
-    let selected = node
-        .member
-        .is_some_and(|member| state.selected() == Some(member));
+fn node_card(state: &State, index: usize, emphasis: &Emphasis, k: &Kit) -> El {
+    let node = &state.graph_view.nodes[index];
+    let selected = emphasis.selected == Some(index);
     let accent = k.c.text_accent;
     let border = if node.cyclic {
         theme::uncertain(k)
@@ -202,6 +285,7 @@ fn node_card(state: &State, node: &ViewNode, index: usize, k: &Kit) -> El {
     let point = state.nav.camera.screen(node.position);
     let scale = state.nav.camera.zoom;
     let key = node.key.clone();
+    let drill_key = key.clone();
     let member = node.member;
     let detail = node_detail(node);
     col()
@@ -220,13 +304,25 @@ fn node_card(state: &State, node: &ViewNode, index: usize, k: &Kit) -> El {
         .padding((10.0 * scale).max(3.0))
         .gap(3.0)
         .clip_rounded(9.0)
+        .opacity(if emphasis.node_dimmed(index) {
+            0.48
+        } else {
+            1.0
+        })
         .role("button")
         .label(format!("{} · {}", node.label, detail))
         .focusable(true)
-        .on_press(move |state: &mut State| state.activate(key.clone(), member))
+        .on_press_tx(move |state: &mut State, tx| {
+            let interval = double_click_interval();
+            state.select_visible(key.clone(), member, interval);
+            tx.wake_after(Duration::from_secs_f64(interval));
+        })
         .on_double_press(move |state: &mut State| {
+            state.pending_center = None;
             if let Some(member) = member {
                 state.select(member, true);
+            } else {
+                state.activate(drill_key.clone(), None);
             }
         })
         .child(
@@ -259,6 +355,42 @@ fn node_detail(node: &ViewNode) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn emphasis_keeps_only_direct_neighbors_and_incident_edges_bright() {
+        let view = GraphView {
+            nodes: (0..5)
+                .map(|i| ViewNode {
+                    key: i.to_string(),
+                    ..Default::default()
+                })
+                .collect(),
+            edges: [(0, 1), (2, 0), (1, 2), (1, 3)]
+                .into_iter()
+                .map(|(from, to)| ViewEdge {
+                    from,
+                    to,
+                    ..Default::default()
+                })
+                .collect(),
+            ..Default::default()
+        };
+        let emphasis = Emphasis::new(&view, Some("0"));
+        assert_eq!(
+            (0..5).map(|i| emphasis.node_dimmed(i)).collect::<Vec<_>>(),
+            [false, false, false, true, true]
+        );
+        assert_eq!(
+            view.edges
+                .iter()
+                .map(|edge| emphasis.edge_dimmed(edge))
+                .collect::<Vec<_>>(),
+            [false, false, true, true]
+        );
+        let none = Emphasis::new(&view, Some("missing"));
+        assert!((0..5).all(|i| !none.node_dimmed(i)));
+        assert!(view.edges.iter().all(|edge| !none.edge_dimmed(edge)));
+    }
     #[test]
     fn zoom_keeps_the_world_point_under_the_pointer() {
         let mut camera = Camera::default();

@@ -39,7 +39,7 @@ fn selection(state: &State, k: &Kit) -> El {
         .and_then(|id| state.graph.as_ref()?.data.nodes.get(id as usize))
     else {
         return detail(
-            "Select a method to inspect its callers, callees and provenance. Click a group to expand it; double-click a method to focus its neighborhood.",
+            "Select a method to inspect its callers, callees and provenance. Double-click a group to expand it; double-click a method to focus its neighborhood.",
             k,
         );
     };

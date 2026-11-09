@@ -173,6 +173,7 @@ impl State {
         if self.scene {
             self.graph_view = projection::project(&graph, &request);
             crate::scenes::position(&mut self.graph_view);
+            self.reconcile_visual_selection();
             self.visible_revision = Some((self.epoch, self.revision));
             if self.auto_fit {
                 self.nav.camera.fit(self.graph_view.size, self.viewport);
@@ -243,7 +244,8 @@ impl State {
 }
 
 pub fn poll(state: &mut State, time: f64, tx: &mut Tx) -> bool {
-    let mut changed = poll_progress(state)
+    let mut changed = crate::camera::poll_center(state, time, tx)
+        | poll_progress(state)
         | poll_boot(state)
         | poll_discovery(state)
         | poll_analysis(state)
@@ -397,6 +399,8 @@ fn install_graph(state: &mut State, loaded: LoadedGraph) {
     state.selected_edge = None;
     state.last_query.clear();
     state.graph_view = projection::GraphView::default();
+    state.visual_selection = None;
+    state.pending_center = None;
     state.status = format!(
         "{} symbols · {} relationships",
         state.graph.as_ref().unwrap().data.nodes.len(),
@@ -422,6 +426,7 @@ fn poll_layout(state: &mut State) -> bool {
     match result {
         Ok(view) => {
             state.graph_view = view;
+            state.reconcile_visual_selection();
             state.visible_revision = Some((epoch, revision));
             state.nav.page = state.nav.page.min(state.graph_view.pages.saturating_sub(1));
             if state.auto_fit {

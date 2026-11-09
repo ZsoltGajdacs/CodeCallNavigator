@@ -426,3 +426,108 @@ fn restore_discovered_builds(
     }
     panic!("Maven and Gradle targets were not discovered");
 }
+
+#[test]
+fn graph_click_centers_and_double_click_focuses_without_extra_history() {
+    let mut runtime = runtime();
+    let (x, y) = runtime.find("graph-node-0").unwrap();
+    let key = runtime.state.graph_view.nodes[0].key.clone();
+    let before = runtime.state.back.len();
+    runtime.pointer_down(x, y);
+    runtime.pointer_up(x, y);
+    runtime.frame(0.05);
+    assert_eq!(
+        runtime.state.visual_selection.as_deref(),
+        Some(key.as_str())
+    );
+    assert_eq!(runtime.state.back.len(), before);
+    runtime.pointer_down(x, y);
+    runtime.pointer_up(x, y);
+    runtime.frame(0.05);
+    assert_eq!(runtime.state.back.len(), before + 1);
+    assert!(runtime.state.nav.focus.is_some());
+}
+
+#[test]
+fn graph_single_click_centers_after_click_interval_and_wheel_zooms() {
+    let mut runtime = runtime();
+    let node = runtime.state.graph_view.nodes[0].clone();
+    let (x, y) = runtime.find("graph-node-0").unwrap();
+    let zoom = runtime.state.nav.camera.zoom;
+    runtime.pointer_down(x, y);
+    runtime.pointer_up(x, y);
+    for _ in 0..90 {
+        runtime.frame(1.0 / 60.0);
+    }
+    let center = runtime.state.nav.camera.screen([
+        node.position[0] + node.size[0] / 2.0,
+        node.position[1] + node.size[1] / 2.0,
+    ]);
+    assert!((center[0] - runtime.state.viewport[0] / 2.0).abs() < 0.1);
+    assert!((center[1] - runtime.state.viewport[1] / 2.0).abs() < 0.1);
+    assert_eq!(runtime.state.nav.camera.zoom, zoom);
+    let rect = runtime
+        .elements()
+        .into_iter()
+        .find(|e| e.key.as_deref() == Some("graph-canvas"))
+        .unwrap()
+        .rect;
+    runtime.wheel_xy(rect[0] + 5.0, rect[1] + 5.0, 0.0, -100.0);
+    runtime.frame(1.0 / 60.0);
+    assert!(runtime.state.nav.camera.zoom > zoom);
+}
+
+#[test]
+fn group_double_click_expands_and_selection_is_reconciled() {
+    let mut runtime = runtime();
+    runtime
+        .state
+        .set_grouping(crate::projection::Grouping::Project);
+    runtime.frame(1.0 / 60.0);
+    assert!(runtime.state.graph_view.nodes[0].member.is_none());
+    let key = runtime.state.graph_view.nodes[0].key.clone();
+    let (x, y) = runtime.find("graph-node-0").unwrap();
+    let before = runtime.state.back.len();
+    runtime.pointer_down(x, y);
+    runtime.pointer_up(x, y);
+    runtime.frame(0.05);
+    assert!(runtime.state.nav.expanded.is_empty());
+    runtime.pointer_down(x, y);
+    runtime.pointer_up(x, y);
+    runtime.frame(0.05);
+    assert!(runtime.state.nav.expanded.contains(&key));
+    assert_eq!(runtime.state.back.len(), before + 1);
+    runtime.state.graph_view.nodes.clear();
+    runtime.state.reconcile_visual_selection();
+    assert!(runtime.state.visual_selection.is_none());
+}
+
+#[test]
+fn inspector_selection_and_restored_selection_update_graph_emphasis() {
+    let mut runtime = runtime();
+    let first = runtime.state.graph_view.nodes[0].member.unwrap();
+    let second = runtime.state.graph_view.nodes[1].member.unwrap();
+    click(&mut runtime, "graph-node-0");
+    assert_eq!(runtime.state.selected(), Some(first));
+    runtime.state.select(second, false);
+    runtime.frame(1.0 / 60.0);
+    let second_key = runtime
+        .state
+        .graph_view
+        .nodes
+        .iter()
+        .find(|node| node.member == Some(second))
+        .unwrap()
+        .key
+        .clone();
+    assert_eq!(
+        runtime.state.visual_selection.as_deref(),
+        Some(second_key.as_str())
+    );
+    runtime.state.visual_selection = None;
+    runtime.state.reconcile_visual_selection();
+    assert_eq!(
+        runtime.state.visual_selection.as_deref(),
+        Some(second_key.as_str())
+    );
+}

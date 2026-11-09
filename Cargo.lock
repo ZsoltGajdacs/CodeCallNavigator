@@ -555,6 +555,7 @@ dependencies = [
  "anyhow",
  "blake3",
  "libc",
+ "objc2-app-kit 0.2.2",
  "petgraph",
  "rune",
  "rune-kit",

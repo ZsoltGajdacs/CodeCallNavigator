@@ -235,12 +235,14 @@ impl State {
     }
 
     pub fn zoom(&mut self, factor: f32) {
+        self.pending_center = None;
         let center = [self.viewport[0] / 2.0, self.viewport[1] / 2.0];
         self.nav.camera.zoom_at(center, factor);
         self.dirty_session = true;
     }
 
     pub fn fit_graph(&mut self) {
+        self.pending_center = None;
         self.nav.camera.fit(self.graph_view.size, self.viewport);
         self.dirty_session = true;
     }

@@ -54,7 +54,8 @@ labeled framework entries separately from verified executable starts. Framework 
 as uncalled candidates without application-start highlighting. Older cached graphs
 still open; refresh them to enable verified-start highlighting.
 
-Click groups to expand; double-click a method to focus. Overview restores the
+Click an element to center it and highlight its direct connections; double-click a
+group to expand it or a method to focus its neighborhood. Overview restores the
 entry roots in Method view. Search covers the entire index with pagination,
 including currently filtered symbols. Choose Callees to read from the focus down
 to its callees, or Callers to read from the focus down to its callers. All views
@@ -62,8 +63,8 @@ use top-down branch grouping; arrows always retain caller-to-callee direction,
 so arrows point upward in Callers view. Shared methods appear once with cross-links,
 and cycles remain visible. Depth bounds the neighborhood; entry-rooted Callers
 views can contain only their roots. Shortest paths retain execution order.
-Explore depth, shortest directed paths and history. Drag to pan, scroll/pinch to
-navigate, or use Fit and zoom buttons. Cmd-O opens the folder chooser; Cmd-F focuses
+Explore depth, shortest directed paths and history. Drag to pan, scroll or pinch to
+zoom, or use Fit and zoom buttons. Cmd-O opens the folder chooser; Cmd-F focuses
 search. The inspector shows signatures, project ownership, locations, relationship
 certainty and analyzer provenance. No source code is displayed.
 
