@@ -146,6 +146,13 @@ when both build tools share a directory, Gradle is selected initially. Overlappi
 selected modules are rejected before compilation. The CLI accepts POM files and
 repository folders. Profile/property controls are not added to the app.
 
+Java lambdas use their assigned field or local variable name when source attribution
+is unambiguous, for example `COST_TYPE_VALIDATION`. Anonymous callbacks show their
+enclosing context and source location. Overlapping lambdas, same-line ambiguity,
+and builds without debug lines use readable contextual fallbacks. Original bytecode
+signatures remain available in the inspector and search. Refresh existing workspaces
+to rebuild cached graphs with these labels.
+
 TypeScript uses the selected project's installed TypeScript 6.0.x compiler with
 Node 24+. The bundled bridge uses public compiler APIs, configured source ownership
 and source redirects for project references; no JavaScript is emitted. Install

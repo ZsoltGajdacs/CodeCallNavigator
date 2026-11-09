@@ -4,7 +4,7 @@ use anyhow::Result;
 use std::collections::HashSet;
 
 /// Persisted generations without this policy must be rebuilt from source.
-pub const VERSION: u32 = 1;
+pub const VERSION: u32 = 2;
 
 /// Remove identities and incident relationships without synthesizing shortcuts.
 /// Validate before mutation so malformed analyzer output cannot be hidden by filtering.

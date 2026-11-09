@@ -1,6 +1,7 @@
 //! Validated source declaration inventory, independent of graph inclusion policy.
 use super::{
     JavaInput,
+    lambda_names::SourceLambda,
     metadata::{method_key, read_tsv, unescape},
 };
 use anyhow::{Result, ensure};
@@ -12,14 +13,30 @@ use std::{
 #[derive(Default)]
 pub(super) struct SourceInventory {
     declarations: HashSet<String>,
-    lambdas: HashMap<String, Vec<(u32, u32)>>,
+    lambdas: HashMap<String, Vec<SourceLambda>>,
 }
 
 impl SourceInventory {
     pub fn read(path: &Path) -> Result<Self> {
         let mut inventory = Self::default();
-        for row in read_tsv(path)?.iter().skip(1) {
-            ensure!(row.len() == 5, "Malformed Java source inventory");
+        let rows = read_tsv(path)?;
+        ensure!(
+            rows.first()
+                .is_some_and(|row| row.iter().map(String::as_str).eq([
+                    "kind_v2",
+                    "signature",
+                    "return_type",
+                    "start_line",
+                    "end_line",
+                    "start_column",
+                    "end_column",
+                    "context",
+                    "assigned_name"
+                ])),
+            "Unsupported Java source inventory format; rebuild the Java adapter"
+        );
+        for row in rows.iter().skip(1) {
+            ensure!(row.len() == 9, "Malformed Java source inventory");
             let fields: Vec<_> = row.iter().map(|field| unescape(field)).collect();
             match fields[0].as_str() {
                 "method" => {
@@ -32,7 +49,7 @@ impl SourceInventory {
                         .lambdas
                         .entry(fields[1].clone())
                         .or_default()
-                        .push((fields[3].parse()?, fields[4].parse()?));
+                        .push(SourceLambda::parse(&fields)?);
                 }
                 _ => anyhow::bail!("Unknown Java source inventory kind"),
             }
@@ -45,11 +62,24 @@ impl SourceInventory {
             .contains(&method_key(signature, return_type))
     }
 
+    pub fn lambda_label(&self, method: &super::metadata::MethodMetadata) -> String {
+        let name = super::lambda_names::method_name(&method.signature);
+        if method.flags & 0x1000 == 0 || !name.starts_with("lambda$") {
+            return name.into();
+        }
+        self.lambdas
+            .get(&method.class.name)
+            .and_then(|sources| {
+                super::lambda_names::resolve(sources, method.start_line, method.end_line)
+            })
+            .unwrap_or_else(|| super::lambda_names::fallback(name))
+    }
+
     pub fn has_lambda(&self, class: &str, line: u32) -> bool {
         self.lambdas.get(class).is_some_and(|ranges| {
             ranges
                 .iter()
-                .any(|&(start, end)| line == 0 || (start..=end).contains(&line))
+                .any(|source| line == 0 || source.contains(line, line))
         })
     }
 }

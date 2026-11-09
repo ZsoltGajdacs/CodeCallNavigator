@@ -103,7 +103,10 @@ impl State {
             .nodes
             .iter()
             .enumerate()
-            .filter(|(_, node)| node.signature.to_lowercase().contains(&query))
+            .filter(|(_, node)| {
+                node.label.to_lowercase().contains(&query)
+                    || node.signature.to_lowercase().contains(&query)
+            })
             .map(|(index, _)| index as u32)
             .skip(self.search_page * RESULT_PAGE_SIZE)
             .take(RESULT_PAGE_SIZE + 1)

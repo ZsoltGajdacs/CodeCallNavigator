@@ -15,6 +15,9 @@ mod compose;
 mod contexts;
 mod engine;
 mod gradle;
+mod lambda_names;
+#[cfg(test)]
+mod lambda_tests;
 mod maven;
 mod metadata;
 mod normalize;
@@ -363,7 +366,7 @@ mod tests {
         )
     }
 
-    fn compile_source_fixture(
+    pub(super) fn compile_source_fixture(
         runtime: &AnalyzerRuntime,
         root: &Path,
         source: &str,
@@ -411,7 +414,11 @@ mod tests {
         }
     }
 
-    fn run_callback_engine(runtime: &AnalyzerRuntime, root: &Path, input: &JavaInput) -> PathBuf {
+    pub(super) fn run_callback_engine(
+        runtime: &AnalyzerRuntime,
+        root: &Path,
+        input: &JavaInput,
+    ) -> PathBuf {
         let output = root.join("analysis");
         run_process(
             Command::new(runtime.java_home.as_ref().unwrap().join("bin/java"))

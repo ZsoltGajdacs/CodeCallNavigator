@@ -75,6 +75,7 @@ pub(super) fn source_inventories(
         let classpath =
             std::env::join_paths(source.class_dirs.iter().chain(&source.compile_classpath))?;
         let key = blake3::hash(&serde_json::to_vec(&serde_json::json!([
+            "source-inventory-v2",
             source.project_dir,
             source.source_set
         ]))?)

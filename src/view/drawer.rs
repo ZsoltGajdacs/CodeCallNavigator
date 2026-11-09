@@ -157,7 +157,7 @@ fn search_results(state: &State, k: &Kit) -> El {
             " · hidden, click to reveal"
         };
         results = results.item(
-            ListItem::new(format!("{}{suffix}", node.signature))
+            ListItem::new(format!("{}{suffix}", node.label))
                 .selected(state.selected() == Some(index))
                 .on_select(move |s: &mut State, _| s.reveal(index)),
         );

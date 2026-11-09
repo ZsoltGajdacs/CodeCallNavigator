@@ -16,6 +16,7 @@ pub(super) struct MethodMetadata {
     pub return_type: String,
     pub flags: u32,
     pub start_line: u32,
+    pub end_line: u32,
     pub annotations: String,
 }
 
@@ -57,7 +58,7 @@ impl MethodMetadata {
                 .is_some_and(|(name, _)| name == class.name),
             "Method class provenance mismatch"
         );
-        fields[9]
+        let end_line = fields[9]
             .parse::<u32>()
             .context("Invalid method end line")?;
         Ok(Self {
@@ -66,6 +67,7 @@ impl MethodMetadata {
             return_type: fields[6].clone(),
             flags: fields[7].parse()?,
             start_line: fields[8].parse()?,
+            end_line,
             annotations: fields[10].clone(),
         })
     }
@@ -87,6 +89,7 @@ impl MethodMetadata {
             return_type: return_type.into(),
             flags: 0,
             start_line: 0,
+            end_line: 0,
         }
     }
 }

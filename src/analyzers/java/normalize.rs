@@ -285,12 +285,11 @@ impl<'a> BytecodeCollector<'a> {
                 "method"
             }
             .into(),
-            label: row
-                .signature
-                .split_once(':')
-                .map(|(_, method)| method.split('(').next().unwrap_or(method))
-                .unwrap_or(&row.signature)
-                .into(),
+            label: self
+                .source_inventory
+                .get(&row.class.input)
+                .map(|inventory| inventory.lambda_label(row))
+                .unwrap_or_else(|| super::lambda_names::method_name(&row.signature).into()),
             signature,
             namespace: namespace.into(),
             container: row.class.name.clone(),

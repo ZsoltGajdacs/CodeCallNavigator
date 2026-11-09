@@ -31,7 +31,8 @@ public final class SourceInventory {
         if (args.length < 3) throw new IllegalArgumentException("Usage: SourceInventory OUTPUT CLASSPATH CLASS_DIRS SOURCE_ROOT...");
         var sources = CompiledSources.collect(args[2], java.util.Arrays.copyOfRange(args, 3, args.length));
         try (var writer = Files.newBufferedWriter(Path.of(args[0]))) {
-            ContextTsv.write(writer, "kind", "signature", "return_type", "start_line", "end_line");
+            ContextTsv.write(writer, "kind_v2", "signature", "return_type", "start_line", "end_line",
+                    "start_column", "end_column", "context", "assigned_name");
             if (sources.isEmpty()) return;
             inventory(sources, args[1], writer);
         }
@@ -55,7 +56,7 @@ public final class SourceInventory {
             task.analyze();
             var trees = Trees.instance(task);
             writeMethods(declarations, task, compiled, writer);
-            for (TreePath path : lambdas) writeLambda(path, trees, task.getElements(), writer);
+            for (TreePath path : lambdas) SourceLambda.write(path, trees, task.getElements(), writer);
         }
     }
 
@@ -95,23 +96,10 @@ public final class SourceInventory {
             var arguments = new ArrayList<String>();
             for (var parameter : method.getParameters()) arguments.add(typeName(parameter.asType(), types, elements, compiled));
             ContextTsv.write(writer, "method", owner + ":" + method.getSimpleName() + "(" + String.join(",", arguments) + ")",
-                    typeName(method.getReturnType(), types, elements, compiled), 0, 0);
+                    typeName(method.getReturnType(), types, elements, compiled), 0, 0, 0, 0, "", "");
         } catch (IOException error) {
             throw new IOException("Cannot inventory " + owner + ":" + method + ": " + error.getMessage(), error);
         }
-    }
-
-    private static void writeLambda(TreePath path, Trees trees, Elements elements, java.io.BufferedWriter writer) throws IOException {
-        TreePath enclosing = path.getParentPath();
-        while (enclosing != null && !(trees.getElement(enclosing) instanceof TypeElement)) enclosing = enclosing.getParentPath();
-        if (enclosing == null) throw new IOException("Cannot identify lambda's declaring type");
-        String owner = elements.getBinaryName((TypeElement) trees.getElement(enclosing)).toString();
-        var unit = path.getCompilationUnit();
-        var positions = trees.getSourcePositions();
-        long start = positions.getStartPosition(unit, path.getLeaf());
-        long end = positions.getEndPosition(unit, path.getLeaf());
-        ContextTsv.write(writer, "lambda", owner, "", unit.getLineMap().getLineNumber(start),
-                unit.getLineMap().getLineNumber(Math.max(start, end - 1)));
     }
 
     private static String typeName(TypeMirror original, Types types, Elements elements, CompiledTypes compiled) throws IOException {

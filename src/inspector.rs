@@ -278,7 +278,7 @@ fn neighbor_list(state: &State, incoming: bool, ids: &[u32], k: &Kit) -> El {
             .take(RESULT_PAGE_SIZE)
         {
             rows = rows.item(
-                ListItem::new(graph.data.nodes[id as usize].signature.clone())
+                ListItem::new(graph.data.nodes[id as usize].label.clone())
                     .selected(state.selected() == Some(id))
                     .on_select(move |state: &mut State, _| state.select(id, true)),
             );
