@@ -1,8 +1,8 @@
 //! Aggregate analyzed relationships, order them, then select a bounded page.
 use super::ordering;
 use super::{
-    EDGE_LIMIT, GraphView, Grouping, NODE_LIMIT, NodeOrder, Request, Scope, Selection, ViewEdge,
-    ViewNode,
+    EDGE_LIMIT, GraphView, GroupKind, Grouping, NODE_LIMIT, NodeOrder, Request, Scope, Selection,
+    SourcePath, ViewEdge, ViewNode,
 };
 use codegraph::{
     graph::{Filter, GraphIndex},
@@ -28,9 +28,13 @@ fn relative_file(node: &Node) -> PathBuf {
     file.strip_prefix(root).unwrap_or(file).to_path_buf()
 }
 
-fn groups(node: &Node, grouping: Grouping) -> Vec<(String, String)> {
+fn groups(node: &Node, grouping: Grouping) -> Vec<(String, String, GroupKind)> {
     let scope = [&*node.build, &*node.project];
-    let mut result = vec![(key(&["project", scope[0], scope[1]]), node.project.clone())];
+    let mut result = vec![(
+        key(&["project", scope[0], scope[1]]),
+        node.project.clone(),
+        GroupKind::Project,
+    )];
     match grouping {
         Grouping::Namespace => result.push((
             key(&["namespace", scope[0], scope[1], &node.namespace]),
@@ -39,6 +43,7 @@ fn groups(node: &Node, grouping: Grouping) -> Vec<(String, String)> {
             } else {
                 node.namespace.clone()
             },
+            GroupKind::Namespace,
         )),
         Grouping::Folder => {
             let file = relative_file(node);
@@ -49,6 +54,7 @@ fn groups(node: &Node, grouping: Grouping) -> Vec<(String, String)> {
                 result.push((
                     key(&["folder", scope[0], scope[1], &name]),
                     name.into_owned(),
+                    GroupKind::Folder,
                 ));
             }
         }
@@ -57,17 +63,19 @@ fn groups(node: &Node, grouping: Grouping) -> Vec<(String, String)> {
     result.push((
         key(&["class", scope[0], scope[1], &node.container]),
         node.container.clone(),
+        GroupKind::Class,
     ));
     result
 }
 
 fn visible_node(node: &Node, index: u32, request: &Request) -> ViewNode {
     if request.scope == Scope::Overview && request.grouping != Grouping::Method {
-        for (key, label) in groups(node, request.grouping) {
+        for (key, label, kind) in groups(node, request.grouping) {
             if !request.expanded.contains(&key) {
                 return ViewNode {
                     key,
                     label,
+                    group_kind: Some(kind),
                     detail: node.project.clone(),
                     ..Default::default()
                 };
@@ -110,8 +118,21 @@ fn aggregate_nodes(graph: &GraphIndex, request: &Request, selection: &Selection)
         node.application_start = node.member.is_some() && starts.contains(&node.key);
         members.insert(index, node.key.clone());
         let representative = representatives.entry(node.key.clone()).or_insert(node);
+        if representative.group_kind.is_some() && !graph.data.nodes[index as usize].file.is_empty()
+        {
+            let source = &graph.data.nodes[index as usize];
+            representative.files.push(SourcePath {
+                label: relative_file(source).to_string_lossy().into_owned(),
+                path: source.file.clone(),
+                language: source.language.clone(),
+            });
+        }
         representative.count += 1;
         representative.cyclic |= cyclic.contains(&index);
+    }
+    for node in representatives.values_mut() {
+        node.files.sort();
+        node.files.dedup_by(|a, b| a.path == b.path);
     }
     let indices: HashMap<_, _> = representatives
         .keys()
@@ -252,4 +273,116 @@ fn hidden_counts(graph: &GraphIndex, filter: &Filter) -> (usize, usize) {
         })
         .count();
     (nodes, edges)
+}
+
+#[cfg(test)]
+mod file_tests {
+    use super::*;
+    use codegraph::model::GraphData;
+    use std::sync::Arc;
+
+    #[test]
+    fn files_are_distinct_filtered_and_qualified_before_paging() {
+        let mut nodes = Vec::new();
+        for (i, (project, file, test)) in [
+            ("a", "/root/src/A.cs", false),
+            ("a", "/root/src/A.cs", false),
+            ("a", "/root/src/sub/A.cs", false),
+            ("a", "/root/src/Test.cs", true),
+            ("b", "/other/src/A.cs", false),
+        ]
+        .into_iter()
+        .enumerate()
+        {
+            nodes.push(Node {
+                id: i.to_string(),
+                build: "/root/app.csproj".into(),
+                project: project.into(),
+                file: file.into(),
+                namespace: "Space".into(),
+                container: "Type".into(),
+                is_test: test,
+                ..Default::default()
+            });
+        }
+        let graph = GraphIndex::new(Arc::new(GraphData {
+            nodes,
+            ..Default::default()
+        }))
+        .unwrap();
+        let mut request = Request {
+            grouping: Grouping::Folder,
+            expanded: HashSet::new(),
+            scope: Scope::Overview,
+            direction: super::super::FlowDirection::Callees,
+            depth: 2,
+            filter: Filter::default(),
+            page: 0,
+        };
+        request.filter.include_tests = false;
+        let view = super::super::project(&graph, &request);
+        let a = view.nodes.iter().find(|n| n.label == "a").unwrap();
+        assert_eq!(a.group_kind, Some(super::super::GroupKind::Project));
+        assert_eq!(
+            a.files.iter().map(|f| f.label.as_str()).collect::<Vec<_>>(),
+            ["src/A.cs", "src/sub/A.cs"]
+        );
+        request.expanded.insert(a.key.clone());
+        let view = super::super::project(&graph, &request);
+        let folder = view.nodes.iter().find(|n| n.label == "src").unwrap();
+        assert_eq!(folder.files.len(), 2);
+        request.grouping = Grouping::Namespace;
+        let view = super::super::project(&graph, &request);
+        let space = view.nodes.iter().find(|n| n.label == "Space").unwrap();
+        assert_eq!(space.files.len(), 2);
+    }
+    #[test]
+    fn file_membership_is_complete_and_separates_identical_projects_in_other_builds() {
+        let nodes = (0..(NODE_LIMIT + 2))
+            .map(|index| Node {
+                id: index.to_string(),
+                build: if index == NODE_LIMIT + 1 {
+                    "/other".into()
+                } else {
+                    "/root".into()
+                },
+                project: "same".into(),
+                namespace: "shared".into(),
+                container: index.to_string(),
+                file: format!("/root/src/{index}.java"),
+                ..Default::default()
+            })
+            .collect();
+        let graph = GraphIndex::new(Arc::new(GraphData {
+            nodes,
+            ..Default::default()
+        }))
+        .unwrap();
+        let request = Request {
+            grouping: Grouping::Namespace,
+            expanded: HashSet::new(),
+            scope: Scope::Overview,
+            direction: super::super::FlowDirection::Callees,
+            depth: 2,
+            filter: Filter::default(),
+            page: 0,
+        };
+        let view = super::super::project(&graph, &request);
+        assert_eq!(view.nodes.len(), 2);
+        let mut counts: Vec<_> = view.nodes.iter().map(|node| node.files.len()).collect();
+        counts.sort();
+        assert_eq!(counts, [1, NODE_LIMIT + 1]);
+        let mut expanded = request;
+        expanded
+            .expanded
+            .extend(view.nodes.iter().map(|n| n.key.clone()));
+        let namespaces = super::super::project(&graph, &expanded);
+        expanded
+            .expanded
+            .extend(namespaces.nodes.iter().map(|n| n.key.clone()));
+        let classes = super::super::project(&graph, &expanded);
+        assert_eq!(classes.nodes.len(), NODE_LIMIT);
+        assert_eq!(classes.pages, 2);
+        assert!(classes.nodes.iter().all(|node| node.files.len() == 1));
+    }
 }

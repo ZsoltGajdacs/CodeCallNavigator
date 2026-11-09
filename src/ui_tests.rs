@@ -2,6 +2,7 @@ use crate::{app::State, jobs, scenes, view};
 use rune::{Env, Runtime};
 
 mod graph_studio;
+mod source_popup;
 
 fn runtime() -> Runtime<State> {
     let mut state = State::new();

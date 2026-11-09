@@ -31,6 +31,7 @@ pub struct State {
     pub runtime: Option<Arc<AnalyzerRuntime>>,
     pub nav: Navigation,
     pub ui: crate::presentation::Presentation,
+    pub source_popup: crate::source_popup::Popup,
     pub back: Vec<Navigation>,
     pub forward: Vec<Navigation>,
     pub graph_view: GraphView,
@@ -80,6 +81,7 @@ impl State {
             runtime: None,
             nav: Navigation::default(),
             ui: crate::presentation::Presentation::default(),
+            source_popup: crate::source_popup::Popup::default(),
             back: Vec::new(),
             forward: Vec::new(),
             graph_view: GraphView::default(),
@@ -126,6 +128,7 @@ impl State {
     }
 
     pub fn changed(&mut self) {
+        self.close_source();
         self.pending_center = None;
         self.revision += 1;
         self.needs_layout = true;

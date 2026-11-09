@@ -115,6 +115,20 @@ cargo run --bin codegraph -- analyze fixtures/dotnet/Fixture.sln fixtures/gradle
 cargo run --bin codegraph -- analyze /path/to/project/tsconfig.json
 ```
 
+## Reading source on the graph
+
+Rest the pointer over a method for 400 ms to open its current source file at the
+recorded line. In Folder or Namespace mode, hover an aggregate card to list the
+source files represented by its methods under the current filters; click a file
+to read it and use Back to return to the list.
+
+Move into the popup to keep it open, or Pin it while exploring the graph. Drag its
+bottom-right corner to resize it, scroll in either direction, and select source
+text to copy it. Close or Escape dismisses it. Popup size lasts for the session;
+changing the graph view clears the preview. Files are read from disk rather than
+saved with the graph, with a 16 MiB limit and an explanation for unavailable files
+or recorded lines. Refresh a stale graph to update its method locations.
+
 ## Engines and accuracy
 
 C# uses compiler-backed CallAtlas. A small checked-in patch qualifies its serialized

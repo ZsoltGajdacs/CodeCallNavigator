@@ -32,6 +32,7 @@ pub struct NeighborOutput {
 
 pub struct Jobs {
     pub boot: Latest<Fallible<Boot>>,
+    pub source: Latest<crate::source_popup::SourceOutput>,
     pub discovery: Latest<DiscoveryOutput>,
     pub analysis: Latest<Fallible<LoadedGraph>>,
     pub layout: Latest<(u64, u64, Fallible<projection::GraphView>)>,
@@ -51,6 +52,7 @@ impl Default for Jobs {
         let (progress_sender, progress_receiver) = mpsc::channel();
         Self {
             boot: Latest::default(),
+            source: Latest::default(),
             discovery: Latest::default(),
             analysis: Latest::default(),
             layout: Latest::default().debounce(Duration::from_millis(50)),
@@ -69,6 +71,7 @@ impl Default for Jobs {
 
 pub fn setup(state: &mut State, waker: Waker) {
     state.jobs.boot.set_waker(waker.clone());
+    state.jobs.source.set_waker(waker.clone());
     state.jobs.discovery.set_waker(waker.clone());
     state.jobs.analysis.set_waker(waker.clone());
     state.jobs.layout.set_waker(waker.clone());
@@ -244,7 +247,8 @@ impl State {
 }
 
 pub fn poll(state: &mut State, time: f64, tx: &mut Tx) -> bool {
-    let mut changed = crate::camera::poll_center(state, time, tx)
+    let mut changed = crate::source_popup::poll(state, time, tx)
+        | crate::camera::poll_center(state, time, tx)
         | poll_progress(state)
         | poll_boot(state)
         | poll_discovery(state)
@@ -393,6 +397,7 @@ fn poll_analysis(state: &mut State) -> bool {
 }
 
 fn install_graph(state: &mut State, loaded: LoadedGraph) {
+    state.close_source();
     state.epoch += 1;
     state.nav.retain_known(&loaded.graph);
     state.graph = Some(loaded.graph);

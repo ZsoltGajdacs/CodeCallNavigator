@@ -63,6 +63,7 @@ pub fn view(state: &State, cx: &mut Cx<State>) -> El {
         .min_w(0.0);
     let body = col()
         .key("application")
+        .on_layout(|s: &mut State, rect| s.source_popup.window = [rect[2], rect[3]])
         .w_full()
         .h_full()
         .fill(k.c.bg_base)
@@ -78,6 +79,13 @@ pub fn view(state: &State, cx: &mut Cx<State>) -> El {
                 .child(split),
         )
         .child(status_bar(state, &k));
+    with_overlays(state, &k, body, layer)
+}
+
+fn with_overlays(state: &State, k: &Kit, body: El, mut layer: Vec<El>) -> El {
+    if let Some(popup) = crate::source_popup::view(state, k) {
+        layer.push(popup);
+    }
     rune_kit::root(body, layer)
 }
 
@@ -267,9 +275,18 @@ pub fn key(state: &mut State, event: &KeyEvent, tx: &mut Tx) -> bool {
     match &event.key {
         Key::Left if event.mods.alt => state.history(false),
         Key::Right if event.mods.alt => state.history(true),
-        Key::Escape if state.ui.overlay.is_some() => state.close_overlay(),
-        Key::Escape => state.overview(),
+        Key::Escape => dismiss(state),
         _ => return false,
     }
     true
+}
+
+fn dismiss(state: &mut State) {
+    if state.source_popup.active.is_some() {
+        state.close_source();
+    } else if state.ui.overlay.is_some() {
+        state.close_overlay();
+    } else {
+        state.overview();
+    }
 }

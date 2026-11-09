@@ -63,12 +63,29 @@ pub struct Request {
     pub page: usize,
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum GroupKind {
+    Project,
+    Namespace,
+    Folder,
+    Class,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+pub struct SourcePath {
+    pub label: String,
+    pub path: String,
+    pub language: String,
+}
+
 #[derive(Clone, Debug, Default)]
 pub struct ViewNode {
     pub key: String,
     pub label: String,
     pub detail: String,
     pub member: Option<u32>,
+    pub group_kind: Option<GroupKind>,
+    pub files: Vec<SourcePath>,
     pub count: usize,
     pub internal_edges: usize,
     pub cyclic: bool,

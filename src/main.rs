@@ -12,6 +12,8 @@ mod projection;
 mod relationship;
 mod scenes;
 mod search;
+mod source;
+mod source_popup;
 mod theme;
 #[cfg(test)]
 mod ui_tests;
@@ -30,6 +32,8 @@ fn main() {
         min_size: Some((1050.0, 680.0)),
         scenes: &[
             ("fixture", scenes::install),
+            ("source-preview", source_popup::scenes::source),
+            ("source-files", source_popup::scenes::files),
             ("method-callees", method_scenes::callees),
             ("method-callers", method_scenes::callers),
             ("cached", scenes::cached),

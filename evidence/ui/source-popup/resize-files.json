@@ -1,0 +1,1 @@
+{"events":[{"t":0.2,"type":"move","key":"graph-node-0"},{"t":0.9,"type":"tap","key":"source-pin"},{"t":1.2,"type":"drag","key":"source-resize","dx":0,"dy":-200,"dur":0.3},{"t":1.8,"type":"wheel","key":"source-files-scroll","dy":-96},{"t":2.4,"type":"move","x":20,"y":650}]}

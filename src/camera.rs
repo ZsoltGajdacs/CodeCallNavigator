@@ -139,7 +139,10 @@ pub fn graph_canvas(state: &State, _: &mut Cx<State>, k: &Kit) -> El {
         .h_full()
         .clip_soft(0.0)
         .fill(theme::canvas(k))
-        .on_layout(|state: &mut State, rect| state.viewport = [rect[2], rect[3]])
+        .on_layout(|state: &mut State, rect| {
+            state.viewport = [rect[2], rect[3]];
+            state.source_popup.canvas = [rect[0], rect[1]];
+        })
         .on_wheel(|state: &mut State, event: WheelEvent, _| {
             state.pending_center = None;
             state
@@ -284,11 +287,8 @@ fn node_card(state: &State, index: usize, emphasis: &Emphasis, k: &Kit) -> El {
     };
     let point = state.nav.camera.screen(node.position);
     let scale = state.nav.camera.zoom;
-    let key = node.key.clone();
-    let drill_key = key.clone();
-    let member = node.member;
     let detail = node_detail(node);
-    col()
+    let card = col()
         .key(format!("graph-node-{index}"))
         .absolute(point[0], point[1])
         .size(node.size[0] * scale, node.size[1] * scale)
@@ -309,22 +309,6 @@ fn node_card(state: &State, index: usize, emphasis: &Emphasis, k: &Kit) -> El {
         } else {
             1.0
         })
-        .role("button")
-        .label(format!("{} · {}", node.label, detail))
-        .focusable(true)
-        .on_press_tx(move |state: &mut State, tx| {
-            let interval = double_click_interval();
-            state.select_visible(key.clone(), member, interval);
-            tx.wake_after(Duration::from_secs_f64(interval));
-        })
-        .on_double_press(move |state: &mut State| {
-            state.pending_center = None;
-            if let Some(member) = member {
-                state.select(member, true);
-            } else {
-                state.activate(drill_key.clone(), None);
-            }
-        })
         .child(
             text(&node.label)
                 .font(theme::mono((14.0 * scale).max(8.0), 600.0))
@@ -336,7 +320,35 @@ fn node_card(state: &State, index: usize, emphasis: &Emphasis, k: &Kit) -> El {
                 .font(TextStyle::new((11.0 * scale).max(7.0), 400.0))
                 .color(k.c.text_muted)
                 .truncate(),
-        )
+        );
+    node_actions(card, node)
+}
+
+fn node_actions(card: El, node: &ViewNode) -> El {
+    let key = node.key.clone();
+    let drill_key = key.clone();
+    let member = node.member;
+    let hover_node = node.clone();
+    let detail = node_detail(node);
+    card.on_hover_change(move |s: &mut State, inside, tx| {
+        s.hover_source(hover_node.clone(), inside, tx)
+    })
+    .role("button")
+    .label(format!("{} · {}", node.label, detail))
+    .focusable(true)
+    .on_press_tx(move |state: &mut State, tx| {
+        let interval = double_click_interval();
+        state.select_visible(key.clone(), member, interval);
+        tx.wake_after(Duration::from_secs_f64(interval));
+    })
+    .on_double_press(move |state: &mut State| {
+        state.pending_center = None;
+        if let Some(member) = member {
+            state.select(member, true);
+        } else {
+            state.activate(drill_key.clone(), None);
+        }
+    })
 }
 
 fn node_detail(node: &ViewNode) -> String {
