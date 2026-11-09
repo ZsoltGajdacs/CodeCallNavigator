@@ -5,13 +5,26 @@ use crate::{
     theme,
 };
 use rune::{El, ScrollSpec, col, text};
-use rune_kit::{Button, Checkbox, Kit, List, ListItem, TextInput};
+use rune_kit::{Button, Checkbox, Kit, List, ListItem, ScrollBar, ScrollBarStyle, TextInput};
 
 pub fn view(state: &State, k: &Kit) -> El {
     let (title, content) = match state.ui.drawer {
         Drawer::Repository => ("Repository", repository(state, k)),
         Drawer::Search => ("Search", search(state, k)),
         Drawer::Filters => ("Graph filters", filters(state, k)),
+    };
+    let content = content
+        .w(state.ui.sidebar.width() - 2.0 * theme::SPACE)
+        .gap(theme::SPACE);
+    let body = col().key("drawer-scroll").w_full().grow(1.0).min_h(0.0);
+    let body = if state.ui.drawer == Drawer::Repository {
+        body.padding(theme::SPACE)
+            .child(content.grow(1.0).min_h(0.0))
+    } else {
+        body.scroll(ScrollSpec {
+            stick_bottom: false,
+        })
+        .child(col().w_full().padding(theme::SPACE).child(content))
     };
     col()
         .key("drawer")
@@ -26,23 +39,7 @@ pub fn view(state: &State, k: &Kit) -> El {
                 .px(theme::SPACE)
                 .h(40.0),
         )
-        .child(
-            col()
-                .key("drawer-scroll")
-                .w_full()
-                .grow(1.0)
-                .min_h(0.0)
-                .scroll(ScrollSpec {
-                    stick_bottom: false,
-                })
-                .child(
-                    col().w_full().padding(theme::SPACE).child(
-                        content
-                            .w(state.ui.sidebar.width() - 2.0 * theme::SPACE)
-                            .gap(theme::SPACE),
-                    ),
-                ),
-        )
+        .child(body)
 }
 
 fn repository(state: &State, k: &Kit) -> El {
@@ -83,14 +80,28 @@ fn repository(state: &State, k: &Kit) -> El {
             k,
         ));
     }
+    let mut builds = col().w_full().gap(theme::SPACE);
     for (index, choice) in state.targets.iter().enumerate() {
-        content = content.child(
+        builds = builds.child(
             Checkbox::new(choice.selected)
                 .label(&choice.target.label)
                 .on_toggle(move |s: &mut State| s.toggle_build(index))
                 .build(k)
                 .key(format!("build-{index}"))
                 .w_full(),
+        );
+    }
+    if !state.targets.is_empty() {
+        content = content.child(
+            col()
+                .key("builds-scroll")
+                .w_full()
+                .grow(1.0)
+                .min_h(0.0)
+                .scroll_xy()
+                .child(builds)
+                .scroll_bar_styled(ScrollBarStyle::from_kit(k).horizontal())
+                .pb(8.0),
         );
     }
     content.child(note(analysis_help(state), k))

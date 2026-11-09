@@ -60,6 +60,102 @@ fn assert_visible(runtime: &Runtime<State>, key: &str) {
 }
 
 #[test]
+fn long_build_paths_scroll_horizontally() {
+    let mut runtime = narrow_runtime(false);
+    runtime.update(|state, _| {
+        state.targets = vec![crate::app::TargetChoice {
+            target: crate::discovery::BuildTarget {
+                path: "/project/build.csproj".into(),
+                language: "C#".into(),
+                kind: "project".into(),
+                label: format!("/project/{}/build.csproj", "long-directory/".repeat(8)),
+            },
+            selected: false,
+        }];
+    });
+    settle(&mut runtime);
+    let before = runtime
+        .elements()
+        .into_iter()
+        .find(|e| e.key.as_deref() == Some("build-0"))
+        .unwrap()
+        .rect;
+    runtime.wheel_xy(before[0] + 50.0, before[1] + 10.0, -200.0, 0.0);
+    runtime.frame(1.0 / 60.0);
+    let after = runtime
+        .elements()
+        .into_iter()
+        .find(|e| e.key.as_deref() == Some("build-0"))
+        .unwrap()
+        .rect;
+    assert!(after[0] < before[0], "long build path did not scroll");
+    assert_visible(&runtime, "choose-folder");
+}
+
+#[test]
+fn build_scrollbar_stays_at_the_bottom_while_the_list_scrolls() {
+    let mut runtime = narrow_runtime(false);
+    runtime.update(|state, _| {
+        state.targets = (0..40)
+            .map(|index| crate::app::TargetChoice {
+                target: crate::discovery::BuildTarget {
+                    path: format!("/project/{index}.csproj").into(),
+                    language: "C#".into(),
+                    kind: "project".into(),
+                    label: format!("/project/{}/{index}.csproj", "long-directory/".repeat(8)),
+                },
+                selected: false,
+            })
+            .collect();
+    });
+    settle(&mut runtime);
+    let viewport = runtime
+        .elements()
+        .into_iter()
+        .find(|e| e.key.as_deref() == Some("builds-scroll"))
+        .unwrap()
+        .rect;
+    let first = runtime
+        .elements()
+        .into_iter()
+        .find(|e| e.key.as_deref() == Some("build-0"))
+        .unwrap()
+        .rect;
+    runtime.wheel(viewport[0] + 50.0, viewport[1] + 50.0, -200.0);
+    runtime.frame(1.0 / 60.0);
+    let after = runtime
+        .elements()
+        .into_iter()
+        .find(|e| e.key.as_deref() == Some("build-0"))
+        .unwrap()
+        .rect;
+    let viewport_after = runtime
+        .elements()
+        .into_iter()
+        .find(|e| e.key.as_deref() == Some("builds-scroll"))
+        .unwrap()
+        .rect;
+    assert!(after[1] < first[1], "build list did not scroll vertically");
+    assert_eq!(
+        viewport, viewport_after,
+        "scrollbar viewport moved with the list"
+    );
+    runtime.frame(0.15);
+    runtime.wheel_xy(viewport[0] + 50.0, viewport[1] + 50.0, -200.0, 0.0);
+    runtime.frame(1.0 / 60.0);
+    let horizontally_scrolled = runtime
+        .elements()
+        .into_iter()
+        .find(|e| e.key.as_deref() == Some("build-0"))
+        .unwrap()
+        .rect;
+    assert!(
+        horizontally_scrolled[0] < after[0],
+        "build list did not scroll horizontally"
+    );
+}
+
+#[test]
 fn minimum_window_keeps_graph_controls_visible_without_toolbar_scrolling() {
     for max_panes in [false, true] {
         let mut runtime = narrow_runtime(max_panes);
