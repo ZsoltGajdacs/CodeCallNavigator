@@ -226,3 +226,29 @@ fn search_pins_generation_while_a_new_analysis_is_published() {
             .is_err()
     );
 }
+
+#[test]
+fn sqlite_preserves_architecture_facts_and_source_for_offline_reclassification() {
+    use codegraph::architecture::{ArchitectureFacts, FileFacts};
+    let temp = tempfile::tempdir().unwrap();
+    let store = SqliteStore::open(temp.path()).unwrap();
+    let mut data = sample();
+    data.architecture = Some(ArchitectureFacts {
+        version: 1,
+        files: vec![FileFacts {
+            build: "build".into(),
+            project: "project".into(),
+            file: "example.cs".into(),
+            language: "csharp".into(),
+            names: vec!["Example".into()],
+            annotations: vec!["Controller".into()],
+            content: "[Controller] class Example {}".into(),
+            ..Default::default()
+        }],
+    });
+    store.publish(&data, &AtomicBool::new(false)).unwrap();
+    let restored = store.load_active().unwrap().unwrap();
+    assert_eq!(restored.architecture, data.architecture);
+    assert_eq!(restored.nodes, data.nodes);
+    assert_eq!(restored.edges.len(), data.edges.len());
+}

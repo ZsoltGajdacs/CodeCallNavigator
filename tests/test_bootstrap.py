@@ -119,6 +119,11 @@ class PatchBootstrapTests(unittest.TestCase):
         bootstrap.apply_patch(self.spec)
         self.assert_current()
 
+    def test_exact_older_patch_upgrades_without_losing_other_supported_versions(self):
+        self.save_patch("older_", "assembly identities\nolder entry metadata\n")
+        bootstrap.apply_patch(self.spec)
+        self.assert_current()
+
     def test_unrelated_tracked_change_is_preserved_and_refused(self):
         self.source.write_text("assembly identities\n")
         other = self.repository / "other.txt"

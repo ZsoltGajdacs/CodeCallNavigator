@@ -1,0 +1,301 @@
+diff --git a/src/CallAtlas.Core/CallGraphBuilder.cs b/src/CallAtlas.Core/CallGraphBuilder.cs
+index bf14b1d..9d7b1f5 100644
+--- a/src/CallAtlas.Core/CallGraphBuilder.cs
++++ b/src/CallAtlas.Core/CallGraphBuilder.cs
+@@ -664,7 +664,7 @@ public sealed partial class CallGraphBuilder
+         List<string> degraded,
+         bool referencesResolved)
+     {
+-        var hasTopLevel = false;
++        var topLevelIds = new HashSet<string>(StringComparer.Ordinal);
+ 
+         // ── 阶段一（全部文件）：一遍句法遍历，登记节点 + 收集待绑定函数体 ──────────
+         // 旧实现把整棵树走两遍：第二遍要重新 GetDeclaredSymbol 才能算出 fromId，
+@@ -752,19 +752,20 @@ public sealed partial class CallGraphBuilder
+                         Site(sites, SymbolId.ForFieldInitializer(f), [v.Initializer!.Value]);
+                         break;
+                     case GlobalStatementSyntax gs:
+-                        if (!hasTopLevel)
++                        var topLevelId = SymbolId.ForTopLevel(model.Compilation);
++                        if (topLevelIds.Add(topLevelId))
+                         {
+-                            hasTopLevel = true;
+-                            nodes[SymbolId.TopLevelId] = new Node
++                            nodes[topLevelId] = new Node
+                             {
+-                                Id = SymbolId.TopLevelId,
++                                Id = topLevelId,
+                                 Kind = "toplevel",
++                                Declaration = new() { HasSourceDeclaration = true, CallableKind = "TopLevel" },
+                                 Container = "Program",
+                                 Name = "<top-level>",
+                                 Location = Rel(root, file) + ":1",
+                             };
+                         }
+-                        Site(sites, SymbolId.TopLevelId, [gs.Statement]);
++                        Site(sites, topLevelId, [gs.Statement]);
+                         break;
+                 }
+             }
+@@ -999,7 +1000,15 @@ public sealed partial class CallGraphBuilder
+                 $"[callatlas] {"symbol cache",-22} hits {h,8}  misses {m,8}  ({rate,5:F1}% hit)");
+         }
+ 
+-        return map;
++        var applicationStarts = compilations.Select(compilation =>
++        {
++            var entry = compilation.GetEntryPoint(default);
++            if (entry is null) return null;
++            var topLevelId = SymbolId.ForTopLevel(compilation);
++            return nodes.ContainsKey(topLevelId) ? topLevelId : SymbolId.Canonical(entry);
++        }).Where(id => id is not null && nodes.ContainsKey(id))
++          .Select(id => id!).Distinct(StringComparer.Ordinal).OrderBy(id => id, StringComparer.Ordinal).ToList();
++        return map with { ApplicationStarts = applicationStarts };
+     }
+ 
+     /// <summary>
+@@ -1251,6 +1260,7 @@ public sealed partial class CallGraphBuilder
+             Id = id,
+             Kind = kind,
+             Container = DisplayOf(symbol.ContainingType),
++            Declaration = MethodDeclarationFacts.From(symbol),
+             Name = symbol.Name,
+             Location = string.IsNullOrEmpty(path) ? "(no location)" : $"{Rel(root, path)}:{line}",
+         };
+@@ -1279,6 +1289,7 @@ public sealed partial class CallGraphBuilder
+         {
+             Id = id,
+             Kind = "accessor",
++            Declaration = MethodDeclarationFacts.From(accessor),
+             Container = DisplayOf(accessor.ContainingType),
+             // 显示成属性名（get_Value 的 Name 是 "get_Value"，用属性名 "Value" 更好读）
+             Name = accessor.AssociatedSymbol?.Name ?? accessor.Name,
+@@ -1331,6 +1342,7 @@ public sealed partial class CallGraphBuilder
+             Id = id,
+             Kind = kind,
+             Container = DisplayOf(target.OriginalDefinition.ContainingType),
++            Declaration = MethodDeclarationFacts.From(target.OriginalDefinition),
+             Name = target.OriginalDefinition.Name,
+             Location = "(implicit)",
+         };
+@@ -1755,7 +1767,7 @@ public sealed partial class CallGraphBuilder
+     /// 但"谁读了这个字段"是架构事实，值得有个落点。</summary>
+     private static string FieldNodeId(Dictionary<string, Node> sink, IFieldSymbol field)
+     {
+-        var id = $"{field.ContainingType.ToDisplayString(SymbolId.QualifiedFormat)}::{field.Name}#field";
++        var id = SymbolId.ForField(field);
+         sink.TryAdd(id, new Node
+         {
+             Id = id,
+diff --git a/src/CallAtlas.Core/CodeMap.cs b/src/CallAtlas.Core/CodeMap.cs
+index a720920..a02d271 100644
+--- a/src/CallAtlas.Core/CodeMap.cs
++++ b/src/CallAtlas.Core/CodeMap.cs
+@@ -10,6 +10,8 @@ public sealed record CodeMap
+ 
+     public required string Schema { get; init; }
+     public required string Root { get; init; }
++    /// <summary>Compiler-selected executable starts, using the existing graph identities.</summary>
++    public IReadOnlyList<string> ApplicationStarts { get; init; } = [];
+     public required IReadOnlyList<Node> Nodes { get; init; }
+     public required IReadOnlyList<Edge> Edges { get; init; }
+     public required IReadOnlyList<ExternalCall> External { get; init; }
+@@ -45,6 +47,50 @@ public sealed record Node
+     public required string Container { get; init; }
+     public required string Name { get; init; }
+     public required string Location { get; init; }
++    /// <summary>Compiler facts; the consumer owns graph inclusion policy.</summary>
++    public MethodDeclarationFacts? Declaration { get; init; }
++
++}
++
++/// <summary>Source origin and callable category supplied by Roslyn.</summary>
++public sealed record MethodDeclarationFacts
++{
++    public bool HasSourceDeclaration { get; init; }
++    public bool IsImplicit { get; init; }
++    public string CallableKind { get; init; } = "";
++    public bool IsObjectMember { get; init; }
++
++    public static MethodDeclarationFacts From(IMethodSymbol method) => new()
++    {
++        HasSourceDeclaration = method.DeclaringSyntaxReferences.Length > 0,
++        IsImplicit = method.IsImplicitlyDeclared,
++        CallableKind = method.MethodKind.ToString(),
++        IsObjectMember = MatchesObjectMember(method),
++    };
++
++    private static bool MatchesObjectMember(IMethodSymbol method)
++    {
++        var type = method.ContainingType;
++        while (type is not null && type.SpecialType != SpecialType.System_Object)
++            type = type.BaseType;
++        type ??= ReferencedObjectType(method);
++        var names = method.ExplicitInterfaceImplementations.Select(member => member.Name).Append(method.Name);
++        return type is not null && names.SelectMany(name => type.GetMembers(name)).OfType<IMethodSymbol>()
++            .Any(candidate => SameSignature(method, candidate));
++    }
++
++    private static INamedTypeSymbol? ReferencedObjectType(IMethodSymbol method) =>
++        method.ContainingModule.ReferencedAssemblySymbols
++            .Select(assembly => assembly.GetTypeByMetadataName("System.Object")
++                ?? assembly.ResolveForwardedType("System.Object"))
++            .FirstOrDefault(type => type is not null);
++
++    private static bool SameSignature(IMethodSymbol method, IMethodSymbol candidate) =>
++        method.Arity == candidate.Arity && method.IsStatic == candidate.IsStatic
++        && method.Parameters.Length == candidate.Parameters.Length
++        && method.Parameters.Zip(candidate.Parameters).All(pair =>
++            pair.First.RefKind == pair.Second.RefKind
++            && SymbolEqualityComparer.Default.Equals(pair.First.Type, pair.Second.Type));
+ }
+ 
+ /// <summary>边的种类常量。</summary>
+@@ -306,27 +352,38 @@ public static class SymbolId
+     public static string Canonical(IMethodSymbol method)
+     {
+         var s = (method.ReducedFrom ?? method).OriginalDefinition;
+-        return s.MethodKind switch
++        if (s.MethodKind == MethodKind.LocalFunction && s.ContainingSymbol is IMethodSymbol enclosing)
++            return $"{Canonical(enclosing)}::{s.Name}#local";
++        return InAssembly(s, s.MethodKind switch
+         {
+             MethodKind.StaticConstructor => $"{s.ContainingType.ToDisplayString(QualifiedFormat)}::.cctor",
+             MethodKind.Constructor => $"{s.ContainingType.ToDisplayString(QualifiedFormat)}::..ctor({Params(s)})",
+-            MethodKind.LocalFunction when s.ContainingSymbol is IMethodSymbol enclosing =>
+-                $"{Canonical(enclosing)}::{s.Name}#local",
+             _ => $"{s.ContainingType.ToDisplayString(QualifiedFormat)}::{s.Name}({Params(s)})",
+-        };
++        });
+     }
+ 
+     /// <summary>字段初始化器的伪节点 id：T::field#init（初始化表达式里的调用归到这里）。</summary>
+     public static string ForFieldInitializer(IFieldSymbol field) =>
+-        $"{field.ContainingType.ToDisplayString(QualifiedFormat)}::{field.Name}#init";
++        InAssembly(field, $"{field.ContainingType.ToDisplayString(QualifiedFormat)}::{field.Name}#init");
+ 
+     /// <summary>属性初始化器的伪节点 id：T::Prop#init（<c>public B P { get; set; } = new B();</c>）。
+     /// 没有对应的字段声明语法，因此按属性自己的名字登记。</summary>
+     public static string ForPropertyInitializer(IPropertySymbol property) =>
+-        $"{property.ContainingType.ToDisplayString(QualifiedFormat)}::{property.Name}#init";
++        InAssembly(property, $"{property.ContainingType.ToDisplayString(QualifiedFormat)}::{property.Name}#init");
+ 
+     /// <summary>顶层语句的伪节点 id（整个入口一个节点）。</summary>
+-    public const string TopLevelId = "Program::<top-level>";
++    public static string ForTopLevel(Compilation compilation) =>
++        InAssembly(compilation.Assembly, "Program::<top-level>");
++
++    public static string ForField(IFieldSymbol field) =>
++        InAssembly(field, $"{field.ContainingType.ToDisplayString(QualifiedFormat)}::{field.Name}#field");
++
++    // Identity serialization only: retain the compiler-owned assembly boundary.
++    public static string InAssembly(ISymbol symbol, string localId)
++    {
++        var assembly = symbol as IAssemblySymbol ?? symbol.ContainingAssembly;
++        return $"[{assembly?.Identity.Name ?? "<unknown>"}]::{localId}";
++    }
+ 
+     /// <summary>
+     /// 委托调用的落点 id：<c>Action#delegate</c>（用委托类型本身命名）。
+@@ -337,7 +394,7 @@ public static class SymbolId
+     /// 后缀 <c>#delegate</c> 与字段初始化器的 <c>#init</c> 同族，一眼可辨其为伪节点。
+     /// </summary>
+     public static string ForDelegate(ITypeSymbol delegateType) =>
+-        $"{delegateType.ToDisplayString(QualifiedFormat)}#delegate";
++        InAssembly(delegateType, $"{delegateType.ToDisplayString(QualifiedFormat)}#delegate");
+ 
+     private static string Params(IMethodSymbol method) =>
+         string.Join(",", method.Parameters.Select(p => p.Type.ToDisplayString(QualifiedFormat)));
+diff --git a/src/CallAtlas.Core/CodeMapJson.cs b/src/CallAtlas.Core/CodeMapJson.cs
+index 9555cb4..357c45f 100644
+--- a/src/CallAtlas.Core/CodeMapJson.cs
++++ b/src/CallAtlas.Core/CodeMapJson.cs
+@@ -5,6 +5,58 @@ namespace CallAtlas.Core;
+ /// <summary>确定性 JSON 写出：字段顺序固定、排序在模型构建时完成、不含时间戳。</summary>
+ public static class CodeMapJson
+ {
++    private static void WriteDeclarations(Utf8JsonWriter writer, CodeMap map)
++    {
++            writer.WriteStartObject("entryPoints");
++            writer.WriteStartArray("candidates");
++            foreach (var entry in CodeMapQuery.EntryPoints(map))
++                writer.WriteStringValue(entry.Id);
++            writer.WriteEndArray();
++            writer.WriteStartArray("applicationStarts");
++            foreach (var identity in map.ApplicationStarts)
++                writer.WriteStringValue(identity);
++            writer.WriteEndArray();
++            writer.WriteEndObject();
++
++            writer.WriteStartArray("nodes");
++            foreach (var n in map.Nodes)
++            {
++                writer.WriteStartObject();
++                writer.WriteString("id", n.Id);
++                writer.WriteString("kind", n.Kind);
++                writer.WriteString("container", n.Container);
++                writer.WriteString("name", n.Name);
++                writer.WriteString("location", n.Location);
++                WriteDeclaration(writer, n.Declaration);
++                writer.WriteEndObject();
++            }
++            writer.WriteEndArray();
++
++    }
++
++    private static void WriteDeclaration(Utf8JsonWriter writer, MethodDeclarationFacts? facts)
++    {
++        if (facts is null) return;
++        writer.WriteStartObject("declaration");
++        writer.WriteBoolean("hasSourceDeclaration", facts.HasSourceDeclaration);
++        writer.WriteBoolean("isImplicit", facts.IsImplicit);
++        writer.WriteString("callableKind", facts.CallableKind);
++        writer.WriteBoolean("isObjectMember", facts.IsObjectMember);
++        writer.WriteEndObject();
++    }
++
++    private static MethodDeclarationFacts? ReadDeclaration(JsonElement node)
++    {
++        if (!node.TryGetProperty("declaration", out var facts)) return null;
++        return new MethodDeclarationFacts
++        {
++            HasSourceDeclaration = facts.GetProperty("hasSourceDeclaration").GetBoolean(),
++            IsImplicit = facts.GetProperty("isImplicit").GetBoolean(),
++            CallableKind = facts.GetProperty("callableKind").GetString() ?? "",
++            IsObjectMember = facts.GetProperty("isObjectMember").GetBoolean(),
++        };
++    }
++
+     /// <summary>写出供人读 / diff 的 JSON：缩进、字段顺序固定、排序已在模型侧完成、无时间戳。</summary>
+     public static string Write(CodeMap map) => Write(map, indented: true);
+ 
+@@ -23,19 +75,9 @@ public static class CodeMapJson
+             writer.WriteStartObject();
+             writer.WriteString("schema", map.Schema);
+             writer.WriteString("root", map.Root);
++            writer.WriteString("declarationFactsVersion", "1");
+ 
+-            writer.WriteStartArray("nodes");
+-            foreach (var n in map.Nodes)
+-            {
+-                writer.WriteStartObject();
+-                writer.WriteString("id", n.Id);
+-                writer.WriteString("kind", n.Kind);
+-                writer.WriteString("container", n.Container);
+-                writer.WriteString("name", n.Name);
+-                writer.WriteString("location", n.Location);
+-                writer.WriteEndObject();
+-            }
+-            writer.WriteEndArray();
++            WriteDeclarations(writer, map);
+ 
+             writer.WriteStartArray("edges");
+             foreach (var e in map.Edges)
+@@ -175,6 +217,7 @@ public static class CodeMapJson
+                         Container = Str(n, "container"),
+                         Name = Str(n, "name"),
+                         Location = Str(n, "location"),
++                        Declaration = ReadDeclaration(n),
+                     });
+ 
+             var edges = new List<Edge>();

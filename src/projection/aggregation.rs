@@ -1,79 +1,25 @@
 //! Aggregate analyzed relationships, order them, then select a bounded page.
-use super::ordering;
 use super::{
-    EDGE_LIMIT, GraphView, GroupKind, Grouping, NODE_LIMIT, NodeOrder, Request, Scope, Selection,
-    SourcePath, ViewEdge, ViewNode,
+    EDGE_LIMIT, GraphView, Grouping, NODE_LIMIT, NodeOrder, Request, Scope, Selection, SourcePath,
+    ViewEdge, ViewNode,
+};
+use super::{
+    groups::{groups, relative_file},
+    layers, ordering,
 };
 use codegraph::{graph::GraphIndex, model::Node};
-use std::{
-    collections::{BTreeMap, HashMap, HashSet},
-    path::{Path, PathBuf},
-};
-
-fn key(parts: &[&str]) -> String {
-    serde_json::to_string(parts).expect("string arrays serialize")
-}
-
-fn relative_file(node: &Node) -> PathBuf {
-    let build = Path::new(&node.build);
-    let root = if build.extension().is_some() {
-        build.parent().unwrap_or(build)
-    } else {
-        build
-    };
-    let file = Path::new(&node.file);
-    file.strip_prefix(root).unwrap_or(file).to_path_buf()
-}
-
-fn groups(node: &Node, grouping: Grouping) -> Vec<(String, String, GroupKind)> {
-    let scope = [&*node.build, &*node.project];
-    let mut result = vec![(
-        key(&["project", scope[0], scope[1]]),
-        node.project.clone(),
-        GroupKind::Project,
-    )];
-    match grouping {
-        Grouping::Namespace => result.push((
-            key(&["namespace", scope[0], scope[1], &node.namespace]),
-            if node.namespace.is_empty() {
-                "(global namespace)".into()
-            } else {
-                node.namespace.clone()
-            },
-            GroupKind::Namespace,
-        )),
-        Grouping::Folder => {
-            let file = relative_file(node);
-            let mut folder = PathBuf::new();
-            for part in file.parent().into_iter().flat_map(Path::components) {
-                folder.push(part);
-                let name = folder.to_string_lossy();
-                result.push((
-                    key(&["folder", scope[0], scope[1], &name]),
-                    name.into_owned(),
-                    GroupKind::Folder,
-                ));
-            }
-        }
-        Grouping::Project | Grouping::Method => {}
-    }
-    result.push((
-        key(&["class", scope[0], scope[1], &node.container]),
-        node.container.clone(),
-        GroupKind::Class,
-    ));
-    result
-}
+use std::collections::{BTreeMap, HashMap, HashSet};
 
 fn visible_node(node: &Node, index: u32, request: &Request) -> ViewNode {
     if request.scope == Scope::Overview && request.grouping != Grouping::Method {
-        for (key, label, kind) in groups(node, request.grouping) {
+        for (key, label, kind) in groups(node, request) {
             if !request.expanded.contains(&key) {
                 return ViewNode {
                     key,
                     label,
                     group_kind: Some(kind),
                     detail: node.project.clone(),
+                    layer: layers::assignment(node, request).map(str::to_owned),
                     ..Default::default()
                 };
             }
@@ -84,6 +30,7 @@ fn visible_node(node: &Node, index: u32, request: &Request) -> ViewNode {
         label: node.label.clone(),
         detail: node.container.clone(),
         member: Some(index),
+        layer: layers::assignment(node, request).map(str::to_owned),
         ..Default::default()
     }
 }
@@ -194,7 +141,9 @@ pub(super) fn project_page(
         roots,
         selection.direction,
     );
+    let ordered = layers::order(&aggregates.nodes, ordered, request);
     let mut view = page(aggregates, ordered, request.page);
+    view.layer_bands = layers::bands(request);
     let summary = graph.filter_summary(&request.filter);
     (view.hidden_nodes, view.hidden_edges) = (summary.hidden_nodes, summary.hidden_edges);
     view.omitted_nodes += selection.omitted_nodes;
@@ -292,6 +241,8 @@ mod file_tests {
             depth: 2,
             filter: Filter::default(),
             page: 0,
+            architecture: None,
+            layer_tab: None,
         };
         request.filter.include_tests = false;
         let view = super::super::project(&graph, &request);
@@ -340,6 +291,8 @@ mod file_tests {
             depth: 2,
             filter: Filter::default(),
             page: 0,
+            architecture: None,
+            layer_tab: None,
         };
         let view = super::super::project(&graph, &request);
         assert_eq!(view.nodes.len(), 2);

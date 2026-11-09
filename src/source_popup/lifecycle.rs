@@ -16,7 +16,11 @@ fn eligible(node: &ViewNode, grouping: Grouping) -> bool {
     if node.member.is_some() {
         return true;
     }
-    node.group_kind.is_some() && matches!(grouping, Grouping::Folder | Grouping::Namespace)
+    node.group_kind.is_some()
+        && matches!(
+            grouping,
+            Grouping::Folder | Grouping::Namespace | Grouping::Layer
+        )
 }
 
 impl State {

@@ -184,3 +184,24 @@ export function start(){toString();new Base();new Implicit();new Other().toStrin
   assert.equal(g.nodes.filter(n=>n.kind==='module').flatMap(n=>edges(g,n.label)).includes('leaf'),false);
   assert.equal(edges(g,'start').includes('leaf'),false);
 });
+
+test('architecture facts retain type-only files, decorators and inherited base types', t => {
+  const source = `function Layer(...args:any[]):any { return undefined; }
+class Grand {}
+@Layer class Base extends Grand {}
+@Layer export class Controller extends Base { @Layer run() {} }
+export interface Contract { run():void }
+export type Result = string;`;
+  const root = fixture(t, { 'tsconfig.json': {...config, compilerOptions:{...config.compilerOptions,experimentalDecorators:true}}, 'src/main.ts':source, 'src/types.ts':'export interface Data { value: string }' });
+  const graph = run(root);
+  assert.equal(graph.architecture.version,1);
+  const facts=graph.architecture.files.find(f=>f.file.endsWith('/src/main.ts'));
+  assert.ok(facts.names.includes('Controller'));
+  assert.ok(facts.kinds.includes('interface'));
+  assert.ok(facts.annotations.includes('Layer'));
+  assert.ok(facts.method_annotations.includes('Layer'));
+  assert.ok(facts.base_types.includes('Base'));
+  assert.ok(facts.base_types.includes('Grand'));
+  assert.equal(facts.content,source);
+  assert.ok(graph.architecture.files.some(f=>f.file.endsWith('/src/types.ts')&&f.names.includes('Data')));
+});

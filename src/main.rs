@@ -1,11 +1,13 @@
 pub use codegraph::{analyzers, discovery, fingerprint};
 mod app;
+mod architecture_workspace;
 mod camera;
 mod cli;
 mod edges;
 mod icons;
 mod inspector;
 mod jobs;
+mod layer_scenes;
 mod method_scenes;
 mod navigation;
 mod presentation;
@@ -36,6 +38,7 @@ fn main() {
             ("source-preview", source_popup::scenes::source),
             ("source-files", source_popup::scenes::files),
             ("method-callees", method_scenes::callees),
+            ("architectural-layers", layer_scenes::install),
             ("method-callers", method_scenes::callers),
             ("cached", scenes::cached),
             ("cached-focus", scenes::cached_focus),

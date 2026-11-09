@@ -72,6 +72,7 @@ impl Default for Jobs {
 pub fn setup(state: &mut State, waker: Waker) {
     state.jobs.boot.set_waker(waker.clone());
     state.jobs.source.set_waker(waker.clone());
+    state.architecture_workspace.job.set_waker(waker.clone());
     state.jobs.discovery.set_waker(waker.clone());
     state.jobs.analysis.set_waker(waker.clone());
     state.jobs.layout.set_waker(waker.clone());
@@ -100,6 +101,7 @@ impl State {
                 state.root = rune::TextEdit::new(path.to_string_lossy());
                 state.saved_builds.clear();
                 state.saved_targets = None;
+                state.reset_architecture();
                 state.discover_root();
             }
             Ok(None) => {}
@@ -278,7 +280,8 @@ pub fn poll(state: &mut State, time: f64, tx: &mut Tx) -> bool {
         | poll_graph(state)
         | poll_search_input(state)
         | poll_persistence(state)
-        | poll_staleness(state, time, tx);
+        | poll_staleness(state, time, tx)
+        | crate::architecture_workspace::poll(state, time, tx);
     changed |= state.constrain_panes(state.ui.window_width);
     if state.needs_layout {
         state.request_layout();
@@ -340,6 +343,7 @@ fn poll_boot(state: &mut State) -> bool {
                 state.saved_builds = session.selected_builds;
                 state.saved_targets = session.selected_targets;
                 state.nav = session.navigation;
+                state.architecture_selection = session.architecture_selection;
                 state.ui.restore(session.presentation);
                 state.auto_fit = false;
             }
@@ -426,6 +430,8 @@ fn install_graph(state: &mut State, loaded: LoadedGraph) {
     state.analysis_metrics = loaded.metrics;
     state.generation = Some(loaded.generation);
     state.next_stale_check = 0.0;
+    state.architecture = None;
+    state.architecture_workspace.invalidate();
     state.hits.clear();
     state.search_page = 0;
     state.search_more = false;

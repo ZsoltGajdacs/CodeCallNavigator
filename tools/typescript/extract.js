@@ -1,5 +1,6 @@
 'use strict';
 const {canonical}=require('./paths.js');
+const {architectureFacts}=require('./architecture-facts.js');
 const {accessorCalls}=require('./accessors.js');
 const {Graph}=require('./graph.js');
 const {Bindings}=require('./bindings.js');
@@ -56,6 +57,6 @@ function extract(context) {
     walkFile(bindings,react,file);
     markNextEntries(context,bindings,graph,file);
   }
-  return graph.result();
+  return {...graph.result(),architecture:{version:1,files:bindings.files.map(file=>architectureFacts(context,file))}};
 }
 module.exports={extract};

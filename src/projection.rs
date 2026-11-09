@@ -1,12 +1,19 @@
 //! Bounded presentation of analyzed relationships, separate from graph layout.
+use codegraph::architecture::LayerAssignments;
 use codegraph::graph::{Direction, Filter, GraphIndex};
 use serde::{Deserialize, Serialize};
-use std::collections::HashSet;
+use std::{collections::HashSet, sync::Arc};
 
 #[path = "projection/aggregation.rs"]
 mod aggregation;
 #[path = "projection/geometry.rs"]
 mod geometry;
+#[path = "projection/groups.rs"]
+mod groups;
+#[path = "projection/layer_geometry.rs"]
+mod layer_geometry;
+#[path = "projection/layers.rs"]
+mod layers;
 #[path = "projection/ordering.rs"]
 mod ordering;
 #[path = "projection/selection.rs"]
@@ -22,6 +29,7 @@ pub enum Grouping {
     Project,
     Namespace,
     Folder,
+    Layer,
     Method,
 }
 
@@ -61,6 +69,8 @@ pub struct Request {
     pub depth: u32,
     pub filter: Filter,
     pub page: usize,
+    pub architecture: Option<Arc<LayerAssignments>>,
+    pub layer_tab: Option<String>,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -69,6 +79,7 @@ pub enum GroupKind {
     Namespace,
     Folder,
     Class,
+    Layer,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
@@ -90,6 +101,7 @@ pub struct ViewNode {
     pub internal_edges: usize,
     pub cyclic: bool,
     pub application_start: bool,
+    pub layer: Option<String>,
     pub position: [f32; 2],
     pub size: [f32; 2],
 }
@@ -124,6 +136,18 @@ pub struct GraphView {
     pub collapsed_edges: usize,
     pub message: String,
     pub pages: usize,
+    pub layer_bands: Vec<LayerBand>,
+}
+
+/// Presentation metadata only; relationships retain analyzer direction and certainty.
+#[derive(Clone, Debug, Default)]
+pub struct LayerBand {
+    pub name: String,
+    pub flow: Option<String>,
+    pub support: bool,
+    pub beside: Option<String>,
+    pub position: [f32; 2],
+    pub size: [f32; 2],
 }
 
 struct Selection {
@@ -137,6 +161,7 @@ struct Selection {
 }
 
 pub fn project(graph: &GraphIndex, request: &Request) -> GraphView {
-    let selection = selection::resolve(graph, request);
+    let mut selection = selection::resolve(graph, request);
+    layers::select(graph, request, &mut selection);
     aggregation::project_page(graph, request, selection)
 }

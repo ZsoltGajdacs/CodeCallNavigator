@@ -1,4 +1,5 @@
 pub mod analyzers;
+pub mod architecture;
 pub mod discovery;
 pub mod fingerprint;
 pub mod graph;

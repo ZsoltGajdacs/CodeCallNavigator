@@ -1,4 +1,5 @@
 //! Headless entrypoint using the same instrumented pipeline as the native app.
+mod layers;
 use anyhow::{Context, Result, ensure};
 use codegraph::{analyzers, discovery, metrics, store::SqliteStore};
 use std::{path::PathBuf, sync::atomic::AtomicBool};
@@ -6,6 +7,7 @@ use std::{path::PathBuf, sync::atomic::AtomicBool};
 struct Arguments {
     paths: Vec<PathBuf>,
     timings: Option<PathBuf>,
+    layers: layers::Arguments,
 }
 
 fn arguments(values: impl Iterator<Item = String>) -> Result<Arguments> {
@@ -13,6 +15,7 @@ fn arguments(values: impl Iterator<Item = String>) -> Result<Arguments> {
     let mut result = Arguments {
         paths: Vec::new(),
         timings: None,
+        layers: layers::Arguments::default(),
     };
     let mut options = true;
     while let Some(value) = values.next() {
@@ -30,13 +33,20 @@ fn arguments(values: impl Iterator<Item = String>) -> Result<Arguments> {
                         .into(),
                 );
             }
+            "--layers" | "--layer-root" if options => {
+                let argument = values
+                    .next()
+                    .with_context(|| format!("{value} requires a value"))?;
+                result.layers.option(&value, argument)?;
+            }
             _ => result.paths.push(value.into()),
         }
     }
     ensure!(
         !result.paths.is_empty(),
-        "Usage: codegraph analyze [--timings REPORT.json] SOLUTION_OR_PROJECT_OR_POM_OR_TSCONFIG_OR_BUILD_ROOT..."
+        "Usage: codegraph analyze [--timings REPORT.json] [--layers PRESET --layer-root ROOT] SOLUTION_OR_PROJECT_OR_POM_OR_TSCONFIG_OR_BUILD_ROOT..."
     );
+    result.layers.validate()?;
     Ok(result)
 }
 
@@ -44,7 +54,7 @@ pub fn analyze() -> Result<()> {
     let arguments = arguments(std::env::args().skip(2))?;
     let metrics = metrics::Metrics::default();
     let _scope = metrics.enter();
-    let result = run(arguments.paths);
+    let result = run(arguments.paths, arguments.layers);
     metrics.finish();
     if let Some(path) = arguments.timings {
         std::fs::write(&path, serde_json::to_vec_pretty(&metrics.report())?)
@@ -53,13 +63,14 @@ pub fn analyze() -> Result<()> {
     result
 }
 
-fn run(paths: Vec<PathBuf>) -> Result<()> {
+fn run(paths: Vec<PathBuf>, layers: layers::Arguments) -> Result<()> {
     let targets = discover(paths)?;
     let runtime = analyzers::AnalyzerRuntime::discover()?;
     let cancelled = AtomicBool::new(false);
     let graph = analyzers::analyze(targets, &runtime, &cancelled, &|message| {
         eprintln!("{message}")
     })?;
+    layers.report(&graph)?;
     let store = SqliteStore::open(crate::jobs::data_directory())?;
     let generation = {
         let _timer = metrics::stage("publication");
@@ -115,5 +126,13 @@ mod tests {
             parse(&["--", "--timings"]).unwrap().paths,
             vec![PathBuf::from("--timings")]
         );
+    }
+    #[test]
+    fn layer_options_validate_before_starting_analysis() {
+        let parse = |v: &[&str]| arguments(v.iter().map(|s| s.to_string()));
+        assert!(parse(&["--layers", "spring", "--layer-root", "/repo", "project"]).is_ok());
+        assert!(parse(&["--layers", "unknown", "project"]).is_err());
+        assert!(parse(&["--layer-root", "/repo", "project"]).is_err());
+        assert!(parse(&["--layers", "spring", "--layers", "react", "project"]).is_err());
     }
 }

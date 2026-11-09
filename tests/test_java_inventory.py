@@ -59,6 +59,28 @@ class JavaInventoryTests(unittest.TestCase):
         self.assertIn("Cannot inventory fixture.Flow:missing()", result.stderr)
         self.assertIn("MissingType", result.stderr)
 
+    def test_architecture_retains_source_annotations_and_interface_attributes(self):
+        source, classes = self.compile("project", "fixture/Flow.java", """package fixture;
+import java.lang.annotation.*;
+@Retention(RetentionPolicy.SOURCE) @interface Layer {}
+@Layer interface Contract { void run(); }
+@Layer public class Flow implements Contract { @Layer public void run() {} }
+record Data(String value) {}
+""")
+        result = self.inventory(source, classes, [classes])
+        self.assertEqual(result.returncode, 0, result.stderr)
+        rows = (self.root / "inventory.tsv").read_text().splitlines()
+        self.assertTrue(rows[0].startswith("kind_v3\t"))
+        row = next(row.split("\t") for row in rows if row.startswith("architecture\t"))
+        self.assertEqual(Path(row[1]), source.resolve())
+        self.assertIn("Flow", row[3].split(","))
+        self.assertIn("Data", row[3].split(","))
+        self.assertIn("record", row[4].split(","))
+        self.assertIn("fixture.Layer", row[5].split(","))
+        self.assertIn("Layer", row[6].split(","))
+        self.assertIn("fixture.Contract", row[7].split(","))
+        self.assertIn("Layer", row[8].split(","))
+
     def resolve(self, classpath, qualified_name):
         source = self.root / "probe/codegraph/bytecode/Resolve.java"
         source.parent.mkdir(parents=True, exist_ok=True)

@@ -91,6 +91,7 @@ fn with_overlays(state: &State, k: &Kit, body: El, mut layer: Vec<El>) -> El {
 
 fn graph_with_filters(state: &State, cx: &mut Cx<State>, k: &Kit) -> El {
     el().key("graph-canvas-wrapper")
+        .motion(rune::Spring::NONE)
         .grow(1.0)
         .min_w(0.0)
         .min_h(0.0)

@@ -1,6 +1,7 @@
 package codegraph.bytecode;
 
 import com.sun.source.tree.CompilationUnitTree;
+import com.sun.source.tree.ClassTree;
 import com.sun.source.tree.LambdaExpressionTree;
 import com.sun.source.tree.MethodTree;
 import com.sun.source.util.JavacTask;
@@ -31,7 +32,7 @@ public final class SourceInventory {
         if (args.length < 3) throw new IllegalArgumentException("Usage: SourceInventory OUTPUT CLASSPATH CLASS_DIRS SOURCE_ROOT...");
         var sources = CompiledSources.collect(args[2], java.util.Arrays.copyOfRange(args, 3, args.length));
         try (var writer = Files.newBufferedWriter(Path.of(args[0]))) {
-            ContextTsv.write(writer, "kind_v2", "signature", "return_type", "start_line", "end_line",
+            ContextTsv.write(writer, "kind_v3", "signature", "return_type", "start_line", "end_line",
                     "start_column", "end_column", "context", "assigned_name");
             if (sources.isEmpty()) return;
             inventory(sources, args[1], writer);
@@ -49,21 +50,27 @@ public final class SourceInventory {
                     manager.getJavaFileObjectsFromPaths(sources));
             List<TreePath> declarations = new ArrayList<>();
             List<TreePath> lambdas = new ArrayList<>();
-            collectTrees(task, declarations, lambdas);
+            List<TreePath> types = new ArrayList<>();
+            collectTrees(task, declarations, lambdas, types);
             var parseError = diagnostics.getDiagnostics().stream()
                     .filter(diagnostic -> diagnostic.getKind() == javax.tools.Diagnostic.Kind.ERROR).findFirst();
             if (parseError.isPresent()) throw new IOException("Cannot parse project source: " + parseError.get());
             task.analyze();
             var trees = Trees.instance(task);
             writeMethods(declarations, task, compiled, writer);
+            SourceArchitecture.write(types, declarations, trees, writer);
             for (TreePath path : lambdas) SourceLambda.write(path, trees, task.getElements(), writer);
         }
     }
 
-    private static void collectTrees(JavacTask task, List<TreePath> declarations, List<TreePath> lambdas) throws IOException {
+    private static void collectTrees(JavacTask task, List<TreePath> declarations, List<TreePath> lambdas, List<TreePath> types) throws IOException {
         // Snapshot parsed trees before attribution can add implicit declarations.
         for (CompilationUnitTree unit : task.parse()) {
             new TreePathScanner<Void, Void>() {
+                @Override public Void visitClass(ClassTree tree, Void unused) {
+                    types.add(getCurrentPath());
+                    return super.visitClass(tree, unused);
+                }
                 @Override public Void visitMethod(MethodTree tree, Void unused) {
                     declarations.add(getCurrentPath());
                     return super.visitMethod(tree, unused);

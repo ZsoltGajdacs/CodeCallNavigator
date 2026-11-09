@@ -79,13 +79,25 @@ fn real_compiler_keeps_callback_calls_on_the_callback_and_roundtrips_provenance(
     assert!(graph.nodes.iter().any(|node| node.label == "disconnected"));
     assert!(graph.edges.iter().all(|edge| !edge.provenance.is_empty()));
     assert!(graph.engine_versions.contains("6.0."));
+    let facts = graph.architecture.as_ref().unwrap();
+    let source = facts
+        .files
+        .iter()
+        .find(|file| file.file.ends_with("/src/main.ts"))
+        .unwrap();
+    assert_eq!(source.build, graph.nodes[0].build);
+    assert!(source.content.contains("export function leaf()"));
+
     let cache = tempfile::tempdir().unwrap();
     let store = SqliteStore::open(cache.path()).unwrap();
     store.publish(&graph, &AtomicBool::new(false)).unwrap();
     let loaded = store.load_active().unwrap().unwrap();
     assert_eq!(loaded.edges.len(), graph.edges.len());
     assert_eq!(loaded.edges[0].provenance, graph.edges[0].provenance);
-    assert_eq!(loaded.entry_points, graph.entry_points);
+    assert_eq!(
+        (loaded.entry_points, loaded.architecture),
+        (graph.entry_points, graph.architecture)
+    );
 }
 
 #[test]

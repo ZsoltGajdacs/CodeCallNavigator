@@ -1,5 +1,5 @@
 diff --git a/src/CallAtlas.Core/CallGraphBuilder.cs b/src/CallAtlas.Core/CallGraphBuilder.cs
-index bf14b1d..9d7b1f5 100644
+index bf14b1d..123939d 100644
 --- a/src/CallAtlas.Core/CallGraphBuilder.cs
 +++ b/src/CallAtlas.Core/CallGraphBuilder.cs
 @@ -664,7 +664,7 @@ public sealed partial class CallGraphBuilder
@@ -37,7 +37,16 @@ index bf14b1d..9d7b1f5 100644
                          break;
                  }
              }
-@@ -999,7 +1000,15 @@ public sealed partial class CallGraphBuilder
+@@ -945,6 +946,8 @@ public sealed partial class CallGraphBuilder
+         var map = new CodeMap
+         {
+             Schema = CodeMap.SchemaVersion,
++            ArchitectureFiles = units.Select(unit => ArchitectureFileFacts.From(unit.Tree, unit.Model))
++                .OrderBy(file => file.File, StringComparer.Ordinal).ToArray(),
+             Root = root.Replace('\\', '/'),
+             Nodes = [.. nodes.Values.OrderBy(n => n.Id, StringComparer.Ordinal)],
+             Edges = [.. edges.Select(kv => new Edge
+@@ -999,7 +1002,15 @@ public sealed partial class CallGraphBuilder
                  $"[callatlas] {"symbol cache",-22} hits {h,8}  misses {m,8}  ({rate,5:F1}% hit)");
          }
  
@@ -54,7 +63,7 @@ index bf14b1d..9d7b1f5 100644
      }
  
      /// <summary>
-@@ -1251,6 +1260,7 @@ public sealed partial class CallGraphBuilder
+@@ -1251,6 +1262,7 @@ public sealed partial class CallGraphBuilder
              Id = id,
              Kind = kind,
              Container = DisplayOf(symbol.ContainingType),
@@ -62,7 +71,7 @@ index bf14b1d..9d7b1f5 100644
              Name = symbol.Name,
              Location = string.IsNullOrEmpty(path) ? "(no location)" : $"{Rel(root, path)}:{line}",
          };
-@@ -1279,6 +1289,7 @@ public sealed partial class CallGraphBuilder
+@@ -1279,6 +1291,7 @@ public sealed partial class CallGraphBuilder
          {
              Id = id,
              Kind = "accessor",
@@ -70,7 +79,7 @@ index bf14b1d..9d7b1f5 100644
              Container = DisplayOf(accessor.ContainingType),
              // 显示成属性名（get_Value 的 Name 是 "get_Value"，用属性名 "Value" 更好读）
              Name = accessor.AssociatedSymbol?.Name ?? accessor.Name,
-@@ -1331,6 +1342,7 @@ public sealed partial class CallGraphBuilder
+@@ -1331,6 +1344,7 @@ public sealed partial class CallGraphBuilder
              Id = id,
              Kind = kind,
              Container = DisplayOf(target.OriginalDefinition.ContainingType),
@@ -78,7 +87,7 @@ index bf14b1d..9d7b1f5 100644
              Name = target.OriginalDefinition.Name,
              Location = "(implicit)",
          };
-@@ -1755,7 +1767,7 @@ public sealed partial class CallGraphBuilder
+@@ -1755,7 +1769,7 @@ public sealed partial class CallGraphBuilder
      /// 但"谁读了这个字段"是架构事实，值得有个落点。</summary>
      private static string FieldNodeId(Dictionary<string, Node> sink, IFieldSymbol field)
      {
@@ -88,19 +97,26 @@ index bf14b1d..9d7b1f5 100644
          {
              Id = id,
 diff --git a/src/CallAtlas.Core/CodeMap.cs b/src/CallAtlas.Core/CodeMap.cs
-index a720920..a02d271 100644
+index a720920..58149a3 100644
 --- a/src/CallAtlas.Core/CodeMap.cs
 +++ b/src/CallAtlas.Core/CodeMap.cs
-@@ -10,6 +10,8 @@ public sealed record CodeMap
+@@ -1,4 +1,5 @@
+ using Microsoft.CodeAnalysis;
++using Microsoft.CodeAnalysis.CSharp.Syntax;
+ 
+ namespace CallAtlas.Core;
+ 
+@@ -10,6 +11,9 @@ public sealed record CodeMap
  
      public required string Schema { get; init; }
      public required string Root { get; init; }
 +    /// <summary>Compiler-selected executable starts, using the existing graph identities.</summary>
 +    public IReadOnlyList<string> ApplicationStarts { get; init; } = [];
++    public IReadOnlyList<ArchitectureFileFacts> ArchitectureFiles { get; init; } = [];
      public required IReadOnlyList<Node> Nodes { get; init; }
      public required IReadOnlyList<Edge> Edges { get; init; }
      public required IReadOnlyList<ExternalCall> External { get; init; }
-@@ -45,6 +47,50 @@ public sealed record Node
+@@ -45,6 +49,50 @@ public sealed record Node
      public required string Container { get; init; }
      public required string Name { get; init; }
      public required string Location { get; init; }
@@ -151,7 +167,7 @@ index a720920..a02d271 100644
  }
  
  /// <summary>边的种类常量。</summary>
-@@ -306,27 +352,38 @@ public static class SymbolId
+@@ -306,27 +354,38 @@ public static class SymbolId
      public static string Canonical(IMethodSymbol method)
      {
          var s = (method.ReducedFrom ?? method).OriginalDefinition;
@@ -197,7 +213,7 @@ index a720920..a02d271 100644
  
      /// <summary>
      /// 委托调用的落点 id：<c>Action#delegate</c>（用委托类型本身命名）。
-@@ -337,7 +394,7 @@ public static class SymbolId
+@@ -337,7 +396,7 @@ public static class SymbolId
      /// 后缀 <c>#delegate</c> 与字段初始化器的 <c>#init</c> 同族，一眼可辨其为伪节点。
      /// </summary>
      public static string ForDelegate(ITypeSymbol delegateType) =>
@@ -206,8 +222,68 @@ index a720920..a02d271 100644
  
      private static string Params(IMethodSymbol method) =>
          string.Join(",", method.Parameters.Select(p => p.Type.ToDisplayString(QualifiedFormat)));
+@@ -385,3 +444,59 @@ internal static class EdgeTierClassifier
+         return EdgeTier.Direct;
+     }
+ }
++
++/// <summary>Compiler declaration facts for file classification; independent of graph inclusion.</summary>
++public sealed record ArchitectureFileFacts
++{
++    public string Assembly { get; init; } = "";
++    public string File { get; init; } = "";
++    public string Content { get; init; } = "";
++    public IReadOnlyList<string> Namespaces { get; init; } = [];
++    public IReadOnlyList<string> Names { get; init; } = [];
++    public IReadOnlyList<string> Kinds { get; init; } = [];
++    public IReadOnlyList<string> Annotations { get; init; } = [];
++    public IReadOnlyList<string> MethodAnnotations { get; init; } = [];
++    public IReadOnlyList<string> BaseTypes { get; init; } = [];
++    public IReadOnlyList<string> AnnotatedInterfaces { get; init; } = [];
++    public bool IsInterface { get; init; }
++
++    public static ArchitectureFileFacts From(SyntaxTree tree, SemanticModel model)
++    {
++        var declarations = tree.GetRoot().DescendantNodes().ToArray();
++        var types = declarations.Where(node => node is BaseTypeDeclarationSyntax or DelegateDeclarationSyntax)
++            .Select(node => model.GetDeclaredSymbol(node)).OfType<INamedTypeSymbol>().ToArray();
++        var methods = declarations.Where(node => node is BaseMethodDeclarationSyntax
++                or LocalFunctionStatementSyntax or AccessorDeclarationSyntax)
++            .Select(node => model.GetDeclaredSymbol(node)).OfType<IMethodSymbol>().ToArray();
++        return new ArchitectureFileFacts
++        {
++            Assembly = model.Compilation.AssemblyName ?? "",
++            File = tree.FilePath.Replace('\\', '/'),
++            Content = tree.GetText().ToString(),
++            Namespaces = Sorted(types.Select(type => type.ContainingNamespace.ToDisplayString())),
++            Names = Sorted(types.SelectMany(NamesOf)),
++            Kinds = Sorted(types.Select(type => type.IsRecord ? "record" : type.TypeKind.ToString().ToLowerInvariant())),
++            Annotations = Sorted(types.SelectMany(Attributes)),
++            MethodAnnotations = Sorted(methods.SelectMany(Attributes)),
++            BaseTypes = Sorted(types.SelectMany(Ancestors).SelectMany(NamesOf)),
++            AnnotatedInterfaces = Sorted(types.SelectMany(type => type.AllInterfaces).SelectMany(Attributes)),
++            IsInterface = types.Any(type => type.TypeKind == TypeKind.Interface),
++        };
++    }
++
++    private static IEnumerable<string> NamesOf(INamedTypeSymbol type) =>
++        new[] { type.Name, type.ToDisplayString(SymbolDisplayFormat.CSharpErrorMessageFormat) };
++
++    private static IEnumerable<string> Attributes(ISymbol symbol) => symbol.GetAttributes()
++        .Select(attribute => attribute.AttributeClass).OfType<INamedTypeSymbol>().SelectMany(NamesOf);
++
++    private static IEnumerable<INamedTypeSymbol> Ancestors(INamedTypeSymbol type)
++    {
++        for (var parent = type.BaseType; parent is not null; parent = parent.BaseType)
++            yield return parent;
++        foreach (var parent in type.AllInterfaces) yield return parent;
++    }
++
++    private static string[] Sorted(IEnumerable<string> values) => values.Where(value => value.Length > 0)
++        .Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToArray();
++}
 diff --git a/src/CallAtlas.Core/CodeMapJson.cs b/src/CallAtlas.Core/CodeMapJson.cs
-index 9555cb4..357c45f 100644
+index 9555cb4..0664181 100644
 --- a/src/CallAtlas.Core/CodeMapJson.cs
 +++ b/src/CallAtlas.Core/CodeMapJson.cs
 @@ -5,6 +5,58 @@ namespace CallAtlas.Core;
@@ -269,7 +345,7 @@ index 9555cb4..357c45f 100644
      /// <summary>写出供人读 / diff 的 JSON：缩进、字段顺序固定、排序已在模型侧完成、无时间戳。</summary>
      public static string Write(CodeMap map) => Write(map, indented: true);
  
-@@ -23,19 +75,9 @@ public static class CodeMapJson
+@@ -23,19 +75,12 @@ public static class CodeMapJson
              writer.WriteStartObject();
              writer.WriteString("schema", map.Schema);
              writer.WriteString("root", map.Root);
@@ -287,11 +363,14 @@ index 9555cb4..357c45f 100644
 -                writer.WriteEndObject();
 -            }
 -            writer.WriteEndArray();
++            writer.WritePropertyName("architectureFiles");
++            JsonSerializer.Serialize(writer, map.ArchitectureFiles, new JsonSerializerOptions
++                { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
 +            WriteDeclarations(writer, map);
  
              writer.WriteStartArray("edges");
              foreach (var e in map.Edges)
-@@ -175,6 +217,7 @@ public static class CodeMapJson
+@@ -175,6 +220,7 @@ public static class CodeMapJson
                          Container = Str(n, "container"),
                          Name = Str(n, "name"),
                          Location = Str(n, "location"),
@@ -299,3 +378,14 @@ index 9555cb4..357c45f 100644
                      });
  
              var edges = new List<Edge>();
+@@ -236,6 +282,10 @@ public static class CodeMapJson
+             {
+                 Schema = CodeMap.SchemaVersion,
+                 Root = Str(root, "root"),
++                ArchitectureFiles = root.TryGetProperty("architectureFiles", out var architecture)
++                    ? JsonSerializer.Deserialize<ArchitectureFileFacts[]>(architecture.GetRawText(),
++                        new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase }) ?? []
++                    : [],
+                 Nodes = nodes,
+                 Edges = edges,
+                 // 读取路径**不裁剪字段**。这些曾经被硬编码成空值，因为最初的唯一消费者是

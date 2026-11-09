@@ -67,6 +67,7 @@ fn analyze_compiled(
     let before_engine = build::snapshot(build, metadata, true)?;
     let mut graph = GraphData {
         roots: vec![build.path.to_string_lossy().into_owned()],
+        architecture: super::architecture::empty(),
         ..GraphData::default()
     };
     let mut composer = compose::Composer::default();

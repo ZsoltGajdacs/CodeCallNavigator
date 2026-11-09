@@ -66,6 +66,9 @@ fn selection(state: &State, k: &Kit) -> El {
         )
         .child(neighbors(state, true, k))
         .child(neighbors(state, false, k));
+    if let Some(details) = architecture_details(state, node, k) {
+        content = content.child(details);
+    }
     if state
         .graph
         .as_ref()
@@ -81,6 +84,20 @@ fn selection(state: &State, k: &Kit) -> El {
         ));
     }
     content
+}
+
+fn architecture_details(state: &State, node: &codegraph::model::Node, k: &Kit) -> Option<El> {
+    let architecture = state.architecture.as_ref()?;
+    let key = codegraph::architecture::file_key(&node.build, &node.project, &node.file);
+    let assignment = architecture.files.get(&key)?;
+    Some(
+        col()
+            .w_full()
+            .gap(4.0)
+            .child(detail(format!("Layer: {}", assignment.layer), k))
+            .child(detail(format!("Rule: {}", assignment.rule), k))
+            .child(detail(format!("Configuration: {}", architecture.origin), k)),
+    )
 }
 
 fn method_summary(node: &codegraph::model::Node, k: &Kit) -> El {

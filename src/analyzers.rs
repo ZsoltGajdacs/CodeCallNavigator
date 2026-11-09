@@ -1,4 +1,5 @@
 //! Orchestrates existing analyzers; language adapters never resolve calls themselves.
+mod architecture;
 mod compose;
 mod csharp;
 mod java;

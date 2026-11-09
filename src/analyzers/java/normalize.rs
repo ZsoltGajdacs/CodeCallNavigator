@@ -367,7 +367,42 @@ impl<'a> BytecodeCollector<'a> {
         })
     }
 
+    fn collect_architecture(&mut self) {
+        let mut facts = crate::architecture::ArchitectureFacts {
+            version: 1,
+            files: Vec::new(),
+        };
+        for (&input, inventory) in &self.source_inventory {
+            if !inventory.has_architecture {
+                self.graph.architecture = None;
+                return;
+            }
+            let Some(source) = self.inputs[input - 1].source_set.as_ref() else {
+                continue;
+            };
+            if self
+                .owner
+                .as_ref()
+                .is_some_and(|owner| self.prefixes[input - 1].as_ref() != Some(owner))
+            {
+                continue;
+            }
+            for raw in &inventory.architecture {
+                let mut file = raw.clone();
+                file.build = self.build.path.to_string_lossy().into_owned();
+                file.project = source.project.clone();
+                file.is_test = source.is_test;
+                facts.files.push(file);
+            }
+        }
+        facts
+            .files
+            .sort_by(|a, b| (&a.build, &a.project, &a.file).cmp(&(&b.build, &b.project, &b.file)));
+        self.graph.architecture = Some(facts);
+    }
+
     fn finish(mut self) -> Result<GraphData> {
+        self.collect_architecture();
         self.graph.entry_points = Some(EntryPoints {
             framework_entries: Vec::new(),
             candidates: Vec::new(),

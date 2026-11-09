@@ -11,6 +11,7 @@ use std::{collections::HashSet, path::PathBuf};
 #[serde(default)]
 pub struct Navigation {
     pub grouping: Grouping,
+    pub layer_tab: Option<String>,
     pub expanded: HashSet<String>,
     pub focus: Option<String>,
     pub selected: Option<String>,
@@ -28,6 +29,7 @@ impl Default for Navigation {
     fn default() -> Self {
         Self {
             grouping: Grouping::Project,
+            layer_tab: None,
             expanded: HashSet::new(),
             focus: None,
             selected: None,
@@ -103,4 +105,5 @@ pub struct SavedSession {
     pub selected_targets: Option<Vec<crate::discovery::BuildIdentity>>,
     pub navigation: Navigation,
     pub presentation: crate::presentation::Preferences,
+    pub architecture_selection: Option<codegraph::architecture::Selection>,
 }

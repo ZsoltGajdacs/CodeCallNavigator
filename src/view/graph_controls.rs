@@ -11,11 +11,15 @@ use rune_kit::{
     Button, ButtonVariant, Checkbox, IconButton, IconButtonVariant, Kit, SegmentedControl, Select,
 };
 
-const GROUPS: [Grouping; 4] = [
+#[path = "architecture_controls.rs"]
+mod architecture_controls;
+
+const GROUPS: [Grouping; 5] = [
     Grouping::Project,
     Grouping::Namespace,
     Grouping::Folder,
     Grouping::Method,
+    Grouping::Layer,
 ];
 const DIRECTIONS: [FlowDirection; 2] = [FlowDirection::Callers, FlowDirection::Callees];
 
@@ -99,7 +103,48 @@ pub fn filters(state: &State, k: &Kit) -> El {
 }
 
 pub fn toolbar(state: &State, k: &Kit) -> El {
-    let navigation = row()
+    let navigation = navigation_controls(state, k);
+    let grouping = SegmentedControl::new(
+        &["Project", "Namespace", "Folder", "Method", "Layer"],
+        GROUPS.iter().position(|g| *g == state.nav.grouping),
+    )
+    .label("Group graph by")
+    .width(Some((state.viewport[0] - 16.0).min(492.0)))
+    .on_pick(|s: &mut State, i, _| s.set_grouping(GROUPS[i]))
+    .build(k)
+    .key("grouping");
+    let toolbar = if state.viewport[0] < 820.0 {
+        col()
+            .key("graph-toolbar")
+            .w_full()
+            .padding(8.0)
+            .gap(6.0)
+            .child(navigation)
+            .child(grouping)
+    } else {
+        row()
+            .key("graph-toolbar")
+            .w_full()
+            .padding(8.0)
+            .gap(12.0)
+            .center_y()
+            .child(navigation)
+            .child(grouping)
+    };
+    if state.nav.grouping == Grouping::Layer {
+        col()
+            .key("architecture-toolbar")
+            .motion(rune::Spring::NONE)
+            .w_full()
+            .child(toolbar)
+            .child(architecture_controls::view(state, k))
+    } else {
+        toolbar
+    }
+}
+
+fn navigation_controls(state: &State, k: &Kit) -> El {
+    row()
         .gap(4.0)
         .center_y()
         .child(
@@ -135,34 +180,7 @@ pub fn toolbar(state: &State, k: &Kit) -> El {
                 .on_press(State::collapse_all)
                 .build(k)
                 .key("collapse-all"),
-        );
-    let grouping = SegmentedControl::new(
-        &["Project", "Namespace", "Folder", "Method"],
-        GROUPS.iter().position(|g| *g == state.nav.grouping),
-    )
-    .label("Group graph by")
-    .width(Some(432.0))
-    .on_pick(|s: &mut State, i, _| s.set_grouping(GROUPS[i]))
-    .build(k)
-    .key("grouping");
-    if state.viewport[0] < 760.0 {
-        col()
-            .key("graph-toolbar")
-            .w_full()
-            .padding(8.0)
-            .gap(6.0)
-            .child(navigation)
-            .child(grouping)
-    } else {
-        row()
-            .key("graph-toolbar")
-            .w_full()
-            .padding(8.0)
-            .gap(12.0)
-            .center_y()
-            .child(navigation)
-            .child(grouping)
-    }
+        )
 }
 
 pub fn footer(state: &State, k: &Kit, layer: &mut Vec<El>) -> El {

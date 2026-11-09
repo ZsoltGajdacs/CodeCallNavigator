@@ -202,6 +202,9 @@ impl Emphasis {
 
 fn graph_content(state: &State, k: &Kit) -> El {
     let mut content = el().key("graph-world").w_full().h_full();
+    for (index, band) in state.graph_view.layer_bands.iter().enumerate() {
+        content = content.child(layer_band(state, index, band, k));
+    }
     let emphasis = Emphasis::new(&state.graph_view, state.visual_selection.as_deref());
     let shapes = crate::edges::render(state, &emphasis, k);
     content = content.child(canvas(shapes).w_full().h_full().inert());
@@ -222,6 +225,25 @@ fn graph_content(state: &State, k: &Kit) -> El {
         content = content.child(empty_canvas(state, k));
     }
     content
+}
+
+fn layer_band(state: &State, index: usize, band: &crate::projection::LayerBand, k: &Kit) -> El {
+    let point = state.nav.camera.screen(band.position);
+    let scale = state.nav.camera.zoom;
+    col()
+        .key(format!("layer-band-{index}"))
+        .absolute(point[0], point[1])
+        .size(band.size[0] * scale, band.size[1] * scale)
+        .radius(8.0)
+        .border(1.0, k.c.text_muted.alpha(0.18))
+        .fill(k.c.text_accent.alpha(0.035))
+        .padding(6.0 * scale)
+        .child(
+            text(&band.name)
+                .font(theme::mono(11.0 * scale, 600.0))
+                .color(k.c.text_muted),
+        )
+        .inert()
 }
 
 fn empty_canvas(state: &State, k: &Kit) -> El {
@@ -261,6 +283,9 @@ fn empty_message(state: &State) -> (&str, &str) {
             "Preparing graph view…",
             "The complete analysis is available while the visible layout is prepared.",
         );
+    }
+    if !state.graph_view.message.is_empty() {
+        return ("Architectural layers", &state.graph_view.message);
     }
     if !state.warning.is_empty() {
         return (

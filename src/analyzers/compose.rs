@@ -16,6 +16,7 @@ impl Default for GraphComposition {
         Self {
             graph: GraphData {
                 entry_points: Some(EntryPoints::default()),
+                architecture: super::architecture::empty(),
                 ..Default::default()
             },
             identities: HashMap::new(),
@@ -30,6 +31,7 @@ impl GraphComposition {
         let remap = self.append_nodes(std::mem::take(&mut part.nodes))?;
         self.append_edges(std::mem::take(&mut part.edges), &remap, shared)?;
         self.graph.entry_points = merge_entries(self.graph.entry_points.take(), part.entry_points);
+        super::architecture::merge(&mut self.graph.architecture, part.architecture)?;
         self.graph.diagnostics.extend(part.diagnostics);
         self.graph.roots.extend(part.roots);
         self.graph.fingerprints.extend(part.fingerprints);

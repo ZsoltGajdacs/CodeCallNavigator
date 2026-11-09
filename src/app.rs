@@ -27,6 +27,9 @@ pub struct State {
     pub saved_builds: Vec<PathBuf>,
     pub saved_targets: Option<Vec<crate::discovery::BuildIdentity>>,
     pub graph: Option<Arc<GraphIndex>>,
+    pub architecture: Option<Arc<codegraph::architecture::LayerAssignments>>,
+    pub architecture_selection: Option<codegraph::architecture::Selection>,
+    pub architecture_workspace: crate::architecture_workspace::Workspace,
     pub analysis_metrics: Option<codegraph::metrics::Metrics>,
     pub store: Option<Arc<SqliteStore>>,
     pub runtime: Option<Arc<AnalyzerRuntime>>,
@@ -78,6 +81,9 @@ impl State {
             saved_builds: Vec::new(),
             saved_targets: None,
             graph: None,
+            architecture: None,
+            architecture_selection: None,
+            architecture_workspace: Default::default(),
             analysis_metrics: None,
             store: None,
             runtime: None,
@@ -305,6 +311,8 @@ impl State {
             depth: self.nav.depth,
             filter: self.nav.filter.clone(),
             page: self.nav.page,
+            architecture: self.architecture.clone(),
+            layer_tab: self.nav.layer_tab.clone(),
         })
     }
 
@@ -330,6 +338,7 @@ impl State {
             ),
             navigation: self.nav.clone(),
             presentation: self.ui.preferences(),
+            architecture_selection: self.architecture_selection,
         }
     }
 
@@ -339,6 +348,7 @@ impl State {
     }
 
     pub fn root_edited(&mut self) {
+        self.reset_architecture();
         self.root_was_edited = true;
         self.jobs.discovery.cancel();
         self.targets.clear();

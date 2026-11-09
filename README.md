@@ -35,7 +35,7 @@ CodeGraph reports missing toolchains; it does not install SDKs. Analysis can
 restore dependencies and compile all configured source sets, including tests,
 but does not run applications or test-execution tasks.
 
-Use Project, Namespace, Folder or Method grouping (including global-namespace C# code).
+Use Project, Namespace, Folder, Layer or Method grouping (including global-namespace C# code).
 The Graph Studio workspace uses Rune Kit controls and follows the system's light or
 dark appearance. The activity rail switches between Repository, Search and Graph
 filters; pressing the active rail button collapses its drawer. Drag the drawer or
@@ -138,6 +138,15 @@ The native app uses the same measurements through its initial layout. Stage time
 can nest and must not be summed; the CLI report covers its headless pipeline.
 See [analysis performance evidence](evidence/performance/analysis.md) for the
 release benchmark protocol, complete graph comparisons and measured results.
+
+## Architectural layers
+
+Layer groups methods into configurable architecture bands with Spring/React presets,
+repository rules and automatic import from Interactive Review. Expand layers into
+projects, classes and methods; source facts are cached for recompilation-free rule
+changes. See [architectural layers](docs/architectural-layers.md) for setup, matching,
+configuration migration and cache behavior. New generations retain source text for
+content-pattern classification; older caches require refresh for Layer mode.
 
 ## Reading source on the graph
 

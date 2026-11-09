@@ -15,6 +15,22 @@ fn dot_input(view: &GraphView) -> String {
     let mut source = String::from(
         "digraph G { graph [rankdir=TB,nodesep=0.35,ranksep=0.8]; node [label=\"\",shape=box,fixedsize=true,width=3.3,height=0.85];\n",
     );
+    if view.layer_bands.is_empty() {
+        traversal_constraints(view, &mut source);
+    } else {
+        super::layer_geometry::constraints(view, &mut source);
+    }
+    for (index, edge) in view.edges.iter().enumerate() {
+        source.push_str(&format!(
+            "n{} -> n{} [id=\"e{index}\",constraint=false];\n",
+            edge.from, edge.to
+        ));
+    }
+    source.push('}');
+    source
+}
+
+fn traversal_constraints(view: &GraphView, source: &mut String) {
     let mut ranks: BTreeMap<usize, Vec<usize>> = BTreeMap::new();
     for (index, order) in view.ordering.iter().enumerate() {
         source.push_str(&format!("n{index};\n"));
@@ -28,7 +44,7 @@ fn dot_input(view: &GraphView) -> String {
     // Explicit same-rank order keeps each parent's children adjacent even when
     // shared methods and recursive cross-links would otherwise rearrange them.
     for members in ranks.values() {
-        append_rank(&mut source, members);
+        append_rank(source, members);
     }
     // Preserve vertical order for pages whose owning parents are on another page.
     let representatives: Vec<_> = ranks.values().map(|members| members[0]).collect();
@@ -38,14 +54,6 @@ fn dot_input(view: &GraphView) -> String {
             pair[0], pair[1]
         ));
     }
-    for (index, edge) in view.edges.iter().enumerate() {
-        source.push_str(&format!(
-            "n{} -> n{} [id=\"e{index}\",constraint=false];\n",
-            edge.from, edge.to
-        ));
-    }
-    source.push('}');
-    source
 }
 
 fn append_rank(source: &mut String, members: &[usize]) {
@@ -178,6 +186,7 @@ pub fn layout(mut view: GraphView, dot: &Path) -> Result<GraphView> {
             .context("Graphviz relationship index out of range")?;
         edge.points = spline_points(&geometry, bounds[3]);
     }
+    super::layers::measure(&mut view);
     Ok(view)
 }
 

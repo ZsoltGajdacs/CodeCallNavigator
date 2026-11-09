@@ -18,6 +18,8 @@ fn request() -> Request {
         depth: 2,
         filter: Filter::default(),
         page: 0,
+        architecture: None,
+        layer_tab: None,
     }
 }
 

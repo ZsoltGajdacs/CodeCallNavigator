@@ -20,6 +20,7 @@ This patch preserves call binding and adds identity and entry-point metadata:
   per-method source-declaration, implicitness, callable-kind and Object-signature
   facts from Roslyn. CodeGraph owns inclusion policy and prunes after validation.
 - Preserve those facts when reading and writing CallAtlas snapshots.
+- Export architecture file facts directly from the same Roslyn semantic models, including type/method attributes, namespaces, declaration kinds, base types and annotated interfaces. These facts do not change call binding or graph inclusion.
 - Export `entryPoints.candidates` using the existing `CodeMapQuery.EntryPoints` query, including uncalled declarations.
 - Export `entryPoints.applicationStarts` from `Compilation.GetEntryPoint`, mapping synthesized top-level starts to the existing top-level graph identity. These verified starts are distinct from ordinary entry candidates.
 
@@ -36,7 +37,8 @@ dotnet build vendor/callatlas/src/CallAtlas.Cli/CallAtlas.Cli.csproj -c Release
 ```
 
 Bootstrap verifies the exact revision and patch hash. It accepts only a clean
-checkout, the exact current patch, the previously shipped entry-metadata patch in
+checkout, the exact current patch, the previous declaration-policy patch in
+`callatlas-assembly-identity-policy.patch`, the earlier entry-metadata patch in
 `callatlas-assembly-identity-entries.patch`, or the exact identity-only
 patch preserved in `callatlas-assembly-identity-legacy.patch` with its pinned hash.
 The legacy patch is reversed and replaced automatically; failure restores it.
