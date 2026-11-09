@@ -66,7 +66,7 @@ fn analyze_cli() -> anyhow::Result<()> {
     }
     anyhow::ensure!(
         !targets.is_empty(),
-        "Usage: codegraph analyze SOLUTION_OR_PROJECT_OR_POM_OR_BUILD_ROOT..."
+        "Usage: codegraph analyze SOLUTION_OR_PROJECT_OR_POM_OR_TSCONFIG_OR_BUILD_ROOT..."
     );
     let runtime = analyzers::AnalyzerRuntime::discover()?;
     let cancelled = AtomicBool::new(false);

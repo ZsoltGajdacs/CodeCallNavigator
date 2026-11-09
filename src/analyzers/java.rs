@@ -289,6 +289,7 @@ impl<'a> BytecodeCollector<'a> {
         self.graph.edges = aggregate
             .into_iter()
             .map(|((from, to, kind, certainty), count)| Edge {
+                provenance: String::new(),
                 from,
                 to,
                 kind,
@@ -436,6 +437,7 @@ impl<'a> BytecodeCollector<'a> {
         candidates.sort();
         self.application_starts.sort();
         self.graph.entry_points = Some(EntryPoints {
+            framework_entries: Vec::new(),
             candidates,
             application_starts: self.application_starts,
         });

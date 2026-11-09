@@ -27,6 +27,7 @@ fn sample() -> GraphData {
     let edges = [(0, 1), (1, 2), (2, 1), (0, 3)]
         .into_iter()
         .map(|(from, to)| Edge {
+            provenance: String::new(),
             from,
             to,
             kind: "call".into(),
@@ -151,6 +152,7 @@ fn canvas_budget_keeps_omitted_nodes_reachable_by_identity() {
         .collect();
     data.edges = (1..1_601)
         .map(|to| Edge {
+            provenance: String::new(),
             from: 0,
             to,
             kind: "call".into(),

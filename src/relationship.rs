@@ -64,6 +64,7 @@ pub fn selected(state: &State, k: &Kit) -> El {
         format!("To: {}", to.signature),
         format!("Kind: {}", edge.kind),
         format!("Certainty: {}", edge.certainty),
+        format!("Provenance: {}", edge.provenance),
         format!("Occurrences: {}", edge.count),
         format!("Build: {}", from.build),
         format!("Analyzer: {}", graph.data.engine_versions),

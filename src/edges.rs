@@ -31,11 +31,8 @@ pub fn render(view: &GraphView, camera: &Camera, viewport: [f32; 2], k: &Kit) ->
 }
 
 fn style(edge: &ViewEdge, k: &Kit) -> Style {
-    let reference = matches!(
-        edge.kind.as_str(),
-        "methodgroup" | "_LM" | "reference" | "callback"
-    );
-    let direct = matches!(edge.certainty.as_str(), "direct" | "proven-direct");
+    let reference = codegraph::model::relationship_is_reference(&edge.kind);
+    let direct = !codegraph::model::relationship_is_uncertain(&edge.certainty);
     let color = if reference {
         theme::callback(k)
     } else if direct {

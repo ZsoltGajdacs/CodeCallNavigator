@@ -1,0 +1,265 @@
+{
+  "map_editor": {
+    "nodes": 5850,
+    "edges": 9090,
+    "framework_entries": [
+      "RootLayout",
+      "Page"
+    ],
+    "verified_starts": 0,
+    "languages": {
+      "typescript": 5850
+    },
+    "edge_kinds": {
+      "call": 5184,
+      "reference": 2987,
+      "react-effect": 77,
+      "react-cleanup": 28,
+      "react-event": 297,
+      "react-render": 420,
+      "construct": 38,
+      "react-prop": 16,
+      "react-initializer": 7,
+      "react-memo": 36
+    },
+    "diagnostics": [
+      "1 unresolved React callback bindings",
+      "19 unresolved React component bindings",
+      "210 unresolved React event/delegation bindings",
+      "32 unresolved React spread/delegation bindings",
+      "616 unresolved dynamic call sites"
+    ],
+    "engine_versions": {
+      "node": "24.15.0",
+      "typescript": "6.0.3",
+      "react": "19.3.1",
+      "next": "16.4.2",
+      "adapter": "1",
+      "react_rules": "1",
+      "next_rules": "1"
+    },
+    "examples": [
+      {
+        "from": "Page",
+        "to": "EditorPage",
+        "kind": "react-render",
+        "certainty": "possible",
+        "count": 1,
+        "from_file": "src/app/page.tsx",
+        "to_file": "src/features/editor/EditorPage.tsx"
+      },
+      {
+        "from": "Dialog",
+        "to": "<callback:12:13>",
+        "kind": "react-effect",
+        "certainty": "possible",
+        "count": 1,
+        "from_file": "src/shared/ui/Dialog.tsx",
+        "to_file": "src/shared/ui/Dialog.tsx"
+      },
+      {
+        "from": "Dialog",
+        "to": "<callback:24:17>",
+        "kind": "react-event",
+        "certainty": "possible",
+        "count": 1,
+        "from_file": "src/shared/ui/Dialog.tsx",
+        "to_file": "src/shared/ui/Dialog.tsx"
+      },
+      {
+        "from": "<callback:126:18>",
+        "to": "<callback:133:20>",
+        "kind": "react-event",
+        "certainty": "possible",
+        "count": 1,
+        "from_file": "src/shared/ui/controls.tsx",
+        "to_file": "src/shared/ui/controls.tsx"
+      },
+      {
+        "from": "<callback:126:18>",
+        "to": "<callback:134:22>",
+        "kind": "react-event",
+        "certainty": "possible",
+        "count": 1,
+        "from_file": "src/shared/ui/controls.tsx",
+        "to_file": "src/shared/ui/controls.tsx"
+      },
+      {
+        "from": "Pagination",
+        "to": "<callback:197:45>",
+        "kind": "react-event",
+        "certainty": "possible",
+        "count": 1,
+        "from_file": "src/shared/ui/controls.tsx",
+        "to_file": "src/shared/ui/controls.tsx"
+      },
+      {
+        "from": "Pagination",
+        "to": "<callback:203:57>",
+        "kind": "react-event",
+        "certainty": "possible",
+        "count": 1,
+        "from_file": "src/shared/ui/controls.tsx",
+        "to_file": "src/shared/ui/controls.tsx"
+      },
+      {
+        "from": "ConfirmationDialog",
+        "to": "<callback:131:122>",
+        "kind": "react-event",
+        "certainty": "possible",
+        "count": 2,
+        "from_file": "src/shared/ui/controls.tsx",
+        "to_file": "src/features/catalog/WorkingCatalogEditor.tsx"
+      },
+      {
+        "from": "ConfirmationDialog",
+        "to": "cancelReplacement",
+        "kind": "react-event",
+        "certainty": "possible",
+        "count": 2,
+        "from_file": "src/shared/ui/controls.tsx",
+        "to_file": "src/features/scenario/hooks/usePlacementWorkspace.ts"
+      }
+    ],
+    "elapsed_seconds": 8.68,
+    "maximum_resident_set_bytes": 867942400
+  },
+  "mixed": {
+    "nodes": 5879,
+    "edges": 9117,
+    "framework_entries": [
+      "RootLayout",
+      "Page"
+    ],
+    "verified_starts": 3,
+    "languages": {
+      "csharp": 12,
+      "java": 17,
+      "typescript": 5850
+    },
+    "edge_kinds": {
+      "call": 5194,
+      "new": 1,
+      "methodgroup": 1,
+      "STA": 9,
+      "SPE": 1,
+      "_ACT_I": 1,
+      "_LM": 1,
+      "INT": 1,
+      "_ITF": 2,
+      "reference": 2987,
+      "react-effect": 77,
+      "react-cleanup": 28,
+      "react-event": 297,
+      "react-render": 420,
+      "construct": 38,
+      "react-prop": 16,
+      "react-initializer": 7,
+      "react-memo": 36
+    },
+    "diagnostics": [
+      "CallAtlas omits most source-generator output; cross-assembly interface implementation candidates are limited; operator invocations are not fully reported. Reflection, dynamic calls, framework callbacks and unsupported DI wiring are not inferred.",
+      "Java: 0 inherited/reference symbols have no declared body; 7 external relationships excluded. These references are engine-reported, not resolved by name.",
+      "Java DI, reflection, framework callback ordering and dynamic runtime targets are supported only where reported by java-callgraph2. Bytecode source columns are unavailable.",
+      "Java: 0 inherited/reference symbols have no declared body; 1 external relationships excluded. These references are engine-reported, not resolved by name.",
+      "Java DI, reflection, framework callback ordering and dynamic runtime targets are supported only where reported by java-callgraph2. Bytecode source columns are unavailable.",
+      "1 unresolved React callback bindings",
+      "19 unresolved React component bindings",
+      "210 unresolved React event/delegation bindings",
+      "32 unresolved React spread/delegation bindings",
+      "616 unresolved dynamic call sites"
+    ],
+    "engine_versions": {
+      "node": "24.15.0",
+      "typescript": "6.0.3",
+      "react": "19.3.1",
+      "next": "16.4.2",
+      "adapter": "1",
+      "react_rules": "1",
+      "next_rules": "1"
+    },
+    "examples": [
+      {
+        "from": "Page",
+        "to": "EditorPage",
+        "kind": "react-render",
+        "certainty": "possible",
+        "count": 1,
+        "from_file": "src/app/page.tsx",
+        "to_file": "src/features/editor/EditorPage.tsx"
+      },
+      {
+        "from": "Dialog",
+        "to": "<callback:12:13>",
+        "kind": "react-effect",
+        "certainty": "possible",
+        "count": 1,
+        "from_file": "src/shared/ui/Dialog.tsx",
+        "to_file": "src/shared/ui/Dialog.tsx"
+      },
+      {
+        "from": "Dialog",
+        "to": "<callback:24:17>",
+        "kind": "react-event",
+        "certainty": "possible",
+        "count": 1,
+        "from_file": "src/shared/ui/Dialog.tsx",
+        "to_file": "src/shared/ui/Dialog.tsx"
+      },
+      {
+        "from": "<callback:126:18>",
+        "to": "<callback:133:20>",
+        "kind": "react-event",
+        "certainty": "possible",
+        "count": 1,
+        "from_file": "src/shared/ui/controls.tsx",
+        "to_file": "src/shared/ui/controls.tsx"
+      },
+      {
+        "from": "<callback:126:18>",
+        "to": "<callback:134:22>",
+        "kind": "react-event",
+        "certainty": "possible",
+        "count": 1,
+        "from_file": "src/shared/ui/controls.tsx",
+        "to_file": "src/shared/ui/controls.tsx"
+      },
+      {
+        "from": "Pagination",
+        "to": "<callback:197:45>",
+        "kind": "react-event",
+        "certainty": "possible",
+        "count": 1,
+        "from_file": "src/shared/ui/controls.tsx",
+        "to_file": "src/shared/ui/controls.tsx"
+      },
+      {
+        "from": "Pagination",
+        "to": "<callback:203:57>",
+        "kind": "react-event",
+        "certainty": "possible",
+        "count": 1,
+        "from_file": "src/shared/ui/controls.tsx",
+        "to_file": "src/shared/ui/controls.tsx"
+      },
+      {
+        "from": "ConfirmationDialog",
+        "to": "<callback:131:122>",
+        "kind": "react-event",
+        "certainty": "possible",
+        "count": 2,
+        "from_file": "src/shared/ui/controls.tsx",
+        "to_file": "src/features/catalog/WorkingCatalogEditor.tsx"
+      },
+      {
+        "from": "ConfirmationDialog",
+        "to": "cancelReplacement",
+        "kind": "react-event",
+        "certainty": "possible",
+        "count": 2,
+        "from_file": "src/shared/ui/controls.tsx",
+        "to_file": "src/features/scenario/hooks/usePlacementWorkspace.ts"
+      }
+    ]
+  }
+}

@@ -22,6 +22,8 @@ pub struct Node {
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Edge {
+    #[serde(default)]
+    pub provenance: String,
     pub from: u32,
     pub to: u32,
     pub kind: String,
@@ -29,16 +31,25 @@ pub struct Edge {
     pub count: u32,
 }
 
+/// Shared by graph filtering and canvas rendering, including projected edges.
+pub fn relationship_is_reference(kind: &str) -> bool {
+    matches!(
+        kind,
+        "methodgroup" | "reference" | "callback" | "_LM" | "_BSM" | "react-event" | "react-prop"
+    )
+}
+
+pub fn relationship_is_uncertain(certainty: &str) -> bool {
+    !matches!(certainty, "direct" | "proven-direct")
+}
+
 impl Edge {
     pub fn is_reference(&self) -> bool {
-        matches!(
-            self.kind.as_str(),
-            "methodgroup" | "reference" | "callback" | "_LM" | "_BSM"
-        )
+        relationship_is_reference(&self.kind)
     }
 
     pub fn is_uncertain(&self) -> bool {
-        !matches!(self.certainty.as_str(), "direct" | "proven-direct")
+        relationship_is_uncertain(&self.certainty)
     }
 }
 
@@ -60,6 +71,8 @@ pub struct FileFingerprint {
 /// Identities are stable across graph composition and independent of node offsets.
 #[derive(Clone, Debug, Default, PartialEq, Eq, Deserialize, Serialize)]
 pub struct EntryPoints {
+    #[serde(default)]
+    pub framework_entries: Vec<String>,
     pub candidates: Vec<String>,
     pub application_starts: Vec<String>,
 }
@@ -70,7 +83,9 @@ pub struct GraphData {
     pub edges: Vec<Edge>,
     pub diagnostics: Vec<String>,
     pub roots: Vec<String>,
+    #[serde(default)]
     pub fingerprints: Vec<FileFingerprint>,
+    #[serde(default)]
     pub engine_versions: String,
     #[serde(default)]
     pub entry_points: Option<EntryPoints>,
@@ -97,6 +112,7 @@ impl GraphData {
         }
         if let Some(entries) = &self.entry_points {
             validate_entries(&entries.candidates, &identities)?;
+            validate_entries(&entries.framework_entries, &identities)?;
             validate_entries(&entries.application_starts, &identities)?;
         }
         for edge in &self.edges {

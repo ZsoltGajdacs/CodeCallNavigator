@@ -139,7 +139,8 @@ impl SqliteStore {
         write_edges(&transaction, graph, cancelled)?;
         let metadata = serde_json::json!({ "diagnostics": graph.diagnostics, "roots": graph.roots,
             "fingerprints": graph.fingerprints, "engine_versions": graph.engine_versions,
-            "entry_points": graph.entry_points });
+            "entry_points": graph.entry_points,
+            "edge_provenance": graph.edges.iter().map(|edge| &edge.provenance).collect::<Vec<_>>() });
         transaction.execute(
             "INSERT INTO metadata VALUES ('graph', ?1)",
             [metadata.to_string()],
@@ -196,6 +197,7 @@ impl SqliteStore {
             .prepare("SELECT from_idx,to_idx,kind,certainty,count FROM edges ORDER BY idx")?
             .query_map([], |row| {
                 Ok(Edge {
+                    provenance: String::new(),
                     from: row.get(0)?,
                     to: row.get(1)?,
                     kind: row.get(2)?,
@@ -204,6 +206,16 @@ impl SqliteStore {
                 })
             })?
             .collect::<rusqlite::Result<Vec<_>>>()?;
+        if let Some(values) = metadata.get("edge_provenance") {
+            let provenance: Vec<String> = serde_json::from_value(values.clone())?;
+            ensure!(
+                provenance.len() == graph.edges.len(),
+                "Edge provenance count differs from graph"
+            );
+            for (edge, value) in graph.edges.iter_mut().zip(provenance) {
+                edge.provenance = value;
+            }
+        }
         graph.validate()?;
         Ok(graph)
     }

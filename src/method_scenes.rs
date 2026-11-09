@@ -88,6 +88,7 @@ fn data() -> GraphData {
         ]
         .into_iter()
         .map(|(from, to)| Edge {
+            provenance: String::new(),
             from,
             to,
             kind: "call".into(),
@@ -96,6 +97,7 @@ fn data() -> GraphData {
         })
         .collect(),
         entry_points: Some(EntryPoints {
+            framework_entries: Vec::new(),
             candidates: vec!["fixture/0".into(), "fixture/7".into()],
             application_starts: vec!["fixture/0".into()],
         }),

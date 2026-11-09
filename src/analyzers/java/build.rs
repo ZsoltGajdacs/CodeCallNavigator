@@ -204,15 +204,11 @@ impl PreparedJava {
     }
 }
 
-pub(in crate::analyzers) fn reject_overlaps(
-    builds: &[BuildTarget],
-    prepared: &[Option<PreparedJava>],
+pub(in crate::analyzers) fn reject_overlaps<'a>(
+    prepared: impl IntoIterator<Item = (&'a BuildTarget, &'a PreparedJava)>,
 ) -> Result<()> {
     let mut owners = BTreeMap::new();
-    for (build, prepared) in builds.iter().zip(prepared) {
-        let Some(prepared) = prepared else {
-            continue;
-        };
+    for (build, prepared) in prepared {
         for module in &prepared.metadata.modules {
             let canonical = module
                 .canonicalize()

@@ -316,6 +316,7 @@ fn normalize_atlas(
                 .collect()
         };
         EntryPoints {
+            framework_entries: Vec::new(),
             candidates: qualify(entries.candidates),
             application_starts: qualify(entries.application_starts),
         }
@@ -421,6 +422,7 @@ fn append_atlas_edge(
         edge.tier
     };
     graph.edges.push(Edge {
+        provenance: String::new(),
         from,
         to,
         kind: edge.kind.clone(),
@@ -430,6 +432,7 @@ fn append_atlas_edge(
     for candidate in edge.virtual_targets {
         if let Some(target) = indices.get(&candidate) {
             graph.edges.push(Edge {
+                provenance: String::new(),
                 from,
                 to: *target,
                 kind: edge.kind.clone(),

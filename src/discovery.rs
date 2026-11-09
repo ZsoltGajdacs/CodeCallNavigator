@@ -73,6 +73,9 @@ pub fn default_selection(targets: &[BuildTarget]) -> BTreeSet<BuildIdentity> {
     targets
         .iter()
         .filter(|target| {
+            if target.kind == "typescript" {
+                return default_typescript_target(target, targets);
+            }
             if target.kind == "project" {
                 return !has_solution;
             }
@@ -88,11 +91,29 @@ pub fn default_selection(targets: &[BuildTarget]) -> BTreeSet<BuildIdentity> {
         .collect()
 }
 
+fn default_typescript_target(target: &BuildTarget, targets: &[BuildTarget]) -> bool {
+    target
+        .path
+        .file_name()
+        .is_some_and(|name| name == "tsconfig.json")
+        || !targets.iter().any(|other| {
+            other.kind == "typescript"
+                && other.path.parent() == target.path.parent()
+                && other
+                    .path
+                    .file_name()
+                    .is_some_and(|name| name == "tsconfig.json")
+        })
+}
+
 pub fn target_from_file(path: &Path) -> Result<BuildTarget> {
     let path = path
         .canonicalize()
         .context("Cannot open selected build file")?;
     let name = path.file_name().unwrap_or_default().to_string_lossy();
+    if is_typescript_config(&name) {
+        return Ok(typescript_target(path));
+    }
     if name == "pom.xml" {
         let root = path
             .parent()
@@ -160,6 +181,9 @@ fn discover_file(
     targets: &mut Vec<BuildTarget>,
     gradle: &mut BTreeSet<PathBuf>,
 ) {
+    if is_typescript_config(name) && !typescript_output_path(path) {
+        targets.push(typescript_target(path.into()));
+    }
     let extension = path
         .extension()
         .and_then(|value| value.to_str())
@@ -191,6 +215,31 @@ fn discover_file(
         "settings.gradle" | "settings.gradle.kts" | "build.gradle" | "build.gradle.kts"
     ) {
         gradle.insert(path.parent().unwrap_or(Path::new(".")).into());
+    }
+}
+
+fn typescript_output_path(path: &Path) -> bool {
+    path.ancestors().skip(1).any(|parent| {
+        parent
+            .file_name()
+            .is_some_and(|name| matches!(name.to_str(), Some(".next" | "dist" | "coverage")))
+    })
+}
+
+fn is_typescript_config(name: &str) -> bool {
+    name == "tsconfig.json" || (name.starts_with("tsconfig.") && name.ends_with(".json"))
+}
+
+fn typescript_target(path: PathBuf) -> BuildTarget {
+    BuildTarget {
+        label: format!(
+            "{} ({})",
+            display_name(path.parent().unwrap_or(Path::new("."))),
+            path.file_name().unwrap_or_default().to_string_lossy()
+        ),
+        path,
+        language: "typescript".into(),
+        kind: "typescript".into(),
     }
 }
 

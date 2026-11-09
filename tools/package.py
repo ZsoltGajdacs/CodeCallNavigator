@@ -207,6 +207,7 @@ def make_app(app):
     analyzers.mkdir()
     copy_tree(ROOT / "vendor/callatlas/src/CallAtlas.Cli/bin/Release/net10.0", analyzers / "callatlas")
     copy_tree(ROOT / "tools/java-bytecode/build/install/codegraph-bytecode", analyzers / "java-bytecode")
+    copy_tree(ROOT / "tools/typescript", analyzers / "typescript")
     shutil.copy2(ROOT / "tools/gradle-metadata.gradle", analyzers)
     shutil.copy2(ROOT / "tools/maven-metadata/build/libs/codegraph-maven-metadata.jar",
                  analyzers / "maven-metadata.jar")

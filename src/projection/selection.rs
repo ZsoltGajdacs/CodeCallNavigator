@@ -40,6 +40,7 @@ fn methods(graph: &GraphIndex, request: &Request) -> Selection {
             .candidates
             .iter()
             .chain(&entries.application_starts)
+            .chain(&entries.framework_entries)
             .filter_map(|id| graph.node_index(id))
             .collect(),
         None => legacy_roots(graph),

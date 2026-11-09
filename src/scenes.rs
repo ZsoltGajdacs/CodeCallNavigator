@@ -30,6 +30,7 @@ pub fn install(state: &mut State) {
 fn fixture_data() -> GraphData {
     GraphData {
         entry_points: Some(EntryPoints {
+            framework_entries: Vec::new(),
             candidates: vec![
                 "fixture/project/Start".into(),
                 "fixture/project/OrderTest".into(),
@@ -81,6 +82,7 @@ fn fixture_edges() -> Vec<Edge> {
     [(0, 1), (1, 2), (2, 3), (3, 2), (1, 4), (5, 1)]
         .into_iter()
         .map(|(from, to)| Edge {
+            provenance: String::new(),
             from,
             to,
             kind: if (from, to) == (2, 3) {

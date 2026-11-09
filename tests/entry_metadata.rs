@@ -11,6 +11,7 @@ fn graph() -> GraphData {
             ..Default::default()
         }],
         entry_points: Some(EntryPoints {
+            framework_entries: Vec::new(),
             candidates: vec!["main".into()],
             application_starts: vec!["main".into()],
         }),
@@ -107,4 +108,33 @@ fn real_csharp_entries_keep_uncalled_methods_and_verify_executable_starts() {
             .iter()
             .all(|id| graph.nodes.iter().any(|node| &node.id == id))
     );
+}
+
+#[test]
+fn framework_entries_and_edge_provenance_survive_cache_without_becoming_starts() {
+    use codegraph::model::Edge;
+    let root = tempfile::tempdir().unwrap();
+    let store = SqliteStore::open(root.path()).unwrap();
+    let mut data = graph();
+    let entries = data.entry_points.as_mut().unwrap();
+    entries.application_starts.clear();
+    entries.framework_entries.push("main".into());
+    data.edges.push(Edge {
+        from: 0,
+        to: 0,
+        kind: "react-render".into(),
+        certainty: "framework-possible".into(),
+        count: 1,
+        provenance: "react-rules.v1:jsx".into(),
+    });
+    let generation = store.publish(&data, &AtomicBool::new(false)).unwrap();
+    let loaded = store.load_active().unwrap().unwrap();
+    assert_eq!(loaded.entry_points, data.entry_points);
+    assert!(loaded.entry_points.unwrap().application_starts.is_empty());
+    assert_eq!(loaded.edges[0].provenance, "react-rules.v1:jsx");
+    let connection = rusqlite::Connection::open(root.path().join(generation)).unwrap();
+    connection.execute("UPDATE metadata SET value=json_remove(value, '$.edge_provenance', '$.entry_points.framework_entries') WHERE key='graph'", []).unwrap();
+    let loaded = store.load_active().unwrap().unwrap();
+    assert!(loaded.edges[0].provenance.is_empty());
+    assert!(loaded.entry_points.unwrap().framework_entries.is_empty());
 }

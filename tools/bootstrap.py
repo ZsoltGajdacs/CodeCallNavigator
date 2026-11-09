@@ -4,6 +4,7 @@ import hashlib
 import argparse
 import json
 import os
+import shutil
 from pathlib import Path
 import subprocess
 import sys
@@ -122,6 +123,14 @@ def verified_jdt_cache(destination, checksum):
     return marker.read_text().strip() == checksum and jdt_present(destination)
 
 
+def check_typescript_adapter():
+    """Validate shipped bridge syntax without installing Node or project dependencies."""
+    node = shutil.which("node")
+    if node:
+        for source in sorted((ROOT / "tools/typescript").glob("*.js")):
+            subprocess.run([node, "--check", source], check=True)
+
+
 def main():
     if sys.version_info < (3, 12):
         raise SystemExit("Dependency bootstrap requires Python 3.12+ for safe archive extraction.")
@@ -139,6 +148,7 @@ def main():
     subprocess.run(["dotnet", "build", str(ROOT / "vendor/callatlas/src/CallAtlas.Cli/CallAtlas.Cli.csproj"),
                     "-c", "Release"], check=True)
     build_java_adapter()
+    check_typescript_adapter()
 
 
 if __name__ == "__main__":

@@ -66,6 +66,14 @@ fn selection(state: &State, k: &Kit) -> El {
         )
         .child(neighbors(state, true, k))
         .child(neighbors(state, false, k));
+    if state
+        .graph
+        .as_ref()
+        .and_then(|graph| graph.data.entry_points.as_ref())
+        .is_some_and(|entries| entries.framework_entries.contains(&node.id))
+    {
+        content = content.child(detail("Framework entry · statically recognized", k));
+    }
     if node.body_unavailable {
         content = content.child(detail(
             "The analyzer reports this target but no project method body is available.",

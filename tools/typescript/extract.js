@@ -1,0 +1,66 @@
+'use strict';
+const {canonical}=require('./paths.js');
+const {accessorCalls}=require('./accessors.js');
+const {Graph}=require('./graph.js');
+const {Bindings}=require('./bindings.js');
+const {isCallable,isCallSite,isJsxSite,isAccess}=require('./syntax.js');
+const {reactImport}=require('./react-import.js');
+const {ReactRules}=require('./react.js');
+const {markNextEntries}=require('./next.js');
+function callCertainty(graph,targets,to,propagated) {
+  if(propagated) return 'possible';
+  return targets.length>1 || graph.nodes[to].body_unavailable ? 'possible' : 'direct';
+}
+function argumentReferences(bindings,checker,node,from) {
+  const targets=(node.arguments||[]).flatMap(argument=>bindings.resolve(checker,argument));
+  for(const target of targets) bindings.graph.edge(from,target,'reference',{certainty:'possible',provenance:'typescript.compiler:argument-reference'});
+}
+function reportUnresolvedCall(bindings,checker,node) {
+  const declaration=checker.getResolvedSignature(node)?.declaration;
+  if(!declaration || bindings.context.owners.has(canonical(declaration.getSourceFile().fileName))) bindings.graph.diagnostic('unresolved dynamic call sites');
+}
+function ordinaryCall(bindings,checker,node,from) {
+  const {ts,graph}=bindings;
+  argumentReferences(bindings,checker,node,from);
+  const targets=bindings.targets(checker,node);
+  const propagated=bindings.propagatedCall(checker,node.expression||node.tag);
+  for(const to of targets) graph.edge(from,to,ts.isNewExpression(node)?'construct':'call',{certainty:callCertainty(graph,targets,to,propagated)});
+  if(!targets.length) reportUnresolvedCall(bindings,checker,node);
+}
+function visitSite(bindings,react,{checker,node,current}) {
+  if(isCallSite(bindings.ts,node)) ordinaryCall(bindings,checker,node,current);
+  if(bindings.ts.isCallExpression(node)) react.call(checker,node,current);
+  if(isJsxSite(bindings.ts,node)) react.jsx(checker,node,current);
+  if(isAccess(bindings.ts,node)) accessorCalls(bindings,checker,node,current);
+}
+function fieldInitializer(bindings,node) {
+  if(!bindings.ts.isPropertyDeclaration(node)) return undefined;
+  const modifiers=bindings.ts.getModifiers(node)||[];
+  if(modifiers.some(modifier=>modifier.kind===bindings.ts.SyntaxKind.StaticKeyword)) return undefined;
+  return bindings.constructorTargets(node.parent)[0];
+}
+function walkFile(bindings,react,{file,checker,module}) {
+  function visit(node,from) {
+    const current=isCallable(bindings.ts,node)?bindings.index(node):from;
+    visitSite(bindings,react,{checker,node,current});
+    const constructor=fieldInitializer(bindings,node);
+    bindings.ts.forEachChild(node,child=>{
+      const owner=child===node.initializer && constructor!==undefined ? constructor : current;
+      visit(child,owner);
+    });
+  }
+  visit(file,module);
+}
+function extract(context) {
+  const graph=new Graph(context);
+  const bindings=new Bindings(context,graph);
+  bindings.collect();
+  const react=new ReactRules(bindings,graph,reactImport);
+  react.collectProps();
+  for(const file of bindings.files) {
+    walkFile(bindings,react,file);
+    markNextEntries(context,bindings,graph,file);
+  }
+  return graph.result();
+}
+module.exports={extract};

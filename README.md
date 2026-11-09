@@ -1,7 +1,7 @@
 # CodeGraph
 
 A native Apple Silicon macOS call-graph explorer built with Rune. Select a repository
-folder, select discovered .NET solutions/projects, Gradle builds or Maven projects, and refresh.
+folder, select discovered .NET solutions/projects, Gradle builds, Maven projects or TypeScript configurations, and refresh.
 The complete analyzed graph stays indexed; the canvas shows bounded aggregates or
 method neighborhoods. Diffs, source previews/editing, runtime tracing,
 cross-service connections and AI features are outside this MVP.
@@ -23,7 +23,7 @@ You can also open `dist/CodeGraph.app` directly. This local build is ad hoc
 signed, not notarized. The packaged minimum macOS version is 27.0; broader OS
 certification and Intel support are deferred.
 
-Installed toolchains remain prerequisites: .NET 10 to run CallAtlas, the SDKs and
+Installed toolchains remain prerequisites: Node 24+ and project-installed TypeScript 6.0.x for TypeScript analysis, .NET 10 to run CallAtlas, the SDKs and
 reference packs needed by your .NET projects, and JDK 25 to run the Java analyzer.
 Gradle projects need a working wrapper and their configured Java toolchains.
 Maven projects need Maven 3.9+ or Maven 4, preferably through their Maven Wrapper.
@@ -48,7 +48,9 @@ The graph canvas still uses Rune's custom shapes and production Graphviz geometr
 
 Method opens all entry-point candidates, including uncalled methods, with verified
 C# and Java application starts highlighted. C# starts come from the compiler;
-Java starts are public static void main(String[]). Framework handlers can appear
+Java starts are public static void main(String[]). TypeScript module initializers and
+uncalled functions remain candidates; recognized Next.js App Router exports are
+labeled framework entries separately from verified executable starts. Framework handlers can appear
 as uncalled candidates without application-start highlighting. Older cached graphs
 still open; refresh them to enable verified-start highlighting.
 
@@ -100,6 +102,7 @@ The same production analyzer pipeline is available without opening a window:
 
 ```sh
 cargo run --bin codegraph -- analyze fixtures/dotnet/Fixture.sln fixtures/gradle fixtures/maven/standalone/pom.xml
+cargo run --bin codegraph -- analyze /path/to/project/tsconfig.json
 ```
 
 ## Engines and accuracy
@@ -118,6 +121,29 @@ inputs. Nested POMs remain selectable, with outermost projects selected by defau
 when both build tools share a directory, Gradle is selected initially. Overlapping
 selected modules are rejected before compilation. The CLI accepts POM files and
 repository folders. Profile/property controls are not added to the app.
+
+TypeScript uses the selected project's installed TypeScript 6.0.x compiler with
+Node 24+. The bundled bridge uses public compiler APIs, configured source ownership
+and source redirects for project references; no JavaScript is emitted. Install
+project dependencies beforehand. CodeGraph does not run npm scripts, compiler
+plugins, Next.js configuration or dependency installation. Missing dependencies,
+configuration/resolution/type errors and unsupported compiler versions reject the
+refresh and retain the last successful graph.
+
+The UI and CLI discover `tsconfig.json` and `tsconfig.*.json`; the standard config
+is selected by default in each directory, with variants still selectable. Identical
+referenced configurations share graph identities; different configurations owning
+the same source are rejected. `.ts`, `.tsx`, `.mts` and `.cts` callables, anonymous
+callbacks and module initializers are indexed. JavaScript/allowJs projects are deferred.
+
+React rules recognize resolved imports, component rendering, memo/forwardRef,
+static event/prop callbacks and supported hook callbacks/cleanup. Framework edges
+carry explicit kinds and provenance; possible execution and references do not
+establish runtime order or frequency. `useCallback` caches a function binding and
+does not itself invoke that function. Next.js rules recognize standard App Router
+exports under `app` or `src/app`. Pages Router, custom routing configuration,
+mutable callback maps/refs and arbitrary higher-order wrappers are deferred;
+dynamic delegation such as `withStableCallbacks` remains explicitly unresolved.
 
 Only project-owned symbols are indexed. Framework-invoked declarations remain
 visible even without project callers. Possible targets and callback references
@@ -143,7 +169,11 @@ The ignored compiler/build regressions require bootstrapped artifacts, installed
 JDK 25 and working Maven/Gradle toolchains. To test a pinned Maven distribution,
 set `CODEGRAPH_TEST_MAVEN=/absolute/path/to/bin/mvn` when running
 `cargo test --test java_builds maven_ -- --ignored --test-threads=1`.
-See [Maven acceptance](evidence/analyzers/maven.md) for the compatibility matrix. Headless Rune GPU screenshots and interaction checks are under
+TypeScript compiler fixtures run with `node --test tools/typescript/adapter.test.js`;
+set `CODEGRAPH_TEST_TYPESCRIPT_ROOT` to an installed TypeScript package if needed.
+The Rust TypeScript integration regressions are ignored by default alongside other
+real-toolchain tests; run `cargo test --test typescript_pipeline -- --ignored --test-threads=1`.
+See [TypeScript acceptance](evidence/analyzers/typescript.md) and [Maven acceptance](evidence/analyzers/maven.md) for the compatibility matrix. Headless Rune GPU screenshots and interaction checks are under
 `evidence/ui`; `--scene fixture` is an explicit synthetic test scene, never normal
 startup data. Real-project results and scale measurements are summarized in
 [evidence/VALIDATION.md](evidence/VALIDATION.md). Live physical trackpad/window

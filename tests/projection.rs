@@ -36,6 +36,7 @@ fn sample() -> GraphIndex {
         .collect();
     let edges = vec![
         Edge {
+            provenance: String::new(),
             from: 0,
             to: 1,
             kind: "call".into(),
@@ -43,6 +44,7 @@ fn sample() -> GraphIndex {
             count: 1,
         },
         Edge {
+            provenance: String::new(),
             from: 1,
             to: 2,
             kind: "call".into(),
@@ -147,6 +149,7 @@ fn page_reports_cross_page_relationships_in_omitted_counts() {
 fn method_recursion_stays_visible_when_group_internals_are_summarized() {
     let mut data = (*sample().data).clone();
     data.edges.push(Edge {
+        provenance: String::new(),
         from: 0,
         to: 0,
         kind: "call".into(),
@@ -260,6 +263,7 @@ fn branching() -> GraphIndex {
     ]
     .into_iter()
     .map(|(from, to)| Edge {
+        provenance: String::new(),
         from,
         to,
         kind: "call".into(),
@@ -271,6 +275,7 @@ fn branching() -> GraphIndex {
         nodes,
         edges,
         entry_points: Some(codegraph::model::EntryPoints {
+            framework_entries: Vec::new(),
             candidates: vec!["Root".into(), "OtherRoot".into()],
             application_starts: vec!["Root".into()],
         }),
@@ -366,6 +371,7 @@ fn aggregate_overview_uses_directional_component_roots_even_for_cycles() {
 fn cycles_without_candidates_have_an_actionable_empty_method_overview() {
     let mut data = (*sample().data).clone();
     data.edges.push(Edge {
+        provenance: String::new(),
         from: 2,
         to: 0,
         kind: "call".into(),
@@ -446,6 +452,7 @@ fn paginated_graph(from: u32, to: u32) -> GraphIndex {
     GraphIndex::new(Arc::new(GraphData {
         nodes,
         edges: vec![Edge {
+            provenance: String::new(),
             from,
             to,
             kind: "call".into(),
@@ -455,4 +462,26 @@ fn paginated_graph(from: u32, to: u32) -> GraphIndex {
         ..Default::default()
     }))
     .unwrap()
+}
+
+#[test]
+fn framework_entry_is_a_method_root_without_verified_start_highlighting() {
+    let mut data = (*branching().data).clone();
+    let id = data.nodes[1].id.clone();
+    data.entry_points = Some(codegraph::model::EntryPoints {
+        candidates: vec![],
+        application_starts: vec![],
+        framework_entries: vec![id.clone()],
+    });
+    let graph = GraphIndex::new(Arc::new(data)).unwrap();
+    let request = Request {
+        grouping: Grouping::Method,
+        ..request()
+    };
+    let view = projection::project(&graph, &request);
+    assert!(
+        view.nodes
+            .iter()
+            .any(|node| node.key == id && !node.application_start)
+    );
 }

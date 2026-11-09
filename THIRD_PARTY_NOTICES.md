@@ -30,3 +30,11 @@ Java JARs remain separate in `Resources/analyzers/java-bytecode/lib`; libltdl is
 in the Graphviz lib directory. Re-sign a locally modified app ad hoc if needed.
 Supplemental pinned upstream notices and the GPL text accompanying Aviator
 are included under `Licenses/supplemental`; upstream source links are above.
+
+## Project-installed TypeScript / React / Next.js
+
+TypeScript analysis loads the selected project's installed TypeScript compiler
+(Microsoft, Apache-2.0). React and Next.js packages supply project type information
+and framework identity. These project dependencies and Node.js are not redistributed
+in CodeGraph; their installed license notices remain with the project/toolchain.
+The bundled TypeScript bridge is CodeGraph source and has no npm dependencies.

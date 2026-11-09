@@ -107,7 +107,7 @@ impl State {
     pub fn discover_root(&mut self) {
         let root = PathBuf::from(self.root.text.trim());
         self.targets.clear();
-        self.status = "Finding solutions, Gradle and Maven builds…".into();
+        self.status = "Finding solutions, Java builds and TypeScript projects…".into();
         self.jobs.discovery.request(root, |path| {
             let root = path.to_string_lossy().into_owned();
             DiscoveryOutput {
@@ -131,7 +131,9 @@ impl State {
             return;
         };
         if targets.is_empty() {
-            self.warning = "Select at least one solution, project, Gradle or Maven build.".into();
+            self.warning =
+                "Select at least one solution, project, Java build or TypeScript configuration."
+                    .into();
             return;
         }
         self.cancel = Arc::new(std::sync::atomic::AtomicBool::new(false));
