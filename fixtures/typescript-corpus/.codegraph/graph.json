@@ -103,7 +103,7 @@
           "annotations": [],
           "base_types": [],
           "build": "@repo/tsconfig.json",
-          "content": "export function nextRequest() { return fetch('/api'); }\nexport function springItems() { return fetch('/api/items'); }\nexport function springItem() { return fetch('/api/items/42'); }\nexport function springCreate() { return fetch('/api/items', {method: 'POST'}); }\nexport function constrainedRequest() { return fetch('/api/constrained'); }\nexport function externalRequest() { return fetch('https://example.invalid/api/items'); }\nexport function dynamicRequest(path: string) { return fetch(path); }\nexport function shadowedRequest() {\n  const fetch = (path: string) => path;\n  return fetch('/api/items');\n}\n",
+          "content": "export function nextRequest() { return fetch('/api'); }\nexport function springItems() { return fetch('/api/items'); }\nexport function springItem() { return fetch('/api/items/42'); }\nexport function springCreate() { return fetch('/api/items', {method: 'POST'}); }\nexport function constrainedRequest() { return fetch('/api/constrained'); }\nexport function springHealth() { return fetch('/api/health'); }\nexport function aspReady() { return fetch('/ready'); }\nexport function aspCaseCollision() { return fetch('/api/items/CASEONLY'); }\nexport function aspOrderCollision() { return fetch('/api/items/ordered'); }\nexport function aspConstraintCollision() { return fetch('/api/items/constraint/42'); }\nexport function externalRequest() { return fetch('https://example.invalid/api/items'); }\nexport function dynamicRequest(path: string) { return fetch(path); }\nexport function shadowedRequest() {\n  const fetch = (path: string) => path;\n  return fetch('/api/items');\n}\n",
           "file": "@repo/src/http.ts",
           "is_interface": false,
           "is_test": false,
@@ -1331,12 +1331,17 @@
         "[\"typescript\",\"@repo/tsconfig.json\",\"@repo/src/callables.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"returnedA\\\\\\\",\\\\\\\"(): number\\\\\\\"]\\\",0]\"]",
         "[\"typescript\",\"@repo/tsconfig.json\",\"@repo/src/callables.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"returnedB\\\\\\\",\\\\\\\"(): number\\\\\\\"]\\\",0]\"]",
         "[\"typescript\",\"@repo/tsconfig.json\",\"@repo/src/http.ts\",\"<module>\"]",
+        "[\"typescript\",\"@repo/tsconfig.json\",\"@repo/src/http.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"aspCaseCollision\\\\\\\",\\\\\\\"(): Promise<Response>\\\\\\\"]\\\",0]\"]",
+        "[\"typescript\",\"@repo/tsconfig.json\",\"@repo/src/http.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"aspConstraintCollision\\\\\\\",\\\\\\\"(): Promise<Response>\\\\\\\"]\\\",0]\"]",
+        "[\"typescript\",\"@repo/tsconfig.json\",\"@repo/src/http.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"aspOrderCollision\\\\\\\",\\\\\\\"(): Promise<Response>\\\\\\\"]\\\",0]\"]",
+        "[\"typescript\",\"@repo/tsconfig.json\",\"@repo/src/http.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"aspReady\\\\\\\",\\\\\\\"(): Promise<Response>\\\\\\\"]\\\",0]\"]",
         "[\"typescript\",\"@repo/tsconfig.json\",\"@repo/src/http.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"constrainedRequest\\\\\\\",\\\\\\\"(): Promise<Response>\\\\\\\"]\\\",0]\"]",
         "[\"typescript\",\"@repo/tsconfig.json\",\"@repo/src/http.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"dynamicRequest\\\\\\\",\\\\\\\"(path: string): Promise<Response>\\\\\\\"]\\\",0]\"]",
         "[\"typescript\",\"@repo/tsconfig.json\",\"@repo/src/http.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"externalRequest\\\\\\\",\\\\\\\"(): Promise<Response>\\\\\\\"]\\\",0]\"]",
         "[\"typescript\",\"@repo/tsconfig.json\",\"@repo/src/http.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"nextRequest\\\\\\\",\\\\\\\"(): Promise<Response>\\\\\\\"]\\\",0]\"]",
         "[\"typescript\",\"@repo/tsconfig.json\",\"@repo/src/http.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"shadowedRequest\\\\\\\",\\\\\\\"(): string\\\\\\\"]\\\",0]\"]",
         "[\"typescript\",\"@repo/tsconfig.json\",\"@repo/src/http.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"springCreate\\\\\\\",\\\\\\\"(): Promise<Response>\\\\\\\"]\\\",0]\"]",
+        "[\"typescript\",\"@repo/tsconfig.json\",\"@repo/src/http.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"springHealth\\\\\\\",\\\\\\\"(): Promise<Response>\\\\\\\"]\\\",0]\"]",
         "[\"typescript\",\"@repo/tsconfig.json\",\"@repo/src/http.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"springItem\\\\\\\",\\\\\\\"(): Promise<Response>\\\\\\\"]\\\",0]\"]",
         "[\"typescript\",\"@repo/tsconfig.json\",\"@repo/src/http.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"springItems\\\\\\\",\\\\\\\"(): Promise<Response>\\\\\\\"]\\\",0]\"]",
         "[\"typescript\",\"@repo/tsconfig.json\",\"@repo/src/observers.ts\",\"<module>\"]",
@@ -3036,108 +3041,6 @@
             {
               "kind": "evaluate",
               "span": {
-                "end": 570,
-                "start": 548
-              },
-              "value": {
-                "calls": [],
-                "kind": "value",
-                "regions": [
-                  {
-                    "body": [
-                      {
-                        "kind": "return",
-                        "span": {
-                          "end": 570,
-                          "start": 566
-                        },
-                        "value": {
-                          "calls": [],
-                          "kind": "value",
-                          "regions": [],
-                          "span": {
-                            "end": 570,
-                            "start": 566
-                          },
-                          "text": "path"
-                        }
-                      }
-                    ],
-                    "deferred": true,
-                    "kind": "region",
-                    "label": "Separate function body: fetch",
-                    "span": {
-                      "end": 570,
-                      "start": 548
-                    }
-                  }
-                ],
-                "span": {
-                  "end": 570,
-                  "start": 548
-                },
-                "text": "(path: string) => path"
-              }
-            },
-            {
-              "calls": [],
-              "kind": "action",
-              "span": {
-                "end": 570,
-                "start": 540
-              },
-              "text": "Bind fetch"
-            },
-            {
-              "kind": "return",
-              "span": {
-                "end": 601,
-                "start": 574
-              },
-              "value": {
-                "calls": [
-                  {
-                    "diagnostic": null,
-                    "label": "fetch",
-                    "span": {
-                      "end": 600,
-                      "start": 581
-                    },
-                    "targets": [
-                      {
-                        "certainty": "direct",
-                        "provenance": "typescript.compiler",
-                        "symbol": "[\"typescript\",\"@repo/tsconfig.json\",\"@repo/src/http.ts\",\"[\\\"[\\\\\\\"[\\\\\\\\\\\\\\\"[\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"<module>\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"FunctionDeclaration\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"shadowedRequest\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"(): string\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"]\\\\\\\\\\\\\\\",0]\\\\\\\",\\\\\\\"ArrowFunction\\\\\\\",\\\\\\\"fetch\\\\\\\",\\\\\\\"(path: string): string\\\\\\\"]\\\",0]\"]"
-                      }
-                    ]
-                  }
-                ],
-                "kind": "value",
-                "regions": [],
-                "span": {
-                  "end": 600,
-                  "start": 581
-                },
-                "text": "fetch('/api/items')"
-              }
-            }
-          ],
-          "build": "@repo/tsconfig.json",
-          "diagnostics": [],
-          "file": "@repo/src/http.ts",
-          "language": "typescript",
-          "project": "@repo",
-          "span": {
-            "end": 603,
-            "start": 496
-          },
-          "symbol": "[\"typescript\",\"@repo/tsconfig.json\",\"@repo/src/http.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"shadowedRequest\\\\\\\",\\\\\\\"(): string\\\\\\\"]\\\",0]\"]"
-        },
-        {
-          "body": [
-            {
-              "kind": "evaluate",
-              "span": {
                 "end": 580,
                 "start": 545
               },
@@ -3708,6 +3611,108 @@
             "start": 791
           },
           "symbol": "[\"typescript\",\"@repo/tsconfig.json\",\"@repo/src/callables.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"immutableAlias\\\\\\\",\\\\\\\"(): number\\\\\\\"]\\\",0]\"]"
+        },
+        {
+          "body": [
+            {
+              "kind": "evaluate",
+              "span": {
+                "end": 928,
+                "start": 906
+              },
+              "value": {
+                "calls": [],
+                "kind": "value",
+                "regions": [
+                  {
+                    "body": [
+                      {
+                        "kind": "return",
+                        "span": {
+                          "end": 928,
+                          "start": 924
+                        },
+                        "value": {
+                          "calls": [],
+                          "kind": "value",
+                          "regions": [],
+                          "span": {
+                            "end": 928,
+                            "start": 924
+                          },
+                          "text": "path"
+                        }
+                      }
+                    ],
+                    "deferred": true,
+                    "kind": "region",
+                    "label": "Separate function body: fetch",
+                    "span": {
+                      "end": 928,
+                      "start": 906
+                    }
+                  }
+                ],
+                "span": {
+                  "end": 928,
+                  "start": 906
+                },
+                "text": "(path: string) => path"
+              }
+            },
+            {
+              "calls": [],
+              "kind": "action",
+              "span": {
+                "end": 928,
+                "start": 898
+              },
+              "text": "Bind fetch"
+            },
+            {
+              "kind": "return",
+              "span": {
+                "end": 959,
+                "start": 932
+              },
+              "value": {
+                "calls": [
+                  {
+                    "diagnostic": null,
+                    "label": "fetch",
+                    "span": {
+                      "end": 958,
+                      "start": 939
+                    },
+                    "targets": [
+                      {
+                        "certainty": "direct",
+                        "provenance": "typescript.compiler",
+                        "symbol": "[\"typescript\",\"@repo/tsconfig.json\",\"@repo/src/http.ts\",\"[\\\"[\\\\\\\"[\\\\\\\\\\\\\\\"[\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"<module>\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"FunctionDeclaration\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"shadowedRequest\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"(): string\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"]\\\\\\\\\\\\\\\",0]\\\\\\\",\\\\\\\"ArrowFunction\\\\\\\",\\\\\\\"fetch\\\\\\\",\\\\\\\"(path: string): string\\\\\\\"]\\\",0]\"]"
+                      }
+                    ]
+                  }
+                ],
+                "kind": "value",
+                "regions": [],
+                "span": {
+                  "end": 958,
+                  "start": 939
+                },
+                "text": "fetch('/api/items')"
+              }
+            }
+          ],
+          "build": "@repo/tsconfig.json",
+          "diagnostics": [],
+          "file": "@repo/src/http.ts",
+          "language": "typescript",
+          "project": "@repo",
+          "span": {
+            "end": 961,
+            "start": 854
+          },
+          "symbol": "[\"typescript\",\"@repo/tsconfig.json\",\"@repo/src/http.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"shadowedRequest\\\\\\\",\\\\\\\"(): string\\\\\\\"]\\\",0]\"]"
         },
         {
           "body": [
@@ -4562,6 +4567,47 @@
             {
               "kind": "return",
               "span": {
+                "end": 399,
+                "start": 371
+              },
+              "value": {
+                "calls": [
+                  {
+                    "diagnostic": "No statically bound project target",
+                    "label": "fetch",
+                    "span": {
+                      "end": 398,
+                      "start": 378
+                    },
+                    "targets": []
+                  }
+                ],
+                "kind": "value",
+                "regions": [],
+                "span": {
+                  "end": 398,
+                  "start": 378
+                },
+                "text": "fetch('/api/health')"
+              }
+            }
+          ],
+          "build": "@repo/tsconfig.json",
+          "diagnostics": [],
+          "file": "@repo/src/http.ts",
+          "language": "typescript",
+          "project": "@repo",
+          "span": {
+            "end": 401,
+            "start": 338
+          },
+          "symbol": "[\"typescript\",\"@repo/tsconfig.json\",\"@repo/src/http.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"springHealth\\\\\\\",\\\\\\\"(): Promise<Response>\\\\\\\"]\\\",0]\"]"
+        },
+        {
+          "body": [
+            {
+              "kind": "return",
+              "span": {
                 "end": 410,
                 "start": 400
               },
@@ -4587,47 +4633,6 @@
             "start": 373
           },
           "symbol": "[\"typescript\",\"@repo/tsconfig.json\",\"@repo/src/callables.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"mutationLeafA\\\\\\\",\\\\\\\"(): number\\\\\\\"]\\\",0]\"]"
-        },
-        {
-          "body": [
-            {
-              "kind": "return",
-              "span": {
-                "end": 424,
-                "start": 374
-              },
-              "value": {
-                "calls": [
-                  {
-                    "diagnostic": "No statically bound project target",
-                    "label": "fetch",
-                    "span": {
-                      "end": 423,
-                      "start": 381
-                    },
-                    "targets": []
-                  }
-                ],
-                "kind": "value",
-                "regions": [],
-                "span": {
-                  "end": 423,
-                  "start": 381
-                },
-                "text": "fetch('https://example.invalid/api/items')"
-              }
-            }
-          ],
-          "build": "@repo/tsconfig.json",
-          "diagnostics": [],
-          "file": "@repo/src/http.ts",
-          "language": "typescript",
-          "project": "@repo",
-          "span": {
-            "end": 426,
-            "start": 338
-          },
-          "symbol": "[\"typescript\",\"@repo/tsconfig.json\",\"@repo/src/http.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"externalRequest\\\\\\\",\\\\\\\"(): Promise<Response>\\\\\\\"]\\\",0]\"]"
         },
         {
           "body": [
@@ -4665,6 +4670,47 @@
             {
               "kind": "return",
               "span": {
+                "end": 454,
+                "start": 431
+              },
+              "value": {
+                "calls": [
+                  {
+                    "diagnostic": "No statically bound project target",
+                    "label": "fetch",
+                    "span": {
+                      "end": 453,
+                      "start": 438
+                    },
+                    "targets": []
+                  }
+                ],
+                "kind": "value",
+                "regions": [],
+                "span": {
+                  "end": 453,
+                  "start": 438
+                },
+                "text": "fetch('/ready')"
+              }
+            }
+          ],
+          "build": "@repo/tsconfig.json",
+          "diagnostics": [],
+          "file": "@repo/src/http.ts",
+          "language": "typescript",
+          "project": "@repo",
+          "span": {
+            "end": 456,
+            "start": 402
+          },
+          "symbol": "[\"typescript\",\"@repo/tsconfig.json\",\"@repo/src/http.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"aspReady\\\\\\\",\\\\\\\"(): Promise<Response>\\\\\\\"]\\\",0]\"]"
+        },
+        {
+          "body": [
+            {
+              "kind": "return",
+              "span": {
                 "end": 490,
                 "start": 480
               },
@@ -4690,47 +4736,6 @@
             "start": 453
           },
           "symbol": "[\"typescript\",\"@repo/tsconfig.json\",\"@repo/src/callables.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"forwardedLeaf\\\\\\\",\\\\\\\"(): number\\\\\\\"]\\\",0]\"]"
-        },
-        {
-          "body": [
-            {
-              "kind": "return",
-              "span": {
-                "end": 493,
-                "start": 474
-              },
-              "value": {
-                "calls": [
-                  {
-                    "diagnostic": "No statically bound project target",
-                    "label": "fetch",
-                    "span": {
-                      "end": 492,
-                      "start": 481
-                    },
-                    "targets": []
-                  }
-                ],
-                "kind": "value",
-                "regions": [],
-                "span": {
-                  "end": 492,
-                  "start": 481
-                },
-                "text": "fetch(path)"
-              }
-            }
-          ],
-          "build": "@repo/tsconfig.json",
-          "diagnostics": [],
-          "file": "@repo/src/http.ts",
-          "language": "typescript",
-          "project": "@repo",
-          "span": {
-            "end": 495,
-            "start": 427
-          },
-          "symbol": "[\"typescript\",\"@repo/tsconfig.json\",\"@repo/src/http.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"dynamicRequest\\\\\\\",\\\\\\\"(path: string): Promise<Response>\\\\\\\"]\\\",0]\"]"
         },
         {
           "body": [
@@ -4819,18 +4824,28 @@
             {
               "kind": "return",
               "span": {
-                "end": 570,
-                "start": 566
+                "end": 530,
+                "start": 494
               },
               "value": {
-                "calls": [],
+                "calls": [
+                  {
+                    "diagnostic": "No statically bound project target",
+                    "label": "fetch",
+                    "span": {
+                      "end": 529,
+                      "start": 501
+                    },
+                    "targets": []
+                  }
+                ],
                 "kind": "value",
                 "regions": [],
                 "span": {
-                  "end": 570,
-                  "start": 566
+                  "end": 529,
+                  "start": 501
                 },
-                "text": "path"
+                "text": "fetch('/api/items/CASEONLY')"
               }
             }
           ],
@@ -4840,10 +4855,51 @@
           "language": "typescript",
           "project": "@repo",
           "span": {
-            "end": 570,
-            "start": 548
+            "end": 532,
+            "start": 457
           },
-          "symbol": "[\"typescript\",\"@repo/tsconfig.json\",\"@repo/src/http.ts\",\"[\\\"[\\\\\\\"[\\\\\\\\\\\\\\\"[\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"<module>\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"FunctionDeclaration\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"shadowedRequest\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"(): string\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"]\\\\\\\\\\\\\\\",0]\\\\\\\",\\\\\\\"ArrowFunction\\\\\\\",\\\\\\\"fetch\\\\\\\",\\\\\\\"(path: string): string\\\\\\\"]\\\",0]\"]"
+          "symbol": "[\"typescript\",\"@repo/tsconfig.json\",\"@repo/src/http.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"aspCaseCollision\\\\\\\",\\\\\\\"(): Promise<Response>\\\\\\\"]\\\",0]\"]"
+        },
+        {
+          "body": [
+            {
+              "kind": "return",
+              "span": {
+                "end": 606,
+                "start": 571
+              },
+              "value": {
+                "calls": [
+                  {
+                    "diagnostic": "No statically bound project target",
+                    "label": "fetch",
+                    "span": {
+                      "end": 605,
+                      "start": 578
+                    },
+                    "targets": []
+                  }
+                ],
+                "kind": "value",
+                "regions": [],
+                "span": {
+                  "end": 605,
+                  "start": 578
+                },
+                "text": "fetch('/api/items/ordered')"
+              }
+            }
+          ],
+          "build": "@repo/tsconfig.json",
+          "diagnostics": [],
+          "file": "@repo/src/http.ts",
+          "language": "typescript",
+          "project": "@repo",
+          "span": {
+            "end": 608,
+            "start": 533
+          },
+          "symbol": "[\"typescript\",\"@repo/tsconfig.json\",\"@repo/src/http.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"aspOrderCollision\\\\\\\",\\\\\\\"(): Promise<Response>\\\\\\\"]\\\",0]\"]"
         },
         {
           "body": [
@@ -4974,6 +5030,88 @@
             {
               "kind": "return",
               "span": {
+                "end": 693,
+                "start": 652
+              },
+              "value": {
+                "calls": [
+                  {
+                    "diagnostic": "No statically bound project target",
+                    "label": "fetch",
+                    "span": {
+                      "end": 692,
+                      "start": 659
+                    },
+                    "targets": []
+                  }
+                ],
+                "kind": "value",
+                "regions": [],
+                "span": {
+                  "end": 692,
+                  "start": 659
+                },
+                "text": "fetch('/api/items/constraint/42')"
+              }
+            }
+          ],
+          "build": "@repo/tsconfig.json",
+          "diagnostics": [],
+          "file": "@repo/src/http.ts",
+          "language": "typescript",
+          "project": "@repo",
+          "span": {
+            "end": 695,
+            "start": 609
+          },
+          "symbol": "[\"typescript\",\"@repo/tsconfig.json\",\"@repo/src/http.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"aspConstraintCollision\\\\\\\",\\\\\\\"(): Promise<Response>\\\\\\\"]\\\",0]\"]"
+        },
+        {
+          "body": [
+            {
+              "kind": "return",
+              "span": {
+                "end": 782,
+                "start": 732
+              },
+              "value": {
+                "calls": [
+                  {
+                    "diagnostic": "No statically bound project target",
+                    "label": "fetch",
+                    "span": {
+                      "end": 781,
+                      "start": 739
+                    },
+                    "targets": []
+                  }
+                ],
+                "kind": "value",
+                "regions": [],
+                "span": {
+                  "end": 781,
+                  "start": 739
+                },
+                "text": "fetch('https://example.invalid/api/items')"
+              }
+            }
+          ],
+          "build": "@repo/tsconfig.json",
+          "diagnostics": [],
+          "file": "@repo/src/http.ts",
+          "language": "typescript",
+          "project": "@repo",
+          "span": {
+            "end": 784,
+            "start": 696
+          },
+          "symbol": "[\"typescript\",\"@repo/tsconfig.json\",\"@repo/src/http.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"externalRequest\\\\\\\",\\\\\\\"(): Promise<Response>\\\\\\\"]\\\",0]\"]"
+        },
+        {
+          "body": [
+            {
+              "kind": "return",
+              "span": {
                 "end": 81,
                 "start": 72
               },
@@ -4999,6 +5137,78 @@
             "start": 47
           },
           "symbol": "[\"typescript\",\"@repo/tsconfig.json\",\"@repo/src/app/page.tsx\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"leaf\\\\\\\",\\\\\\\"(): number\\\\\\\"]\\\",0]\"]"
+        },
+        {
+          "body": [
+            {
+              "kind": "return",
+              "span": {
+                "end": 851,
+                "start": 832
+              },
+              "value": {
+                "calls": [
+                  {
+                    "diagnostic": "No statically bound project target",
+                    "label": "fetch",
+                    "span": {
+                      "end": 850,
+                      "start": 839
+                    },
+                    "targets": []
+                  }
+                ],
+                "kind": "value",
+                "regions": [],
+                "span": {
+                  "end": 850,
+                  "start": 839
+                },
+                "text": "fetch(path)"
+              }
+            }
+          ],
+          "build": "@repo/tsconfig.json",
+          "diagnostics": [],
+          "file": "@repo/src/http.ts",
+          "language": "typescript",
+          "project": "@repo",
+          "span": {
+            "end": 853,
+            "start": 785
+          },
+          "symbol": "[\"typescript\",\"@repo/tsconfig.json\",\"@repo/src/http.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"dynamicRequest\\\\\\\",\\\\\\\"(path: string): Promise<Response>\\\\\\\"]\\\",0]\"]"
+        },
+        {
+          "body": [
+            {
+              "kind": "return",
+              "span": {
+                "end": 928,
+                "start": 924
+              },
+              "value": {
+                "calls": [],
+                "kind": "value",
+                "regions": [],
+                "span": {
+                  "end": 928,
+                  "start": 924
+                },
+                "text": "path"
+              }
+            }
+          ],
+          "build": "@repo/tsconfig.json",
+          "diagnostics": [],
+          "file": "@repo/src/http.ts",
+          "language": "typescript",
+          "project": "@repo",
+          "span": {
+            "end": 928,
+            "start": 906
+          },
+          "symbol": "[\"typescript\",\"@repo/tsconfig.json\",\"@repo/src/http.ts\",\"[\\\"[\\\\\\\"[\\\\\\\\\\\\\\\"[\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"<module>\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"FunctionDeclaration\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"shadowedRequest\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"(): string\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"]\\\\\\\\\\\\\\\",0]\\\\\\\",\\\\\\\"ArrowFunction\\\\\\\",\\\\\\\"fetch\\\\\\\",\\\\\\\"(path: string): string\\\\\\\"]\\\",0]\"]"
         }
       ],
       "version": 1
@@ -5809,6 +6019,70 @@
         "build": "@repo/tsconfig.json",
         "container": "src/http.ts",
         "file": "@repo/src/http.ts",
+        "id": "[\"typescript\",\"@repo/tsconfig.json\",\"@repo/src/http.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"aspCaseCollision\\\\\\\",\\\\\\\"(): Promise<Response>\\\\\\\"]\\\",0]\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "function",
+        "label": "aspCaseCollision",
+        "language": "typescript",
+        "line": 8,
+        "namespace": "src",
+        "project": "@repo",
+        "signature": "(): Promise<Response>"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/tsconfig.json",
+        "container": "src/http.ts",
+        "file": "@repo/src/http.ts",
+        "id": "[\"typescript\",\"@repo/tsconfig.json\",\"@repo/src/http.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"aspConstraintCollision\\\\\\\",\\\\\\\"(): Promise<Response>\\\\\\\"]\\\",0]\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "function",
+        "label": "aspConstraintCollision",
+        "language": "typescript",
+        "line": 10,
+        "namespace": "src",
+        "project": "@repo",
+        "signature": "(): Promise<Response>"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/tsconfig.json",
+        "container": "src/http.ts",
+        "file": "@repo/src/http.ts",
+        "id": "[\"typescript\",\"@repo/tsconfig.json\",\"@repo/src/http.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"aspOrderCollision\\\\\\\",\\\\\\\"(): Promise<Response>\\\\\\\"]\\\",0]\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "function",
+        "label": "aspOrderCollision",
+        "language": "typescript",
+        "line": 9,
+        "namespace": "src",
+        "project": "@repo",
+        "signature": "(): Promise<Response>"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/tsconfig.json",
+        "container": "src/http.ts",
+        "file": "@repo/src/http.ts",
+        "id": "[\"typescript\",\"@repo/tsconfig.json\",\"@repo/src/http.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"aspReady\\\\\\\",\\\\\\\"(): Promise<Response>\\\\\\\"]\\\",0]\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "function",
+        "label": "aspReady",
+        "language": "typescript",
+        "line": 7,
+        "namespace": "src",
+        "project": "@repo",
+        "signature": "(): Promise<Response>"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/tsconfig.json",
+        "container": "src/http.ts",
+        "file": "@repo/src/http.ts",
         "id": "[\"typescript\",\"@repo/tsconfig.json\",\"@repo/src/http.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"constrainedRequest\\\\\\\",\\\\\\\"(): Promise<Response>\\\\\\\"]\\\",0]\"]",
         "is_generated": false,
         "is_test": false,
@@ -5831,7 +6105,7 @@
         "kind": "function",
         "label": "dynamicRequest",
         "language": "typescript",
-        "line": 7,
+        "line": 12,
         "namespace": "src",
         "project": "@repo",
         "signature": "(path: string): Promise<Response>"
@@ -5847,7 +6121,7 @@
         "kind": "function",
         "label": "externalRequest",
         "language": "typescript",
-        "line": 6,
+        "line": 11,
         "namespace": "src",
         "project": "@repo",
         "signature": "(): Promise<Response>"
@@ -5879,7 +6153,7 @@
         "kind": "function",
         "label": "shadowedRequest",
         "language": "typescript",
-        "line": 8,
+        "line": 13,
         "namespace": "src",
         "project": "@repo",
         "signature": "(): string"
@@ -5896,6 +6170,22 @@
         "label": "springCreate",
         "language": "typescript",
         "line": 4,
+        "namespace": "src",
+        "project": "@repo",
+        "signature": "(): Promise<Response>"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/tsconfig.json",
+        "container": "src/http.ts",
+        "file": "@repo/src/http.ts",
+        "id": "[\"typescript\",\"@repo/tsconfig.json\",\"@repo/src/http.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"springHealth\\\\\\\",\\\\\\\"(): Promise<Response>\\\\\\\"]\\\",0]\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "function",
+        "label": "springHealth",
+        "language": "typescript",
+        "line": 6,
         "namespace": "src",
         "project": "@repo",
         "signature": "(): Promise<Response>"
@@ -5943,7 +6233,7 @@
         "kind": "callback",
         "label": "fetch",
         "language": "typescript",
-        "line": 9,
+        "line": 14,
         "namespace": "src",
         "project": "@repo",
         "signature": "(path: string): string"
