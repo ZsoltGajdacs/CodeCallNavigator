@@ -44,8 +44,6 @@ def apply_patch(spec, name="callatlas"):
     if not difference:
         subprocess.run([*command, "apply", str(patch)], check=True)
         return
-    if name != "callatlas":
-        raise RuntimeError(f"Dependency source differs from the supported patch; inspect {repository}")
     upgrade_legacy_patch(command, spec, difference, patch)
 
 
@@ -61,7 +59,7 @@ def upgrade_legacy_patch(command, spec, difference, patch):
                   if f"{prefix}patch" in spec]
     legacy = next((candidate for candidate in candidates if difference == candidate.read_bytes()), None)
     if legacy is None:
-        raise RuntimeError("CallAtlas source differs from the supported identity patch; inspect vendor/callatlas")
+        raise RuntimeError(f"Dependency source differs from the supported patch; inspect {command[-1]}")
     # Upgrade only the exact previously shipped patch. git apply checks every hunk
     # before writing; restore the legacy patch if applying its replacement fails.
     subprocess.run([*command, "apply", "--reverse", str(legacy)], check=True)

@@ -77,3 +77,32 @@ It scopes platform-specific dead-code allowances and the Windows-only focus meth
 to avoid warnings on macOS while preserving the shared state machines. Bootstrap
 applies it after checkout; no other Rune patches precede it. Bootstrap refuses
 unrelated Rune source changes rather than overwriting them.
+
+# Rune oriented segment quads
+
+`rune-oriented-segments.patch` replaces the warnings-only patch on Rune revision
+`7ed827a2b969ec737323c3e80d2bfc1b8032b609`. Its SHA-256 is pinned in
+`analyzers.lock.json`. It contains the existing platform-warning fixes followed
+by tightly oriented vertex quads for line segments and a GPU pixel regression.
+Apply the combined patch once to the pristine pinned revision. Do not stack the
+warnings-only patch with it. Bootstrap recognizes the exact previous
+warnings-only diff, reverses it, then applies this replacement; unrelated source
+changes are rejected and preserved.
+
+The segment endpoints, instance ABI, CPU axis-aligned bounds, antialias coverage,
+round/butt caps, and fragment distance function are unchanged. Only rasterized
+vertex bounds become a thin strip; the padding includes the same two device
+pixels of conservative fringe as the original renderer. Zero-length round
+segments retain a finite quad and their original circular coverage.
+
+The pinned precompiled uber/Windfoil libraries intentionally retain their original
+source fingerprints. Their hash guards reject the changed shader and compile
+the patched WGSL at runtime; the native built-in table also keys on shader source.
+Do not update fingerprint constants to match stale bytecode. The focused pixel
+test verifies rejection of the stale uber library and compares the new renderer
+with the original AABB vertex path at 1x and 2x, including clipping, fades,
+transparency, isolated-layer projection, caps, reversed slopes and degenerate
+segments. The upstream precompiled-library freshness tests require regeneration
+of those libraries and are not claimed to pass for this runtime-compiled patch.
+
+Patch migration tests: `python3 -m unittest discover -s tools -p test_dependency_patches.py`.
