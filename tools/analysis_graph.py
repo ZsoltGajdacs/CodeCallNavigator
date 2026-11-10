@@ -28,6 +28,7 @@ def graph_snapshot(cache):
             edges.append(edge)
     for node in nodes:
         del node["idx"]
+        decode_visibility(node)
     return {
         "nodes": sorted(nodes, key=lambda node: node["id"]),
         "edges": sorted(edges, key=canonical),
@@ -36,10 +37,19 @@ def graph_snapshot(cache):
         "roots": metadata["roots"],
         "engine_versions": metadata["engine_versions"],
         "method_policy": metadata["method_policy"],
+        "architecture": metadata.get("architecture"),
+        "flow_inventory": metadata.get("flow_inventory"),
         # Builds can rewrite identical outputs with new mtimes. Keep all content
         # and membership facts used for freshness; only omit observation times.
         "fingerprints": sorted((fingerprint_facts(item) for item in metadata.get("fingerprints", [])), key=canonical),
     }
+
+
+def decode_visibility(node):
+    for field in ('visibility', 'container_visibility'):
+        value = node.get(field)
+        if isinstance(value, str):
+            node[field] = json.loads(value)
 
 
 def fingerprint_facts(item):

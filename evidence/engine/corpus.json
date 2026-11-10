@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "reference_commit": "fb54f5f789d94c6cbc5fe86bf20010edea815b33",
+  "toolchains": {"java": "JDK 25", "csharp": ".NET 10", "typescript": "Node 24+ and project TypeScript 6.0.x", "analyzers": "analyzers.lock.json"},
+  "workloads": [
+    {"name": "maven", "source": "fixtures/maven", "targets": ["reactor/pom.xml"], "checks": "tests/java_builds.rs"},
+    {"name": "gradle", "source": "fixtures/gradle-regression", "targets": ["."], "wrapper": "fixtures/gradle/gradlew", "checks": "tests/java_builds.rs"},
+    {"name": "csharp", "source": "fixtures/dotnet-collisions", "targets": ["Collisions.sln"], "checks": "tests/csharp_policy.rs"},
+    {"name": "typescript", "source": "fixtures/typescript-corpus", "targets": ["tsconfig.json"], "dependencies": "CODEGRAPH_TS_NODE_MODULES", "checks": "tests/typescript_pipeline.rs"},
+    {"name": "mixed", "components": ["maven", "csharp", "typescript"], "checks": "tests/multi_root.rs"}
+  ]
+}

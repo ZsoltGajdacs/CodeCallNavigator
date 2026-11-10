@@ -66,6 +66,15 @@ class GraphComparisonTest(unittest.TestCase):
             connection.execute('UPDATE metadata SET value=?', (json.dumps(metadata),))
         self.assertEqual(compare(self.reference, self.current)['different_fields'], ['edges', 'diagnostics'])
 
+    def test_flow_and_architecture_payloads_are_compared(self):
+        with sqlite3.connect(self.current / 'graph.sqlite3') as connection:
+            metadata = json.loads(connection.execute('SELECT value FROM metadata').fetchone()[0])
+            metadata['flow_inventory'] = {'version': 1, 'functions': []}
+            metadata['architecture'] = {'version': 1, 'files': []}
+            connection.execute('UPDATE metadata SET value=?', (json.dumps(metadata),))
+        self.assertEqual(compare(self.reference, self.current)['different_fields'],
+                         ['architecture', 'flow_inventory'])
+
     def test_dropping_freshness_inputs_is_detected_but_observation_times_are_ignored(self):
         self.assertTrue(compare(self.reference, self.current)['equal'])
         with sqlite3.connect(self.current / 'graph.sqlite3') as connection:
