@@ -21,9 +21,21 @@ java {
 
 application {
     mainClass = "codegraph.bytecode.Analyzer"
-    applicationDefaultJvmArgs = listOf("-Xmx8g")
+    applicationDefaultJvmArgs = listOf(
+        "-Xmx8g",
+        "--add-exports=jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED",
+        "--add-exports=jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED"
+    )
 }
 
 dependencyLocking {
     lockAllConfigurations()
+}
+
+// Correlation reads javac lowering symbols, confined to the pinned JDK 25 helper.
+tasks.withType<JavaCompile>().configureEach {
+    options.compilerArgs.addAll(listOf(
+        "--add-exports=jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED",
+        "--add-exports=jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED"
+    ))
 }

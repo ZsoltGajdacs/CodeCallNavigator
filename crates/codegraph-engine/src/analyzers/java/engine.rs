@@ -74,9 +74,7 @@ impl SourceInventories {
             let Some(source) = &input.source_set else {
                 continue;
             };
-            let key = blake3::hash(&serde_json::to_vec(source)?)
-                .to_hex()
-                .to_string();
+            let key = inventory_key(source)?;
             if !self.parsed.contains_key(&key) {
                 let path = generate_inventory(source, &key, output, job)?;
                 let inventory = super::source_inventory::SourceInventory::read_current(&path)?;
@@ -89,6 +87,13 @@ impl SourceInventories {
         }
         Ok(result)
     }
+}
+
+fn inventory_key(source: &super::build::JavaSourceSet) -> Result<String> {
+    let input = (super::source_inventory::VERSION, source);
+    Ok(blake3::hash(&serde_json::to_vec(&input)?)
+        .to_hex()
+        .to_string())
 }
 
 fn generate_inventory(
@@ -109,6 +114,8 @@ fn generate_inventory(
         run_process(
             Command::new(java.join("bin/java"))
                 .arg("-Xmx2g")
+                .arg("--add-exports=jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED")
+                .arg("--add-exports=jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED")
                 .arg("-cp")
                 .arg(job.runtime.bytecode_lib()?.join("*"))
                 .arg("codegraph.bytecode.SourceInventory")
@@ -137,9 +144,7 @@ pub(super) fn source_inventories(
         let Some(source) = &input.source_set else {
             continue;
         };
-        let key = blake3::hash(&serde_json::to_vec(source)?)
-            .to_hex()
-            .to_string();
+        let key = inventory_key(source)?;
         let inventory = generate_inventory(source, &key, output, job)?;
         fs::copy(inventory, output.join(format!("source-{}.tsv", index + 1)))?;
     }

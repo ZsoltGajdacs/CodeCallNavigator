@@ -55,18 +55,13 @@ final class SourceFlow {
         var body = lambda.getBody() instanceof com.sun.source.tree.ExpressionTree expression
                 ? List.of(FlowJson.object("kind", "return", "span", source.span(expression), "value", statements.expression(expression)))
                 : statements.list(lambda.getBody());
-        String owner = lambdaOwner(path);
+        var site = LambdaSourceSite.of(path, task);
+        String owner = site.owner();
         long startLine = source.unit.getLineMap().getLineNumber(source.start(lambda));
         long endLine = source.unit.getLineMap().getLineNumber(source.end(lambda) - 1);
-        String symbol = "@lambda:" + owner + ":" + source.start(lambda);
+        String symbol = site.symbol();
         var function = FlowJson.object("symbol", symbol, "file", source.file, "language", "java", "span", source.span(lambda),
                 "body", body, "diagnostics", source.diagnostics, "lambda_owner", owner, "lambda_start_line", startLine, "lambda_end_line", endLine, "export_identity", identities.key(path));
         ContextTsv.write(writer, "flow", symbol, "", FlowJson.encode(function), "", "", "", "", "");
-    }
-    private String lambdaOwner(TreePath path) {
-        for (var enclosing = path.getParentPath(); enclosing != null; enclosing = enclosing.getParentPath()) {
-            if (trees.getElement(enclosing) instanceof javax.lang.model.element.TypeElement type) return task.getElements().getBinaryName(type).toString();
-        }
-        return "";
     }
 }

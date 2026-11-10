@@ -1,0 +1,158 @@
+"""Real javac evidence for verified source/compiled lambda correlation."""
+import json
+import os
+from pathlib import Path
+import subprocess
+import tempfile
+import unittest
+
+from test_java_context import LIB, installed_jdk, require_analyzer, run, tsv
+
+EXPORTS = [f"--add-exports=jdk.compiler/com.sun.tools.javac.{name}=ALL-UNNAMED"
+           for name in ("code", "tree")]
+
+
+class JavaLambdaCorrelationTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.home = installed_jdk()
+        require_analyzer()
+
+    def setUp(self):
+        temporary = tempfile.TemporaryDirectory(prefix="CodeGraph lambda proof ")
+        self.addCleanup(temporary.cleanup)
+        self.root = Path(temporary.name)
+        self.source = self.root / "src/fixture/Flow.java"
+        self.source.parent.mkdir(parents=True)
+        self.classes = self.root / "classes"
+
+    def compile(self, body, debug="-g", release="25"):
+        self.source.write_text("package fixture; public class Flow { "
+            "static void leaf(String s) {} static void accept(Runnable r) {} "
+            "void run() { " + body + " } }")
+        run(self.home / "bin/javac", debug, "--release", release,
+            "-d", self.classes, self.source)
+
+    def inventory(self):
+        path = self.root / "inventory.tsv"
+        run(self.home / "bin/java", *EXPORTS, "-cp", LIB / "*",
+            "codegraph.bytecode.SourceInventory", path, self.classes,
+            self.classes, self.source.parents[1])
+        return [(next(iter(row.values())), json.loads(row["start_line"]))
+                for row in tsv(path)
+                if next(iter(row.values())) in ("lambda-binding", "lambda-correlation")]
+
+    def assert_verified(self, rows):
+        states = [value for kind, value in rows if kind == "lambda-correlation"]
+        self.assertTrue(states, "Inventory must carry an explicit correlation outcome")
+        self.assertEqual(states, [{"owner": "fixture.Flow", "status": "verified", "reason": ""}])
+        return [value for kind, value in rows if kind == "lambda-binding"]
+
+    def test_same_line_distinct_and_nested_have_exact_implementation_bindings(self):
+        self.compile('accept(() -> leaf("first")); accept(() -> { '
+                     'Runnable inner = () -> leaf("inner"); inner.run(); });')
+        bindings = self.assert_verified(self.inventory())
+        self.assertEqual(len(bindings), 3)
+        self.assertEqual(len({b["implementation"] for b in bindings}), 3)
+        self.assertTrue(all(len(b["sources"]) == 1 for b in bindings))
+
+    def test_missing_debug_groups_all_shared_source_sites(self):
+        self.compile('accept(() -> leaf("same")); accept(() -> leaf("same")); '
+                     'accept(() -> { Runnable inner = () -> leaf("same"); inner.run(); });', "-g:none")
+        bindings = self.assert_verified(self.inventory())
+        self.assertEqual(sorted(len(b["sources"]) for b in bindings), [1, 3])
+        self.assertEqual(len({site for b in bindings for site in b["sources"]}), 4)
+
+    def test_debug_keeps_identical_implementations_separate(self):
+        self.compile('accept(() -> leaf("same")); accept(() -> leaf("same"));')
+        bindings = self.assert_verified(self.inventory())
+        self.assertEqual([len(b["sources"]) for b in bindings], [1, 1])
+
+    def test_supported_older_target_matches_actual_major(self):
+        self.compile('accept(() -> leaf("older"));', "-g:none", "17")
+        self.assertEqual(len(self.assert_verified(self.inventory())), 1)
+
+    def test_missing_lines_with_local_variable_debug_keeps_siblings_separate(self):
+        self.compile('accept(() -> leaf("same")); accept(() -> leaf("same"));', "-g:vars")
+        self.assertEqual([len(b["sources"]) for b in self.assert_verified(self.inventory())], [1, 1])
+
+    def test_captures_serializable_initializers_and_method_references(self):
+        self.source.write_text("""package fixture;
+public class Flow {
+ static void leaf(String value) {}
+ static void plain() {}
+ static final Runnable STATIC = () -> leaf("static");
+ final Runnable field = () -> leaf("field");
+ Flow() { Runnable constructor = () -> leaf("constructor"); }
+ void run(String captured) {
+  Runnable callback = () -> leaf(captured);
+  Runnable serial = (Runnable & java.io.Serializable) () -> leaf("serial");
+  Runnable reference = Flow::plain;
+ }
+}
+""")
+        run(self.home / "bin/javac", "-g:none", "-d", self.classes, self.source)
+        before = {p: p.read_bytes() for p in self.classes.rglob("*.class")}
+        bindings = self.assert_verified(self.inventory())
+        self.assertEqual(len(bindings), 5)
+        self.assertFalse(any("plain" in binding["implementation"] for binding in bindings))
+        self.assertEqual(before, {p: p.read_bytes() for p in self.classes.rglob("*.class")})
+        self.assertEqual(sorted(p.suffix for p in self.source.parents[1].rglob("*.*")), [".java"])
+
+    def tamper(self, operation):
+        helper = self.root / "Tamper.java"
+        helper.write_text("""import java.nio.file.*;
+import org.apache.bcel.classfile.*;
+public class Tamper { public static void main(String[] args) throws Exception {
+ var path = Path.of(args[0]); var type = new ClassParser(args[0]).parse();
+ var pool = type.getConstantPool();
+ for (var value : pool.getConstantPool()) {
+  if (args[1].equals("bootstrap") && value instanceof ConstantMethodHandle handle
+      && pool.constantToString(pool.getConstant(handle.getReferenceIndex())).contains("lambda$")) {
+   handle.setReferenceKind(5); break;
+  }
+  if (args[1].equals("descriptor") && value instanceof ConstantUtf8 text
+      && text.getBytes().equals("()V")) { pool.setConstant(java.util.Arrays.asList(pool.getConstantPool()).indexOf(value), new ConstantUtf8("(I)V")); break; }
+ }
+ Files.write(path, type.getBytes());
+} }
+""")
+        run(self.home / "bin/javac", "-cp", LIB / "*", "-d", self.root, helper)
+        run(self.home / "bin/java", "-cp", os.pathsep.join([str(self.root), str(LIB / "*")]),
+            "Tamper", self.classes / "fixture/Flow.class", operation)
+
+    def assert_rejected(self):
+        rows = self.inventory()
+        self.assertFalse(any(kind == "lambda-binding" for kind, _ in rows))
+        self.assertTrue(any(kind == "lambda-correlation" and value["status"] == "rejected"
+                            for kind, value in rows))
+
+    def test_changed_bootstrap_handle_rejects_correlation(self):
+        self.compile('accept(() -> leaf("compiled"));')
+        self.tamper("bootstrap")
+        self.assert_rejected()
+
+    def test_changed_method_descriptor_rejects_correlation(self):
+        self.compile('accept(() -> leaf("compiled"));')
+        self.tamper("descriptor")
+        self.assert_rejected()
+
+    def test_stale_body_rejects_mapping_without_failing_inventory(self):
+        self.compile('accept(() -> leaf("compiled"));')
+        self.source.write_text(self.source.read_text().replace('"compiled"', '"different"'))
+        rows = self.inventory()
+        self.assertFalse(any(kind == "lambda-binding" for kind, _ in rows))
+        self.assertTrue(any(kind == "lambda-correlation" and value["status"] == "rejected"
+                            for kind, value in rows))
+
+    def test_body_attribution_error_retains_inventory_with_unavailable_proof(self):
+        self.compile('accept(() -> leaf("compiled"));')
+        self.source.write_text(self.source.read_text().replace('leaf("compiled")', 'missing()'))
+        rows = self.inventory()
+        self.assertFalse(any(kind == "lambda-binding" for kind, _ in rows))
+        self.assertTrue(any(kind == "lambda-correlation" and value["status"] == "unavailable"
+                            for kind, value in rows))
+
+
+if __name__ == "__main__":
+    unittest.main()

@@ -419,6 +419,7 @@ impl<'a> BytecodeCollector<'a> {
         self.graph.flow_inventory = flows.inventory;
         self.graph.export_identities.extend(flows.export_identities);
         self.graph.diagnostics.extend(flows.unstable_identities);
+        self.graph.diagnostics.extend(flows.correlation_diagnostics);
         self.graph.entry_points = Some(EntryPoints {
             framework_entries: Vec::new(),
             candidates: Vec::new(),
@@ -444,6 +445,9 @@ impl<'a> BytecodeCollector<'a> {
         )?;
         if flows.ambiguous_callbacks > 0 {
             self.graph.diagnostics.push(format!("{} Java callback flow(s) remain unavailable because source-to-bytecode attribution is ambiguous", flows.ambiguous_callbacks));
+        }
+        if flows.shared_callbacks > 0 {
+            self.graph.diagnostics.push(format!("{} Java source lambda(s) share verified compiled implementations; individual source flows remain unavailable", flows.shared_callbacks));
         }
         crate::method_policy::prune(&mut self.graph, &self.excluded)?;
         if self.owner.is_none() {

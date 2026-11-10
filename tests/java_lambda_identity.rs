@@ -103,7 +103,7 @@ fn unrelated_lambda_insertion_keeps_proven_source_identity_and_native_binding_un
 
 #[test]
 #[ignore = "requires pinned Java adapter, Maven and JDK25"]
-fn ambiguous_siblings_and_local_type_owners_keep_diagnosed_native_fallbacks() {
+fn same_line_siblings_get_identities_while_local_type_owners_keep_native_fallbacks() {
     let directory = support::fixture("maven");
     if let Some(command) = std::env::var_os("CODEGRAPH_TEST_MAVEN") {
         support::install_wrapper(directory.path(), &std::path::PathBuf::from(command));
@@ -132,19 +132,29 @@ public final class Standalone {
         .filter(|node| node.visibility.is_none() && node.signature.contains(":lambda$"))
         .collect();
     assert!(synthetic.len() >= 3);
+    assert_eq!(
+        synthetic
+            .iter()
+            .filter(|node| graph.export_identities.contains_key(&node.id))
+            .count(),
+        2,
+        "The named owner has two verified same-line source lambdas"
+    );
     assert!(
         synthetic
             .iter()
+            .filter(|node| node.signature.contains("$Local:"))
             .all(|node| !graph.export_identities.contains_key(&node.id))
     );
-    assert!(
+    assert_eq!(
         graph
             .diagnostics
             .iter()
             .filter(|message| message
                 .starts_with("Java anonymous portable identity remains compiler-native"))
-            .count()
-            >= 3
+            .count(),
+        1,
+        "Only the local type owner retains a native fallback"
     );
     assert!(
         !graph

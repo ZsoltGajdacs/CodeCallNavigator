@@ -48,7 +48,7 @@ fn function<'a>(graph: &'a GraphData, name: &str) -> &'a flow::FunctionFlowIR {
 
 #[test]
 #[ignore = "requires pinned Java analyzer, Maven and JDK 25"]
-fn java_flow_binds_overloads_preserves_unicode_and_skips_ambiguous_lambdas() {
+fn java_flow_binds_overloads_unicode_and_verified_same_line_lambdas() {
     let source = "package fixture;\npublic final class Standalone {\n static int leaf(int x) { return x; }\n static int leaf(String x) { return x.length(); }\n int run(int x) { String text = \"é😀\"; outer: for(int i=0;i<2;i++) { try { if(x>i) return leaf(x); if(x<0) continue outer; break; } finally { leaf(0); } } return switch(x) { case 0 -> leaf(1); default -> { yield leaf(\"s\"); } }; }\n void callbacks() {\n  Runnable unique = () -> { leaf(10); };\n  Runnable first = () -> leaf(1), second = () -> leaf(2);\n  unique.run();\n }\n}\n";
     let directory = fixture(source, false);
     let graph = run(&directory);
@@ -84,8 +84,8 @@ fn java_flow_binds_overloads_preserves_unicode_and_skips_ambiguous_lambdas() {
         .collect();
     assert_eq!(
         lambdas.len(),
-        1,
-        "Same-line callback declarations must remain unbound"
+        3,
+        "Verified same-line callback declarations must bind to their compiled implementations"
     );
     let callbacks = flow::build(function(&graph, ":callbacks()")).unwrap();
     assert_eq!(callbacks.regions.len(), 3);

@@ -7,6 +7,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+import zipfile
 from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "tools"))
@@ -107,6 +108,46 @@ class SourceProvenanceTests(unittest.TestCase):
         with patch.object(PACKAGE, "ROOT", self.root):
             with self.assertRaisesRegex(RuntimeError, "checksum mismatch"):
                 PACKAGE.verify_dependency_sources()
+
+
+class JavaAdapterCapabilityTests(unittest.TestCase):
+    def test_installed_adapter_has_matching_correlation_capability(self):
+        distribution = PACKAGE.ROOT / "tools/java-bytecode/build/install/codegraph-bytecode"
+        if not (distribution / "lib/codegraph-bytecode.jar").is_file():
+            self.skipTest("Build the Java adapter before testing packaged resources")
+        PACKAGE.verify_java_adapter(distribution)
+
+    def test_incomplete_adapter_is_rejected_before_packaging(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            distribution = Path(temporary)
+            (distribution / "lib").mkdir()
+            jar = distribution / "lib/codegraph-bytecode.jar"
+            with zipfile.ZipFile(jar, "w") as archive:
+                archive.writestr("codegraph/bytecode/SourceInventory.class", b"kind_v8")
+            with self.assertRaisesRegex(RuntimeError, "lacks kind_v8"):
+                PACKAGE.verify_java_adapter(distribution)
+
+    def test_complete_adapter_with_legacy_inventory_marker_is_rejected(self):
+        installed = PACKAGE.ROOT / "tools/java-bytecode/build/install/codegraph-bytecode/lib/codegraph-bytecode.jar"
+        if not installed.is_file():
+            self.skipTest("Build the Java adapter before testing packaged resources")
+        with tempfile.TemporaryDirectory() as temporary:
+            distribution = Path(temporary)
+            (distribution / "lib").mkdir()
+            with zipfile.ZipFile(installed) as original, zipfile.ZipFile(distribution / "lib/codegraph-bytecode.jar", "w") as legacy:
+                for name in original.namelist():
+                    contents = original.read(name)
+                    if name == "codegraph/bytecode/SourceInventory.class":
+                        self.assertIn(b"kind_v8", contents)
+                        contents = contents.replace(b"kind_v8", b"kind_v7")
+                    legacy.writestr(name, contents)
+            with self.assertRaisesRegex(RuntimeError, "lacks kind_v8"):
+                PACKAGE.verify_java_adapter(distribution)
+
+    def test_invalid_adapter_archive_has_actionable_error(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            with self.assertRaisesRegex(RuntimeError, "rebuild matching analyzer resources"):
+                PACKAGE.verify_java_adapter(Path(temporary))
 
 
 if __name__ == "__main__":

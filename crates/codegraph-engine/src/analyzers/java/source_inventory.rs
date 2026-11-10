@@ -2,6 +2,7 @@
 #[cfg(test)]
 use super::JavaInput;
 use super::{
+    lambda_correlation::{LambdaCorrelations, PendingCorrelations},
     lambda_names::SourceLambda,
     metadata::{method_key, unescape},
     tables::tsv_rows,
@@ -12,6 +13,8 @@ use std::{
     path::Path,
     sync::Arc,
 };
+
+pub(super) const VERSION: u32 = 8;
 
 pub(super) type Inventories = HashMap<usize, Arc<SourceInventory>>;
 
@@ -25,6 +28,8 @@ pub(super) struct SourceInventory {
     pub has_framework: bool,
     pub has_http: bool,
     pub has_portable_lambdas: bool,
+    pub has_lambda_correlations: bool,
+    pub lambda_correlations: LambdaCorrelations,
     pub http_routes: Vec<super::http::SourceRoute>,
     pub flows: Vec<super::flow_inventory::SourceFlow>,
     pub framework: Vec<super::framework::SourcePair>,
@@ -36,14 +41,15 @@ impl SourceInventory {
     pub fn read_current(path: &Path) -> Result<Self> {
         let inventory = Self::read(path)?;
         ensure!(
-            inventory.has_portable_lambdas,
-            "Java source inventory lacks portable lambda capability kind_v7; rebuild the matching Java adapter"
+            inventory.has_lambda_correlations,
+            "Java source inventory lacks compiled lambda correlation capability kind_v8; rebuild the matching Java adapter"
         );
         Ok(inventory)
     }
 
     pub fn read(path: &Path) -> Result<Self> {
         let mut inventory = Self::default();
+        let mut correlations = PendingCorrelations::default();
         let mut rows = tsv_rows(path)?;
         let mut header = rows.next().transpose()?;
         inventory.capabilities(&mut header);
@@ -76,6 +82,8 @@ impl SourceInventory {
                 "flow" => {
                     inventory.flows.push(serde_json::from_str(&fields[3])?);
                 }
+                "lambda-binding" => correlations.binding(&fields[3])?,
+                "lambda-correlation" => correlations.correlation(&fields[3])?,
                 "http-route" => inventory
                     .http_routes
                     .push(serde_json::from_str(&fields[3])?),
@@ -95,28 +103,38 @@ impl SourceInventory {
                 _ => anyhow::bail!("Unknown Java source inventory kind"),
             }
         }
+        inventory.lambda_correlations =
+            correlations.validate(&inventory.flows, inventory.has_lambda_correlations)?;
         Ok(inventory)
     }
 
     fn capabilities(&mut self, header: &mut Option<Vec<String>>) {
-        self.has_portable_lambdas = header
+        self.has_lambda_correlations = header
             .as_ref()
-            .is_some_and(|fields| fields.first().is_some_and(|field| field == "kind_v7"));
+            .is_some_and(|fields| fields.first().is_some_and(|field| field == "kind_v8"));
+        self.has_portable_lambdas = header.as_ref().is_some_and(|fields| {
+            fields
+                .first()
+                .is_some_and(|field| matches!(field.as_str(), "kind_v7" | "kind_v8"))
+        });
         self.has_http = header.as_ref().is_some_and(|fields| {
             fields
                 .first()
-                .is_some_and(|field| matches!(field.as_str(), "kind_v6" | "kind_v7"))
+                .is_some_and(|field| matches!(field.as_str(), "kind_v6" | "kind_v7" | "kind_v8"))
         });
         self.has_framework = header.as_ref().is_some_and(|fields| {
-            fields
-                .first()
-                .is_some_and(|field| matches!(field.as_str(), "kind_v5" | "kind_v6" | "kind_v7"))
+            fields.first().is_some_and(|field| {
+                matches!(
+                    field.as_str(),
+                    "kind_v5" | "kind_v6" | "kind_v7" | "kind_v8"
+                )
+            })
         });
         self.has_flow = header.as_ref().is_some_and(|fields| {
             fields.first().is_some_and(|field| {
                 matches!(
                     field.as_str(),
-                    "kind_v4" | "kind_v5" | "kind_v6" | "kind_v7"
+                    "kind_v4" | "kind_v5" | "kind_v6" | "kind_v7" | "kind_v8"
                 )
             })
         });
@@ -124,7 +142,7 @@ impl SourceInventory {
             fields.first().is_some_and(|field| {
                 matches!(
                     field.as_str(),
-                    "kind_v3" | "kind_v4" | "kind_v5" | "kind_v6" | "kind_v7"
+                    "kind_v3" | "kind_v4" | "kind_v5" | "kind_v6" | "kind_v7" | "kind_v8"
                 )
             })
         });
@@ -227,6 +245,9 @@ mod capability_tests {
             );
         }
         std::fs::write(&path, format!("kind_v7{suffix}")).unwrap();
+        assert!(SourceInventory::read(&path).unwrap().has_portable_lambdas);
+        assert!(SourceInventory::read_current(&path).is_err());
+        std::fs::write(&path, format!("kind_v8{suffix}")).unwrap();
         assert!(SourceInventory::read_current(&path).unwrap().has_http);
     }
 }

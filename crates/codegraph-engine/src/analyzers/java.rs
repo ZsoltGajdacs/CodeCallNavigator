@@ -19,6 +19,10 @@ mod flow_inventory;
 mod framework;
 mod gradle;
 mod http;
+mod lambda_binding;
+mod lambda_correlation;
+#[cfg(test)]
+mod lambda_correlation_tests;
 mod lambda_names;
 #[cfg(test)]
 mod lambda_tests;
@@ -117,7 +121,7 @@ fn analyze_compiled(
     let order_hash = blake3::hash(&serde_json::to_vec(&visibility)?)
         .to_hex()
         .to_string();
-    graph.engine_versions = serde_json::json!({"java_context_protocol": 1, "compile_contexts": visibility, "classpath_order_hash": order_hash}).to_string();
+    graph.engine_versions = serde_json::json!({"java_context_protocol": 1, "java_source_inventory": source_inventory::VERSION, "compile_contexts": visibility, "classpath_order_hash": order_hash}).to_string();
     Ok(graph)
 }
 

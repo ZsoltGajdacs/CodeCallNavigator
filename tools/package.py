@@ -201,6 +201,7 @@ def notice_file(source):
 
 
 def copy_analyzers(resources):
+    verify_java_adapter(ROOT / "tools/java-bytecode/build/install/codegraph-bytecode")
     analyzers = resources / "analyzers"
     analyzers.mkdir()
     copy_tree(ROOT / "vendor/callatlas/src/CallAtlas.Cli/bin/Release/net10.0", analyzers / "callatlas")
@@ -211,6 +212,22 @@ def copy_analyzers(resources):
                  analyzers / "maven-metadata.jar")
     shutil.copy2(ROOT / "analyzers.lock.json", resources)
     return analyzers
+
+
+def verify_java_adapter(distribution):
+    jar = distribution / "lib/codegraph-bytecode.jar"
+    package = "codegraph/bytecode/"
+    required = {package + name + ".class" for name in
+                ("SourceInventory", "LambdaCorrelation", "LambdaCompilation",
+                 "LambdaLowering", "LambdaSourceSite", "CompiledClassModel")}
+    try:
+        with zipfile.ZipFile(jar) as archive:
+            complete = required.issubset(archive.namelist())
+            current = complete and b"kind_v8" in archive.read(package + "SourceInventory.class")
+    except (OSError, zipfile.BadZipFile) as error:
+        raise RuntimeError("Java adapter is missing or invalid; rebuild matching analyzer resources") from error
+    if not current:
+        raise RuntimeError("Java adapter lacks kind_v8 compiled/source lambda correlation; rebuild matching analyzer resources")
 
 
 def make_engine(destination):

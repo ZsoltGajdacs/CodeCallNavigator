@@ -117,19 +117,52 @@ mappings and unsupported path patterns remain inventory blockers; unbound method
 also survive as blockers. Fake annotations with the same simple names are ignored.
 Property-dependent paths remain owner-wide blockers. Route facts do not prove bean
 registration, servlet deployment context paths or custom global MVC configuration.
-The current engine requires matching v7 resources; legacy inventory formats remain
+The current engine requires matching v8 resources; legacy inventory formats remain
 readable for historical fixtures but cannot silently satisfy the current runtime.
 
-The current `kind_v7` source inventory adds portable lambda export keys. Within
-named type owners, javac supplies a logical enclosing method/initializer, a
-syntactic role, normalized AST fingerprint and deterministic sibling occurrence.
-Rust exports those keys only where the existing source-to-bytecode flow binding
-proves a unique source match, and includes the owning compile-context prefix.
-Native bytecode method identities and call bindings stay unchanged.
+The current `kind_v8` source inventory retains portable lambda export keys and
+adds verified compiler/source correlation. Within named type owners, the source
+key still contains the logical enclosing method/initializer, syntactic role,
+normalized AST fingerprint and deterministic sibling occurrence. Singleton key
+bytes are unchanged from v7, and Rust adds the owning compile-context prefix.
 
-Same-line or overlapping lambdas, missing debug locations and anonymous/local type
-owners remain compiler-native identities with an explicit graph diagnostic. They
-may still be renumbered by javac when unrelated lambdas are inserted. No binding is
-guessed to conceal this limitation; exact compiler/bytecode correlation remains a
-separate follow-up. Rebuild matching analyzer resources when moving from an older
-inventory capability.
+Before lowering mutates the trees, inventory snapshots source positions, keys and
+flow IR. An optional compiler pass then generates classes in temporary storage,
+with annotation processing disabled. Its lowered LambdaMetafactory sites retain
+source offsets and exact implementation handles. A BCEL symbolic class comparison
+verifies those generated classes against the actual build output, including
+method descriptors, executable instructions, exception regions and bootstrap
+arguments. Debug attributes and constant-pool ordering do not establish identity.
+Bounded debug modes cover both separate and compiler-shared implementations;
+conflicting successful candidates are rejected. No association is inferred from
+synthetic names or ordinal positions alone. Project sources and compiled outputs
+are never rewritten by correlation.
+
+Verified same-line, overlapping/nested and missing-line singleton lambdas receive
+source-derived export identities and exact source-flow bindings. When javac merges
+several source expressions into one implementation, the existing single graph
+node receives a separately tagged group identity containing the sorted complete
+collection of source keys. All members must be accounted for and have portable
+keys. Adding, removing or editing a member can change that group identity. A
+shared implementation does not acquire an arbitrary member's source flow or span;
+a separate diagnostic explains that source-flow ambiguity.
+
+Indistinguishable separate siblings keep distinct deterministic occurrence IDs.
+There is no individual continuity guarantee when indistinguishable siblings are
+swapped or another identical sibling is inserted before them. Formatting and
+unrelated insertions do not affect otherwise distinguishable source identities.
+
+Anonymous/local type owners retain compiler-native export identities. Unsupported
+compiler configurations, processor-dependent generation, incomplete evidence and
+bytecode mismatch also retain diagnosed fallback. A rejected proof cannot be
+overridden by line matching. Compiler renumbering can still affect fallback IDs.
+Native bytecode nodes, IDs and call relationships remain unchanged by enrichment.
+
+Inventory correlation records are scoped to the owning compile context. A
+`lambda-correlation` row records a class owner's verified, unavailable or rejected
+outcome and reason. A `lambda-binding` row records the exact implementation key
+(including return type) and its complete source-symbol membership. Rust validates
+the records before assigning identities or binding flows. Current runtime helpers
+require v8; historical formats remain readable for existing fixtures. Rebuild the
+matching analyzer resources when upgrading. Compiler-internal module exports are
+configured for adapter compilation, direct helper launches and installed scripts.

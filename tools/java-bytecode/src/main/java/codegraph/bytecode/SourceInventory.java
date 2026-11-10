@@ -32,14 +32,14 @@ public final class SourceInventory {
         if (args.length < 3) throw new IllegalArgumentException("Usage: SourceInventory OUTPUT CLASSPATH CLASS_DIRS SOURCE_ROOT...");
         var sources = CompiledSources.collect(args[2], java.util.Arrays.copyOfRange(args, 3, args.length));
         try (var writer = Files.newBufferedWriter(Path.of(args[0]))) {
-            ContextTsv.write(writer, "kind_v7", "signature", "return_type", "start_line", "end_line",
+            ContextTsv.write(writer, "kind_v8", "signature", "return_type", "start_line", "end_line",
                     "start_column", "end_column", "context", "assigned_name");
             if (sources.isEmpty()) return;
-            inventory(sources, args[1], writer);
+            inventory(sources, args[1], args[2], writer);
         }
     }
 
-    private static void inventory(TreeSet<Path> sources, String classpath, java.io.BufferedWriter writer) throws IOException {
+    private static void inventory(TreeSet<Path> sources, String classpath, String directories, java.io.BufferedWriter writer) throws IOException {
         var compiler = ToolProvider.getSystemJavaCompiler();
         if (compiler == null) throw new IOException("Source inventory requires a full JDK");
         try (var manager = compiler.getStandardFileManager(null, null, null);
@@ -63,6 +63,8 @@ public final class SourceInventory {
             new SourceFramework(task, compiled, writer).write(declarations);
             new SourceHttp(task, compiled, writer).write(types, declarations);
             for (TreePath path : lambdas) SourceLambda.write(path, trees, task.getElements(), writer);
+            var sites = lambdas.stream().map(path -> LambdaSourceSite.of(path, task)).toList();
+            LambdaCorrelation.write(new LambdaCompilation.Context(sources, classpath, compiled), directories, sites, writer);
         }
     }
 
