@@ -790,8 +790,8 @@
       "1 unresolved observer instance channels (constructor escape or multiple allocations)",
       "3 unresolved callable flow: mutable or decorated callable binding",
       "4 unresolved dynamic call sites",
-      "CallAtlas omits most source-generator output; cross-assembly interface implementation candidates are limited; operator invocations are not fully reported. Reflection, dynamic calls, framework callbacks and unsupported DI wiring are not inferred.",
-      "CallAtlas omits most source-generator output; cross-assembly interface implementation candidates are limited; operator invocations are not fully reported. Reflection, dynamic calls, framework callbacks and unsupported DI wiring are not inferred.",
+      "CallAtlas omits most source-generator output; cross-assembly interface implementation candidates are limited; operator invocations are not fully reported. Reflection, dynamic calls, unsupported framework callbacks and unsupported DI wiring are not inferred. MediatR targets are compiler-visible possibilities, not proof of dependency-injection registration.",
+      "CallAtlas omits most source-generator output; cross-assembly interface implementation candidates are limited; operator invocations are not fully reported. Reflection, dynamic calls, unsupported framework callbacks and unsupported DI wiring are not inferred. MediatR targets are compiler-visible possibilities, not proof of dependency-injection registration.",
       "Java DI, reflection, framework callback ordering and dynamic runtime targets are supported only where reported by java-callgraph2. Bytecode source columns are unavailable.",
       "Java DI, reflection, framework callback ordering and dynamic runtime targets are supported only where reported by java-callgraph2. Bytecode source columns are unavailable.",
       "Java DI, reflection, framework callback ordering and dynamic runtime targets are supported only where reported by java-callgraph2. Bytecode source columns are unavailable.",
@@ -804,6 +804,12 @@
       "Java: 0 inherited/reference symbols without declared bodies excluded; 2 external relationships excluded. These references are engine-reported, not resolved by name.",
       "Java: 0 inherited/reference symbols without declared bodies excluded; 20 external relationships excluded. These references are engine-reported, not resolved by name.",
       "Java: 0 inherited/reference symbols without declared bodies excluded; 3 external relationships excluded. These references are engine-reported, not resolved by name.",
+      "MediatR dispatch deferred (anonymous callable has no native identity) at @repo/mediatr-dispatch/AppA/Dispatch.cs:49:15",
+      "MediatR dispatch deferred (concrete closed payload type is unknown) at @repo/mediatr-dispatch/AppA/Dispatch.cs:34:9",
+      "MediatR dispatch deferred (concrete closed payload type is unknown) at @repo/mediatr-dispatch/AppA/Dispatch.cs:37:9",
+      "MediatR dispatch deferred (no exact closed source handler in compiler scope) at @repo/mediatr-dispatch/AppA/Dispatch.cs:40:9",
+      "MediatR dispatch deferred (no exact closed source handler in compiler scope) at @repo/mediatr-dispatch/AppA/Dispatch.cs:43:9",
+      "MediatR dispatch deferred (no exact closed source handler in compiler scope) at @repo/mediatr-dispatch/AppA/Dispatch.cs:46:9",
       "Spring event analysis is limited to compiler-qualified method publishers and source listeners in the same source context; lambda publishers, custom composed annotations and cross-context wiring remain unresolved.",
       "Spring event targets are static possibilities within one compiler source context. DI registration, event conditions, transaction state and async configuration are not proven. Cross-context and lambda publishers remain unresolved.",
       "Spring publishEvent payload is erased, generic or unresolved at @repo/spring-events/src/main/java/fixture/spring/Publisher.java:22",
@@ -2051,6 +2057,37 @@
         "evidence": [
           {
             "invocation": {
+              "column": 26,
+              "file": "@repo/mediatr-dispatch/AppA/Dispatch.cs",
+              "line": 23
+            },
+            "qualifiers": {
+              "mediatr.completion": "task",
+              "mediatr.conditional_context": "true",
+              "mediatr.direct_await": "true",
+              "mediatr.handler": "{\"kind\":\"named\",\"assembly\":\"AppA\",\"namespace\":\"DispatchAppA\",\"name\":\"PingHandler\",\"arguments\":[]}",
+              "mediatr.operation": "Send",
+              "mediatr.payload": "{\"kind\":\"named\",\"assembly\":\"Contracts\",\"namespace\":\"DispatchContracts\",\"name\":\"Ping\",\"arguments\":[]}"
+            },
+            "rule": "codegraph.mediatr:send",
+            "semantics": "possible-invocation",
+            "supporting_symbols": [
+              "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Handlers.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.PingHandler::Handle(DispatchContracts.Ping,System.Threading.CancellationToken)\"]"
+            ],
+            "version": 1
+          }
+        ],
+        "from": "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Dispatch.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.Dispatch::Conditional(MediatR.ISender,System.Boolean,System.Threading.CancellationToken)\"]",
+        "kind": "call",
+        "provenance": "codegraph.mediatr.v1",
+        "to": "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Handlers.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.PingHandler::Handle(DispatchContracts.Ping,System.Threading.CancellationToken)\"]"
+      },
+      {
+        "certainty": "possible",
+        "count": 1,
+        "evidence": [
+          {
+            "invocation": {
               "column": 29,
               "file": "@repo/typescript-corpus/src/app/page.tsx",
               "line": 10,
@@ -2118,6 +2155,36 @@
         "kind": "react-effect",
         "provenance": "codegraph.react.v1:react-effect",
         "to": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/app/page.tsx\",\"[\\\"[\\\\\\\"[\\\\\\\\\\\\\\\"[\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"<module>\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"FunctionDeclaration\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"Page\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"(): Element\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"]\\\\\\\\\\\\\\\",0]\\\\\\\",\\\\\\\"ArrowFunction\\\\\\\",\\\\\\\"argument:0\\\\\\\",\\\\\\\"a9626b658fcf55fa3ae99d3b717c6b03b415c2bdb246a8a538d72beff607706e\\\\\\\"]\\\",0]\"]"
+      },
+      {
+        "certainty": "possible",
+        "count": 1,
+        "evidence": [
+          {
+            "invocation": {
+              "column": 31,
+              "file": "@repo/mediatr-dispatch/AppA/Dispatch.cs",
+              "line": 29
+            },
+            "qualifiers": {
+              "mediatr.completion": "task",
+              "mediatr.direct_await": "false",
+              "mediatr.handler": "{\"kind\":\"named\",\"assembly\":\"AppA\",\"namespace\":\"DispatchAppA\",\"name\":\"PingHandler\",\"arguments\":[]}",
+              "mediatr.operation": "Send",
+              "mediatr.payload": "{\"kind\":\"named\",\"assembly\":\"Contracts\",\"namespace\":\"DispatchContracts\",\"name\":\"Ping\",\"arguments\":[]}"
+            },
+            "rule": "codegraph.mediatr:send",
+            "semantics": "possible-invocation",
+            "supporting_symbols": [
+              "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Handlers.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.PingHandler::Handle(DispatchContracts.Ping,System.Threading.CancellationToken)\"]"
+            ],
+            "version": 1
+          }
+        ],
+        "from": "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Dispatch.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.Dispatch::LocalFunction(MediatR.ISender,System.Threading.CancellationToken)::Invoke#local\"]",
+        "kind": "call",
+        "provenance": "codegraph.mediatr.v1",
+        "to": "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Handlers.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.PingHandler::Handle(DispatchContracts.Ping,System.Threading.CancellationToken)\"]"
       },
       {
         "certainty": "possible",
@@ -2353,6 +2420,216 @@
         "kind": "call",
         "provenance": "codegraph.callable.v1",
         "to": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/callables.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"returnLeafB\\\\\\\",\\\\\\\"(): number\\\\\\\"]\\\",0]\"]"
+      },
+      {
+        "certainty": "possible",
+        "count": 1,
+        "evidence": [
+          {
+            "invocation": {
+              "column": 9,
+              "file": "@repo/mediatr-dispatch/AppA/Dispatch.cs",
+              "line": 12
+            },
+            "qualifiers": {
+              "mediatr.completion": "task",
+              "mediatr.direct_await": "false",
+              "mediatr.handler": "{\"kind\":\"named\",\"assembly\":\"AppA\",\"namespace\":\"DispatchAppA\",\"name\":\"ResetHandler\",\"arguments\":[]}",
+              "mediatr.operation": "Send",
+              "mediatr.payload": "{\"kind\":\"named\",\"assembly\":\"Contracts\",\"namespace\":\"DispatchContracts\",\"name\":\"Reset\",\"arguments\":[]}"
+            },
+            "rule": "codegraph.mediatr:send",
+            "semantics": "possible-invocation",
+            "supporting_symbols": [
+              "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Handlers.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.ResetHandler::MediatR.IRequestHandler<DispatchContracts.Reset>.Handle(DispatchContracts.Reset,System.Threading.CancellationToken)\"]"
+            ],
+            "version": 1
+          }
+        ],
+        "from": "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Dispatch.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.Dispatch::SendReset(MediatR.ISender,System.Threading.CancellationToken)\"]",
+        "kind": "call",
+        "provenance": "codegraph.mediatr.v1",
+        "to": "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Handlers.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.ResetHandler::MediatR.IRequestHandler<DispatchContracts.Reset>.Handle(DispatchContracts.Reset,System.Threading.CancellationToken)\"]"
+      },
+      {
+        "certainty": "possible",
+        "count": 1,
+        "evidence": [
+          {
+            "invocation": {
+              "column": 9,
+              "file": "@repo/mediatr-dispatch/AppA/Dispatch.cs",
+              "line": 15
+            },
+            "qualifiers": {
+              "mediatr.completion": "task",
+              "mediatr.direct_await": "false",
+              "mediatr.handler": "{\"kind\":\"named\",\"assembly\":\"AppA\",\"namespace\":\"DispatchAppA\",\"name\":\"FirstChangedHandler\",\"arguments\":[]}",
+              "mediatr.operation": "Publish",
+              "mediatr.payload": "{\"kind\":\"named\",\"assembly\":\"Contracts\",\"namespace\":\"DispatchContracts\",\"name\":\"Changed\",\"arguments\":[]}"
+            },
+            "rule": "codegraph.mediatr:publish",
+            "semantics": "possible-invocation",
+            "supporting_symbols": [
+              "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Handlers.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.FirstChangedHandler::Handle(DispatchContracts.Changed,System.Threading.CancellationToken)\"]"
+            ],
+            "version": 1
+          }
+        ],
+        "from": "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Dispatch.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.Dispatch::PublishChanged(MediatR.IPublisher,System.Threading.CancellationToken)\"]",
+        "kind": "call",
+        "provenance": "codegraph.mediatr.v1",
+        "to": "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Handlers.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.FirstChangedHandler::Handle(DispatchContracts.Changed,System.Threading.CancellationToken)\"]"
+      },
+      {
+        "certainty": "possible",
+        "count": 1,
+        "evidence": [
+          {
+            "invocation": {
+              "column": 9,
+              "file": "@repo/mediatr-dispatch/AppA/Dispatch.cs",
+              "line": 15
+            },
+            "qualifiers": {
+              "mediatr.completion": "task",
+              "mediatr.direct_await": "false",
+              "mediatr.handler": "{\"kind\":\"named\",\"assembly\":\"AppA\",\"namespace\":\"DispatchAppA\",\"name\":\"InheritedChangedHandler\",\"arguments\":[]}",
+              "mediatr.operation": "Publish",
+              "mediatr.payload": "{\"kind\":\"named\",\"assembly\":\"Contracts\",\"namespace\":\"DispatchContracts\",\"name\":\"Changed\",\"arguments\":[]}"
+            },
+            "rule": "codegraph.mediatr:publish",
+            "semantics": "possible-invocation",
+            "supporting_symbols": [
+              "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Handlers.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.ChangedHandlerBase::Handle(DispatchContracts.Changed,System.Threading.CancellationToken)\"]"
+            ],
+            "version": 1
+          }
+        ],
+        "from": "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Dispatch.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.Dispatch::PublishChanged(MediatR.IPublisher,System.Threading.CancellationToken)\"]",
+        "kind": "call",
+        "provenance": "codegraph.mediatr.v1",
+        "to": "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Handlers.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.ChangedHandlerBase::Handle(DispatchContracts.Changed,System.Threading.CancellationToken)\"]"
+      },
+      {
+        "certainty": "possible",
+        "count": 1,
+        "evidence": [
+          {
+            "invocation": {
+              "column": 9,
+              "file": "@repo/mediatr-dispatch/AppA/Dispatch.cs",
+              "line": 18
+            },
+            "qualifiers": {
+              "mediatr.completion": "task",
+              "mediatr.direct_await": "false",
+              "mediatr.handler": "{\"kind\":\"named\",\"assembly\":\"AppA\",\"namespace\":\"DispatchAppA\",\"name\":\"PingHandler\",\"arguments\":[]}",
+              "mediatr.operation": "Send",
+              "mediatr.payload": "{\"kind\":\"named\",\"assembly\":\"Contracts\",\"namespace\":\"DispatchContracts\",\"name\":\"Ping\",\"arguments\":[]}"
+            },
+            "rule": "codegraph.mediatr:send",
+            "semantics": "possible-invocation",
+            "supporting_symbols": [
+              "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Handlers.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.PingHandler::Handle(DispatchContracts.Ping,System.Threading.CancellationToken)\"]"
+            ],
+            "version": 1
+          }
+        ],
+        "from": "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Dispatch.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.Dispatch::NamedArguments(MediatR.ISender,System.Threading.CancellationToken)\"]",
+        "kind": "call",
+        "provenance": "codegraph.mediatr.v1",
+        "to": "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Handlers.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.PingHandler::Handle(DispatchContracts.Ping,System.Threading.CancellationToken)\"]"
+      },
+      {
+        "certainty": "possible",
+        "count": 1,
+        "evidence": [
+          {
+            "invocation": {
+              "column": 9,
+              "file": "@repo/mediatr-dispatch/AppA/Dispatch.cs",
+              "line": 9
+            },
+            "qualifiers": {
+              "mediatr.completion": "task",
+              "mediatr.direct_await": "false",
+              "mediatr.handler": "{\"kind\":\"named\",\"assembly\":\"AppA\",\"namespace\":\"DispatchAppA\",\"name\":\"PingHandler\",\"arguments\":[]}",
+              "mediatr.operation": "Send",
+              "mediatr.payload": "{\"kind\":\"named\",\"assembly\":\"Contracts\",\"namespace\":\"DispatchContracts\",\"name\":\"Ping\",\"arguments\":[]}"
+            },
+            "rule": "codegraph.mediatr:send",
+            "semantics": "possible-invocation",
+            "supporting_symbols": [
+              "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Handlers.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.PingHandler::Handle(DispatchContracts.Ping,System.Threading.CancellationToken)\"]"
+            ],
+            "version": 1
+          }
+        ],
+        "from": "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Dispatch.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.Dispatch::SendPing(MediatR.ISender,System.Threading.CancellationToken)\"]",
+        "kind": "call",
+        "provenance": "codegraph.mediatr.v1",
+        "to": "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Handlers.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.PingHandler::Handle(DispatchContracts.Ping,System.Threading.CancellationToken)\"]"
+      },
+      {
+        "certainty": "possible",
+        "count": 1,
+        "evidence": [
+          {
+            "invocation": {
+              "column": 9,
+              "file": "@repo/mediatr-dispatch/AppB/Dispatch.cs",
+              "line": 12
+            },
+            "qualifiers": {
+              "mediatr.completion": "task",
+              "mediatr.direct_await": "false",
+              "mediatr.handler": "{\"kind\":\"named\",\"assembly\":\"AppB\",\"namespace\":\"DispatchAppB\",\"name\":\"ChangedHandler\",\"arguments\":[]}",
+              "mediatr.operation": "Publish",
+              "mediatr.payload": "{\"kind\":\"named\",\"assembly\":\"Contracts\",\"namespace\":\"DispatchContracts\",\"name\":\"Changed\",\"arguments\":[]}"
+            },
+            "rule": "codegraph.mediatr:publish",
+            "semantics": "possible-invocation",
+            "supporting_symbols": [
+              "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppB/Dispatch.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppB]::DispatchAppB.ChangedHandler::Handle(DispatchContracts.Changed,System.Threading.CancellationToken)\"]"
+            ],
+            "version": 1
+          }
+        ],
+        "from": "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppB/Dispatch.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppB]::DispatchAppB.Dispatch::PublishChanged(MediatR.IPublisher,System.Threading.CancellationToken)\"]",
+        "kind": "call",
+        "provenance": "codegraph.mediatr.v1",
+        "to": "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppB/Dispatch.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppB]::DispatchAppB.ChangedHandler::Handle(DispatchContracts.Changed,System.Threading.CancellationToken)\"]"
+      },
+      {
+        "certainty": "possible",
+        "count": 1,
+        "evidence": [
+          {
+            "invocation": {
+              "column": 9,
+              "file": "@repo/mediatr-dispatch/AppB/Dispatch.cs",
+              "line": 9
+            },
+            "qualifiers": {
+              "mediatr.completion": "task",
+              "mediatr.direct_await": "false",
+              "mediatr.handler": "{\"kind\":\"named\",\"assembly\":\"AppB\",\"namespace\":\"DispatchAppB\",\"name\":\"PingHandler\",\"arguments\":[]}",
+              "mediatr.operation": "Send",
+              "mediatr.payload": "{\"kind\":\"named\",\"assembly\":\"Contracts\",\"namespace\":\"DispatchContracts\",\"name\":\"Ping\",\"arguments\":[]}"
+            },
+            "rule": "codegraph.mediatr:send",
+            "semantics": "possible-invocation",
+            "supporting_symbols": [
+              "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppB/Dispatch.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppB]::DispatchAppB.PingHandler::Handle(DispatchContracts.Ping,System.Threading.CancellationToken)\"]"
+            ],
+            "version": 1
+          }
+        ],
+        "from": "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppB/Dispatch.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppB]::DispatchAppB.Dispatch::SendPing(MediatR.ISender,System.Threading.CancellationToken)\"]",
+        "kind": "call",
+        "provenance": "codegraph.mediatr.v1",
+        "to": "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppB/Dispatch.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppB]::DispatchAppB.PingHandler::Handle(DispatchContracts.Ping,System.Threading.CancellationToken)\"]"
       },
       {
         "certainty": "possible",
@@ -3014,15 +3291,9 @@
         "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Dispatch.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.Dispatch::SendReset(MediatR.ISender,System.Threading.CancellationToken)\"]",
         "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Dispatch.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.Dispatch::UnknownRequest(MediatR.ISender,System.Threading.CancellationToken)\"]",
         "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Handlers.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.BaseRequestHandler::Handle(DispatchContracts.BaseRequest,System.Threading.CancellationToken)\"]",
-        "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Handlers.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.ChangedHandlerBase::Handle(DispatchContracts.Changed,System.Threading.CancellationToken)\"]",
-        "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Handlers.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.FirstChangedHandler::Handle(DispatchContracts.Changed,System.Threading.CancellationToken)\"]",
         "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Handlers.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.OpenGenericHandler<T>::Handle(DispatchContracts.GenericRequest<T>,System.Threading.CancellationToken)\"]",
-        "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Handlers.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.PingHandler::Handle(DispatchContracts.Ping,System.Threading.CancellationToken)\"]",
-        "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Handlers.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.ResetHandler::MediatR.IRequestHandler<DispatchContracts.Reset>.Handle(DispatchContracts.Reset,System.Threading.CancellationToken)\"]",
-        "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppB/Dispatch.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppB]::DispatchAppB.ChangedHandler::Handle(DispatchContracts.Changed,System.Threading.CancellationToken)\"]",
         "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppB/Dispatch.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppB]::DispatchAppB.Dispatch::PublishChanged(MediatR.IPublisher,System.Threading.CancellationToken)\"]",
         "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppB/Dispatch.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppB]::DispatchAppB.Dispatch::SendPing(MediatR.ISender,System.Threading.CancellationToken)\"]",
-        "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppB/Dispatch.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppB]::DispatchAppB.PingHandler::Handle(DispatchContracts.Ping,System.Threading.CancellationToken)\"]",
         "[\"java\",\"@repo/maven/reactor\",\"@repo/maven/profile-library/src/main/java/fixture/ProfileOnly.java\",\"[\\\"@repo/maven/reactor\\\",\\\"@repo/maven/profile-library\\\",\\\"main\\\"]|fixture.ProfileOnly:fromActiveProfile()|void\"]",
         "[\"java\",\"@repo/maven/reactor\",\"@repo/maven/reactor/app/src/main-custom/java/fixture/App.java\",\"[\\\"@repo/maven/reactor\\\",\\\"@repo/maven/reactor/app\\\",\\\"main\\\"]|fixture.App:constructorOnly()|void\"]",
         "[\"java\",\"@repo/maven/reactor\",\"@repo/maven/reactor/app/src/main-custom/java/fixture/App.java\",\"[\\\"@repo/maven/reactor\\\",\\\"@repo/maven/reactor/app\\\",\\\"main\\\"]|fixture.App:disconnected()|void\"]",
@@ -3066,6 +3337,13 @@
         "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/observers.ts\",\"[\\\"[\\\\\\\"[\\\\\\\\\\\\\\\"[\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"<module>\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"ClassDeclaration\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"StaticBus\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"]\\\\\\\\\\\\\\\",0]\\\\\\\",\\\\\\\"MethodDeclaration\\\\\\\",\\\\\\\"triggerUpdate\\\\\\\",\\\\\\\"(): void\\\\\\\"]\\\",0]\"]"
       ],
       "framework_entries": [
+        "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Handlers.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.BaseRequestHandler::Handle(DispatchContracts.BaseRequest,System.Threading.CancellationToken)\"]",
+        "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Handlers.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.ChangedHandlerBase::Handle(DispatchContracts.Changed,System.Threading.CancellationToken)\"]",
+        "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Handlers.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.FirstChangedHandler::Handle(DispatchContracts.Changed,System.Threading.CancellationToken)\"]",
+        "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Handlers.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.PingHandler::Handle(DispatchContracts.Ping,System.Threading.CancellationToken)\"]",
+        "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Handlers.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.ResetHandler::MediatR.IRequestHandler<DispatchContracts.Reset>.Handle(DispatchContracts.Reset,System.Threading.CancellationToken)\"]",
+        "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppB/Dispatch.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppB]::DispatchAppB.ChangedHandler::Handle(DispatchContracts.Changed,System.Threading.CancellationToken)\"]",
+        "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppB/Dispatch.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppB]::DispatchAppB.PingHandler::Handle(DispatchContracts.Ping,System.Threading.CancellationToken)\"]",
         "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/InterfaceListener.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.InterfaceListener:onApplicationEvent(fixture.spring.events.Started)|void\"]",
         "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/Listeners.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.Listeners:onAnyApplicationEvent(org.springframework.context.ApplicationEvent)|void\"]",
         "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/Listeners.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.Listeners:onAsyncPayload(fixture.spring.events.Created)|void\"]",

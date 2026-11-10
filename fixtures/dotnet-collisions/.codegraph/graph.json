@@ -134,7 +134,7 @@
       "version": 1
     },
     "diagnostics": [
-      "CallAtlas omits most source-generator output; cross-assembly interface implementation candidates are limited; operator invocations are not fully reported. Reflection, dynamic calls, framework callbacks and unsupported DI wiring are not inferred."
+      "CallAtlas omits most source-generator output; cross-assembly interface implementation candidates are limited; operator invocations are not fully reported. Reflection, dynamic calls, unsupported framework callbacks and unsupported DI wiring are not inferred. MediatR targets are compiler-visible possibilities, not proof of dependency-injection registration."
     ],
     "edges": [
       {

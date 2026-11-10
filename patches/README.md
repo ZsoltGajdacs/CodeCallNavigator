@@ -3,15 +3,16 @@
 `callatlas-assembly-identity.patch` applies only to upstream revision
 `916c2419c0cdb91b5b86b84df4842dadb17bb6b4`.
 
-SHA-256: `7b64792f14f02fafb4472402b0ab26ac53d9be6e496ef73964ad49791db1d08a`,
-also pinned in `analyzers.lock.json`.
+The current SHA-256 is pinned as `callatlas.patch_sha256` in
+`analyzers.lock.json` alongside the exact prior-checkpoint hashes.
 
 The pinned analyzer combines every solution compilation in one node dictionary,
 while its original symbol IDs omit assembly ownership. Two independent projects
 with `Program.Main` or the same qualified type/method can therefore silently merge.
 Top-level statements additionally use one global ID and registration flag.
 
-This patch preserves call binding and adds identity and entry-point metadata:
+This patch preserves native call binding and adds identity, entry-point and
+compiler-owned framework metadata:
 
 - Prefix method, field, property-initializer and delegate identities with the
   Roslyn-owned assembly name: `[AssemblyName]::original-symbol-id`.
@@ -24,6 +25,12 @@ This patch preserves call binding and adds identity and entry-point metadata:
 - Export architecture file facts directly from the same Roslyn semantic models, including type/method attributes, namespaces, declaration kinds, base types and annotated interfaces. These facts do not change call binding or graph inclusion.
 - Export `entryPoints.candidates` using the existing `CodeMapQuery.EntryPoints` query, including uncalled declarations.
 - Export `entryPoints.applicationStarts` from `Compilation.GetEntryPoint`, mapping synthesized top-level starts to the existing top-level graph identity. These verified starts are distinct from ordinary entry candidates.
+- Export versioned MediatR facts separately from native edges: compiler-bound
+  ISender/IPublisher calls, actual concrete request/notification types, scoped
+  closed handler implementations, source sites and handler entry catalogs.
+  Reading and writing snapshots preserves the capability and facts. CodeGraph's
+  language adapter creates possible relationships from them. Task return values
+  describe completion contracts and do not prove asynchronous scheduling.
 
 The application must reject independent projects sharing an evaluated
 `AssemblyName` within one selected solution, because this identity format cannot
@@ -38,13 +45,17 @@ dotnet build vendor/callatlas/src/CallAtlas.Cli/CallAtlas.Cli.csproj -c Release
 ```
 
 Bootstrap verifies the exact revision and patch hash. It accepts only a clean
-checkout, the exact current patch, the previous declaration-policy patch in
+checkout, the exact current patch, the pre-framework checkpoint in
+`callatlas-assembly-identity-pre-framework.patch`, the previous declaration-policy patch in
 `callatlas-assembly-identity-policy.patch`, the earlier entry-metadata patch in
 `callatlas-assembly-identity-entries.patch`, or the exact identity-only
 patch preserved in `callatlas-assembly-identity-legacy.patch` with its pinned hash.
 The legacy patch is reversed and replaced automatically; failure restores it.
 Unrelated tracked or untracked source edits are refused and preserved. Ignored
 build outputs do not affect this check.
+Apply the current combined patch once to the pristine pinned revision; do not
+stack it on a prior checkpoint. Bootstrap recognizes every checksum-verified
+`*_patch` checkpoint recorded in the lock and migrates only an exact byte match.
 
 Regression fixture: `fixtures/dotnet-collisions/Collisions.sln` contains four
 independent applications with duplicate entry/type/member names and two top-level
@@ -68,6 +79,13 @@ Upstream limitation preserved by this patch: overloaded-operator declarations ar
 registered, but the analyzer does not report the binary operator invocation used
 by this fixture. The identity check proves that the two operator declarations stay
 separate; it does not claim that missing invocation coverage has been repaired.
+
+MediatR fixture: `fixtures/mediatr-dispatch/MediatRDispatch.sln` uses the real
+pinned package, response-type and argument-order controls, explicit/inherited
+handlers and unrelated AppA/AppB scopes. The upstream test suite retains the same
+29 failures as the recorded pre-framework identity patch; four added capability
+and snapshot tests pass. The comparison and exact failure names are recorded in
+`evidence/engine/stages/mediatr-upstream-tests.json`.
 
 # Rune platform warnings patch
 

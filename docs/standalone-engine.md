@@ -160,3 +160,26 @@ directly parameterized payload classes whose type arguments disappear at runtime
 lambda publishers, custom composed annotations and cross-context wiring remain
 unresolved. A concrete nongeneric subclass can retain generic superclass metadata.
 Runtime analysis requires the matching v5 Java source adapter.
+
+## MediatR dispatch
+
+C# analysis recognizes compiler-bound `ISender`/`IPublisher` contracts, including
+inherited `IMediator` calls. Actual argument types determine request/notification
+types; response type arguments and source argument order do not select handlers.
+Closed handler interfaces and their real `Handle` implementations must be visible
+in the caller's compilation scope. Requests require one matching handler;
+notifications may have several. Existing native relationships remain intact.
+
+Added calls have possible certainty and `codegraph.mediatr.v1` provenance.
+Evidence records the operation, concrete types, source site and Task completion
+contract. `mediatr.direct_await` means directly awaited with only parentheses;
+`mediatr.conditional_context` reports surrounding conditional syntax, not a proven
+path guard. Neither a Task return nor these flags prove asynchronous scheduling.
+Recognized closed handlers remain framework entries without dispatch calls.
+
+Object/interface-erased payloads, open types, anonymous callables, ambiguous
+requests and handlers outside compiler-visible scope remain unresolved. Concrete
+`Mediator` method declarations and custom wrappers are outside the initial
+contract-only subset. C# flow inventories remain unavailable. The matching
+CallAtlas adapter must provide framework-facts capability v1, including snapshot
+round trips; stale/incomplete facts fail explicitly.

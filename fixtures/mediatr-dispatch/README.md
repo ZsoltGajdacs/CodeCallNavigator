@@ -35,8 +35,9 @@ Inferred dispatch targets therefore describe possible framework relationships.
 
 `SendPing` explicitly supplies the response type argument `int`; the request
 type must come from the actual argument. `NamedArguments` reverses source
-argument order, requiring compiler parameter mapping. The conditional async
-dispatch remains conditional and asynchronous. The abstract inherited handler
+argument order, requiring compiler parameter mapping. The conditional site
+retains its branch and `await` facts; returning `Task` does not prove runtime
+scheduling. The abstract inherited handler
 base is not an additional concrete candidate. No C# flow inventory is fabricated.
 
 The single `.codegraph/graph.json` is recorded before inference and then updated

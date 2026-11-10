@@ -72,6 +72,16 @@ class AddedSourcePatch(unittest.TestCase):
         self.assertEqual(self.added.read_text(), 'new source\n')
         bootstrap.apply_patch(self.spec, 'example')
 
+    def test_named_prior_patch_checkpoint_can_migrate_without_dropping_older_checkpoints(self):
+        prior = self.spec.pop('previous_patch')
+        prior_hash = self.spec.pop('previous_patch_sha256')
+        self.spec.update(pre_framework_patch=prior, pre_framework_patch_sha256=prior_hash)
+        self.git('apply', str(self.root / prior))
+        bootstrap.apply_patch(self.spec, 'example')
+        self.assertEqual(self.tracked.read_text(), 'current\n')
+        self.assertEqual(self.added.read_text(), 'new source\n')
+        bootstrap.apply_patch(self.spec, 'example')
+
     def test_unrelated_untracked_source_is_rejected_without_index_or_source_changes(self):
         bootstrap.apply_patch(self.spec, 'example')
         extra = self.repository / 'Unrelated.cs'

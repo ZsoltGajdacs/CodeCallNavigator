@@ -1,4 +1,5 @@
 mod architecture;
+mod framework;
 mod policy;
 use super::process::run_process;
 use super::{AnalysisJob, ensure_unchanged, find_tool, source_snapshot};
@@ -21,6 +22,14 @@ struct AtlasMap {
     schema: String,
     #[serde(rename = "declarationFactsVersion")]
     declaration_facts_version: String,
+    #[serde(default, rename = "frameworkFactsVersion")]
+    framework_facts_version: String,
+    #[serde(default, rename = "frameworkEdges")]
+    framework_edges: Option<Vec<framework::DispatchFact>>,
+    #[serde(default, rename = "frameworkEntries")]
+    framework_entries: Option<Vec<String>>,
+    #[serde(default, rename = "frameworkDiagnostics")]
+    framework_diagnostics: Option<Vec<String>>,
     #[serde(default, rename = "architectureFiles")]
     architecture_files: Option<Vec<architecture::AtlasFileFacts>>,
     nodes: Vec<AtlasNode>,
@@ -33,6 +42,25 @@ struct AtlasMap {
     unresolved: Vec<serde_json::Value>,
     #[serde(default, rename = "entryPoints")]
     entry_points: Option<AtlasEntries>,
+}
+
+impl AtlasMap {
+    fn take_framework_facts(&mut self) -> Result<framework::Facts> {
+        Ok(framework::Facts {
+            edges: self
+                .framework_edges
+                .take()
+                .context("MediatR facts are missing")?,
+            entries: self
+                .framework_entries
+                .take()
+                .context("MediatR entries are missing")?,
+            diagnostics: self
+                .framework_diagnostics
+                .take()
+                .context("MediatR diagnostics are missing")?,
+        })
+    }
 }
 
 #[derive(Deserialize)]
@@ -334,10 +362,11 @@ fn record_project_properties(
 fn normalize_atlas(
     build: &BuildTarget,
     root: &Path,
-    map: AtlasMap,
+    mut map: AtlasMap,
     owners: &SourceOwners,
 ) -> Result<GraphData> {
     validate_atlas(&map)?;
+    let framework = map.take_framework_facts()?;
     let mut graph = GraphData {
         roots: vec![build.path.to_string_lossy().into_owned()],
         ..GraphData::default()
@@ -382,7 +411,8 @@ fn normalize_atlas(
     for edge in map.edges {
         append_atlas_edge(&mut graph, &indices, edge)?;
     }
-    graph.diagnostics.push("CallAtlas omits most source-generator output; cross-assembly interface implementation candidates are limited; operator invocations are not fully reported. Reflection, dynamic calls, framework callbacks and unsupported DI wiring are not inferred.".into());
+    framework::append(root, &mut graph, &indices, framework)?;
+    graph.diagnostics.push("CallAtlas omits most source-generator output; cross-assembly interface implementation candidates are limited; operator invocations are not fully reported. Reflection, dynamic calls, unsupported framework callbacks and unsupported DI wiring are not inferred. MediatR targets are compiler-visible possibilities, not proof of dependency-injection registration.".into());
     if !map.unresolved.is_empty() {
         graph.diagnostics.push(format!(
             "CallAtlas reported {} unresolved call sites",
@@ -405,6 +435,13 @@ fn validate_atlas(map: &AtlasMap) -> Result<()> {
     ensure!(
         map.declaration_facts_version == "2",
         "CallAtlas declaration facts are missing or unsupported; run tools/bootstrap.py"
+    );
+    ensure!(
+        map.framework_facts_version == "1"
+            && map.framework_edges.is_some()
+            && map.framework_entries.is_some()
+            && map.framework_diagnostics.is_some(),
+        "CallAtlas framework facts are missing or unsupported; run tools/bootstrap.py and refresh the analysis"
     );
     ensure!(
         map.body_errors == 0 && map.diagnostics.is_empty(),
@@ -518,6 +555,31 @@ fn append_atlas_edge(
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn stale_or_incomplete_framework_capabilities_require_refresh() {
+        let mut value = serde_json::json!({
+            "schema":"callatlas.ir.v3", "declarationFactsVersion":"2", "nodes":[], "edges":[]
+        });
+        let stale: AtlasMap = serde_json::from_value(value.clone()).unwrap();
+        assert!(
+            validate_atlas(&stale)
+                .unwrap_err()
+                .to_string()
+                .contains("refresh")
+        );
+        value["frameworkFactsVersion"] = "1".into();
+        let incomplete: AtlasMap = serde_json::from_value(value.clone()).unwrap();
+        assert!(validate_atlas(&incomplete).is_err());
+        for key in ["frameworkEdges", "frameworkEntries", "frameworkDiagnostics"] {
+            value[key] = serde_json::json!([]);
+        }
+        let current: AtlasMap = serde_json::from_value(value.clone()).unwrap();
+        validate_atlas(&current).unwrap();
+        value["frameworkFactsVersion"] = "2".into();
+        let incompatible: AtlasMap = serde_json::from_value(value).unwrap();
+        assert!(validate_atlas(&incompatible).is_err());
+    }
+
     #[test]
     fn unpatched_symbol_identities_are_rejected() {
         assert!(!qualified_identity("Program::<top-level>"));
