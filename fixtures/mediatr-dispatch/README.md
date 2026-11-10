@@ -42,3 +42,28 @@ base is not an additional concrete candidate. No C# flow inventory is fabricated
 
 The single `.codegraph/graph.json` is recorded before inference and then updated
 with reviewed changes. Git retains the baseline history.
+
+## Attributed ASP.NET controllers
+
+`AppA` and `AppB` reference the installed `Microsoft.AspNetCore.App` shared
+framework. Both expose `/api/items` from different compiler assemblies; a
+solution selection alone must not merge their application origins.
+
+The controller fixture includes literal and single-parameter GET routes, POST,
+class/method prefix composition, `/` and `~/` rooted templates, and multiple
+templates on one action. AppA's `CaseOnly`/`caseonly` actions deliberately
+collide under ASP.NET's case-insensitive routing policy; AppB has a single
+case variant in its separate application.
+
+The constrained route and its overlapping literal, nonzero method/class route
+orders, and catch-all template must remain visible as candidates or blockers.
+Unsupported declarations must not disappear and make a competing route appear
+unique. `[NonAction]`, nonpublic/static/generic actions, `[NonController]`, and
+open generic controllers are exclusions. The source-owned `PretendRouting`
+attribute must not be confused with an ASP.NET route contract.
+
+The fixture intentionally produces four ASP0023 warnings for its case/order
+collision controls; these are expected and are not compilation errors.
+
+These classes only compile and supply analyzer input; no server is started and
+no route or dependency-injection configuration is executed.

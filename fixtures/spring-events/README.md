@@ -22,3 +22,11 @@ publisher API, a custom EventListener annotation, an unannotated method, and
 Object-erased/type-variable payloads. Missing DI registration, transaction state,
 event conditions and async executor configuration cannot be proved by source
 analysis; inferred targets never claim guaranteed runtime execution.
+
+The HTTP fixture also compiles against actual Spring Web 6.2.5. `HttpController`
+provides literal GET/POST handlers, a single-segment parameter and a class prefix.
+The same path with a different verb is independent. Custom same-simple-name
+`GetMapping` is unrelated. `ConstrainedController` retains both same-path handlers
+with differing `produces`, and both the unconstrained and query-constrained
+`/api/constrained` handlers: unsupported constraints must remain blockers so a
+unique-looking surviving candidate cannot create a false HTTP relationship.

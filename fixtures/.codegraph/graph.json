@@ -268,6 +268,124 @@
         {
           "annotated_interfaces": [],
           "annotations": [
+            "ApiControllerAttribute",
+            "Microsoft.AspNetCore.Mvc.ApiControllerAttribute",
+            "Microsoft.AspNetCore.Mvc.NonControllerAttribute",
+            "Microsoft.AspNetCore.Mvc.RouteAttribute",
+            "NonControllerAttribute",
+            "RouteAttribute"
+          ],
+          "base_types": [
+            "ControllerBase",
+            "Microsoft.AspNetCore.Mvc.ControllerBase",
+            "Object",
+            "object"
+          ],
+          "build": "@repo/mediatr-dispatch/MediatRDispatch.sln",
+          "content": "using Microsoft.AspNetCore.Mvc;\n\nnamespace DispatchAppA.Http;\n\n[ApiController]\n[Route(\"api/items\")]\npublic class ItemsController : ControllerBase\n{\n    [HttpGet]\n    public IActionResult List() => Ok();\n\n    [HttpGet(\"{id}\")]\n    public IActionResult Get(string id) => Ok(id);\n\n    [HttpPost]\n    public IActionResult Create() => Ok();\n\n    [HttpGet(\"/health\")]\n    public IActionResult Health() => Ok();\n\n    [HttpGet(\"~/ready\")]\n    public IActionResult Ready() => Ok();\n\n    [HttpGet(\"many-one\")]\n    [HttpGet(\"many-two\")]\n    public IActionResult MultipleTemplates() => Ok();\n\n    [HttpGet(\"CaseOnly\")]\n    public IActionResult CaseOne() => Ok();\n\n    [HttpGet(\"caseonly\")]\n    public IActionResult CaseTwo() => Ok();\n\n    [HttpGet(\"constraint/{id:int}\")]\n    public IActionResult Constrained(int id) => Ok(id);\n\n    [HttpGet(\"constraint/42\")]\n    public IActionResult ConstraintLiteral() => Ok();\n\n    [HttpGet(\"ordered\", Order = 1)]\n    public IActionResult Ordered() => Ok();\n\n    [HttpGet(\"ordered\")]\n    public IActionResult DefaultOrder() => Ok();\n\n    [HttpGet(\"unsupported/{*rest}\")]\n    public IActionResult CatchAll(string rest) => Ok(rest);\n\n    [NonAction]\n    [HttpGet(\"hidden\")]\n    public IActionResult NotAnAction() => Ok();\n\n    [HttpGet(\"generic\")]\n    public IActionResult Generic<T>() => Ok();\n\n    [HttpGet(\"private\")]\n    private IActionResult Private() => Ok();\n\n    [HttpGet(\"static\")]\n    public static IActionResult Static() => new OkResult();\n}\n\n[Route(\"api/prioritized\", Order = 2)]\npublic class PrioritizedController : ControllerBase\n{\n    [HttpGet(\"value\")]\n    public IActionResult Value() => Ok();\n}\n\n[NonController]\n[Route(\"api/excluded\")]\npublic class ExcludedController : ControllerBase\n{\n    [HttpGet(\"value\")]\n    public IActionResult Value() => Ok();\n}\n\n[Route(\"api/generic\")]\npublic class GenericController<T> : ControllerBase\n{\n    [HttpGet(\"value\")]\n    public IActionResult Value() => Ok();\n}\n\npublic class CustomAttributeController : ControllerBase\n{\n    [PretendRouting.HttpGet(\"/pretend\")]\n    public IActionResult FakeOnly() => Ok();\n}\n",
+          "file": "@repo/mediatr-dispatch/AppA/Controllers.cs",
+          "is_interface": false,
+          "is_test": false,
+          "kinds": [
+            "class"
+          ],
+          "language": "csharp",
+          "method_annotations": [
+            "HttpGetAttribute",
+            "HttpPostAttribute",
+            "Microsoft.AspNetCore.Mvc.HttpGetAttribute",
+            "Microsoft.AspNetCore.Mvc.HttpPostAttribute",
+            "Microsoft.AspNetCore.Mvc.NonActionAttribute",
+            "NonActionAttribute",
+            "PretendRouting.HttpGetAttribute"
+          ],
+          "names": [
+            "CustomAttributeController",
+            "DispatchAppA.Http.CustomAttributeController",
+            "DispatchAppA.Http.ExcludedController",
+            "DispatchAppA.Http.GenericController<T>",
+            "DispatchAppA.Http.ItemsController",
+            "DispatchAppA.Http.PrioritizedController",
+            "ExcludedController",
+            "GenericController",
+            "ItemsController",
+            "PrioritizedController"
+          ],
+          "namespaces": [
+            "DispatchAppA.Http"
+          ],
+          "project": "AppA"
+        },
+        {
+          "annotated_interfaces": [],
+          "annotations": [
+            "ApiControllerAttribute",
+            "Microsoft.AspNetCore.Mvc.ApiControllerAttribute",
+            "Microsoft.AspNetCore.Mvc.RouteAttribute",
+            "RouteAttribute"
+          ],
+          "base_types": [
+            "ControllerBase",
+            "Microsoft.AspNetCore.Mvc.ControllerBase",
+            "Object",
+            "object"
+          ],
+          "build": "@repo/mediatr-dispatch/MediatRDispatch.sln",
+          "content": "using Microsoft.AspNetCore.Mvc;\n\nnamespace DispatchAppB.Http;\n\n[ApiController]\n[Route(\"api/items\")]\npublic class ItemsController : ControllerBase\n{\n    [HttpGet]\n    public IActionResult List() => Ok();\n\n    [HttpGet(\"{id}\")]\n    public IActionResult Get(string id) => Ok(id);\n\n    [HttpGet(\"CaseOnly\")]\n    public IActionResult CaseOnly() => Ok();\n}\n",
+          "file": "@repo/mediatr-dispatch/AppB/Controllers.cs",
+          "is_interface": false,
+          "is_test": false,
+          "kinds": [
+            "class"
+          ],
+          "language": "csharp",
+          "method_annotations": [
+            "HttpGetAttribute",
+            "Microsoft.AspNetCore.Mvc.HttpGetAttribute"
+          ],
+          "names": [
+            "DispatchAppB.Http.ItemsController",
+            "ItemsController"
+          ],
+          "namespaces": [
+            "DispatchAppB.Http"
+          ],
+          "project": "AppB"
+        },
+        {
+          "annotated_interfaces": [],
+          "annotations": [
+            "AttributeUsageAttribute",
+            "System.AttributeUsageAttribute"
+          ],
+          "base_types": [
+            "Attribute",
+            "Object",
+            "System.Attribute",
+            "object"
+          ],
+          "build": "@repo/mediatr-dispatch/MediatRDispatch.sln",
+          "content": "namespace PretendRouting;\n\n[AttributeUsage(AttributeTargets.Method)]\npublic sealed class HttpGetAttribute(string template) : Attribute\n{\n    public string Template { get; } = template;\n}\n",
+          "file": "@repo/mediatr-dispatch/AppA/PretendRouting.cs",
+          "is_interface": false,
+          "is_test": false,
+          "kinds": [
+            "class"
+          ],
+          "language": "csharp",
+          "method_annotations": [],
+          "names": [
+            "HttpGetAttribute",
+            "PretendRouting.HttpGetAttribute"
+          ],
+          "namespaces": [
+            "PretendRouting"
+          ],
+          "project": "AppA"
+        },
+        {
+          "annotated_interfaces": [],
+          "annotations": [
             "Component",
             "org.springframework.stereotype.Component"
           ],
@@ -305,6 +423,79 @@
         {
           "annotated_interfaces": [],
           "annotations": [
+            "RequestMapping",
+            "RestController",
+            "org.springframework.web.bind.annotation.RequestMapping",
+            "org.springframework.web.bind.annotation.RestController"
+          ],
+          "base_types": [
+            "Object",
+            "java.lang.Object"
+          ],
+          "build": "@repo/spring-events",
+          "content": "package fixture.spring.http;\n\nimport fixture.spring.Sink;\nimport org.springframework.web.bind.annotation.GetMapping;\nimport org.springframework.web.bind.annotation.PostMapping;\nimport org.springframework.web.bind.annotation.RequestMapping;\nimport org.springframework.web.bind.annotation.RequestMethod;\nimport org.springframework.web.bind.annotation.RestController;\n\n@RestController\n@RequestMapping(\"/api\")\npublic final class HttpController {\n    @GetMapping(\"/items\")\n    public String items() { Sink.record(\"http items\"); return \"items\"; }\n\n    @GetMapping(\"/items/{id}\")\n    public String item() { Sink.record(\"http item\"); return \"item\"; }\n\n    @PostMapping(\"/items\")\n    public void create() { Sink.record(\"http create\"); }\n\n    @RequestMapping(path = \"/health\", method = RequestMethod.GET)\n    public String health() { Sink.record(\"http health\"); return \"ok\"; }\n\n    @fixture.spring.fake.GetMapping(\"/pretend\")\n    public void pretend() { Sink.record(\"custom annotation is not Spring\"); }\n}\n",
+          "file": "@repo/spring-events/src/main/java/fixture/spring/http/HttpController.java",
+          "is_interface": false,
+          "is_test": false,
+          "kinds": [
+            "class"
+          ],
+          "language": "java",
+          "method_annotations": [
+            "GetMapping",
+            "PostMapping",
+            "RequestMapping",
+            "fixture.spring.fake.GetMapping",
+            "org.springframework.web.bind.annotation.GetMapping",
+            "org.springframework.web.bind.annotation.PostMapping",
+            "org.springframework.web.bind.annotation.RequestMapping"
+          ],
+          "names": [
+            "HttpController",
+            "fixture.spring.http.HttpController"
+          ],
+          "namespaces": [
+            "fixture.spring.http"
+          ],
+          "project": "codegraph.fixture:spring-events"
+        },
+        {
+          "annotated_interfaces": [],
+          "annotations": [
+            "RequestMapping",
+            "RestController",
+            "org.springframework.web.bind.annotation.RequestMapping",
+            "org.springframework.web.bind.annotation.RestController"
+          ],
+          "base_types": [
+            "Object",
+            "java.lang.Object"
+          ],
+          "build": "@repo/spring-events",
+          "content": "package fixture.spring.http;\n\nimport fixture.spring.Sink;\nimport org.springframework.web.bind.annotation.GetMapping;\nimport org.springframework.web.bind.annotation.RequestMapping;\nimport org.springframework.web.bind.annotation.RestController;\n\n@RestController\n@RequestMapping(\"/api\")\npublic final class ConstrainedController {\n    @GetMapping(path = \"/ambiguous\", produces = \"application/json\")\n    public String json() { Sink.record(\"json variant\"); return \"{}\"; }\n\n    @GetMapping(path = \"/ambiguous\", produces = \"text/plain\")\n    public String text() { Sink.record(\"text variant\"); return \"text\"; }\n\n    @GetMapping(\"/constrained\")\n    public String unconstrained() { Sink.record(\"unconstrained variant\"); return \"default\"; }\n\n    @GetMapping(path = \"/constrained\", params = \"mode=special\")\n    public String constrained() { Sink.record(\"query constrained variant\"); return \"special\"; }\n}\n",
+          "file": "@repo/spring-events/src/main/java/fixture/spring/http/ConstrainedController.java",
+          "is_interface": false,
+          "is_test": false,
+          "kinds": [
+            "class"
+          ],
+          "language": "java",
+          "method_annotations": [
+            "GetMapping",
+            "org.springframework.web.bind.annotation.GetMapping"
+          ],
+          "names": [
+            "ConstrainedController",
+            "fixture.spring.http.ConstrainedController"
+          ],
+          "namespaces": [
+            "fixture.spring.http"
+          ],
+          "project": "codegraph.fixture:spring-events"
+        },
+        {
+          "annotated_interfaces": [],
+          "annotations": [
             "Retention",
             "Target",
             "java.lang.annotation.Retention",
@@ -327,6 +518,37 @@
           "names": [
             "EventListener",
             "fixture.spring.fake.EventListener"
+          ],
+          "namespaces": [
+            "fixture.spring.fake"
+          ],
+          "project": "codegraph.fixture:spring-events"
+        },
+        {
+          "annotated_interfaces": [],
+          "annotations": [
+            "Retention",
+            "Target",
+            "java.lang.annotation.Retention",
+            "java.lang.annotation.Target"
+          ],
+          "base_types": [
+            "Annotation",
+            "java.lang.annotation.Annotation"
+          ],
+          "build": "@repo/spring-events",
+          "content": "package fixture.spring.fake;\n\nimport java.lang.annotation.ElementType;\nimport java.lang.annotation.Retention;\nimport java.lang.annotation.RetentionPolicy;\nimport java.lang.annotation.Target;\n\n@Target(ElementType.METHOD)\n@Retention(RetentionPolicy.RUNTIME)\npublic @interface GetMapping { String value(); }\n",
+          "file": "@repo/spring-events/src/main/java/fixture/spring/fake/GetMapping.java",
+          "is_interface": false,
+          "is_test": false,
+          "kinds": [
+            "annotation"
+          ],
+          "language": "java",
+          "method_annotations": [],
+          "names": [
+            "GetMapping",
+            "fixture.spring.fake.GetMapping"
           ],
           "namespaces": [
             "fixture.spring.fake"
@@ -715,6 +937,22 @@
           "annotations": [],
           "base_types": [],
           "build": "@repo/typescript-corpus/tsconfig.json",
+          "content": "'use client';\nimport Link from 'next/link';\nimport {useRouter} from 'next/navigation';\n\nexport default function NavigationPage() {\n  const router = useRouter();\n  function openAbout() { router.push('/about'); }\n  function replaceUser() { router.replace('/users/42'); }\n  function prefetchOnly() { router.prefetch('/about'); }\n  return <><Link href=\"/about\">About</Link><button onClick={openAbout}>About</button>\n    <button onClick={replaceUser}>User</button><button onClick={prefetchOnly}>Warm</button></>;\n}\n",
+          "file": "@repo/typescript-corpus/src/app/navigation/page.tsx",
+          "is_interface": false,
+          "is_test": false,
+          "kinds": [],
+          "language": "typescript",
+          "method_annotations": [],
+          "names": [],
+          "namespaces": [],
+          "project": "typescript-corpus"
+        },
+        {
+          "annotated_interfaces": [],
+          "annotations": [],
+          "base_types": [],
+          "build": "@repo/typescript-corpus/tsconfig.json",
           "content": "const choose = Date.now() > 0;\nfunction nullishPrimary() { return 1; }\nfunction nullishFallback() { return 2; }\nfunction orPrimary() { return 3; }\nfunction orFallback() { return 4; }\nfunction aliasPrimary() { return 5; }\nfunction aliasFallback() { return 6; }\nfunction parameterLeaf() { return 7; }\nfunction returnLeafA() { return 8; }\nfunction returnLeafB() { return 9; }\nfunction mutationLeafA() { return 10; }\nfunction mutationLeafB() { return 11; }\nfunction forwardedLeaf() { return 12; }\n\nexport function logicalNullish() {\n  const maybe = choose ? nullishPrimary : undefined;\n  const selected = maybe ?? nullishFallback;\n  return selected();\n}\nexport function logicalOr() {\n  const maybe = choose ? orPrimary : undefined;\n  const selected = maybe || orFallback;\n  return selected();\n}\nexport function immutableAlias() {\n  const maybe = choose ? aliasPrimary : undefined;\n  const selected = maybe ?? aliasFallback;\n  const alias = selected;\n  return alias();\n}\nfunction invokeParameter(callback: () => number) { return callback(); }\nexport function callParameter() { return invokeParameter(parameterLeaf); }\nfunction identity(callback: () => number) { return callback; }\nexport function returnedA() { const callback = identity(returnLeafA); return callback(); }\nexport function returnedB() { const callback = identity(returnLeafB); return callback(); }\nexport function immediateReturned() { return identity(returnLeafA)(); }\nfunction relay(callback: () => number) { return callback; }\nfunction forwardOnly(callback: () => number) { return relay(callback); }\nexport function forwardingOnly() { forwardOnly(forwardedLeaf); return 0; }\nfunction mutatedParameter(callback: () => number) { callback = mutationLeafB; return callback(); }\nexport function parameterMutationNegative() { return mutatedParameter(mutationLeafA); }\nexport function mutableAliasNegative() {\n  let callback = choose ? mutationLeafA : mutationLeafB;\n  callback = mutationLeafB;\n  const selected = callback ?? mutationLeafA;\n  return selected();\n}\nexport function mutableReturnNegative() {\n  let callback = identity(mutationLeafA);\n  callback = identity(mutationLeafB);\n  const alias = callback;\n  return alias();\n}\n",
           "file": "@repo/typescript-corpus/src/callables.ts",
           "is_interface": false,
@@ -731,8 +969,72 @@
           "annotations": [],
           "base_types": [],
           "build": "@repo/typescript-corpus/tsconfig.json",
+          "content": "export default function AboutPage() { return <main>About</main>; }\n",
+          "file": "@repo/typescript-corpus/src/app/about/page.tsx",
+          "is_interface": false,
+          "is_test": false,
+          "kinds": [],
+          "language": "typescript",
+          "method_annotations": [],
+          "names": [],
+          "namespaces": [],
+          "project": "typescript-corpus"
+        },
+        {
+          "annotated_interfaces": [],
+          "annotations": [],
+          "base_types": [],
+          "build": "@repo/typescript-corpus/tsconfig.json",
+          "content": "export default function NewUserPage() { return <main>New user</main>; }\n",
+          "file": "@repo/typescript-corpus/src/app/users/new/page.tsx",
+          "is_interface": false,
+          "is_test": false,
+          "kinds": [],
+          "language": "typescript",
+          "method_annotations": [],
+          "names": [],
+          "namespaces": [],
+          "project": "typescript-corpus"
+        },
+        {
+          "annotated_interfaces": [],
+          "annotations": [],
+          "base_types": [],
+          "build": "@repo/typescript-corpus/tsconfig.json",
+          "content": "export default function UserPage() { return <main>User</main>; }\n",
+          "file": "@repo/typescript-corpus/src/app/users/[id]/page.tsx",
+          "is_interface": false,
+          "is_test": false,
+          "kinds": [],
+          "language": "typescript",
+          "method_annotations": [],
+          "names": [],
+          "namespaces": [],
+          "project": "typescript-corpus"
+        },
+        {
+          "annotated_interfaces": [],
+          "annotations": [],
+          "base_types": [],
+          "build": "@repo/typescript-corpus/tsconfig.json",
           "content": "export function GET() { return new Response('ok'); }\n",
           "file": "@repo/typescript-corpus/src/app/api/route.ts",
+          "is_interface": false,
+          "is_test": false,
+          "kinds": [],
+          "language": "typescript",
+          "method_annotations": [],
+          "names": [],
+          "namespaces": [],
+          "project": "typescript-corpus"
+        },
+        {
+          "annotated_interfaces": [],
+          "annotations": [],
+          "base_types": [],
+          "build": "@repo/typescript-corpus/tsconfig.json",
+          "content": "export function nextRequest() { return fetch('/api'); }\nexport function springItems() { return fetch('/api/items'); }\nexport function springItem() { return fetch('/api/items/42'); }\nexport function springCreate() { return fetch('/api/items', {method: 'POST'}); }\nexport function constrainedRequest() { return fetch('/api/constrained'); }\nexport function externalRequest() { return fetch('https://example.invalid/api/items'); }\nexport function dynamicRequest(path: string) { return fetch(path); }\nexport function shadowedRequest() {\n  const fetch = (path: string) => path;\n  return fetch('/api/items');\n}\n",
+          "file": "@repo/typescript-corpus/src/http.ts",
           "is_interface": false,
           "is_test": false,
           "kinds": [],
@@ -786,6 +1088,7 @@
       "version": 1
     },
     "diagnostics": [
+      "1 unresolved React component bindings",
       "1 unresolved callable flow: callable initializer unavailable",
       "1 unresolved observer instance channels (constructor escape or multiple allocations)",
       "3 unresolved callable flow: mutable or decorated callable binding",
@@ -802,7 +1105,7 @@
       "Java: 0 inherited/reference symbols without declared bodies excluded; 1 external relationships excluded. These references are engine-reported, not resolved by name.",
       "Java: 0 inherited/reference symbols without declared bodies excluded; 1 external relationships excluded. These references are engine-reported, not resolved by name.",
       "Java: 0 inherited/reference symbols without declared bodies excluded; 2 external relationships excluded. These references are engine-reported, not resolved by name.",
-      "Java: 0 inherited/reference symbols without declared bodies excluded; 20 external relationships excluded. These references are engine-reported, not resolved by name.",
+      "Java: 0 inherited/reference symbols without declared bodies excluded; 22 external relationships excluded. These references are engine-reported, not resolved by name.",
       "Java: 0 inherited/reference symbols without declared bodies excluded; 3 external relationships excluded. These references are engine-reported, not resolved by name.",
       "MediatR dispatch deferred (anonymous callable has no native identity) at @repo/mediatr-dispatch/AppA/Dispatch.cs:49:15",
       "MediatR dispatch deferred (concrete closed payload type is unknown) at @repo/mediatr-dispatch/AppA/Dispatch.cs:34:9",
@@ -1051,6 +1354,78 @@
       {
         "certainty": "direct",
         "count": 1,
+        "from": "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/http/ConstrainedController.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.http.ConstrainedController:constrained()|java.lang.String\"]",
+        "kind": "STA",
+        "provenance": "",
+        "to": "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/Sink.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.Sink:record(java.lang.String)|void\"]"
+      },
+      {
+        "certainty": "direct",
+        "count": 1,
+        "from": "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/http/ConstrainedController.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.http.ConstrainedController:json()|java.lang.String\"]",
+        "kind": "STA",
+        "provenance": "",
+        "to": "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/Sink.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.Sink:record(java.lang.String)|void\"]"
+      },
+      {
+        "certainty": "direct",
+        "count": 1,
+        "from": "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/http/ConstrainedController.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.http.ConstrainedController:text()|java.lang.String\"]",
+        "kind": "STA",
+        "provenance": "",
+        "to": "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/Sink.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.Sink:record(java.lang.String)|void\"]"
+      },
+      {
+        "certainty": "direct",
+        "count": 1,
+        "from": "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/http/ConstrainedController.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.http.ConstrainedController:unconstrained()|java.lang.String\"]",
+        "kind": "STA",
+        "provenance": "",
+        "to": "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/Sink.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.Sink:record(java.lang.String)|void\"]"
+      },
+      {
+        "certainty": "direct",
+        "count": 1,
+        "from": "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/http/HttpController.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.http.HttpController:create()|void\"]",
+        "kind": "STA",
+        "provenance": "",
+        "to": "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/Sink.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.Sink:record(java.lang.String)|void\"]"
+      },
+      {
+        "certainty": "direct",
+        "count": 1,
+        "from": "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/http/HttpController.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.http.HttpController:health()|java.lang.String\"]",
+        "kind": "STA",
+        "provenance": "",
+        "to": "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/Sink.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.Sink:record(java.lang.String)|void\"]"
+      },
+      {
+        "certainty": "direct",
+        "count": 1,
+        "from": "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/http/HttpController.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.http.HttpController:item()|java.lang.String\"]",
+        "kind": "STA",
+        "provenance": "",
+        "to": "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/Sink.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.Sink:record(java.lang.String)|void\"]"
+      },
+      {
+        "certainty": "direct",
+        "count": 1,
+        "from": "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/http/HttpController.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.http.HttpController:items()|java.lang.String\"]",
+        "kind": "STA",
+        "provenance": "",
+        "to": "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/Sink.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.Sink:record(java.lang.String)|void\"]"
+      },
+      {
+        "certainty": "direct",
+        "count": 1,
+        "from": "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/http/HttpController.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.http.HttpController:pretend()|void\"]",
+        "kind": "STA",
+        "provenance": "",
+        "to": "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/Sink.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.Sink:record(java.lang.String)|void\"]"
+      },
+      {
+        "certainty": "direct",
+        "count": 1,
         "from": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/app/page.tsx\",\"[\\\"[\\\\\\\"[\\\\\\\\\\\\\\\"[\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"<module>\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"FunctionDeclaration\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"Page\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"(): Element\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"]\\\\\\\\\\\\\\\",0]\\\\\\\",\\\\\\\"ArrowFunction\\\\\\\",\\\\\\\"argument:0\\\\\\\",\\\\\\\"a9626b658fcf55fa3ae99d3b717c6b03b415c2bdb246a8a538d72beff607706e\\\\\\\"]\\\",0]\"]",
         "kind": "call",
         "provenance": "typescript.compiler",
@@ -1119,6 +1494,14 @@
         "kind": "call",
         "provenance": "typescript.compiler",
         "to": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/callables.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"identity\\\\\\\",\\\\\\\"(callback: () => number): () => number\\\\\\\"]\\\",0]\"]"
+      },
+      {
+        "certainty": "direct",
+        "count": 1,
+        "from": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/http.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"shadowedRequest\\\\\\\",\\\\\\\"(): string\\\\\\\"]\\\",0]\"]",
+        "kind": "call",
+        "provenance": "typescript.compiler",
+        "to": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/http.ts\",\"[\\\"[\\\\\\\"[\\\\\\\\\\\\\\\"[\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"<module>\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"FunctionDeclaration\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"shadowedRequest\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"(): string\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"]\\\\\\\\\\\\\\\",0]\\\\\\\",\\\\\\\"ArrowFunction\\\\\\\",\\\\\\\"fetch\\\\\\\",\\\\\\\"(path: string): string\\\\\\\"]\\\",0]\"]"
       },
       {
         "certainty": "direct",
@@ -1983,6 +2366,43 @@
         "evidence": [
           {
             "invocation": {
+              "column": 13,
+              "file": "@repo/typescript-corpus/src/app/navigation/page.tsx",
+              "line": 11,
+              "span": {
+                "end": 445,
+                "start": 424
+              }
+            },
+            "registration": {
+              "column": 13,
+              "file": "@repo/typescript-corpus/src/app/navigation/page.tsx",
+              "line": 11,
+              "span": {
+                "end": 445,
+                "start": 424
+              }
+            },
+            "rule": "codegraph.react:react-event",
+            "semantics": "reference",
+            "supporting_symbols": [
+              "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/app/navigation/page.tsx\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"NavigationPage\\\\\\\",\\\\\\\"(): Element\\\\\\\"]\\\",0]\"]",
+              "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/app/navigation/page.tsx\",\"[\\\"[\\\\\\\"[\\\\\\\\\\\\\\\"[\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"<module>\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"FunctionDeclaration\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"NavigationPage\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"(): Element\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"]\\\\\\\\\\\\\\\",0]\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"replaceUser\\\\\\\",\\\\\\\"(): void\\\\\\\"]\\\",0]\"]"
+            ],
+            "version": 1
+          }
+        ],
+        "from": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/app/navigation/page.tsx\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"NavigationPage\\\\\\\",\\\\\\\"(): Element\\\\\\\"]\\\",0]\"]",
+        "kind": "react-event",
+        "provenance": "codegraph.react.v1:react-event",
+        "to": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/app/navigation/page.tsx\",\"[\\\"[\\\\\\\"[\\\\\\\\\\\\\\\"[\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"<module>\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"FunctionDeclaration\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"NavigationPage\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"(): Element\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"]\\\\\\\\\\\\\\\",0]\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"replaceUser\\\\\\\",\\\\\\\"(): void\\\\\\\"]\\\",0]\"]"
+      },
+      {
+        "certainty": "possible",
+        "count": 1,
+        "evidence": [
+          {
+            "invocation": {
               "column": 17,
               "file": "@repo/typescript-corpus/src/app/page.tsx",
               "line": 11,
@@ -2251,6 +2671,80 @@
         "kind": "call",
         "provenance": "codegraph.callable.v1",
         "to": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/callables.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"returnLeafA\\\\\\\",\\\\\\\"(): number\\\\\\\"]\\\",0]\"]"
+      },
+      {
+        "certainty": "possible",
+        "count": 1,
+        "evidence": [
+          {
+            "invocation": {
+              "column": 52,
+              "file": "@repo/typescript-corpus/src/app/navigation/page.tsx",
+              "line": 10,
+              "span": {
+                "end": 396,
+                "start": 377
+              }
+            },
+            "registration": {
+              "column": 52,
+              "file": "@repo/typescript-corpus/src/app/navigation/page.tsx",
+              "line": 10,
+              "span": {
+                "end": 396,
+                "start": 377
+              }
+            },
+            "rule": "codegraph.react:react-event",
+            "semantics": "reference",
+            "supporting_symbols": [
+              "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/app/navigation/page.tsx\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"NavigationPage\\\\\\\",\\\\\\\"(): Element\\\\\\\"]\\\",0]\"]",
+              "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/app/navigation/page.tsx\",\"[\\\"[\\\\\\\"[\\\\\\\\\\\\\\\"[\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"<module>\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"FunctionDeclaration\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"NavigationPage\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"(): Element\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"]\\\\\\\\\\\\\\\",0]\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"openAbout\\\\\\\",\\\\\\\"(): void\\\\\\\"]\\\",0]\"]"
+            ],
+            "version": 1
+          }
+        ],
+        "from": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/app/navigation/page.tsx\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"NavigationPage\\\\\\\",\\\\\\\"(): Element\\\\\\\"]\\\",0]\"]",
+        "kind": "react-event",
+        "provenance": "codegraph.react.v1:react-event",
+        "to": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/app/navigation/page.tsx\",\"[\\\"[\\\\\\\"[\\\\\\\\\\\\\\\"[\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"<module>\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"FunctionDeclaration\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"NavigationPage\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"(): Element\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"]\\\\\\\\\\\\\\\",0]\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"openAbout\\\\\\\",\\\\\\\"(): void\\\\\\\"]\\\",0]\"]"
+      },
+      {
+        "certainty": "possible",
+        "count": 1,
+        "evidence": [
+          {
+            "invocation": {
+              "column": 56,
+              "file": "@repo/typescript-corpus/src/app/navigation/page.tsx",
+              "line": 11,
+              "span": {
+                "end": 489,
+                "start": 467
+              }
+            },
+            "registration": {
+              "column": 56,
+              "file": "@repo/typescript-corpus/src/app/navigation/page.tsx",
+              "line": 11,
+              "span": {
+                "end": 489,
+                "start": 467
+              }
+            },
+            "rule": "codegraph.react:react-event",
+            "semantics": "reference",
+            "supporting_symbols": [
+              "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/app/navigation/page.tsx\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"NavigationPage\\\\\\\",\\\\\\\"(): Element\\\\\\\"]\\\",0]\"]",
+              "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/app/navigation/page.tsx\",\"[\\\"[\\\\\\\"[\\\\\\\\\\\\\\\"[\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"<module>\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"FunctionDeclaration\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"NavigationPage\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"(): Element\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"]\\\\\\\\\\\\\\\",0]\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"prefetchOnly\\\\\\\",\\\\\\\"(): void\\\\\\\"]\\\",0]\"]"
+            ],
+            "version": 1
+          }
+        ],
+        "from": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/app/navigation/page.tsx\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"NavigationPage\\\\\\\",\\\\\\\"(): Element\\\\\\\"]\\\",0]\"]",
+        "kind": "react-event",
+        "provenance": "codegraph.react.v1:react-event",
+        "to": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/app/navigation/page.tsx\",\"[\\\"[\\\\\\\"[\\\\\\\\\\\\\\\"[\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"<module>\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"FunctionDeclaration\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"NavigationPage\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"(): Element\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"]\\\\\\\\\\\\\\\",0]\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"prefetchOnly\\\\\\\",\\\\\\\"(): void\\\\\\\"]\\\",0]\"]"
       },
       {
         "certainty": "possible",
@@ -3277,6 +3771,27 @@
         "[\"csharp\",\"@repo/dotnet-collisions/Collisions.sln\",\"@repo/dotnet-collisions/EntryB/Program.cs\",\"@repo/dotnet-collisions/Collisions.sln|[EntryB]::Program::Main()\"]",
         "[\"csharp\",\"@repo/dotnet-collisions/Collisions.sln\",\"@repo/dotnet-collisions/EntryB/Program.cs\",\"@repo/dotnet-collisions/Collisions.sln|[EntryB]::Worker::Seed()\"]",
         "[\"csharp\",\"@repo/dotnet-collisions/Collisions.sln\",\"@repo/dotnet-collisions/EntryB/Program.cs\",\"@repo/dotnet-collisions/Collisions.sln|[EntryB]::Worker::op_Addition(Worker,Worker)\"]",
+        "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Controllers.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.Http.CustomAttributeController::FakeOnly()\"]",
+        "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Controllers.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.Http.ExcludedController::Value()\"]",
+        "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Controllers.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.Http.GenericController<T>::Value()\"]",
+        "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Controllers.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.Http.ItemsController::CaseOne()\"]",
+        "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Controllers.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.Http.ItemsController::CaseTwo()\"]",
+        "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Controllers.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.Http.ItemsController::CatchAll(System.String)\"]",
+        "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Controllers.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.Http.ItemsController::Constrained(System.Int32)\"]",
+        "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Controllers.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.Http.ItemsController::ConstraintLiteral()\"]",
+        "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Controllers.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.Http.ItemsController::Create()\"]",
+        "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Controllers.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.Http.ItemsController::DefaultOrder()\"]",
+        "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Controllers.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.Http.ItemsController::Generic()\"]",
+        "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Controllers.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.Http.ItemsController::Get(System.String)\"]",
+        "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Controllers.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.Http.ItemsController::Health()\"]",
+        "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Controllers.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.Http.ItemsController::List()\"]",
+        "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Controllers.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.Http.ItemsController::MultipleTemplates()\"]",
+        "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Controllers.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.Http.ItemsController::NotAnAction()\"]",
+        "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Controllers.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.Http.ItemsController::Ordered()\"]",
+        "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Controllers.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.Http.ItemsController::Private()\"]",
+        "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Controllers.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.Http.ItemsController::Ready()\"]",
+        "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Controllers.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.Http.ItemsController::Static()\"]",
+        "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Controllers.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.Http.PrioritizedController::Value()\"]",
         "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Dispatch.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.Dispatch::AnonymousDeferred(MediatR.ISender,System.Threading.CancellationToken)\"]",
         "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Dispatch.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.Dispatch::Conditional(MediatR.ISender,System.Boolean,System.Threading.CancellationToken)\"]",
         "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Dispatch.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.Dispatch::CustomSend(DispatchAppA.FakeSender)\"]",
@@ -3292,6 +3807,9 @@
         "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Dispatch.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.Dispatch::UnknownRequest(MediatR.ISender,System.Threading.CancellationToken)\"]",
         "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Handlers.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.BaseRequestHandler::Handle(DispatchContracts.BaseRequest,System.Threading.CancellationToken)\"]",
         "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Handlers.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.OpenGenericHandler<T>::Handle(DispatchContracts.GenericRequest<T>,System.Threading.CancellationToken)\"]",
+        "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppB/Controllers.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppB]::DispatchAppB.Http.ItemsController::CaseOnly()\"]",
+        "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppB/Controllers.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppB]::DispatchAppB.Http.ItemsController::Get(System.String)\"]",
+        "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppB/Controllers.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppB]::DispatchAppB.Http.ItemsController::List()\"]",
         "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppB/Dispatch.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppB]::DispatchAppB.Dispatch::PublishChanged(MediatR.IPublisher,System.Threading.CancellationToken)\"]",
         "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppB/Dispatch.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppB]::DispatchAppB.Dispatch::SendPing(MediatR.ISender,System.Threading.CancellationToken)\"]",
         "[\"java\",\"@repo/maven/reactor\",\"@repo/maven/profile-library/src/main/java/fixture/ProfileOnly.java\",\"[\\\"@repo/maven/reactor\\\",\\\"@repo/maven/profile-library\\\",\\\"main\\\"]|fixture.ProfileOnly:fromActiveProfile()|void\"]",
@@ -3311,11 +3829,29 @@
         "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/Publisher.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.Publisher:publishPayload(org.springframework.context.ApplicationEventPublisher)|void\"]",
         "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/Publisher.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.Publisher:publishPayloadTwice(org.springframework.context.ApplicationEventPublisher)|void\"]",
         "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/Publisher.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.Publisher:sameNamedApi(fixture.spring.PretendPublisher)|void\"]",
+        "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/fake/GetMapping.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.fake.GetMapping:value()|java.lang.String\"]",
+        "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/http/ConstrainedController.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.http.ConstrainedController:constrained()|java.lang.String\"]",
+        "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/http/ConstrainedController.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.http.ConstrainedController:json()|java.lang.String\"]",
+        "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/http/ConstrainedController.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.http.ConstrainedController:text()|java.lang.String\"]",
+        "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/http/ConstrainedController.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.http.ConstrainedController:unconstrained()|java.lang.String\"]",
+        "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/http/HttpController.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.http.HttpController:create()|void\"]",
+        "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/http/HttpController.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.http.HttpController:health()|java.lang.String\"]",
+        "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/http/HttpController.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.http.HttpController:item()|java.lang.String\"]",
+        "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/http/HttpController.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.http.HttpController:items()|java.lang.String\"]",
+        "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/http/HttpController.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.http.HttpController:pretend()|void\"]",
+        "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/app/about/page.tsx\",\"<module>\"]",
+        "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/app/about/page.tsx\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"AboutPage\\\\\\\",\\\\\\\"(): Element\\\\\\\"]\\\",0]\"]",
         "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/app/api/route.ts\",\"<module>\"]",
         "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/app/api/route.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"GET\\\\\\\",\\\\\\\"(): Response\\\\\\\"]\\\",0]\"]",
+        "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/app/navigation/page.tsx\",\"<module>\"]",
+        "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/app/navigation/page.tsx\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"NavigationPage\\\\\\\",\\\\\\\"(): Element\\\\\\\"]\\\",0]\"]",
         "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/app/page.tsx\",\"<module>\"]",
         "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/app/page.tsx\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"Page\\\\\\\",\\\\\\\"(): Element\\\\\\\"]\\\",0]\"]",
         "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/app/page.tsx\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"disconnected\\\\\\\",\\\\\\\"(): number\\\\\\\"]\\\",0]\"]",
+        "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/app/users/[id]/page.tsx\",\"<module>\"]",
+        "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/app/users/[id]/page.tsx\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"UserPage\\\\\\\",\\\\\\\"(): Element\\\\\\\"]\\\",0]\"]",
+        "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/app/users/new/page.tsx\",\"<module>\"]",
+        "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/app/users/new/page.tsx\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"NewUserPage\\\\\\\",\\\\\\\"(): Element\\\\\\\"]\\\",0]\"]",
         "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/callables.ts\",\"<module>\"]",
         "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/callables.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"callParameter\\\\\\\",\\\\\\\"(): number\\\\\\\"]\\\",0]\"]",
         "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/callables.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"forwardedLeaf\\\\\\\",\\\\\\\"(): number\\\\\\\"]\\\",0]\"]",
@@ -3331,6 +3867,15 @@
         "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/callables.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"parameterMutationNegative\\\\\\\",\\\\\\\"(): number\\\\\\\"]\\\",0]\"]",
         "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/callables.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"returnedA\\\\\\\",\\\\\\\"(): number\\\\\\\"]\\\",0]\"]",
         "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/callables.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"returnedB\\\\\\\",\\\\\\\"(): number\\\\\\\"]\\\",0]\"]",
+        "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/http.ts\",\"<module>\"]",
+        "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/http.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"constrainedRequest\\\\\\\",\\\\\\\"(): Promise<Response>\\\\\\\"]\\\",0]\"]",
+        "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/http.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"dynamicRequest\\\\\\\",\\\\\\\"(path: string): Promise<Response>\\\\\\\"]\\\",0]\"]",
+        "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/http.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"externalRequest\\\\\\\",\\\\\\\"(): Promise<Response>\\\\\\\"]\\\",0]\"]",
+        "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/http.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"nextRequest\\\\\\\",\\\\\\\"(): Promise<Response>\\\\\\\"]\\\",0]\"]",
+        "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/http.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"shadowedRequest\\\\\\\",\\\\\\\"(): string\\\\\\\"]\\\",0]\"]",
+        "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/http.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"springCreate\\\\\\\",\\\\\\\"(): Promise<Response>\\\\\\\"]\\\",0]\"]",
+        "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/http.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"springItem\\\\\\\",\\\\\\\"(): Promise<Response>\\\\\\\"]\\\",0]\"]",
+        "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/http.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"springItems\\\\\\\",\\\\\\\"(): Promise<Response>\\\\\\\"]\\\",0]\"]",
         "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/observers.ts\",\"<module>\"]",
         "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/observers.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"notify\\\\\\\",\\\\\\\"(): void\\\\\\\"]\\\",0]\"]",
         "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/observers.ts\",\"[\\\"[\\\\\\\"[\\\\\\\\\\\\\\\"[\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"<module>\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"ClassDeclaration\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"Scene\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"]\\\\\\\\\\\\\\\",0]\\\\\\\",\\\\\\\"MethodDeclaration\\\\\\\",\\\\\\\"triggerUpdate\\\\\\\",\\\\\\\"(): void\\\\\\\"]\\\",0]\"]",
@@ -3353,8 +3898,12 @@
         "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/Listeners.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.Listeners:onOtherCreated(fixture.spring.other.Created)|void\"]",
         "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/Listeners.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.Listeners:onPayload(fixture.spring.events.Created)|void\"]",
         "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/Listeners.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.Listeners:onPayloadEnvelope(org.springframework.context.PayloadApplicationEvent)|void\"]",
+        "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/app/about/page.tsx\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"AboutPage\\\\\\\",\\\\\\\"(): Element\\\\\\\"]\\\",0]\"]",
         "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/app/api/route.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"GET\\\\\\\",\\\\\\\"(): Response\\\\\\\"]\\\",0]\"]",
-        "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/app/page.tsx\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"Page\\\\\\\",\\\\\\\"(): Element\\\\\\\"]\\\",0]\"]"
+        "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/app/navigation/page.tsx\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"NavigationPage\\\\\\\",\\\\\\\"(): Element\\\\\\\"]\\\",0]\"]",
+        "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/app/page.tsx\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"Page\\\\\\\",\\\\\\\"(): Element\\\\\\\"]\\\",0]\"]",
+        "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/app/users/[id]/page.tsx\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"UserPage\\\\\\\",\\\\\\\"(): Element\\\\\\\"]\\\",0]\"]",
+        "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/app/users/new/page.tsx\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"NewUserPage\\\\\\\",\\\\\\\"(): Element\\\\\\\"]\\\",0]\"]"
       ]
     },
     "flow_inventory": {
@@ -4332,6 +4881,214 @@
             {
               "kind": "evaluate",
               "span": {
+                "end": 159,
+                "start": 148
+              },
+              "value": {
+                "calls": [
+                  {
+                    "diagnostic": "No statically bound project target",
+                    "label": "useRouter",
+                    "span": {
+                      "end": 159,
+                      "start": 148
+                    },
+                    "targets": []
+                  }
+                ],
+                "kind": "value",
+                "regions": [],
+                "span": {
+                  "end": 159,
+                  "start": 148
+                },
+                "text": "useRouter()"
+              }
+            },
+            {
+              "calls": [],
+              "kind": "action",
+              "span": {
+                "end": 159,
+                "start": 139
+              },
+              "text": "Bind router"
+            },
+            {
+              "calls": [],
+              "kind": "action",
+              "span": {
+                "end": 210,
+                "start": 163
+              },
+              "text": "Declare function openAbout"
+            },
+            {
+              "body": [
+                {
+                  "kind": "evaluate",
+                  "span": {
+                    "end": 207,
+                    "start": 186
+                  },
+                  "value": {
+                    "calls": [
+                      {
+                        "diagnostic": "No statically bound project target",
+                        "label": "push",
+                        "span": {
+                          "end": 207,
+                          "start": 186
+                        },
+                        "targets": []
+                      }
+                    ],
+                    "kind": "value",
+                    "regions": [],
+                    "span": {
+                      "end": 207,
+                      "start": 186
+                    },
+                    "text": "router.push('/about')"
+                  }
+                }
+              ],
+              "deferred": true,
+              "kind": "region",
+              "label": "Separate function body: openAbout",
+              "span": {
+                "end": 210,
+                "start": 163
+              }
+            },
+            {
+              "calls": [],
+              "kind": "action",
+              "span": {
+                "end": 268,
+                "start": 213
+              },
+              "text": "Declare function replaceUser"
+            },
+            {
+              "body": [
+                {
+                  "kind": "evaluate",
+                  "span": {
+                    "end": 265,
+                    "start": 238
+                  },
+                  "value": {
+                    "calls": [
+                      {
+                        "diagnostic": "No statically bound project target",
+                        "label": "replace",
+                        "span": {
+                          "end": 265,
+                          "start": 238
+                        },
+                        "targets": []
+                      }
+                    ],
+                    "kind": "value",
+                    "regions": [],
+                    "span": {
+                      "end": 265,
+                      "start": 238
+                    },
+                    "text": "router.replace('/users/42')"
+                  }
+                }
+              ],
+              "deferred": true,
+              "kind": "region",
+              "label": "Separate function body: replaceUser",
+              "span": {
+                "end": 268,
+                "start": 213
+              }
+            },
+            {
+              "calls": [],
+              "kind": "action",
+              "span": {
+                "end": 325,
+                "start": 271
+              },
+              "text": "Declare function prefetchOnly"
+            },
+            {
+              "body": [
+                {
+                  "kind": "evaluate",
+                  "span": {
+                    "end": 322,
+                    "start": 297
+                  },
+                  "value": {
+                    "calls": [
+                      {
+                        "diagnostic": "No statically bound project target",
+                        "label": "prefetch",
+                        "span": {
+                          "end": 322,
+                          "start": 297
+                        },
+                        "targets": []
+                      }
+                    ],
+                    "kind": "value",
+                    "regions": [],
+                    "span": {
+                      "end": 322,
+                      "start": 297
+                    },
+                    "text": "router.prefetch('/about')"
+                  }
+                }
+              ],
+              "deferred": true,
+              "kind": "region",
+              "label": "Separate function body: prefetchOnly",
+              "span": {
+                "end": 325,
+                "start": 271
+              }
+            },
+            {
+              "kind": "return",
+              "span": {
+                "end": 507,
+                "start": 328
+              },
+              "value": {
+                "calls": [],
+                "kind": "value",
+                "regions": [],
+                "span": {
+                  "end": 506,
+                  "start": 335
+                },
+                "text": "<><Link href=\"/about\">About</Link><button onClick={openAbout}>About</button>\n    <button onClick={replaceUser}>User</button><button onClick={prefetchOnly}>Warm</button></>"
+              }
+            }
+          ],
+          "build": "@repo/typescript-corpus/tsconfig.json",
+          "diagnostics": [],
+          "file": "@repo/typescript-corpus/src/app/navigation/page.tsx",
+          "language": "typescript",
+          "project": "typescript-corpus",
+          "span": {
+            "end": 509,
+            "start": 88
+          },
+          "symbol": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/app/navigation/page.tsx\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"NavigationPage\\\\\\\",\\\\\\\"(): Element\\\\\\\"]\\\",0]\"]"
+        },
+        {
+          "body": [
+            {
+              "kind": "evaluate",
+              "span": {
                 "end": 1624,
                 "start": 1598
               },
@@ -4825,6 +5582,47 @@
             {
               "kind": "evaluate",
               "span": {
+                "end": 207,
+                "start": 186
+              },
+              "value": {
+                "calls": [
+                  {
+                    "diagnostic": "No statically bound project target",
+                    "label": "push",
+                    "span": {
+                      "end": 207,
+                      "start": 186
+                    },
+                    "targets": []
+                  }
+                ],
+                "kind": "value",
+                "regions": [],
+                "span": {
+                  "end": 207,
+                  "start": 186
+                },
+                "text": "router.push('/about')"
+              }
+            }
+          ],
+          "build": "@repo/typescript-corpus/tsconfig.json",
+          "diagnostics": [],
+          "file": "@repo/typescript-corpus/src/app/navigation/page.tsx",
+          "language": "typescript",
+          "project": "typescript-corpus",
+          "span": {
+            "end": 210,
+            "start": 163
+          },
+          "symbol": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/app/navigation/page.tsx\",\"[\\\"[\\\\\\\"[\\\\\\\\\\\\\\\"[\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"<module>\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"FunctionDeclaration\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"NavigationPage\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"(): Element\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"]\\\\\\\\\\\\\\\",0]\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"openAbout\\\\\\\",\\\\\\\"(): void\\\\\\\"]\\\",0]\"]"
+        },
+        {
+          "body": [
+            {
+              "kind": "evaluate",
+              "span": {
                 "end": 2102,
                 "start": 2079
               },
@@ -5159,6 +5957,47 @@
             "start": 128
           },
           "symbol": "[\"java\",\"@repo/maven/reactor\",\"@repo/maven/reactor/app/src/test/java/fixture/AppTest.java\",\"[\\\"@repo/maven/reactor\\\",\\\"@repo/maven/reactor/app\\\",\\\"test\\\"]|fixture.AppTest:testOnly()|void\"]"
+        },
+        {
+          "body": [
+            {
+              "kind": "evaluate",
+              "span": {
+                "end": 265,
+                "start": 238
+              },
+              "value": {
+                "calls": [
+                  {
+                    "diagnostic": "No statically bound project target",
+                    "label": "replace",
+                    "span": {
+                      "end": 265,
+                      "start": 238
+                    },
+                    "targets": []
+                  }
+                ],
+                "kind": "value",
+                "regions": [],
+                "span": {
+                  "end": 265,
+                  "start": 238
+                },
+                "text": "router.replace('/users/42')"
+              }
+            }
+          ],
+          "build": "@repo/typescript-corpus/tsconfig.json",
+          "diagnostics": [],
+          "file": "@repo/typescript-corpus/src/app/navigation/page.tsx",
+          "language": "typescript",
+          "project": "typescript-corpus",
+          "span": {
+            "end": 268,
+            "start": 213
+          },
+          "symbol": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/app/navigation/page.tsx\",\"[\\\"[\\\\\\\"[\\\\\\\\\\\\\\\"[\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"<module>\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"FunctionDeclaration\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"NavigationPage\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"(): Element\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"]\\\\\\\\\\\\\\\",0]\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"replaceUser\\\\\\\",\\\\\\\"(): void\\\\\\\"]\\\",0]\"]"
         },
         {
           "body": [
@@ -5501,6 +6340,47 @@
             {
               "kind": "evaluate",
               "span": {
+                "end": 322,
+                "start": 297
+              },
+              "value": {
+                "calls": [
+                  {
+                    "diagnostic": "No statically bound project target",
+                    "label": "prefetch",
+                    "span": {
+                      "end": 322,
+                      "start": 297
+                    },
+                    "targets": []
+                  }
+                ],
+                "kind": "value",
+                "regions": [],
+                "span": {
+                  "end": 322,
+                  "start": 297
+                },
+                "text": "router.prefetch('/about')"
+              }
+            }
+          ],
+          "build": "@repo/typescript-corpus/tsconfig.json",
+          "diagnostics": [],
+          "file": "@repo/typescript-corpus/src/app/navigation/page.tsx",
+          "language": "typescript",
+          "project": "typescript-corpus",
+          "span": {
+            "end": 325,
+            "start": 271
+          },
+          "symbol": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/app/navigation/page.tsx\",\"[\\\"[\\\\\\\"[\\\\\\\\\\\\\\\"[\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"<module>\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"FunctionDeclaration\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"NavigationPage\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"(): Element\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"]\\\\\\\\\\\\\\\",0]\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"prefetchOnly\\\\\\\",\\\\\\\"(): void\\\\\\\"]\\\",0]\"]"
+        },
+        {
+          "body": [
+            {
+              "kind": "evaluate",
+              "span": {
                 "end": 325,
                 "start": 319
               },
@@ -5717,6 +6597,89 @@
             "start": 263
           },
           "symbol": "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/InterfaceListener.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.InterfaceListener:onApplicationEvent(fixture.spring.events.Started)|void\"]"
+        },
+        {
+          "body": [
+            {
+              "kind": "evaluate",
+              "span": {
+                "end": 450,
+                "start": 422
+              },
+              "value": {
+                "items": [
+                  {
+                    "calls": [],
+                    "kind": "value",
+                    "regions": [],
+                    "span": {
+                      "end": 448,
+                      "start": 434
+                    },
+                    "text": "\"json variant\""
+                  },
+                  {
+                    "calls": [
+                      {
+                        "diagnostic": null,
+                        "label": "Sink.record(\"json variant\")",
+                        "span": {
+                          "end": 449,
+                          "start": 422
+                        },
+                        "targets": [
+                          {
+                            "certainty": "direct",
+                            "provenance": "java.javac.source-call",
+                            "symbol": "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/Sink.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.Sink:record(java.lang.String)|void\"]"
+                          }
+                        ]
+                      }
+                    ],
+                    "kind": "value",
+                    "regions": [],
+                    "span": {
+                      "end": 449,
+                      "start": 422
+                    },
+                    "text": "Sink.record(\"json variant\")"
+                  }
+                ],
+                "kind": "sequence",
+                "span": {
+                  "end": 449,
+                  "start": 422
+                }
+              }
+            },
+            {
+              "kind": "return",
+              "span": {
+                "end": 463,
+                "start": 451
+              },
+              "value": {
+                "calls": [],
+                "kind": "value",
+                "regions": [],
+                "span": {
+                  "end": 462,
+                  "start": 458
+                },
+                "text": "\"{}\""
+              }
+            }
+          ],
+          "build": "@repo/spring-events",
+          "diagnostics": [],
+          "file": "@repo/spring-events/src/main/java/fixture/spring/http/ConstrainedController.java",
+          "language": "java",
+          "project": "codegraph.fixture:spring-events",
+          "span": {
+            "end": 465,
+            "start": 331
+          },
+          "symbol": "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/http/ConstrainedController.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.http.ConstrainedController:json()|java.lang.String\"]"
         },
         {
           "body": [
@@ -6020,6 +6983,89 @@
             {
               "kind": "evaluate",
               "span": {
+                "end": 522,
+                "start": 496
+              },
+              "value": {
+                "items": [
+                  {
+                    "calls": [],
+                    "kind": "value",
+                    "regions": [],
+                    "span": {
+                      "end": 520,
+                      "start": 508
+                    },
+                    "text": "\"http items\""
+                  },
+                  {
+                    "calls": [
+                      {
+                        "diagnostic": null,
+                        "label": "Sink.record(\"http items\")",
+                        "span": {
+                          "end": 521,
+                          "start": 496
+                        },
+                        "targets": [
+                          {
+                            "certainty": "direct",
+                            "provenance": "java.javac.source-call",
+                            "symbol": "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/Sink.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.Sink:record(java.lang.String)|void\"]"
+                          }
+                        ]
+                      }
+                    ],
+                    "kind": "value",
+                    "regions": [],
+                    "span": {
+                      "end": 521,
+                      "start": 496
+                    },
+                    "text": "Sink.record(\"http items\")"
+                  }
+                ],
+                "kind": "sequence",
+                "span": {
+                  "end": 521,
+                  "start": 496
+                }
+              }
+            },
+            {
+              "kind": "return",
+              "span": {
+                "end": 538,
+                "start": 523
+              },
+              "value": {
+                "calls": [],
+                "kind": "value",
+                "regions": [],
+                "span": {
+                  "end": 537,
+                  "start": 530
+                },
+                "text": "\"items\""
+              }
+            }
+          ],
+          "build": "@repo/spring-events",
+          "diagnostics": [],
+          "file": "@repo/spring-events/src/main/java/fixture/spring/http/HttpController.java",
+          "language": "java",
+          "project": "codegraph.fixture:spring-events",
+          "span": {
+            "end": 540,
+            "start": 446
+          },
+          "symbol": "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/http/HttpController.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.http.HttpController:items()|java.lang.String\"]"
+        },
+        {
+          "body": [
+            {
+              "kind": "evaluate",
+              "span": {
                 "end": 531,
                 "start": 517
               },
@@ -6109,6 +7155,108 @@
             "start": 476
           },
           "symbol": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/observers.ts\",\"[\\\"[\\\\\\\"[\\\\\\\\\\\\\\\"[\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"<module>\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"ClassDeclaration\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"Scene\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"]\\\\\\\\\\\\\\\",0]\\\\\\\",\\\\\\\"MethodDeclaration\\\\\\\",\\\\\\\"triggerUpdate\\\\\\\",\\\\\\\"(): void\\\\\\\"]\\\",0]\"]"
+        },
+        {
+          "body": [
+            {
+              "kind": "evaluate",
+              "span": {
+                "end": 570,
+                "start": 548
+              },
+              "value": {
+                "calls": [],
+                "kind": "value",
+                "regions": [
+                  {
+                    "body": [
+                      {
+                        "kind": "return",
+                        "span": {
+                          "end": 570,
+                          "start": 566
+                        },
+                        "value": {
+                          "calls": [],
+                          "kind": "value",
+                          "regions": [],
+                          "span": {
+                            "end": 570,
+                            "start": 566
+                          },
+                          "text": "path"
+                        }
+                      }
+                    ],
+                    "deferred": true,
+                    "kind": "region",
+                    "label": "Separate function body: fetch",
+                    "span": {
+                      "end": 570,
+                      "start": 548
+                    }
+                  }
+                ],
+                "span": {
+                  "end": 570,
+                  "start": 548
+                },
+                "text": "(path: string) => path"
+              }
+            },
+            {
+              "calls": [],
+              "kind": "action",
+              "span": {
+                "end": 570,
+                "start": 540
+              },
+              "text": "Bind fetch"
+            },
+            {
+              "kind": "return",
+              "span": {
+                "end": 601,
+                "start": 574
+              },
+              "value": {
+                "calls": [
+                  {
+                    "diagnostic": null,
+                    "label": "fetch",
+                    "span": {
+                      "end": 600,
+                      "start": 581
+                    },
+                    "targets": [
+                      {
+                        "certainty": "direct",
+                        "provenance": "typescript.compiler",
+                        "symbol": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/http.ts\",\"[\\\"[\\\\\\\"[\\\\\\\\\\\\\\\"[\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"<module>\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"FunctionDeclaration\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"shadowedRequest\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"(): string\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"]\\\\\\\\\\\\\\\",0]\\\\\\\",\\\\\\\"ArrowFunction\\\\\\\",\\\\\\\"fetch\\\\\\\",\\\\\\\"(path: string): string\\\\\\\"]\\\",0]\"]"
+                      }
+                    ]
+                  }
+                ],
+                "kind": "value",
+                "regions": [],
+                "span": {
+                  "end": 600,
+                  "start": 581
+                },
+                "text": "fetch('/api/items')"
+              }
+            }
+          ],
+          "build": "@repo/typescript-corpus/tsconfig.json",
+          "diagnostics": [],
+          "file": "@repo/typescript-corpus/src/http.ts",
+          "language": "typescript",
+          "project": "typescript-corpus",
+          "span": {
+            "end": 603,
+            "start": 496
+          },
+          "symbol": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/http.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"shadowedRequest\\\\\\\",\\\\\\\"(): string\\\\\\\"]\\\",0]\"]"
         },
         {
           "body": [
@@ -6248,6 +7396,89 @@
             {
               "kind": "evaluate",
               "span": {
+                "end": 584,
+                "start": 556
+              },
+              "value": {
+                "items": [
+                  {
+                    "calls": [],
+                    "kind": "value",
+                    "regions": [],
+                    "span": {
+                      "end": 582,
+                      "start": 568
+                    },
+                    "text": "\"text variant\""
+                  },
+                  {
+                    "calls": [
+                      {
+                        "diagnostic": null,
+                        "label": "Sink.record(\"text variant\")",
+                        "span": {
+                          "end": 583,
+                          "start": 556
+                        },
+                        "targets": [
+                          {
+                            "certainty": "direct",
+                            "provenance": "java.javac.source-call",
+                            "symbol": "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/Sink.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.Sink:record(java.lang.String)|void\"]"
+                          }
+                        ]
+                      }
+                    ],
+                    "kind": "value",
+                    "regions": [],
+                    "span": {
+                      "end": 583,
+                      "start": 556
+                    },
+                    "text": "Sink.record(\"text variant\")"
+                  }
+                ],
+                "kind": "sequence",
+                "span": {
+                  "end": 583,
+                  "start": 556
+                }
+              }
+            },
+            {
+              "kind": "return",
+              "span": {
+                "end": 599,
+                "start": 585
+              },
+              "value": {
+                "calls": [],
+                "kind": "value",
+                "regions": [],
+                "span": {
+                  "end": 598,
+                  "start": 592
+                },
+                "text": "\"text\""
+              }
+            }
+          ],
+          "build": "@repo/spring-events",
+          "diagnostics": [],
+          "file": "@repo/spring-events/src/main/java/fixture/spring/http/ConstrainedController.java",
+          "language": "java",
+          "project": "codegraph.fixture:spring-events",
+          "span": {
+            "end": 601,
+            "start": 471
+          },
+          "symbol": "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/http/ConstrainedController.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.http.ConstrainedController:text()|java.lang.String\"]"
+        },
+        {
+          "body": [
+            {
+              "kind": "evaluate",
+              "span": {
                 "end": 601,
                 "start": 578
               },
@@ -6308,6 +7539,89 @@
             "start": 520
           },
           "symbol": "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/Listeners.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.Listeners:onPayload(fixture.spring.events.Created)|void\"]"
+        },
+        {
+          "body": [
+            {
+              "kind": "evaluate",
+              "span": {
+                "end": 625,
+                "start": 600
+              },
+              "value": {
+                "items": [
+                  {
+                    "calls": [],
+                    "kind": "value",
+                    "regions": [],
+                    "span": {
+                      "end": 623,
+                      "start": 612
+                    },
+                    "text": "\"http item\""
+                  },
+                  {
+                    "calls": [
+                      {
+                        "diagnostic": null,
+                        "label": "Sink.record(\"http item\")",
+                        "span": {
+                          "end": 624,
+                          "start": 600
+                        },
+                        "targets": [
+                          {
+                            "certainty": "direct",
+                            "provenance": "java.javac.source-call",
+                            "symbol": "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/Sink.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.Sink:record(java.lang.String)|void\"]"
+                          }
+                        ]
+                      }
+                    ],
+                    "kind": "value",
+                    "regions": [],
+                    "span": {
+                      "end": 624,
+                      "start": 600
+                    },
+                    "text": "Sink.record(\"http item\")"
+                  }
+                ],
+                "kind": "sequence",
+                "span": {
+                  "end": 624,
+                  "start": 600
+                }
+              }
+            },
+            {
+              "kind": "return",
+              "span": {
+                "end": 640,
+                "start": 626
+              },
+              "value": {
+                "calls": [],
+                "kind": "value",
+                "regions": [],
+                "span": {
+                  "end": 639,
+                  "start": 633
+                },
+                "text": "\"item\""
+              }
+            }
+          ],
+          "build": "@repo/spring-events",
+          "diagnostics": [],
+          "file": "@repo/spring-events/src/main/java/fixture/spring/http/HttpController.java",
+          "language": "java",
+          "project": "codegraph.fixture:spring-events",
+          "span": {
+            "end": 642,
+            "start": 546
+          },
+          "symbol": "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/http/HttpController.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.http.HttpController:item()|java.lang.String\"]"
         },
         {
           "body": [
@@ -6424,6 +7738,89 @@
             {
               "kind": "evaluate",
               "span": {
+                "end": 708,
+                "start": 671
+              },
+              "value": {
+                "items": [
+                  {
+                    "calls": [],
+                    "kind": "value",
+                    "regions": [],
+                    "span": {
+                      "end": 706,
+                      "start": 683
+                    },
+                    "text": "\"unconstrained variant\""
+                  },
+                  {
+                    "calls": [
+                      {
+                        "diagnostic": null,
+                        "label": "Sink.record(\"unconstrained variant\")",
+                        "span": {
+                          "end": 707,
+                          "start": 671
+                        },
+                        "targets": [
+                          {
+                            "certainty": "direct",
+                            "provenance": "java.javac.source-call",
+                            "symbol": "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/Sink.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.Sink:record(java.lang.String)|void\"]"
+                          }
+                        ]
+                      }
+                    ],
+                    "kind": "value",
+                    "regions": [],
+                    "span": {
+                      "end": 707,
+                      "start": 671
+                    },
+                    "text": "Sink.record(\"unconstrained variant\")"
+                  }
+                ],
+                "kind": "sequence",
+                "span": {
+                  "end": 707,
+                  "start": 671
+                }
+              }
+            },
+            {
+              "kind": "return",
+              "span": {
+                "end": 726,
+                "start": 709
+              },
+              "value": {
+                "calls": [],
+                "kind": "value",
+                "regions": [],
+                "span": {
+                  "end": 725,
+                  "start": 716
+                },
+                "text": "\"default\""
+              }
+            }
+          ],
+          "build": "@repo/spring-events",
+          "diagnostics": [],
+          "file": "@repo/spring-events/src/main/java/fixture/spring/http/ConstrainedController.java",
+          "language": "java",
+          "project": "codegraph.fixture:spring-events",
+          "span": {
+            "end": 728,
+            "start": 607
+          },
+          "symbol": "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/http/ConstrainedController.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.http.ConstrainedController:unconstrained()|java.lang.String\"]"
+        },
+        {
+          "body": [
+            {
+              "kind": "evaluate",
+              "span": {
                 "end": 719,
                 "start": 687
               },
@@ -6484,6 +7881,72 @@
             "start": 609
           },
           "symbol": "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/Listeners.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.Listeners:onExplicitPayload()|void\"]"
+        },
+        {
+          "body": [
+            {
+              "kind": "evaluate",
+              "span": {
+                "end": 725,
+                "start": 698
+              },
+              "value": {
+                "items": [
+                  {
+                    "calls": [],
+                    "kind": "value",
+                    "regions": [],
+                    "span": {
+                      "end": 723,
+                      "start": 710
+                    },
+                    "text": "\"http create\""
+                  },
+                  {
+                    "calls": [
+                      {
+                        "diagnostic": null,
+                        "label": "Sink.record(\"http create\")",
+                        "span": {
+                          "end": 724,
+                          "start": 698
+                        },
+                        "targets": [
+                          {
+                            "certainty": "direct",
+                            "provenance": "java.javac.source-call",
+                            "symbol": "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/Sink.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.Sink:record(java.lang.String)|void\"]"
+                          }
+                        ]
+                      }
+                    ],
+                    "kind": "value",
+                    "regions": [],
+                    "span": {
+                      "end": 724,
+                      "start": 698
+                    },
+                    "text": "Sink.record(\"http create\")"
+                  }
+                ],
+                "kind": "sequence",
+                "span": {
+                  "end": 724,
+                  "start": 698
+                }
+              }
+            }
+          ],
+          "build": "@repo/spring-events",
+          "diagnostics": [],
+          "file": "@repo/spring-events/src/main/java/fixture/spring/http/HttpController.java",
+          "language": "java",
+          "project": "codegraph.fixture:spring-events",
+          "span": {
+            "end": 727,
+            "start": 648
+          },
+          "symbol": "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/http/HttpController.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.http.HttpController:create()|void\"]"
         },
         {
           "body": [
@@ -6844,6 +8307,172 @@
             {
               "kind": "evaluate",
               "span": {
+                "end": 851,
+                "start": 824
+              },
+              "value": {
+                "items": [
+                  {
+                    "calls": [],
+                    "kind": "value",
+                    "regions": [],
+                    "span": {
+                      "end": 849,
+                      "start": 836
+                    },
+                    "text": "\"http health\""
+                  },
+                  {
+                    "calls": [
+                      {
+                        "diagnostic": null,
+                        "label": "Sink.record(\"http health\")",
+                        "span": {
+                          "end": 850,
+                          "start": 824
+                        },
+                        "targets": [
+                          {
+                            "certainty": "direct",
+                            "provenance": "java.javac.source-call",
+                            "symbol": "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/Sink.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.Sink:record(java.lang.String)|void\"]"
+                          }
+                        ]
+                      }
+                    ],
+                    "kind": "value",
+                    "regions": [],
+                    "span": {
+                      "end": 850,
+                      "start": 824
+                    },
+                    "text": "Sink.record(\"http health\")"
+                  }
+                ],
+                "kind": "sequence",
+                "span": {
+                  "end": 850,
+                  "start": 824
+                }
+              }
+            },
+            {
+              "kind": "return",
+              "span": {
+                "end": 864,
+                "start": 852
+              },
+              "value": {
+                "calls": [],
+                "kind": "value",
+                "regions": [],
+                "span": {
+                  "end": 863,
+                  "start": 859
+                },
+                "text": "\"ok\""
+              }
+            }
+          ],
+          "build": "@repo/spring-events",
+          "diagnostics": [],
+          "file": "@repo/spring-events/src/main/java/fixture/spring/http/HttpController.java",
+          "language": "java",
+          "project": "codegraph.fixture:spring-events",
+          "span": {
+            "end": 866,
+            "start": 733
+          },
+          "symbol": "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/http/HttpController.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.http.HttpController:health()|java.lang.String\"]"
+        },
+        {
+          "body": [
+            {
+              "kind": "evaluate",
+              "span": {
+                "end": 869,
+                "start": 828
+              },
+              "value": {
+                "items": [
+                  {
+                    "calls": [],
+                    "kind": "value",
+                    "regions": [],
+                    "span": {
+                      "end": 867,
+                      "start": 840
+                    },
+                    "text": "\"query constrained variant\""
+                  },
+                  {
+                    "calls": [
+                      {
+                        "diagnostic": null,
+                        "label": "Sink.record(\"query constrained variant\")",
+                        "span": {
+                          "end": 868,
+                          "start": 828
+                        },
+                        "targets": [
+                          {
+                            "certainty": "direct",
+                            "provenance": "java.javac.source-call",
+                            "symbol": "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/Sink.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.Sink:record(java.lang.String)|void\"]"
+                          }
+                        ]
+                      }
+                    ],
+                    "kind": "value",
+                    "regions": [],
+                    "span": {
+                      "end": 868,
+                      "start": 828
+                    },
+                    "text": "Sink.record(\"query constrained variant\")"
+                  }
+                ],
+                "kind": "sequence",
+                "span": {
+                  "end": 868,
+                  "start": 828
+                }
+              }
+            },
+            {
+              "kind": "return",
+              "span": {
+                "end": 887,
+                "start": 870
+              },
+              "value": {
+                "calls": [],
+                "kind": "value",
+                "regions": [],
+                "span": {
+                  "end": 886,
+                  "start": 877
+                },
+                "text": "\"special\""
+              }
+            }
+          ],
+          "build": "@repo/spring-events",
+          "diagnostics": [],
+          "file": "@repo/spring-events/src/main/java/fixture/spring/http/ConstrainedController.java",
+          "language": "java",
+          "project": "codegraph.fixture:spring-events",
+          "span": {
+            "end": 889,
+            "start": 734
+          },
+          "symbol": "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/http/ConstrainedController.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.http.ConstrainedController:constrained()|java.lang.String\"]"
+        },
+        {
+          "body": [
+            {
+              "kind": "evaluate",
+              "span": {
                 "end": 875,
                 "start": 842
               },
@@ -7137,6 +8766,72 @@
         {
           "body": [
             {
+              "kind": "evaluate",
+              "span": {
+                "end": 991,
+                "start": 944
+              },
+              "value": {
+                "items": [
+                  {
+                    "calls": [],
+                    "kind": "value",
+                    "regions": [],
+                    "span": {
+                      "end": 989,
+                      "start": 956
+                    },
+                    "text": "\"custom annotation is not Spring\""
+                  },
+                  {
+                    "calls": [
+                      {
+                        "diagnostic": null,
+                        "label": "Sink.record(\"custom annotation is not Spring\")",
+                        "span": {
+                          "end": 990,
+                          "start": 944
+                        },
+                        "targets": [
+                          {
+                            "certainty": "direct",
+                            "provenance": "java.javac.source-call",
+                            "symbol": "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/Sink.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.Sink:record(java.lang.String)|void\"]"
+                          }
+                        ]
+                      }
+                    ],
+                    "kind": "value",
+                    "regions": [],
+                    "span": {
+                      "end": 990,
+                      "start": 944
+                    },
+                    "text": "Sink.record(\"custom annotation is not Spring\")"
+                  }
+                ],
+                "kind": "sequence",
+                "span": {
+                  "end": 990,
+                  "start": 944
+                }
+              }
+            }
+          ],
+          "build": "@repo/spring-events",
+          "diagnostics": [],
+          "file": "@repo/spring-events/src/main/java/fixture/spring/http/HttpController.java",
+          "language": "java",
+          "project": "codegraph.fixture:spring-events",
+          "span": {
+            "end": 993,
+            "start": 872
+          },
+          "symbol": "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/http/HttpController.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.http.HttpController:pretend()|void\"]"
+        },
+        {
+          "body": [
+            {
               "kind": "return",
               "span": {
                 "end": 1035,
@@ -7258,6 +8953,47 @@
             "start": 1038
           },
           "symbol": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/callables.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"callParameter\\\\\\\",\\\\\\\"(): number\\\\\\\"]\\\",0]\"]"
+        },
+        {
+          "body": [
+            {
+              "kind": "return",
+              "span": {
+                "end": 115,
+                "start": 88
+              },
+              "value": {
+                "calls": [
+                  {
+                    "diagnostic": "No statically bound project target",
+                    "label": "fetch",
+                    "span": {
+                      "end": 114,
+                      "start": 95
+                    },
+                    "targets": []
+                  }
+                ],
+                "kind": "value",
+                "regions": [],
+                "span": {
+                  "end": 114,
+                  "start": 95
+                },
+                "text": "fetch('/api/items')"
+              }
+            }
+          ],
+          "build": "@repo/typescript-corpus/tsconfig.json",
+          "diagnostics": [],
+          "file": "@repo/typescript-corpus/src/http.ts",
+          "language": "typescript",
+          "project": "typescript-corpus",
+          "span": {
+            "end": 117,
+            "start": 56
+          },
+          "symbol": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/http.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"springItems\\\\\\\",\\\\\\\"(): Promise<Response>\\\\\\\"]\\\",0]\"]"
         },
         {
           "body": [
@@ -7497,6 +9233,47 @@
             {
               "kind": "return",
               "span": {
+                "end": 179,
+                "start": 149
+              },
+              "value": {
+                "calls": [
+                  {
+                    "diagnostic": "No statically bound project target",
+                    "label": "fetch",
+                    "span": {
+                      "end": 178,
+                      "start": 156
+                    },
+                    "targets": []
+                  }
+                ],
+                "kind": "value",
+                "regions": [],
+                "span": {
+                  "end": 178,
+                  "start": 156
+                },
+                "text": "fetch('/api/items/42')"
+              }
+            }
+          ],
+          "build": "@repo/typescript-corpus/tsconfig.json",
+          "diagnostics": [],
+          "file": "@repo/typescript-corpus/src/http.ts",
+          "language": "typescript",
+          "project": "typescript-corpus",
+          "span": {
+            "end": 181,
+            "start": 118
+          },
+          "symbol": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/http.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"springItem\\\\\\\",\\\\\\\"(): Promise<Response>\\\\\\\"]\\\",0]\"]"
+        },
+        {
+          "body": [
+            {
+              "kind": "return",
+              "span": {
                 "end": 180,
                 "start": 171
               },
@@ -7699,6 +9476,47 @@
             {
               "kind": "return",
               "span": {
+                "end": 260,
+                "start": 215
+              },
+              "value": {
+                "calls": [
+                  {
+                    "diagnostic": "No statically bound project target",
+                    "label": "fetch",
+                    "span": {
+                      "end": 259,
+                      "start": 222
+                    },
+                    "targets": []
+                  }
+                ],
+                "kind": "value",
+                "regions": [],
+                "span": {
+                  "end": 259,
+                  "start": 222
+                },
+                "text": "fetch('/api/items', {method: 'POST'})"
+              }
+            }
+          ],
+          "build": "@repo/typescript-corpus/tsconfig.json",
+          "diagnostics": [],
+          "file": "@repo/typescript-corpus/src/http.ts",
+          "language": "typescript",
+          "project": "typescript-corpus",
+          "span": {
+            "end": 262,
+            "start": 182
+          },
+          "symbol": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/http.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"springCreate\\\\\\\",\\\\\\\"(): Promise<Response>\\\\\\\"]\\\",0]\"]"
+        },
+        {
+          "body": [
+            {
+              "kind": "return",
+              "span": {
                 "end": 296,
                 "start": 287
               },
@@ -7786,6 +9604,47 @@
             "start": 299
           },
           "symbol": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/callables.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"returnLeafA\\\\\\\",\\\\\\\"(): number\\\\\\\"]\\\",0]\"]"
+        },
+        {
+          "body": [
+            {
+              "kind": "return",
+              "span": {
+                "end": 335,
+                "start": 302
+              },
+              "value": {
+                "calls": [
+                  {
+                    "diagnostic": "No statically bound project target",
+                    "label": "fetch",
+                    "span": {
+                      "end": 334,
+                      "start": 309
+                    },
+                    "targets": []
+                  }
+                ],
+                "kind": "value",
+                "regions": [],
+                "span": {
+                  "end": 334,
+                  "start": 309
+                },
+                "text": "fetch('/api/constrained')"
+              }
+            }
+          ],
+          "build": "@repo/typescript-corpus/tsconfig.json",
+          "diagnostics": [],
+          "file": "@repo/typescript-corpus/src/http.ts",
+          "language": "typescript",
+          "project": "typescript-corpus",
+          "span": {
+            "end": 337,
+            "start": 263
+          },
+          "symbol": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/http.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"constrainedRequest\\\\\\\",\\\\\\\"(): Promise<Response>\\\\\\\"]\\\",0]\"]"
         },
         {
           "body": [
@@ -7885,6 +9744,47 @@
             {
               "kind": "return",
               "span": {
+                "end": 424,
+                "start": 374
+              },
+              "value": {
+                "calls": [
+                  {
+                    "diagnostic": "No statically bound project target",
+                    "label": "fetch",
+                    "span": {
+                      "end": 423,
+                      "start": 381
+                    },
+                    "targets": []
+                  }
+                ],
+                "kind": "value",
+                "regions": [],
+                "span": {
+                  "end": 423,
+                  "start": 381
+                },
+                "text": "fetch('https://example.invalid/api/items')"
+              }
+            }
+          ],
+          "build": "@repo/typescript-corpus/tsconfig.json",
+          "diagnostics": [],
+          "file": "@repo/typescript-corpus/src/http.ts",
+          "language": "typescript",
+          "project": "typescript-corpus",
+          "span": {
+            "end": 426,
+            "start": 338
+          },
+          "symbol": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/http.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"externalRequest\\\\\\\",\\\\\\\"(): Promise<Response>\\\\\\\"]\\\",0]\"]"
+        },
+        {
+          "body": [
+            {
+              "kind": "return",
+              "span": {
                 "end": 450,
                 "start": 440
               },
@@ -7947,6 +9847,47 @@
             {
               "kind": "return",
               "span": {
+                "end": 493,
+                "start": 474
+              },
+              "value": {
+                "calls": [
+                  {
+                    "diagnostic": "No statically bound project target",
+                    "label": "fetch",
+                    "span": {
+                      "end": 492,
+                      "start": 481
+                    },
+                    "targets": []
+                  }
+                ],
+                "kind": "value",
+                "regions": [],
+                "span": {
+                  "end": 492,
+                  "start": 481
+                },
+                "text": "fetch(path)"
+              }
+            }
+          ],
+          "build": "@repo/typescript-corpus/tsconfig.json",
+          "diagnostics": [],
+          "file": "@repo/typescript-corpus/src/http.ts",
+          "language": "typescript",
+          "project": "typescript-corpus",
+          "span": {
+            "end": 495,
+            "start": 427
+          },
+          "symbol": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/http.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"dynamicRequest\\\\\\\",\\\\\\\"(path: string): Promise<Response>\\\\\\\"]\\\",0]\"]"
+        },
+        {
+          "body": [
+            {
+              "kind": "return",
+              "span": {
                 "end": 50,
                 "start": 24
               },
@@ -7988,6 +9929,140 @@
             {
               "kind": "return",
               "span": {
+                "end": 53,
+                "start": 32
+              },
+              "value": {
+                "calls": [
+                  {
+                    "diagnostic": "No statically bound project target",
+                    "label": "fetch",
+                    "span": {
+                      "end": 52,
+                      "start": 39
+                    },
+                    "targets": []
+                  }
+                ],
+                "kind": "value",
+                "regions": [],
+                "span": {
+                  "end": 52,
+                  "start": 39
+                },
+                "text": "fetch('/api')"
+              }
+            }
+          ],
+          "build": "@repo/typescript-corpus/tsconfig.json",
+          "diagnostics": [],
+          "file": "@repo/typescript-corpus/src/http.ts",
+          "language": "typescript",
+          "project": "typescript-corpus",
+          "span": {
+            "end": 55,
+            "start": 0
+          },
+          "symbol": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/http.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"nextRequest\\\\\\\",\\\\\\\"(): Promise<Response>\\\\\\\"]\\\",0]\"]"
+        },
+        {
+          "body": [
+            {
+              "kind": "return",
+              "span": {
+                "end": 570,
+                "start": 566
+              },
+              "value": {
+                "calls": [],
+                "kind": "value",
+                "regions": [],
+                "span": {
+                  "end": 570,
+                  "start": 566
+                },
+                "text": "path"
+              }
+            }
+          ],
+          "build": "@repo/typescript-corpus/tsconfig.json",
+          "diagnostics": [],
+          "file": "@repo/typescript-corpus/src/http.ts",
+          "language": "typescript",
+          "project": "typescript-corpus",
+          "span": {
+            "end": 570,
+            "start": 548
+          },
+          "symbol": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/http.ts\",\"[\\\"[\\\\\\\"[\\\\\\\\\\\\\\\"[\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"<module>\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"FunctionDeclaration\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"shadowedRequest\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"(): string\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"]\\\\\\\\\\\\\\\",0]\\\\\\\",\\\\\\\"ArrowFunction\\\\\\\",\\\\\\\"fetch\\\\\\\",\\\\\\\"(path: string): string\\\\\\\"]\\\",0]\"]"
+        },
+        {
+          "body": [
+            {
+              "kind": "return",
+              "span": {
+                "end": 62,
+                "start": 37
+              },
+              "value": {
+                "calls": [],
+                "kind": "value",
+                "regions": [],
+                "span": {
+                  "end": 61,
+                  "start": 44
+                },
+                "text": "<main>User</main>"
+              }
+            }
+          ],
+          "build": "@repo/typescript-corpus/tsconfig.json",
+          "diagnostics": [],
+          "file": "@repo/typescript-corpus/src/app/users/[id]/page.tsx",
+          "language": "typescript",
+          "project": "typescript-corpus",
+          "span": {
+            "end": 64,
+            "start": 0
+          },
+          "symbol": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/app/users/[id]/page.tsx\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"UserPage\\\\\\\",\\\\\\\"(): Element\\\\\\\"]\\\",0]\"]"
+        },
+        {
+          "body": [
+            {
+              "kind": "return",
+              "span": {
+                "end": 64,
+                "start": 38
+              },
+              "value": {
+                "calls": [],
+                "kind": "value",
+                "regions": [],
+                "span": {
+                  "end": 63,
+                  "start": 45
+                },
+                "text": "<main>About</main>"
+              }
+            }
+          ],
+          "build": "@repo/typescript-corpus/tsconfig.json",
+          "diagnostics": [],
+          "file": "@repo/typescript-corpus/src/app/about/page.tsx",
+          "language": "typescript",
+          "project": "typescript-corpus",
+          "span": {
+            "end": 66,
+            "start": 0
+          },
+          "symbol": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/app/about/page.tsx\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"AboutPage\\\\\\\",\\\\\\\"(): Element\\\\\\\"]\\\",0]\"]"
+        },
+        {
+          "body": [
+            {
+              "kind": "return",
+              "span": {
                 "end": 68,
                 "start": 59
               },
@@ -8013,6 +10088,37 @@
             "start": 31
           },
           "symbol": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/callables.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"nullishPrimary\\\\\\\",\\\\\\\"(): number\\\\\\\"]\\\",0]\"]"
+        },
+        {
+          "body": [
+            {
+              "kind": "return",
+              "span": {
+                "end": 69,
+                "start": 40
+              },
+              "value": {
+                "calls": [],
+                "kind": "value",
+                "regions": [],
+                "span": {
+                  "end": 68,
+                  "start": 47
+                },
+                "text": "<main>New user</main>"
+              }
+            }
+          ],
+          "build": "@repo/typescript-corpus/tsconfig.json",
+          "diagnostics": [],
+          "file": "@repo/typescript-corpus/src/app/users/new/page.tsx",
+          "language": "typescript",
+          "project": "typescript-corpus",
+          "span": {
+            "end": 71,
+            "start": 0
+          },
+          "symbol": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/app/users/new/page.tsx\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"NewUserPage\\\\\\\",\\\\\\\"(): Element\\\\\\\"]\\\",0]\"]"
         },
         {
           "body": [
@@ -8837,6 +10943,384 @@
       {
         "body_unavailable": false,
         "build": "@repo/mediatr-dispatch/MediatRDispatch.sln",
+        "container": "DispatchAppA.Http.CustomAttributeController",
+        "container_visibility": "public",
+        "file": "@repo/mediatr-dispatch/AppA/Controllers.cs",
+        "id": "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Controllers.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.Http.CustomAttributeController::FakeOnly()\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "method",
+        "label": "FakeOnly",
+        "language": "csharp",
+        "line": 88,
+        "namespace": "DispatchAppA.Http",
+        "project": "AppA",
+        "signature": "[AppA]::DispatchAppA.Http.CustomAttributeController::FakeOnly()",
+        "visibility": "public"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/mediatr-dispatch/MediatRDispatch.sln",
+        "container": "DispatchAppA.Http.ExcludedController",
+        "container_visibility": "public",
+        "file": "@repo/mediatr-dispatch/AppA/Controllers.cs",
+        "id": "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Controllers.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.Http.ExcludedController::Value()\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "method",
+        "label": "Value",
+        "language": "csharp",
+        "line": 75,
+        "namespace": "DispatchAppA.Http",
+        "project": "AppA",
+        "signature": "[AppA]::DispatchAppA.Http.ExcludedController::Value()",
+        "visibility": "public"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/mediatr-dispatch/MediatRDispatch.sln",
+        "container": "DispatchAppA.Http.GenericController<T>",
+        "container_visibility": "public",
+        "file": "@repo/mediatr-dispatch/AppA/Controllers.cs",
+        "id": "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Controllers.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.Http.GenericController<T>::Value()\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "method",
+        "label": "Value",
+        "language": "csharp",
+        "line": 82,
+        "namespace": "DispatchAppA.Http",
+        "project": "AppA",
+        "signature": "[AppA]::DispatchAppA.Http.GenericController<T>::Value()",
+        "visibility": "public"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/mediatr-dispatch/MediatRDispatch.sln",
+        "container": "DispatchAppA.Http.ItemsController",
+        "container_visibility": "public",
+        "file": "@repo/mediatr-dispatch/AppA/Controllers.cs",
+        "id": "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Controllers.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.Http.ItemsController::CaseOne()\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "method",
+        "label": "CaseOne",
+        "language": "csharp",
+        "line": 29,
+        "namespace": "DispatchAppA.Http",
+        "project": "AppA",
+        "signature": "[AppA]::DispatchAppA.Http.ItemsController::CaseOne()",
+        "visibility": "public"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/mediatr-dispatch/MediatRDispatch.sln",
+        "container": "DispatchAppA.Http.ItemsController",
+        "container_visibility": "public",
+        "file": "@repo/mediatr-dispatch/AppA/Controllers.cs",
+        "id": "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Controllers.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.Http.ItemsController::CaseTwo()\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "method",
+        "label": "CaseTwo",
+        "language": "csharp",
+        "line": 32,
+        "namespace": "DispatchAppA.Http",
+        "project": "AppA",
+        "signature": "[AppA]::DispatchAppA.Http.ItemsController::CaseTwo()",
+        "visibility": "public"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/mediatr-dispatch/MediatRDispatch.sln",
+        "container": "DispatchAppA.Http.ItemsController",
+        "container_visibility": "public",
+        "file": "@repo/mediatr-dispatch/AppA/Controllers.cs",
+        "id": "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Controllers.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.Http.ItemsController::CatchAll(System.String)\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "method",
+        "label": "CatchAll",
+        "language": "csharp",
+        "line": 47,
+        "namespace": "DispatchAppA.Http",
+        "project": "AppA",
+        "signature": "[AppA]::DispatchAppA.Http.ItemsController::CatchAll(System.String)",
+        "visibility": "public"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/mediatr-dispatch/MediatRDispatch.sln",
+        "container": "DispatchAppA.Http.ItemsController",
+        "container_visibility": "public",
+        "file": "@repo/mediatr-dispatch/AppA/Controllers.cs",
+        "id": "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Controllers.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.Http.ItemsController::Constrained(System.Int32)\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "method",
+        "label": "Constrained",
+        "language": "csharp",
+        "line": 35,
+        "namespace": "DispatchAppA.Http",
+        "project": "AppA",
+        "signature": "[AppA]::DispatchAppA.Http.ItemsController::Constrained(System.Int32)",
+        "visibility": "public"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/mediatr-dispatch/MediatRDispatch.sln",
+        "container": "DispatchAppA.Http.ItemsController",
+        "container_visibility": "public",
+        "file": "@repo/mediatr-dispatch/AppA/Controllers.cs",
+        "id": "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Controllers.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.Http.ItemsController::ConstraintLiteral()\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "method",
+        "label": "ConstraintLiteral",
+        "language": "csharp",
+        "line": 38,
+        "namespace": "DispatchAppA.Http",
+        "project": "AppA",
+        "signature": "[AppA]::DispatchAppA.Http.ItemsController::ConstraintLiteral()",
+        "visibility": "public"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/mediatr-dispatch/MediatRDispatch.sln",
+        "container": "DispatchAppA.Http.ItemsController",
+        "container_visibility": "public",
+        "file": "@repo/mediatr-dispatch/AppA/Controllers.cs",
+        "id": "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Controllers.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.Http.ItemsController::Create()\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "method",
+        "label": "Create",
+        "language": "csharp",
+        "line": 16,
+        "namespace": "DispatchAppA.Http",
+        "project": "AppA",
+        "signature": "[AppA]::DispatchAppA.Http.ItemsController::Create()",
+        "visibility": "public"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/mediatr-dispatch/MediatRDispatch.sln",
+        "container": "DispatchAppA.Http.ItemsController",
+        "container_visibility": "public",
+        "file": "@repo/mediatr-dispatch/AppA/Controllers.cs",
+        "id": "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Controllers.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.Http.ItemsController::DefaultOrder()\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "method",
+        "label": "DefaultOrder",
+        "language": "csharp",
+        "line": 44,
+        "namespace": "DispatchAppA.Http",
+        "project": "AppA",
+        "signature": "[AppA]::DispatchAppA.Http.ItemsController::DefaultOrder()",
+        "visibility": "public"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/mediatr-dispatch/MediatRDispatch.sln",
+        "container": "DispatchAppA.Http.ItemsController",
+        "container_visibility": "public",
+        "file": "@repo/mediatr-dispatch/AppA/Controllers.cs",
+        "id": "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Controllers.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.Http.ItemsController::Generic()\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "method",
+        "label": "Generic",
+        "language": "csharp",
+        "line": 54,
+        "namespace": "DispatchAppA.Http",
+        "project": "AppA",
+        "signature": "[AppA]::DispatchAppA.Http.ItemsController::Generic()",
+        "visibility": "public"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/mediatr-dispatch/MediatRDispatch.sln",
+        "container": "DispatchAppA.Http.ItemsController",
+        "container_visibility": "public",
+        "file": "@repo/mediatr-dispatch/AppA/Controllers.cs",
+        "id": "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Controllers.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.Http.ItemsController::Get(System.String)\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "method",
+        "label": "Get",
+        "language": "csharp",
+        "line": 13,
+        "namespace": "DispatchAppA.Http",
+        "project": "AppA",
+        "signature": "[AppA]::DispatchAppA.Http.ItemsController::Get(System.String)",
+        "visibility": "public"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/mediatr-dispatch/MediatRDispatch.sln",
+        "container": "DispatchAppA.Http.ItemsController",
+        "container_visibility": "public",
+        "file": "@repo/mediatr-dispatch/AppA/Controllers.cs",
+        "id": "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Controllers.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.Http.ItemsController::Health()\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "method",
+        "label": "Health",
+        "language": "csharp",
+        "line": 19,
+        "namespace": "DispatchAppA.Http",
+        "project": "AppA",
+        "signature": "[AppA]::DispatchAppA.Http.ItemsController::Health()",
+        "visibility": "public"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/mediatr-dispatch/MediatRDispatch.sln",
+        "container": "DispatchAppA.Http.ItemsController",
+        "container_visibility": "public",
+        "file": "@repo/mediatr-dispatch/AppA/Controllers.cs",
+        "id": "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Controllers.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.Http.ItemsController::List()\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "method",
+        "label": "List",
+        "language": "csharp",
+        "line": 10,
+        "namespace": "DispatchAppA.Http",
+        "project": "AppA",
+        "signature": "[AppA]::DispatchAppA.Http.ItemsController::List()",
+        "visibility": "public"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/mediatr-dispatch/MediatRDispatch.sln",
+        "container": "DispatchAppA.Http.ItemsController",
+        "container_visibility": "public",
+        "file": "@repo/mediatr-dispatch/AppA/Controllers.cs",
+        "id": "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Controllers.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.Http.ItemsController::MultipleTemplates()\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "method",
+        "label": "MultipleTemplates",
+        "language": "csharp",
+        "line": 26,
+        "namespace": "DispatchAppA.Http",
+        "project": "AppA",
+        "signature": "[AppA]::DispatchAppA.Http.ItemsController::MultipleTemplates()",
+        "visibility": "public"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/mediatr-dispatch/MediatRDispatch.sln",
+        "container": "DispatchAppA.Http.ItemsController",
+        "container_visibility": "public",
+        "file": "@repo/mediatr-dispatch/AppA/Controllers.cs",
+        "id": "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Controllers.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.Http.ItemsController::NotAnAction()\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "method",
+        "label": "NotAnAction",
+        "language": "csharp",
+        "line": 51,
+        "namespace": "DispatchAppA.Http",
+        "project": "AppA",
+        "signature": "[AppA]::DispatchAppA.Http.ItemsController::NotAnAction()",
+        "visibility": "public"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/mediatr-dispatch/MediatRDispatch.sln",
+        "container": "DispatchAppA.Http.ItemsController",
+        "container_visibility": "public",
+        "file": "@repo/mediatr-dispatch/AppA/Controllers.cs",
+        "id": "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Controllers.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.Http.ItemsController::Ordered()\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "method",
+        "label": "Ordered",
+        "language": "csharp",
+        "line": 41,
+        "namespace": "DispatchAppA.Http",
+        "project": "AppA",
+        "signature": "[AppA]::DispatchAppA.Http.ItemsController::Ordered()",
+        "visibility": "public"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/mediatr-dispatch/MediatRDispatch.sln",
+        "container": "DispatchAppA.Http.ItemsController",
+        "container_visibility": "public",
+        "file": "@repo/mediatr-dispatch/AppA/Controllers.cs",
+        "id": "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Controllers.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.Http.ItemsController::Private()\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "method",
+        "label": "Private",
+        "language": "csharp",
+        "line": 57,
+        "namespace": "DispatchAppA.Http",
+        "project": "AppA",
+        "signature": "[AppA]::DispatchAppA.Http.ItemsController::Private()",
+        "visibility": "private"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/mediatr-dispatch/MediatRDispatch.sln",
+        "container": "DispatchAppA.Http.ItemsController",
+        "container_visibility": "public",
+        "file": "@repo/mediatr-dispatch/AppA/Controllers.cs",
+        "id": "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Controllers.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.Http.ItemsController::Ready()\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "method",
+        "label": "Ready",
+        "language": "csharp",
+        "line": 22,
+        "namespace": "DispatchAppA.Http",
+        "project": "AppA",
+        "signature": "[AppA]::DispatchAppA.Http.ItemsController::Ready()",
+        "visibility": "public"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/mediatr-dispatch/MediatRDispatch.sln",
+        "container": "DispatchAppA.Http.ItemsController",
+        "container_visibility": "public",
+        "file": "@repo/mediatr-dispatch/AppA/Controllers.cs",
+        "id": "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Controllers.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.Http.ItemsController::Static()\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "method",
+        "label": "Static",
+        "language": "csharp",
+        "line": 60,
+        "namespace": "DispatchAppA.Http",
+        "project": "AppA",
+        "signature": "[AppA]::DispatchAppA.Http.ItemsController::Static()",
+        "visibility": "public"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/mediatr-dispatch/MediatRDispatch.sln",
+        "container": "DispatchAppA.Http.PrioritizedController",
+        "container_visibility": "public",
+        "file": "@repo/mediatr-dispatch/AppA/Controllers.cs",
+        "id": "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Controllers.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.Http.PrioritizedController::Value()\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "method",
+        "label": "Value",
+        "language": "csharp",
+        "line": 67,
+        "namespace": "DispatchAppA.Http",
+        "project": "AppA",
+        "signature": "[AppA]::DispatchAppA.Http.PrioritizedController::Value()",
+        "visibility": "public"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/mediatr-dispatch/MediatRDispatch.sln",
         "container": "DispatchAppA.OpenGenericHandler<T>",
         "container_visibility": "public",
         "file": "@repo/mediatr-dispatch/AppA/Handlers.cs",
@@ -8940,6 +11424,60 @@
         "namespace": "DispatchAppB",
         "project": "AppB",
         "signature": "[AppB]::DispatchAppB.Dispatch::SendPing(MediatR.ISender,System.Threading.CancellationToken)",
+        "visibility": "public"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/mediatr-dispatch/MediatRDispatch.sln",
+        "container": "DispatchAppB.Http.ItemsController",
+        "container_visibility": "public",
+        "file": "@repo/mediatr-dispatch/AppB/Controllers.cs",
+        "id": "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppB/Controllers.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppB]::DispatchAppB.Http.ItemsController::CaseOnly()\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "method",
+        "label": "CaseOnly",
+        "language": "csharp",
+        "line": 16,
+        "namespace": "DispatchAppB.Http",
+        "project": "AppB",
+        "signature": "[AppB]::DispatchAppB.Http.ItemsController::CaseOnly()",
+        "visibility": "public"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/mediatr-dispatch/MediatRDispatch.sln",
+        "container": "DispatchAppB.Http.ItemsController",
+        "container_visibility": "public",
+        "file": "@repo/mediatr-dispatch/AppB/Controllers.cs",
+        "id": "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppB/Controllers.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppB]::DispatchAppB.Http.ItemsController::Get(System.String)\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "method",
+        "label": "Get",
+        "language": "csharp",
+        "line": 13,
+        "namespace": "DispatchAppB.Http",
+        "project": "AppB",
+        "signature": "[AppB]::DispatchAppB.Http.ItemsController::Get(System.String)",
+        "visibility": "public"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/mediatr-dispatch/MediatRDispatch.sln",
+        "container": "DispatchAppB.Http.ItemsController",
+        "container_visibility": "public",
+        "file": "@repo/mediatr-dispatch/AppB/Controllers.cs",
+        "id": "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppB/Controllers.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppB]::DispatchAppB.Http.ItemsController::List()\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "method",
+        "label": "List",
+        "language": "csharp",
+        "line": 10,
+        "namespace": "DispatchAppB.Http",
+        "project": "AppB",
+        "signature": "[AppB]::DispatchAppB.Http.ItemsController::List()",
         "visibility": "public"
       },
       {
@@ -9304,6 +11842,218 @@
       },
       {
         "body_unavailable": false,
+        "build": "@repo/spring-events",
+        "container": "fixture.spring.fake.GetMapping",
+        "container_visibility": "public",
+        "file": "@repo/spring-events/src/main/java/fixture/spring/fake/GetMapping.java",
+        "id": "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/fake/GetMapping.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.fake.GetMapping:value()|java.lang.String\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "method",
+        "label": "value",
+        "language": "java",
+        "line": 0,
+        "namespace": "fixture.spring.fake",
+        "project": "codegraph.fixture:spring-events",
+        "signature": "fixture.spring.fake.GetMapping:value() -> java.lang.String",
+        "visibility": "public"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/spring-events",
+        "container": "fixture.spring.http.ConstrainedController",
+        "container_visibility": "public",
+        "file": "@repo/spring-events/src/main/java/fixture/spring/http/ConstrainedController.java",
+        "id": "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/http/ConstrainedController.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.http.ConstrainedController:constrained()|java.lang.String\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "method",
+        "label": "constrained",
+        "language": "java",
+        "line": 21,
+        "namespace": "fixture.spring.http",
+        "project": "codegraph.fixture:spring-events",
+        "signature": "fixture.spring.http.ConstrainedController:constrained() -> java.lang.String",
+        "visibility": "public"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/spring-events",
+        "container": "fixture.spring.http.ConstrainedController",
+        "container_visibility": "public",
+        "file": "@repo/spring-events/src/main/java/fixture/spring/http/ConstrainedController.java",
+        "id": "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/http/ConstrainedController.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.http.ConstrainedController:json()|java.lang.String\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "method",
+        "label": "json",
+        "language": "java",
+        "line": 12,
+        "namespace": "fixture.spring.http",
+        "project": "codegraph.fixture:spring-events",
+        "signature": "fixture.spring.http.ConstrainedController:json() -> java.lang.String",
+        "visibility": "public"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/spring-events",
+        "container": "fixture.spring.http.ConstrainedController",
+        "container_visibility": "public",
+        "file": "@repo/spring-events/src/main/java/fixture/spring/http/ConstrainedController.java",
+        "id": "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/http/ConstrainedController.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.http.ConstrainedController:text()|java.lang.String\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "method",
+        "label": "text",
+        "language": "java",
+        "line": 15,
+        "namespace": "fixture.spring.http",
+        "project": "codegraph.fixture:spring-events",
+        "signature": "fixture.spring.http.ConstrainedController:text() -> java.lang.String",
+        "visibility": "public"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/spring-events",
+        "container": "fixture.spring.http.ConstrainedController",
+        "container_visibility": "public",
+        "file": "@repo/spring-events/src/main/java/fixture/spring/http/ConstrainedController.java",
+        "id": "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/http/ConstrainedController.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.http.ConstrainedController:unconstrained()|java.lang.String\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "method",
+        "label": "unconstrained",
+        "language": "java",
+        "line": 18,
+        "namespace": "fixture.spring.http",
+        "project": "codegraph.fixture:spring-events",
+        "signature": "fixture.spring.http.ConstrainedController:unconstrained() -> java.lang.String",
+        "visibility": "public"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/spring-events",
+        "container": "fixture.spring.http.HttpController",
+        "container_visibility": "public",
+        "file": "@repo/spring-events/src/main/java/fixture/spring/http/HttpController.java",
+        "id": "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/http/HttpController.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.http.HttpController:create()|void\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "method",
+        "label": "create",
+        "language": "java",
+        "line": 20,
+        "namespace": "fixture.spring.http",
+        "project": "codegraph.fixture:spring-events",
+        "signature": "fixture.spring.http.HttpController:create() -> void",
+        "visibility": "public"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/spring-events",
+        "container": "fixture.spring.http.HttpController",
+        "container_visibility": "public",
+        "file": "@repo/spring-events/src/main/java/fixture/spring/http/HttpController.java",
+        "id": "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/http/HttpController.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.http.HttpController:health()|java.lang.String\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "method",
+        "label": "health",
+        "language": "java",
+        "line": 23,
+        "namespace": "fixture.spring.http",
+        "project": "codegraph.fixture:spring-events",
+        "signature": "fixture.spring.http.HttpController:health() -> java.lang.String",
+        "visibility": "public"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/spring-events",
+        "container": "fixture.spring.http.HttpController",
+        "container_visibility": "public",
+        "file": "@repo/spring-events/src/main/java/fixture/spring/http/HttpController.java",
+        "id": "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/http/HttpController.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.http.HttpController:item()|java.lang.String\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "method",
+        "label": "item",
+        "language": "java",
+        "line": 17,
+        "namespace": "fixture.spring.http",
+        "project": "codegraph.fixture:spring-events",
+        "signature": "fixture.spring.http.HttpController:item() -> java.lang.String",
+        "visibility": "public"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/spring-events",
+        "container": "fixture.spring.http.HttpController",
+        "container_visibility": "public",
+        "file": "@repo/spring-events/src/main/java/fixture/spring/http/HttpController.java",
+        "id": "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/http/HttpController.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.http.HttpController:items()|java.lang.String\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "method",
+        "label": "items",
+        "language": "java",
+        "line": 14,
+        "namespace": "fixture.spring.http",
+        "project": "codegraph.fixture:spring-events",
+        "signature": "fixture.spring.http.HttpController:items() -> java.lang.String",
+        "visibility": "public"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/spring-events",
+        "container": "fixture.spring.http.HttpController",
+        "container_visibility": "public",
+        "file": "@repo/spring-events/src/main/java/fixture/spring/http/HttpController.java",
+        "id": "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/http/HttpController.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.http.HttpController:pretend()|void\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "method",
+        "label": "pretend",
+        "language": "java",
+        "line": 26,
+        "namespace": "fixture.spring.http",
+        "project": "codegraph.fixture:spring-events",
+        "signature": "fixture.spring.http.HttpController:pretend() -> void",
+        "visibility": "public"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/typescript-corpus/tsconfig.json",
+        "container": "src/app/about/page.tsx",
+        "file": "@repo/typescript-corpus/src/app/about/page.tsx",
+        "id": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/app/about/page.tsx\",\"<module>\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "module",
+        "label": "<module:page.tsx>",
+        "language": "typescript",
+        "line": 1,
+        "namespace": "src/app/about",
+        "project": "typescript-corpus",
+        "signature": "<module:page.tsx>"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/typescript-corpus/tsconfig.json",
+        "container": "src/app/about/page.tsx",
+        "file": "@repo/typescript-corpus/src/app/about/page.tsx",
+        "id": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/app/about/page.tsx\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"AboutPage\\\\\\\",\\\\\\\"(): Element\\\\\\\"]\\\",0]\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "function",
+        "label": "AboutPage",
+        "language": "typescript",
+        "line": 1,
+        "namespace": "src/app/about",
+        "project": "typescript-corpus",
+        "signature": "(): Element"
+      },
+      {
+        "body_unavailable": false,
         "build": "@repo/typescript-corpus/tsconfig.json",
         "container": "src/app/api/route.ts",
         "file": "@repo/typescript-corpus/src/app/api/route.ts",
@@ -9333,6 +12083,86 @@
         "namespace": "src/app/api",
         "project": "typescript-corpus",
         "signature": "(): Response"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/typescript-corpus/tsconfig.json",
+        "container": "src/app/navigation/page.tsx",
+        "file": "@repo/typescript-corpus/src/app/navigation/page.tsx",
+        "id": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/app/navigation/page.tsx\",\"<module>\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "module",
+        "label": "<module:page.tsx>",
+        "language": "typescript",
+        "line": 1,
+        "namespace": "src/app/navigation",
+        "project": "typescript-corpus",
+        "signature": "<module:page.tsx>"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/typescript-corpus/tsconfig.json",
+        "container": "src/app/navigation/page.tsx",
+        "file": "@repo/typescript-corpus/src/app/navigation/page.tsx",
+        "id": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/app/navigation/page.tsx\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"NavigationPage\\\\\\\",\\\\\\\"(): Element\\\\\\\"]\\\",0]\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "function",
+        "label": "NavigationPage",
+        "language": "typescript",
+        "line": 5,
+        "namespace": "src/app/navigation",
+        "project": "typescript-corpus",
+        "signature": "(): Element"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/typescript-corpus/tsconfig.json",
+        "container": "src/app/navigation/page.tsx",
+        "file": "@repo/typescript-corpus/src/app/navigation/page.tsx",
+        "id": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/app/navigation/page.tsx\",\"[\\\"[\\\\\\\"[\\\\\\\\\\\\\\\"[\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"<module>\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"FunctionDeclaration\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"NavigationPage\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"(): Element\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"]\\\\\\\\\\\\\\\",0]\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"openAbout\\\\\\\",\\\\\\\"(): void\\\\\\\"]\\\",0]\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "function",
+        "label": "openAbout",
+        "language": "typescript",
+        "line": 7,
+        "namespace": "src/app/navigation",
+        "project": "typescript-corpus",
+        "signature": "(): void"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/typescript-corpus/tsconfig.json",
+        "container": "src/app/navigation/page.tsx",
+        "file": "@repo/typescript-corpus/src/app/navigation/page.tsx",
+        "id": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/app/navigation/page.tsx\",\"[\\\"[\\\\\\\"[\\\\\\\\\\\\\\\"[\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"<module>\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"FunctionDeclaration\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"NavigationPage\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"(): Element\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"]\\\\\\\\\\\\\\\",0]\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"prefetchOnly\\\\\\\",\\\\\\\"(): void\\\\\\\"]\\\",0]\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "function",
+        "label": "prefetchOnly",
+        "language": "typescript",
+        "line": 9,
+        "namespace": "src/app/navigation",
+        "project": "typescript-corpus",
+        "signature": "(): void"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/typescript-corpus/tsconfig.json",
+        "container": "src/app/navigation/page.tsx",
+        "file": "@repo/typescript-corpus/src/app/navigation/page.tsx",
+        "id": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/app/navigation/page.tsx\",\"[\\\"[\\\\\\\"[\\\\\\\\\\\\\\\"[\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"<module>\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"FunctionDeclaration\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"NavigationPage\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"(): Element\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"]\\\\\\\\\\\\\\\",0]\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"replaceUser\\\\\\\",\\\\\\\"(): void\\\\\\\"]\\\",0]\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "function",
+        "label": "replaceUser",
+        "language": "typescript",
+        "line": 8,
+        "namespace": "src/app/navigation",
+        "project": "typescript-corpus",
+        "signature": "(): void"
       },
       {
         "body_unavailable": false,
@@ -9445,6 +12275,70 @@
         "namespace": "src/app",
         "project": "typescript-corpus",
         "signature": "(): void"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/typescript-corpus/tsconfig.json",
+        "container": "src/app/users/[id]/page.tsx",
+        "file": "@repo/typescript-corpus/src/app/users/[id]/page.tsx",
+        "id": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/app/users/[id]/page.tsx\",\"<module>\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "module",
+        "label": "<module:page.tsx>",
+        "language": "typescript",
+        "line": 1,
+        "namespace": "src/app/users/[id]",
+        "project": "typescript-corpus",
+        "signature": "<module:page.tsx>"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/typescript-corpus/tsconfig.json",
+        "container": "src/app/users/[id]/page.tsx",
+        "file": "@repo/typescript-corpus/src/app/users/[id]/page.tsx",
+        "id": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/app/users/[id]/page.tsx\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"UserPage\\\\\\\",\\\\\\\"(): Element\\\\\\\"]\\\",0]\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "function",
+        "label": "UserPage",
+        "language": "typescript",
+        "line": 1,
+        "namespace": "src/app/users/[id]",
+        "project": "typescript-corpus",
+        "signature": "(): Element"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/typescript-corpus/tsconfig.json",
+        "container": "src/app/users/new/page.tsx",
+        "file": "@repo/typescript-corpus/src/app/users/new/page.tsx",
+        "id": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/app/users/new/page.tsx\",\"<module>\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "module",
+        "label": "<module:page.tsx>",
+        "language": "typescript",
+        "line": 1,
+        "namespace": "src/app/users/new",
+        "project": "typescript-corpus",
+        "signature": "<module:page.tsx>"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/typescript-corpus/tsconfig.json",
+        "container": "src/app/users/new/page.tsx",
+        "file": "@repo/typescript-corpus/src/app/users/new/page.tsx",
+        "id": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/app/users/new/page.tsx\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"NewUserPage\\\\\\\",\\\\\\\"(): Element\\\\\\\"]\\\",0]\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "function",
+        "label": "NewUserPage",
+        "language": "typescript",
+        "line": 1,
+        "namespace": "src/app/users/new",
+        "project": "typescript-corpus",
+        "signature": "(): Element"
       },
       {
         "body_unavailable": false,
@@ -9909,6 +12803,166 @@
         "namespace": "src",
         "project": "typescript-corpus",
         "signature": "(): number"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/typescript-corpus/tsconfig.json",
+        "container": "src/http.ts",
+        "file": "@repo/typescript-corpus/src/http.ts",
+        "id": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/http.ts\",\"<module>\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "module",
+        "label": "<module:http.ts>",
+        "language": "typescript",
+        "line": 1,
+        "namespace": "src",
+        "project": "typescript-corpus",
+        "signature": "<module:http.ts>"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/typescript-corpus/tsconfig.json",
+        "container": "src/http.ts",
+        "file": "@repo/typescript-corpus/src/http.ts",
+        "id": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/http.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"constrainedRequest\\\\\\\",\\\\\\\"(): Promise<Response>\\\\\\\"]\\\",0]\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "function",
+        "label": "constrainedRequest",
+        "language": "typescript",
+        "line": 5,
+        "namespace": "src",
+        "project": "typescript-corpus",
+        "signature": "(): Promise<Response>"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/typescript-corpus/tsconfig.json",
+        "container": "src/http.ts",
+        "file": "@repo/typescript-corpus/src/http.ts",
+        "id": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/http.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"dynamicRequest\\\\\\\",\\\\\\\"(path: string): Promise<Response>\\\\\\\"]\\\",0]\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "function",
+        "label": "dynamicRequest",
+        "language": "typescript",
+        "line": 7,
+        "namespace": "src",
+        "project": "typescript-corpus",
+        "signature": "(path: string): Promise<Response>"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/typescript-corpus/tsconfig.json",
+        "container": "src/http.ts",
+        "file": "@repo/typescript-corpus/src/http.ts",
+        "id": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/http.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"externalRequest\\\\\\\",\\\\\\\"(): Promise<Response>\\\\\\\"]\\\",0]\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "function",
+        "label": "externalRequest",
+        "language": "typescript",
+        "line": 6,
+        "namespace": "src",
+        "project": "typescript-corpus",
+        "signature": "(): Promise<Response>"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/typescript-corpus/tsconfig.json",
+        "container": "src/http.ts",
+        "file": "@repo/typescript-corpus/src/http.ts",
+        "id": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/http.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"nextRequest\\\\\\\",\\\\\\\"(): Promise<Response>\\\\\\\"]\\\",0]\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "function",
+        "label": "nextRequest",
+        "language": "typescript",
+        "line": 1,
+        "namespace": "src",
+        "project": "typescript-corpus",
+        "signature": "(): Promise<Response>"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/typescript-corpus/tsconfig.json",
+        "container": "src/http.ts",
+        "file": "@repo/typescript-corpus/src/http.ts",
+        "id": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/http.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"shadowedRequest\\\\\\\",\\\\\\\"(): string\\\\\\\"]\\\",0]\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "function",
+        "label": "shadowedRequest",
+        "language": "typescript",
+        "line": 8,
+        "namespace": "src",
+        "project": "typescript-corpus",
+        "signature": "(): string"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/typescript-corpus/tsconfig.json",
+        "container": "src/http.ts",
+        "file": "@repo/typescript-corpus/src/http.ts",
+        "id": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/http.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"springCreate\\\\\\\",\\\\\\\"(): Promise<Response>\\\\\\\"]\\\",0]\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "function",
+        "label": "springCreate",
+        "language": "typescript",
+        "line": 4,
+        "namespace": "src",
+        "project": "typescript-corpus",
+        "signature": "(): Promise<Response>"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/typescript-corpus/tsconfig.json",
+        "container": "src/http.ts",
+        "file": "@repo/typescript-corpus/src/http.ts",
+        "id": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/http.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"springItem\\\\\\\",\\\\\\\"(): Promise<Response>\\\\\\\"]\\\",0]\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "function",
+        "label": "springItem",
+        "language": "typescript",
+        "line": 3,
+        "namespace": "src",
+        "project": "typescript-corpus",
+        "signature": "(): Promise<Response>"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/typescript-corpus/tsconfig.json",
+        "container": "src/http.ts",
+        "file": "@repo/typescript-corpus/src/http.ts",
+        "id": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/http.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"springItems\\\\\\\",\\\\\\\"(): Promise<Response>\\\\\\\"]\\\",0]\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "function",
+        "label": "springItems",
+        "language": "typescript",
+        "line": 2,
+        "namespace": "src",
+        "project": "typescript-corpus",
+        "signature": "(): Promise<Response>"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/typescript-corpus/tsconfig.json",
+        "container": "src/http.ts",
+        "file": "@repo/typescript-corpus/src/http.ts",
+        "id": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/http.ts\",\"[\\\"[\\\\\\\"[\\\\\\\\\\\\\\\"[\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"<module>\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"FunctionDeclaration\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"shadowedRequest\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"(): string\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"]\\\\\\\\\\\\\\\",0]\\\\\\\",\\\\\\\"ArrowFunction\\\\\\\",\\\\\\\"fetch\\\\\\\",\\\\\\\"(path: string): string\\\\\\\"]\\\",0]\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "callback",
+        "label": "fetch",
+        "language": "typescript",
+        "line": 9,
+        "namespace": "src",
+        "project": "typescript-corpus",
+        "signature": "(path: string): string"
       },
       {
         "body_unavailable": false,

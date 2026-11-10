@@ -81,6 +81,79 @@
         {
           "annotated_interfaces": [],
           "annotations": [
+            "RequestMapping",
+            "RestController",
+            "org.springframework.web.bind.annotation.RequestMapping",
+            "org.springframework.web.bind.annotation.RestController"
+          ],
+          "base_types": [
+            "Object",
+            "java.lang.Object"
+          ],
+          "build": "@repo/",
+          "content": "package fixture.spring.http;\n\nimport fixture.spring.Sink;\nimport org.springframework.web.bind.annotation.GetMapping;\nimport org.springframework.web.bind.annotation.PostMapping;\nimport org.springframework.web.bind.annotation.RequestMapping;\nimport org.springframework.web.bind.annotation.RequestMethod;\nimport org.springframework.web.bind.annotation.RestController;\n\n@RestController\n@RequestMapping(\"/api\")\npublic final class HttpController {\n    @GetMapping(\"/items\")\n    public String items() { Sink.record(\"http items\"); return \"items\"; }\n\n    @GetMapping(\"/items/{id}\")\n    public String item() { Sink.record(\"http item\"); return \"item\"; }\n\n    @PostMapping(\"/items\")\n    public void create() { Sink.record(\"http create\"); }\n\n    @RequestMapping(path = \"/health\", method = RequestMethod.GET)\n    public String health() { Sink.record(\"http health\"); return \"ok\"; }\n\n    @fixture.spring.fake.GetMapping(\"/pretend\")\n    public void pretend() { Sink.record(\"custom annotation is not Spring\"); }\n}\n",
+          "file": "@repo/src/main/java/fixture/spring/http/HttpController.java",
+          "is_interface": false,
+          "is_test": false,
+          "kinds": [
+            "class"
+          ],
+          "language": "java",
+          "method_annotations": [
+            "GetMapping",
+            "PostMapping",
+            "RequestMapping",
+            "fixture.spring.fake.GetMapping",
+            "org.springframework.web.bind.annotation.GetMapping",
+            "org.springframework.web.bind.annotation.PostMapping",
+            "org.springframework.web.bind.annotation.RequestMapping"
+          ],
+          "names": [
+            "HttpController",
+            "fixture.spring.http.HttpController"
+          ],
+          "namespaces": [
+            "fixture.spring.http"
+          ],
+          "project": "codegraph.fixture:spring-events"
+        },
+        {
+          "annotated_interfaces": [],
+          "annotations": [
+            "RequestMapping",
+            "RestController",
+            "org.springframework.web.bind.annotation.RequestMapping",
+            "org.springframework.web.bind.annotation.RestController"
+          ],
+          "base_types": [
+            "Object",
+            "java.lang.Object"
+          ],
+          "build": "@repo/",
+          "content": "package fixture.spring.http;\n\nimport fixture.spring.Sink;\nimport org.springframework.web.bind.annotation.GetMapping;\nimport org.springframework.web.bind.annotation.RequestMapping;\nimport org.springframework.web.bind.annotation.RestController;\n\n@RestController\n@RequestMapping(\"/api\")\npublic final class ConstrainedController {\n    @GetMapping(path = \"/ambiguous\", produces = \"application/json\")\n    public String json() { Sink.record(\"json variant\"); return \"{}\"; }\n\n    @GetMapping(path = \"/ambiguous\", produces = \"text/plain\")\n    public String text() { Sink.record(\"text variant\"); return \"text\"; }\n\n    @GetMapping(\"/constrained\")\n    public String unconstrained() { Sink.record(\"unconstrained variant\"); return \"default\"; }\n\n    @GetMapping(path = \"/constrained\", params = \"mode=special\")\n    public String constrained() { Sink.record(\"query constrained variant\"); return \"special\"; }\n}\n",
+          "file": "@repo/src/main/java/fixture/spring/http/ConstrainedController.java",
+          "is_interface": false,
+          "is_test": false,
+          "kinds": [
+            "class"
+          ],
+          "language": "java",
+          "method_annotations": [
+            "GetMapping",
+            "org.springframework.web.bind.annotation.GetMapping"
+          ],
+          "names": [
+            "ConstrainedController",
+            "fixture.spring.http.ConstrainedController"
+          ],
+          "namespaces": [
+            "fixture.spring.http"
+          ],
+          "project": "codegraph.fixture:spring-events"
+        },
+        {
+          "annotated_interfaces": [],
+          "annotations": [
             "Retention",
             "Target",
             "java.lang.annotation.Retention",
@@ -103,6 +176,37 @@
           "names": [
             "EventListener",
             "fixture.spring.fake.EventListener"
+          ],
+          "namespaces": [
+            "fixture.spring.fake"
+          ],
+          "project": "codegraph.fixture:spring-events"
+        },
+        {
+          "annotated_interfaces": [],
+          "annotations": [
+            "Retention",
+            "Target",
+            "java.lang.annotation.Retention",
+            "java.lang.annotation.Target"
+          ],
+          "base_types": [
+            "Annotation",
+            "java.lang.annotation.Annotation"
+          ],
+          "build": "@repo/",
+          "content": "package fixture.spring.fake;\n\nimport java.lang.annotation.ElementType;\nimport java.lang.annotation.Retention;\nimport java.lang.annotation.RetentionPolicy;\nimport java.lang.annotation.Target;\n\n@Target(ElementType.METHOD)\n@Retention(RetentionPolicy.RUNTIME)\npublic @interface GetMapping { String value(); }\n",
+          "file": "@repo/src/main/java/fixture/spring/fake/GetMapping.java",
+          "is_interface": false,
+          "is_test": false,
+          "kinds": [
+            "annotation"
+          ],
+          "language": "java",
+          "method_annotations": [],
+          "names": [
+            "GetMapping",
+            "fixture.spring.fake.GetMapping"
           ],
           "namespaces": [
             "fixture.spring.fake"
@@ -281,7 +385,7 @@
     "diagnostics": [
       "Java DI, reflection, framework callback ordering and dynamic runtime targets are supported only where reported by java-callgraph2. Bytecode source columns are unavailable.",
       "Java combined declarations use each caller's owning compile context. Paths may cross incompatible consumer contexts and do not describe a single runtime classpath.",
-      "Java: 0 inherited/reference symbols without declared bodies excluded; 20 external relationships excluded. These references are engine-reported, not resolved by name.",
+      "Java: 0 inherited/reference symbols without declared bodies excluded; 22 external relationships excluded. These references are engine-reported, not resolved by name.",
       "Spring event analysis is limited to compiler-qualified method publishers and source listeners in the same source context; lambda publishers, custom composed annotations and cross-context wiring remain unresolved.",
       "Spring event targets are static possibilities within one compiler source context. DI registration, event conditions, transaction state and async configuration are not proven. Cross-context and lambda publishers remain unresolved.",
       "Spring publishEvent payload is erased, generic or unresolved at @repo/src/main/java/fixture/spring/Publisher.java:22",
@@ -380,6 +484,78 @@
         "certainty": "direct",
         "count": 1,
         "from": "[\"java\",\"@repo/\",\"@repo/src/main/java/fixture/spring/PretendPublisher.java\",\"[\\\"@repo/\\\",\\\"@repo/\\\",\\\"main\\\"]|fixture.spring.PretendPublisher:publishEvent(fixture.spring.events.Created)|void\"]",
+        "kind": "STA",
+        "provenance": "",
+        "to": "[\"java\",\"@repo/\",\"@repo/src/main/java/fixture/spring/Sink.java\",\"[\\\"@repo/\\\",\\\"@repo/\\\",\\\"main\\\"]|fixture.spring.Sink:record(java.lang.String)|void\"]"
+      },
+      {
+        "certainty": "direct",
+        "count": 1,
+        "from": "[\"java\",\"@repo/\",\"@repo/src/main/java/fixture/spring/http/ConstrainedController.java\",\"[\\\"@repo/\\\",\\\"@repo/\\\",\\\"main\\\"]|fixture.spring.http.ConstrainedController:constrained()|java.lang.String\"]",
+        "kind": "STA",
+        "provenance": "",
+        "to": "[\"java\",\"@repo/\",\"@repo/src/main/java/fixture/spring/Sink.java\",\"[\\\"@repo/\\\",\\\"@repo/\\\",\\\"main\\\"]|fixture.spring.Sink:record(java.lang.String)|void\"]"
+      },
+      {
+        "certainty": "direct",
+        "count": 1,
+        "from": "[\"java\",\"@repo/\",\"@repo/src/main/java/fixture/spring/http/ConstrainedController.java\",\"[\\\"@repo/\\\",\\\"@repo/\\\",\\\"main\\\"]|fixture.spring.http.ConstrainedController:json()|java.lang.String\"]",
+        "kind": "STA",
+        "provenance": "",
+        "to": "[\"java\",\"@repo/\",\"@repo/src/main/java/fixture/spring/Sink.java\",\"[\\\"@repo/\\\",\\\"@repo/\\\",\\\"main\\\"]|fixture.spring.Sink:record(java.lang.String)|void\"]"
+      },
+      {
+        "certainty": "direct",
+        "count": 1,
+        "from": "[\"java\",\"@repo/\",\"@repo/src/main/java/fixture/spring/http/ConstrainedController.java\",\"[\\\"@repo/\\\",\\\"@repo/\\\",\\\"main\\\"]|fixture.spring.http.ConstrainedController:text()|java.lang.String\"]",
+        "kind": "STA",
+        "provenance": "",
+        "to": "[\"java\",\"@repo/\",\"@repo/src/main/java/fixture/spring/Sink.java\",\"[\\\"@repo/\\\",\\\"@repo/\\\",\\\"main\\\"]|fixture.spring.Sink:record(java.lang.String)|void\"]"
+      },
+      {
+        "certainty": "direct",
+        "count": 1,
+        "from": "[\"java\",\"@repo/\",\"@repo/src/main/java/fixture/spring/http/ConstrainedController.java\",\"[\\\"@repo/\\\",\\\"@repo/\\\",\\\"main\\\"]|fixture.spring.http.ConstrainedController:unconstrained()|java.lang.String\"]",
+        "kind": "STA",
+        "provenance": "",
+        "to": "[\"java\",\"@repo/\",\"@repo/src/main/java/fixture/spring/Sink.java\",\"[\\\"@repo/\\\",\\\"@repo/\\\",\\\"main\\\"]|fixture.spring.Sink:record(java.lang.String)|void\"]"
+      },
+      {
+        "certainty": "direct",
+        "count": 1,
+        "from": "[\"java\",\"@repo/\",\"@repo/src/main/java/fixture/spring/http/HttpController.java\",\"[\\\"@repo/\\\",\\\"@repo/\\\",\\\"main\\\"]|fixture.spring.http.HttpController:create()|void\"]",
+        "kind": "STA",
+        "provenance": "",
+        "to": "[\"java\",\"@repo/\",\"@repo/src/main/java/fixture/spring/Sink.java\",\"[\\\"@repo/\\\",\\\"@repo/\\\",\\\"main\\\"]|fixture.spring.Sink:record(java.lang.String)|void\"]"
+      },
+      {
+        "certainty": "direct",
+        "count": 1,
+        "from": "[\"java\",\"@repo/\",\"@repo/src/main/java/fixture/spring/http/HttpController.java\",\"[\\\"@repo/\\\",\\\"@repo/\\\",\\\"main\\\"]|fixture.spring.http.HttpController:health()|java.lang.String\"]",
+        "kind": "STA",
+        "provenance": "",
+        "to": "[\"java\",\"@repo/\",\"@repo/src/main/java/fixture/spring/Sink.java\",\"[\\\"@repo/\\\",\\\"@repo/\\\",\\\"main\\\"]|fixture.spring.Sink:record(java.lang.String)|void\"]"
+      },
+      {
+        "certainty": "direct",
+        "count": 1,
+        "from": "[\"java\",\"@repo/\",\"@repo/src/main/java/fixture/spring/http/HttpController.java\",\"[\\\"@repo/\\\",\\\"@repo/\\\",\\\"main\\\"]|fixture.spring.http.HttpController:item()|java.lang.String\"]",
+        "kind": "STA",
+        "provenance": "",
+        "to": "[\"java\",\"@repo/\",\"@repo/src/main/java/fixture/spring/Sink.java\",\"[\\\"@repo/\\\",\\\"@repo/\\\",\\\"main\\\"]|fixture.spring.Sink:record(java.lang.String)|void\"]"
+      },
+      {
+        "certainty": "direct",
+        "count": 1,
+        "from": "[\"java\",\"@repo/\",\"@repo/src/main/java/fixture/spring/http/HttpController.java\",\"[\\\"@repo/\\\",\\\"@repo/\\\",\\\"main\\\"]|fixture.spring.http.HttpController:items()|java.lang.String\"]",
+        "kind": "STA",
+        "provenance": "",
+        "to": "[\"java\",\"@repo/\",\"@repo/src/main/java/fixture/spring/Sink.java\",\"[\\\"@repo/\\\",\\\"@repo/\\\",\\\"main\\\"]|fixture.spring.Sink:record(java.lang.String)|void\"]"
+      },
+      {
+        "certainty": "direct",
+        "count": 1,
+        "from": "[\"java\",\"@repo/\",\"@repo/src/main/java/fixture/spring/http/HttpController.java\",\"[\\\"@repo/\\\",\\\"@repo/\\\",\\\"main\\\"]|fixture.spring.http.HttpController:pretend()|void\"]",
         "kind": "STA",
         "provenance": "",
         "to": "[\"java\",\"@repo/\",\"@repo/src/main/java/fixture/spring/Sink.java\",\"[\\\"@repo/\\\",\\\"@repo/\\\",\\\"main\\\"]|fixture.spring.Sink:record(java.lang.String)|void\"]"
@@ -1324,7 +1500,17 @@
         "[\"java\",\"@repo/\",\"@repo/src/main/java/fixture/spring/Publisher.java\",\"[\\\"@repo/\\\",\\\"@repo/\\\",\\\"main\\\"]|fixture.spring.Publisher:publishGeneric(org.springframework.context.ApplicationEventPublisher,java.lang.Object)|void\"]",
         "[\"java\",\"@repo/\",\"@repo/src/main/java/fixture/spring/Publisher.java\",\"[\\\"@repo/\\\",\\\"@repo/\\\",\\\"main\\\"]|fixture.spring.Publisher:publishPayload(org.springframework.context.ApplicationEventPublisher)|void\"]",
         "[\"java\",\"@repo/\",\"@repo/src/main/java/fixture/spring/Publisher.java\",\"[\\\"@repo/\\\",\\\"@repo/\\\",\\\"main\\\"]|fixture.spring.Publisher:publishPayloadTwice(org.springframework.context.ApplicationEventPublisher)|void\"]",
-        "[\"java\",\"@repo/\",\"@repo/src/main/java/fixture/spring/Publisher.java\",\"[\\\"@repo/\\\",\\\"@repo/\\\",\\\"main\\\"]|fixture.spring.Publisher:sameNamedApi(fixture.spring.PretendPublisher)|void\"]"
+        "[\"java\",\"@repo/\",\"@repo/src/main/java/fixture/spring/Publisher.java\",\"[\\\"@repo/\\\",\\\"@repo/\\\",\\\"main\\\"]|fixture.spring.Publisher:sameNamedApi(fixture.spring.PretendPublisher)|void\"]",
+        "[\"java\",\"@repo/\",\"@repo/src/main/java/fixture/spring/fake/GetMapping.java\",\"[\\\"@repo/\\\",\\\"@repo/\\\",\\\"main\\\"]|fixture.spring.fake.GetMapping:value()|java.lang.String\"]",
+        "[\"java\",\"@repo/\",\"@repo/src/main/java/fixture/spring/http/ConstrainedController.java\",\"[\\\"@repo/\\\",\\\"@repo/\\\",\\\"main\\\"]|fixture.spring.http.ConstrainedController:constrained()|java.lang.String\"]",
+        "[\"java\",\"@repo/\",\"@repo/src/main/java/fixture/spring/http/ConstrainedController.java\",\"[\\\"@repo/\\\",\\\"@repo/\\\",\\\"main\\\"]|fixture.spring.http.ConstrainedController:json()|java.lang.String\"]",
+        "[\"java\",\"@repo/\",\"@repo/src/main/java/fixture/spring/http/ConstrainedController.java\",\"[\\\"@repo/\\\",\\\"@repo/\\\",\\\"main\\\"]|fixture.spring.http.ConstrainedController:text()|java.lang.String\"]",
+        "[\"java\",\"@repo/\",\"@repo/src/main/java/fixture/spring/http/ConstrainedController.java\",\"[\\\"@repo/\\\",\\\"@repo/\\\",\\\"main\\\"]|fixture.spring.http.ConstrainedController:unconstrained()|java.lang.String\"]",
+        "[\"java\",\"@repo/\",\"@repo/src/main/java/fixture/spring/http/HttpController.java\",\"[\\\"@repo/\\\",\\\"@repo/\\\",\\\"main\\\"]|fixture.spring.http.HttpController:create()|void\"]",
+        "[\"java\",\"@repo/\",\"@repo/src/main/java/fixture/spring/http/HttpController.java\",\"[\\\"@repo/\\\",\\\"@repo/\\\",\\\"main\\\"]|fixture.spring.http.HttpController:health()|java.lang.String\"]",
+        "[\"java\",\"@repo/\",\"@repo/src/main/java/fixture/spring/http/HttpController.java\",\"[\\\"@repo/\\\",\\\"@repo/\\\",\\\"main\\\"]|fixture.spring.http.HttpController:item()|java.lang.String\"]",
+        "[\"java\",\"@repo/\",\"@repo/src/main/java/fixture/spring/http/HttpController.java\",\"[\\\"@repo/\\\",\\\"@repo/\\\",\\\"main\\\"]|fixture.spring.http.HttpController:items()|java.lang.String\"]",
+        "[\"java\",\"@repo/\",\"@repo/src/main/java/fixture/spring/http/HttpController.java\",\"[\\\"@repo/\\\",\\\"@repo/\\\",\\\"main\\\"]|fixture.spring.http.HttpController:pretend()|void\"]"
       ],
       "framework_entries": [
         "[\"java\",\"@repo/\",\"@repo/src/main/java/fixture/spring/InterfaceListener.java\",\"[\\\"@repo/\\\",\\\"@repo/\\\",\\\"main\\\"]|fixture.spring.InterfaceListener:onApplicationEvent(fixture.spring.events.Started)|void\"]",
@@ -2192,6 +2378,89 @@
             {
               "kind": "evaluate",
               "span": {
+                "end": 450,
+                "start": 422
+              },
+              "value": {
+                "items": [
+                  {
+                    "calls": [],
+                    "kind": "value",
+                    "regions": [],
+                    "span": {
+                      "end": 448,
+                      "start": 434
+                    },
+                    "text": "\"json variant\""
+                  },
+                  {
+                    "calls": [
+                      {
+                        "diagnostic": null,
+                        "label": "Sink.record(\"json variant\")",
+                        "span": {
+                          "end": 449,
+                          "start": 422
+                        },
+                        "targets": [
+                          {
+                            "certainty": "direct",
+                            "provenance": "java.javac.source-call",
+                            "symbol": "[\"java\",\"@repo/\",\"@repo/src/main/java/fixture/spring/Sink.java\",\"[\\\"@repo/\\\",\\\"@repo/\\\",\\\"main\\\"]|fixture.spring.Sink:record(java.lang.String)|void\"]"
+                          }
+                        ]
+                      }
+                    ],
+                    "kind": "value",
+                    "regions": [],
+                    "span": {
+                      "end": 449,
+                      "start": 422
+                    },
+                    "text": "Sink.record(\"json variant\")"
+                  }
+                ],
+                "kind": "sequence",
+                "span": {
+                  "end": 449,
+                  "start": 422
+                }
+              }
+            },
+            {
+              "kind": "return",
+              "span": {
+                "end": 463,
+                "start": 451
+              },
+              "value": {
+                "calls": [],
+                "kind": "value",
+                "regions": [],
+                "span": {
+                  "end": 462,
+                  "start": 458
+                },
+                "text": "\"{}\""
+              }
+            }
+          ],
+          "build": "@repo/",
+          "diagnostics": [],
+          "file": "@repo/src/main/java/fixture/spring/http/ConstrainedController.java",
+          "language": "java",
+          "project": "codegraph.fixture:spring-events",
+          "span": {
+            "end": 465,
+            "start": 331
+          },
+          "symbol": "[\"java\",\"@repo/\",\"@repo/src/main/java/fixture/spring/http/ConstrainedController.java\",\"[\\\"@repo/\\\",\\\"@repo/\\\",\\\"main\\\"]|fixture.spring.http.ConstrainedController:json()|java.lang.String\"]"
+        },
+        {
+          "body": [
+            {
+              "kind": "evaluate",
+              "span": {
                 "end": 456,
                 "start": 411
               },
@@ -2448,6 +2717,172 @@
             {
               "kind": "evaluate",
               "span": {
+                "end": 522,
+                "start": 496
+              },
+              "value": {
+                "items": [
+                  {
+                    "calls": [],
+                    "kind": "value",
+                    "regions": [],
+                    "span": {
+                      "end": 520,
+                      "start": 508
+                    },
+                    "text": "\"http items\""
+                  },
+                  {
+                    "calls": [
+                      {
+                        "diagnostic": null,
+                        "label": "Sink.record(\"http items\")",
+                        "span": {
+                          "end": 521,
+                          "start": 496
+                        },
+                        "targets": [
+                          {
+                            "certainty": "direct",
+                            "provenance": "java.javac.source-call",
+                            "symbol": "[\"java\",\"@repo/\",\"@repo/src/main/java/fixture/spring/Sink.java\",\"[\\\"@repo/\\\",\\\"@repo/\\\",\\\"main\\\"]|fixture.spring.Sink:record(java.lang.String)|void\"]"
+                          }
+                        ]
+                      }
+                    ],
+                    "kind": "value",
+                    "regions": [],
+                    "span": {
+                      "end": 521,
+                      "start": 496
+                    },
+                    "text": "Sink.record(\"http items\")"
+                  }
+                ],
+                "kind": "sequence",
+                "span": {
+                  "end": 521,
+                  "start": 496
+                }
+              }
+            },
+            {
+              "kind": "return",
+              "span": {
+                "end": 538,
+                "start": 523
+              },
+              "value": {
+                "calls": [],
+                "kind": "value",
+                "regions": [],
+                "span": {
+                  "end": 537,
+                  "start": 530
+                },
+                "text": "\"items\""
+              }
+            }
+          ],
+          "build": "@repo/",
+          "diagnostics": [],
+          "file": "@repo/src/main/java/fixture/spring/http/HttpController.java",
+          "language": "java",
+          "project": "codegraph.fixture:spring-events",
+          "span": {
+            "end": 540,
+            "start": 446
+          },
+          "symbol": "[\"java\",\"@repo/\",\"@repo/src/main/java/fixture/spring/http/HttpController.java\",\"[\\\"@repo/\\\",\\\"@repo/\\\",\\\"main\\\"]|fixture.spring.http.HttpController:items()|java.lang.String\"]"
+        },
+        {
+          "body": [
+            {
+              "kind": "evaluate",
+              "span": {
+                "end": 584,
+                "start": 556
+              },
+              "value": {
+                "items": [
+                  {
+                    "calls": [],
+                    "kind": "value",
+                    "regions": [],
+                    "span": {
+                      "end": 582,
+                      "start": 568
+                    },
+                    "text": "\"text variant\""
+                  },
+                  {
+                    "calls": [
+                      {
+                        "diagnostic": null,
+                        "label": "Sink.record(\"text variant\")",
+                        "span": {
+                          "end": 583,
+                          "start": 556
+                        },
+                        "targets": [
+                          {
+                            "certainty": "direct",
+                            "provenance": "java.javac.source-call",
+                            "symbol": "[\"java\",\"@repo/\",\"@repo/src/main/java/fixture/spring/Sink.java\",\"[\\\"@repo/\\\",\\\"@repo/\\\",\\\"main\\\"]|fixture.spring.Sink:record(java.lang.String)|void\"]"
+                          }
+                        ]
+                      }
+                    ],
+                    "kind": "value",
+                    "regions": [],
+                    "span": {
+                      "end": 583,
+                      "start": 556
+                    },
+                    "text": "Sink.record(\"text variant\")"
+                  }
+                ],
+                "kind": "sequence",
+                "span": {
+                  "end": 583,
+                  "start": 556
+                }
+              }
+            },
+            {
+              "kind": "return",
+              "span": {
+                "end": 599,
+                "start": 585
+              },
+              "value": {
+                "calls": [],
+                "kind": "value",
+                "regions": [],
+                "span": {
+                  "end": 598,
+                  "start": 592
+                },
+                "text": "\"text\""
+              }
+            }
+          ],
+          "build": "@repo/",
+          "diagnostics": [],
+          "file": "@repo/src/main/java/fixture/spring/http/ConstrainedController.java",
+          "language": "java",
+          "project": "codegraph.fixture:spring-events",
+          "span": {
+            "end": 601,
+            "start": 471
+          },
+          "symbol": "[\"java\",\"@repo/\",\"@repo/src/main/java/fixture/spring/http/ConstrainedController.java\",\"[\\\"@repo/\\\",\\\"@repo/\\\",\\\"main\\\"]|fixture.spring.http.ConstrainedController:text()|java.lang.String\"]"
+        },
+        {
+          "body": [
+            {
+              "kind": "evaluate",
+              "span": {
                 "end": 601,
                 "start": 578
               },
@@ -2508,6 +2943,89 @@
             "start": 520
           },
           "symbol": "[\"java\",\"@repo/\",\"@repo/src/main/java/fixture/spring/Listeners.java\",\"[\\\"@repo/\\\",\\\"@repo/\\\",\\\"main\\\"]|fixture.spring.Listeners:onPayload(fixture.spring.events.Created)|void\"]"
+        },
+        {
+          "body": [
+            {
+              "kind": "evaluate",
+              "span": {
+                "end": 625,
+                "start": 600
+              },
+              "value": {
+                "items": [
+                  {
+                    "calls": [],
+                    "kind": "value",
+                    "regions": [],
+                    "span": {
+                      "end": 623,
+                      "start": 612
+                    },
+                    "text": "\"http item\""
+                  },
+                  {
+                    "calls": [
+                      {
+                        "diagnostic": null,
+                        "label": "Sink.record(\"http item\")",
+                        "span": {
+                          "end": 624,
+                          "start": 600
+                        },
+                        "targets": [
+                          {
+                            "certainty": "direct",
+                            "provenance": "java.javac.source-call",
+                            "symbol": "[\"java\",\"@repo/\",\"@repo/src/main/java/fixture/spring/Sink.java\",\"[\\\"@repo/\\\",\\\"@repo/\\\",\\\"main\\\"]|fixture.spring.Sink:record(java.lang.String)|void\"]"
+                          }
+                        ]
+                      }
+                    ],
+                    "kind": "value",
+                    "regions": [],
+                    "span": {
+                      "end": 624,
+                      "start": 600
+                    },
+                    "text": "Sink.record(\"http item\")"
+                  }
+                ],
+                "kind": "sequence",
+                "span": {
+                  "end": 624,
+                  "start": 600
+                }
+              }
+            },
+            {
+              "kind": "return",
+              "span": {
+                "end": 640,
+                "start": 626
+              },
+              "value": {
+                "calls": [],
+                "kind": "value",
+                "regions": [],
+                "span": {
+                  "end": 639,
+                  "start": 633
+                },
+                "text": "\"item\""
+              }
+            }
+          ],
+          "build": "@repo/",
+          "diagnostics": [],
+          "file": "@repo/src/main/java/fixture/spring/http/HttpController.java",
+          "language": "java",
+          "project": "codegraph.fixture:spring-events",
+          "span": {
+            "end": 642,
+            "start": 546
+          },
+          "symbol": "[\"java\",\"@repo/\",\"@repo/src/main/java/fixture/spring/http/HttpController.java\",\"[\\\"@repo/\\\",\\\"@repo/\\\",\\\"main\\\"]|fixture.spring.http.HttpController:item()|java.lang.String\"]"
         },
         {
           "body": [
@@ -2624,6 +3142,89 @@
             {
               "kind": "evaluate",
               "span": {
+                "end": 708,
+                "start": 671
+              },
+              "value": {
+                "items": [
+                  {
+                    "calls": [],
+                    "kind": "value",
+                    "regions": [],
+                    "span": {
+                      "end": 706,
+                      "start": 683
+                    },
+                    "text": "\"unconstrained variant\""
+                  },
+                  {
+                    "calls": [
+                      {
+                        "diagnostic": null,
+                        "label": "Sink.record(\"unconstrained variant\")",
+                        "span": {
+                          "end": 707,
+                          "start": 671
+                        },
+                        "targets": [
+                          {
+                            "certainty": "direct",
+                            "provenance": "java.javac.source-call",
+                            "symbol": "[\"java\",\"@repo/\",\"@repo/src/main/java/fixture/spring/Sink.java\",\"[\\\"@repo/\\\",\\\"@repo/\\\",\\\"main\\\"]|fixture.spring.Sink:record(java.lang.String)|void\"]"
+                          }
+                        ]
+                      }
+                    ],
+                    "kind": "value",
+                    "regions": [],
+                    "span": {
+                      "end": 707,
+                      "start": 671
+                    },
+                    "text": "Sink.record(\"unconstrained variant\")"
+                  }
+                ],
+                "kind": "sequence",
+                "span": {
+                  "end": 707,
+                  "start": 671
+                }
+              }
+            },
+            {
+              "kind": "return",
+              "span": {
+                "end": 726,
+                "start": 709
+              },
+              "value": {
+                "calls": [],
+                "kind": "value",
+                "regions": [],
+                "span": {
+                  "end": 725,
+                  "start": 716
+                },
+                "text": "\"default\""
+              }
+            }
+          ],
+          "build": "@repo/",
+          "diagnostics": [],
+          "file": "@repo/src/main/java/fixture/spring/http/ConstrainedController.java",
+          "language": "java",
+          "project": "codegraph.fixture:spring-events",
+          "span": {
+            "end": 728,
+            "start": 607
+          },
+          "symbol": "[\"java\",\"@repo/\",\"@repo/src/main/java/fixture/spring/http/ConstrainedController.java\",\"[\\\"@repo/\\\",\\\"@repo/\\\",\\\"main\\\"]|fixture.spring.http.ConstrainedController:unconstrained()|java.lang.String\"]"
+        },
+        {
+          "body": [
+            {
+              "kind": "evaluate",
+              "span": {
                 "end": 719,
                 "start": 687
               },
@@ -2684,6 +3285,72 @@
             "start": 609
           },
           "symbol": "[\"java\",\"@repo/\",\"@repo/src/main/java/fixture/spring/Listeners.java\",\"[\\\"@repo/\\\",\\\"@repo/\\\",\\\"main\\\"]|fixture.spring.Listeners:onExplicitPayload()|void\"]"
+        },
+        {
+          "body": [
+            {
+              "kind": "evaluate",
+              "span": {
+                "end": 725,
+                "start": 698
+              },
+              "value": {
+                "items": [
+                  {
+                    "calls": [],
+                    "kind": "value",
+                    "regions": [],
+                    "span": {
+                      "end": 723,
+                      "start": 710
+                    },
+                    "text": "\"http create\""
+                  },
+                  {
+                    "calls": [
+                      {
+                        "diagnostic": null,
+                        "label": "Sink.record(\"http create\")",
+                        "span": {
+                          "end": 724,
+                          "start": 698
+                        },
+                        "targets": [
+                          {
+                            "certainty": "direct",
+                            "provenance": "java.javac.source-call",
+                            "symbol": "[\"java\",\"@repo/\",\"@repo/src/main/java/fixture/spring/Sink.java\",\"[\\\"@repo/\\\",\\\"@repo/\\\",\\\"main\\\"]|fixture.spring.Sink:record(java.lang.String)|void\"]"
+                          }
+                        ]
+                      }
+                    ],
+                    "kind": "value",
+                    "regions": [],
+                    "span": {
+                      "end": 724,
+                      "start": 698
+                    },
+                    "text": "Sink.record(\"http create\")"
+                  }
+                ],
+                "kind": "sequence",
+                "span": {
+                  "end": 724,
+                  "start": 698
+                }
+              }
+            }
+          ],
+          "build": "@repo/",
+          "diagnostics": [],
+          "file": "@repo/src/main/java/fixture/spring/http/HttpController.java",
+          "language": "java",
+          "project": "codegraph.fixture:spring-events",
+          "span": {
+            "end": 727,
+            "start": 648
+          },
+          "symbol": "[\"java\",\"@repo/\",\"@repo/src/main/java/fixture/spring/http/HttpController.java\",\"[\\\"@repo/\\\",\\\"@repo/\\\",\\\"main\\\"]|fixture.spring.http.HttpController:create()|void\"]"
         },
         {
           "body": [
@@ -2754,6 +3421,172 @@
             "start": 660
           },
           "symbol": "[\"java\",\"@repo/\",\"@repo/src/main/java/fixture/spring/Publisher.java\",\"[\\\"@repo/\\\",\\\"@repo/\\\",\\\"main\\\"]|fixture.spring.Publisher:publishErased(org.springframework.context.ApplicationEventPublisher,java.lang.Object)|void\"]"
+        },
+        {
+          "body": [
+            {
+              "kind": "evaluate",
+              "span": {
+                "end": 851,
+                "start": 824
+              },
+              "value": {
+                "items": [
+                  {
+                    "calls": [],
+                    "kind": "value",
+                    "regions": [],
+                    "span": {
+                      "end": 849,
+                      "start": 836
+                    },
+                    "text": "\"http health\""
+                  },
+                  {
+                    "calls": [
+                      {
+                        "diagnostic": null,
+                        "label": "Sink.record(\"http health\")",
+                        "span": {
+                          "end": 850,
+                          "start": 824
+                        },
+                        "targets": [
+                          {
+                            "certainty": "direct",
+                            "provenance": "java.javac.source-call",
+                            "symbol": "[\"java\",\"@repo/\",\"@repo/src/main/java/fixture/spring/Sink.java\",\"[\\\"@repo/\\\",\\\"@repo/\\\",\\\"main\\\"]|fixture.spring.Sink:record(java.lang.String)|void\"]"
+                          }
+                        ]
+                      }
+                    ],
+                    "kind": "value",
+                    "regions": [],
+                    "span": {
+                      "end": 850,
+                      "start": 824
+                    },
+                    "text": "Sink.record(\"http health\")"
+                  }
+                ],
+                "kind": "sequence",
+                "span": {
+                  "end": 850,
+                  "start": 824
+                }
+              }
+            },
+            {
+              "kind": "return",
+              "span": {
+                "end": 864,
+                "start": 852
+              },
+              "value": {
+                "calls": [],
+                "kind": "value",
+                "regions": [],
+                "span": {
+                  "end": 863,
+                  "start": 859
+                },
+                "text": "\"ok\""
+              }
+            }
+          ],
+          "build": "@repo/",
+          "diagnostics": [],
+          "file": "@repo/src/main/java/fixture/spring/http/HttpController.java",
+          "language": "java",
+          "project": "codegraph.fixture:spring-events",
+          "span": {
+            "end": 866,
+            "start": 733
+          },
+          "symbol": "[\"java\",\"@repo/\",\"@repo/src/main/java/fixture/spring/http/HttpController.java\",\"[\\\"@repo/\\\",\\\"@repo/\\\",\\\"main\\\"]|fixture.spring.http.HttpController:health()|java.lang.String\"]"
+        },
+        {
+          "body": [
+            {
+              "kind": "evaluate",
+              "span": {
+                "end": 869,
+                "start": 828
+              },
+              "value": {
+                "items": [
+                  {
+                    "calls": [],
+                    "kind": "value",
+                    "regions": [],
+                    "span": {
+                      "end": 867,
+                      "start": 840
+                    },
+                    "text": "\"query constrained variant\""
+                  },
+                  {
+                    "calls": [
+                      {
+                        "diagnostic": null,
+                        "label": "Sink.record(\"query constrained variant\")",
+                        "span": {
+                          "end": 868,
+                          "start": 828
+                        },
+                        "targets": [
+                          {
+                            "certainty": "direct",
+                            "provenance": "java.javac.source-call",
+                            "symbol": "[\"java\",\"@repo/\",\"@repo/src/main/java/fixture/spring/Sink.java\",\"[\\\"@repo/\\\",\\\"@repo/\\\",\\\"main\\\"]|fixture.spring.Sink:record(java.lang.String)|void\"]"
+                          }
+                        ]
+                      }
+                    ],
+                    "kind": "value",
+                    "regions": [],
+                    "span": {
+                      "end": 868,
+                      "start": 828
+                    },
+                    "text": "Sink.record(\"query constrained variant\")"
+                  }
+                ],
+                "kind": "sequence",
+                "span": {
+                  "end": 868,
+                  "start": 828
+                }
+              }
+            },
+            {
+              "kind": "return",
+              "span": {
+                "end": 887,
+                "start": 870
+              },
+              "value": {
+                "calls": [],
+                "kind": "value",
+                "regions": [],
+                "span": {
+                  "end": 886,
+                  "start": 877
+                },
+                "text": "\"special\""
+              }
+            }
+          ],
+          "build": "@repo/",
+          "diagnostics": [],
+          "file": "@repo/src/main/java/fixture/spring/http/ConstrainedController.java",
+          "language": "java",
+          "project": "codegraph.fixture:spring-events",
+          "span": {
+            "end": 889,
+            "start": 734
+          },
+          "symbol": "[\"java\",\"@repo/\",\"@repo/src/main/java/fixture/spring/http/ConstrainedController.java\",\"[\\\"@repo/\\\",\\\"@repo/\\\",\\\"main\\\"]|fixture.spring.http.ConstrainedController:constrained()|java.lang.String\"]"
         },
         {
           "body": [
@@ -2890,6 +3723,72 @@
             "start": 789
           },
           "symbol": "[\"java\",\"@repo/\",\"@repo/src/main/java/fixture/spring/Publisher.java\",\"[\\\"@repo/\\\",\\\"@repo/\\\",\\\"main\\\"]|fixture.spring.Publisher:publishGeneric(org.springframework.context.ApplicationEventPublisher,java.lang.Object)|void\"]"
+        },
+        {
+          "body": [
+            {
+              "kind": "evaluate",
+              "span": {
+                "end": 991,
+                "start": 944
+              },
+              "value": {
+                "items": [
+                  {
+                    "calls": [],
+                    "kind": "value",
+                    "regions": [],
+                    "span": {
+                      "end": 989,
+                      "start": 956
+                    },
+                    "text": "\"custom annotation is not Spring\""
+                  },
+                  {
+                    "calls": [
+                      {
+                        "diagnostic": null,
+                        "label": "Sink.record(\"custom annotation is not Spring\")",
+                        "span": {
+                          "end": 990,
+                          "start": 944
+                        },
+                        "targets": [
+                          {
+                            "certainty": "direct",
+                            "provenance": "java.javac.source-call",
+                            "symbol": "[\"java\",\"@repo/\",\"@repo/src/main/java/fixture/spring/Sink.java\",\"[\\\"@repo/\\\",\\\"@repo/\\\",\\\"main\\\"]|fixture.spring.Sink:record(java.lang.String)|void\"]"
+                          }
+                        ]
+                      }
+                    ],
+                    "kind": "value",
+                    "regions": [],
+                    "span": {
+                      "end": 990,
+                      "start": 944
+                    },
+                    "text": "Sink.record(\"custom annotation is not Spring\")"
+                  }
+                ],
+                "kind": "sequence",
+                "span": {
+                  "end": 990,
+                  "start": 944
+                }
+              }
+            }
+          ],
+          "build": "@repo/",
+          "diagnostics": [],
+          "file": "@repo/src/main/java/fixture/spring/http/HttpController.java",
+          "language": "java",
+          "project": "codegraph.fixture:spring-events",
+          "span": {
+            "end": 993,
+            "start": 872
+          },
+          "symbol": "[\"java\",\"@repo/\",\"@repo/src/main/java/fixture/spring/http/HttpController.java\",\"[\\\"@repo/\\\",\\\"@repo/\\\",\\\"main\\\"]|fixture.spring.http.HttpController:pretend()|void\"]"
         }
       ],
       "version": 1
@@ -3235,6 +4134,186 @@
         "namespace": "fixture.spring",
         "project": "codegraph.fixture:spring-events",
         "signature": "fixture.spring.Sink:record(java.lang.String) -> void",
+        "visibility": "public"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/",
+        "container": "fixture.spring.fake.GetMapping",
+        "container_visibility": "public",
+        "file": "@repo/src/main/java/fixture/spring/fake/GetMapping.java",
+        "id": "[\"java\",\"@repo/\",\"@repo/src/main/java/fixture/spring/fake/GetMapping.java\",\"[\\\"@repo/\\\",\\\"@repo/\\\",\\\"main\\\"]|fixture.spring.fake.GetMapping:value()|java.lang.String\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "method",
+        "label": "value",
+        "language": "java",
+        "line": 0,
+        "namespace": "fixture.spring.fake",
+        "project": "codegraph.fixture:spring-events",
+        "signature": "fixture.spring.fake.GetMapping:value() -> java.lang.String",
+        "visibility": "public"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/",
+        "container": "fixture.spring.http.ConstrainedController",
+        "container_visibility": "public",
+        "file": "@repo/src/main/java/fixture/spring/http/ConstrainedController.java",
+        "id": "[\"java\",\"@repo/\",\"@repo/src/main/java/fixture/spring/http/ConstrainedController.java\",\"[\\\"@repo/\\\",\\\"@repo/\\\",\\\"main\\\"]|fixture.spring.http.ConstrainedController:constrained()|java.lang.String\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "method",
+        "label": "constrained",
+        "language": "java",
+        "line": 21,
+        "namespace": "fixture.spring.http",
+        "project": "codegraph.fixture:spring-events",
+        "signature": "fixture.spring.http.ConstrainedController:constrained() -> java.lang.String",
+        "visibility": "public"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/",
+        "container": "fixture.spring.http.ConstrainedController",
+        "container_visibility": "public",
+        "file": "@repo/src/main/java/fixture/spring/http/ConstrainedController.java",
+        "id": "[\"java\",\"@repo/\",\"@repo/src/main/java/fixture/spring/http/ConstrainedController.java\",\"[\\\"@repo/\\\",\\\"@repo/\\\",\\\"main\\\"]|fixture.spring.http.ConstrainedController:json()|java.lang.String\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "method",
+        "label": "json",
+        "language": "java",
+        "line": 12,
+        "namespace": "fixture.spring.http",
+        "project": "codegraph.fixture:spring-events",
+        "signature": "fixture.spring.http.ConstrainedController:json() -> java.lang.String",
+        "visibility": "public"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/",
+        "container": "fixture.spring.http.ConstrainedController",
+        "container_visibility": "public",
+        "file": "@repo/src/main/java/fixture/spring/http/ConstrainedController.java",
+        "id": "[\"java\",\"@repo/\",\"@repo/src/main/java/fixture/spring/http/ConstrainedController.java\",\"[\\\"@repo/\\\",\\\"@repo/\\\",\\\"main\\\"]|fixture.spring.http.ConstrainedController:text()|java.lang.String\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "method",
+        "label": "text",
+        "language": "java",
+        "line": 15,
+        "namespace": "fixture.spring.http",
+        "project": "codegraph.fixture:spring-events",
+        "signature": "fixture.spring.http.ConstrainedController:text() -> java.lang.String",
+        "visibility": "public"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/",
+        "container": "fixture.spring.http.ConstrainedController",
+        "container_visibility": "public",
+        "file": "@repo/src/main/java/fixture/spring/http/ConstrainedController.java",
+        "id": "[\"java\",\"@repo/\",\"@repo/src/main/java/fixture/spring/http/ConstrainedController.java\",\"[\\\"@repo/\\\",\\\"@repo/\\\",\\\"main\\\"]|fixture.spring.http.ConstrainedController:unconstrained()|java.lang.String\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "method",
+        "label": "unconstrained",
+        "language": "java",
+        "line": 18,
+        "namespace": "fixture.spring.http",
+        "project": "codegraph.fixture:spring-events",
+        "signature": "fixture.spring.http.ConstrainedController:unconstrained() -> java.lang.String",
+        "visibility": "public"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/",
+        "container": "fixture.spring.http.HttpController",
+        "container_visibility": "public",
+        "file": "@repo/src/main/java/fixture/spring/http/HttpController.java",
+        "id": "[\"java\",\"@repo/\",\"@repo/src/main/java/fixture/spring/http/HttpController.java\",\"[\\\"@repo/\\\",\\\"@repo/\\\",\\\"main\\\"]|fixture.spring.http.HttpController:create()|void\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "method",
+        "label": "create",
+        "language": "java",
+        "line": 20,
+        "namespace": "fixture.spring.http",
+        "project": "codegraph.fixture:spring-events",
+        "signature": "fixture.spring.http.HttpController:create() -> void",
+        "visibility": "public"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/",
+        "container": "fixture.spring.http.HttpController",
+        "container_visibility": "public",
+        "file": "@repo/src/main/java/fixture/spring/http/HttpController.java",
+        "id": "[\"java\",\"@repo/\",\"@repo/src/main/java/fixture/spring/http/HttpController.java\",\"[\\\"@repo/\\\",\\\"@repo/\\\",\\\"main\\\"]|fixture.spring.http.HttpController:health()|java.lang.String\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "method",
+        "label": "health",
+        "language": "java",
+        "line": 23,
+        "namespace": "fixture.spring.http",
+        "project": "codegraph.fixture:spring-events",
+        "signature": "fixture.spring.http.HttpController:health() -> java.lang.String",
+        "visibility": "public"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/",
+        "container": "fixture.spring.http.HttpController",
+        "container_visibility": "public",
+        "file": "@repo/src/main/java/fixture/spring/http/HttpController.java",
+        "id": "[\"java\",\"@repo/\",\"@repo/src/main/java/fixture/spring/http/HttpController.java\",\"[\\\"@repo/\\\",\\\"@repo/\\\",\\\"main\\\"]|fixture.spring.http.HttpController:item()|java.lang.String\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "method",
+        "label": "item",
+        "language": "java",
+        "line": 17,
+        "namespace": "fixture.spring.http",
+        "project": "codegraph.fixture:spring-events",
+        "signature": "fixture.spring.http.HttpController:item() -> java.lang.String",
+        "visibility": "public"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/",
+        "container": "fixture.spring.http.HttpController",
+        "container_visibility": "public",
+        "file": "@repo/src/main/java/fixture/spring/http/HttpController.java",
+        "id": "[\"java\",\"@repo/\",\"@repo/src/main/java/fixture/spring/http/HttpController.java\",\"[\\\"@repo/\\\",\\\"@repo/\\\",\\\"main\\\"]|fixture.spring.http.HttpController:items()|java.lang.String\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "method",
+        "label": "items",
+        "language": "java",
+        "line": 14,
+        "namespace": "fixture.spring.http",
+        "project": "codegraph.fixture:spring-events",
+        "signature": "fixture.spring.http.HttpController:items() -> java.lang.String",
+        "visibility": "public"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/",
+        "container": "fixture.spring.http.HttpController",
+        "container_visibility": "public",
+        "file": "@repo/src/main/java/fixture/spring/http/HttpController.java",
+        "id": "[\"java\",\"@repo/\",\"@repo/src/main/java/fixture/spring/http/HttpController.java\",\"[\\\"@repo/\\\",\\\"@repo/\\\",\\\"main\\\"]|fixture.spring.http.HttpController:pretend()|void\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "method",
+        "label": "pretend",
+        "language": "java",
+        "line": 26,
+        "namespace": "fixture.spring.http",
+        "project": "codegraph.fixture:spring-events",
+        "signature": "fixture.spring.http.HttpController:pretend() -> void",
         "visibility": "public"
       }
     ],
