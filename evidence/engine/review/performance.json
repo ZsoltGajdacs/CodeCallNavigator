@@ -1,0 +1,130 @@
+{
+  "protocol": "Same copied source paths and target order, inference cache disabled for both, one warmup per engine then three alternating baseline/candidate runs. Process-tree sampled RSS is a lower bound and may double-count shared pages. Build products/dependency caches remain warm.",
+  "baseline": "/private/tmp/codegraph-stage6-b839ba3/bin/codegraph-engine",
+  "candidate": "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/dist/CodeGraphEngine/bin/codegraph-engine",
+  "workloads": {
+    "typescript": {
+      "baseline": {
+        "runs": [
+          {
+            "seconds": 0.631552917,
+            "sampled_peak_tree_rss_bytes": 347750400,
+            "sampling_errors": [],
+            "nodes": 75,
+            "edges": 54
+          },
+          {
+            "seconds": 0.5920422080000001,
+            "sampled_peak_tree_rss_bytes": 344457216,
+            "sampling_errors": [],
+            "nodes": 75,
+            "edges": 54
+          },
+          {
+            "seconds": 0.6552404589999998,
+            "sampled_peak_tree_rss_bytes": 344735744,
+            "sampling_errors": [],
+            "nodes": 75,
+            "edges": 54
+          }
+        ],
+        "median_seconds": 0.631552917,
+        "median_sampled_peak_tree_rss_bytes": 344735744,
+        "resource_sampling_complete": true
+      },
+      "candidate": {
+        "runs": [
+          {
+            "seconds": 0.652351208,
+            "sampled_peak_tree_rss_bytes": 334266368,
+            "sampling_errors": [],
+            "nodes": 75,
+            "edges": 54
+          },
+          {
+            "seconds": 0.642091084,
+            "sampled_peak_tree_rss_bytes": 334807040,
+            "sampling_errors": [],
+            "nodes": 75,
+            "edges": 54
+          },
+          {
+            "seconds": 0.6400986250000003,
+            "sampled_peak_tree_rss_bytes": 349159424,
+            "sampling_errors": [],
+            "nodes": 75,
+            "edges": 54
+          }
+        ],
+        "median_seconds": 0.642091084,
+        "median_sampled_peak_tree_rss_bytes": 334807040,
+        "resource_sampling_complete": true
+      },
+      "runtime_change_percent": 1.6686118797548
+    },
+    "mixed": {
+      "baseline": {
+        "runs": [
+          {
+            "seconds": 15.555105083999997,
+            "sampled_peak_tree_rss_bytes": 349306880,
+            "sampling_errors": [],
+            "nodes": 179,
+            "edges": 120
+          },
+          {
+            "seconds": 15.536894582999992,
+            "sampled_peak_tree_rss_bytes": 377913344,
+            "sampling_errors": [],
+            "nodes": 179,
+            "edges": 120
+          },
+          {
+            "seconds": 17.384941292000008,
+            "sampled_peak_tree_rss_bytes": 416890880,
+            "sampling_errors": [],
+            "nodes": 179,
+            "edges": 120
+          }
+        ],
+        "median_seconds": 15.555105083999997,
+        "median_sampled_peak_tree_rss_bytes": 377913344,
+        "resource_sampling_complete": true
+      },
+      "candidate": {
+        "runs": [
+          {
+            "seconds": 15.726534666999996,
+            "sampled_peak_tree_rss_bytes": 403210240,
+            "sampling_errors": [],
+            "nodes": 179,
+            "edges": 120
+          },
+          {
+            "seconds": 15.781305291999999,
+            "sampled_peak_tree_rss_bytes": 334348288,
+            "sampling_errors": [],
+            "nodes": 179,
+            "edges": 120
+          },
+          {
+            "seconds": 16.454075665999994,
+            "sampled_peak_tree_rss_bytes": 404766720,
+            "sampling_errors": [],
+            "nodes": 179,
+            "edges": 120
+          }
+        ],
+        "median_seconds": 15.781305291999999,
+        "median_sampled_peak_tree_rss_bytes": 403210240,
+        "resource_sampling_complete": true
+      },
+      "runtime_change_percent": 1.4541863059007731
+    }
+  },
+  "observations": [
+    "TypeScript and mixed median runtime increases were 1.67% and 1.45%, below the 5% runtime investigation threshold. Node and edge counts were unchanged for both workloads.",
+    "TypeScript median sampled process-tree RSS decreased 2.88%; mixed median sampled RSS increased 6.69%. Mixed individual baseline samples ranged 349306880\u2013416890880 bytes and candidate samples ranged 334348288\u2013404766720 bytes. These ranges overlap; short-lived process overlap and 100 ms sampling limit memory conclusions. No memory improvement or statistically established memory regression is claimed.",
+    "Three paired runs after one warmup per engine are a small local fixture benchmark, not a general production performance guarantee. Inference cache was disabled for both distributions."
+  ]
+}

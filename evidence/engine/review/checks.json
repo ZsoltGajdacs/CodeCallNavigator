@@ -44,5 +44,20 @@
     "workloads": 7,
     "repeat_equal": true,
     "relocation_and_target_reordering_equal": true
-  }
+  },
+  "codescene": {
+    "pre_commit": {
+      "gate": "passed",
+      "eligible_files": 48
+    },
+    "branch_vs_master": {
+      "gate": "passed",
+      "eligible_files": 242,
+      "changed_files": 336
+    }
+  },
+  "sonar": "inactive: no .sonar/config.json",
+  "master": "fb54f5f789d94c6cbc5fe86bf20010edea815b33",
+  "merged": false,
+  "pushed": false
 }

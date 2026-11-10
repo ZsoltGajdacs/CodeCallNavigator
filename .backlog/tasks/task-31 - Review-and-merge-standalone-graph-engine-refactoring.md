@@ -1,11 +1,11 @@
 ---
 id: TASK-31
 title: Review standalone graph engine refactoring
-status: In Progress
+status: Done
 assignee:
   - codex
 created_date: '2026-11-10T20:17:00Z'
-updated_date: '2026-11-10T21:27:00Z'
+updated_date: '2026-11-10T21:31:00Z'
 labels: []
 dependencies: []
 ordinal: 43000
@@ -20,8 +20,8 @@ Review the complete refactoring against the preserved master baseline before loc
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
 - [x] #1 Complete diff reviewed and confirmed defects fixed with regression evidence
-- [ ] #2 Applicable compiler, analyzer, packaging and CodeScene checks pass with baseline limitations recorded
-- [ ] #3 Reviewed fixes committed on the feature branch with clean working tree; local master unchanged and no merge or push
+- [x] #2 Applicable compiler, analyzer, packaging and CodeScene checks pass with baseline limitations recorded
+- [x] #3 Reviewed fixes committed on the feature branch with clean working tree; local master unchanged and no merge or push
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -40,4 +40,8 @@ Review findings confirmed with failing regressions: Java/C# canonical-hydrate-ex
 User accepted deferring exact ambiguous Java lambda correlation to follow-up TASK-32; current review fixes proven unique mappings and emits explicit native-ID stability warnings for ambiguous cases. Additional confirmed fixes: invalid nested flow/architecture versions rejected; quoted encoded Java context paths normalized; actual Gradle/nested TypeScript project ownership and named-root path metadata corrected; macOS source aliases canonicalized without changing bindings; computed/quoted TypeScript declaration names stabilized. Packaging regressions proved index flags/external diff could hide edits; private-index/raw-diff correction passes6package+7dependency tests and preserves all realvendor indexbytes. Full CallAtlas262pass/29fail matchesexactbaseline.
 
 Review fixes verified with final workspace379passed, strict all-target Clippy, Python77, TypeScript104, real-language51 including successful isolated retry after one NuGet restore failure, final integration8 and desktop8. Packaged app+engine build; all7workloads repeat/reversed-target/relocation byte-identical. Pinned vendors match complete checked-in patches; pre-commit CodeScene48eligible files passed. Independent native preservation/performance comparisons finishing before handoff. Master remains fb54f5f789d94c6cbc5fe86bf20010edea815b33; no merge/push.
+
+Committed reviewed fixes as 5db7709. Final seven-workload native comparison against frozen b839ba3 preserves native IDs, complete edges, entry/flow/architecture/boundary facts, diagnostics and freshness facts. Expected deltas: six TypeScript React signature qualifications and corresponding export keys, analyzer provenance and Java identity/folder-root metadata. All7 deterministic repeats/relocations/reversed-target checks passed. Final matched timing runs and post-commit whole-branch CodeScene gate pending.
+
+Final verification complete. Native preservation all7 explained; desktop8 and deterministic7passed. Matched full-mode median runtime +1.67%TypeScript/+1.45%mixed, below5%; sampled mixedRSS+6.69% with overlapping broad ranges, limitations documented. Whole-branch CodeScene master gate passed242eligible of336changed files. Source fixes5db7709; final evidence/task completion committed separately. No Sonar config; exact29CallAtlas baseline failures unchanged. TASK32 tracks deferred ambiguous Java correlation. Masterfb54f5f789d94c6cbc5fe86bf20010edea815b33 unchanged; no merge or push.
 <!-- SECTION:NOTES:END -->

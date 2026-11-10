@@ -71,7 +71,21 @@ The original foundation equivalence against `master` is documented in the parent
 engine evidence. Subsequent inference stages deliberately add reviewed possible
 relationships; this review does not equate their output with pre-inference data.
 
-Final matched performance results are recorded separately after completion.
+The [matched performance report](performance.json) uses one warmup followed by
+three alternating full-analysis runs per distribution on identical copied inputs.
+Median runtime changed by +1.67% (TypeScript) and +1.45% (mixed), below the 5%
+investigation threshold. Mixed sampled process-tree RSS median increased 6.69%;
+run ranges overlap substantially. Sampling is a lower bound, can double-count
+shared pages and is too variable here to claim a memory improvement.
+
+Final whole-branch CodeScene review against `master` passed all 242 eligible
+files out of 336 changed files, with no degradations. The pre-commit safeguard
+passed all 48 eligible review-modified source files. Sonar was inactive because
+this repository has no `.sonar/config.json`.
+
+Reviewed fixes are committed as `5db7709`. Final evidence and task completion
+are committed separately on the same feature branch. Local `master` remains at
+the reference commit. No branch was merged or pushed.
 One negative MediatR test initially failed during NuGet restore; its isolated
 retry passed, including the expected compiler diagnostic. No analyzer failure
 was observed on retry.
