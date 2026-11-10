@@ -23,6 +23,20 @@ Do not edit Backlog task, draft, document, decision, or milestone markdown files
 </CRITICAL_INSTRUCTION>
 <!-- BACKLOG.MD GUIDELINES END -->
 
+## Upstream Dependency Changes
+
+Keep all local changes to upstream projects, including vendored libraries, as
+checked-in patch files under `patches/`. Upstream checkout edits must be captured
+in those patches; do not rely on unrecorded edits or Git stashes to preserve them.
+Document each patch's purpose, upstream base revision, and application order, and
+integrate its application into the dependency bootstrap where applicable.
+
+When updating an upstream project, reapply its patches to the new revision,
+resolve any conflicts, refresh the patch files and revision/checksum metadata,
+and verify the patched integration. Remove patches whose changes have landed
+upstream. Avoid formatting unrelated upstream files, and scope formatting tools
+to this project's files so they do not rewrite vendored sources.
+
 ## CodeScene Code Health
 
 Check AI-modified source files with the CodeScene MCP `code_health_review` tool.

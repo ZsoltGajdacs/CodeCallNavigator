@@ -4,6 +4,8 @@ set -euo pipefail
 cd "$(dirname "$0")"
 project_dir="$PWD"
 
+cargo clean
+
 "${PYTHON:-python3.13}" tools/bootstrap.py
 "${PYTHON:-python3.13}" tools/package.py
 

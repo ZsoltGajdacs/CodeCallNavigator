@@ -17,7 +17,9 @@ called from another directory.
 Run `./prod.sh` to build the release app and create `dist/CodeGraph.dmg`. Open the
 image and drag CodeGraph to Applications. The `.app` and ZIP are also kept in `dist`.
 The scripts use Python 3.13 by default; set `PYTHON=python3.12` to use another
-installed Python 3.12+ interpreter.
+installed Python 3.12+ interpreter. Both scripts clean Cargo's build directory
+before building, removing previous Rust build artifacts and dependencies. This
+forces a full Rust rebuild on each run.
 
 You can also open `dist/CodeGraph.app` directly. This local build is ad hoc
 signed, not notarized. The packaged minimum macOS version is 27.0; broader OS
