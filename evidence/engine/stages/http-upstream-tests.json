@@ -1,0 +1,41 @@
+{
+  "baseline_counts": {
+    "Passed": 257,
+    "Failed": 29
+  },
+  "current_counts": {
+    "Passed": 262,
+    "Failed": 29
+  },
+  "same_failed_test_ids": true,
+  "new_failures": [],
+  "resolved_failures": [],
+  "new_tests": [
+    {
+      "test_id": "7d857a9e-ac3c-c00f-00c8-0f1a99fc20dc",
+      "name": "CallAtlas.Tests.HttpRouteFactsTests.Incompatible_or_incomplete_http_capability_is_rejected(json: \"{\\\"schema\\\":\\\"callatlas.ir.v3\\\",\\\"httpFactsVersion\"\u00b7\u00b7\u00b7)",
+      "outcome": "Passed"
+    },
+    {
+      "test_id": "e7b4bb98-cd55-1f82-565c-63da7aff385b",
+      "name": "CallAtlas.Tests.HttpRouteFactsTests.Incompatible_or_incomplete_http_capability_is_rejected(json: \"{\\\"schema\\\":\\\"callatlas.ir.v3\\\",\\\"httpFactsVersion\"\u00b7\u00b7\u00b7)",
+      "outcome": "Passed"
+    },
+    {
+      "test_id": "27dbbd05-b602-39f8-c7b7-da4aa2e1474b",
+      "name": "CallAtlas.Tests.HttpRouteFactsTests.Http_snapshot_roundtrip_preserves_unsupported_route_and_owner",
+      "outcome": "Passed"
+    },
+    {
+      "test_id": "49241397-350c-67e1-a47e-6f6172bea9ab",
+      "name": "CallAtlas.Tests.HttpRouteFactsTests.Incompatible_or_incomplete_http_capability_is_rejected(json: \"{\\\"schema\\\":\\\"callatlas.ir.v3\\\",\\\"httpFactsVersion\"\u00b7\u00b7\u00b7)",
+      "outcome": "Passed"
+    },
+    {
+      "test_id": "820e11f0-117e-6176-f451-2354845d8a36",
+      "name": "CallAtlas.Tests.HttpRouteFactsTests.Historical_snapshot_does_not_claim_current_http_capability",
+      "outcome": "Passed"
+    }
+  ],
+  "removed_test_count": 0
+}

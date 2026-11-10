@@ -431,6 +431,15 @@ impl<'a> BytecodeCollector<'a> {
             &self.source_inventory,
             &mut self.graph,
         )?;
+        super::http::attach(
+            super::flow_inventory::BindingContext {
+                build: self.build,
+                inputs: self.inputs,
+                owner: self.owner.as_deref(),
+            },
+            &self.source_inventory,
+            &mut self.graph,
+        )?;
         if flows.ambiguous_callbacks > 0 {
             self.graph.diagnostics.push(format!("{} Java callback flow(s) remain unavailable because source-to-bytecode attribution is ambiguous", flows.ambiguous_callbacks));
         }

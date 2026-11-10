@@ -42,6 +42,7 @@ def graph_snapshot(cache):
         "method_policy": metadata["method_policy"],
         "architecture": metadata.get("architecture"),
         "flow_inventory": metadata.get("flow_inventory"),
+        "boundaries": metadata.get("boundaries"),
         # Builds can rewrite identical outputs with new mtimes. Keep all content
         # and membership facts used for freshness; only omit observation times.
         "fingerprints": sorted((fingerprint_facts(item) for item in metadata.get("fingerprints", [])), key=canonical),
@@ -49,13 +50,25 @@ def graph_snapshot(cache):
 
 
 def normalize_sets(graph):
+    graph.setdefault("boundaries", None)
     normalize_edges(graph.get('edges', []))
+    normalize_boundaries(graph.get("boundaries"))
     for field in ('roots', 'diagnostics'):
         graph.get(field, []).sort()
     for section, field in [('architecture', 'files'), ('flow_inventory', 'functions')]:
         if graph.get(section):
             graph[section][field].sort(key=canonical)
     return graph
+
+
+def normalize_boundaries(inventory):
+    if not inventory:
+        return
+    for route in inventory.get("routes", []):
+        for field in ("methods", "restrictions"):
+            route.get(field, []).sort()
+    for field in ("routes", "uses"):
+        inventory.get(field, []).sort(key=canonical)
 
 
 def normalize_edges(edges):

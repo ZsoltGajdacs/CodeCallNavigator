@@ -8,6 +8,7 @@ import json
 import os
 from pathlib import Path
 import subprocess
+from corpus_boundaries import configure
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -45,6 +46,8 @@ def main():
     for name in args.workload or workloads:
         workload = workloads[name]
         project, targets = workload_targets(workload, workloads)
+        configure(workload, workloads, project,
+                  {name: ROOT / workloads[name]['source'] for name in workload.get('components', [])})
         subprocess.run([str(args.executable.resolve()), 'analyze', '--project', str(project), *targets], check=True)
 
 

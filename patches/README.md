@@ -87,6 +87,14 @@ handlers and unrelated AppA/AppB scopes. The upstream test suite retains the sam
 and snapshot tests pass. The comparison and exact failure names are recorded in
 `evidence/engine/stages/mediatr-upstream-tests.json`.
 
+The HTTP extension adds compiler-qualified ASP.NET controller route facts and a
+separate capability marker. Unsupported constraints and selector combinations
+remain blockers. Snapshot read/write preserves the inventory. The pre-HTTP
+MediatR checkpoint is preserved in
+`callatlas-assembly-identity-pre-http.patch`; its checksum is pinned in the lock
+file so bootstrap can replace that exact prior source state safely.
+
+
 # Rune platform warnings patch
 
 `rune-platform-warnings.patch` applies to Rune revision

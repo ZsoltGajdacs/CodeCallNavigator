@@ -1,5 +1,6 @@
 //! Shared analysis contracts and graph operations, independent of the desktop.
 pub mod artifact;
+pub mod boundary;
 pub mod protocol;
 pub mod architecture;
 pub mod discovery;

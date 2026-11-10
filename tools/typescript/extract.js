@@ -12,6 +12,7 @@ const {markNextEntries}=require('./next.js');
 const {semanticKeys}=require('./semantic.js');
 const {collectObservers}=require('./observer.js');
 const {collectCallables}=require('./callable.js');
+const {boundaryFacts}=require('./boundary.js');
 function argumentReferences(bindings,checker,node,from) {
   const targets=(node.arguments||[]).flatMap(argument=>bindings.resolve(checker,argument));
   for(const target of targets) bindings.graph.edge(from,target,'reference',{certainty:'possible',provenance:'typescript.compiler:argument-reference'});
@@ -60,6 +61,6 @@ function extract(context) {
     walkFile(bindings,react,file);
     markNextEntries(context,bindings,graph,file);
   }
-  return {...graph.result(),export_identities:semanticKeys(bindings),flow_inventory:flowInventory(bindings),architecture:{version:1,files:bindings.files.map(file=>architectureFacts(context,file))}};
+  return {...graph.result(),boundaries:boundaryFacts(bindings),export_identities:semanticKeys(bindings),flow_inventory:flowInventory(bindings),architecture:{version:1,files:bindings.files.map(file=>architectureFacts(context,file))}};
 }
 module.exports={extract};

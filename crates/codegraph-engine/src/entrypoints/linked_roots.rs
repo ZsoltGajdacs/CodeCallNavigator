@@ -41,6 +41,14 @@ fn owned_directories(graph: &GraphData) -> Result<Vec<PathBuf>> {
     {
         owned_paths(&function.file, &function.build, &mut directories)?;
     }
+    if let Some(inventory) = &graph.boundaries {
+        for route in &inventory.routes {
+            owned_paths(&route.site.file, &route.build, &mut directories)?;
+        }
+        for usage in &inventory.uses {
+            owned_paths(&usage.site.file, &usage.build, &mut directories)?;
+        }
+    }
     Ok(directories.into_iter().collect())
 }
 
@@ -112,6 +120,45 @@ mod tests {
         }
     }
 
+    #[test]
+    fn compiler_owned_boundary_blockers_without_symbols_get_portable_roots() {
+        let graph = GraphData {
+            boundaries: Some(codegraph_core::boundary::BoundaryInventory {
+                version: 1,
+                uses: vec![],
+                routes: vec![codegraph_core::boundary::RouteFact {
+                    symbol: None,
+                    build: "/first/app/tsconfig.json".into(),
+                    application: "app".into(),
+                    framework: "next".into(),
+                    kind: "navigation".into(),
+                    path: None,
+                    methods: vec![],
+                    site: codegraph_core::model::SourceSite {
+                        file: "/first/shared/Blocked.ts".into(),
+                        line: 1,
+                        column: None,
+                        span: None,
+                    },
+                    restrictions: vec!["unsupported".into()],
+                    order: None,
+                }],
+            }),
+            ..Default::default()
+        };
+        let roots = infer(
+            &graph,
+            Path::new("/first/app"),
+            vec![("repo".into(), "/first/app".into())],
+        )
+        .unwrap();
+        assert!(
+            roots
+                .iter()
+                .any(|(_, path)| path == Path::new("/first/shared"))
+        );
+        codegraph_core::artifact::canonical(&graph, &roots).unwrap();
+    }
     #[test]
     fn equivalent_sibling_layouts_have_stable_aliases_and_keep_explicit_roots() {
         let first = infer(

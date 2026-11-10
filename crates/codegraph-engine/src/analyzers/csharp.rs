@@ -1,5 +1,6 @@
 mod architecture;
 mod framework;
+mod http;
 mod policy;
 use super::process::run_process;
 use super::{AnalysisJob, ensure_unchanged, find_tool, source_snapshot};
@@ -30,6 +31,10 @@ struct AtlasMap {
     framework_entries: Option<Vec<String>>,
     #[serde(default, rename = "frameworkDiagnostics")]
     framework_diagnostics: Option<Vec<String>>,
+    #[serde(default, rename = "httpFactsVersion")]
+    http_facts_version: String,
+    #[serde(default, rename = "httpRoutes")]
+    http_routes: Option<Vec<http::RawRoute>>,
     #[serde(default, rename = "architectureFiles")]
     architecture_files: Option<Vec<architecture::AtlasFileFacts>>,
     nodes: Vec<AtlasNode>,
@@ -367,6 +372,7 @@ fn normalize_atlas(
 ) -> Result<GraphData> {
     validate_atlas(&map)?;
     let framework = map.take_framework_facts()?;
+    let http = map.http_routes.take().context("HTTP routes are missing")?;
     let mut graph = GraphData {
         roots: vec![build.path.to_string_lossy().into_owned()],
         ..GraphData::default()
@@ -412,6 +418,7 @@ fn normalize_atlas(
         append_atlas_edge(&mut graph, &indices, edge)?;
     }
     framework::append(root, &mut graph, &indices, framework)?;
+    http::append(build, root, &mut graph, http)?;
     graph.diagnostics.push("CallAtlas omits most source-generator output; cross-assembly interface implementation candidates are limited; operator invocations are not fully reported. Reflection, dynamic calls, unsupported framework callbacks and unsupported DI wiring are not inferred. MediatR targets are compiler-visible possibilities, not proof of dependency-injection registration.".into());
     if !map.unresolved.is_empty() {
         graph.diagnostics.push(format!(
@@ -442,6 +449,10 @@ fn validate_atlas(map: &AtlasMap) -> Result<()> {
             && map.framework_entries.is_some()
             && map.framework_diagnostics.is_some(),
         "CallAtlas framework facts are missing or unsupported; run tools/bootstrap.py and refresh the analysis"
+    );
+    ensure!(
+        map.http_facts_version == "1" && map.http_routes.is_some(),
+        "CallAtlas HTTP facts are missing or unsupported; run tools/bootstrap.py and refresh the analysis"
     );
     ensure!(
         map.body_errors == 0 && map.diagnostics.is_empty(),
@@ -558,7 +569,8 @@ mod tests {
     #[test]
     fn stale_or_incomplete_framework_capabilities_require_refresh() {
         let mut value = serde_json::json!({
-            "schema":"callatlas.ir.v3", "declarationFactsVersion":"2", "nodes":[], "edges":[]
+            "schema":"callatlas.ir.v3", "declarationFactsVersion":"2", "nodes":[], "edges":[],
+            "httpFactsVersion":"1", "httpRoutes":[]
         });
         let stale: AtlasMap = serde_json::from_value(value.clone()).unwrap();
         assert!(
@@ -578,6 +590,28 @@ mod tests {
         value["frameworkFactsVersion"] = "2".into();
         let incompatible: AtlasMap = serde_json::from_value(value).unwrap();
         assert!(validate_atlas(&incompatible).is_err());
+    }
+
+    #[test]
+    fn http_capability_must_be_current_and_complete() {
+        let mut value = serde_json::json!({
+            "schema":"callatlas.ir.v3", "declarationFactsVersion":"2", "nodes":[], "edges":[],
+            "frameworkFactsVersion":"1", "frameworkEdges":[], "frameworkEntries":[], "frameworkDiagnostics":[]
+        });
+        let missing: AtlasMap = serde_json::from_value(value.clone()).unwrap();
+        assert!(
+            validate_atlas(&missing)
+                .unwrap_err()
+                .to_string()
+                .contains("HTTP facts")
+        );
+        value["httpFactsVersion"] = "1".into();
+        value["httpRoutes"] = serde_json::json!([]);
+        let current: AtlasMap = serde_json::from_value(value.clone()).unwrap();
+        validate_atlas(&current).unwrap();
+        value["httpRoutes"] = serde_json::Value::Null;
+        let incomplete: AtlasMap = serde_json::from_value(value).unwrap();
+        assert!(validate_atlas(&incomplete).is_err());
     }
 
     #[test]

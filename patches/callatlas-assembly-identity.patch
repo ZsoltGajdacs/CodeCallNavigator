@@ -1,5 +1,478 @@
+diff --git a/src/CallAtlas.Core/AspNetAttributes.cs b/src/CallAtlas.Core/AspNetAttributes.cs
+new file mode 100644
+index 0000000..04b6183
+--- /dev/null
++++ b/src/CallAtlas.Core/AspNetAttributes.cs
+@@ -0,0 +1,118 @@
++using Microsoft.CodeAnalysis;
++
++namespace CallAtlas.Core;
++
++internal sealed record AspNetRouteSpec
++{
++    internal string? Template { get; init; }
++    internal bool UnknownPath { get; init; }
++    internal string[] Methods { get; init; } = [];
++    internal int? Order { get; init; }
++    internal bool OrderKnown { get; init; } = true;
++    internal bool IsHttp { get; init; }
++    internal bool Silent { get; init; }
++    internal string[] Restrictions { get; init; } = [];
++    internal AttributeData? Attribute { get; init; }
++}
++
++internal sealed class AspNetAttributes(AspNetContracts contracts)
++{
++    private static readonly string[] Verbs = ["Get", "Post", "Put", "Delete", "Patch", "Head", "Options"];
++
++    internal AspNetRouteSpec Parse(AttributeData attribute)
++    {
++        if (contracts.Is(attribute.AttributeClass, "Microsoft.AspNetCore.Mvc.RouteAttribute"))
++            return RequiredTemplate(attribute);
++        foreach (var verb in Verbs)
++        {
++            if (contracts.Is(attribute.AttributeClass, "Microsoft.AspNetCore.Mvc.Http" + verb + "Attribute"))
++                return HttpMethod(attribute, verb);
++        }
++        if (contracts.Is(attribute.AttributeClass, "Microsoft.AspNetCore.Mvc.AcceptVerbsAttribute"))
++            return AcceptVerbs(attribute);
++        return new AspNetRouteSpec { UnknownPath = true, OrderKnown = false, Attribute = attribute,
++            Restrictions = ["aspnet.custom-route-provider"] };
++    }
++
++    private static AspNetRouteSpec RequiredTemplate(AttributeData attribute)
++    {
++        var template = StringArgument(attribute);
++        return template is not null ? Known(attribute, template, []) : UnknownTemplate(attribute);
++    }
++
++    private static AspNetRouteSpec HttpMethod(AttributeData attribute, string verb)
++    {
++        var template = StringArgument(attribute);
++        if (template is null && attribute.ConstructorArguments.Length != 0) return UnknownTemplate(attribute);
++        return Known(attribute, template, [verb.ToUpperInvariant()], true);
++    }
++
++    private static AspNetRouteSpec UnknownTemplate(AttributeData attribute) => new()
++    {
++        UnknownPath = true, Attribute = attribute, Restrictions = ["aspnet.unknown-template"],
++    };
++
++    private static AspNetRouteSpec AcceptVerbs(AttributeData attribute)
++    {
++        var methods = AcceptedMethods(attribute);
++        var result = Known(attribute, NamedString(attribute, "Route"), methods, true);
++        return methods.Length != 0 && methods.All(ValidMethod) ? result
++            : result with { Methods = [], Restrictions = ["aspnet.unsupported-http-methods"] };
++    }
++
++    private static bool ValidMethod(string method) => method.Length != 0 && method.All(character => character is >= 'A' and <= 'Z');
++
++    private static AspNetRouteSpec Known(AttributeData attribute, string? template, string[] methods, bool isHttp = false)
++    {
++        var order = attribute.NamedArguments.FirstOrDefault(argument => argument.Key == "Order");
++        return new AspNetRouteSpec
++        {
++            Template = template, Methods = methods, IsHttp = isHttp, Attribute = attribute,
++            Order = order.Value.Value as int?,
++            OrderKnown = order.Key is null || order.Value.Value is int,
++            Silent = template is null && order.Key is null && NamedString(attribute, "Name") is null,
++        };
++    }
++
++    private static string? StringArgument(AttributeData attribute) => StringValue(attribute.ConstructorArguments.FirstOrDefault());
++
++    private static string? NamedString(AttributeData attribute, string name) =>
++        StringValue(attribute.NamedArguments.FirstOrDefault(argument => argument.Key == name).Value);
++
++    private static string? StringValue(TypedConstant value) => value.Kind == TypedConstantKind.Primitive ? value.Value as string : null;
++
++    private static string[] AcceptedMethods(AttributeData attribute)
++    {
++        var argument = attribute.ConstructorArguments.FirstOrDefault();
++        if (argument.IsNull) return [];
++        var values = argument.Kind == TypedConstantKind.Array ? argument.Values : [argument];
++        return values.Select(StringValue).OfType<string>()
++            .Select(value => value.ToUpperInvariant()).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToArray();
++    }
++
++    internal AspNetRouteSpec[] Effective(ISymbol symbol)
++    {
++        var chain = symbol is INamedTypeSymbol type ? AspNetContracts.Ancestors(type).Cast<ISymbol>()
++            : AspNetContracts.MethodChain((IMethodSymbol)symbol).Cast<ISymbol>();
++        foreach (var current in chain)
++        {
++            var routes = current.GetAttributes().Where(contracts.RouteProvider).Select(Parse).ToArray();
++            if (routes.Length != 0) return routes;
++        }
++        return [];
++    }
++
++    internal static AspNetRouteSpec[] Selectors(AspNetRouteSpec[] routes)
++    {
++        var silent = routes.Where(route => route.Silent).ToArray();
++        var selectors = routes.Where(route => !route.Silent).Select(route => route.IsHttp ? route
++            : route with { Methods = silent.SelectMany(item => item.Methods).Distinct().Order().ToArray() }).ToList();
++        if (NeedsSilentSelector(routes, silent))
++            selectors.Add(new AspNetRouteSpec { Methods = silent.SelectMany(route => route.Methods).Distinct().Order().ToArray(),
++                Attribute = silent.FirstOrDefault()?.Attribute });
++        return selectors.ToArray();
++    }
++
++    private static bool NeedsSilentSelector(AspNetRouteSpec[] routes, AspNetRouteSpec[] silent) =>
++        routes.Length == 0 || silent.Length != 0 && routes.Where(route => !route.Silent).All(route => route.IsHttp);
++}
+diff --git a/src/CallAtlas.Core/AspNetConstraints.cs b/src/CallAtlas.Core/AspNetConstraints.cs
+new file mode 100644
+index 0000000..bea1bef
+--- /dev/null
++++ b/src/CallAtlas.Core/AspNetConstraints.cs
+@@ -0,0 +1,28 @@
++using Microsoft.CodeAnalysis;
++
++namespace CallAtlas.Core;
++
++internal sealed class AspNetConstraints(AspNetContracts contracts)
++{
++    internal string[] Restrictions(INamedTypeSymbol controller, IMethodSymbol action) =>
++        Attributes(controller, action).Where(RequestConstraint).Any() ? ["aspnet.request-constraints"] : [];
++
++    internal bool UnknownMethods(INamedTypeSymbol controller, IMethodSymbol action) =>
++        Attributes(controller, action).Any(UnknownMethodProvider);
++
++    private static IEnumerable<AttributeData> Attributes(INamedTypeSymbol controller, IMethodSymbol action) =>
++        AspNetContracts.Attributes(controller).Concat(AspNetContracts.Attributes(action));
++
++    private bool RequestConstraint(AttributeData attribute) =>
++        contracts.Implements(attribute.AttributeClass, "Microsoft.AspNetCore.Mvc.ActionConstraints.IActionConstraintMetadata")
++        || contracts.Implements(attribute.AttributeClass, "Microsoft.AspNetCore.Routing.IHostMetadata")
++        || contracts.Implements(attribute.AttributeClass, "Microsoft.AspNetCore.Routing.ISuppressMatchingMetadata");
++
++    private bool UnknownMethodProvider(AttributeData attribute) =>
++        contracts.Implements(attribute.AttributeClass, "Microsoft.AspNetCore.Mvc.Routing.IActionHttpMethodProvider")
++        && !KnownMethodProvider(attribute.AttributeClass);
++
++    private bool KnownMethodProvider(INamedTypeSymbol? type) => new[] { "Get", "Post", "Put", "Delete", "Patch", "Head", "Options" }
++        .Any(verb => contracts.Is(type, "Microsoft.AspNetCore.Mvc.Http" + verb + "Attribute"))
++        || contracts.Is(type, "Microsoft.AspNetCore.Mvc.AcceptVerbsAttribute");
++}
+diff --git a/src/CallAtlas.Core/AspNetContracts.cs b/src/CallAtlas.Core/AspNetContracts.cs
+new file mode 100644
+index 0000000..33b59ec
+--- /dev/null
++++ b/src/CallAtlas.Core/AspNetContracts.cs
+@@ -0,0 +1,54 @@
++using Microsoft.CodeAnalysis;
++
++namespace CallAtlas.Core;
++
++internal sealed class AspNetContracts(Compilation compilation)
++{
++    private readonly Dictionary<string, INamedTypeSymbol?> symbols = new(StringComparer.Ordinal);
++
++    internal INamedTypeSymbol? Type(string metadataName)
++    {
++        if (symbols.TryGetValue(metadataName, out var cached)) return cached;
++        var symbol = compilation.GetTypeByMetadataName(metadataName);
++        symbols[metadataName] = IsFrameworkType(symbol) ? symbol : null;
++        return symbols[metadataName];
++    }
++
++    private static bool IsFrameworkType(INamedTypeSymbol? symbol) => symbol is not null
++        && symbol.Locations.All(location => !location.IsInSource)
++        && symbol.ContainingAssembly.Identity.Name is "Microsoft.AspNetCore.Mvc.Core"
++            or "Microsoft.AspNetCore.Mvc.Abstractions" or "Microsoft.AspNetCore.Http.Abstractions"
++            or "Microsoft.AspNetCore.Routing.Abstractions" or "Microsoft.AspNetCore.Routing";
++
++    internal bool Is(INamedTypeSymbol? symbol, string metadataName) => symbol is not null
++        && SymbolEqualityComparer.Default.Equals(symbol.OriginalDefinition, Type(metadataName));
++
++    internal bool Derives(INamedTypeSymbol? symbol, string metadataName) =>
++        Ancestors(symbol).Any(type => Is(type, metadataName));
++
++    internal bool Implements(INamedTypeSymbol? symbol, string metadataName) => symbol is not null
++        && symbol.AllInterfaces.Any(type => Is(type, metadataName));
++
++    internal bool RouteProvider(AttributeData attribute) =>
++        Implements(attribute.AttributeClass, "Microsoft.AspNetCore.Mvc.Routing.IRouteTemplateProvider");
++
++    internal bool HasAttribute(ISymbol symbol, string metadataName) =>
++        Attributes(symbol).Any(attribute => Derives(attribute.AttributeClass, metadataName));
++
++    internal static IEnumerable<INamedTypeSymbol> Ancestors(INamedTypeSymbol? type)
++    {
++        for (var current = type; current is not null; current = current.BaseType) yield return current;
++    }
++
++    internal static IEnumerable<AttributeData> Attributes(ISymbol symbol) => symbol switch
++    {
++        INamedTypeSymbol type => Ancestors(type).SelectMany(current => current.GetAttributes()),
++        IMethodSymbol method => MethodChain(method).SelectMany(current => current.GetAttributes()),
++        _ => symbol.GetAttributes(),
++    };
++
++    internal static IEnumerable<IMethodSymbol> MethodChain(IMethodSymbol? method)
++    {
++        for (var current = method; current is not null; current = current.OverriddenMethod) yield return current;
++    }
++}
+diff --git a/src/CallAtlas.Core/AspNetEligibility.cs b/src/CallAtlas.Core/AspNetEligibility.cs
+new file mode 100644
+index 0000000..59c3867
+--- /dev/null
++++ b/src/CallAtlas.Core/AspNetEligibility.cs
+@@ -0,0 +1,38 @@
++using Microsoft.CodeAnalysis;
++
++namespace CallAtlas.Core;
++
++internal sealed class AspNetEligibility(AspNetContracts contracts, Compilation compilation)
++{
++    internal bool Controller(INamedTypeSymbol type) => IsPublicClass(type)
++        && !contracts.HasAttribute(type, "Microsoft.AspNetCore.Mvc.NonControllerAttribute")
++        && HasControllerMarker(type);
++
++    private static bool IsPublicClass(INamedTypeSymbol type) => type.TypeKind == TypeKind.Class
++        && !type.IsAbstract && type.DeclaredAccessibility == Accessibility.Public
++        && type.ContainingType is null && type.TypeParameters.Length == 0;
++
++    private bool HasControllerMarker(INamedTypeSymbol type) =>
++        type.Name.EndsWith("Controller", StringComparison.OrdinalIgnoreCase)
++        || contracts.HasAttribute(type, "Microsoft.AspNetCore.Mvc.ControllerAttribute");
++
++    internal bool Action(IMethodSymbol method) => IsPublicMethod(method)
++        && !contracts.HasAttribute(method, "Microsoft.AspNetCore.Mvc.NonActionAttribute")
++        && Root(method).ContainingType.SpecialType != SpecialType.System_Object
++        && !IsDispose(method);
++
++    private static bool IsPublicMethod(IMethodSymbol method) => method.MethodKind == MethodKind.Ordinary
++        && method.DeclaredAccessibility == Accessibility.Public && !method.IsStatic
++        && !method.IsAbstract && !method.IsGenericMethod;
++
++    private bool IsDispose(IMethodSymbol method)
++    {
++        var root = Root(method);
++        var contract = compilation.GetTypeByMetadataName("System.IDisposable");
++        var dispose = contract?.GetMembers("Dispose").OfType<IMethodSymbol>().SingleOrDefault();
++        return dispose is not null && SymbolEqualityComparer.Default.Equals(root,
++            root.ContainingType.FindImplementationForInterfaceMember(dispose));
++    }
++
++    private static IMethodSymbol Root(IMethodSymbol method) => AspNetContracts.MethodChain(method).Last();
++}
+diff --git a/src/CallAtlas.Core/AspNetRouteBuilder.cs b/src/CallAtlas.Core/AspNetRouteBuilder.cs
+new file mode 100644
+index 0000000..ec8dab6
+--- /dev/null
++++ b/src/CallAtlas.Core/AspNetRouteBuilder.cs
+@@ -0,0 +1,62 @@
++using Microsoft.CodeAnalysis;
++
++namespace CallAtlas.Core;
++
++internal sealed class AspNetRouteBuilder(AspNetContracts contracts, IReadOnlySet<string> nodes)
++{
++    private readonly AspNetConstraints constraints = new(contracts);
++
++    internal HttpRouteFact? Build(INamedTypeSymbol controller, IMethodSymbol method,
++        AspNetRouteSpec prefix, AspNetRouteSpec selector)
++    {
++        var selection = new AspNetRouteSelection(prefix, selector);
++        if (!selection.Attributed) return null;
++        var action = new ControllerAction(controller, method);
++        var restrictions = selection.Restrictions();
++        restrictions.AddRange(ActionRestrictions(action));
++        var symbol = NativeSymbol(method, restrictions);
++        var methods = Methods(action, selection, restrictions);
++        return new HttpRouteFact
++        {
++            Symbol = symbol, Application = controller.ContainingAssembly.Identity.Name,
++            Path = selection.Path, Methods = methods, Order = selection.Order,
++            Restrictions = restrictions.Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToArray(),
++            Site = Site(selector.Attribute ?? prefix.Attribute, action),
++        };
++    }
++
++    private string? NativeSymbol(IMethodSymbol action, List<string> restrictions)
++    {
++        var symbol = SymbolId.Canonical(action);
++        if (nodes.Contains(symbol)) return symbol;
++        restrictions.Add("aspnet.missing-native-action");
++        return null;
++    }
++
++    private List<string> ActionRestrictions(ControllerAction action)
++    {
++        var result = constraints.Restrictions(action.Controller, action.Method).ToList();
++        if (!contracts.Derives(action.Controller, "Microsoft.AspNetCore.Mvc.ControllerBase")) result.Add("aspnet.non-controllerbase");
++        if (!SymbolEqualityComparer.Default.Equals(action.Method.ContainingType, action.Controller)) result.Add("aspnet.inherited-action");
++        return result;
++    }
++
++    private string[] Methods(ControllerAction action, AspNetRouteSelection selection, List<string> restrictions)
++    {
++        if (!constraints.UnknownMethods(action.Controller, action.Method)) return selection.Selector.Methods;
++        restrictions.Add("aspnet.custom-http-method-provider");
++        return [];
++    }
++
++    private static HttpRouteSite Site(AttributeData? attribute, ControllerAction action)
++    {
++        var syntax = attribute?.ApplicationSyntaxReference?.GetSyntax()
++            ?? action.Method.DeclaringSyntaxReferences.FirstOrDefault()?.GetSyntax()
++            ?? action.Controller.DeclaringSyntaxReferences.First().GetSyntax();
++        var position = syntax.SyntaxTree.GetLineSpan(syntax.Span).StartLinePosition;
++        return new HttpRouteSite(Path.GetFullPath(syntax.SyntaxTree.FilePath).Replace('\\', '/'),
++            position.Line + 1, position.Character + 1);
++    }
++
++    private sealed record ControllerAction(INamedTypeSymbol Controller, IMethodSymbol Method);
++}
+diff --git a/src/CallAtlas.Core/AspNetRouteInference.cs b/src/CallAtlas.Core/AspNetRouteInference.cs
+new file mode 100644
+index 0000000..a94eef5
+--- /dev/null
++++ b/src/CallAtlas.Core/AspNetRouteInference.cs
+@@ -0,0 +1,67 @@
++using Microsoft.CodeAnalysis;
++using Microsoft.CodeAnalysis.CSharp.Syntax;
++
++namespace CallAtlas.Core;
++
++internal sealed class AspNetRouteInference
++{
++    private readonly AspNetContracts contracts;
++    private readonly AspNetEligibility eligibility;
++    private readonly AspNetAttributes attributes;
++    private readonly AspNetRouteBuilder builder;
++    private readonly List<HttpRouteFact> routes = [];
++
++    private AspNetRouteInference(Compilation compilation, IReadOnlySet<string> nodes)
++    {
++        contracts = new AspNetContracts(compilation);
++        eligibility = new AspNetEligibility(contracts, compilation);
++        attributes = new AspNetAttributes(contracts);
++        builder = new AspNetRouteBuilder(contracts, nodes);
++    }
++
++    internal static IReadOnlyList<HttpRouteFact> Analyze(
++        IReadOnlyList<(SyntaxTree Tree, SemanticModel Model, Compilation Compilation)> units,
++        IReadOnlySet<string> nodes)
++    {
++        var routes = new List<HttpRouteFact>();
++        foreach (var group in units.GroupBy(unit => unit.Compilation))
++        {
++            var analysis = new AspNetRouteInference(group.Key, nodes);
++            if (analysis.contracts.Type("Microsoft.AspNetCore.Mvc.ControllerBase") is null) continue;
++            analysis.Collect(group);
++            routes.AddRange(analysis.routes);
++        }
++        return routes.OrderBy(route => route.Application, StringComparer.Ordinal)
++            .ThenBy(route => route.Path, StringComparer.Ordinal).ThenBy(route => route.Symbol, StringComparer.Ordinal)
++            .ThenBy(route => route.Site.File, StringComparer.Ordinal).ThenBy(route => route.Site.Line).ToArray();
++    }
++
++    private void Collect(IEnumerable<(SyntaxTree Tree, SemanticModel Model, Compilation Compilation)> units)
++    {
++        var seen = new HashSet<INamedTypeSymbol>(SymbolEqualityComparer.Default);
++        foreach (var (tree, model, _) in units)
++        foreach (var type in tree.GetRoot().DescendantNodes().OfType<BaseTypeDeclarationSyntax>()
++                     .Select(node => model.GetDeclaredSymbol(node)).OfType<INamedTypeSymbol>().Where(eligibility.Controller))
++        {
++            if (seen.Add(type)) Controller(type);
++        }
++    }
++
++    private void Controller(INamedTypeSymbol type)
++    {
++        var prefixes = attributes.Effective(type);
++        if (prefixes.Length == 0) prefixes = [new AspNetRouteSpec()];
++        foreach (var owner in AspNetContracts.Ancestors(type).TakeWhile(owner => owner.SpecialType != SpecialType.System_Object))
++        foreach (var action in owner.GetMembers().OfType<IMethodSymbol>().Where(eligibility.Action))
++            Action(type, action, prefixes);
++    }
++
++    private void Action(INamedTypeSymbol controller, IMethodSymbol action, AspNetRouteSpec[] prefixes)
++    {
++        foreach (var selector in AspNetAttributes.Selectors(attributes.Effective(action)))
++        {
++            var parents = AspNetTemplates.Rooted(selector.Template) ? [new AspNetRouteSpec()] : prefixes;
++            routes.AddRange(parents.Select(prefix => builder.Build(controller, action, prefix, selector)).OfType<HttpRouteFact>());
++        }
++    }
++}
+diff --git a/src/CallAtlas.Core/AspNetRouteSelection.cs b/src/CallAtlas.Core/AspNetRouteSelection.cs
+new file mode 100644
+index 0000000..162a09d
+--- /dev/null
++++ b/src/CallAtlas.Core/AspNetRouteSelection.cs
+@@ -0,0 +1,23 @@
++namespace CallAtlas.Core;
++
++internal sealed class AspNetRouteSelection(AspNetRouteSpec prefix, AspNetRouteSpec selector)
++{
++    internal AspNetRouteSpec Prefix { get; } = prefix;
++    internal AspNetRouteSpec Selector { get; } = selector;
++    internal string? Path { get; } = AspNetTemplates.Combine(prefix, selector);
++    internal bool Attributed => Path is not null || Prefix.UnknownPath || Selector.UnknownPath;
++    private bool KnownOrder => Prefix.OrderKnown && Selector.OrderKnown;
++    internal int? Order => KnownOrder ? Selector.Order ?? Prefix.Order ?? 0 : null;
++    private bool UnsupportedTemplate => UnsupportedPath || DoubleSeparator(Prefix.Template) || DoubleSeparator(Selector.Template);
++    private bool UnsupportedPath => Path is not null && !AspNetTemplates.Supported(Path);
++    private static bool DoubleSeparator(string? template) => template?.Contains("//", StringComparison.Ordinal) == true;
++
++    internal List<string> Restrictions()
++    {
++        var result = Prefix.Restrictions.Concat(Selector.Restrictions).ToList();
++        if (UnsupportedTemplate) result.Add("aspnet.unsupported-template");
++        if (!KnownOrder) result.Add("aspnet.unknown-order");
++        if (Order.GetValueOrDefault() != 0) result.Add("aspnet.nondefault-order");
++        return result;
++    }
++}
+diff --git a/src/CallAtlas.Core/AspNetTemplates.cs b/src/CallAtlas.Core/AspNetTemplates.cs
+new file mode 100644
+index 0000000..ffbc6d7
+--- /dev/null
++++ b/src/CallAtlas.Core/AspNetTemplates.cs
+@@ -0,0 +1,35 @@
++using System.Text.RegularExpressions;
++
++namespace CallAtlas.Core;
++
++internal static class AspNetTemplates
++{
++    private static readonly Regex Literal = new(@"^[A-Za-z0-9._~-]+$", RegexOptions.CultureInvariant);
++    private static readonly Regex Parameter = new(@"^\{[A-Za-z_][A-Za-z0-9_]*\}$", RegexOptions.CultureInvariant);
++
++    internal static bool Rooted(string? template) => template is not null
++        && (template.StartsWith('/') || template.StartsWith("~/", StringComparison.Ordinal));
++
++    internal static string? Combine(AspNetRouteSpec prefix, AspNetRouteSpec action)
++    {
++        if (action.UnknownPath) return null;
++        if (Rooted(action.Template)) return Normalize(action.Template!);
++        if (prefix.UnknownPath) return null;
++        if (prefix.Template is null && action.Template is null) return null;
++        return Normalize(string.Join("/", new[] { prefix.Template, action.Template }
++            .Where(template => !string.IsNullOrEmpty(template))));
++    }
++
++    private static string Normalize(string template)
++    {
++        var value = template.StartsWith("~/", StringComparison.Ordinal) ? template[2..] : template;
++        return "/" + value.Trim('/');
++    }
++
++    internal static bool Supported(string path) => path == "/" || path.Split('/').Skip(1).All(SupportedSegment);
++
++    private static bool SupportedSegment(string segment) =>
++        Parameter.IsMatch(segment) || SafeLiteral(segment);
++
++    private static bool SafeLiteral(string segment) => Literal.IsMatch(segment) && segment is not "." and not "..";
++}
 diff --git a/src/CallAtlas.Core/CallGraphBuilder.cs b/src/CallAtlas.Core/CallGraphBuilder.cs
-index bf14b1d..4ad76b6 100644
+index bf14b1d..32474a3 100644
 --- a/src/CallAtlas.Core/CallGraphBuilder.cs
 +++ b/src/CallAtlas.Core/CallGraphBuilder.cs
 @@ -664,7 +664,7 @@ public sealed partial class CallGraphBuilder
@@ -37,7 +510,7 @@ index bf14b1d..4ad76b6 100644
                          break;
                  }
              }
-@@ -942,9 +943,19 @@ public sealed partial class CallGraphBuilder
+@@ -942,9 +943,21 @@ public sealed partial class CallGraphBuilder
              Ms(PhaseTicks.CollectDiag), Ms(PhaseTicks.BodyScan),
              Ms(PhaseTicks.BodySpan), Ms(PhaseTicks.BodyGetDiag), Ms(PhaseTicks.BodyScanLoop)));
  
@@ -52,12 +525,14 @@ index bf14b1d..4ad76b6 100644
 +            FrameworkEdges = framework.Edges,
 +            FrameworkEntries = framework.Entries,
 +            FrameworkDiagnostics = framework.Diagnostics,
++            HttpFactsVersion = HttpRouteFact.Version,
++            HttpRoutes = AspNetRouteInference.Analyze(units, nodes.Keys.ToHashSet(StringComparer.Ordinal)),
 +            ArchitectureFiles = units.Select(unit => ArchitectureFileFacts.From(unit.Tree, unit.Model))
 +                .OrderBy(file => file.File, StringComparer.Ordinal).ToArray(),
              Root = root.Replace('\\', '/'),
              Nodes = [.. nodes.Values.OrderBy(n => n.Id, StringComparer.Ordinal)],
              Edges = [.. edges.Select(kv => new Edge
-@@ -999,7 +1010,15 @@ public sealed partial class CallGraphBuilder
+@@ -999,7 +1012,15 @@ public sealed partial class CallGraphBuilder
                  $"[callatlas] {"symbol cache",-22} hits {h,8}  misses {m,8}  ({rate,5:F1}% hit)");
          }
  
@@ -74,7 +549,7 @@ index bf14b1d..4ad76b6 100644
      }
  
      /// <summary>
-@@ -1251,6 +1270,7 @@ public sealed partial class CallGraphBuilder
+@@ -1251,6 +1272,7 @@ public sealed partial class CallGraphBuilder
              Id = id,
              Kind = kind,
              Container = DisplayOf(symbol.ContainingType),
@@ -82,7 +557,7 @@ index bf14b1d..4ad76b6 100644
              Name = symbol.Name,
              Location = string.IsNullOrEmpty(path) ? "(no location)" : $"{Rel(root, path)}:{line}",
          };
-@@ -1279,6 +1299,7 @@ public sealed partial class CallGraphBuilder
+@@ -1279,6 +1301,7 @@ public sealed partial class CallGraphBuilder
          {
              Id = id,
              Kind = "accessor",
@@ -90,7 +565,7 @@ index bf14b1d..4ad76b6 100644
              Container = DisplayOf(accessor.ContainingType),
              // 显示成属性名（get_Value 的 Name 是 "get_Value"，用属性名 "Value" 更好读）
              Name = accessor.AssociatedSymbol?.Name ?? accessor.Name,
-@@ -1331,6 +1352,7 @@ public sealed partial class CallGraphBuilder
+@@ -1331,6 +1354,7 @@ public sealed partial class CallGraphBuilder
              Id = id,
              Kind = kind,
              Container = DisplayOf(target.OriginalDefinition.ContainingType),
@@ -98,7 +573,7 @@ index bf14b1d..4ad76b6 100644
              Name = target.OriginalDefinition.Name,
              Location = "(implicit)",
          };
-@@ -1755,7 +1777,7 @@ public sealed partial class CallGraphBuilder
+@@ -1755,7 +1779,7 @@ public sealed partial class CallGraphBuilder
      /// 但"谁读了这个字段"是架构事实，值得有个落点。</summary>
      private static string FieldNodeId(Dictionary<string, Node> sink, IFieldSymbol field)
      {
@@ -108,7 +583,7 @@ index bf14b1d..4ad76b6 100644
          {
              Id = id,
 diff --git a/src/CallAtlas.Core/CodeMap.cs b/src/CallAtlas.Core/CodeMap.cs
-index a720920..02d2f40 100644
+index a720920..a934720 100644
 --- a/src/CallAtlas.Core/CodeMap.cs
 +++ b/src/CallAtlas.Core/CodeMap.cs
 @@ -1,4 +1,5 @@
@@ -117,7 +592,7 @@ index a720920..02d2f40 100644
  
  namespace CallAtlas.Core;
  
-@@ -10,6 +11,13 @@ public sealed record CodeMap
+@@ -10,6 +11,15 @@ public sealed record CodeMap
  
      public required string Schema { get; init; }
      public required string Root { get; init; }
@@ -128,10 +603,12 @@ index a720920..02d2f40 100644
 +    public IReadOnlyList<MediatRDispatchFact> FrameworkEdges { get; init; } = [];
 +    public IReadOnlyList<string> FrameworkEntries { get; init; } = [];
 +    public IReadOnlyList<string> FrameworkDiagnostics { get; init; } = [];
++    public string HttpFactsVersion { get; init; } = "";
++    public IReadOnlyList<HttpRouteFact> HttpRoutes { get; init; } = [];
      public required IReadOnlyList<Node> Nodes { get; init; }
      public required IReadOnlyList<Edge> Edges { get; init; }
      public required IReadOnlyList<ExternalCall> External { get; init; }
-@@ -45,6 +53,68 @@ public sealed record Node
+@@ -45,6 +55,68 @@ public sealed record Node
      public required string Container { get; init; }
      public required string Name { get; init; }
      public required string Location { get; init; }
@@ -200,7 +677,7 @@ index a720920..02d2f40 100644
  }
  
  /// <summary>边的种类常量。</summary>
-@@ -306,27 +376,38 @@ public static class SymbolId
+@@ -306,27 +378,38 @@ public static class SymbolId
      public static string Canonical(IMethodSymbol method)
      {
          var s = (method.ReducedFrom ?? method).OriginalDefinition;
@@ -246,7 +723,7 @@ index a720920..02d2f40 100644
  
      /// <summary>
      /// 委托调用的落点 id：<c>Action#delegate</c>（用委托类型本身命名）。
-@@ -337,7 +418,7 @@ public static class SymbolId
+@@ -337,7 +420,7 @@ public static class SymbolId
      /// 后缀 <c>#delegate</c> 与字段初始化器的 <c>#init</c> 同族，一眼可辨其为伪节点。
      /// </summary>
      public static string ForDelegate(ITypeSymbol delegateType) =>
@@ -255,7 +732,7 @@ index a720920..02d2f40 100644
  
      private static string Params(IMethodSymbol method) =>
          string.Join(",", method.Parameters.Select(p => p.Type.ToDisplayString(QualifiedFormat)));
-@@ -385,3 +466,59 @@ internal static class EdgeTierClassifier
+@@ -385,3 +468,59 @@ internal static class EdgeTierClassifier
          return EdgeTier.Direct;
      }
  }
@@ -316,10 +793,10 @@ index a720920..02d2f40 100644
 +        .Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToArray();
 +}
 diff --git a/src/CallAtlas.Core/CodeMapJson.cs b/src/CallAtlas.Core/CodeMapJson.cs
-index 9555cb4..6d084d2 100644
+index 9555cb4..3fa6d8d 100644
 --- a/src/CallAtlas.Core/CodeMapJson.cs
 +++ b/src/CallAtlas.Core/CodeMapJson.cs
-@@ -5,6 +5,64 @@ namespace CallAtlas.Core;
+@@ -5,6 +5,65 @@ namespace CallAtlas.Core;
  /// <summary>确定性 JSON 写出：字段顺序固定、排序在模型构建时完成、不含时间戳。</summary>
  public static class CodeMapJson
  {
@@ -327,6 +804,7 @@ index 9555cb4..6d084d2 100644
 +    {
 +            writer.WriteString("declarationFactsVersion", "2");
 +            MediatRJson.Write(writer, map);
++            HttpRouteJson.Write(writer, map);
 +            writer.WriteStartObject("entryPoints");
 +            writer.WriteStartArray("candidates");
 +            foreach (var entry in CodeMapQuery.EntryPoints(map))
@@ -384,7 +862,7 @@ index 9555cb4..6d084d2 100644
      /// <summary>写出供人读 / diff 的 JSON：缩进、字段顺序固定、排序已在模型侧完成、无时间戳。</summary>
      public static string Write(CodeMap map) => Write(map, indented: true);
  
-@@ -24,18 +82,10 @@ public static class CodeMapJson
+@@ -24,18 +83,10 @@ public static class CodeMapJson
              writer.WriteString("schema", map.Schema);
              writer.WriteString("root", map.Root);
  
@@ -407,15 +885,16 @@ index 9555cb4..6d084d2 100644
  
              writer.WriteStartArray("edges");
              foreach (var e in map.Edges)
-@@ -162,6 +212,7 @@ public static class CodeMapJson
+@@ -162,6 +213,8 @@ public static class CodeMapJson
                      $"unsupported schema \"{schema}\" — known: {string.Join(", ", KnownSchemas)}. "
                      + "Regenerate the snapshot, or add a migration if this is an older callatlas.");
  
 +            var framework = MediatRJson.Read(root);
++            var http = HttpRouteJson.Read(root);
              string Str(JsonElement e, string name) =>
                  e.TryGetProperty(name, out var v) ? v.GetString() ?? "" : "";
  
-@@ -175,6 +226,7 @@ public static class CodeMapJson
+@@ -175,6 +228,7 @@ public static class CodeMapJson
                          Container = Str(n, "container"),
                          Name = Str(n, "name"),
                          Location = Str(n, "location"),
@@ -423,7 +902,7 @@ index 9555cb4..6d084d2 100644
                      });
  
              var edges = new List<Edge>();
-@@ -236,6 +288,14 @@ public static class CodeMapJson
+@@ -236,6 +290,16 @@ public static class CodeMapJson
              {
                  Schema = CodeMap.SchemaVersion,
                  Root = Str(root, "root"),
@@ -431,6 +910,8 @@ index 9555cb4..6d084d2 100644
 +                FrameworkEdges = framework.Edges,
 +                FrameworkEntries = framework.Entries,
 +                FrameworkDiagnostics = framework.Diagnostics,
++                HttpFactsVersion = http.Version,
++                HttpRoutes = http.Routes,
 +                ArchitectureFiles = root.TryGetProperty("architectureFiles", out var architecture)
 +                    ? JsonSerializer.Deserialize<ArchitectureFileFacts[]>(architecture.GetRawText(),
 +                        new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase }) ?? []
@@ -438,13 +919,73 @@ index 9555cb4..6d084d2 100644
                  Nodes = nodes,
                  Edges = edges,
                  // 读取路径**不裁剪字段**。这些曾经被硬编码成空值，因为最初的唯一消费者是
-@@ -282,4 +342,4 @@ public static class CodeMapJson
+@@ -282,4 +346,4 @@ public static class CodeMapJson
      {
          "callatlas.ir.v3",
      };
 -}
 \ No newline at end of file
 +}
+diff --git a/src/CallAtlas.Core/HttpRouteFacts.cs b/src/CallAtlas.Core/HttpRouteFacts.cs
+new file mode 100644
+index 0000000..5f59b55
+--- /dev/null
++++ b/src/CallAtlas.Core/HttpRouteFacts.cs
+@@ -0,0 +1,16 @@
++namespace CallAtlas.Core;
++
++/// <summary>Compiler-owned attributed MVC routes; restrictions retain unsupported competitors.</summary>
++public sealed record HttpRouteFact
++{
++    public const string Version = "1";
++    public string? Symbol { get; init; }
++    public required string Application { get; init; }
++    public string? Path { get; init; }
++    public IReadOnlyList<string> Methods { get; init; } = [];
++    public required HttpRouteSite Site { get; init; }
++    public IReadOnlyList<string> Restrictions { get; init; } = [];
++    public int? Order { get; init; }
++}
++
++public sealed record HttpRouteSite(string File, int Line, int Column);
+diff --git a/src/CallAtlas.Core/HttpRouteJson.cs b/src/CallAtlas.Core/HttpRouteJson.cs
+new file mode 100644
+index 0000000..d6b127e
+--- /dev/null
++++ b/src/CallAtlas.Core/HttpRouteJson.cs
+@@ -0,0 +1,32 @@
++using System.Text.Json;
++
++namespace CallAtlas.Core;
++
++internal static class HttpRouteJson
++{
++    private static readonly JsonSerializerOptions Options = new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
++
++    internal static void Write(Utf8JsonWriter writer, CodeMap map)
++    {
++        writer.WriteString("httpFactsVersion", map.HttpFactsVersion);
++        writer.WritePropertyName("httpRoutes");
++        JsonSerializer.Serialize(writer, map.HttpRoutes, Options);
++    }
++
++    internal static HttpRouteSnapshot Read(JsonElement root)
++    {
++        var version = root.TryGetProperty("httpFactsVersion", out var property) ? property.GetString() ?? "" : "";
++        if (version.Length != 0 && version != HttpRouteFact.Version)
++            throw new CallAtlasException($"Unsupported HTTP facts version '{version}'; regenerate the snapshot.");
++        if (!root.TryGetProperty("httpRoutes", out var routes))
++        {
++            if (version == HttpRouteFact.Version) throw new CallAtlasException("Missing HTTP routes; regenerate the snapshot.");
++            return new HttpRouteSnapshot(version, []);
++        }
++        if (routes.ValueKind != JsonValueKind.Array) throw new CallAtlasException("Invalid HTTP routes; regenerate the snapshot.");
++        return new HttpRouteSnapshot(version,
++            JsonSerializer.Deserialize<HttpRouteFact[]>(routes.GetRawText(), Options) ?? []);
++    }
++}
++
++internal sealed record HttpRouteSnapshot(string Version, HttpRouteFact[] Routes);
 diff --git a/src/CallAtlas.Core/MediatRContracts.cs b/src/CallAtlas.Core/MediatRContracts.cs
 new file mode 100644
 index 0000000..9d2317e
@@ -902,6 +1443,60 @@ index 0000000..02f75df
 +        public int? Rank { get; init; }
 +        public bool? SzArray { get; init; }
 +    }
++}
+diff --git a/tests/CallAtlas.Tests/HttpRouteFactsTests.cs b/tests/CallAtlas.Tests/HttpRouteFactsTests.cs
+new file mode 100644
+index 0000000..fe979d5
+--- /dev/null
++++ b/tests/CallAtlas.Tests/HttpRouteFactsTests.cs
+@@ -0,0 +1,48 @@
++using CallAtlas.Core;
++using Xunit;
++
++namespace CallAtlas.Tests;
++
++public class HttpRouteFactsTests
++{
++    [Fact]
++    public void Http_snapshot_roundtrip_preserves_unsupported_route_and_owner()
++    {
++        var original = CallGraphBuilder.Build([("a.cs", "class A { void Run() {} }")], root: "/proj") with
++        {
++            HttpFactsVersion = "1",
++            HttpRoutes = [new HttpRouteFact
++            {
++                Symbol = "handler", Application = "ApplicationA", Path = "/api/{id:int}",
++                Methods = ["GET"], Site = new HttpRouteSite("a.cs", 2, 3),
++                Restrictions = ["aspnet.unsupported-template"], Order = null,
++            }],
++        };
++        var read = CodeMapJson.Read(CodeMapJson.Write(original));
++        Assert.Equal("1", read.HttpFactsVersion);
++        var route = Assert.Single(read.HttpRoutes);
++        Assert.Equal("handler", route.Symbol);
++        Assert.Equal("ApplicationA", route.Application);
++        Assert.Equal("/api/{id:int}", route.Path);
++        Assert.Equal(["GET"], route.Methods);
++        Assert.Equal(["aspnet.unsupported-template"], route.Restrictions);
++        Assert.Equal(new HttpRouteSite("a.cs", 2, 3), route.Site);
++        Assert.Null(route.Order);
++    }
++
++    [Fact]
++    public void Historical_snapshot_does_not_claim_current_http_capability()
++    {
++        var historical = CodeMapJson.Read("""{"schema":"callatlas.ir.v3","nodes":[],"edges":[]}""");
++        var read = CodeMapJson.Read(CodeMapJson.Write(historical));
++        Assert.Equal("", read.HttpFactsVersion);
++        Assert.Empty(read.HttpRoutes);
++    }
++
++    [Theory]
++    [InlineData("""{"schema":"callatlas.ir.v3","httpFactsVersion":"2","httpRoutes":[]}""")]
++    [InlineData("""{"schema":"callatlas.ir.v3","httpFactsVersion":"1"}""")]
++    [InlineData("""{"schema":"callatlas.ir.v3","httpFactsVersion":"1","httpRoutes":null}""")]
++    public void Incompatible_or_incomplete_http_capability_is_rejected(string json) =>
++        Assert.Throws<CallAtlasException>(() => CodeMapJson.Read(json));
 +}
 diff --git a/tests/CallAtlas.Tests/MediatRFactsTests.cs b/tests/CallAtlas.Tests/MediatRFactsTests.cs
 new file mode 100644

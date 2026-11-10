@@ -7,6 +7,7 @@ import subprocess
 import tempfile
 
 from check_engine_reference import ROOT, prepare
+from corpus_boundaries import configure
 
 
 def analyze(executable, project, targets):
@@ -19,8 +20,11 @@ def targets_for(workload, workloads, project):
     if 'components' not in workload:
         return prepare(workload, project)
     project.mkdir()
-    return [target for name in workload['components']
-            for target in prepare(workloads[name], project / name)]
+    targets = [target for name in workload['components']
+               for target in prepare(workloads[name], project / name)]
+    configure(workload, workloads, project,
+              {name: project / name for name in workload['components']})
+    return targets
 
 
 def check(executable, workload, workloads, directory):

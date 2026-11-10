@@ -248,7 +248,7 @@ fn assert_listener_catalog(graph: &GraphData) {
     let actual = graph
         .nodes
         .iter()
-        .filter(|node| entries.contains(&node.id))
+        .filter(|node| entries.contains(&node.id) && !node.namespace.ends_with(".http"))
         .map(|node| node.label.as_str())
         .collect::<BTreeSet<_>>();
     assert_eq!(
@@ -267,7 +267,7 @@ fn assert_listener_catalog(graph: &GraphData) {
     );
     assert_eq!(
         entries.len(),
-        9,
-        "Catalog keeps disconnected source listeners and rejects unrelated annotations"
+        17,
+        "Nine event listeners and eight HTTP handlers stay catalogued"
     );
 }

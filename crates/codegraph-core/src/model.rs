@@ -100,6 +100,8 @@ pub struct EntryPoints {
 
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
 pub struct GraphData {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub boundaries: Option<crate::boundary::BoundaryInventory>,
     /// Adapter-owned export keys; native bindings and graph identity stay intact.
     #[serde(default, skip_serializing_if = "std::collections::HashMap::is_empty")]
     pub export_identities: std::collections::HashMap<String, String>,
@@ -137,6 +139,9 @@ impl GraphData {
                 "Duplicate graph identity: {}",
                 node.id
             );
+        }
+        if let Some(inventory) = &self.boundaries {
+            inventory.validate(&identities)?;
         }
         if let Some(entries) = &self.entry_points {
             validate_entries(&entries.candidates, &identities)?;

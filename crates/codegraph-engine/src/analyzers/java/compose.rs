@@ -36,6 +36,7 @@ impl Composer {
             entries.application_starts.extend(part.application_starts);
             entries.framework_entries.extend(part.framework_entries);
         }
+        codegraph_core::boundary::merge(&mut graph.boundaries, part.boundaries)?;
         crate::analyzers::architecture::merge(&mut graph.architecture, part.architecture)?;
         crate::flow::merge_inventory(&mut graph.flow_inventory, part.flow_inventory)?;
         graph.diagnostics.extend(part.diagnostics);

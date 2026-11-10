@@ -78,6 +78,7 @@ fn inventory() -> FlowInventory {
                                     span: span("save()"),
                                     label: "save".into(),
                                     targets: vec![CallTarget {
+                                        kind: "call".into(),
                                         symbol: "flow/save".into(),
                                         certainty: "direct".into(),
                                         provenance: "explicit fixture".into(),

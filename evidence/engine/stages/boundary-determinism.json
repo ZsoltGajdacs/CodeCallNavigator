@@ -1,0 +1,30 @@
+[
+  {
+    "workload": "typescript",
+    "equal": true,
+    "repeat_equal": true,
+    "relocation_equal": true,
+    "bytes": 307959
+  },
+  {
+    "workload": "spring",
+    "equal": true,
+    "repeat_equal": true,
+    "relocation_equal": true,
+    "bytes": 200702
+  },
+  {
+    "workload": "mediatr",
+    "equal": true,
+    "repeat_equal": true,
+    "relocation_equal": true,
+    "bytes": 97224
+  },
+  {
+    "workload": "mixed",
+    "equal": true,
+    "repeat_equal": true,
+    "relocation_equal": true,
+    "bytes": 691208
+  }
+]

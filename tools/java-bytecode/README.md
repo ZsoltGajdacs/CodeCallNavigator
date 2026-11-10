@@ -108,3 +108,14 @@ resolvable types. Concrete nongeneric subclasses retain compiler generic-superty
 metadata. Unresolved payloads, lambda publishers, custom composed annotations and
 cross-context wiring remain unresolved, with diagnostics. No joins use simple
 payload names, display labels or unrelated selected-build facts.
+
+`kind_v6` retains the event facts and adds compiler-qualified Spring Web HTTP route
+facts. Direct `@RequestMapping` and GET/POST/PUT/PATCH/DELETE shortcuts combine
+class prefixes, paths and verbs. Each attributed controller method remains an
+entry point. Header/query/media constraints, unknown composed mappings, inherited
+mappings and unsupported path patterns remain inventory blockers; unbound methods
+also survive as blockers. Fake annotations with the same simple names are ignored.
+Property-dependent paths remain owner-wide blockers. Route facts do not prove bean
+registration, servlet deployment context paths or custom global MVC configuration.
+The current engine requires matching v6 resources; legacy inventory formats remain
+readable for historical fixtures but cannot silently satisfy the current runtime.

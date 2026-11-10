@@ -3,7 +3,7 @@
     "repository": "https://github.com/castorhrio/callatlas.git",
     "revision": "916c2419c0cdb91b5b86b84df4842dadb17bb6b4",
     "patch": "patches/callatlas-assembly-identity.patch",
-    "patch_sha256": "3dc7ede680f323e7e394ecdd5ef9551f90ca1cf5413bed589241b47a7834c216",
+    "patch_sha256": "874c4dbd8543abb34e6c87b634e4cf3d67acc300b80a66d28e58fbaafe90152e",
     "legacy_patch": "patches/callatlas-assembly-identity-legacy.patch",
     "legacy_patch_sha256": "ec723795ee841b98c2efbf49a7f010cd3f22652889c0e5c34866461b0137c574",
     "previous_patch": "patches/callatlas-assembly-identity-policy.patch",
@@ -13,7 +13,9 @@
     "pre_visibility_patch": "patches/callatlas-assembly-identity-pre-visibility.patch",
     "pre_visibility_patch_sha256": "c9633858854be41ab7e6867df8727a74de6674363f20636216555ed7cfe7472c",
     "pre_framework_patch": "patches/callatlas-assembly-identity-pre-framework.patch",
-    "pre_framework_patch_sha256": "7b64792f14f02fafb4472402b0ab26ac53d9be6e496ef73964ad49791db1d08a"
+    "pre_framework_patch_sha256": "7b64792f14f02fafb4472402b0ab26ac53d9be6e496ef73964ad49791db1d08a",
+    "pre_http_patch": "patches/callatlas-assembly-identity-pre-http.patch",
+    "pre_http_patch_sha256": "3dc7ede680f323e7e394ecdd5ef9551f90ca1cf5413bed589241b47a7834c216"
   },
   "jdtls": {
     "version": "1.63.0",

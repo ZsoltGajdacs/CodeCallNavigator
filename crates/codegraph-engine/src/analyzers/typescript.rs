@@ -72,6 +72,14 @@ pub(super) fn prepare(
     let (worker, output) = start_worker(build, context)?;
     let metadata: Metadata = serde_json::from_slice(&fs::read(output)?)?;
     ensure!(
+        metadata
+            .versions
+            .get("boundary_rules")
+            .and_then(|value| value.as_str())
+            == Some("1"),
+        "TypeScript adapter lacks boundary inventory support; rebuild matching analyzer resources"
+    );
+    ensure!(
         !metadata.configs.is_empty(),
         "TypeScript emitted no configurations"
     );
@@ -185,6 +193,10 @@ pub(super) fn analyze(
     );
     ensure_unchanged(&prepared.before)?;
     let mut graph = result.graph;
+    ensure!(
+        graph.boundaries.is_some(),
+        "TypeScript adapter omitted boundary inventory"
+    );
     if graph.nodes.iter().any(|node| node.language != "typescript") {
         bail!("TypeScript adapter emitted a foreign language symbol");
     }

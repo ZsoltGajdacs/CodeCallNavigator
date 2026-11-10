@@ -38,6 +38,7 @@ impl GraphComposition {
         let shared = part.nodes.iter().all(|node| node.language == "typescript");
         let remap = self.append_nodes(std::mem::take(&mut part.nodes))?;
         self.append_edges(std::mem::take(&mut part.edges), &remap, shared)?;
+        codegraph_core::boundary::merge(&mut self.graph.boundaries, part.boundaries)?;
         self.graph.entry_points = merge_entries(self.graph.entry_points.take(), part.entry_points);
         super::architecture::merge(&mut self.graph.architecture, part.architecture)?;
         crate::flow::merge_inventory(&mut self.graph.flow_inventory, part.flow_inventory)?;

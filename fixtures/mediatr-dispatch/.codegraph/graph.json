@@ -297,6 +297,344 @@
       ],
       "version": 1
     },
+    "boundaries": {
+      "routes": [
+        {
+          "application": "AppA",
+          "build": "@repo/MediatRDispatch.sln",
+          "framework": "aspnet",
+          "kind": "http",
+          "methods": [
+            "GET"
+          ],
+          "order": 0,
+          "path": "/api/items",
+          "restrictions": [],
+          "site": {
+            "column": 6,
+            "file": "@repo/AppA/Controllers.cs",
+            "line": 9
+          },
+          "symbol": "[\"csharp\",\"@repo/MediatRDispatch.sln\",\"@repo/AppA/Controllers.cs\",\"@repo/MediatRDispatch.sln|[AppA]::DispatchAppA.Http.ItemsController::List()\"]"
+        },
+        {
+          "application": "AppA",
+          "build": "@repo/MediatRDispatch.sln",
+          "framework": "aspnet",
+          "kind": "http",
+          "methods": [
+            "GET"
+          ],
+          "order": 0,
+          "path": "/api/items/CaseOnly",
+          "restrictions": [],
+          "site": {
+            "column": 6,
+            "file": "@repo/AppA/Controllers.cs",
+            "line": 28
+          },
+          "symbol": "[\"csharp\",\"@repo/MediatRDispatch.sln\",\"@repo/AppA/Controllers.cs\",\"@repo/MediatRDispatch.sln|[AppA]::DispatchAppA.Http.ItemsController::CaseOne()\"]"
+        },
+        {
+          "application": "AppA",
+          "build": "@repo/MediatRDispatch.sln",
+          "framework": "aspnet",
+          "kind": "http",
+          "methods": [
+            "GET"
+          ],
+          "order": 0,
+          "path": "/api/items/caseonly",
+          "restrictions": [],
+          "site": {
+            "column": 6,
+            "file": "@repo/AppA/Controllers.cs",
+            "line": 31
+          },
+          "symbol": "[\"csharp\",\"@repo/MediatRDispatch.sln\",\"@repo/AppA/Controllers.cs\",\"@repo/MediatRDispatch.sln|[AppA]::DispatchAppA.Http.ItemsController::CaseTwo()\"]"
+        },
+        {
+          "application": "AppA",
+          "build": "@repo/MediatRDispatch.sln",
+          "framework": "aspnet",
+          "kind": "http",
+          "methods": [
+            "GET"
+          ],
+          "order": 0,
+          "path": "/api/items/constraint/42",
+          "restrictions": [],
+          "site": {
+            "column": 6,
+            "file": "@repo/AppA/Controllers.cs",
+            "line": 37
+          },
+          "symbol": "[\"csharp\",\"@repo/MediatRDispatch.sln\",\"@repo/AppA/Controllers.cs\",\"@repo/MediatRDispatch.sln|[AppA]::DispatchAppA.Http.ItemsController::ConstraintLiteral()\"]"
+        },
+        {
+          "application": "AppA",
+          "build": "@repo/MediatRDispatch.sln",
+          "framework": "aspnet",
+          "kind": "http",
+          "methods": [
+            "GET"
+          ],
+          "order": 0,
+          "path": "/api/items/constraint/{id:int}",
+          "restrictions": [
+            "aspnet.unsupported-template"
+          ],
+          "site": {
+            "column": 6,
+            "file": "@repo/AppA/Controllers.cs",
+            "line": 34
+          },
+          "symbol": "[\"csharp\",\"@repo/MediatRDispatch.sln\",\"@repo/AppA/Controllers.cs\",\"@repo/MediatRDispatch.sln|[AppA]::DispatchAppA.Http.ItemsController::Constrained(System.Int32)\"]"
+        },
+        {
+          "application": "AppA",
+          "build": "@repo/MediatRDispatch.sln",
+          "framework": "aspnet",
+          "kind": "http",
+          "methods": [
+            "GET"
+          ],
+          "order": 0,
+          "path": "/api/items/many-one",
+          "restrictions": [],
+          "site": {
+            "column": 6,
+            "file": "@repo/AppA/Controllers.cs",
+            "line": 24
+          },
+          "symbol": "[\"csharp\",\"@repo/MediatRDispatch.sln\",\"@repo/AppA/Controllers.cs\",\"@repo/MediatRDispatch.sln|[AppA]::DispatchAppA.Http.ItemsController::MultipleTemplates()\"]"
+        },
+        {
+          "application": "AppA",
+          "build": "@repo/MediatRDispatch.sln",
+          "framework": "aspnet",
+          "kind": "http",
+          "methods": [
+            "GET"
+          ],
+          "order": 0,
+          "path": "/api/items/many-two",
+          "restrictions": [],
+          "site": {
+            "column": 6,
+            "file": "@repo/AppA/Controllers.cs",
+            "line": 25
+          },
+          "symbol": "[\"csharp\",\"@repo/MediatRDispatch.sln\",\"@repo/AppA/Controllers.cs\",\"@repo/MediatRDispatch.sln|[AppA]::DispatchAppA.Http.ItemsController::MultipleTemplates()\"]"
+        },
+        {
+          "application": "AppA",
+          "build": "@repo/MediatRDispatch.sln",
+          "framework": "aspnet",
+          "kind": "http",
+          "methods": [
+            "GET"
+          ],
+          "order": 0,
+          "path": "/api/items/ordered",
+          "restrictions": [],
+          "site": {
+            "column": 6,
+            "file": "@repo/AppA/Controllers.cs",
+            "line": 43
+          },
+          "symbol": "[\"csharp\",\"@repo/MediatRDispatch.sln\",\"@repo/AppA/Controllers.cs\",\"@repo/MediatRDispatch.sln|[AppA]::DispatchAppA.Http.ItemsController::DefaultOrder()\"]"
+        },
+        {
+          "application": "AppA",
+          "build": "@repo/MediatRDispatch.sln",
+          "framework": "aspnet",
+          "kind": "http",
+          "methods": [
+            "GET"
+          ],
+          "order": 0,
+          "path": "/api/items/unsupported/{*rest}",
+          "restrictions": [
+            "aspnet.unsupported-template"
+          ],
+          "site": {
+            "column": 6,
+            "file": "@repo/AppA/Controllers.cs",
+            "line": 46
+          },
+          "symbol": "[\"csharp\",\"@repo/MediatRDispatch.sln\",\"@repo/AppA/Controllers.cs\",\"@repo/MediatRDispatch.sln|[AppA]::DispatchAppA.Http.ItemsController::CatchAll(System.String)\"]"
+        },
+        {
+          "application": "AppA",
+          "build": "@repo/MediatRDispatch.sln",
+          "framework": "aspnet",
+          "kind": "http",
+          "methods": [
+            "GET"
+          ],
+          "order": 0,
+          "path": "/api/items/{id}",
+          "restrictions": [],
+          "site": {
+            "column": 6,
+            "file": "@repo/AppA/Controllers.cs",
+            "line": 12
+          },
+          "symbol": "[\"csharp\",\"@repo/MediatRDispatch.sln\",\"@repo/AppA/Controllers.cs\",\"@repo/MediatRDispatch.sln|[AppA]::DispatchAppA.Http.ItemsController::Get(System.String)\"]"
+        },
+        {
+          "application": "AppA",
+          "build": "@repo/MediatRDispatch.sln",
+          "framework": "aspnet",
+          "kind": "http",
+          "methods": [
+            "GET"
+          ],
+          "order": 0,
+          "path": "/health",
+          "restrictions": [],
+          "site": {
+            "column": 6,
+            "file": "@repo/AppA/Controllers.cs",
+            "line": 18
+          },
+          "symbol": "[\"csharp\",\"@repo/MediatRDispatch.sln\",\"@repo/AppA/Controllers.cs\",\"@repo/MediatRDispatch.sln|[AppA]::DispatchAppA.Http.ItemsController::Health()\"]"
+        },
+        {
+          "application": "AppA",
+          "build": "@repo/MediatRDispatch.sln",
+          "framework": "aspnet",
+          "kind": "http",
+          "methods": [
+            "GET"
+          ],
+          "order": 0,
+          "path": "/ready",
+          "restrictions": [],
+          "site": {
+            "column": 6,
+            "file": "@repo/AppA/Controllers.cs",
+            "line": 21
+          },
+          "symbol": "[\"csharp\",\"@repo/MediatRDispatch.sln\",\"@repo/AppA/Controllers.cs\",\"@repo/MediatRDispatch.sln|[AppA]::DispatchAppA.Http.ItemsController::Ready()\"]"
+        },
+        {
+          "application": "AppA",
+          "build": "@repo/MediatRDispatch.sln",
+          "framework": "aspnet",
+          "kind": "http",
+          "methods": [
+            "GET"
+          ],
+          "order": 1,
+          "path": "/api/items/ordered",
+          "restrictions": [
+            "aspnet.nondefault-order"
+          ],
+          "site": {
+            "column": 6,
+            "file": "@repo/AppA/Controllers.cs",
+            "line": 40
+          },
+          "symbol": "[\"csharp\",\"@repo/MediatRDispatch.sln\",\"@repo/AppA/Controllers.cs\",\"@repo/MediatRDispatch.sln|[AppA]::DispatchAppA.Http.ItemsController::Ordered()\"]"
+        },
+        {
+          "application": "AppA",
+          "build": "@repo/MediatRDispatch.sln",
+          "framework": "aspnet",
+          "kind": "http",
+          "methods": [
+            "GET"
+          ],
+          "order": 2,
+          "path": "/api/prioritized/value",
+          "restrictions": [
+            "aspnet.nondefault-order"
+          ],
+          "site": {
+            "column": 6,
+            "file": "@repo/AppA/Controllers.cs",
+            "line": 66
+          },
+          "symbol": "[\"csharp\",\"@repo/MediatRDispatch.sln\",\"@repo/AppA/Controllers.cs\",\"@repo/MediatRDispatch.sln|[AppA]::DispatchAppA.Http.PrioritizedController::Value()\"]"
+        },
+        {
+          "application": "AppA",
+          "build": "@repo/MediatRDispatch.sln",
+          "framework": "aspnet",
+          "kind": "http",
+          "methods": [
+            "POST"
+          ],
+          "order": 0,
+          "path": "/api/items",
+          "restrictions": [],
+          "site": {
+            "column": 6,
+            "file": "@repo/AppA/Controllers.cs",
+            "line": 15
+          },
+          "symbol": "[\"csharp\",\"@repo/MediatRDispatch.sln\",\"@repo/AppA/Controllers.cs\",\"@repo/MediatRDispatch.sln|[AppA]::DispatchAppA.Http.ItemsController::Create()\"]"
+        },
+        {
+          "application": "AppB",
+          "build": "@repo/MediatRDispatch.sln",
+          "framework": "aspnet",
+          "kind": "http",
+          "methods": [
+            "GET"
+          ],
+          "order": 0,
+          "path": "/api/items",
+          "restrictions": [],
+          "site": {
+            "column": 6,
+            "file": "@repo/AppB/Controllers.cs",
+            "line": 9
+          },
+          "symbol": "[\"csharp\",\"@repo/MediatRDispatch.sln\",\"@repo/AppB/Controllers.cs\",\"@repo/MediatRDispatch.sln|[AppB]::DispatchAppB.Http.ItemsController::List()\"]"
+        },
+        {
+          "application": "AppB",
+          "build": "@repo/MediatRDispatch.sln",
+          "framework": "aspnet",
+          "kind": "http",
+          "methods": [
+            "GET"
+          ],
+          "order": 0,
+          "path": "/api/items/CaseOnly",
+          "restrictions": [],
+          "site": {
+            "column": 6,
+            "file": "@repo/AppB/Controllers.cs",
+            "line": 15
+          },
+          "symbol": "[\"csharp\",\"@repo/MediatRDispatch.sln\",\"@repo/AppB/Controllers.cs\",\"@repo/MediatRDispatch.sln|[AppB]::DispatchAppB.Http.ItemsController::CaseOnly()\"]"
+        },
+        {
+          "application": "AppB",
+          "build": "@repo/MediatRDispatch.sln",
+          "framework": "aspnet",
+          "kind": "http",
+          "methods": [
+            "GET"
+          ],
+          "order": 0,
+          "path": "/api/items/{id}",
+          "restrictions": [],
+          "site": {
+            "column": 6,
+            "file": "@repo/AppB/Controllers.cs",
+            "line": 12
+          },
+          "symbol": "[\"csharp\",\"@repo/MediatRDispatch.sln\",\"@repo/AppB/Controllers.cs\",\"@repo/MediatRDispatch.sln|[AppB]::DispatchAppB.Http.ItemsController::Get(System.String)\"]"
+        }
+      ],
+      "uses": [],
+      "version": 1
+    },
     "diagnostics": [
       "CallAtlas omits most source-generator output; cross-assembly interface implementation candidates are limited; operator invocations are not fully reported. Reflection, dynamic calls, unsupported framework callbacks and unsupported DI wiring are not inferred. MediatR targets are compiler-visible possibilities, not proof of dependency-injection registration.",
       "MediatR dispatch deferred (anonymous callable has no native identity) at @repo/AppA/Dispatch.cs:49:15",
@@ -641,11 +979,28 @@
         "[\"csharp\",\"@repo/MediatRDispatch.sln\",\"@repo/AppB/Dispatch.cs\",\"@repo/MediatRDispatch.sln|[AppB]::DispatchAppB.Dispatch::SendPing(MediatR.ISender,System.Threading.CancellationToken)\"]"
       ],
       "framework_entries": [
+        "[\"csharp\",\"@repo/MediatRDispatch.sln\",\"@repo/AppA/Controllers.cs\",\"@repo/MediatRDispatch.sln|[AppA]::DispatchAppA.Http.ItemsController::CaseOne()\"]",
+        "[\"csharp\",\"@repo/MediatRDispatch.sln\",\"@repo/AppA/Controllers.cs\",\"@repo/MediatRDispatch.sln|[AppA]::DispatchAppA.Http.ItemsController::CaseTwo()\"]",
+        "[\"csharp\",\"@repo/MediatRDispatch.sln\",\"@repo/AppA/Controllers.cs\",\"@repo/MediatRDispatch.sln|[AppA]::DispatchAppA.Http.ItemsController::CatchAll(System.String)\"]",
+        "[\"csharp\",\"@repo/MediatRDispatch.sln\",\"@repo/AppA/Controllers.cs\",\"@repo/MediatRDispatch.sln|[AppA]::DispatchAppA.Http.ItemsController::Constrained(System.Int32)\"]",
+        "[\"csharp\",\"@repo/MediatRDispatch.sln\",\"@repo/AppA/Controllers.cs\",\"@repo/MediatRDispatch.sln|[AppA]::DispatchAppA.Http.ItemsController::ConstraintLiteral()\"]",
+        "[\"csharp\",\"@repo/MediatRDispatch.sln\",\"@repo/AppA/Controllers.cs\",\"@repo/MediatRDispatch.sln|[AppA]::DispatchAppA.Http.ItemsController::Create()\"]",
+        "[\"csharp\",\"@repo/MediatRDispatch.sln\",\"@repo/AppA/Controllers.cs\",\"@repo/MediatRDispatch.sln|[AppA]::DispatchAppA.Http.ItemsController::DefaultOrder()\"]",
+        "[\"csharp\",\"@repo/MediatRDispatch.sln\",\"@repo/AppA/Controllers.cs\",\"@repo/MediatRDispatch.sln|[AppA]::DispatchAppA.Http.ItemsController::Get(System.String)\"]",
+        "[\"csharp\",\"@repo/MediatRDispatch.sln\",\"@repo/AppA/Controllers.cs\",\"@repo/MediatRDispatch.sln|[AppA]::DispatchAppA.Http.ItemsController::Health()\"]",
+        "[\"csharp\",\"@repo/MediatRDispatch.sln\",\"@repo/AppA/Controllers.cs\",\"@repo/MediatRDispatch.sln|[AppA]::DispatchAppA.Http.ItemsController::List()\"]",
+        "[\"csharp\",\"@repo/MediatRDispatch.sln\",\"@repo/AppA/Controllers.cs\",\"@repo/MediatRDispatch.sln|[AppA]::DispatchAppA.Http.ItemsController::MultipleTemplates()\"]",
+        "[\"csharp\",\"@repo/MediatRDispatch.sln\",\"@repo/AppA/Controllers.cs\",\"@repo/MediatRDispatch.sln|[AppA]::DispatchAppA.Http.ItemsController::Ordered()\"]",
+        "[\"csharp\",\"@repo/MediatRDispatch.sln\",\"@repo/AppA/Controllers.cs\",\"@repo/MediatRDispatch.sln|[AppA]::DispatchAppA.Http.ItemsController::Ready()\"]",
+        "[\"csharp\",\"@repo/MediatRDispatch.sln\",\"@repo/AppA/Controllers.cs\",\"@repo/MediatRDispatch.sln|[AppA]::DispatchAppA.Http.PrioritizedController::Value()\"]",
         "[\"csharp\",\"@repo/MediatRDispatch.sln\",\"@repo/AppA/Handlers.cs\",\"@repo/MediatRDispatch.sln|[AppA]::DispatchAppA.BaseRequestHandler::Handle(DispatchContracts.BaseRequest,System.Threading.CancellationToken)\"]",
         "[\"csharp\",\"@repo/MediatRDispatch.sln\",\"@repo/AppA/Handlers.cs\",\"@repo/MediatRDispatch.sln|[AppA]::DispatchAppA.ChangedHandlerBase::Handle(DispatchContracts.Changed,System.Threading.CancellationToken)\"]",
         "[\"csharp\",\"@repo/MediatRDispatch.sln\",\"@repo/AppA/Handlers.cs\",\"@repo/MediatRDispatch.sln|[AppA]::DispatchAppA.FirstChangedHandler::Handle(DispatchContracts.Changed,System.Threading.CancellationToken)\"]",
         "[\"csharp\",\"@repo/MediatRDispatch.sln\",\"@repo/AppA/Handlers.cs\",\"@repo/MediatRDispatch.sln|[AppA]::DispatchAppA.PingHandler::Handle(DispatchContracts.Ping,System.Threading.CancellationToken)\"]",
         "[\"csharp\",\"@repo/MediatRDispatch.sln\",\"@repo/AppA/Handlers.cs\",\"@repo/MediatRDispatch.sln|[AppA]::DispatchAppA.ResetHandler::MediatR.IRequestHandler<DispatchContracts.Reset>.Handle(DispatchContracts.Reset,System.Threading.CancellationToken)\"]",
+        "[\"csharp\",\"@repo/MediatRDispatch.sln\",\"@repo/AppB/Controllers.cs\",\"@repo/MediatRDispatch.sln|[AppB]::DispatchAppB.Http.ItemsController::CaseOnly()\"]",
+        "[\"csharp\",\"@repo/MediatRDispatch.sln\",\"@repo/AppB/Controllers.cs\",\"@repo/MediatRDispatch.sln|[AppB]::DispatchAppB.Http.ItemsController::Get(System.String)\"]",
+        "[\"csharp\",\"@repo/MediatRDispatch.sln\",\"@repo/AppB/Controllers.cs\",\"@repo/MediatRDispatch.sln|[AppB]::DispatchAppB.Http.ItemsController::List()\"]",
         "[\"csharp\",\"@repo/MediatRDispatch.sln\",\"@repo/AppB/Dispatch.cs\",\"@repo/MediatRDispatch.sln|[AppB]::DispatchAppB.ChangedHandler::Handle(DispatchContracts.Changed,System.Threading.CancellationToken)\"]",
         "[\"csharp\",\"@repo/MediatRDispatch.sln\",\"@repo/AppB/Dispatch.cs\",\"@repo/MediatRDispatch.sln|[AppB]::DispatchAppB.PingHandler::Handle(DispatchContracts.Ping,System.Threading.CancellationToken)\"]"
       ]

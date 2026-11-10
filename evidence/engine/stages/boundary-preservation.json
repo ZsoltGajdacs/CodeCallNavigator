@@ -1,0 +1,50 @@
+[
+  {
+    "project": "fixtures/typescript-corpus",
+    "nodes_equal": true,
+    "native_edges_equal": true,
+    "flow_equal_after_boundary_translation": true,
+    "architecture_equal": true,
+    "nodes": 75,
+    "edges": 54,
+    "added_boundary_edges": 4,
+    "route_facts": 6,
+    "uses": 13
+  },
+  {
+    "project": "fixtures/spring-events",
+    "nodes_equal": true,
+    "native_edges_equal": true,
+    "flow_equal_after_boundary_translation": true,
+    "architecture_equal": true,
+    "nodes": 29,
+    "edges": 38,
+    "added_boundary_edges": 0,
+    "route_facts": 8,
+    "uses": 0
+  },
+  {
+    "project": "fixtures/mediatr-dispatch",
+    "nodes_equal": true,
+    "native_edges_equal": true,
+    "flow_equal_after_boundary_translation": true,
+    "architecture_equal": true,
+    "nodes": 49,
+    "edges": 11,
+    "added_boundary_edges": 0,
+    "route_facts": 18,
+    "uses": 0
+  },
+  {
+    "project": "fixtures",
+    "nodes_equal": true,
+    "native_edges_equal": true,
+    "flow_equal_after_boundary_translation": true,
+    "architecture_equal": true,
+    "nodes": 179,
+    "edges": 120,
+    "added_boundary_edges": 6,
+    "route_facts": 32,
+    "uses": 13
+  }
+]

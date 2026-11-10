@@ -28,12 +28,43 @@ pub struct FunctionFlowIR {
     pub diagnostics: Vec<String>,
 }
 
-#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(default)]
 pub struct CallTarget {
+    #[serde(
+        default = "call_kind",
+        skip_serializing_if = "is_call",
+        deserialize_with = "target_kind"
+    )]
+    pub kind: String,
     pub symbol: String,
     pub certainty: String,
     pub provenance: String,
+}
+
+fn call_kind() -> String {
+    "call".into()
+}
+fn is_call(kind: &String) -> bool {
+    kind == "call"
+}
+fn target_kind<'de, D: serde::Deserializer<'de>>(deserializer: D) -> Result<String, D::Error> {
+    let kind = String::deserialize(deserializer)?;
+    if matches!(kind.as_str(), "call" | "navigation" | "http") {
+        Ok(kind)
+    } else {
+        Err(serde::de::Error::custom("Unsupported flow target kind"))
+    }
+}
+impl Default for CallTarget {
+    fn default() -> Self {
+        Self {
+            kind: call_kind(),
+            symbol: String::new(),
+            certainty: String::new(),
+            provenance: String::new(),
+        }
+    }
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]

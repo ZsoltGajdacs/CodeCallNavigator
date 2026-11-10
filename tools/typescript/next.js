@@ -53,4 +53,4 @@ function markNextEntries(context,bindings,graph,{file,checker,owner}) {
     for(const declaration of symbol?.declarations||[]) markDeclaration(state,declaration);
   }
 }
-module.exports={markNextEntries};
+module.exports={markNextEntries,hasNext};

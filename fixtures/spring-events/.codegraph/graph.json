@@ -382,10 +382,206 @@
       ],
       "version": 1
     },
+    "boundaries": {
+      "routes": [
+        {
+          "application": "codegraph.fixture:spring-events",
+          "build": "@repo/",
+          "framework": "spring",
+          "kind": "http",
+          "methods": [
+            "GET",
+            "HEAD"
+          ],
+          "order": 0,
+          "path": "/api/ambiguous",
+          "restrictions": [
+            "spring.produces:application/json"
+          ],
+          "site": {
+            "column": 5,
+            "file": "@repo/src/main/java/fixture/spring/http/ConstrainedController.java",
+            "line": 11,
+            "span": {
+              "end": 465,
+              "start": 331
+            }
+          },
+          "symbol": "[\"java\",\"@repo/\",\"@repo/src/main/java/fixture/spring/http/ConstrainedController.java\",\"[\\\"@repo/\\\",\\\"@repo/\\\",\\\"main\\\"]|fixture.spring.http.ConstrainedController:json()|java.lang.String\"]"
+        },
+        {
+          "application": "codegraph.fixture:spring-events",
+          "build": "@repo/",
+          "framework": "spring",
+          "kind": "http",
+          "methods": [
+            "GET",
+            "HEAD"
+          ],
+          "order": 0,
+          "path": "/api/ambiguous",
+          "restrictions": [
+            "spring.produces:text/plain"
+          ],
+          "site": {
+            "column": 5,
+            "file": "@repo/src/main/java/fixture/spring/http/ConstrainedController.java",
+            "line": 14,
+            "span": {
+              "end": 601,
+              "start": 471
+            }
+          },
+          "symbol": "[\"java\",\"@repo/\",\"@repo/src/main/java/fixture/spring/http/ConstrainedController.java\",\"[\\\"@repo/\\\",\\\"@repo/\\\",\\\"main\\\"]|fixture.spring.http.ConstrainedController:text()|java.lang.String\"]"
+        },
+        {
+          "application": "codegraph.fixture:spring-events",
+          "build": "@repo/",
+          "framework": "spring",
+          "kind": "http",
+          "methods": [
+            "GET",
+            "HEAD"
+          ],
+          "order": 0,
+          "path": "/api/constrained",
+          "restrictions": [
+            "spring.params:mode=special"
+          ],
+          "site": {
+            "column": 5,
+            "file": "@repo/src/main/java/fixture/spring/http/ConstrainedController.java",
+            "line": 20,
+            "span": {
+              "end": 889,
+              "start": 734
+            }
+          },
+          "symbol": "[\"java\",\"@repo/\",\"@repo/src/main/java/fixture/spring/http/ConstrainedController.java\",\"[\\\"@repo/\\\",\\\"@repo/\\\",\\\"main\\\"]|fixture.spring.http.ConstrainedController:constrained()|java.lang.String\"]"
+        },
+        {
+          "application": "codegraph.fixture:spring-events",
+          "build": "@repo/",
+          "framework": "spring",
+          "kind": "http",
+          "methods": [
+            "GET",
+            "HEAD"
+          ],
+          "order": 0,
+          "path": "/api/constrained",
+          "restrictions": [],
+          "site": {
+            "column": 5,
+            "file": "@repo/src/main/java/fixture/spring/http/ConstrainedController.java",
+            "line": 17,
+            "span": {
+              "end": 728,
+              "start": 607
+            }
+          },
+          "symbol": "[\"java\",\"@repo/\",\"@repo/src/main/java/fixture/spring/http/ConstrainedController.java\",\"[\\\"@repo/\\\",\\\"@repo/\\\",\\\"main\\\"]|fixture.spring.http.ConstrainedController:unconstrained()|java.lang.String\"]"
+        },
+        {
+          "application": "codegraph.fixture:spring-events",
+          "build": "@repo/",
+          "framework": "spring",
+          "kind": "http",
+          "methods": [
+            "GET",
+            "HEAD"
+          ],
+          "order": 0,
+          "path": "/api/health",
+          "restrictions": [],
+          "site": {
+            "column": 5,
+            "file": "@repo/src/main/java/fixture/spring/http/HttpController.java",
+            "line": 22,
+            "span": {
+              "end": 866,
+              "start": 733
+            }
+          },
+          "symbol": "[\"java\",\"@repo/\",\"@repo/src/main/java/fixture/spring/http/HttpController.java\",\"[\\\"@repo/\\\",\\\"@repo/\\\",\\\"main\\\"]|fixture.spring.http.HttpController:health()|java.lang.String\"]"
+        },
+        {
+          "application": "codegraph.fixture:spring-events",
+          "build": "@repo/",
+          "framework": "spring",
+          "kind": "http",
+          "methods": [
+            "GET",
+            "HEAD"
+          ],
+          "order": 0,
+          "path": "/api/items",
+          "restrictions": [],
+          "site": {
+            "column": 5,
+            "file": "@repo/src/main/java/fixture/spring/http/HttpController.java",
+            "line": 13,
+            "span": {
+              "end": 540,
+              "start": 446
+            }
+          },
+          "symbol": "[\"java\",\"@repo/\",\"@repo/src/main/java/fixture/spring/http/HttpController.java\",\"[\\\"@repo/\\\",\\\"@repo/\\\",\\\"main\\\"]|fixture.spring.http.HttpController:items()|java.lang.String\"]"
+        },
+        {
+          "application": "codegraph.fixture:spring-events",
+          "build": "@repo/",
+          "framework": "spring",
+          "kind": "http",
+          "methods": [
+            "GET",
+            "HEAD"
+          ],
+          "order": 0,
+          "path": "/api/items/{id}",
+          "restrictions": [],
+          "site": {
+            "column": 5,
+            "file": "@repo/src/main/java/fixture/spring/http/HttpController.java",
+            "line": 16,
+            "span": {
+              "end": 642,
+              "start": 546
+            }
+          },
+          "symbol": "[\"java\",\"@repo/\",\"@repo/src/main/java/fixture/spring/http/HttpController.java\",\"[\\\"@repo/\\\",\\\"@repo/\\\",\\\"main\\\"]|fixture.spring.http.HttpController:item()|java.lang.String\"]"
+        },
+        {
+          "application": "codegraph.fixture:spring-events",
+          "build": "@repo/",
+          "framework": "spring",
+          "kind": "http",
+          "methods": [
+            "POST"
+          ],
+          "order": 0,
+          "path": "/api/items",
+          "restrictions": [],
+          "site": {
+            "column": 5,
+            "file": "@repo/src/main/java/fixture/spring/http/HttpController.java",
+            "line": 19,
+            "span": {
+              "end": 727,
+              "start": 648
+            }
+          },
+          "symbol": "[\"java\",\"@repo/\",\"@repo/src/main/java/fixture/spring/http/HttpController.java\",\"[\\\"@repo/\\\",\\\"@repo/\\\",\\\"main\\\"]|fixture.spring.http.HttpController:create()|void\"]"
+        }
+      ],
+      "uses": [],
+      "version": 1
+    },
     "diagnostics": [
       "Java DI, reflection, framework callback ordering and dynamic runtime targets are supported only where reported by java-callgraph2. Bytecode source columns are unavailable.",
       "Java combined declarations use each caller's owning compile context. Paths may cross incompatible consumer contexts and do not describe a single runtime classpath.",
       "Java: 0 inherited/reference symbols without declared bodies excluded; 22 external relationships excluded. These references are engine-reported, not resolved by name.",
+      "Spring HTTP routes describe compiler-qualified controller mappings; deployment context paths, global MVC prefixes, bean registration and custom runtime routing are not proven. Unsupported constraints and inherited/composed mappings remain ambiguity blockers.",
       "Spring event analysis is limited to compiler-qualified method publishers and source listeners in the same source context; lambda publishers, custom composed annotations and cross-context wiring remain unresolved.",
       "Spring event targets are static possibilities within one compiler source context. DI registration, event conditions, transaction state and async configuration are not proven. Cross-context and lambda publishers remain unresolved.",
       "Spring publishEvent payload is erased, generic or unresolved at @repo/src/main/java/fixture/spring/Publisher.java:22",
@@ -1521,7 +1717,15 @@
         "[\"java\",\"@repo/\",\"@repo/src/main/java/fixture/spring/Listeners.java\",\"[\\\"@repo/\\\",\\\"@repo/\\\",\\\"main\\\"]|fixture.spring.Listeners:onExplicitPayload()|void\"]",
         "[\"java\",\"@repo/\",\"@repo/src/main/java/fixture/spring/Listeners.java\",\"[\\\"@repo/\\\",\\\"@repo/\\\",\\\"main\\\"]|fixture.spring.Listeners:onOtherCreated(fixture.spring.other.Created)|void\"]",
         "[\"java\",\"@repo/\",\"@repo/src/main/java/fixture/spring/Listeners.java\",\"[\\\"@repo/\\\",\\\"@repo/\\\",\\\"main\\\"]|fixture.spring.Listeners:onPayload(fixture.spring.events.Created)|void\"]",
-        "[\"java\",\"@repo/\",\"@repo/src/main/java/fixture/spring/Listeners.java\",\"[\\\"@repo/\\\",\\\"@repo/\\\",\\\"main\\\"]|fixture.spring.Listeners:onPayloadEnvelope(org.springframework.context.PayloadApplicationEvent)|void\"]"
+        "[\"java\",\"@repo/\",\"@repo/src/main/java/fixture/spring/Listeners.java\",\"[\\\"@repo/\\\",\\\"@repo/\\\",\\\"main\\\"]|fixture.spring.Listeners:onPayloadEnvelope(org.springframework.context.PayloadApplicationEvent)|void\"]",
+        "[\"java\",\"@repo/\",\"@repo/src/main/java/fixture/spring/http/ConstrainedController.java\",\"[\\\"@repo/\\\",\\\"@repo/\\\",\\\"main\\\"]|fixture.spring.http.ConstrainedController:constrained()|java.lang.String\"]",
+        "[\"java\",\"@repo/\",\"@repo/src/main/java/fixture/spring/http/ConstrainedController.java\",\"[\\\"@repo/\\\",\\\"@repo/\\\",\\\"main\\\"]|fixture.spring.http.ConstrainedController:json()|java.lang.String\"]",
+        "[\"java\",\"@repo/\",\"@repo/src/main/java/fixture/spring/http/ConstrainedController.java\",\"[\\\"@repo/\\\",\\\"@repo/\\\",\\\"main\\\"]|fixture.spring.http.ConstrainedController:text()|java.lang.String\"]",
+        "[\"java\",\"@repo/\",\"@repo/src/main/java/fixture/spring/http/ConstrainedController.java\",\"[\\\"@repo/\\\",\\\"@repo/\\\",\\\"main\\\"]|fixture.spring.http.ConstrainedController:unconstrained()|java.lang.String\"]",
+        "[\"java\",\"@repo/\",\"@repo/src/main/java/fixture/spring/http/HttpController.java\",\"[\\\"@repo/\\\",\\\"@repo/\\\",\\\"main\\\"]|fixture.spring.http.HttpController:create()|void\"]",
+        "[\"java\",\"@repo/\",\"@repo/src/main/java/fixture/spring/http/HttpController.java\",\"[\\\"@repo/\\\",\\\"@repo/\\\",\\\"main\\\"]|fixture.spring.http.HttpController:health()|java.lang.String\"]",
+        "[\"java\",\"@repo/\",\"@repo/src/main/java/fixture/spring/http/HttpController.java\",\"[\\\"@repo/\\\",\\\"@repo/\\\",\\\"main\\\"]|fixture.spring.http.HttpController:item()|java.lang.String\"]",
+        "[\"java\",\"@repo/\",\"@repo/src/main/java/fixture/spring/http/HttpController.java\",\"[\\\"@repo/\\\",\\\"@repo/\\\",\\\"main\\\"]|fixture.spring.http.HttpController:items()|java.lang.String\"]"
       ]
     },
     "flow_inventory": {

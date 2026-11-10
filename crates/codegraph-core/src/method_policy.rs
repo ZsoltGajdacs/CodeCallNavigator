@@ -31,6 +31,7 @@ pub fn prune(graph: &mut GraphData, excluded: &HashSet<String>) -> Result<()> {
         }
         true
     });
+    prune_boundaries(graph, excluded);
     if let Some(entries) = &mut graph.entry_points {
         for list in [
             &mut entries.candidates,
@@ -45,4 +46,25 @@ pub fn prune(graph: &mut GraphData, excluded: &HashSet<String>) -> Result<()> {
         inventory.retain_symbols(&symbols);
     }
     graph.validate()
+}
+
+fn prune_boundaries(graph: &mut GraphData, excluded: &HashSet<String>) {
+    let Some(inventory) = &mut graph.boundaries else {
+        return;
+    };
+    inventory
+        .uses
+        .retain(|usage| !excluded.contains(&usage.symbol));
+    for route in &mut inventory.routes {
+        if route
+            .symbol
+            .as_ref()
+            .is_some_and(|id| excluded.contains(id))
+        {
+            route.symbol = None;
+            route
+                .restrictions
+                .push("target excluded by declaration policy".into());
+        }
+    }
 }

@@ -153,7 +153,7 @@ fn validate_symbols(value: &Value, ids: &HashMap<String, u32>) -> Result<()> {
     match value {
         Value::Object(fields) => {
             for (key, value) in fields {
-                if key == "symbol" {
+                if key == "symbol" && !value.is_null() {
                     let symbol = value
                         .as_str()
                         .context("Flow target must have a string identity")?;

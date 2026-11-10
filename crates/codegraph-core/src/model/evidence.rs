@@ -78,7 +78,7 @@ impl RelationshipEvidence {
 }
 
 impl SourceSite {
-    fn validate(&self) -> Result<()> {
+    pub(crate) fn validate(&self) -> Result<()> {
         ensure!(
             !self.file.trim().is_empty(),
             "Relationship evidence needs a source file"

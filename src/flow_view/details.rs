@@ -93,7 +93,11 @@ fn call_details(state: &State, call: &codegraph::flow::CallSite, call_index: usi
             Button::new(format!(
                 "{} · {}",
                 target_name(state, &target.symbol),
-                target.certainty
+                if target.kind == "call" {
+                    target.certainty.clone()
+                } else {
+                    format!("{} · {}", target.certainty, target.kind)
+                }
             ))
             .variant(ButtonVariant::Outline)
             .help(format!("{}\n{}", target.symbol, target.provenance))

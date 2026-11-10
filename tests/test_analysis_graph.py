@@ -86,6 +86,20 @@ class GraphComparisonTest(unittest.TestCase):
             connection.execute('UPDATE metadata SET value=?', (json.dumps(metadata),))
         self.assertEqual(compare(self.reference, self.current)['different_fields'], ['edges'])
 
+    def test_boundary_inventory_changes_are_compared(self):
+        with sqlite3.connect(self.current / 'graph.sqlite3') as connection:
+            metadata = json.loads(connection.execute('SELECT value FROM metadata').fetchone()[0])
+            metadata['boundaries'] = {'version': 1, 'routes': [{'path': '/items/{id}',
+                                      'methods': ['POST', 'GET'], 'restrictions': ['condition']}], 'uses': []}
+            connection.execute('UPDATE metadata SET value=?', (json.dumps(metadata),))
+        self.assertEqual(compare(self.reference, self.current)['different_fields'], ['boundaries'])
+        with sqlite3.connect(self.reference / 'graph.sqlite3') as connection:
+            before = json.loads(connection.execute('SELECT value FROM metadata').fetchone()[0])
+            before['boundaries'] = metadata['boundaries']
+            before['boundaries']['routes'][0]['methods'].reverse()
+            connection.execute('UPDATE metadata SET value=?', (json.dumps(before),))
+        self.assertTrue(compare(self.reference, self.current)['equal'])
+
     def test_dropping_freshness_inputs_is_detected_but_observation_times_are_ignored(self):
         self.assertTrue(compare(self.reference, self.current)['equal'])
         with sqlite3.connect(self.current / 'graph.sqlite3') as connection:

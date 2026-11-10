@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "http": [
+    {
+      "client": "typescript-corpus/tsconfig.json",
+      "servers": [
+        "spring-events/pom.xml",
+        {
+          "target": "mediatr-dispatch/MediatRDispatch.sln",
+          "application": "AppA"
+        }
+      ]
+    }
+  ]
+}

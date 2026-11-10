@@ -139,6 +139,7 @@ fn attach_flow(graph: &mut GraphData, caller: &str, handler: &str, pair: &Source
             .any(|target| target.symbol == handler && target.provenance == PROVENANCE)
         {
             call.targets.push(CallTarget {
+                kind: "call".into(),
                 symbol: handler.into(),
                 certainty: "possible".into(),
                 provenance: PROVENANCE.into(),

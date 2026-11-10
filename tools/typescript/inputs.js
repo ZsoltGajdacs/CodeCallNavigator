@@ -3,6 +3,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const {projectInputs,packageVersion}=require('./dependencies.js');
 const {canonical} = require('./paths.js');
+const {configurationFiles}=require('./boundary-template.js');
 const OMITTED = new Set(['.git','node_modules','.next','dist','build','coverage','.backlog','.serena','target']);
 function includeRoot(config, pattern) {
   const prefix = pattern.split(/[?*]/,1)[0];
@@ -56,9 +57,10 @@ function outputRoots(projects) {
 }
 function metadata(context, inputs) {
   const {ts,projects,owners,programs} = context;
-  const versions = {typescript:ts.version,node:process.versions.node,adapter:'3',react_rules:'1',next_rules:'1'};
+  const versions = {typescript:ts.version,node:process.versions.node,adapter:'4',react_rules:'1',next_rules:'1',boundary_rules:'1'};
   for (const {config} of projects.values()) {
     projectInputs(config,inputs);
+    for(const file of configurationFiles(config)) inputs.add(file);
     for (const name of ['typescript','react','next']) packageVersion(config,name,inputs,{versions,observations:context.observations});
   }
   for (const {program} of programs) {

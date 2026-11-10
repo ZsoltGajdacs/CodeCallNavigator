@@ -76,6 +76,44 @@ fn flow_step_highlights_snapshot_and_back_preserves_call_graph() {
     assert_eq!(serde_json::to_value(&runtime.state.nav).unwrap(), before);
 }
 #[test]
+fn http_boundary_target_is_explicitly_labelled_in_flow_details() {
+    let mut runtime = runtime();
+    runtime.update(|state, _| {
+        state.close_flow();
+        let mut graph = flow_scenes::data();
+        for function in &mut graph.flow_inventory.as_mut().unwrap().functions {
+            codegraph::flow::visit_calls_mut(function, &mut |call| {
+                for target in &mut call.targets {
+                    target.kind = "http".into();
+                    target.certainty = "possible".into();
+                }
+            });
+        }
+        state.graph = Some(std::sync::Arc::new(
+            codegraph::graph::GraphIndex::new(std::sync::Arc::new(graph)).unwrap(),
+        ));
+        state.flow_workspace.invalidate();
+        state.open_flow("flow/load".into());
+    });
+    ready(&mut runtime);
+    let index = session(&runtime)
+        .ready
+        .as_ref()
+        .unwrap()
+        .chart
+        .steps
+        .iter()
+        .position(|step| !step.calls.is_empty())
+        .unwrap();
+    click(&mut runtime, &format!("flow-step-{index}"));
+    assert!(runtime.elements().iter().any(|element| {
+        element
+            .text
+            .as_deref()
+            .is_some_and(|text| text.contains("save() · possible · http"))
+    }));
+}
+#[test]
 fn flow_reads_cached_source_and_rejects_obsolete_generation() {
     let mut runtime = runtime();
     let session = runtime.state.flow_workspace.current.as_ref().unwrap();

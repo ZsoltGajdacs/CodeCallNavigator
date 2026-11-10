@@ -87,7 +87,13 @@ fn real_framework_dispatch_uses_request_symbols_and_application_scope() {
     .unwrap();
     assert_eq!(inferred_targets(&graph), expected_targets());
     let entries = &graph.entry_points.as_ref().unwrap().framework_entries;
-    assert_eq!(entries.len(), 7);
+    let handlers = graph
+        .nodes
+        .iter()
+        .filter(|node| node.label == "Handle" || node.label.ends_with(".Handle"))
+        .filter(|node| entries.contains(&node.id))
+        .count();
+    assert_eq!(handlers, 7);
     assert!(
         graph
             .diagnostics

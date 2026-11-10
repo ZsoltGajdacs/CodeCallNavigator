@@ -1087,6 +1087,904 @@
       ],
       "version": 1
     },
+    "boundaries": {
+      "routes": [
+        {
+          "application": "AppA",
+          "build": "@repo/mediatr-dispatch/MediatRDispatch.sln",
+          "framework": "aspnet",
+          "kind": "http",
+          "methods": [
+            "GET"
+          ],
+          "order": 0,
+          "path": "/api/items",
+          "restrictions": [],
+          "site": {
+            "column": 6,
+            "file": "@repo/mediatr-dispatch/AppA/Controllers.cs",
+            "line": 9
+          },
+          "symbol": "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Controllers.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.Http.ItemsController::List()\"]"
+        },
+        {
+          "application": "AppA",
+          "build": "@repo/mediatr-dispatch/MediatRDispatch.sln",
+          "framework": "aspnet",
+          "kind": "http",
+          "methods": [
+            "GET"
+          ],
+          "order": 0,
+          "path": "/api/items/CaseOnly",
+          "restrictions": [],
+          "site": {
+            "column": 6,
+            "file": "@repo/mediatr-dispatch/AppA/Controllers.cs",
+            "line": 28
+          },
+          "symbol": "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Controllers.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.Http.ItemsController::CaseOne()\"]"
+        },
+        {
+          "application": "AppA",
+          "build": "@repo/mediatr-dispatch/MediatRDispatch.sln",
+          "framework": "aspnet",
+          "kind": "http",
+          "methods": [
+            "GET"
+          ],
+          "order": 0,
+          "path": "/api/items/caseonly",
+          "restrictions": [],
+          "site": {
+            "column": 6,
+            "file": "@repo/mediatr-dispatch/AppA/Controllers.cs",
+            "line": 31
+          },
+          "symbol": "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Controllers.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.Http.ItemsController::CaseTwo()\"]"
+        },
+        {
+          "application": "AppA",
+          "build": "@repo/mediatr-dispatch/MediatRDispatch.sln",
+          "framework": "aspnet",
+          "kind": "http",
+          "methods": [
+            "GET"
+          ],
+          "order": 0,
+          "path": "/api/items/constraint/42",
+          "restrictions": [],
+          "site": {
+            "column": 6,
+            "file": "@repo/mediatr-dispatch/AppA/Controllers.cs",
+            "line": 37
+          },
+          "symbol": "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Controllers.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.Http.ItemsController::ConstraintLiteral()\"]"
+        },
+        {
+          "application": "AppA",
+          "build": "@repo/mediatr-dispatch/MediatRDispatch.sln",
+          "framework": "aspnet",
+          "kind": "http",
+          "methods": [
+            "GET"
+          ],
+          "order": 0,
+          "path": "/api/items/constraint/{id:int}",
+          "restrictions": [
+            "aspnet.unsupported-template"
+          ],
+          "site": {
+            "column": 6,
+            "file": "@repo/mediatr-dispatch/AppA/Controllers.cs",
+            "line": 34
+          },
+          "symbol": "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Controllers.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.Http.ItemsController::Constrained(System.Int32)\"]"
+        },
+        {
+          "application": "AppA",
+          "build": "@repo/mediatr-dispatch/MediatRDispatch.sln",
+          "framework": "aspnet",
+          "kind": "http",
+          "methods": [
+            "GET"
+          ],
+          "order": 0,
+          "path": "/api/items/many-one",
+          "restrictions": [],
+          "site": {
+            "column": 6,
+            "file": "@repo/mediatr-dispatch/AppA/Controllers.cs",
+            "line": 24
+          },
+          "symbol": "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Controllers.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.Http.ItemsController::MultipleTemplates()\"]"
+        },
+        {
+          "application": "AppA",
+          "build": "@repo/mediatr-dispatch/MediatRDispatch.sln",
+          "framework": "aspnet",
+          "kind": "http",
+          "methods": [
+            "GET"
+          ],
+          "order": 0,
+          "path": "/api/items/many-two",
+          "restrictions": [],
+          "site": {
+            "column": 6,
+            "file": "@repo/mediatr-dispatch/AppA/Controllers.cs",
+            "line": 25
+          },
+          "symbol": "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Controllers.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.Http.ItemsController::MultipleTemplates()\"]"
+        },
+        {
+          "application": "AppA",
+          "build": "@repo/mediatr-dispatch/MediatRDispatch.sln",
+          "framework": "aspnet",
+          "kind": "http",
+          "methods": [
+            "GET"
+          ],
+          "order": 0,
+          "path": "/api/items/ordered",
+          "restrictions": [],
+          "site": {
+            "column": 6,
+            "file": "@repo/mediatr-dispatch/AppA/Controllers.cs",
+            "line": 43
+          },
+          "symbol": "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Controllers.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.Http.ItemsController::DefaultOrder()\"]"
+        },
+        {
+          "application": "AppA",
+          "build": "@repo/mediatr-dispatch/MediatRDispatch.sln",
+          "framework": "aspnet",
+          "kind": "http",
+          "methods": [
+            "GET"
+          ],
+          "order": 0,
+          "path": "/api/items/unsupported/{*rest}",
+          "restrictions": [
+            "aspnet.unsupported-template"
+          ],
+          "site": {
+            "column": 6,
+            "file": "@repo/mediatr-dispatch/AppA/Controllers.cs",
+            "line": 46
+          },
+          "symbol": "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Controllers.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.Http.ItemsController::CatchAll(System.String)\"]"
+        },
+        {
+          "application": "AppA",
+          "build": "@repo/mediatr-dispatch/MediatRDispatch.sln",
+          "framework": "aspnet",
+          "kind": "http",
+          "methods": [
+            "GET"
+          ],
+          "order": 0,
+          "path": "/api/items/{id}",
+          "restrictions": [],
+          "site": {
+            "column": 6,
+            "file": "@repo/mediatr-dispatch/AppA/Controllers.cs",
+            "line": 12
+          },
+          "symbol": "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Controllers.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.Http.ItemsController::Get(System.String)\"]"
+        },
+        {
+          "application": "AppA",
+          "build": "@repo/mediatr-dispatch/MediatRDispatch.sln",
+          "framework": "aspnet",
+          "kind": "http",
+          "methods": [
+            "GET"
+          ],
+          "order": 0,
+          "path": "/health",
+          "restrictions": [],
+          "site": {
+            "column": 6,
+            "file": "@repo/mediatr-dispatch/AppA/Controllers.cs",
+            "line": 18
+          },
+          "symbol": "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Controllers.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.Http.ItemsController::Health()\"]"
+        },
+        {
+          "application": "AppA",
+          "build": "@repo/mediatr-dispatch/MediatRDispatch.sln",
+          "framework": "aspnet",
+          "kind": "http",
+          "methods": [
+            "GET"
+          ],
+          "order": 0,
+          "path": "/ready",
+          "restrictions": [],
+          "site": {
+            "column": 6,
+            "file": "@repo/mediatr-dispatch/AppA/Controllers.cs",
+            "line": 21
+          },
+          "symbol": "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Controllers.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.Http.ItemsController::Ready()\"]"
+        },
+        {
+          "application": "AppA",
+          "build": "@repo/mediatr-dispatch/MediatRDispatch.sln",
+          "framework": "aspnet",
+          "kind": "http",
+          "methods": [
+            "GET"
+          ],
+          "order": 1,
+          "path": "/api/items/ordered",
+          "restrictions": [
+            "aspnet.nondefault-order"
+          ],
+          "site": {
+            "column": 6,
+            "file": "@repo/mediatr-dispatch/AppA/Controllers.cs",
+            "line": 40
+          },
+          "symbol": "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Controllers.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.Http.ItemsController::Ordered()\"]"
+        },
+        {
+          "application": "AppA",
+          "build": "@repo/mediatr-dispatch/MediatRDispatch.sln",
+          "framework": "aspnet",
+          "kind": "http",
+          "methods": [
+            "GET"
+          ],
+          "order": 2,
+          "path": "/api/prioritized/value",
+          "restrictions": [
+            "aspnet.nondefault-order"
+          ],
+          "site": {
+            "column": 6,
+            "file": "@repo/mediatr-dispatch/AppA/Controllers.cs",
+            "line": 66
+          },
+          "symbol": "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Controllers.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.Http.PrioritizedController::Value()\"]"
+        },
+        {
+          "application": "AppA",
+          "build": "@repo/mediatr-dispatch/MediatRDispatch.sln",
+          "framework": "aspnet",
+          "kind": "http",
+          "methods": [
+            "POST"
+          ],
+          "order": 0,
+          "path": "/api/items",
+          "restrictions": [],
+          "site": {
+            "column": 6,
+            "file": "@repo/mediatr-dispatch/AppA/Controllers.cs",
+            "line": 15
+          },
+          "symbol": "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Controllers.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.Http.ItemsController::Create()\"]"
+        },
+        {
+          "application": "AppB",
+          "build": "@repo/mediatr-dispatch/MediatRDispatch.sln",
+          "framework": "aspnet",
+          "kind": "http",
+          "methods": [
+            "GET"
+          ],
+          "order": 0,
+          "path": "/api/items",
+          "restrictions": [],
+          "site": {
+            "column": 6,
+            "file": "@repo/mediatr-dispatch/AppB/Controllers.cs",
+            "line": 9
+          },
+          "symbol": "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppB/Controllers.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppB]::DispatchAppB.Http.ItemsController::List()\"]"
+        },
+        {
+          "application": "AppB",
+          "build": "@repo/mediatr-dispatch/MediatRDispatch.sln",
+          "framework": "aspnet",
+          "kind": "http",
+          "methods": [
+            "GET"
+          ],
+          "order": 0,
+          "path": "/api/items/CaseOnly",
+          "restrictions": [],
+          "site": {
+            "column": 6,
+            "file": "@repo/mediatr-dispatch/AppB/Controllers.cs",
+            "line": 15
+          },
+          "symbol": "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppB/Controllers.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppB]::DispatchAppB.Http.ItemsController::CaseOnly()\"]"
+        },
+        {
+          "application": "AppB",
+          "build": "@repo/mediatr-dispatch/MediatRDispatch.sln",
+          "framework": "aspnet",
+          "kind": "http",
+          "methods": [
+            "GET"
+          ],
+          "order": 0,
+          "path": "/api/items/{id}",
+          "restrictions": [],
+          "site": {
+            "column": 6,
+            "file": "@repo/mediatr-dispatch/AppB/Controllers.cs",
+            "line": 12
+          },
+          "symbol": "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppB/Controllers.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppB]::DispatchAppB.Http.ItemsController::Get(System.String)\"]"
+        },
+        {
+          "application": "codegraph.fixture:spring-events",
+          "build": "@repo/spring-events",
+          "framework": "spring",
+          "kind": "http",
+          "methods": [
+            "GET",
+            "HEAD"
+          ],
+          "order": 0,
+          "path": "/api/ambiguous",
+          "restrictions": [
+            "spring.produces:application/json"
+          ],
+          "site": {
+            "column": 5,
+            "file": "@repo/spring-events/src/main/java/fixture/spring/http/ConstrainedController.java",
+            "line": 11,
+            "span": {
+              "end": 465,
+              "start": 331
+            }
+          },
+          "symbol": "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/http/ConstrainedController.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.http.ConstrainedController:json()|java.lang.String\"]"
+        },
+        {
+          "application": "codegraph.fixture:spring-events",
+          "build": "@repo/spring-events",
+          "framework": "spring",
+          "kind": "http",
+          "methods": [
+            "GET",
+            "HEAD"
+          ],
+          "order": 0,
+          "path": "/api/ambiguous",
+          "restrictions": [
+            "spring.produces:text/plain"
+          ],
+          "site": {
+            "column": 5,
+            "file": "@repo/spring-events/src/main/java/fixture/spring/http/ConstrainedController.java",
+            "line": 14,
+            "span": {
+              "end": 601,
+              "start": 471
+            }
+          },
+          "symbol": "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/http/ConstrainedController.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.http.ConstrainedController:text()|java.lang.String\"]"
+        },
+        {
+          "application": "codegraph.fixture:spring-events",
+          "build": "@repo/spring-events",
+          "framework": "spring",
+          "kind": "http",
+          "methods": [
+            "GET",
+            "HEAD"
+          ],
+          "order": 0,
+          "path": "/api/constrained",
+          "restrictions": [
+            "spring.params:mode=special"
+          ],
+          "site": {
+            "column": 5,
+            "file": "@repo/spring-events/src/main/java/fixture/spring/http/ConstrainedController.java",
+            "line": 20,
+            "span": {
+              "end": 889,
+              "start": 734
+            }
+          },
+          "symbol": "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/http/ConstrainedController.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.http.ConstrainedController:constrained()|java.lang.String\"]"
+        },
+        {
+          "application": "codegraph.fixture:spring-events",
+          "build": "@repo/spring-events",
+          "framework": "spring",
+          "kind": "http",
+          "methods": [
+            "GET",
+            "HEAD"
+          ],
+          "order": 0,
+          "path": "/api/constrained",
+          "restrictions": [],
+          "site": {
+            "column": 5,
+            "file": "@repo/spring-events/src/main/java/fixture/spring/http/ConstrainedController.java",
+            "line": 17,
+            "span": {
+              "end": 728,
+              "start": 607
+            }
+          },
+          "symbol": "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/http/ConstrainedController.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.http.ConstrainedController:unconstrained()|java.lang.String\"]"
+        },
+        {
+          "application": "codegraph.fixture:spring-events",
+          "build": "@repo/spring-events",
+          "framework": "spring",
+          "kind": "http",
+          "methods": [
+            "GET",
+            "HEAD"
+          ],
+          "order": 0,
+          "path": "/api/health",
+          "restrictions": [],
+          "site": {
+            "column": 5,
+            "file": "@repo/spring-events/src/main/java/fixture/spring/http/HttpController.java",
+            "line": 22,
+            "span": {
+              "end": 866,
+              "start": 733
+            }
+          },
+          "symbol": "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/http/HttpController.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.http.HttpController:health()|java.lang.String\"]"
+        },
+        {
+          "application": "codegraph.fixture:spring-events",
+          "build": "@repo/spring-events",
+          "framework": "spring",
+          "kind": "http",
+          "methods": [
+            "GET",
+            "HEAD"
+          ],
+          "order": 0,
+          "path": "/api/items",
+          "restrictions": [],
+          "site": {
+            "column": 5,
+            "file": "@repo/spring-events/src/main/java/fixture/spring/http/HttpController.java",
+            "line": 13,
+            "span": {
+              "end": 540,
+              "start": 446
+            }
+          },
+          "symbol": "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/http/HttpController.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.http.HttpController:items()|java.lang.String\"]"
+        },
+        {
+          "application": "codegraph.fixture:spring-events",
+          "build": "@repo/spring-events",
+          "framework": "spring",
+          "kind": "http",
+          "methods": [
+            "GET",
+            "HEAD"
+          ],
+          "order": 0,
+          "path": "/api/items/{id}",
+          "restrictions": [],
+          "site": {
+            "column": 5,
+            "file": "@repo/spring-events/src/main/java/fixture/spring/http/HttpController.java",
+            "line": 16,
+            "span": {
+              "end": 642,
+              "start": 546
+            }
+          },
+          "symbol": "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/http/HttpController.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.http.HttpController:item()|java.lang.String\"]"
+        },
+        {
+          "application": "codegraph.fixture:spring-events",
+          "build": "@repo/spring-events",
+          "framework": "spring",
+          "kind": "http",
+          "methods": [
+            "POST"
+          ],
+          "order": 0,
+          "path": "/api/items",
+          "restrictions": [],
+          "site": {
+            "column": 5,
+            "file": "@repo/spring-events/src/main/java/fixture/spring/http/HttpController.java",
+            "line": 19,
+            "span": {
+              "end": 727,
+              "start": 648
+            }
+          },
+          "symbol": "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/http/HttpController.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.http.HttpController:create()|void\"]"
+        },
+        {
+          "application": "next-app",
+          "build": "@repo/typescript-corpus/tsconfig.json",
+          "framework": "next",
+          "kind": "http",
+          "methods": [
+            "GET",
+            "HEAD"
+          ],
+          "order": 0,
+          "path": "/api",
+          "restrictions": [],
+          "site": {
+            "column": 1,
+            "file": "@repo/typescript-corpus/src/app/api/route.ts",
+            "line": 1,
+            "span": {
+              "end": 52,
+              "start": 0
+            }
+          },
+          "symbol": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/app/api/route.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"GET\\\\\\\",\\\\\\\"(): Response\\\\\\\"]\\\",0]\"]"
+        },
+        {
+          "application": "next-app",
+          "build": "@repo/typescript-corpus/tsconfig.json",
+          "framework": "next",
+          "kind": "navigation",
+          "methods": [],
+          "order": 0,
+          "path": "/",
+          "restrictions": [],
+          "site": {
+            "column": 1,
+            "file": "@repo/typescript-corpus/src/app/page.tsx",
+            "line": 8,
+            "span": {
+              "end": 397,
+              "start": 224
+            }
+          },
+          "symbol": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/app/page.tsx\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"Page\\\\\\\",\\\\\\\"(): Element\\\\\\\"]\\\",0]\"]"
+        },
+        {
+          "application": "next-app",
+          "build": "@repo/typescript-corpus/tsconfig.json",
+          "framework": "next",
+          "kind": "navigation",
+          "methods": [],
+          "order": 0,
+          "path": "/about",
+          "restrictions": [],
+          "site": {
+            "column": 1,
+            "file": "@repo/typescript-corpus/src/app/about/page.tsx",
+            "line": 1,
+            "span": {
+              "end": 66,
+              "start": 0
+            }
+          },
+          "symbol": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/app/about/page.tsx\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"AboutPage\\\\\\\",\\\\\\\"(): Element\\\\\\\"]\\\",0]\"]"
+        },
+        {
+          "application": "next-app",
+          "build": "@repo/typescript-corpus/tsconfig.json",
+          "framework": "next",
+          "kind": "navigation",
+          "methods": [],
+          "order": 0,
+          "path": "/navigation",
+          "restrictions": [],
+          "site": {
+            "column": 1,
+            "file": "@repo/typescript-corpus/src/app/navigation/page.tsx",
+            "line": 5,
+            "span": {
+              "end": 509,
+              "start": 88
+            }
+          },
+          "symbol": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/app/navigation/page.tsx\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"NavigationPage\\\\\\\",\\\\\\\"(): Element\\\\\\\"]\\\",0]\"]"
+        },
+        {
+          "application": "next-app",
+          "build": "@repo/typescript-corpus/tsconfig.json",
+          "framework": "next",
+          "kind": "navigation",
+          "methods": [],
+          "order": 0,
+          "path": "/users/new",
+          "restrictions": [],
+          "site": {
+            "column": 1,
+            "file": "@repo/typescript-corpus/src/app/users/new/page.tsx",
+            "line": 1,
+            "span": {
+              "end": 71,
+              "start": 0
+            }
+          },
+          "symbol": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/app/users/new/page.tsx\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"NewUserPage\\\\\\\",\\\\\\\"(): Element\\\\\\\"]\\\",0]\"]"
+        },
+        {
+          "application": "next-app",
+          "build": "@repo/typescript-corpus/tsconfig.json",
+          "framework": "next",
+          "kind": "navigation",
+          "methods": [],
+          "order": 0,
+          "path": "/users/{id}",
+          "restrictions": [],
+          "site": {
+            "column": 1,
+            "file": "@repo/typescript-corpus/src/app/users/[id]/page.tsx",
+            "line": 1,
+            "span": {
+              "end": 64,
+              "start": 0
+            }
+          },
+          "symbol": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/app/users/[id]/page.tsx\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"UserPage\\\\\\\",\\\\\\\"(): Element\\\\\\\"]\\\",0]\"]"
+        }
+      ],
+      "uses": [
+        {
+          "application": "next-app",
+          "build": "@repo/typescript-corpus/tsconfig.json",
+          "flow": false,
+          "kind": "navigation",
+          "method": null,
+          "path": "/about",
+          "rule": "codegraph.next:link",
+          "site": {
+            "column": 12,
+            "file": "@repo/typescript-corpus/src/app/navigation/page.tsx",
+            "line": 10,
+            "span": {
+              "end": 357,
+              "start": 337
+            }
+          },
+          "symbol": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/app/navigation/page.tsx\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"NavigationPage\\\\\\\",\\\\\\\"(): Element\\\\\\\"]\\\",0]\"]"
+        },
+        {
+          "application": "next-app",
+          "build": "@repo/typescript-corpus/tsconfig.json",
+          "flow": true,
+          "kind": "http",
+          "method": "GET",
+          "path": "/api",
+          "rule": "codegraph.typescript:http",
+          "site": {
+            "column": 40,
+            "file": "@repo/typescript-corpus/src/http.ts",
+            "line": 1,
+            "span": {
+              "end": 52,
+              "start": 39
+            }
+          },
+          "symbol": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/http.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"nextRequest\\\\\\\",\\\\\\\"(): Promise<Response>\\\\\\\"]\\\",0]\"]"
+        },
+        {
+          "application": "next-app",
+          "build": "@repo/typescript-corpus/tsconfig.json",
+          "flow": true,
+          "kind": "http",
+          "method": "GET",
+          "path": "/api/constrained",
+          "rule": "codegraph.typescript:http",
+          "site": {
+            "column": 47,
+            "file": "@repo/typescript-corpus/src/http.ts",
+            "line": 5,
+            "span": {
+              "end": 334,
+              "start": 309
+            }
+          },
+          "symbol": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/http.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"constrainedRequest\\\\\\\",\\\\\\\"(): Promise<Response>\\\\\\\"]\\\",0]\"]"
+        },
+        {
+          "application": "next-app",
+          "build": "@repo/typescript-corpus/tsconfig.json",
+          "flow": true,
+          "kind": "http",
+          "method": "GET",
+          "path": "/api/health",
+          "rule": "codegraph.typescript:http",
+          "site": {
+            "column": 41,
+            "file": "@repo/typescript-corpus/src/http.ts",
+            "line": 6,
+            "span": {
+              "end": 398,
+              "start": 378
+            }
+          },
+          "symbol": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/http.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"springHealth\\\\\\\",\\\\\\\"(): Promise<Response>\\\\\\\"]\\\",0]\"]"
+        },
+        {
+          "application": "next-app",
+          "build": "@repo/typescript-corpus/tsconfig.json",
+          "flow": true,
+          "kind": "http",
+          "method": "GET",
+          "path": "/api/items",
+          "rule": "codegraph.typescript:http",
+          "site": {
+            "column": 40,
+            "file": "@repo/typescript-corpus/src/http.ts",
+            "line": 2,
+            "span": {
+              "end": 114,
+              "start": 95
+            }
+          },
+          "symbol": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/http.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"springItems\\\\\\\",\\\\\\\"(): Promise<Response>\\\\\\\"]\\\",0]\"]"
+        },
+        {
+          "application": "next-app",
+          "build": "@repo/typescript-corpus/tsconfig.json",
+          "flow": true,
+          "kind": "http",
+          "method": "GET",
+          "path": "/api/items/42",
+          "rule": "codegraph.typescript:http",
+          "site": {
+            "column": 39,
+            "file": "@repo/typescript-corpus/src/http.ts",
+            "line": 3,
+            "span": {
+              "end": 178,
+              "start": 156
+            }
+          },
+          "symbol": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/http.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"springItem\\\\\\\",\\\\\\\"(): Promise<Response>\\\\\\\"]\\\",0]\"]"
+        },
+        {
+          "application": "next-app",
+          "build": "@repo/typescript-corpus/tsconfig.json",
+          "flow": true,
+          "kind": "http",
+          "method": "GET",
+          "path": "/api/items/CASEONLY",
+          "rule": "codegraph.typescript:http",
+          "site": {
+            "column": 45,
+            "file": "@repo/typescript-corpus/src/http.ts",
+            "line": 8,
+            "span": {
+              "end": 529,
+              "start": 501
+            }
+          },
+          "symbol": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/http.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"aspCaseCollision\\\\\\\",\\\\\\\"(): Promise<Response>\\\\\\\"]\\\",0]\"]"
+        },
+        {
+          "application": "next-app",
+          "build": "@repo/typescript-corpus/tsconfig.json",
+          "flow": true,
+          "kind": "http",
+          "method": "GET",
+          "path": "/api/items/constraint/42",
+          "rule": "codegraph.typescript:http",
+          "site": {
+            "column": 51,
+            "file": "@repo/typescript-corpus/src/http.ts",
+            "line": 10,
+            "span": {
+              "end": 692,
+              "start": 659
+            }
+          },
+          "symbol": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/http.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"aspConstraintCollision\\\\\\\",\\\\\\\"(): Promise<Response>\\\\\\\"]\\\",0]\"]"
+        },
+        {
+          "application": "next-app",
+          "build": "@repo/typescript-corpus/tsconfig.json",
+          "flow": true,
+          "kind": "http",
+          "method": "GET",
+          "path": "/api/items/ordered",
+          "rule": "codegraph.typescript:http",
+          "site": {
+            "column": 46,
+            "file": "@repo/typescript-corpus/src/http.ts",
+            "line": 9,
+            "span": {
+              "end": 605,
+              "start": 578
+            }
+          },
+          "symbol": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/http.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"aspOrderCollision\\\\\\\",\\\\\\\"(): Promise<Response>\\\\\\\"]\\\",0]\"]"
+        },
+        {
+          "application": "next-app",
+          "build": "@repo/typescript-corpus/tsconfig.json",
+          "flow": true,
+          "kind": "http",
+          "method": "GET",
+          "path": "/ready",
+          "rule": "codegraph.typescript:http",
+          "site": {
+            "column": 37,
+            "file": "@repo/typescript-corpus/src/http.ts",
+            "line": 7,
+            "span": {
+              "end": 453,
+              "start": 438
+            }
+          },
+          "symbol": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/http.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"aspReady\\\\\\\",\\\\\\\"(): Promise<Response>\\\\\\\"]\\\",0]\"]"
+        },
+        {
+          "application": "next-app",
+          "build": "@repo/typescript-corpus/tsconfig.json",
+          "flow": true,
+          "kind": "http",
+          "method": "POST",
+          "path": "/api/items",
+          "rule": "codegraph.typescript:http",
+          "site": {
+            "column": 41,
+            "file": "@repo/typescript-corpus/src/http.ts",
+            "line": 4,
+            "span": {
+              "end": 259,
+              "start": 222
+            }
+          },
+          "symbol": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/http.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"springCreate\\\\\\\",\\\\\\\"(): Promise<Response>\\\\\\\"]\\\",0]\"]"
+        },
+        {
+          "application": "next-app",
+          "build": "@repo/typescript-corpus/tsconfig.json",
+          "flow": true,
+          "kind": "navigation",
+          "method": null,
+          "path": "/about",
+          "rule": "codegraph.next:navigation",
+          "site": {
+            "column": 26,
+            "file": "@repo/typescript-corpus/src/app/navigation/page.tsx",
+            "line": 7,
+            "span": {
+              "end": 207,
+              "start": 186
+            }
+          },
+          "symbol": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/app/navigation/page.tsx\",\"[\\\"[\\\\\\\"[\\\\\\\\\\\\\\\"[\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"<module>\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"FunctionDeclaration\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"NavigationPage\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"(): Element\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"]\\\\\\\\\\\\\\\",0]\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"openAbout\\\\\\\",\\\\\\\"(): void\\\\\\\"]\\\",0]\"]"
+        },
+        {
+          "application": "next-app",
+          "build": "@repo/typescript-corpus/tsconfig.json",
+          "flow": true,
+          "kind": "navigation",
+          "method": null,
+          "path": "/users/42",
+          "rule": "codegraph.next:navigation",
+          "site": {
+            "column": 28,
+            "file": "@repo/typescript-corpus/src/app/navigation/page.tsx",
+            "line": 8,
+            "span": {
+              "end": 265,
+              "start": 238
+            }
+          },
+          "symbol": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/app/navigation/page.tsx\",\"[\\\"[\\\\\\\"[\\\\\\\\\\\\\\\"[\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"<module>\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"FunctionDeclaration\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"NavigationPage\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"(): Element\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"]\\\\\\\\\\\\\\\",0]\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"replaceUser\\\\\\\",\\\\\\\"(): void\\\\\\\"]\\\",0]\"]"
+        }
+      ],
+      "version": 1
+    },
     "diagnostics": [
       "1 unresolved React component bindings",
       "1 unresolved callable flow: callable initializer unavailable",
@@ -1113,10 +2011,18 @@
       "MediatR dispatch deferred (no exact closed source handler in compiler scope) at @repo/mediatr-dispatch/AppA/Dispatch.cs:40:9",
       "MediatR dispatch deferred (no exact closed source handler in compiler scope) at @repo/mediatr-dispatch/AppA/Dispatch.cs:43:9",
       "MediatR dispatch deferred (no exact closed source handler in compiler scope) at @repo/mediatr-dispatch/AppA/Dispatch.cs:46:9",
+      "Spring HTTP routes describe compiler-qualified controller mappings; deployment context paths, global MVC prefixes, bean registration and custom runtime routing are not proven. Unsupported constraints and inherited/composed mappings remain ambiguity blockers.",
       "Spring event analysis is limited to compiler-qualified method publishers and source listeners in the same source context; lambda publishers, custom composed annotations and cross-context wiring remain unresolved.",
       "Spring event targets are static possibilities within one compiler source context. DI registration, event conditions, transaction state and async configuration are not proven. Cross-context and lambda publishers remain unresolved.",
       "Spring publishEvent payload is erased, generic or unresolved at @repo/spring-events/src/main/java/fixture/spring/Publisher.java:22",
-      "Spring publishEvent payload is erased, generic or unresolved at @repo/spring-events/src/main/java/fixture/spring/Publisher.java:26"
+      "Spring publishEvent payload is erased, generic or unresolved at @repo/spring-events/src/main/java/fixture/spring/Publisher.java:26",
+      "http boundary unresolved at @repo/typescript-corpus/src/http.ts:10: route is missing, ambiguous or blocked by unsupported routing behavior",
+      "http boundary unresolved at @repo/typescript-corpus/src/http.ts:2: route is missing, ambiguous or blocked by unsupported routing behavior",
+      "http boundary unresolved at @repo/typescript-corpus/src/http.ts:3: route is missing, ambiguous or blocked by unsupported routing behavior",
+      "http boundary unresolved at @repo/typescript-corpus/src/http.ts:4: route is missing, ambiguous or blocked by unsupported routing behavior",
+      "http boundary unresolved at @repo/typescript-corpus/src/http.ts:5: route is missing, ambiguous or blocked by unsupported routing behavior",
+      "http boundary unresolved at @repo/typescript-corpus/src/http.ts:8: route is missing, ambiguous or blocked by unsupported routing behavior",
+      "http boundary unresolved at @repo/typescript-corpus/src/http.ts:9: route is missing, ambiguous or blocked by unsupported routing behavior"
     ],
     "edges": [
       {
@@ -1558,6 +2464,248 @@
         "kind": "VIR",
         "provenance": "",
         "to": "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/PretendPublisher.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.PretendPublisher:publishEvent(fixture.spring.events.Created)|void\"]"
+      },
+      {
+        "certainty": "possible",
+        "count": 1,
+        "evidence": [
+          {
+            "channel": "GET /api",
+            "invocation": {
+              "column": 40,
+              "file": "@repo/typescript-corpus/src/http.ts",
+              "line": 1,
+              "span": {
+                "end": 52,
+                "start": 39
+              }
+            },
+            "qualifiers": {
+              "boundary.framework": "next"
+            },
+            "registration": {
+              "column": 1,
+              "file": "@repo/typescript-corpus/src/app/api/route.ts",
+              "line": 1,
+              "span": {
+                "end": 52,
+                "start": 0
+              }
+            },
+            "rule": "codegraph.typescript:http",
+            "semantics": "http",
+            "supporting_symbols": [
+              "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/app/api/route.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"GET\\\\\\\",\\\\\\\"(): Response\\\\\\\"]\\\",0]\"]",
+              "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/http.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"nextRequest\\\\\\\",\\\\\\\"(): Promise<Response>\\\\\\\"]\\\",0]\"]"
+            ],
+            "version": 1
+          }
+        ],
+        "from": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/http.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"nextRequest\\\\\\\",\\\\\\\"(): Promise<Response>\\\\\\\"]\\\",0]\"]",
+        "kind": "http",
+        "provenance": "codegraph.boundary.v1",
+        "to": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/app/api/route.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"GET\\\\\\\",\\\\\\\"(): Response\\\\\\\"]\\\",0]\"]"
+      },
+      {
+        "certainty": "possible",
+        "count": 1,
+        "evidence": [
+          {
+            "channel": "GET /api/health",
+            "invocation": {
+              "column": 41,
+              "file": "@repo/typescript-corpus/src/http.ts",
+              "line": 6,
+              "span": {
+                "end": 398,
+                "start": 378
+              }
+            },
+            "qualifiers": {
+              "boundary.framework": "spring"
+            },
+            "registration": {
+              "column": 5,
+              "file": "@repo/spring-events/src/main/java/fixture/spring/http/HttpController.java",
+              "line": 22,
+              "span": {
+                "end": 866,
+                "start": 733
+              }
+            },
+            "rule": "codegraph.typescript:http",
+            "semantics": "http",
+            "supporting_symbols": [
+              "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/http/HttpController.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.http.HttpController:health()|java.lang.String\"]",
+              "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/http.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"springHealth\\\\\\\",\\\\\\\"(): Promise<Response>\\\\\\\"]\\\",0]\"]"
+            ],
+            "version": 1
+          }
+        ],
+        "from": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/http.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"springHealth\\\\\\\",\\\\\\\"(): Promise<Response>\\\\\\\"]\\\",0]\"]",
+        "kind": "http",
+        "provenance": "codegraph.boundary.v1",
+        "to": "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/http/HttpController.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.http.HttpController:health()|java.lang.String\"]"
+      },
+      {
+        "certainty": "possible",
+        "count": 1,
+        "evidence": [
+          {
+            "channel": "GET /ready",
+            "invocation": {
+              "column": 37,
+              "file": "@repo/typescript-corpus/src/http.ts",
+              "line": 7,
+              "span": {
+                "end": 453,
+                "start": 438
+              }
+            },
+            "qualifiers": {
+              "boundary.framework": "aspnet"
+            },
+            "registration": {
+              "column": 6,
+              "file": "@repo/mediatr-dispatch/AppA/Controllers.cs",
+              "line": 21
+            },
+            "rule": "codegraph.typescript:http",
+            "semantics": "http",
+            "supporting_symbols": [
+              "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Controllers.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.Http.ItemsController::Ready()\"]",
+              "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/http.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"aspReady\\\\\\\",\\\\\\\"(): Promise<Response>\\\\\\\"]\\\",0]\"]"
+            ],
+            "version": 1
+          }
+        ],
+        "from": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/http.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"aspReady\\\\\\\",\\\\\\\"(): Promise<Response>\\\\\\\"]\\\",0]\"]",
+        "kind": "http",
+        "provenance": "codegraph.boundary.v1",
+        "to": "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Controllers.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.Http.ItemsController::Ready()\"]"
+      },
+      {
+        "certainty": "possible",
+        "count": 1,
+        "evidence": [
+          {
+            "channel": "NAVIGATE /about",
+            "invocation": {
+              "column": 12,
+              "file": "@repo/typescript-corpus/src/app/navigation/page.tsx",
+              "line": 10,
+              "span": {
+                "end": 357,
+                "start": 337
+              }
+            },
+            "qualifiers": {
+              "boundary.framework": "next"
+            },
+            "registration": {
+              "column": 1,
+              "file": "@repo/typescript-corpus/src/app/about/page.tsx",
+              "line": 1,
+              "span": {
+                "end": 66,
+                "start": 0
+              }
+            },
+            "rule": "codegraph.next:link",
+            "semantics": "navigation",
+            "supporting_symbols": [
+              "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/app/about/page.tsx\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"AboutPage\\\\\\\",\\\\\\\"(): Element\\\\\\\"]\\\",0]\"]",
+              "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/app/navigation/page.tsx\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"NavigationPage\\\\\\\",\\\\\\\"(): Element\\\\\\\"]\\\",0]\"]"
+            ],
+            "version": 1
+          }
+        ],
+        "from": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/app/navigation/page.tsx\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"NavigationPage\\\\\\\",\\\\\\\"(): Element\\\\\\\"]\\\",0]\"]",
+        "kind": "navigation",
+        "provenance": "codegraph.boundary.v1",
+        "to": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/app/about/page.tsx\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"AboutPage\\\\\\\",\\\\\\\"(): Element\\\\\\\"]\\\",0]\"]"
+      },
+      {
+        "certainty": "possible",
+        "count": 1,
+        "evidence": [
+          {
+            "channel": "NAVIGATE /about",
+            "invocation": {
+              "column": 26,
+              "file": "@repo/typescript-corpus/src/app/navigation/page.tsx",
+              "line": 7,
+              "span": {
+                "end": 207,
+                "start": 186
+              }
+            },
+            "qualifiers": {
+              "boundary.framework": "next"
+            },
+            "registration": {
+              "column": 1,
+              "file": "@repo/typescript-corpus/src/app/about/page.tsx",
+              "line": 1,
+              "span": {
+                "end": 66,
+                "start": 0
+              }
+            },
+            "rule": "codegraph.next:navigation",
+            "semantics": "navigation",
+            "supporting_symbols": [
+              "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/app/about/page.tsx\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"AboutPage\\\\\\\",\\\\\\\"(): Element\\\\\\\"]\\\",0]\"]",
+              "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/app/navigation/page.tsx\",\"[\\\"[\\\\\\\"[\\\\\\\\\\\\\\\"[\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"<module>\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"FunctionDeclaration\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"NavigationPage\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"(): Element\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"]\\\\\\\\\\\\\\\",0]\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"openAbout\\\\\\\",\\\\\\\"(): void\\\\\\\"]\\\",0]\"]"
+            ],
+            "version": 1
+          }
+        ],
+        "from": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/app/navigation/page.tsx\",\"[\\\"[\\\\\\\"[\\\\\\\\\\\\\\\"[\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"<module>\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"FunctionDeclaration\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"NavigationPage\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"(): Element\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"]\\\\\\\\\\\\\\\",0]\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"openAbout\\\\\\\",\\\\\\\"(): void\\\\\\\"]\\\",0]\"]",
+        "kind": "navigation",
+        "provenance": "codegraph.boundary.v1",
+        "to": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/app/about/page.tsx\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"AboutPage\\\\\\\",\\\\\\\"(): Element\\\\\\\"]\\\",0]\"]"
+      },
+      {
+        "certainty": "possible",
+        "count": 1,
+        "evidence": [
+          {
+            "channel": "NAVIGATE /users/42",
+            "invocation": {
+              "column": 28,
+              "file": "@repo/typescript-corpus/src/app/navigation/page.tsx",
+              "line": 8,
+              "span": {
+                "end": 265,
+                "start": 238
+              }
+            },
+            "qualifiers": {
+              "boundary.framework": "next"
+            },
+            "registration": {
+              "column": 1,
+              "file": "@repo/typescript-corpus/src/app/users/[id]/page.tsx",
+              "line": 1,
+              "span": {
+                "end": 64,
+                "start": 0
+              }
+            },
+            "rule": "codegraph.next:navigation",
+            "semantics": "navigation",
+            "supporting_symbols": [
+              "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/app/navigation/page.tsx\",\"[\\\"[\\\\\\\"[\\\\\\\\\\\\\\\"[\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"<module>\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"FunctionDeclaration\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"NavigationPage\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"(): Element\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"]\\\\\\\\\\\\\\\",0]\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"replaceUser\\\\\\\",\\\\\\\"(): void\\\\\\\"]\\\",0]\"]",
+              "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/app/users/[id]/page.tsx\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"UserPage\\\\\\\",\\\\\\\"(): Element\\\\\\\"]\\\",0]\"]"
+            ],
+            "version": 1
+          }
+        ],
+        "from": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/app/navigation/page.tsx\",\"[\\\"[\\\\\\\"[\\\\\\\\\\\\\\\"[\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"<module>\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"FunctionDeclaration\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"NavigationPage\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"(): Element\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"]\\\\\\\\\\\\\\\",0]\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"replaceUser\\\\\\\",\\\\\\\"(): void\\\\\\\"]\\\",0]\"]",
+        "kind": "navigation",
+        "provenance": "codegraph.boundary.v1",
+        "to": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/app/users/[id]/page.tsx\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"UserPage\\\\\\\",\\\\\\\"(): Element\\\\\\\"]\\\",0]\"]"
       },
       {
         "certainty": "possible",
@@ -3887,11 +5035,28 @@
         "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/observers.ts\",\"[\\\"[\\\\\\\"[\\\\\\\\\\\\\\\"[\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"<module>\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"ClassDeclaration\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"StaticBus\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"]\\\\\\\\\\\\\\\",0]\\\\\\\",\\\\\\\"MethodDeclaration\\\\\\\",\\\\\\\"triggerUpdate\\\\\\\",\\\\\\\"(): void\\\\\\\"]\\\",0]\"]"
       ],
       "framework_entries": [
+        "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Controllers.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.Http.ItemsController::CaseOne()\"]",
+        "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Controllers.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.Http.ItemsController::CaseTwo()\"]",
+        "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Controllers.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.Http.ItemsController::CatchAll(System.String)\"]",
+        "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Controllers.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.Http.ItemsController::Constrained(System.Int32)\"]",
+        "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Controllers.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.Http.ItemsController::ConstraintLiteral()\"]",
+        "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Controllers.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.Http.ItemsController::Create()\"]",
+        "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Controllers.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.Http.ItemsController::DefaultOrder()\"]",
+        "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Controllers.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.Http.ItemsController::Get(System.String)\"]",
+        "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Controllers.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.Http.ItemsController::Health()\"]",
+        "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Controllers.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.Http.ItemsController::List()\"]",
+        "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Controllers.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.Http.ItemsController::MultipleTemplates()\"]",
+        "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Controllers.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.Http.ItemsController::Ordered()\"]",
+        "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Controllers.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.Http.ItemsController::Ready()\"]",
+        "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Controllers.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.Http.PrioritizedController::Value()\"]",
         "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Handlers.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.BaseRequestHandler::Handle(DispatchContracts.BaseRequest,System.Threading.CancellationToken)\"]",
         "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Handlers.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.ChangedHandlerBase::Handle(DispatchContracts.Changed,System.Threading.CancellationToken)\"]",
         "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Handlers.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.FirstChangedHandler::Handle(DispatchContracts.Changed,System.Threading.CancellationToken)\"]",
         "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Handlers.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.PingHandler::Handle(DispatchContracts.Ping,System.Threading.CancellationToken)\"]",
         "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Handlers.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.ResetHandler::MediatR.IRequestHandler<DispatchContracts.Reset>.Handle(DispatchContracts.Reset,System.Threading.CancellationToken)\"]",
+        "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppB/Controllers.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppB]::DispatchAppB.Http.ItemsController::CaseOnly()\"]",
+        "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppB/Controllers.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppB]::DispatchAppB.Http.ItemsController::Get(System.String)\"]",
+        "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppB/Controllers.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppB]::DispatchAppB.Http.ItemsController::List()\"]",
         "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppB/Dispatch.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppB]::DispatchAppB.ChangedHandler::Handle(DispatchContracts.Changed,System.Threading.CancellationToken)\"]",
         "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppB/Dispatch.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppB]::DispatchAppB.PingHandler::Handle(DispatchContracts.Ping,System.Threading.CancellationToken)\"]",
         "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/InterfaceListener.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.InterfaceListener:onApplicationEvent(fixture.spring.events.Started)|void\"]",
@@ -3903,6 +5068,14 @@
         "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/Listeners.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.Listeners:onOtherCreated(fixture.spring.other.Created)|void\"]",
         "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/Listeners.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.Listeners:onPayload(fixture.spring.events.Created)|void\"]",
         "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/Listeners.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.Listeners:onPayloadEnvelope(org.springframework.context.PayloadApplicationEvent)|void\"]",
+        "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/http/ConstrainedController.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.http.ConstrainedController:constrained()|java.lang.String\"]",
+        "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/http/ConstrainedController.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.http.ConstrainedController:json()|java.lang.String\"]",
+        "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/http/ConstrainedController.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.http.ConstrainedController:text()|java.lang.String\"]",
+        "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/http/ConstrainedController.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.http.ConstrainedController:unconstrained()|java.lang.String\"]",
+        "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/http/HttpController.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.http.HttpController:create()|void\"]",
+        "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/http/HttpController.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.http.HttpController:health()|java.lang.String\"]",
+        "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/http/HttpController.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.http.HttpController:item()|java.lang.String\"]",
+        "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/http/HttpController.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.http.HttpController:items()|java.lang.String\"]",
         "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/app/about/page.tsx\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"AboutPage\\\\\\\",\\\\\\\"(): Element\\\\\\\"]\\\",0]\"]",
         "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/app/api/route.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"GET\\\\\\\",\\\\\\\"(): Response\\\\\\\"]\\\",0]\"]",
         "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/app/navigation/page.tsx\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"NavigationPage\\\\\\\",\\\\\\\"(): Element\\\\\\\"]\\\",0]\"]",
@@ -5593,13 +6766,20 @@
               "value": {
                 "calls": [
                   {
-                    "diagnostic": "No statically bound project target",
+                    "diagnostic": "No statically bound project target\nPossible navigation boundary; runtime dispatch is not proven",
                     "label": "push",
                     "span": {
                       "end": 207,
                       "start": 186
                     },
-                    "targets": []
+                    "targets": [
+                      {
+                        "certainty": "possible",
+                        "kind": "navigation",
+                        "provenance": "codegraph.boundary.v1",
+                        "symbol": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/app/about/page.tsx\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"AboutPage\\\\\\\",\\\\\\\"(): Element\\\\\\\"]\\\",0]\"]"
+                      }
+                    ]
                   }
                 ],
                 "kind": "value",
@@ -5974,13 +7154,20 @@
               "value": {
                 "calls": [
                   {
-                    "diagnostic": "No statically bound project target",
+                    "diagnostic": "No statically bound project target\nPossible navigation boundary; runtime dispatch is not proven",
                     "label": "replace",
                     "span": {
                       "end": 265,
                       "start": 238
                     },
-                    "targets": []
+                    "targets": [
+                      {
+                        "certainty": "possible",
+                        "kind": "navigation",
+                        "provenance": "codegraph.boundary.v1",
+                        "symbol": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/app/users/[id]/page.tsx\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"UserPage\\\\\\\",\\\\\\\"(): Element\\\\\\\"]\\\",0]\"]"
+                      }
+                    ]
                   }
                 ],
                 "kind": "value",
@@ -9693,13 +10880,20 @@
               "value": {
                 "calls": [
                   {
-                    "diagnostic": "No statically bound project target",
+                    "diagnostic": "No statically bound project target\nPossible http boundary; runtime dispatch is not proven",
                     "label": "fetch",
                     "span": {
                       "end": 398,
                       "start": 378
                     },
-                    "targets": []
+                    "targets": [
+                      {
+                        "certainty": "possible",
+                        "kind": "http",
+                        "provenance": "codegraph.boundary.v1",
+                        "symbol": "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/http/HttpController.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.http.HttpController:health()|java.lang.String\"]"
+                      }
+                    ]
                   }
                 ],
                 "kind": "value",
@@ -9827,13 +11021,20 @@
               "value": {
                 "calls": [
                   {
-                    "diagnostic": "No statically bound project target",
+                    "diagnostic": "No statically bound project target\nPossible http boundary; runtime dispatch is not proven",
                     "label": "fetch",
                     "span": {
                       "end": 453,
                       "start": 438
                     },
-                    "targets": []
+                    "targets": [
+                      {
+                        "certainty": "possible",
+                        "kind": "http",
+                        "provenance": "codegraph.boundary.v1",
+                        "symbol": "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Controllers.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.Http.ItemsController::Ready()\"]"
+                      }
+                    ]
                   }
                 ],
                 "kind": "value",
@@ -9940,13 +11141,20 @@
               "value": {
                 "calls": [
                   {
-                    "diagnostic": "No statically bound project target",
+                    "diagnostic": "No statically bound project target\nPossible http boundary; runtime dispatch is not proven",
                     "label": "fetch",
                     "span": {
                       "end": 52,
                       "start": 39
                     },
-                    "targets": []
+                    "targets": [
+                      {
+                        "certainty": "possible",
+                        "kind": "http",
+                        "provenance": "codegraph.boundary.v1",
+                        "symbol": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/app/api/route.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"GET\\\\\\\",\\\\\\\"(): Response\\\\\\\"]\\\",0]\"]"
+                      }
+                    ]
                   }
                 ],
                 "kind": "value",

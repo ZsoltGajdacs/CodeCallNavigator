@@ -159,7 +159,7 @@ membership alone creates no invocation edge. Raw or erased generic payloads,
 directly parameterized payload classes whose type arguments disappear at runtime,
 lambda publishers, custom composed annotations and cross-context wiring remain
 unresolved. A concrete nongeneric subclass can retain generic superclass metadata.
-Runtime analysis requires the matching v5 Java source adapter.
+Runtime analysis requires the matching v6 Java source adapter, including its HTTP inventory capability.
 
 ## MediatR dispatch
 
@@ -183,3 +183,25 @@ requests and handlers outside compiler-visible scope remain unresolved. Concrete
 contract-only subset. C# flow inventories remain unavailable. The matching
 CallAtlas adapter must provide framework-facts capability v1, including snapshot
 round trips; stale/incomplete facts fail explicitly.
+
+
+## Navigation and HTTP
+
+Compiler-bound Next App Router navigation and builtin TypeScript `fetch` create
+possible `navigation` or `http` boundary relationships. They do not imply a
+synchronous call or a proven deployment. Routes come from Next App Router exports,
+qualified Spring Web annotations and ASP.NET MVC controller metadata. Known
+unsupported conditions, catchalls and route orders remain ambiguity blockers.
+
+Cross-language HTTP requires the owning project's `.codegraph/boundaries.yml`.
+Build selection alone does not establish a shared origin. Configuration examples,
+application ownership and the deliberately bounded matching rules are documented
+in [the boundary contract](../crates/codegraph-core/src/boundary/README.md).
+Facts and explicit flow target kinds survive canonical export and the derived
+desktop cache. Next Link JSX adds a graph boundary without inventing a flow call.
+
+Only root-relative literal URLs and supported literal request methods are joined.
+Shadowed/replaced APIs, mutable or escaped routers, dynamic URL/options and
+unmodeled deployment/route behavior stay unresolved. Next configuration or
+middleware/proxy presence conservatively blocks its route candidates; the
+analyzer does not execute project configuration.

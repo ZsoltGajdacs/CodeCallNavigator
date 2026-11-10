@@ -157,12 +157,398 @@
       ],
       "version": 1
     },
+    "boundaries": {
+      "routes": [
+        {
+          "application": "next-app",
+          "build": "@repo/tsconfig.json",
+          "framework": "next",
+          "kind": "http",
+          "methods": [
+            "GET",
+            "HEAD"
+          ],
+          "order": 0,
+          "path": "/api",
+          "restrictions": [],
+          "site": {
+            "column": 1,
+            "file": "@repo/src/app/api/route.ts",
+            "line": 1,
+            "span": {
+              "end": 52,
+              "start": 0
+            }
+          },
+          "symbol": "[\"typescript\",\"@repo/tsconfig.json\",\"@repo/src/app/api/route.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"GET\\\\\\\",\\\\\\\"(): Response\\\\\\\"]\\\",0]\"]"
+        },
+        {
+          "application": "next-app",
+          "build": "@repo/tsconfig.json",
+          "framework": "next",
+          "kind": "navigation",
+          "methods": [],
+          "order": 0,
+          "path": "/",
+          "restrictions": [],
+          "site": {
+            "column": 1,
+            "file": "@repo/src/app/page.tsx",
+            "line": 8,
+            "span": {
+              "end": 397,
+              "start": 224
+            }
+          },
+          "symbol": "[\"typescript\",\"@repo/tsconfig.json\",\"@repo/src/app/page.tsx\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"Page\\\\\\\",\\\\\\\"(): Element\\\\\\\"]\\\",0]\"]"
+        },
+        {
+          "application": "next-app",
+          "build": "@repo/tsconfig.json",
+          "framework": "next",
+          "kind": "navigation",
+          "methods": [],
+          "order": 0,
+          "path": "/about",
+          "restrictions": [],
+          "site": {
+            "column": 1,
+            "file": "@repo/src/app/about/page.tsx",
+            "line": 1,
+            "span": {
+              "end": 66,
+              "start": 0
+            }
+          },
+          "symbol": "[\"typescript\",\"@repo/tsconfig.json\",\"@repo/src/app/about/page.tsx\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"AboutPage\\\\\\\",\\\\\\\"(): Element\\\\\\\"]\\\",0]\"]"
+        },
+        {
+          "application": "next-app",
+          "build": "@repo/tsconfig.json",
+          "framework": "next",
+          "kind": "navigation",
+          "methods": [],
+          "order": 0,
+          "path": "/navigation",
+          "restrictions": [],
+          "site": {
+            "column": 1,
+            "file": "@repo/src/app/navigation/page.tsx",
+            "line": 5,
+            "span": {
+              "end": 509,
+              "start": 88
+            }
+          },
+          "symbol": "[\"typescript\",\"@repo/tsconfig.json\",\"@repo/src/app/navigation/page.tsx\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"NavigationPage\\\\\\\",\\\\\\\"(): Element\\\\\\\"]\\\",0]\"]"
+        },
+        {
+          "application": "next-app",
+          "build": "@repo/tsconfig.json",
+          "framework": "next",
+          "kind": "navigation",
+          "methods": [],
+          "order": 0,
+          "path": "/users/new",
+          "restrictions": [],
+          "site": {
+            "column": 1,
+            "file": "@repo/src/app/users/new/page.tsx",
+            "line": 1,
+            "span": {
+              "end": 71,
+              "start": 0
+            }
+          },
+          "symbol": "[\"typescript\",\"@repo/tsconfig.json\",\"@repo/src/app/users/new/page.tsx\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"NewUserPage\\\\\\\",\\\\\\\"(): Element\\\\\\\"]\\\",0]\"]"
+        },
+        {
+          "application": "next-app",
+          "build": "@repo/tsconfig.json",
+          "framework": "next",
+          "kind": "navigation",
+          "methods": [],
+          "order": 0,
+          "path": "/users/{id}",
+          "restrictions": [],
+          "site": {
+            "column": 1,
+            "file": "@repo/src/app/users/[id]/page.tsx",
+            "line": 1,
+            "span": {
+              "end": 64,
+              "start": 0
+            }
+          },
+          "symbol": "[\"typescript\",\"@repo/tsconfig.json\",\"@repo/src/app/users/[id]/page.tsx\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"UserPage\\\\\\\",\\\\\\\"(): Element\\\\\\\"]\\\",0]\"]"
+        }
+      ],
+      "uses": [
+        {
+          "application": "next-app",
+          "build": "@repo/tsconfig.json",
+          "flow": false,
+          "kind": "navigation",
+          "method": null,
+          "path": "/about",
+          "rule": "codegraph.next:link",
+          "site": {
+            "column": 12,
+            "file": "@repo/src/app/navigation/page.tsx",
+            "line": 10,
+            "span": {
+              "end": 357,
+              "start": 337
+            }
+          },
+          "symbol": "[\"typescript\",\"@repo/tsconfig.json\",\"@repo/src/app/navigation/page.tsx\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"NavigationPage\\\\\\\",\\\\\\\"(): Element\\\\\\\"]\\\",0]\"]"
+        },
+        {
+          "application": "next-app",
+          "build": "@repo/tsconfig.json",
+          "flow": true,
+          "kind": "http",
+          "method": "GET",
+          "path": "/api",
+          "rule": "codegraph.typescript:http",
+          "site": {
+            "column": 40,
+            "file": "@repo/src/http.ts",
+            "line": 1,
+            "span": {
+              "end": 52,
+              "start": 39
+            }
+          },
+          "symbol": "[\"typescript\",\"@repo/tsconfig.json\",\"@repo/src/http.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"nextRequest\\\\\\\",\\\\\\\"(): Promise<Response>\\\\\\\"]\\\",0]\"]"
+        },
+        {
+          "application": "next-app",
+          "build": "@repo/tsconfig.json",
+          "flow": true,
+          "kind": "http",
+          "method": "GET",
+          "path": "/api/constrained",
+          "rule": "codegraph.typescript:http",
+          "site": {
+            "column": 47,
+            "file": "@repo/src/http.ts",
+            "line": 5,
+            "span": {
+              "end": 334,
+              "start": 309
+            }
+          },
+          "symbol": "[\"typescript\",\"@repo/tsconfig.json\",\"@repo/src/http.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"constrainedRequest\\\\\\\",\\\\\\\"(): Promise<Response>\\\\\\\"]\\\",0]\"]"
+        },
+        {
+          "application": "next-app",
+          "build": "@repo/tsconfig.json",
+          "flow": true,
+          "kind": "http",
+          "method": "GET",
+          "path": "/api/health",
+          "rule": "codegraph.typescript:http",
+          "site": {
+            "column": 41,
+            "file": "@repo/src/http.ts",
+            "line": 6,
+            "span": {
+              "end": 398,
+              "start": 378
+            }
+          },
+          "symbol": "[\"typescript\",\"@repo/tsconfig.json\",\"@repo/src/http.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"springHealth\\\\\\\",\\\\\\\"(): Promise<Response>\\\\\\\"]\\\",0]\"]"
+        },
+        {
+          "application": "next-app",
+          "build": "@repo/tsconfig.json",
+          "flow": true,
+          "kind": "http",
+          "method": "GET",
+          "path": "/api/items",
+          "rule": "codegraph.typescript:http",
+          "site": {
+            "column": 40,
+            "file": "@repo/src/http.ts",
+            "line": 2,
+            "span": {
+              "end": 114,
+              "start": 95
+            }
+          },
+          "symbol": "[\"typescript\",\"@repo/tsconfig.json\",\"@repo/src/http.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"springItems\\\\\\\",\\\\\\\"(): Promise<Response>\\\\\\\"]\\\",0]\"]"
+        },
+        {
+          "application": "next-app",
+          "build": "@repo/tsconfig.json",
+          "flow": true,
+          "kind": "http",
+          "method": "GET",
+          "path": "/api/items/42",
+          "rule": "codegraph.typescript:http",
+          "site": {
+            "column": 39,
+            "file": "@repo/src/http.ts",
+            "line": 3,
+            "span": {
+              "end": 178,
+              "start": 156
+            }
+          },
+          "symbol": "[\"typescript\",\"@repo/tsconfig.json\",\"@repo/src/http.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"springItem\\\\\\\",\\\\\\\"(): Promise<Response>\\\\\\\"]\\\",0]\"]"
+        },
+        {
+          "application": "next-app",
+          "build": "@repo/tsconfig.json",
+          "flow": true,
+          "kind": "http",
+          "method": "GET",
+          "path": "/api/items/CASEONLY",
+          "rule": "codegraph.typescript:http",
+          "site": {
+            "column": 45,
+            "file": "@repo/src/http.ts",
+            "line": 8,
+            "span": {
+              "end": 529,
+              "start": 501
+            }
+          },
+          "symbol": "[\"typescript\",\"@repo/tsconfig.json\",\"@repo/src/http.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"aspCaseCollision\\\\\\\",\\\\\\\"(): Promise<Response>\\\\\\\"]\\\",0]\"]"
+        },
+        {
+          "application": "next-app",
+          "build": "@repo/tsconfig.json",
+          "flow": true,
+          "kind": "http",
+          "method": "GET",
+          "path": "/api/items/constraint/42",
+          "rule": "codegraph.typescript:http",
+          "site": {
+            "column": 51,
+            "file": "@repo/src/http.ts",
+            "line": 10,
+            "span": {
+              "end": 692,
+              "start": 659
+            }
+          },
+          "symbol": "[\"typescript\",\"@repo/tsconfig.json\",\"@repo/src/http.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"aspConstraintCollision\\\\\\\",\\\\\\\"(): Promise<Response>\\\\\\\"]\\\",0]\"]"
+        },
+        {
+          "application": "next-app",
+          "build": "@repo/tsconfig.json",
+          "flow": true,
+          "kind": "http",
+          "method": "GET",
+          "path": "/api/items/ordered",
+          "rule": "codegraph.typescript:http",
+          "site": {
+            "column": 46,
+            "file": "@repo/src/http.ts",
+            "line": 9,
+            "span": {
+              "end": 605,
+              "start": 578
+            }
+          },
+          "symbol": "[\"typescript\",\"@repo/tsconfig.json\",\"@repo/src/http.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"aspOrderCollision\\\\\\\",\\\\\\\"(): Promise<Response>\\\\\\\"]\\\",0]\"]"
+        },
+        {
+          "application": "next-app",
+          "build": "@repo/tsconfig.json",
+          "flow": true,
+          "kind": "http",
+          "method": "GET",
+          "path": "/ready",
+          "rule": "codegraph.typescript:http",
+          "site": {
+            "column": 37,
+            "file": "@repo/src/http.ts",
+            "line": 7,
+            "span": {
+              "end": 453,
+              "start": 438
+            }
+          },
+          "symbol": "[\"typescript\",\"@repo/tsconfig.json\",\"@repo/src/http.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"aspReady\\\\\\\",\\\\\\\"(): Promise<Response>\\\\\\\"]\\\",0]\"]"
+        },
+        {
+          "application": "next-app",
+          "build": "@repo/tsconfig.json",
+          "flow": true,
+          "kind": "http",
+          "method": "POST",
+          "path": "/api/items",
+          "rule": "codegraph.typescript:http",
+          "site": {
+            "column": 41,
+            "file": "@repo/src/http.ts",
+            "line": 4,
+            "span": {
+              "end": 259,
+              "start": 222
+            }
+          },
+          "symbol": "[\"typescript\",\"@repo/tsconfig.json\",\"@repo/src/http.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"springCreate\\\\\\\",\\\\\\\"(): Promise<Response>\\\\\\\"]\\\",0]\"]"
+        },
+        {
+          "application": "next-app",
+          "build": "@repo/tsconfig.json",
+          "flow": true,
+          "kind": "navigation",
+          "method": null,
+          "path": "/about",
+          "rule": "codegraph.next:navigation",
+          "site": {
+            "column": 26,
+            "file": "@repo/src/app/navigation/page.tsx",
+            "line": 7,
+            "span": {
+              "end": 207,
+              "start": 186
+            }
+          },
+          "symbol": "[\"typescript\",\"@repo/tsconfig.json\",\"@repo/src/app/navigation/page.tsx\",\"[\\\"[\\\\\\\"[\\\\\\\\\\\\\\\"[\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"<module>\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"FunctionDeclaration\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"NavigationPage\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"(): Element\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"]\\\\\\\\\\\\\\\",0]\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"openAbout\\\\\\\",\\\\\\\"(): void\\\\\\\"]\\\",0]\"]"
+        },
+        {
+          "application": "next-app",
+          "build": "@repo/tsconfig.json",
+          "flow": true,
+          "kind": "navigation",
+          "method": null,
+          "path": "/users/42",
+          "rule": "codegraph.next:navigation",
+          "site": {
+            "column": 28,
+            "file": "@repo/src/app/navigation/page.tsx",
+            "line": 8,
+            "span": {
+              "end": 265,
+              "start": 238
+            }
+          },
+          "symbol": "[\"typescript\",\"@repo/tsconfig.json\",\"@repo/src/app/navigation/page.tsx\",\"[\\\"[\\\\\\\"[\\\\\\\\\\\\\\\"[\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"<module>\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"FunctionDeclaration\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"NavigationPage\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"(): Element\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"]\\\\\\\\\\\\\\\",0]\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"replaceUser\\\\\\\",\\\\\\\"(): void\\\\\\\"]\\\",0]\"]"
+        }
+      ],
+      "version": 1
+    },
     "diagnostics": [
       "1 unresolved React component bindings",
       "1 unresolved callable flow: callable initializer unavailable",
       "1 unresolved observer instance channels (constructor escape or multiple allocations)",
       "3 unresolved callable flow: mutable or decorated callable binding",
-      "4 unresolved dynamic call sites"
+      "4 unresolved dynamic call sites",
+      "http boundary unresolved at @repo/src/http.ts:10: route is missing, ambiguous or blocked by unsupported routing behavior",
+      "http boundary unresolved at @repo/src/http.ts:2: route is missing, ambiguous or blocked by unsupported routing behavior",
+      "http boundary unresolved at @repo/src/http.ts:3: route is missing, ambiguous or blocked by unsupported routing behavior",
+      "http boundary unresolved at @repo/src/http.ts:4: route is missing, ambiguous or blocked by unsupported routing behavior",
+      "http boundary unresolved at @repo/src/http.ts:5: route is missing, ambiguous or blocked by unsupported routing behavior",
+      "http boundary unresolved at @repo/src/http.ts:6: route is missing, ambiguous or blocked by unsupported routing behavior",
+      "http boundary unresolved at @repo/src/http.ts:7: route is missing, ambiguous or blocked by unsupported routing behavior",
+      "http boundary unresolved at @repo/src/http.ts:8: route is missing, ambiguous or blocked by unsupported routing behavior",
+      "http boundary unresolved at @repo/src/http.ts:9: route is missing, ambiguous or blocked by unsupported routing behavior"
     ],
     "edges": [
       {
@@ -292,6 +678,170 @@
         "kind": "call",
         "provenance": "typescript.compiler",
         "to": "[\"typescript\",\"@repo/tsconfig.json\",\"@repo/src/observers.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"subscribe\\\\\\\",\\\\\\\"(callback: Listener): void\\\\\\\"]\\\",0]\"]"
+      },
+      {
+        "certainty": "possible",
+        "count": 1,
+        "evidence": [
+          {
+            "channel": "GET /api",
+            "invocation": {
+              "column": 40,
+              "file": "@repo/src/http.ts",
+              "line": 1,
+              "span": {
+                "end": 52,
+                "start": 39
+              }
+            },
+            "qualifiers": {
+              "boundary.framework": "next"
+            },
+            "registration": {
+              "column": 1,
+              "file": "@repo/src/app/api/route.ts",
+              "line": 1,
+              "span": {
+                "end": 52,
+                "start": 0
+              }
+            },
+            "rule": "codegraph.typescript:http",
+            "semantics": "http",
+            "supporting_symbols": [
+              "[\"typescript\",\"@repo/tsconfig.json\",\"@repo/src/app/api/route.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"GET\\\\\\\",\\\\\\\"(): Response\\\\\\\"]\\\",0]\"]",
+              "[\"typescript\",\"@repo/tsconfig.json\",\"@repo/src/http.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"nextRequest\\\\\\\",\\\\\\\"(): Promise<Response>\\\\\\\"]\\\",0]\"]"
+            ],
+            "version": 1
+          }
+        ],
+        "from": "[\"typescript\",\"@repo/tsconfig.json\",\"@repo/src/http.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"nextRequest\\\\\\\",\\\\\\\"(): Promise<Response>\\\\\\\"]\\\",0]\"]",
+        "kind": "http",
+        "provenance": "codegraph.boundary.v1",
+        "to": "[\"typescript\",\"@repo/tsconfig.json\",\"@repo/src/app/api/route.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"GET\\\\\\\",\\\\\\\"(): Response\\\\\\\"]\\\",0]\"]"
+      },
+      {
+        "certainty": "possible",
+        "count": 1,
+        "evidence": [
+          {
+            "channel": "NAVIGATE /about",
+            "invocation": {
+              "column": 12,
+              "file": "@repo/src/app/navigation/page.tsx",
+              "line": 10,
+              "span": {
+                "end": 357,
+                "start": 337
+              }
+            },
+            "qualifiers": {
+              "boundary.framework": "next"
+            },
+            "registration": {
+              "column": 1,
+              "file": "@repo/src/app/about/page.tsx",
+              "line": 1,
+              "span": {
+                "end": 66,
+                "start": 0
+              }
+            },
+            "rule": "codegraph.next:link",
+            "semantics": "navigation",
+            "supporting_symbols": [
+              "[\"typescript\",\"@repo/tsconfig.json\",\"@repo/src/app/about/page.tsx\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"AboutPage\\\\\\\",\\\\\\\"(): Element\\\\\\\"]\\\",0]\"]",
+              "[\"typescript\",\"@repo/tsconfig.json\",\"@repo/src/app/navigation/page.tsx\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"NavigationPage\\\\\\\",\\\\\\\"(): Element\\\\\\\"]\\\",0]\"]"
+            ],
+            "version": 1
+          }
+        ],
+        "from": "[\"typescript\",\"@repo/tsconfig.json\",\"@repo/src/app/navigation/page.tsx\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"NavigationPage\\\\\\\",\\\\\\\"(): Element\\\\\\\"]\\\",0]\"]",
+        "kind": "navigation",
+        "provenance": "codegraph.boundary.v1",
+        "to": "[\"typescript\",\"@repo/tsconfig.json\",\"@repo/src/app/about/page.tsx\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"AboutPage\\\\\\\",\\\\\\\"(): Element\\\\\\\"]\\\",0]\"]"
+      },
+      {
+        "certainty": "possible",
+        "count": 1,
+        "evidence": [
+          {
+            "channel": "NAVIGATE /about",
+            "invocation": {
+              "column": 26,
+              "file": "@repo/src/app/navigation/page.tsx",
+              "line": 7,
+              "span": {
+                "end": 207,
+                "start": 186
+              }
+            },
+            "qualifiers": {
+              "boundary.framework": "next"
+            },
+            "registration": {
+              "column": 1,
+              "file": "@repo/src/app/about/page.tsx",
+              "line": 1,
+              "span": {
+                "end": 66,
+                "start": 0
+              }
+            },
+            "rule": "codegraph.next:navigation",
+            "semantics": "navigation",
+            "supporting_symbols": [
+              "[\"typescript\",\"@repo/tsconfig.json\",\"@repo/src/app/about/page.tsx\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"AboutPage\\\\\\\",\\\\\\\"(): Element\\\\\\\"]\\\",0]\"]",
+              "[\"typescript\",\"@repo/tsconfig.json\",\"@repo/src/app/navigation/page.tsx\",\"[\\\"[\\\\\\\"[\\\\\\\\\\\\\\\"[\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"<module>\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"FunctionDeclaration\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"NavigationPage\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"(): Element\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"]\\\\\\\\\\\\\\\",0]\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"openAbout\\\\\\\",\\\\\\\"(): void\\\\\\\"]\\\",0]\"]"
+            ],
+            "version": 1
+          }
+        ],
+        "from": "[\"typescript\",\"@repo/tsconfig.json\",\"@repo/src/app/navigation/page.tsx\",\"[\\\"[\\\\\\\"[\\\\\\\\\\\\\\\"[\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"<module>\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"FunctionDeclaration\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"NavigationPage\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"(): Element\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"]\\\\\\\\\\\\\\\",0]\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"openAbout\\\\\\\",\\\\\\\"(): void\\\\\\\"]\\\",0]\"]",
+        "kind": "navigation",
+        "provenance": "codegraph.boundary.v1",
+        "to": "[\"typescript\",\"@repo/tsconfig.json\",\"@repo/src/app/about/page.tsx\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"AboutPage\\\\\\\",\\\\\\\"(): Element\\\\\\\"]\\\",0]\"]"
+      },
+      {
+        "certainty": "possible",
+        "count": 1,
+        "evidence": [
+          {
+            "channel": "NAVIGATE /users/42",
+            "invocation": {
+              "column": 28,
+              "file": "@repo/src/app/navigation/page.tsx",
+              "line": 8,
+              "span": {
+                "end": 265,
+                "start": 238
+              }
+            },
+            "qualifiers": {
+              "boundary.framework": "next"
+            },
+            "registration": {
+              "column": 1,
+              "file": "@repo/src/app/users/[id]/page.tsx",
+              "line": 1,
+              "span": {
+                "end": 64,
+                "start": 0
+              }
+            },
+            "rule": "codegraph.next:navigation",
+            "semantics": "navigation",
+            "supporting_symbols": [
+              "[\"typescript\",\"@repo/tsconfig.json\",\"@repo/src/app/navigation/page.tsx\",\"[\\\"[\\\\\\\"[\\\\\\\\\\\\\\\"[\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"<module>\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"FunctionDeclaration\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"NavigationPage\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"(): Element\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"]\\\\\\\\\\\\\\\",0]\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"replaceUser\\\\\\\",\\\\\\\"(): void\\\\\\\"]\\\",0]\"]",
+              "[\"typescript\",\"@repo/tsconfig.json\",\"@repo/src/app/users/[id]/page.tsx\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"UserPage\\\\\\\",\\\\\\\"(): Element\\\\\\\"]\\\",0]\"]"
+            ],
+            "version": 1
+          }
+        ],
+        "from": "[\"typescript\",\"@repo/tsconfig.json\",\"@repo/src/app/navigation/page.tsx\",\"[\\\"[\\\\\\\"[\\\\\\\\\\\\\\\"[\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"<module>\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"FunctionDeclaration\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"NavigationPage\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"(): Element\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"]\\\\\\\\\\\\\\\",0]\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"replaceUser\\\\\\\",\\\\\\\"(): void\\\\\\\"]\\\",0]\"]",
+        "kind": "navigation",
+        "provenance": "codegraph.boundary.v1",
+        "to": "[\"typescript\",\"@repo/tsconfig.json\",\"@repo/src/app/users/[id]/page.tsx\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"UserPage\\\\\\\",\\\\\\\"(): Element\\\\\\\"]\\\",0]\"]"
       },
       {
         "certainty": "possible",
@@ -2289,13 +2839,20 @@
               "value": {
                 "calls": [
                   {
-                    "diagnostic": "No statically bound project target",
+                    "diagnostic": "No statically bound project target\nPossible navigation boundary; runtime dispatch is not proven",
                     "label": "push",
                     "span": {
                       "end": 207,
                       "start": 186
                     },
-                    "targets": []
+                    "targets": [
+                      {
+                        "certainty": "possible",
+                        "kind": "navigation",
+                        "provenance": "codegraph.boundary.v1",
+                        "symbol": "[\"typescript\",\"@repo/tsconfig.json\",\"@repo/src/app/about/page.tsx\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"AboutPage\\\\\\\",\\\\\\\"(): Element\\\\\\\"]\\\",0]\"]"
+                      }
+                    ]
                   }
                 ],
                 "kind": "value",
@@ -2472,13 +3029,20 @@
               "value": {
                 "calls": [
                   {
-                    "diagnostic": "No statically bound project target",
+                    "diagnostic": "No statically bound project target\nPossible navigation boundary; runtime dispatch is not proven",
                     "label": "replace",
                     "span": {
                       "end": 265,
                       "start": 238
                     },
-                    "targets": []
+                    "targets": [
+                      {
+                        "certainty": "possible",
+                        "kind": "navigation",
+                        "provenance": "codegraph.boundary.v1",
+                        "symbol": "[\"typescript\",\"@repo/tsconfig.json\",\"@repo/src/app/users/[id]/page.tsx\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"UserPage\\\\\\\",\\\\\\\"(): Element\\\\\\\"]\\\",0]\"]"
+                      }
+                    ]
                   }
                 ],
                 "kind": "value",
@@ -4789,13 +5353,20 @@
               "value": {
                 "calls": [
                   {
-                    "diagnostic": "No statically bound project target",
+                    "diagnostic": "No statically bound project target\nPossible http boundary; runtime dispatch is not proven",
                     "label": "fetch",
                     "span": {
                       "end": 52,
                       "start": 39
                     },
-                    "targets": []
+                    "targets": [
+                      {
+                        "certainty": "possible",
+                        "kind": "http",
+                        "provenance": "codegraph.boundary.v1",
+                        "symbol": "[\"typescript\",\"@repo/tsconfig.json\",\"@repo/src/app/api/route.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"GET\\\\\\\",\\\\\\\"(): Response\\\\\\\"]\\\",0]\"]"
+                      }
+                    ]
                   }
                 ],
                 "kind": "value",

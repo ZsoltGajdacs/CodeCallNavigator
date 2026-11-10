@@ -106,7 +106,16 @@ pub fn analyze_with_linked_roots(
     let mut targets = targets;
     targets.sort_by_key(BuildTarget::identity);
     targets.dedup_by(|a, b| a.identity() == b.identity());
-    let graph = native(targets, progress)?;
+    let (boundaries, boundary_inputs) =
+        codegraph_core::boundary::Configuration::load(&project, &targets)?;
+    let mut graph = native(targets, progress)?;
+    graph.fingerprints.extend(boundary_inputs);
+    let relationships = graph.edges.len();
+    codegraph_core::boundary::resolve(&mut graph, &boundaries)?;
+    metrics::count(
+        "relationships",
+        graph.edges.len().saturating_sub(relationships) as u64,
+    );
     let roots = if options.infer_linked {
         super::linked_roots::infer(&graph, &project, roots)?
     } else {

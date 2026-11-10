@@ -60,6 +60,9 @@ impl Transform<'_> {
     }
 
     fn symbol(&self, value: &mut Value) -> Result<()> {
+        if value.is_null() {
+            return Ok(());
+        }
         if let Some(identities) = self.identities {
             identity::rewrite(value, identities)?;
         }
@@ -121,6 +124,10 @@ fn unordered(field: &str) -> bool {
             | "roots"
             | "diagnostics"
             | "functions"
+            | "routes"
+            | "uses"
+            | "methods"
+            | "restrictions"
             | "files"
             | "candidates"
             | "application_starts"

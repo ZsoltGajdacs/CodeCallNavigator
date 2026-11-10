@@ -112,3 +112,20 @@ calls retain their old behavior.
 Graph and flow use the same invocation descriptors, with possible certainty,
 `codegraph.callable.v1` provenance and source-backed rule evidence. Callable flow
 does not replace observer targets or convert argument references into invocations.
+
+`boundary.js` exports versioned route/use facts for the shared boundary resolver.
+App Router APIs must bind through `next/navigation`; Link must bind through
+`next/link`. Pages Router, local reexports and unrelated same-name declarations
+are outside this subset. Only immutable nonescaped router receivers are accepted.
+Link `as` and spreads defer inference. Builtin fetch accepts literal root-relative
+URLs and supported literal options/methods; compiler-owned global-object writes
+and structural escapes invalidate that proof. Class initialization regions are
+not attributed to enclosing functions.
+
+Next route groups retain competing destinations, single dynamic segments become
+shared `{name}` templates, and catchalls/parallel/intercepted routes remain blockers.
+GET contributes implicit HEAD only without an explicit HEAD export. Configuration
+or middleware/proxy presence conservatively blocks routing rather than executing
+project configuration. Metadata tracks present and absent configuration files.
+The Rust entry point requires boundary capability v1 and a present inventory;
+stale adapter distributions fail explicitly.

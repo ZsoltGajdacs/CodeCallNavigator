@@ -23,6 +23,8 @@ pub(super) struct SourceInventory {
     pub has_architecture: bool,
     pub has_flow: bool,
     pub has_framework: bool,
+    pub has_http: bool,
+    pub http_routes: Vec<super::http::SourceRoute>,
     pub flows: Vec<super::flow_inventory::SourceFlow>,
     pub framework: Vec<super::framework::SourcePair>,
     pub framework_diagnostics: Vec<String>,
@@ -33,8 +35,8 @@ impl SourceInventory {
     pub fn read_current(path: &Path) -> Result<Self> {
         let inventory = Self::read(path)?;
         ensure!(
-            inventory.has_framework,
-            "Java source inventory lacks framework capability kind_v5; rebuild the matching Java adapter"
+            inventory.has_http,
+            "Java source inventory lacks HTTP capability kind_v6; rebuild the matching Java adapter"
         );
         Ok(inventory)
     }
@@ -43,22 +45,7 @@ impl SourceInventory {
         let mut inventory = Self::default();
         let mut rows = tsv_rows(path)?;
         let mut header = rows.next().transpose()?;
-        inventory.has_framework = header
-            .as_ref()
-            .is_some_and(|fields| fields.first().is_some_and(|field| field == "kind_v5"));
-        inventory.has_flow = header.as_ref().is_some_and(|fields| {
-            fields
-                .first()
-                .is_some_and(|field| matches!(field.as_str(), "kind_v4" | "kind_v5"))
-        });
-        inventory.has_architecture = header.as_ref().is_some_and(|fields| {
-            fields
-                .first()
-                .is_some_and(|field| matches!(field.as_str(), "kind_v3" | "kind_v4" | "kind_v5"))
-        });
-        if inventory.has_architecture {
-            header.as_mut().unwrap()[0] = "kind_v2".into();
-        }
+        inventory.capabilities(&mut header);
         ensure!(
             header
                 .as_ref()
@@ -88,6 +75,9 @@ impl SourceInventory {
                 "flow" => {
                     inventory.flows.push(serde_json::from_str(&fields[3])?);
                 }
+                "http-route" => inventory
+                    .http_routes
+                    .push(serde_json::from_str(&fields[3])?),
                 "framework" => inventory.framework.push(serde_json::from_str(&fields[3])?),
                 "framework-listener" => inventory.framework_listeners.push(fields[3].clone()),
                 "framework-diagnostic" => inventory.framework_diagnostics.push(fields[3].clone()),
@@ -105,6 +95,33 @@ impl SourceInventory {
             }
         }
         Ok(inventory)
+    }
+
+    fn capabilities(&mut self, header: &mut Option<Vec<String>>) {
+        self.has_http = header
+            .as_ref()
+            .is_some_and(|fields| fields.first().is_some_and(|field| field == "kind_v6"));
+        self.has_framework = header.as_ref().is_some_and(|fields| {
+            fields
+                .first()
+                .is_some_and(|field| matches!(field.as_str(), "kind_v5" | "kind_v6"))
+        });
+        self.has_flow = header.as_ref().is_some_and(|fields| {
+            fields
+                .first()
+                .is_some_and(|field| matches!(field.as_str(), "kind_v4" | "kind_v5" | "kind_v6"))
+        });
+        self.has_architecture = header.as_ref().is_some_and(|fields| {
+            fields.first().is_some_and(|field| {
+                matches!(
+                    field.as_str(),
+                    "kind_v3" | "kind_v4" | "kind_v5" | "kind_v6"
+                )
+            })
+        });
+        if self.has_architecture {
+            header.as_mut().unwrap()[0] = "kind_v2".into();
+        }
     }
 
     pub fn declares(&self, signature: &str, return_type: &str) -> bool {
@@ -189,9 +206,9 @@ mod capability_tests {
         let directory = tempfile::tempdir().unwrap();
         let path = directory.path().join("source.tsv");
         let suffix = "\tsignature\treturn_type\tstart_line\tend_line\tstart_column\tend_column\tcontext\tassigned_name\n";
-        for version in ["kind_v2", "kind_v3", "kind_v4"] {
+        for version in ["kind_v2", "kind_v3", "kind_v4", "kind_v5"] {
             std::fs::write(&path, format!("{version}{suffix}")).unwrap();
-            assert!(!SourceInventory::read(&path).unwrap().has_framework);
+            assert!(!SourceInventory::read(&path).unwrap().has_http);
             assert!(
                 SourceInventory::read_current(&path)
                     .err()
@@ -200,7 +217,7 @@ mod capability_tests {
                     .contains("rebuild the matching Java adapter")
             );
         }
-        std::fs::write(&path, format!("kind_v5{suffix}")).unwrap();
-        assert!(SourceInventory::read_current(&path).unwrap().has_framework);
+        std::fs::write(&path, format!("kind_v6{suffix}")).unwrap();
+        assert!(SourceInventory::read_current(&path).unwrap().has_http);
     }
 }

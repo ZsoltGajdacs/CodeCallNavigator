@@ -9,6 +9,6 @@
     {"name": "typescript", "source": "fixtures/typescript-corpus", "targets": ["tsconfig.json"], "dependencies": "CODEGRAPH_TS_NODE_MODULES", "checks": "tests/typescript_pipeline.rs"},
     {"name": "spring", "source": "fixtures/spring-events", "targets": ["pom.xml"], "libraries": {"spring-context": "6.2.5", "spring-tx": "6.2.5", "maven-compiler-plugin": "3.14.1"}, "checks": "tests/java_spring.rs"},
     {"name": "mediatr", "source": "fixtures/mediatr-dispatch", "targets": ["MediatRDispatch.sln"], "libraries": {"MediatR": "12.4.1"}, "checks": "tests/mediatr_dispatch.rs"},
-    {"name": "mixed", "components": ["maven", "csharp", "typescript", "spring", "mediatr"], "checks": "tests/multi_root.rs"}
+    {"name": "mixed", "components": ["maven", "csharp", "typescript", "spring", "mediatr"], "http": [{"client":"typescript","servers":[{"component":"spring"},{"component":"mediatr","application":"AppA"}]}], "checks": "tests/multi_root.rs"}
   ]
 }

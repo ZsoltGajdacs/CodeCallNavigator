@@ -18,6 +18,7 @@ mod engine;
 mod flow_inventory;
 mod framework;
 mod gradle;
+mod http;
 mod lambda_names;
 #[cfg(test)]
 mod lambda_tests;
