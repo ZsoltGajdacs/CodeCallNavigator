@@ -1,5 +1,6 @@
 'use strict';
 const path=require('node:path');
+const {sourcePath}=require('./paths.js');
 function addNames(values,name) {
   if(!name) return;
   values.add(name);
@@ -75,8 +76,9 @@ class FileInventory {
 function architectureFacts(context,{file,checker,owner}) {
   const inventory=new FileInventory(context,checker);
   inventory.collect(file);
-  const relative=path.relative(path.dirname(owner),file.fileName);
-  return {build:owner,project:path.basename(path.dirname(owner)),file:file.fileName,language:'typescript',
+  const source=sourcePath(file);
+  const relative=path.relative(path.dirname(owner),source);
+  return {build:owner,project:path.basename(path.dirname(owner)),file:source,language:'typescript',
     ...inventory.values(),is_interface:inventory.kinds.has('interface'),content:file.text,
     is_test:/(?:^|\/)(?:__tests__|tests?|test-support|test-fixtures)(?:\/|$)|\.(?:test|spec)\.[cm]?tsx?$/.test(relative)};
 }

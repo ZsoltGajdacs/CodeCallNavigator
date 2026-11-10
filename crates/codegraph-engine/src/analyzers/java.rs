@@ -70,11 +70,7 @@ fn analyze_compiled(
     let contexts = contexts::plan(&metadata.source_sets)?;
     let bytecode_before = contexts::snapshot(&contexts)?;
     let before_engine = build::snapshot(build, metadata, true)?;
-    let mut graph = GraphData {
-        roots: vec![build.path.to_string_lossy().into_owned()],
-        architecture: super::architecture::empty(),
-        ..GraphData::default()
-    };
+    let mut graph = compiled_graph(build, metadata);
     let mut composer = compose::Composer::default();
     let mut inventories = engine::SourceInventories::default();
     for (index, planned) in contexts.iter().enumerate() {
@@ -123,6 +119,24 @@ fn analyze_compiled(
         .to_string();
     graph.engine_versions = serde_json::json!({"java_context_protocol": 1, "compile_contexts": visibility, "classpath_order_hash": order_hash}).to_string();
     Ok(graph)
+}
+
+fn compiled_graph(build: &BuildTarget, metadata: &build::JavaBuildMetadata) -> GraphData {
+    GraphData {
+        roots: vec![build.path.to_string_lossy().into_owned()],
+        identity_roots: metadata
+            .modules
+            .iter()
+            .map(|root| root.to_string_lossy().into_owned())
+            .collect(),
+        folder_project_builds: if build.kind == "gradle" {
+            vec![build.path.to_string_lossy().into_owned()]
+        } else {
+            Vec::new()
+        },
+        architecture: super::architecture::empty(),
+        ..GraphData::default()
+    }
 }
 
 fn compiled_paths(root: &Path, paths: &mut Vec<PathBuf>) -> Result<()> {
@@ -420,6 +434,7 @@ mod tests {
         JavaInput {
             path: classes.clone(),
             source_set: Some(JavaSourceSet {
+                application: None,
                 project: "fixture".into(),
                 source_set: "main".into(),
                 compile_classpath: Vec::new(),

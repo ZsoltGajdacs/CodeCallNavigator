@@ -400,6 +400,13 @@
       ],
       "version": 1
     },
+    "folder_project_builds": [
+      "@repo/"
+    ],
+    "identity_roots": [
+      "@repo/app",
+      "@repo/library"
+    ],
     "nodes": [
       {
         "body_unavailable": false,

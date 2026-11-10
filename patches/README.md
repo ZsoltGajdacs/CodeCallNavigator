@@ -94,6 +94,16 @@ MediatR checkpoint is preserved in
 `callatlas-assembly-identity-pre-http.patch`; its checksum is pinned in the lock
 file so bootstrap can replace that exact prior source state safely.
 
+The review checkpoint is preserved in
+`callatlas-assembly-identity-pre-review.patch`, with its checksum in the lock.
+The current combined patch additionally recognizes compiler-qualified custom
+HTTP-method metadata, endpoint metadata providers (including awaitable results
+and parameters), and MVC conventions applied to controllers, actions, parameters
+and properties. Unknown runtime route rewrites produce owner-wide blockers;
+source analysis never executes these providers. Same-named unrelated types and
+unapplied application-model convention attributes remain negative controls.
+Apply this combined patch once, in place of any exact recognized checkpoint.
+
 
 # Rune platform warnings patch
 
@@ -139,7 +149,9 @@ Patch migration tests: `python3 -m unittest discover -s tools -p test_dependency
 Bootstrap and packaging compare the entire checkout diff with the verified patch
 bytes. A patch may add source files: `git apply` leaves those files untracked,
 so verification uses a disposable Git index to include them in the comparison.
-The upstream checkout's real index is preserved. Extra untracked files or other
+The upstream checkout's real index is preserved. Verification clears hidden-path
+index flags only in its disposable copy and disables external diff and textconv
+commands, so those Git settings cannot conceal source edits. Extra untracked files or other
 unrecorded changes make the diff differ and are rejected; no stash is used.
 
 Added-file installation, repeat verification, previous-patch migration and

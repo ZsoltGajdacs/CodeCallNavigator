@@ -117,5 +117,19 @@ mappings and unsupported path patterns remain inventory blockers; unbound method
 also survive as blockers. Fake annotations with the same simple names are ignored.
 Property-dependent paths remain owner-wide blockers. Route facts do not prove bean
 registration, servlet deployment context paths or custom global MVC configuration.
-The current engine requires matching v6 resources; legacy inventory formats remain
+The current engine requires matching v7 resources; legacy inventory formats remain
 readable for historical fixtures but cannot silently satisfy the current runtime.
+
+The current `kind_v7` source inventory adds portable lambda export keys. Within
+named type owners, javac supplies a logical enclosing method/initializer, a
+syntactic role, normalized AST fingerprint and deterministic sibling occurrence.
+Rust exports those keys only where the existing source-to-bytecode flow binding
+proves a unique source match, and includes the owning compile-context prefix.
+Native bytecode method identities and call bindings stay unchanged.
+
+Same-line or overlapping lambdas, missing debug locations and anonymous/local type
+owners remain compiler-native identities with an explicit graph diagnostic. They
+may still be renumbered by javac when unrelated lambdas are inserted. No binding is
+guessed to conceal this limitation; exact compiler/bytecode correlation remains a
+separate follow-up. Rebuild matching analyzer resources when moving from an older
+inventory capability.

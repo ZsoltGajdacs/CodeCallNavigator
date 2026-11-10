@@ -83,6 +83,11 @@ time.sleep(12)
 }
 
 #[test]
+fn crashed_engine_with_inherited_output_pipe_is_bounded_and_stops_its_group() {
+    failed_engine_child("subprocess.Popen(['sleep', '8'])", Duration::from_secs(7));
+}
+
+#[test]
 #[ignore = "requires process-table access outside the macOS sandbox for detached descendant cleanup"]
 fn forced_cancellation_reaps_engine_and_its_separate_child_group() {
     use std::os::unix::fs::PermissionsExt;
@@ -266,5 +271,70 @@ fn real_engine_cancellation_reaps_build_and_preserves_previous_artifact() {
     assert_eq!(
         fs::read(project.join(GRAPH_PATH)).unwrap(),
         b"previous graph"
+    );
+}
+
+#[test]
+fn crashed_engine_with_closed_output_stops_remaining_owned_group() {
+    failed_engine_child(
+        "subprocess.Popen(['sleep', '30'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)",
+        Duration::from_secs(2),
+    );
+}
+
+#[test]
+fn crashed_engine_with_chatty_inherited_output_still_observes_leader_exit() {
+    let child = r#"subprocess.Popen([sys.executable, '-u', '-c',
+"import json,time\nfor i in range(1600):\n print(json.dumps({'event':'progress','message':'inherited'}),flush=True);time.sleep(.005)"])"#;
+    failed_engine_child(child, Duration::from_secs(7));
+}
+
+fn failed_engine_child(child_expression: &str, bound: Duration) {
+    use std::os::unix::fs::PermissionsExt;
+    let root = tempfile::tempdir().unwrap();
+    let script = root.path().join("engine");
+    let marker = root.path().join("child");
+    let source = r#"#!/usr/bin/env python3
+import json, pathlib, subprocess, sys
+sys.stdin.readline()
+child = CHILD_EXPRESSION
+pathlib.Path(__file__).with_name('child').write_text(str(child.pid))
+print(json.dumps({'event': 'hello', 'version': 1}), flush=True)
+sys.exit(7)
+"#
+    .replace("CHILD_EXPRESSION", child_expression);
+    fs::write(&script, source).unwrap();
+    fs::set_permissions(&script, fs::Permissions::from_mode(0o755)).unwrap();
+    let runtime = Runtime {
+        engine: script,
+        resources: root.path().into(),
+        dot: Default::default(),
+    };
+    let request = Request::Discover {
+        version: VERSION,
+        project: root.path().into(),
+    };
+    let started = Instant::now();
+    let result = exchange(&runtime, &request, &AtomicBool::new(false), &|_| {});
+    assert!(result.is_err());
+    let elapsed = started.elapsed();
+    let pid: i32 = fs::read_to_string(marker).unwrap().parse().unwrap();
+    let cleanup = Instant::now();
+    while unsafe { libc::kill(pid, 0) } == 0 && cleanup.elapsed() < Duration::from_secs(1) {
+        std::thread::sleep(Duration::from_millis(20));
+    }
+    let alive = unsafe { libc::kill(pid, 0) } == 0;
+    if alive {
+        unsafe {
+            libc::kill(pid, libc::SIGKILL);
+        }
+    }
+    assert!(
+        elapsed < bound,
+        "Waited for an exited engine's child: {elapsed:?}"
+    );
+    assert!(
+        !alive,
+        "Engine-owned child survived its leader's failed exit"
     );
 }

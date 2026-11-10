@@ -1,4 +1,7 @@
-use super::{identity, paths::Paths};
+use super::{
+    identity,
+    paths::{Paths, ProjectOwner, SourceDisplay},
+};
 use anyhow::{Context, Result};
 use serde_json::Value;
 use std::collections::HashMap;
@@ -13,6 +16,14 @@ pub(super) fn transform(
         paths,
         identities,
         hydrate,
+        folder_builds: value
+            .get("folder_project_builds")
+            .and_then(Value::as_array)
+            .into_iter()
+            .flatten()
+            .filter_map(Value::as_str)
+            .map(str::to_owned)
+            .collect(),
     }
     .visit(value)
 }
@@ -21,16 +32,28 @@ struct Transform<'a> {
     paths: &'a Paths,
     identities: Option<&'a HashMap<String, String>>,
     hydrate: bool,
+    folder_builds: std::collections::HashSet<String>,
+}
+
+struct ObjectPaths {
+    build: String,
+    directory: bool,
+    typescript: bool,
+    display: Option<SourceDisplay>,
+}
+impl ObjectPaths {
+    fn project_field(&self, key: &str) -> bool {
+        match key {
+            "project" => self.directory || self.typescript,
+            _ => false,
+        }
+    }
 }
 
 impl Transform<'_> {
     fn visit(&self, value: &mut Value) -> Result<()> {
         match value {
-            Value::Object(fields) => {
-                for (key, value) in fields {
-                    self.field(key, value)?;
-                }
-            }
+            Value::Object(fields) => self.object(fields)?,
             Value::Array(values) => {
                 for value in values {
                     self.visit(value)?;
@@ -41,16 +64,64 @@ impl Transform<'_> {
         Ok(())
     }
 
+    fn object(&self, fields: &mut serde_json::Map<String, Value>) -> Result<()> {
+        let context = self.object_context(fields)?;
+        for (key, value) in fields {
+            self.object_field(&context, key, value)?;
+        }
+        Ok(())
+    }
+    fn object_context(&self, fields: &serde_json::Map<String, Value>) -> Result<ObjectPaths> {
+        let build = fields
+            .get("build")
+            .and_then(Value::as_str)
+            .unwrap_or_default()
+            .to_owned();
+        let directory = self.folder_builds.contains(&build);
+        let typescript = fields.get("language").and_then(Value::as_str) == Some("typescript");
+        let display = if typescript {
+            self.paths.source_display(
+                fields
+                    .get("file")
+                    .and_then(Value::as_str)
+                    .unwrap_or_default(),
+                &build,
+                self.hydrate,
+            )?
+        } else {
+            None
+        };
+        Ok(ObjectPaths {
+            build,
+            directory,
+            typescript,
+            display,
+        })
+    }
+    fn object_field(&self, context: &ObjectPaths, key: &str, value: &mut Value) -> Result<()> {
+        if let Some(display) = &context.display {
+            display.rewrite(key, value);
+        }
+        if context.project_field(key) {
+            self.paths.project(
+                value,
+                ProjectOwner {
+                    build: &context.build,
+                    directory: context.directory,
+                },
+                self.hydrate,
+            )
+        } else {
+            self.field(key, value)
+        }
+    }
+
     fn field(&self, key: &str, value: &mut Value) -> Result<()> {
         match key {
             "qualifiers" => Ok(()),
             "id" | "symbol" => self.symbol(value),
             "file" | "build" => self.paths.rewrite(value, self.hydrate),
-            "project" => {
-                self.paths.project(value, self.hydrate);
-                Ok(())
-            }
-            "roots" => self.roots(value),
+            "roots" | "folder_project_builds" | "identity_roots" => self.roots(value),
             "candidates" | "application_starts" | "framework_entries" | "supporting_symbols" => {
                 self.entries(value)
             }
@@ -121,6 +192,8 @@ fn unordered(field: &str) -> bool {
             | "evidence"
             | "supporting_symbols"
             | "edges"
+            | "folder_project_builds"
+            | "identity_roots"
             | "roots"
             | "diagnostics"
             | "functions"

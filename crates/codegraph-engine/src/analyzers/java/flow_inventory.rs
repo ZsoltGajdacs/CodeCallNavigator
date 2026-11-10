@@ -15,6 +15,8 @@ pub(super) struct SourceFlow {
     #[serde(default)]
     lambda_owner: String,
     #[serde(default)]
+    export_identity: String,
+    #[serde(default)]
     lambda_start_line: u32,
     #[serde(default)]
     lambda_end_line: u32,
@@ -29,6 +31,8 @@ pub(super) struct BindingContext<'a> {
 pub(super) struct BindingResult {
     pub inventory: Option<FlowInventory>,
     pub ambiguous_callbacks: usize,
+    pub export_identities: HashMap<String, String>,
+    pub unstable_identities: Vec<String>,
 }
 
 pub(super) fn bind(
@@ -43,6 +47,7 @@ pub(super) fn bind(
     } = context;
     let mut functions = Vec::new();
     let mut ambiguous_callbacks = 0;
+    let mut export_identities = HashMap::new();
     let targets = target_index(graph);
     for (&input, inventory) in inventories {
         let Some(source) = inputs[input - 1].source_set.as_ref() else {
@@ -56,6 +61,8 @@ pub(super) fn bind(
             return BindingResult {
                 inventory: None,
                 ambiguous_callbacks: 0,
+                export_identities: HashMap::new(),
+                unstable_identities: Vec::new(),
             };
         }
         for raw in &inventory.flows {
@@ -63,17 +70,35 @@ pub(super) fn bind(
                 ambiguous_callbacks += usize::from(!raw.lambda_owner.is_empty());
                 continue;
             };
+            record_identity(raw, node, &prefix, &mut export_identities);
             functions.push(bind_function(&raw.function, node, &targets));
         }
     }
     functions.sort_by(|a, b| a.symbol.cmp(&b.symbol));
+    let unstable_identities = unstable_identities(graph, &export_identities);
     BindingResult {
+        export_identities,
+        unstable_identities,
         inventory: Some(FlowInventory {
             version: INVENTORY_VERSION,
             functions,
         }),
         ambiguous_callbacks,
     }
+}
+
+fn record_identity(
+    raw: &SourceFlow,
+    node: &Node,
+    prefix: &str,
+    keys: &mut HashMap<String, String>,
+) {
+    if !raw.lambda_owner.is_empty() && !raw.export_identity.is_empty() {
+        keys.insert(node.id.clone(), format!("{prefix}{}", raw.export_identity));
+    }
+}
+fn unstable_identities(graph: &GraphData, keys: &HashMap<String, String>) -> Vec<String> {
+    graph.nodes.iter().filter(|node|node.visibility.is_none() && node.signature.contains(":lambda$") && !keys.contains_key(&node.id)).map(|node|format!("Java anonymous portable identity remains compiler-native because source attribution is ambiguous, unlocated or has an anonymous/local type owner: {}",node.id)).collect()
 }
 
 fn bind_function(

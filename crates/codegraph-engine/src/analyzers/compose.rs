@@ -45,6 +45,14 @@ impl GraphComposition {
         self.graph.diagnostics.extend(part.diagnostics);
         self.graph.export_identities.extend(part.export_identities);
         self.graph.roots.extend(part.roots);
+        self.graph.identity_roots.extend(part.identity_roots);
+        self.graph.identity_roots.sort();
+        self.graph.identity_roots.dedup();
+        self.graph
+            .folder_project_builds
+            .extend(part.folder_project_builds);
+        self.graph.folder_project_builds.sort();
+        self.graph.folder_project_builds.dedup();
         self.graph.fingerprints.extend(part.fingerprints);
         Ok(())
     }

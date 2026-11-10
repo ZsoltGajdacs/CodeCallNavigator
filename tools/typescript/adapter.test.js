@@ -161,6 +161,7 @@ test('type errors reject analysis and config preparation reports engine inputs',
   const metadata=run(root,'tsconfig.json','prepare');
   assert.ok(metadata.inputs.some(p=>p.endsWith('typescript.js')));
   assert.match(metadata.versions.typescript,/^6\.0\./);
+  assert.equal(metadata.versions.adapter,'5');
 });
 
 test('shadowed hook names and cached callbacks never invent execution', t => {
@@ -304,4 +305,62 @@ export type Result = string;`;
   assert.ok(facts.base_types.includes('Grand'));
   assert.equal(facts.content,source);
   assert.ok(graph.architecture.files.some(f=>f.file.endsWith('/src/types.ts')&&f.names.includes('Data')));
+});
+
+test('default class method export identities survive body edits and method movement',t=>{
+  const source=`export default class {first(){return 1}second(){return 2}}
+    export const Assigned=class {first(){return 1}};
+    export const holder={value:class {first(){return 1}}};
+    export function siblings(){return [class {first(){return 1}},class {first(){return 1}}]}`;
+  const root=fixture(t,{'tsconfig.json':config,'src/main.ts':source});
+  const before=run(root);
+  fs.writeFileSync(path.join(root,'src/main.ts'),source.replace('first(){return 1}second(){return 2}','second(){return 2}first(){/* body edit */return 3}'));
+  const after=run(root);
+  const keys=graph=>graph.nodes.filter(node=>['first','second'].includes(node.label)).map(node=>graph.export_identities[node.id]).sort();
+  assert.equal(keys(before).length,6);
+  assert.equal(new Set(keys(before)).size,6,'Default, assigned, property and anonymous sibling class owners remain distinct');
+  assert.deepEqual(keys(after),keys(before));
+});
+
+test('anonymous regex bodies keep distinct fingerprints when callbacks move',t=>{
+  const first="()=>/[/*]a/.test('a')",second="()=>/[/*]b/.test('b')";
+  const source=`export function callbacks(){return [${first},${second}]}`;
+  const root=fixture(t,{'tsconfig.json':config,'src/main.ts':source});
+  const before=run(root);
+  const moved=`export function callbacks(){return [${second},${first}]}`;
+  fs.writeFileSync(path.join(root,'src/main.ts'),moved);
+  const after=run(root);
+  const keys=(graph,text)=>Object.fromEntries(graph.nodes.filter(node=>node.kind==='callback').map(node=>{
+    const flow=graph.flow_inventory.functions.find(flow=>flow.symbol===node.id);
+    return [text.slice(flow.span.start,flow.span.end),graph.export_identities[node.id]];
+  }));
+  assert.deepEqual(keys(before,source),keys(after,moved));
+});
+
+test('source aliases use canonical display facts while retaining native compiler identities',t=>{
+  const root=fixture(t,{'tsconfig.json':config,'src/main.ts':'export function leaf(){return 1} export function entry(){return leaf()}'});
+  const alias=`${root}-alias`;
+  fs.symlinkSync(root,alias,'dir');t.after(()=>fs.rmSync(alias,{force:true}));
+  fs.writeFileSync(path.join(root,'tsconfig.json'),JSON.stringify({...config,include:undefined,files:[path.join(alias,'src/main.ts')]}));
+  const graph=run(root),leaf=graph.nodes.find(node=>node.label==='leaf');
+  assert.equal(leaf.file,fs.realpathSync(path.join(root,'src/main.ts')));
+  assert.ok(leaf.id.includes(`${alias}/src/main.ts|`),'Native binding identities retain the compiler spelling');
+  assert.deepEqual(edges(graph,'entry'),['leaf']);
+  assert.ok(graph.architecture.files.every(file=>file.file===leaf.file));
+  assert.ok(graph.flow_inventory.functions.every(flow=>flow.file===leaf.file));
+});
+
+test('computed and quoted declaration names ignore spelling trivia in export identities',t=>{
+  const source=`export class Sequence{[Symbol.iterator](){return [1].values()} 'quoted'(){return 1}}
+    export const holder={'quoted'(){return 2},[Symbol.toStringTag](){return 'value'},['literal'](){return 3}};`;
+  const root=fixture(t,{'tsconfig.json':config,'src/main.ts':source});
+  const before=run(root);
+  const changed=source.replace('[Symbol.iterator]','[ /* comment */ Symbol . iterator ]')
+    .replace('[Symbol.toStringTag]','[Symbol /* tag */ . toStringTag]').replaceAll("'quoted'",'"quoted"').replace("['literal']",'["literal"]');
+  fs.writeFileSync(path.join(root,'src/main.ts'),changed);
+  const after=run(root);
+  const keys=graph=>graph.nodes.filter(node=>node.kind==='function').map(node=>graph.export_identities[node.id]).sort();
+  assert.equal(keys(before).length,5);
+  assert.equal(new Set(keys(before)).size,5);
+  assert.deepEqual(keys(after),keys(before));
 });

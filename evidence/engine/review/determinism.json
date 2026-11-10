@@ -1,0 +1,51 @@
+[
+  {
+    "workload": "maven",
+    "equal": true,
+    "repeat_equal": true,
+    "relocation_equal": true,
+    "bytes": 30735
+  },
+  {
+    "workload": "gradle",
+    "equal": true,
+    "repeat_equal": true,
+    "relocation_equal": true,
+    "bytes": 22852
+  },
+  {
+    "workload": "csharp",
+    "equal": true,
+    "repeat_equal": true,
+    "relocation_equal": true,
+    "bytes": 21709
+  },
+  {
+    "workload": "typescript",
+    "equal": true,
+    "repeat_equal": true,
+    "relocation_equal": true,
+    "bytes": 318237
+  },
+  {
+    "workload": "spring",
+    "equal": true,
+    "repeat_equal": true,
+    "relocation_equal": true,
+    "bytes": 200748
+  },
+  {
+    "workload": "mediatr",
+    "equal": true,
+    "repeat_equal": true,
+    "relocation_equal": true,
+    "bytes": 97224
+  },
+  {
+    "workload": "mixed",
+    "equal": true,
+    "repeat_equal": true,
+    "relocation_equal": true,
+    "bytes": 704216
+  }
+]

@@ -19,7 +19,7 @@ pub(super) struct Session {
     events: mpsc::Receiver<Result<Event>>,
     log: tempfile::NamedTempFile,
     cancellation: Option<Instant>,
-    terminal: Option<Instant>,
+    completion: Option<Instant>,
     reaped: bool,
 }
 
@@ -57,7 +57,7 @@ impl Session {
             events,
             log,
             cancellation: None,
-            terminal: None,
+            completion: None,
             reaped: false,
         };
         serde_json::to_writer(session.input.as_mut().unwrap(), request)?;
@@ -68,6 +68,7 @@ impl Session {
 
     pub fn next(&mut self, cancel: &AtomicBool) -> Result<Option<Event>> {
         loop {
+            self.observe_exit()?;
             if cancel.load(Ordering::Relaxed) {
                 self.request_cancel();
             }
@@ -79,12 +80,12 @@ impl Session {
                 bail!("Analysis cancelled; engine did not stop within five seconds");
             }
             if self
-                .terminal
+                .completion
                 .is_some_and(|started| started.elapsed() > Duration::from_secs(5))
             {
                 self.stop()
-                    .context("Engine did not exit after its terminal result")?;
-                bail!("Engine did not exit after its terminal result");
+                    .context("Engine result stream remained open after completion")?;
+                bail!("Engine result stream remained open after completion");
             }
             match self.events.recv_timeout(Duration::from_millis(50)) {
                 Ok(event) => return event.map(Some),
@@ -98,12 +99,12 @@ impl Session {
         let started = self
             .cancellation
             .into_iter()
-            .chain(self.terminal)
+            .chain(self.completion)
             .min()
             .unwrap_or_else(Instant::now);
         loop {
             if let Some(status) = self.child.try_wait()? {
-                self.reaped = true;
+                self.finish_group();
                 return Ok(status);
             }
             if started.elapsed() > Duration::from_secs(5) {
@@ -115,7 +116,22 @@ impl Session {
     }
 
     pub fn expect_exit(&mut self) {
-        self.terminal.get_or_insert_with(Instant::now);
+        self.completion.get_or_insert_with(Instant::now);
+    }
+
+    fn observe_exit(&mut self) -> Result<()> {
+        if self.child.try_wait()?.is_some() {
+            self.expect_exit();
+        }
+        Ok(())
+    }
+
+    fn finish_group(&mut self) {
+        // The leader is reaped, but its group may still own pipes or build work.
+        // Signal the group only: the leader's numeric PID can already be reused.
+        signal_group(self.child.id(), libc::SIGTERM);
+        signal_group(self.child.id(), libc::SIGKILL);
+        self.reaped = true;
     }
 
     pub fn log_tail(&self) -> String {
@@ -149,7 +165,7 @@ impl Session {
             return Ok(());
         }
         if self.child.try_wait().ok().flatten().is_some() {
-            self.reaped = true;
+            self.finish_group();
             return Ok(());
         }
         self.request_cancel();
@@ -190,9 +206,15 @@ impl Drop for Session {
 
 fn signal(pid: u32, signal: i32) {
     // Engine and adapters each own process groups; signal both group and process.
+    signal_group(pid, signal);
+    unsafe {
+        libc::kill(pid as i32, signal);
+    }
+}
+
+fn signal_group(pid: u32, signal: i32) {
     unsafe {
         libc::kill(-(pid as i32), signal);
-        libc::kill(pid as i32, signal);
     }
 }
 

@@ -530,6 +530,12 @@
       ],
       "version": 1
     },
+    "identity_roots": [
+      "@repo/library",
+      "@repo/profile-library",
+      "@repo/reactor",
+      "@repo/reactor/app"
+    ],
     "nodes": [
       {
         "body_unavailable": false,

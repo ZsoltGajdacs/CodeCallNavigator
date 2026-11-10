@@ -1,6 +1,7 @@
 'use strict';
 const fs=require('node:fs');
 const path=require('node:path');
+const {sourcePath}=require('./paths.js');
 const {createRequire}=require('node:module');
 const COMPONENT_FILES=new Set(['page','layout','template','loading','error','global-error','not-found','default','forbidden','unauthorized']);
 const ROUTE_METHODS=new Set(['GET','POST','PUT','PATCH','DELETE','HEAD','OPTIONS']);
@@ -18,7 +19,7 @@ function directive(ts,node,text) {
 }
 function appStem(owner,file) {
   const root=path.dirname(owner);
-  const relative=path.relative(root,file.fileName).replaceAll(path.sep,'/');
+  const relative=path.relative(root,sourcePath(file)).replaceAll(path.sep,'/');
   const match=/^(src\/)?app\/(.*)\.tsx?$/.exec(relative);
   if(!match) return undefined;
   if(match[1] && fs.existsSync(path.join(root,'app'))) return undefined;

@@ -43,7 +43,10 @@ pub(super) fn attach(
             routes.push(RouteFact {
                 symbol,
                 build: context.build.path.to_string_lossy().into_owned(),
-                application: source.project.clone(),
+                application: source
+                    .application
+                    .clone()
+                    .unwrap_or_else(|| source.project.clone()),
                 framework: "spring".into(),
                 kind: "http".into(),
                 path: route.path.clone(),

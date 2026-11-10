@@ -1,0 +1,1554 @@
+diff --git a/src/CallAtlas.Core/AspNetAttributes.cs b/src/CallAtlas.Core/AspNetAttributes.cs
+new file mode 100644
+index 0000000..04b6183
+--- /dev/null
++++ b/src/CallAtlas.Core/AspNetAttributes.cs
+@@ -0,0 +1,118 @@
++using Microsoft.CodeAnalysis;
++
++namespace CallAtlas.Core;
++
++internal sealed record AspNetRouteSpec
++{
++    internal string? Template { get; init; }
++    internal bool UnknownPath { get; init; }
++    internal string[] Methods { get; init; } = [];
++    internal int? Order { get; init; }
++    internal bool OrderKnown { get; init; } = true;
++    internal bool IsHttp { get; init; }
++    internal bool Silent { get; init; }
++    internal string[] Restrictions { get; init; } = [];
++    internal AttributeData? Attribute { get; init; }
++}
++
++internal sealed class AspNetAttributes(AspNetContracts contracts)
++{
++    private static readonly string[] Verbs = ["Get", "Post", "Put", "Delete", "Patch", "Head", "Options"];
++
++    internal AspNetRouteSpec Parse(AttributeData attribute)
++    {
++        if (contracts.Is(attribute.AttributeClass, "Microsoft.AspNetCore.Mvc.RouteAttribute"))
++            return RequiredTemplate(attribute);
++        foreach (var verb in Verbs)
++        {
++            if (contracts.Is(attribute.AttributeClass, "Microsoft.AspNetCore.Mvc.Http" + verb + "Attribute"))
++                return HttpMethod(attribute, verb);
++        }
++        if (contracts.Is(attribute.AttributeClass, "Microsoft.AspNetCore.Mvc.AcceptVerbsAttribute"))
++            return AcceptVerbs(attribute);
++        return new AspNetRouteSpec { UnknownPath = true, OrderKnown = false, Attribute = attribute,
++            Restrictions = ["aspnet.custom-route-provider"] };
++    }
++
++    private static AspNetRouteSpec RequiredTemplate(AttributeData attribute)
++    {
++        var template = StringArgument(attribute);
++        return template is not null ? Known(attribute, template, []) : UnknownTemplate(attribute);
++    }
++
++    private static AspNetRouteSpec HttpMethod(AttributeData attribute, string verb)
++    {
++        var template = StringArgument(attribute);
++        if (template is null && attribute.ConstructorArguments.Length != 0) return UnknownTemplate(attribute);
++        return Known(attribute, template, [verb.ToUpperInvariant()], true);
++    }
++
++    private static AspNetRouteSpec UnknownTemplate(AttributeData attribute) => new()
++    {
++        UnknownPath = true, Attribute = attribute, Restrictions = ["aspnet.unknown-template"],
++    };
++
++    private static AspNetRouteSpec AcceptVerbs(AttributeData attribute)
++    {
++        var methods = AcceptedMethods(attribute);
++        var result = Known(attribute, NamedString(attribute, "Route"), methods, true);
++        return methods.Length != 0 && methods.All(ValidMethod) ? result
++            : result with { Methods = [], Restrictions = ["aspnet.unsupported-http-methods"] };
++    }
++
++    private static bool ValidMethod(string method) => method.Length != 0 && method.All(character => character is >= 'A' and <= 'Z');
++
++    private static AspNetRouteSpec Known(AttributeData attribute, string? template, string[] methods, bool isHttp = false)
++    {
++        var order = attribute.NamedArguments.FirstOrDefault(argument => argument.Key == "Order");
++        return new AspNetRouteSpec
++        {
++            Template = template, Methods = methods, IsHttp = isHttp, Attribute = attribute,
++            Order = order.Value.Value as int?,
++            OrderKnown = order.Key is null || order.Value.Value is int,
++            Silent = template is null && order.Key is null && NamedString(attribute, "Name") is null,
++        };
++    }
++
++    private static string? StringArgument(AttributeData attribute) => StringValue(attribute.ConstructorArguments.FirstOrDefault());
++
++    private static string? NamedString(AttributeData attribute, string name) =>
++        StringValue(attribute.NamedArguments.FirstOrDefault(argument => argument.Key == name).Value);
++
++    private static string? StringValue(TypedConstant value) => value.Kind == TypedConstantKind.Primitive ? value.Value as string : null;
++
++    private static string[] AcceptedMethods(AttributeData attribute)
++    {
++        var argument = attribute.ConstructorArguments.FirstOrDefault();
++        if (argument.IsNull) return [];
++        var values = argument.Kind == TypedConstantKind.Array ? argument.Values : [argument];
++        return values.Select(StringValue).OfType<string>()
++            .Select(value => value.ToUpperInvariant()).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToArray();
++    }
++
++    internal AspNetRouteSpec[] Effective(ISymbol symbol)
++    {
++        var chain = symbol is INamedTypeSymbol type ? AspNetContracts.Ancestors(type).Cast<ISymbol>()
++            : AspNetContracts.MethodChain((IMethodSymbol)symbol).Cast<ISymbol>();
++        foreach (var current in chain)
++        {
++            var routes = current.GetAttributes().Where(contracts.RouteProvider).Select(Parse).ToArray();
++            if (routes.Length != 0) return routes;
++        }
++        return [];
++    }
++
++    internal static AspNetRouteSpec[] Selectors(AspNetRouteSpec[] routes)
++    {
++        var silent = routes.Where(route => route.Silent).ToArray();
++        var selectors = routes.Where(route => !route.Silent).Select(route => route.IsHttp ? route
++            : route with { Methods = silent.SelectMany(item => item.Methods).Distinct().Order().ToArray() }).ToList();
++        if (NeedsSilentSelector(routes, silent))
++            selectors.Add(new AspNetRouteSpec { Methods = silent.SelectMany(route => route.Methods).Distinct().Order().ToArray(),
++                Attribute = silent.FirstOrDefault()?.Attribute });
++        return selectors.ToArray();
++    }
++
++    private static bool NeedsSilentSelector(AspNetRouteSpec[] routes, AspNetRouteSpec[] silent) =>
++        routes.Length == 0 || silent.Length != 0 && routes.Where(route => !route.Silent).All(route => route.IsHttp);
++}
+diff --git a/src/CallAtlas.Core/AspNetConstraints.cs b/src/CallAtlas.Core/AspNetConstraints.cs
+new file mode 100644
+index 0000000..bea1bef
+--- /dev/null
++++ b/src/CallAtlas.Core/AspNetConstraints.cs
+@@ -0,0 +1,28 @@
++using Microsoft.CodeAnalysis;
++
++namespace CallAtlas.Core;
++
++internal sealed class AspNetConstraints(AspNetContracts contracts)
++{
++    internal string[] Restrictions(INamedTypeSymbol controller, IMethodSymbol action) =>
++        Attributes(controller, action).Where(RequestConstraint).Any() ? ["aspnet.request-constraints"] : [];
++
++    internal bool UnknownMethods(INamedTypeSymbol controller, IMethodSymbol action) =>
++        Attributes(controller, action).Any(UnknownMethodProvider);
++
++    private static IEnumerable<AttributeData> Attributes(INamedTypeSymbol controller, IMethodSymbol action) =>
++        AspNetContracts.Attributes(controller).Concat(AspNetContracts.Attributes(action));
++
++    private bool RequestConstraint(AttributeData attribute) =>
++        contracts.Implements(attribute.AttributeClass, "Microsoft.AspNetCore.Mvc.ActionConstraints.IActionConstraintMetadata")
++        || contracts.Implements(attribute.AttributeClass, "Microsoft.AspNetCore.Routing.IHostMetadata")
++        || contracts.Implements(attribute.AttributeClass, "Microsoft.AspNetCore.Routing.ISuppressMatchingMetadata");
++
++    private bool UnknownMethodProvider(AttributeData attribute) =>
++        contracts.Implements(attribute.AttributeClass, "Microsoft.AspNetCore.Mvc.Routing.IActionHttpMethodProvider")
++        && !KnownMethodProvider(attribute.AttributeClass);
++
++    private bool KnownMethodProvider(INamedTypeSymbol? type) => new[] { "Get", "Post", "Put", "Delete", "Patch", "Head", "Options" }
++        .Any(verb => contracts.Is(type, "Microsoft.AspNetCore.Mvc.Http" + verb + "Attribute"))
++        || contracts.Is(type, "Microsoft.AspNetCore.Mvc.AcceptVerbsAttribute");
++}
+diff --git a/src/CallAtlas.Core/AspNetContracts.cs b/src/CallAtlas.Core/AspNetContracts.cs
+new file mode 100644
+index 0000000..33b59ec
+--- /dev/null
++++ b/src/CallAtlas.Core/AspNetContracts.cs
+@@ -0,0 +1,54 @@
++using Microsoft.CodeAnalysis;
++
++namespace CallAtlas.Core;
++
++internal sealed class AspNetContracts(Compilation compilation)
++{
++    private readonly Dictionary<string, INamedTypeSymbol?> symbols = new(StringComparer.Ordinal);
++
++    internal INamedTypeSymbol? Type(string metadataName)
++    {
++        if (symbols.TryGetValue(metadataName, out var cached)) return cached;
++        var symbol = compilation.GetTypeByMetadataName(metadataName);
++        symbols[metadataName] = IsFrameworkType(symbol) ? symbol : null;
++        return symbols[metadataName];
++    }
++
++    private static bool IsFrameworkType(INamedTypeSymbol? symbol) => symbol is not null
++        && symbol.Locations.All(location => !location.IsInSource)
++        && symbol.ContainingAssembly.Identity.Name is "Microsoft.AspNetCore.Mvc.Core"
++            or "Microsoft.AspNetCore.Mvc.Abstractions" or "Microsoft.AspNetCore.Http.Abstractions"
++            or "Microsoft.AspNetCore.Routing.Abstractions" or "Microsoft.AspNetCore.Routing";
++
++    internal bool Is(INamedTypeSymbol? symbol, string metadataName) => symbol is not null
++        && SymbolEqualityComparer.Default.Equals(symbol.OriginalDefinition, Type(metadataName));
++
++    internal bool Derives(INamedTypeSymbol? symbol, string metadataName) =>
++        Ancestors(symbol).Any(type => Is(type, metadataName));
++
++    internal bool Implements(INamedTypeSymbol? symbol, string metadataName) => symbol is not null
++        && symbol.AllInterfaces.Any(type => Is(type, metadataName));
++
++    internal bool RouteProvider(AttributeData attribute) =>
++        Implements(attribute.AttributeClass, "Microsoft.AspNetCore.Mvc.Routing.IRouteTemplateProvider");
++
++    internal bool HasAttribute(ISymbol symbol, string metadataName) =>
++        Attributes(symbol).Any(attribute => Derives(attribute.AttributeClass, metadataName));
++
++    internal static IEnumerable<INamedTypeSymbol> Ancestors(INamedTypeSymbol? type)
++    {
++        for (var current = type; current is not null; current = current.BaseType) yield return current;
++    }
++
++    internal static IEnumerable<AttributeData> Attributes(ISymbol symbol) => symbol switch
++    {
++        INamedTypeSymbol type => Ancestors(type).SelectMany(current => current.GetAttributes()),
++        IMethodSymbol method => MethodChain(method).SelectMany(current => current.GetAttributes()),
++        _ => symbol.GetAttributes(),
++    };
++
++    internal static IEnumerable<IMethodSymbol> MethodChain(IMethodSymbol? method)
++    {
++        for (var current = method; current is not null; current = current.OverriddenMethod) yield return current;
++    }
++}
+diff --git a/src/CallAtlas.Core/AspNetEligibility.cs b/src/CallAtlas.Core/AspNetEligibility.cs
+new file mode 100644
+index 0000000..59c3867
+--- /dev/null
++++ b/src/CallAtlas.Core/AspNetEligibility.cs
+@@ -0,0 +1,38 @@
++using Microsoft.CodeAnalysis;
++
++namespace CallAtlas.Core;
++
++internal sealed class AspNetEligibility(AspNetContracts contracts, Compilation compilation)
++{
++    internal bool Controller(INamedTypeSymbol type) => IsPublicClass(type)
++        && !contracts.HasAttribute(type, "Microsoft.AspNetCore.Mvc.NonControllerAttribute")
++        && HasControllerMarker(type);
++
++    private static bool IsPublicClass(INamedTypeSymbol type) => type.TypeKind == TypeKind.Class
++        && !type.IsAbstract && type.DeclaredAccessibility == Accessibility.Public
++        && type.ContainingType is null && type.TypeParameters.Length == 0;
++
++    private bool HasControllerMarker(INamedTypeSymbol type) =>
++        type.Name.EndsWith("Controller", StringComparison.OrdinalIgnoreCase)
++        || contracts.HasAttribute(type, "Microsoft.AspNetCore.Mvc.ControllerAttribute");
++
++    internal bool Action(IMethodSymbol method) => IsPublicMethod(method)
++        && !contracts.HasAttribute(method, "Microsoft.AspNetCore.Mvc.NonActionAttribute")
++        && Root(method).ContainingType.SpecialType != SpecialType.System_Object
++        && !IsDispose(method);
++
++    private static bool IsPublicMethod(IMethodSymbol method) => method.MethodKind == MethodKind.Ordinary
++        && method.DeclaredAccessibility == Accessibility.Public && !method.IsStatic
++        && !method.IsAbstract && !method.IsGenericMethod;
++
++    private bool IsDispose(IMethodSymbol method)
++    {
++        var root = Root(method);
++        var contract = compilation.GetTypeByMetadataName("System.IDisposable");
++        var dispose = contract?.GetMembers("Dispose").OfType<IMethodSymbol>().SingleOrDefault();
++        return dispose is not null && SymbolEqualityComparer.Default.Equals(root,
++            root.ContainingType.FindImplementationForInterfaceMember(dispose));
++    }
++
++    private static IMethodSymbol Root(IMethodSymbol method) => AspNetContracts.MethodChain(method).Last();
++}
+diff --git a/src/CallAtlas.Core/AspNetRouteBuilder.cs b/src/CallAtlas.Core/AspNetRouteBuilder.cs
+new file mode 100644
+index 0000000..ec8dab6
+--- /dev/null
++++ b/src/CallAtlas.Core/AspNetRouteBuilder.cs
+@@ -0,0 +1,62 @@
++using Microsoft.CodeAnalysis;
++
++namespace CallAtlas.Core;
++
++internal sealed class AspNetRouteBuilder(AspNetContracts contracts, IReadOnlySet<string> nodes)
++{
++    private readonly AspNetConstraints constraints = new(contracts);
++
++    internal HttpRouteFact? Build(INamedTypeSymbol controller, IMethodSymbol method,
++        AspNetRouteSpec prefix, AspNetRouteSpec selector)
++    {
++        var selection = new AspNetRouteSelection(prefix, selector);
++        if (!selection.Attributed) return null;
++        var action = new ControllerAction(controller, method);
++        var restrictions = selection.Restrictions();
++        restrictions.AddRange(ActionRestrictions(action));
++        var symbol = NativeSymbol(method, restrictions);
++        var methods = Methods(action, selection, restrictions);
++        return new HttpRouteFact
++        {
++            Symbol = symbol, Application = controller.ContainingAssembly.Identity.Name,
++            Path = selection.Path, Methods = methods, Order = selection.Order,
++            Restrictions = restrictions.Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToArray(),
++            Site = Site(selector.Attribute ?? prefix.Attribute, action),
++        };
++    }
++
++    private string? NativeSymbol(IMethodSymbol action, List<string> restrictions)
++    {
++        var symbol = SymbolId.Canonical(action);
++        if (nodes.Contains(symbol)) return symbol;
++        restrictions.Add("aspnet.missing-native-action");
++        return null;
++    }
++
++    private List<string> ActionRestrictions(ControllerAction action)
++    {
++        var result = constraints.Restrictions(action.Controller, action.Method).ToList();
++        if (!contracts.Derives(action.Controller, "Microsoft.AspNetCore.Mvc.ControllerBase")) result.Add("aspnet.non-controllerbase");
++        if (!SymbolEqualityComparer.Default.Equals(action.Method.ContainingType, action.Controller)) result.Add("aspnet.inherited-action");
++        return result;
++    }
++
++    private string[] Methods(ControllerAction action, AspNetRouteSelection selection, List<string> restrictions)
++    {
++        if (!constraints.UnknownMethods(action.Controller, action.Method)) return selection.Selector.Methods;
++        restrictions.Add("aspnet.custom-http-method-provider");
++        return [];
++    }
++
++    private static HttpRouteSite Site(AttributeData? attribute, ControllerAction action)
++    {
++        var syntax = attribute?.ApplicationSyntaxReference?.GetSyntax()
++            ?? action.Method.DeclaringSyntaxReferences.FirstOrDefault()?.GetSyntax()
++            ?? action.Controller.DeclaringSyntaxReferences.First().GetSyntax();
++        var position = syntax.SyntaxTree.GetLineSpan(syntax.Span).StartLinePosition;
++        return new HttpRouteSite(Path.GetFullPath(syntax.SyntaxTree.FilePath).Replace('\\', '/'),
++            position.Line + 1, position.Character + 1);
++    }
++
++    private sealed record ControllerAction(INamedTypeSymbol Controller, IMethodSymbol Method);
++}
+diff --git a/src/CallAtlas.Core/AspNetRouteInference.cs b/src/CallAtlas.Core/AspNetRouteInference.cs
+new file mode 100644
+index 0000000..a94eef5
+--- /dev/null
++++ b/src/CallAtlas.Core/AspNetRouteInference.cs
+@@ -0,0 +1,67 @@
++using Microsoft.CodeAnalysis;
++using Microsoft.CodeAnalysis.CSharp.Syntax;
++
++namespace CallAtlas.Core;
++
++internal sealed class AspNetRouteInference
++{
++    private readonly AspNetContracts contracts;
++    private readonly AspNetEligibility eligibility;
++    private readonly AspNetAttributes attributes;
++    private readonly AspNetRouteBuilder builder;
++    private readonly List<HttpRouteFact> routes = [];
++
++    private AspNetRouteInference(Compilation compilation, IReadOnlySet<string> nodes)
++    {
++        contracts = new AspNetContracts(compilation);
++        eligibility = new AspNetEligibility(contracts, compilation);
++        attributes = new AspNetAttributes(contracts);
++        builder = new AspNetRouteBuilder(contracts, nodes);
++    }
++
++    internal static IReadOnlyList<HttpRouteFact> Analyze(
++        IReadOnlyList<(SyntaxTree Tree, SemanticModel Model, Compilation Compilation)> units,
++        IReadOnlySet<string> nodes)
++    {
++        var routes = new List<HttpRouteFact>();
++        foreach (var group in units.GroupBy(unit => unit.Compilation))
++        {
++            var analysis = new AspNetRouteInference(group.Key, nodes);
++            if (analysis.contracts.Type("Microsoft.AspNetCore.Mvc.ControllerBase") is null) continue;
++            analysis.Collect(group);
++            routes.AddRange(analysis.routes);
++        }
++        return routes.OrderBy(route => route.Application, StringComparer.Ordinal)
++            .ThenBy(route => route.Path, StringComparer.Ordinal).ThenBy(route => route.Symbol, StringComparer.Ordinal)
++            .ThenBy(route => route.Site.File, StringComparer.Ordinal).ThenBy(route => route.Site.Line).ToArray();
++    }
++
++    private void Collect(IEnumerable<(SyntaxTree Tree, SemanticModel Model, Compilation Compilation)> units)
++    {
++        var seen = new HashSet<INamedTypeSymbol>(SymbolEqualityComparer.Default);
++        foreach (var (tree, model, _) in units)
++        foreach (var type in tree.GetRoot().DescendantNodes().OfType<BaseTypeDeclarationSyntax>()
++                     .Select(node => model.GetDeclaredSymbol(node)).OfType<INamedTypeSymbol>().Where(eligibility.Controller))
++        {
++            if (seen.Add(type)) Controller(type);
++        }
++    }
++
++    private void Controller(INamedTypeSymbol type)
++    {
++        var prefixes = attributes.Effective(type);
++        if (prefixes.Length == 0) prefixes = [new AspNetRouteSpec()];
++        foreach (var owner in AspNetContracts.Ancestors(type).TakeWhile(owner => owner.SpecialType != SpecialType.System_Object))
++        foreach (var action in owner.GetMembers().OfType<IMethodSymbol>().Where(eligibility.Action))
++            Action(type, action, prefixes);
++    }
++
++    private void Action(INamedTypeSymbol controller, IMethodSymbol action, AspNetRouteSpec[] prefixes)
++    {
++        foreach (var selector in AspNetAttributes.Selectors(attributes.Effective(action)))
++        {
++            var parents = AspNetTemplates.Rooted(selector.Template) ? [new AspNetRouteSpec()] : prefixes;
++            routes.AddRange(parents.Select(prefix => builder.Build(controller, action, prefix, selector)).OfType<HttpRouteFact>());
++        }
++    }
++}
+diff --git a/src/CallAtlas.Core/AspNetRouteSelection.cs b/src/CallAtlas.Core/AspNetRouteSelection.cs
+new file mode 100644
+index 0000000..162a09d
+--- /dev/null
++++ b/src/CallAtlas.Core/AspNetRouteSelection.cs
+@@ -0,0 +1,23 @@
++namespace CallAtlas.Core;
++
++internal sealed class AspNetRouteSelection(AspNetRouteSpec prefix, AspNetRouteSpec selector)
++{
++    internal AspNetRouteSpec Prefix { get; } = prefix;
++    internal AspNetRouteSpec Selector { get; } = selector;
++    internal string? Path { get; } = AspNetTemplates.Combine(prefix, selector);
++    internal bool Attributed => Path is not null || Prefix.UnknownPath || Selector.UnknownPath;
++    private bool KnownOrder => Prefix.OrderKnown && Selector.OrderKnown;
++    internal int? Order => KnownOrder ? Selector.Order ?? Prefix.Order ?? 0 : null;
++    private bool UnsupportedTemplate => UnsupportedPath || DoubleSeparator(Prefix.Template) || DoubleSeparator(Selector.Template);
++    private bool UnsupportedPath => Path is not null && !AspNetTemplates.Supported(Path);
++    private static bool DoubleSeparator(string? template) => template?.Contains("//", StringComparison.Ordinal) == true;
++
++    internal List<string> Restrictions()
++    {
++        var result = Prefix.Restrictions.Concat(Selector.Restrictions).ToList();
++        if (UnsupportedTemplate) result.Add("aspnet.unsupported-template");
++        if (!KnownOrder) result.Add("aspnet.unknown-order");
++        if (Order.GetValueOrDefault() != 0) result.Add("aspnet.nondefault-order");
++        return result;
++    }
++}
+diff --git a/src/CallAtlas.Core/AspNetTemplates.cs b/src/CallAtlas.Core/AspNetTemplates.cs
+new file mode 100644
+index 0000000..ffbc6d7
+--- /dev/null
++++ b/src/CallAtlas.Core/AspNetTemplates.cs
+@@ -0,0 +1,35 @@
++using System.Text.RegularExpressions;
++
++namespace CallAtlas.Core;
++
++internal static class AspNetTemplates
++{
++    private static readonly Regex Literal = new(@"^[A-Za-z0-9._~-]+$", RegexOptions.CultureInvariant);
++    private static readonly Regex Parameter = new(@"^\{[A-Za-z_][A-Za-z0-9_]*\}$", RegexOptions.CultureInvariant);
++
++    internal static bool Rooted(string? template) => template is not null
++        && (template.StartsWith('/') || template.StartsWith("~/", StringComparison.Ordinal));
++
++    internal static string? Combine(AspNetRouteSpec prefix, AspNetRouteSpec action)
++    {
++        if (action.UnknownPath) return null;
++        if (Rooted(action.Template)) return Normalize(action.Template!);
++        if (prefix.UnknownPath) return null;
++        if (prefix.Template is null && action.Template is null) return null;
++        return Normalize(string.Join("/", new[] { prefix.Template, action.Template }
++            .Where(template => !string.IsNullOrEmpty(template))));
++    }
++
++    private static string Normalize(string template)
++    {
++        var value = template.StartsWith("~/", StringComparison.Ordinal) ? template[2..] : template;
++        return "/" + value.Trim('/');
++    }
++
++    internal static bool Supported(string path) => path == "/" || path.Split('/').Skip(1).All(SupportedSegment);
++
++    private static bool SupportedSegment(string segment) =>
++        Parameter.IsMatch(segment) || SafeLiteral(segment);
++
++    private static bool SafeLiteral(string segment) => Literal.IsMatch(segment) && segment is not "." and not "..";
++}
+diff --git a/src/CallAtlas.Core/CallGraphBuilder.cs b/src/CallAtlas.Core/CallGraphBuilder.cs
+index bf14b1d..32474a3 100644
+--- a/src/CallAtlas.Core/CallGraphBuilder.cs
++++ b/src/CallAtlas.Core/CallGraphBuilder.cs
+@@ -664,7 +664,7 @@ public sealed partial class CallGraphBuilder
+         List<string> degraded,
+         bool referencesResolved)
+     {
+-        var hasTopLevel = false;
++        var topLevelIds = new HashSet<string>(StringComparer.Ordinal);
+ 
+         // ── 阶段一（全部文件）：一遍句法遍历，登记节点 + 收集待绑定函数体 ──────────
+         // 旧实现把整棵树走两遍：第二遍要重新 GetDeclaredSymbol 才能算出 fromId，
+@@ -752,19 +752,20 @@ public sealed partial class CallGraphBuilder
+                         Site(sites, SymbolId.ForFieldInitializer(f), [v.Initializer!.Value]);
+                         break;
+                     case GlobalStatementSyntax gs:
+-                        if (!hasTopLevel)
++                        var topLevelId = SymbolId.ForTopLevel(model.Compilation);
++                        if (topLevelIds.Add(topLevelId))
+                         {
+-                            hasTopLevel = true;
+-                            nodes[SymbolId.TopLevelId] = new Node
++                            nodes[topLevelId] = new Node
+                             {
+-                                Id = SymbolId.TopLevelId,
++                                Id = topLevelId,
+                                 Kind = "toplevel",
++                                Declaration = new() { HasSourceDeclaration = true, CallableKind = "TopLevel" },
+                                 Container = "Program",
+                                 Name = "<top-level>",
+                                 Location = Rel(root, file) + ":1",
+                             };
+                         }
+-                        Site(sites, SymbolId.TopLevelId, [gs.Statement]);
++                        Site(sites, topLevelId, [gs.Statement]);
+                         break;
+                 }
+             }
+@@ -942,9 +943,21 @@ public sealed partial class CallGraphBuilder
+             Ms(PhaseTicks.CollectDiag), Ms(PhaseTicks.BodyScan),
+             Ms(PhaseTicks.BodySpan), Ms(PhaseTicks.BodyGetDiag), Ms(PhaseTicks.BodyScanLoop)));
+ 
++        var framework = MediatRInference.Analyze(units,
++            pending.SelectMany(item => item.Sites.Select(site =>
++                new MediatRBody(item.Model, site.FromId, site.Bodies))),
++            nodes.Keys.ToHashSet(StringComparer.Ordinal), root);
+         var map = new CodeMap
+         {
+             Schema = CodeMap.SchemaVersion,
++            FrameworkFactsVersion = MediatRFacts.Version,
++            FrameworkEdges = framework.Edges,
++            FrameworkEntries = framework.Entries,
++            FrameworkDiagnostics = framework.Diagnostics,
++            HttpFactsVersion = HttpRouteFact.Version,
++            HttpRoutes = AspNetRouteInference.Analyze(units, nodes.Keys.ToHashSet(StringComparer.Ordinal)),
++            ArchitectureFiles = units.Select(unit => ArchitectureFileFacts.From(unit.Tree, unit.Model))
++                .OrderBy(file => file.File, StringComparer.Ordinal).ToArray(),
+             Root = root.Replace('\\', '/'),
+             Nodes = [.. nodes.Values.OrderBy(n => n.Id, StringComparer.Ordinal)],
+             Edges = [.. edges.Select(kv => new Edge
+@@ -999,7 +1012,15 @@ public sealed partial class CallGraphBuilder
+                 $"[callatlas] {"symbol cache",-22} hits {h,8}  misses {m,8}  ({rate,5:F1}% hit)");
+         }
+ 
+-        return map;
++        var applicationStarts = compilations.Select(compilation =>
++        {
++            var entry = compilation.GetEntryPoint(default);
++            if (entry is null) return null;
++            var topLevelId = SymbolId.ForTopLevel(compilation);
++            return nodes.ContainsKey(topLevelId) ? topLevelId : SymbolId.Canonical(entry);
++        }).Where(id => id is not null && nodes.ContainsKey(id))
++          .Select(id => id!).Distinct(StringComparer.Ordinal).OrderBy(id => id, StringComparer.Ordinal).ToList();
++        return map with { ApplicationStarts = applicationStarts };
+     }
+ 
+     /// <summary>
+@@ -1251,6 +1272,7 @@ public sealed partial class CallGraphBuilder
+             Id = id,
+             Kind = kind,
+             Container = DisplayOf(symbol.ContainingType),
++            Declaration = MethodDeclarationFacts.From(symbol),
+             Name = symbol.Name,
+             Location = string.IsNullOrEmpty(path) ? "(no location)" : $"{Rel(root, path)}:{line}",
+         };
+@@ -1279,6 +1301,7 @@ public sealed partial class CallGraphBuilder
+         {
+             Id = id,
+             Kind = "accessor",
++            Declaration = MethodDeclarationFacts.From(accessor),
+             Container = DisplayOf(accessor.ContainingType),
+             // 显示成属性名（get_Value 的 Name 是 "get_Value"，用属性名 "Value" 更好读）
+             Name = accessor.AssociatedSymbol?.Name ?? accessor.Name,
+@@ -1331,6 +1354,7 @@ public sealed partial class CallGraphBuilder
+             Id = id,
+             Kind = kind,
+             Container = DisplayOf(target.OriginalDefinition.ContainingType),
++            Declaration = MethodDeclarationFacts.From(target.OriginalDefinition),
+             Name = target.OriginalDefinition.Name,
+             Location = "(implicit)",
+         };
+@@ -1755,7 +1779,7 @@ public sealed partial class CallGraphBuilder
+     /// 但"谁读了这个字段"是架构事实，值得有个落点。</summary>
+     private static string FieldNodeId(Dictionary<string, Node> sink, IFieldSymbol field)
+     {
+-        var id = $"{field.ContainingType.ToDisplayString(SymbolId.QualifiedFormat)}::{field.Name}#field";
++        var id = SymbolId.ForField(field);
+         sink.TryAdd(id, new Node
+         {
+             Id = id,
+diff --git a/src/CallAtlas.Core/CodeMap.cs b/src/CallAtlas.Core/CodeMap.cs
+index a720920..a934720 100644
+--- a/src/CallAtlas.Core/CodeMap.cs
++++ b/src/CallAtlas.Core/CodeMap.cs
+@@ -1,4 +1,5 @@
+ using Microsoft.CodeAnalysis;
++using Microsoft.CodeAnalysis.CSharp.Syntax;
+ 
+ namespace CallAtlas.Core;
+ 
+@@ -10,6 +11,15 @@ public sealed record CodeMap
+ 
+     public required string Schema { get; init; }
+     public required string Root { get; init; }
++    /// <summary>Compiler-selected executable starts, using the existing graph identities.</summary>
++    public IReadOnlyList<string> ApplicationStarts { get; init; } = [];
++    public IReadOnlyList<ArchitectureFileFacts> ArchitectureFiles { get; init; } = [];
++    public string FrameworkFactsVersion { get; init; } = "";
++    public IReadOnlyList<MediatRDispatchFact> FrameworkEdges { get; init; } = [];
++    public IReadOnlyList<string> FrameworkEntries { get; init; } = [];
++    public IReadOnlyList<string> FrameworkDiagnostics { get; init; } = [];
++    public string HttpFactsVersion { get; init; } = "";
++    public IReadOnlyList<HttpRouteFact> HttpRoutes { get; init; } = [];
+     public required IReadOnlyList<Node> Nodes { get; init; }
+     public required IReadOnlyList<Edge> Edges { get; init; }
+     public required IReadOnlyList<ExternalCall> External { get; init; }
+@@ -45,6 +55,68 @@ public sealed record Node
+     public required string Container { get; init; }
+     public required string Name { get; init; }
+     public required string Location { get; init; }
++    /// <summary>Compiler facts; the consumer owns graph inclusion policy.</summary>
++    public MethodDeclarationFacts? Declaration { get; init; }
++
++}
++
++/// <summary>Source origin and callable category supplied by Roslyn.</summary>
++public sealed record MethodDeclarationFacts
++{
++    public bool HasSourceDeclaration { get; init; }
++    public bool IsImplicit { get; init; }
++    public string CallableKind { get; init; } = "";
++    public bool IsObjectMember { get; init; }
++    public string? Visibility { get; init; }
++    public string? ContainerVisibility { get; init; }
++
++    public static MethodDeclarationFacts From(IMethodSymbol method) => new()
++    {
++        HasSourceDeclaration = method.DeclaringSyntaxReferences.Length > 0,
++        IsImplicit = method.IsImplicitlyDeclared,
++        CallableKind = method.MethodKind.ToString(),
++        IsObjectMember = MatchesObjectMember(method),
++        Visibility = method.MethodKind is MethodKind.LocalFunction or MethodKind.AnonymousFunction
++            ? null : AccessName(method.DeclaredAccessibility),
++        ContainerVisibility = method.ContainingType is { IsImplicitlyDeclared: false } type
++            ? AccessName(type.DeclaredAccessibility) : null,
++    };
++
++    private static readonly IReadOnlyDictionary<Accessibility, string> AccessNames = new Dictionary<Accessibility, string>
++    {
++        [Accessibility.Public] = "public",
++        [Accessibility.Private] = "private",
++        [Accessibility.Protected] = "protected",
++        [Accessibility.Internal] = "internal",
++        [Accessibility.ProtectedOrInternal] = "protected_internal",
++        [Accessibility.ProtectedAndInternal] = "private_protected",
++    };
++
++    private static string? AccessName(Accessibility access) => AccessNames.GetValueOrDefault(access);
++
++    private static bool MatchesObjectMember(IMethodSymbol method)
++    {
++        var type = method.ContainingType;
++        while (type is not null && type.SpecialType != SpecialType.System_Object)
++            type = type.BaseType;
++        type ??= ReferencedObjectType(method);
++        var names = method.ExplicitInterfaceImplementations.Select(member => member.Name).Append(method.Name);
++        return type is not null && names.SelectMany(name => type.GetMembers(name)).OfType<IMethodSymbol>()
++            .Any(candidate => SameSignature(method, candidate));
++    }
++
++    private static INamedTypeSymbol? ReferencedObjectType(IMethodSymbol method) =>
++        method.ContainingModule.ReferencedAssemblySymbols
++            .Select(assembly => assembly.GetTypeByMetadataName("System.Object")
++                ?? assembly.ResolveForwardedType("System.Object"))
++            .FirstOrDefault(type => type is not null);
++
++    private static bool SameSignature(IMethodSymbol method, IMethodSymbol candidate) =>
++        method.Arity == candidate.Arity && method.IsStatic == candidate.IsStatic
++        && method.Parameters.Length == candidate.Parameters.Length
++        && method.Parameters.Zip(candidate.Parameters).All(pair =>
++            pair.First.RefKind == pair.Second.RefKind
++            && SymbolEqualityComparer.Default.Equals(pair.First.Type, pair.Second.Type));
+ }
+ 
+ /// <summary>边的种类常量。</summary>
+@@ -306,27 +378,38 @@ public static class SymbolId
+     public static string Canonical(IMethodSymbol method)
+     {
+         var s = (method.ReducedFrom ?? method).OriginalDefinition;
+-        return s.MethodKind switch
++        if (s.MethodKind == MethodKind.LocalFunction && s.ContainingSymbol is IMethodSymbol enclosing)
++            return $"{Canonical(enclosing)}::{s.Name}#local";
++        return InAssembly(s, s.MethodKind switch
+         {
+             MethodKind.StaticConstructor => $"{s.ContainingType.ToDisplayString(QualifiedFormat)}::.cctor",
+             MethodKind.Constructor => $"{s.ContainingType.ToDisplayString(QualifiedFormat)}::..ctor({Params(s)})",
+-            MethodKind.LocalFunction when s.ContainingSymbol is IMethodSymbol enclosing =>
+-                $"{Canonical(enclosing)}::{s.Name}#local",
+             _ => $"{s.ContainingType.ToDisplayString(QualifiedFormat)}::{s.Name}({Params(s)})",
+-        };
++        });
+     }
+ 
+     /// <summary>字段初始化器的伪节点 id：T::field#init（初始化表达式里的调用归到这里）。</summary>
+     public static string ForFieldInitializer(IFieldSymbol field) =>
+-        $"{field.ContainingType.ToDisplayString(QualifiedFormat)}::{field.Name}#init";
++        InAssembly(field, $"{field.ContainingType.ToDisplayString(QualifiedFormat)}::{field.Name}#init");
+ 
+     /// <summary>属性初始化器的伪节点 id：T::Prop#init（<c>public B P { get; set; } = new B();</c>）。
+     /// 没有对应的字段声明语法，因此按属性自己的名字登记。</summary>
+     public static string ForPropertyInitializer(IPropertySymbol property) =>
+-        $"{property.ContainingType.ToDisplayString(QualifiedFormat)}::{property.Name}#init";
++        InAssembly(property, $"{property.ContainingType.ToDisplayString(QualifiedFormat)}::{property.Name}#init");
+ 
+     /// <summary>顶层语句的伪节点 id（整个入口一个节点）。</summary>
+-    public const string TopLevelId = "Program::<top-level>";
++    public static string ForTopLevel(Compilation compilation) =>
++        InAssembly(compilation.Assembly, "Program::<top-level>");
++
++    public static string ForField(IFieldSymbol field) =>
++        InAssembly(field, $"{field.ContainingType.ToDisplayString(QualifiedFormat)}::{field.Name}#field");
++
++    // Identity serialization only: retain the compiler-owned assembly boundary.
++    public static string InAssembly(ISymbol symbol, string localId)
++    {
++        var assembly = symbol as IAssemblySymbol ?? symbol.ContainingAssembly;
++        return $"[{assembly?.Identity.Name ?? "<unknown>"}]::{localId}";
++    }
+ 
+     /// <summary>
+     /// 委托调用的落点 id：<c>Action#delegate</c>（用委托类型本身命名）。
+@@ -337,7 +420,7 @@ public static class SymbolId
+     /// 后缀 <c>#delegate</c> 与字段初始化器的 <c>#init</c> 同族，一眼可辨其为伪节点。
+     /// </summary>
+     public static string ForDelegate(ITypeSymbol delegateType) =>
+-        $"{delegateType.ToDisplayString(QualifiedFormat)}#delegate";
++        InAssembly(delegateType, $"{delegateType.ToDisplayString(QualifiedFormat)}#delegate");
+ 
+     private static string Params(IMethodSymbol method) =>
+         string.Join(",", method.Parameters.Select(p => p.Type.ToDisplayString(QualifiedFormat)));
+@@ -385,3 +468,59 @@ internal static class EdgeTierClassifier
+         return EdgeTier.Direct;
+     }
+ }
++
++/// <summary>Compiler declaration facts for file classification; independent of graph inclusion.</summary>
++public sealed record ArchitectureFileFacts
++{
++    public string Assembly { get; init; } = "";
++    public string File { get; init; } = "";
++    public string Content { get; init; } = "";
++    public IReadOnlyList<string> Namespaces { get; init; } = [];
++    public IReadOnlyList<string> Names { get; init; } = [];
++    public IReadOnlyList<string> Kinds { get; init; } = [];
++    public IReadOnlyList<string> Annotations { get; init; } = [];
++    public IReadOnlyList<string> MethodAnnotations { get; init; } = [];
++    public IReadOnlyList<string> BaseTypes { get; init; } = [];
++    public IReadOnlyList<string> AnnotatedInterfaces { get; init; } = [];
++    public bool IsInterface { get; init; }
++
++    public static ArchitectureFileFacts From(SyntaxTree tree, SemanticModel model)
++    {
++        var declarations = tree.GetRoot().DescendantNodes().ToArray();
++        var types = declarations.Where(node => node is BaseTypeDeclarationSyntax or DelegateDeclarationSyntax)
++            .Select(node => model.GetDeclaredSymbol(node)).OfType<INamedTypeSymbol>().ToArray();
++        var methods = declarations.Where(node => node is BaseMethodDeclarationSyntax
++                or LocalFunctionStatementSyntax or AccessorDeclarationSyntax)
++            .Select(node => model.GetDeclaredSymbol(node)).OfType<IMethodSymbol>().ToArray();
++        return new ArchitectureFileFacts
++        {
++            Assembly = model.Compilation.AssemblyName ?? "",
++            File = tree.FilePath.Replace('\\', '/'),
++            Content = tree.GetText().ToString(),
++            Namespaces = Sorted(types.Select(type => type.ContainingNamespace.ToDisplayString())),
++            Names = Sorted(types.SelectMany(NamesOf)),
++            Kinds = Sorted(types.Select(type => type.IsRecord ? "record" : type.TypeKind.ToString().ToLowerInvariant())),
++            Annotations = Sorted(types.SelectMany(Attributes)),
++            MethodAnnotations = Sorted(methods.SelectMany(Attributes)),
++            BaseTypes = Sorted(types.SelectMany(Ancestors).SelectMany(NamesOf)),
++            AnnotatedInterfaces = Sorted(types.SelectMany(type => type.AllInterfaces).SelectMany(Attributes)),
++            IsInterface = types.Any(type => type.TypeKind == TypeKind.Interface),
++        };
++    }
++
++    private static IEnumerable<string> NamesOf(INamedTypeSymbol type) =>
++        new[] { type.Name, type.ToDisplayString(SymbolDisplayFormat.CSharpErrorMessageFormat) };
++
++    private static IEnumerable<string> Attributes(ISymbol symbol) => symbol.GetAttributes()
++        .Select(attribute => attribute.AttributeClass).OfType<INamedTypeSymbol>().SelectMany(NamesOf);
++
++    private static IEnumerable<INamedTypeSymbol> Ancestors(INamedTypeSymbol type)
++    {
++        for (var parent = type.BaseType; parent is not null; parent = parent.BaseType)
++            yield return parent;
++        foreach (var parent in type.AllInterfaces) yield return parent;
++    }
++
++    private static string[] Sorted(IEnumerable<string> values) => values.Where(value => value.Length > 0)
++        .Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToArray();
++}
+diff --git a/src/CallAtlas.Core/CodeMapJson.cs b/src/CallAtlas.Core/CodeMapJson.cs
+index 9555cb4..3fa6d8d 100644
+--- a/src/CallAtlas.Core/CodeMapJson.cs
++++ b/src/CallAtlas.Core/CodeMapJson.cs
+@@ -5,6 +5,65 @@ namespace CallAtlas.Core;
+ /// <summary>确定性 JSON 写出：字段顺序固定、排序在模型构建时完成、不含时间戳。</summary>
+ public static class CodeMapJson
+ {
++    private static void WriteDeclarations(Utf8JsonWriter writer, CodeMap map)
++    {
++            writer.WriteString("declarationFactsVersion", "2");
++            MediatRJson.Write(writer, map);
++            HttpRouteJson.Write(writer, map);
++            writer.WriteStartObject("entryPoints");
++            writer.WriteStartArray("candidates");
++            foreach (var entry in CodeMapQuery.EntryPoints(map))
++                writer.WriteStringValue(entry.Id);
++            writer.WriteEndArray();
++            writer.WriteStartArray("applicationStarts");
++            foreach (var identity in map.ApplicationStarts)
++                writer.WriteStringValue(identity);
++            writer.WriteEndArray();
++            writer.WriteEndObject();
++
++            writer.WriteStartArray("nodes");
++            foreach (var n in map.Nodes)
++            {
++                writer.WriteStartObject();
++                writer.WriteString("id", n.Id);
++                writer.WriteString("kind", n.Kind);
++                writer.WriteString("container", n.Container);
++                writer.WriteString("name", n.Name);
++                writer.WriteString("location", n.Location);
++                WriteDeclaration(writer, n.Declaration);
++                writer.WriteEndObject();
++            }
++            writer.WriteEndArray();
++
++    }
++
++    private static void WriteDeclaration(Utf8JsonWriter writer, MethodDeclarationFacts? facts)
++    {
++        if (facts is null) return;
++        writer.WriteStartObject("declaration");
++        writer.WriteBoolean("hasSourceDeclaration", facts.HasSourceDeclaration);
++        writer.WriteBoolean("isImplicit", facts.IsImplicit);
++        writer.WriteString("callableKind", facts.CallableKind);
++        writer.WriteBoolean("isObjectMember", facts.IsObjectMember);
++        writer.WriteString("visibility", facts.Visibility);
++        writer.WriteString("containerVisibility", facts.ContainerVisibility);
++        writer.WriteEndObject();
++    }
++
++    private static MethodDeclarationFacts? ReadDeclaration(JsonElement node)
++    {
++        if (!node.TryGetProperty("declaration", out var facts)) return null;
++        return new MethodDeclarationFacts
++        {
++            HasSourceDeclaration = facts.GetProperty("hasSourceDeclaration").GetBoolean(),
++            IsImplicit = facts.GetProperty("isImplicit").GetBoolean(),
++            CallableKind = facts.GetProperty("callableKind").GetString() ?? "",
++            IsObjectMember = facts.GetProperty("isObjectMember").GetBoolean(),
++            Visibility = facts.TryGetProperty("visibility", out var access) ? access.GetString() : null,
++            ContainerVisibility = facts.TryGetProperty("containerVisibility", out var containerAccess) ? containerAccess.GetString() : null,
++        };
++    }
++
+     /// <summary>写出供人读 / diff 的 JSON：缩进、字段顺序固定、排序已在模型侧完成、无时间戳。</summary>
+     public static string Write(CodeMap map) => Write(map, indented: true);
+ 
+@@ -24,18 +83,10 @@ public static class CodeMapJson
+             writer.WriteString("schema", map.Schema);
+             writer.WriteString("root", map.Root);
+ 
+-            writer.WriteStartArray("nodes");
+-            foreach (var n in map.Nodes)
+-            {
+-                writer.WriteStartObject();
+-                writer.WriteString("id", n.Id);
+-                writer.WriteString("kind", n.Kind);
+-                writer.WriteString("container", n.Container);
+-                writer.WriteString("name", n.Name);
+-                writer.WriteString("location", n.Location);
+-                writer.WriteEndObject();
+-            }
+-            writer.WriteEndArray();
++            writer.WritePropertyName("architectureFiles");
++            JsonSerializer.Serialize(writer, map.ArchitectureFiles, new JsonSerializerOptions
++                { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
++            WriteDeclarations(writer, map);
+ 
+             writer.WriteStartArray("edges");
+             foreach (var e in map.Edges)
+@@ -162,6 +213,8 @@ public static class CodeMapJson
+                     $"unsupported schema \"{schema}\" — known: {string.Join(", ", KnownSchemas)}. "
+                     + "Regenerate the snapshot, or add a migration if this is an older callatlas.");
+ 
++            var framework = MediatRJson.Read(root);
++            var http = HttpRouteJson.Read(root);
+             string Str(JsonElement e, string name) =>
+                 e.TryGetProperty(name, out var v) ? v.GetString() ?? "" : "";
+ 
+@@ -175,6 +228,7 @@ public static class CodeMapJson
+                         Container = Str(n, "container"),
+                         Name = Str(n, "name"),
+                         Location = Str(n, "location"),
++                        Declaration = ReadDeclaration(n),
+                     });
+ 
+             var edges = new List<Edge>();
+@@ -236,6 +290,16 @@ public static class CodeMapJson
+             {
+                 Schema = CodeMap.SchemaVersion,
+                 Root = Str(root, "root"),
++                FrameworkFactsVersion = framework.Version,
++                FrameworkEdges = framework.Edges,
++                FrameworkEntries = framework.Entries,
++                FrameworkDiagnostics = framework.Diagnostics,
++                HttpFactsVersion = http.Version,
++                HttpRoutes = http.Routes,
++                ArchitectureFiles = root.TryGetProperty("architectureFiles", out var architecture)
++                    ? JsonSerializer.Deserialize<ArchitectureFileFacts[]>(architecture.GetRawText(),
++                        new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase }) ?? []
++                    : [],
+                 Nodes = nodes,
+                 Edges = edges,
+                 // 读取路径**不裁剪字段**。这些曾经被硬编码成空值，因为最初的唯一消费者是
+@@ -282,4 +346,4 @@ public static class CodeMapJson
+     {
+         "callatlas.ir.v3",
+     };
+-}
+\ No newline at end of file
++}
+diff --git a/src/CallAtlas.Core/HttpRouteFacts.cs b/src/CallAtlas.Core/HttpRouteFacts.cs
+new file mode 100644
+index 0000000..5f59b55
+--- /dev/null
++++ b/src/CallAtlas.Core/HttpRouteFacts.cs
+@@ -0,0 +1,16 @@
++namespace CallAtlas.Core;
++
++/// <summary>Compiler-owned attributed MVC routes; restrictions retain unsupported competitors.</summary>
++public sealed record HttpRouteFact
++{
++    public const string Version = "1";
++    public string? Symbol { get; init; }
++    public required string Application { get; init; }
++    public string? Path { get; init; }
++    public IReadOnlyList<string> Methods { get; init; } = [];
++    public required HttpRouteSite Site { get; init; }
++    public IReadOnlyList<string> Restrictions { get; init; } = [];
++    public int? Order { get; init; }
++}
++
++public sealed record HttpRouteSite(string File, int Line, int Column);
+diff --git a/src/CallAtlas.Core/HttpRouteJson.cs b/src/CallAtlas.Core/HttpRouteJson.cs
+new file mode 100644
+index 0000000..d6b127e
+--- /dev/null
++++ b/src/CallAtlas.Core/HttpRouteJson.cs
+@@ -0,0 +1,32 @@
++using System.Text.Json;
++
++namespace CallAtlas.Core;
++
++internal static class HttpRouteJson
++{
++    private static readonly JsonSerializerOptions Options = new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
++
++    internal static void Write(Utf8JsonWriter writer, CodeMap map)
++    {
++        writer.WriteString("httpFactsVersion", map.HttpFactsVersion);
++        writer.WritePropertyName("httpRoutes");
++        JsonSerializer.Serialize(writer, map.HttpRoutes, Options);
++    }
++
++    internal static HttpRouteSnapshot Read(JsonElement root)
++    {
++        var version = root.TryGetProperty("httpFactsVersion", out var property) ? property.GetString() ?? "" : "";
++        if (version.Length != 0 && version != HttpRouteFact.Version)
++            throw new CallAtlasException($"Unsupported HTTP facts version '{version}'; regenerate the snapshot.");
++        if (!root.TryGetProperty("httpRoutes", out var routes))
++        {
++            if (version == HttpRouteFact.Version) throw new CallAtlasException("Missing HTTP routes; regenerate the snapshot.");
++            return new HttpRouteSnapshot(version, []);
++        }
++        if (routes.ValueKind != JsonValueKind.Array) throw new CallAtlasException("Invalid HTTP routes; regenerate the snapshot.");
++        return new HttpRouteSnapshot(version,
++            JsonSerializer.Deserialize<HttpRouteFact[]>(routes.GetRawText(), Options) ?? []);
++    }
++}
++
++internal sealed record HttpRouteSnapshot(string Version, HttpRouteFact[] Routes);
+diff --git a/src/CallAtlas.Core/MediatRContracts.cs b/src/CallAtlas.Core/MediatRContracts.cs
+new file mode 100644
+index 0000000..9d2317e
+--- /dev/null
++++ b/src/CallAtlas.Core/MediatRContracts.cs
+@@ -0,0 +1,70 @@
++using Microsoft.CodeAnalysis;
++using Microsoft.CodeAnalysis.CSharp.Syntax;
++using Microsoft.CodeAnalysis.Operations;
++
++namespace CallAtlas.Core;
++
++internal static class MediatRContracts
++{
++    internal static string StableType(ITypeSymbol type) => MediatRTypes.Stable(type);
++    internal static string TypeKey(ITypeSymbol type) => MediatRTypes.Key(type);
++    internal static bool IsClosed(ITypeSymbol type) => MediatRTypes.IsClosed(type);
++
++    internal static INamedTypeSymbol? FrameworkType(Compilation compilation, string metadataName)
++    {
++        var symbol = compilation.GetTypeByMetadataName(metadataName);
++        return symbol is not null && symbol.ContainingAssembly.Identity.Name == "MediatR"
++            && symbol.Locations.All(location => !location.IsInSource) ? symbol : null;
++    }
++
++    internal static bool HasFrameworkContracts(Compilation compilation) =>
++        FrameworkType(compilation, "MediatR.ISender") is not null
++        || FrameworkType(compilation, "MediatR.IPublisher") is not null;
++
++    internal static string? DispatchKind(IInvocationOperation invocation, Compilation compilation)
++    {
++        var method = invocation.TargetMethod.OriginalDefinition;
++        var metadata = method.Name switch
++        {
++            "Send" => "MediatR.ISender",
++            "Publish" => "MediatR.IPublisher",
++            _ => null,
++        };
++        if (metadata is null) return null;
++        var contract = FrameworkType(compilation, metadata);
++        return contract is not null && contract.GetMembers(method.Name).OfType<IMethodSymbol>()
++            .Any(candidate => SymbolEqualityComparer.Default.Equals(candidate.OriginalDefinition, method))
++            ? method.Name.ToLowerInvariant() : null;
++    }
++
++    internal static INamedTypeSymbol? Payload(IInvocationOperation invocation)
++    {
++        IOperation? value = invocation.Arguments.FirstOrDefault(argument => argument.Parameter?.Ordinal == 0)?.Value;
++        while (value is IConversionOperation { IsImplicit: true, OperatorMethod: null } conversion)
++            value = conversion.Operand;
++        if (value?.Type is not INamedTypeSymbol type) return null;
++        if (!IsPayloadType(type)) return null;
++        return value is IObjectCreationOperation || type.IsSealed || type.IsValueType ? type : null;
++    }
++
++    private static bool IsPayloadType(INamedTypeSymbol type) => IsClosed(type)
++        && type.TypeKind is not (TypeKind.Interface or TypeKind.Delegate)
++        && type.SpecialType != SpecialType.System_Object;
++
++    internal static HashSet<string> VisibleAssemblies(Compilation compilation) =>
++        compilation.SourceModule.ReferencedAssemblySymbols.Select(assembly => assembly.Identity.ToString())
++            .Append(compilation.Assembly.Identity.ToString()).ToHashSet(StringComparer.Ordinal);
++
++    internal static string? HandlerKind(Compilation compilation, INamedTypeSymbol contract)
++    {
++        foreach (var (name, dispatch) in new[] {
++                     ("MediatR.IRequestHandler`1", "send"), ("MediatR.IRequestHandler`2", "send"),
++                     ("MediatR.INotificationHandler`1", "publish") })
++        {
++            var expected = FrameworkType(compilation, name);
++            if (expected is not null && SymbolEqualityComparer.Default.Equals(expected, contract.OriginalDefinition))
++                return dispatch;
++        }
++        return null;
++    }
++}
+diff --git a/src/CallAtlas.Core/MediatRFacts.cs b/src/CallAtlas.Core/MediatRFacts.cs
+new file mode 100644
+index 0000000..cd88011
+--- /dev/null
++++ b/src/CallAtlas.Core/MediatRFacts.cs
+@@ -0,0 +1,30 @@
++using Microsoft.CodeAnalysis;
++
++namespace CallAtlas.Core;
++
++/// <summary>Separate compiler facts: native CallAtlas relationships remain unchanged.</summary>
++public sealed record MediatRFacts
++{
++    public const string Version = "1";
++    public IReadOnlyList<MediatRDispatchFact> Edges { get; init; } = [];
++    public IReadOnlyList<string> Diagnostics { get; init; } = [];
++    public IReadOnlyList<string> Entries { get; init; } = [];
++}
++
++public sealed record MediatRSourceSite(string File, int Line, int Column);
++
++public sealed record MediatRDispatchFact
++{
++    public required string From { get; init; }
++    public required string To { get; init; }
++    public required string Dispatch { get; init; }
++    public required MediatRSourceSite Invocation { get; init; }
++    public required string Payload { get; init; }
++    public required string Handler { get; init; }
++    public bool Awaited { get; init; }
++    public bool Conditional { get; init; }
++}
++
++internal sealed record MediatRBody(SemanticModel Model, string From, SyntaxNode[] Bodies);
++internal sealed record MediatRHandler(string Assembly, string Payload, string Dispatch,
++    string Type, string Method);
+diff --git a/src/CallAtlas.Core/MediatRHandlerCatalog.cs b/src/CallAtlas.Core/MediatRHandlerCatalog.cs
+new file mode 100644
+index 0000000..32069da
+--- /dev/null
++++ b/src/CallAtlas.Core/MediatRHandlerCatalog.cs
+@@ -0,0 +1,58 @@
++using Microsoft.CodeAnalysis;
++using Microsoft.CodeAnalysis.CSharp.Syntax;
++
++namespace CallAtlas.Core;
++
++internal static class MediatRHandlerCatalog
++{
++    internal static IEnumerable<MediatRHandler> Collect(
++        IReadOnlyList<(SyntaxTree Tree, SemanticModel Model, Compilation Compilation)> units,
++        IReadOnlySet<string> nodes)
++    {
++        var seen = new HashSet<INamedTypeSymbol>(SymbolEqualityComparer.Default);
++        foreach (var (type, compilation) in SourceTypes(units))
++        {
++            if (!seen.Add(type)) continue;
++            foreach (var handler in ForType(type, compilation, nodes)) yield return handler;
++        }
++    }
++
++    private static IEnumerable<(INamedTypeSymbol Type, Compilation Compilation)> SourceTypes(
++        IReadOnlyList<(SyntaxTree Tree, SemanticModel Model, Compilation Compilation)> units)
++    {
++        foreach (var (tree, model, compilation) in units)
++        foreach (var type in tree.GetRoot().DescendantNodes().OfType<BaseTypeDeclarationSyntax>()
++                     .Select(declaration => model.GetDeclaredSymbol(declaration)).OfType<INamedTypeSymbol>()
++                     .Where(IsConcreteClass))
++            yield return (type, compilation);
++    }
++
++    private static bool IsConcreteClass(INamedTypeSymbol type) =>
++        type.TypeKind == TypeKind.Class && !type.IsAbstract && MediatRContracts.IsClosed(type);
++
++    private static IEnumerable<MediatRHandler> ForType(INamedTypeSymbol type,
++        Compilation compilation, IReadOnlySet<string> nodes) =>
++        BoundContracts(type, compilation).SelectMany(binding => binding.Contract.GetMembers("Handle")
++            .OfType<IMethodSymbol>().Select(member => Resolve(type, binding, member, nodes)))
++            .OfType<MediatRHandler>();
++
++    private static IEnumerable<HandlerContract> BoundContracts(INamedTypeSymbol type, Compilation compilation) =>
++        type.AllInterfaces.Select(contract => new HandlerContract(contract,
++                MediatRContracts.HandlerKind(compilation, contract)))
++            .Where(IsSupportedBinding);
++
++    private static bool IsSupportedBinding(HandlerContract binding) => binding.Dispatch is not null
++        && MediatRContracts.IsClosed(binding.Contract.TypeArguments[0]);
++
++    private static MediatRHandler? Resolve(INamedTypeSymbol type, HandlerContract binding,
++        IMethodSymbol member, IReadOnlySet<string> nodes)
++    {
++        if (type.FindImplementationForInterfaceMember(member) is not IMethodSymbol method) return null;
++        var id = SymbolId.Canonical(method);
++        return nodes.Contains(id) ? new MediatRHandler(type.ContainingAssembly.Identity.ToString(),
++            MediatRContracts.TypeKey(binding.Contract.TypeArguments[0]), binding.Dispatch!,
++            MediatRContracts.StableType(type), id) : null;
++    }
++
++    private sealed record HandlerContract(INamedTypeSymbol Contract, string? Dispatch);
++}
+diff --git a/src/CallAtlas.Core/MediatRInference.cs b/src/CallAtlas.Core/MediatRInference.cs
+new file mode 100644
+index 0000000..498a0e5
+--- /dev/null
++++ b/src/CallAtlas.Core/MediatRInference.cs
+@@ -0,0 +1,139 @@
++using Microsoft.CodeAnalysis;
++using Microsoft.CodeAnalysis.CSharp;
++using Microsoft.CodeAnalysis.CSharp.Syntax;
++using Microsoft.CodeAnalysis.Operations;
++
++namespace CallAtlas.Core;
++
++internal sealed class MediatRInference
++{
++    private readonly MediatRHandler[] handlers;
++    private readonly List<MediatRDispatchFact> edges = [];
++    private readonly SortedSet<string> diagnostics = new(StringComparer.Ordinal);
++    private readonly string root;
++
++    private MediatRInference(MediatRHandler[] handlers, string root)
++    {
++        this.handlers = handlers;
++        this.root = root;
++    }
++
++    internal static MediatRFacts Analyze(
++        IReadOnlyList<(SyntaxTree Tree, SemanticModel Model, Compilation Compilation)> units,
++        IEnumerable<MediatRBody> bodies, IReadOnlySet<string> nodes, string root)
++    {
++        var scopes = CompilationScopes(units);
++        if (scopes.Count == 0) return new MediatRFacts();
++        var activeUnits = units.Where(unit => scopes.ContainsKey(unit.Compilation)).ToArray();
++        var analysis = new MediatRInference(MediatRHandlerCatalog.Collect(activeUnits, nodes).ToArray(), root);
++        foreach (var body in bodies)
++        {
++            if (scopes.TryGetValue(body.Model.Compilation, out var visible)) analysis.AnalyzeBody(body, visible);
++        }
++        return new MediatRFacts
++        {
++            Edges = analysis.edges.OrderBy(edge => edge.From, StringComparer.Ordinal)
++                .ThenBy(edge => edge.To, StringComparer.Ordinal)
++                .ThenBy(edge => edge.Invocation.File, StringComparer.Ordinal)
++                .ThenBy(edge => edge.Invocation.Line).ThenBy(edge => edge.Invocation.Column)
++                .ThenBy(edge => edge.Handler, StringComparer.Ordinal).ToArray(),
++            Diagnostics = analysis.diagnostics.ToArray(),
++            Entries = analysis.handlers.Select(handler => handler.Method).Distinct(StringComparer.Ordinal)
++                .Order(StringComparer.Ordinal).ToArray(),
++        };
++    }
++
++    private static Dictionary<Compilation, HashSet<string>> CompilationScopes(
++        IReadOnlyList<(SyntaxTree Tree, SemanticModel Model, Compilation Compilation)> units) =>
++        units.Select(unit => unit.Compilation).Distinct().Where(MediatRContracts.HasFrameworkContracts)
++            .ToDictionary(compilation => compilation, MediatRContracts.VisibleAssemblies);
++
++    private void AnalyzeBody(MediatRBody body, IReadOnlySet<string> visible)
++    {
++        foreach (var syntax in body.Bodies.SelectMany(node => node.DescendantNodesAndSelf(Descend))
++                     .OfType<InvocationExpressionSyntax>())
++        {
++            if (!IsDispatchName(syntax.Expression)) continue;
++            if (body.Model.GetOperation(syntax) is not IInvocationOperation invocation) continue;
++            var dispatch = MediatRContracts.DispatchKind(invocation, body.Model.Compilation);
++            if (dispatch is not null) AnalyzeInvocation(body.From, syntax, invocation, dispatch, visible);
++        }
++    }
++
++    private static bool IsDispatchName(ExpressionSyntax expression) => expression switch
++    {
++        MemberAccessExpressionSyntax access => access.Name.Identifier.ValueText is "Send" or "Publish",
++        MemberBindingExpressionSyntax binding => binding.Name.Identifier.ValueText is "Send" or "Publish",
++        SimpleNameSyntax name => name.Identifier.ValueText is "Send" or "Publish",
++        _ => false,
++    };
++
++    private static bool Descend(SyntaxNode node) =>
++        node is not (MethodDeclarationSyntax or ConstructorDeclarationSyntax or LocalFunctionStatementSyntax);
++
++    private void AnalyzeInvocation(string from, InvocationExpressionSyntax syntax, IInvocationOperation invocation,
++        string dispatch, IReadOnlySet<string> visible)
++    {
++        if (syntax.Ancestors().OfType<AnonymousFunctionExpressionSyntax>().Any())
++        {
++            Defer(syntax, "anonymous callable has no native identity");
++            return;
++        }
++        var payload = MediatRContracts.Payload(invocation);
++        if (payload is null)
++        {
++            Defer(syntax, "concrete closed payload type is unknown");
++            return;
++        }
++        var key = MediatRContracts.TypeKey(payload);
++        var candidates = handlers.Where(handler => handler.Dispatch == dispatch && handler.Payload == key
++            && visible.Contains(handler.Assembly)).ToArray();
++        if (candidates.Length == 0 || dispatch == "send" && candidates.Length != 1)
++        {
++            Defer(syntax, candidates.Length == 0 ? "no exact closed source handler in compiler scope"
++                : "multiple request handlers in compiler scope");
++            return;
++        }
++        foreach (var handler in candidates)
++            edges.Add(new MediatRDispatchFact
++            {
++                From = from, To = handler.Method, Dispatch = dispatch, Invocation = Site(syntax),
++                Payload = MediatRContracts.StableType(payload), Handler = handler.Type,
++                Awaited = IsDirectAwait(syntax),
++                Conditional = Context(syntax).Any(IsConditional),
++            });
++    }
++
++    private static bool IsDirectAwait(InvocationExpressionSyntax syntax)
++    {
++        SyntaxNode expression = syntax;
++        while (expression.Parent is ParenthesizedExpressionSyntax parenthesized)
++            expression = parenthesized;
++        return expression.Parent is AwaitExpressionSyntax;
++    }
++
++    private static IEnumerable<SyntaxNode> Context(SyntaxNode syntax) =>
++        syntax.Ancestors().TakeWhile(node => node is not (BaseMethodDeclarationSyntax
++            or LocalFunctionStatementSyntax or AnonymousFunctionExpressionSyntax));
++
++    private static bool IsConditional(SyntaxNode node) =>
++        node is IfStatementSyntax or SwitchSectionSyntax or SwitchExpressionArmSyntax or ConditionalExpressionSyntax
++            or ConditionalAccessExpressionSyntax or ForStatementSyntax or ForEachStatementSyntax
++            or WhileStatementSyntax or DoStatementSyntax or CatchClauseSyntax
++        || node.IsKind(SyntaxKind.LogicalAndExpression) || node.IsKind(SyntaxKind.LogicalOrExpression)
++        || node.IsKind(SyntaxKind.CoalesceExpression);
++
++    private MediatRSourceSite Site(SyntaxNode syntax)
++    {
++        var position = syntax.SyntaxTree.GetLineSpan(syntax.Span).StartLinePosition;
++        return new MediatRSourceSite(Path.GetRelativePath(root, syntax.SyntaxTree.FilePath).Replace('\\', '/'),
++            position.Line + 1, position.Character + 1);
++    }
++
++    private void Defer(SyntaxNode syntax, string reason)
++    {
++        var site = Site(syntax);
++        var file = Path.GetFullPath(syntax.SyntaxTree.FilePath).Replace('\\', '/');
++        diagnostics.Add($"MediatR dispatch deferred ({reason}) at {file}:{site.Line}:{site.Column}");
++    }
++}
+diff --git a/src/CallAtlas.Core/MediatRJson.cs b/src/CallAtlas.Core/MediatRJson.cs
+new file mode 100644
+index 0000000..8839204
+--- /dev/null
++++ b/src/CallAtlas.Core/MediatRJson.cs
+@@ -0,0 +1,51 @@
++using System.Text.Json;
++
++namespace CallAtlas.Core;
++
++/// <summary>Round-trip additive framework capability without relabeling historical snapshots.</summary>
++internal static class MediatRJson
++{
++    private static readonly JsonSerializerOptions Options = new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
++
++    internal static void Write(Utf8JsonWriter writer, CodeMap map)
++    {
++        writer.WriteString("frameworkFactsVersion", map.FrameworkFactsVersion);
++        WriteValue(writer, "frameworkEdges", map.FrameworkEdges);
++        WriteValue(writer, "frameworkEntries", map.FrameworkEntries);
++        WriteValue(writer, "frameworkDiagnostics", map.FrameworkDiagnostics);
++    }
++
++    private static void WriteValue<T>(Utf8JsonWriter writer, string name, T value)
++    {
++        writer.WritePropertyName(name);
++        JsonSerializer.Serialize(writer, value, Options);
++    }
++
++    internal static MediatRSnapshot Read(JsonElement root)
++    {
++        var version = root.TryGetProperty("frameworkFactsVersion", out var property) ? property.GetString() ?? "" : "";
++        if (version.Length != 0 && version != MediatRFacts.Version)
++            throw new CallAtlasException($"Unsupported framework facts version '{version}'; regenerate the snapshot.");
++        if (version == MediatRFacts.Version) RequireArrays(root);
++        return new MediatRSnapshot(version,
++            ReadValue<MediatRDispatchFact>(root, "frameworkEdges"),
++            ReadValue<string>(root, "frameworkEntries"),
++            ReadValue<string>(root, "frameworkDiagnostics"));
++    }
++
++    private static void RequireArrays(JsonElement root)
++    {
++        var fields = new[] { "frameworkEdges", "frameworkEntries", "frameworkDiagnostics" };
++        if (!fields.All(name => HasArray(root, name)))
++            throw new CallAtlasException("Incomplete framework facts; regenerate the snapshot.");
++    }
++
++    private static bool HasArray(JsonElement root, string name) =>
++        root.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.Array;
++
++    private static T[] ReadValue<T>(JsonElement root, string name) => root.TryGetProperty(name, out var value)
++        ? JsonSerializer.Deserialize<T[]>(value.GetRawText(), Options) ?? [] : [];
++}
++
++internal sealed record MediatRSnapshot(string Version, MediatRDispatchFact[] Edges,
++    string[] Entries, string[] Diagnostics);
+diff --git a/src/CallAtlas.Core/MediatRTypes.cs b/src/CallAtlas.Core/MediatRTypes.cs
+new file mode 100644
+index 0000000..02f75df
+--- /dev/null
++++ b/src/CallAtlas.Core/MediatRTypes.cs
+@@ -0,0 +1,74 @@
++using System.Text.Json;
++using System.Text.Json.Serialization;
++using Microsoft.CodeAnalysis;
++
++namespace CallAtlas.Core;
++
++/// <summary>Structural compiler type identities retain constructed owners and array element assemblies.</summary>
++internal static class MediatRTypes
++{
++    private static readonly JsonSerializerOptions Options = new()
++    {
++        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
++        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
++    };
++
++    internal static string Key(ITypeSymbol type) =>
++        JsonSerializer.Serialize(Describe(type, assembly => assembly.Identity.ToString()), Options);
++
++    internal static string Stable(ITypeSymbol type) =>
++        JsonSerializer.Serialize(Describe(type, assembly => assembly.Identity.Name), Options);
++
++    internal static bool IsClosed(ITypeSymbol type) => type switch
++    {
++        INamedTypeSymbol named => IsClosedNamed(named),
++        IArrayTypeSymbol array => IsClosed(array.ElementType),
++        _ => false,
++    };
++
++    private static bool IsClosedNamed(INamedTypeSymbol type) =>
++        IsNamedDefinition(type) && type.TypeArguments.All(IsClosed) && IsClosedOwner(type.ContainingType);
++
++    private static bool IsNamedDefinition(INamedTypeSymbol type) =>
++        !type.IsUnboundGenericType && type.TypeKind != TypeKind.Error;
++
++    private static bool IsClosedOwner(INamedTypeSymbol? owner) => owner is null || IsClosed(owner);
++
++    private static CompilerType Describe(ITypeSymbol type, Func<IAssemblySymbol, string> assemblyName) => type switch
++    {
++        INamedTypeSymbol named => Named(named, assemblyName),
++        IArrayTypeSymbol array => Array(array, assemblyName),
++        _ => throw new InvalidOperationException("Unsupported MediatR compiler type identity"),
++    };
++
++    private static CompilerType Named(INamedTypeSymbol type, Func<IAssemblySymbol, string> assemblyName) => new()
++    {
++        Kind = "named",
++        Assembly = assemblyName(type.ContainingAssembly),
++        Namespace = type.ContainingNamespace.ToDisplayString(),
++        Name = type.MetadataName,
++        Owner = type.ContainingType is null ? null : Describe(type.ContainingType, assemblyName),
++        Arguments = type.TypeArguments.Select(argument => Describe(argument, assemblyName)).ToArray(),
++    };
++
++    private static CompilerType Array(IArrayTypeSymbol type, Func<IAssemblySymbol, string> assemblyName) => new()
++    {
++        Kind = "array",
++        Element = Describe(type.ElementType, assemblyName),
++        Rank = type.Rank,
++        SzArray = type.IsSZArray,
++    };
++
++    private sealed record CompilerType
++    {
++        public required string Kind { get; init; }
++        public string? Assembly { get; init; }
++        public string? Namespace { get; init; }
++        public string? Name { get; init; }
++        public CompilerType? Owner { get; init; }
++        public CompilerType[]? Arguments { get; init; }
++        public CompilerType? Element { get; init; }
++        public int? Rank { get; init; }
++        public bool? SzArray { get; init; }
++    }
++}
+diff --git a/tests/CallAtlas.Tests/HttpRouteFactsTests.cs b/tests/CallAtlas.Tests/HttpRouteFactsTests.cs
+new file mode 100644
+index 0000000..fe979d5
+--- /dev/null
++++ b/tests/CallAtlas.Tests/HttpRouteFactsTests.cs
+@@ -0,0 +1,48 @@
++using CallAtlas.Core;
++using Xunit;
++
++namespace CallAtlas.Tests;
++
++public class HttpRouteFactsTests
++{
++    [Fact]
++    public void Http_snapshot_roundtrip_preserves_unsupported_route_and_owner()
++    {
++        var original = CallGraphBuilder.Build([("a.cs", "class A { void Run() {} }")], root: "/proj") with
++        {
++            HttpFactsVersion = "1",
++            HttpRoutes = [new HttpRouteFact
++            {
++                Symbol = "handler", Application = "ApplicationA", Path = "/api/{id:int}",
++                Methods = ["GET"], Site = new HttpRouteSite("a.cs", 2, 3),
++                Restrictions = ["aspnet.unsupported-template"], Order = null,
++            }],
++        };
++        var read = CodeMapJson.Read(CodeMapJson.Write(original));
++        Assert.Equal("1", read.HttpFactsVersion);
++        var route = Assert.Single(read.HttpRoutes);
++        Assert.Equal("handler", route.Symbol);
++        Assert.Equal("ApplicationA", route.Application);
++        Assert.Equal("/api/{id:int}", route.Path);
++        Assert.Equal(["GET"], route.Methods);
++        Assert.Equal(["aspnet.unsupported-template"], route.Restrictions);
++        Assert.Equal(new HttpRouteSite("a.cs", 2, 3), route.Site);
++        Assert.Null(route.Order);
++    }
++
++    [Fact]
++    public void Historical_snapshot_does_not_claim_current_http_capability()
++    {
++        var historical = CodeMapJson.Read("""{"schema":"callatlas.ir.v3","nodes":[],"edges":[]}""");
++        var read = CodeMapJson.Read(CodeMapJson.Write(historical));
++        Assert.Equal("", read.HttpFactsVersion);
++        Assert.Empty(read.HttpRoutes);
++    }
++
++    [Theory]
++    [InlineData("""{"schema":"callatlas.ir.v3","httpFactsVersion":"2","httpRoutes":[]}""")]
++    [InlineData("""{"schema":"callatlas.ir.v3","httpFactsVersion":"1"}""")]
++    [InlineData("""{"schema":"callatlas.ir.v3","httpFactsVersion":"1","httpRoutes":null}""")]
++    public void Incompatible_or_incomplete_http_capability_is_rejected(string json) =>
++        Assert.Throws<CallAtlasException>(() => CodeMapJson.Read(json));
++}
+diff --git a/tests/CallAtlas.Tests/MediatRFactsTests.cs b/tests/CallAtlas.Tests/MediatRFactsTests.cs
+new file mode 100644
+index 0000000..042c324
+--- /dev/null
++++ b/tests/CallAtlas.Tests/MediatRFactsTests.cs
+@@ -0,0 +1,48 @@
++using CallAtlas.Core;
++using Xunit;
++
++namespace CallAtlas.Tests;
++
++public class MediatRFactsTests
++{
++    [Fact]
++    public void Framework_snapshot_roundtrip_preserves_capability_and_all_facts()
++    {
++        var original = CallGraphBuilder.Build([("a.cs", "class A { void Run() {} }")], root: "/proj") with
++        {
++            FrameworkFactsVersion = "1",
++            FrameworkEdges = [new MediatRDispatchFact
++            {
++                From = "caller", To = "handler", Dispatch = "send", Payload = "[Contracts]::Ping",
++                Handler = "[Application]::Handler", Invocation = new MediatRSourceSite("a.cs", 3, 7),
++                Awaited = true, Conditional = true,
++            }],
++            FrameworkEntries = ["handler"],
++            FrameworkDiagnostics = ["deferred site"],
++        };
++        var read = CodeMapJson.Read(CodeMapJson.Write(original));
++        Assert.Equal("1", read.FrameworkFactsVersion);
++        Assert.Equal(original.FrameworkEdges, read.FrameworkEdges);
++        Assert.Equal(original.FrameworkEntries, read.FrameworkEntries);
++        Assert.Equal(original.FrameworkDiagnostics, read.FrameworkDiagnostics);
++        Assert.Equal(original.Edges, read.Edges);
++    }
++
++    [Fact]
++    public void Historical_snapshot_is_not_relabelled_as_current_framework_facts()
++    {
++        var historical = CodeMapJson.Read("""{"schema":"callatlas.ir.v3","nodes":[],"edges":[]}""");
++        var roundtrip = CodeMapJson.Read(CodeMapJson.Write(historical));
++        Assert.Equal("", roundtrip.FrameworkFactsVersion);
++        Assert.Empty(roundtrip.FrameworkEdges);
++    }
++
++    [Theory]
++    [InlineData("2")]
++    [InlineData("1")]
++    public void Unsupported_or_incomplete_framework_snapshot_is_rejected(string version)
++    {
++        var json = "{\"schema\":\"callatlas.ir.v3\",\"frameworkFactsVersion\":\"" + version + "\"}";
++        Assert.Throws<CallAtlasException>(() => CodeMapJson.Read(json));
++    }
++}

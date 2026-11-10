@@ -100,6 +100,12 @@ pub struct EntryPoints {
 
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
 pub struct GraphData {
+    /// Compiler-owned context directories embedded in native identities.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub identity_roots: Vec<String>,
+    /// Build owners whose project display labels come from their directory.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub folder_project_builds: Vec<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub boundaries: Option<crate::boundary::BoundaryInventory>,
     /// Adapter-owned export keys; native bindings and graph identity stay intact.
@@ -123,6 +129,7 @@ pub struct GraphData {
 
 impl GraphData {
     pub fn validate(&self) -> Result<()> {
+        self.validate_inventory_versions()?;
         ensure!(
             self.nodes.len() <= u32::MAX as usize,
             "Too many graph nodes"
@@ -157,6 +164,22 @@ impl GraphData {
             for evidence in &edge.evidence {
                 evidence.validate(&identities)?;
             }
+        }
+        Ok(())
+    }
+
+    fn validate_inventory_versions(&self) -> Result<()> {
+        if let Some(inventory) = &self.flow_inventory {
+            ensure!(
+                inventory.version == crate::flow::INVENTORY_VERSION,
+                "Unsupported function flow inventory version"
+            );
+        }
+        if let Some(facts) = &self.architecture {
+            ensure!(
+                facts.version == crate::architecture::FACTS_VERSION,
+                "Unsupported architecture declaration facts version"
+            );
         }
         Ok(())
     }

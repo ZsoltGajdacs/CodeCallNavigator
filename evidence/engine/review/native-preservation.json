@@ -1,0 +1,150 @@
+[
+  {
+    "workload": "maven",
+    "nodes": 10,
+    "edges": 3,
+    "different_fields": [
+      "engine_versions",
+      "identity_roots"
+    ],
+    "semantic_differences": 0,
+    "difference_count": 2,
+    "examples": []
+  },
+  {
+    "workload": "gradle",
+    "nodes": 9,
+    "edges": 3,
+    "different_fields": [
+      "engine_versions",
+      "folder_project_builds",
+      "identity_roots"
+    ],
+    "semantic_differences": 0,
+    "difference_count": 3,
+    "examples": []
+  },
+  {
+    "workload": "csharp",
+    "nodes": 16,
+    "edges": 12,
+    "different_fields": [
+      "engine_versions"
+    ],
+    "semantic_differences": 0,
+    "difference_count": 1,
+    "examples": []
+  },
+  {
+    "workload": "typescript",
+    "nodes": 75,
+    "edges": 50,
+    "different_fields": [
+      "engine_versions",
+      "export_identities",
+      "nodes"
+    ],
+    "semantic_differences": 6,
+    "difference_count": 18,
+    "examples": [
+      {
+        "path": "/nodes/0/signature",
+        "before": "(): Element",
+        "after": "(): import(\"react\").JSX.Element"
+      },
+      {
+        "path": "/nodes/8/signature",
+        "before": "(): Element",
+        "after": "(): import(\"react\").JSX.Element"
+      },
+      {
+        "path": "/nodes/10/signature",
+        "before": "({ onGo }: { onGo: () => number; }): Element",
+        "after": "({ onGo }: { onGo: () => number; }): import(\"react\").JSX.Element"
+      },
+      {
+        "path": "/nodes/11/signature",
+        "before": "(): Element",
+        "after": "(): import(\"react\").JSX.Element"
+      },
+      {
+        "path": "/nodes/16/signature",
+        "before": "(): Element",
+        "after": "(): import(\"react\").JSX.Element"
+      },
+      {
+        "path": "/nodes/18/signature",
+        "before": "(): Element",
+        "after": "(): import(\"react\").JSX.Element"
+      }
+    ]
+  },
+  {
+    "workload": "spring",
+    "nodes": 29,
+    "edges": 38,
+    "different_fields": [
+      "engine_versions",
+      "identity_roots"
+    ],
+    "semantic_differences": 0,
+    "difference_count": 2,
+    "examples": []
+  },
+  {
+    "workload": "mediatr",
+    "nodes": 49,
+    "edges": 11,
+    "different_fields": [
+      "engine_versions"
+    ],
+    "semantic_differences": 0,
+    "difference_count": 1,
+    "examples": []
+  },
+  {
+    "workload": "mixed",
+    "nodes": 179,
+    "edges": 114,
+    "different_fields": [
+      "engine_versions",
+      "export_identities",
+      "identity_roots",
+      "nodes"
+    ],
+    "semantic_differences": 6,
+    "difference_count": 19,
+    "examples": [
+      {
+        "path": "/nodes/65/signature",
+        "before": "(): Element",
+        "after": "(): import(\"react\").JSX.Element"
+      },
+      {
+        "path": "/nodes/73/signature",
+        "before": "(): Element",
+        "after": "(): import(\"react\").JSX.Element"
+      },
+      {
+        "path": "/nodes/75/signature",
+        "before": "({ onGo }: { onGo: () => number; }): Element",
+        "after": "({ onGo }: { onGo: () => number; }): import(\"react\").JSX.Element"
+      },
+      {
+        "path": "/nodes/76/signature",
+        "before": "(): Element",
+        "after": "(): import(\"react\").JSX.Element"
+      },
+      {
+        "path": "/nodes/81/signature",
+        "before": "(): Element",
+        "after": "(): import(\"react\").JSX.Element"
+      },
+      {
+        "path": "/nodes/83/signature",
+        "before": "(): Element",
+        "after": "(): import(\"react\").JSX.Element"
+      }
+    ]
+  }
+]

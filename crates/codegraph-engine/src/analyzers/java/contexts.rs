@@ -250,6 +250,7 @@ mod tests {
         fs::write(classes.join("Example.class"), b"fixture").unwrap();
         let absent = root.path().join("dependency-output");
         let source = JavaSourceSet {
+            application: None,
             project: "fixture".into(),
             source_set: "main".into(),
             project_dir: root.path().into(),

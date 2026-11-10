@@ -1,0 +1,48 @@
+{
+  "python_tests": {
+    "passed": 58,
+    "failed": 0,
+    "log": "python-tests.log"
+  },
+  "python_tools": {
+    "passed": 19,
+    "failed": 0,
+    "log": "python-tools.log"
+  },
+  "typescript": {
+    "passed": 104,
+    "failed": 0,
+    "log": "typescript-tests.log"
+  },
+  "callatlas": {
+    "passed": 262,
+    "failed": 29,
+    "same_baseline_failure_names": true,
+    "comparison": "/private/tmp/codegraph-final-review-callatlas-results/comparison.json"
+  },
+  "workspace": {
+    "passed": 379,
+    "failed": 0,
+    "opt_in_ignored": 77
+  },
+  "clippy": "passed",
+  "packaging": "standalone engine and desktop app passed",
+  "native_acceptance": {
+    "passed": 51,
+    "transient_nuget_restore_failure": 1,
+    "isolated_retry": "passed"
+  },
+  "integration": {
+    "passed": 8,
+    "failed": 0
+  },
+  "desktop_process_tests": {
+    "passed": 8,
+    "failed": 0
+  },
+  "determinism": {
+    "workloads": 7,
+    "repeat_equal": true,
+    "relocation_and_target_reordering_equal": true
+  }
+}

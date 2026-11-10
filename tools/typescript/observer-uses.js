@@ -3,7 +3,7 @@ const syntax=require('./observer-syntax.js');
 const {declarationKey}=require('./paths.js');
 const {isWrapper}=require('./syntax.js');
 const {parameterUnchanged,written}=require('./observer-values.js');
-const {elementWrites}=require('./observer-intrinsics.js');
+const {elementWrites,setEscape,SET_PROOF}=require('./observer-intrinsics.js');
 const {registrarReceiver,collectionReceiver}=require('./observer-receivers.js');
 const {ContextEscapes}=require('./observer-context.js');
 function wrapperParent(ts,node) {
@@ -120,6 +120,7 @@ class Uses {
   channelReference(channel,node,expression,checker) {if(channel&&node!==channel.node.name) this.use(channel,expression,checker);}
   scan() {
     syntax.walkOwned(this.bindings,(node,{checker})=>{
+      if(setEscape(this.bindings,checker,node)) this.writes.add(SET_PROOF);
       if(this.ts.isCallExpression(node)) this.calls.push({node,checker});
       if(this.ts.isElementAccessExpression(node)) this.computed(node,checker);
       this.contextual.inspect(node,checker);

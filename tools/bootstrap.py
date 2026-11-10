@@ -49,9 +49,10 @@ def apply_patch(spec, name="callatlas"):
 
 def checkout_patch(command):
     untracked = subprocess.check_output([*command, "ls-files", "--others", "--exclude-standard", "-z"])
+    marked = hidden_index_paths(command)
     environment = {**os.environ, "GIT_OPTIONAL_LOCKS": "0"}
-    if not untracked:
-        return subprocess.check_output([*command, "diff", "--binary", "HEAD"], env=environment)
+    if not untracked and not marked:
+        return source_diff(command, environment)
     # git apply leaves newly added source files untracked. Include them in the
     # exact-patch comparison without modifying the real index or staging work.
     # Unrelated files make the complete diff differ and are rejected by callers.
@@ -61,9 +62,28 @@ def checkout_patch(command):
         temporary_index = Path(temporary) / "index"
         shutil.copyfile(original_index, temporary_index)
         environment.update(GIT_INDEX_FILE=str(temporary_index), GIT_LITERAL_PATHSPECS="1")
-        subprocess.run([*command, "add", "--intent-to-add", "--pathspec-from-file=-", "--pathspec-file-nul"],
-                       input=untracked, env=environment, check=True)
-        return subprocess.check_output([*command, "diff", "--binary", "HEAD"], env=environment)
+        clear_index_flags(command, environment, marked)
+        if untracked:
+            subprocess.run([*command, "add", "--intent-to-add", "--pathspec-from-file=-", "--pathspec-file-nul"],
+                           input=untracked, env=environment, check=True)
+        return source_diff(command, environment)
+
+
+def source_diff(command, environment):
+    return subprocess.check_output([*command, "diff", "--no-ext-diff", "--no-textconv", "--binary", "HEAD"], env=environment)
+
+
+def hidden_index_paths(command):
+    entries = subprocess.check_output([*command, "ls-files", "-v", "-z"]).split(b"\0")
+    paths = [entry[2:] for entry in entries if entry[:1] == b"S" or entry[:1].islower()]
+    return b"\0".join(paths) + b"\0" if paths else b""
+
+
+def clear_index_flags(command, environment, paths):
+    if not paths:
+        return
+    for option in ("--no-assume-unchanged", "--no-skip-worktree"):
+        subprocess.run([*command, "update-index", option, "-z", "--stdin"], input=paths, env=environment, check=True)
 
 
 def upgrade_legacy_patch(command, spec, difference, patch):

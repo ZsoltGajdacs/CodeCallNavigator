@@ -1,5 +1,6 @@
 'use strict';
 const path = require('node:path');
+const {sourcePath}=require('./paths.js');
 const {methodVisibility} = require('./visibility.js');
 const {mergeEvidence}=require('./evidence.js');
 class Graph {
@@ -14,14 +15,15 @@ class Graph {
     const id=`${owner}|${file.fileName}|${position}|${kind}`;
     if (this.indices.has(id)) return this.indices.get(id);
     const index=this.nodes.length;
-    const relative=path.relative(path.dirname(owner),file.fileName);
+    const source=sourcePath(file);
+    const relative=path.relative(path.dirname(owner),source);
     const signature=['module','implicit-constructor','initializer'].includes(kind) ? undefined : checker.getSignatureFromDeclaration(declaration);
     const generatedFolders=['/.next/','/generated/','/__generated__/'];
-    const generatedOutput=this.context.metadata.output_roots.some(root=>file.fileName.startsWith(`${root}/`));
+    const generatedOutput=this.context.metadata.output_roots.some(root=>source.startsWith(`${root}/`));
     this.nodes.push({id,project:path.basename(path.dirname(owner)),build:owner,language:'typescript',kind,label,
-      signature:signature ? checker.signatureToString(signature) : label,visibility:methodVisibility(this.context.ts,declaration),namespace:path.dirname(relative),container:relative,file:file.fileName,
+      signature:signature ? checker.signatureToString(signature,declaration) : label,visibility:methodVisibility(this.context.ts,declaration),namespace:path.dirname(relative),container:relative,file:source,
       line:file.getLineAndCharacterOfPosition(position).line+1,is_test:/(?:^|\/)(?:__tests__|tests?|test-support|test-fixtures)(?:\/|$)|\.(?:test|spec)\.[cm]?tsx?$/.test(relative),
-      is_generated:generatedOutput || generatedFolders.some(root=>file.fileName.includes(root)),body_unavailable:!['module','implicit-constructor','initializer'].includes(kind) && !declaration.body});
+      is_generated:generatedOutput || generatedFolders.some(root=>source.includes(root)),body_unavailable:!['module','implicit-constructor','initializer'].includes(kind) && !declaration.body});
     this.indices.set(id,index); return index;
   }
   edge(from,to,kind='call',{certainty='direct',provenance='typescript.compiler',evidence=[]}={}) {

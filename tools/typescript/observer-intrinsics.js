@@ -1,6 +1,8 @@
 'use strict';
 const {declarationKey}=require('./paths.js');
 const syntax=require('./observer-syntax.js');
+const {compilerGlobal,globalMemberUse,outerExpression}=require('./intrinsic-globals.js');
+const SET_PROOF='codegraph.observer:builtin-set-escape';
 function iterator(ts,declaration) {
   if(!declaration.name||!ts.isComputedPropertyName(declaration.name)) return false;
   const expression=declaration.name.expression;
@@ -12,13 +14,24 @@ function members(bindings,type) {
 }
 function storageMembers(bindings,checker,declaration) {
   const constructor=syntax.keys(bindings,checker,declaration.initializer.expression);
-  return [...constructor,...members(bindings,checker.getTypeAtLocation(declaration.name))];
+  return [SET_PROOF,...constructor,...members(bindings,checker.getTypeAtLocation(declaration.name))];
 }
 function elementWrites(bindings,node,checker) {
   const type=checker.getTypeAtLocation(syntax.unwrap(bindings.ts,node.expression));
   const symbol=type.getSymbol();
   if(symbol?.name!=='Set'||!syntax.librarySymbol(bindings,symbol)) return [];
   return members(bindings,type);
+}
+function constructorUseEscapes(ts,node) {
+  const expression=outerExpression(ts,node),parent=expression.parent;
+  return !ts.isNewExpression(parent)||parent.expression!==expression;
+}
+function setEscape(bindings,checker,node) {
+  if(syntax.typePosition(bindings.ts,node)) return false;
+  const use=globalMemberUse(bindings,checker,node,'Set');
+  if(use!==undefined) return use===null||constructorUseEscapes(bindings.ts,use);
+  if(node.text!=='Set'||!compilerGlobal(bindings,checker,node)) return false;
+  return constructorUseEscapes(bindings.ts,node);
 }
 function validateStorage(bindings,channels,writes) {
   for(const channel of channels.values()) {
@@ -27,4 +40,4 @@ function validateStorage(bindings,channels,writes) {
     bindings.graph.diagnostic('unresolved observer builtin storage mutation');
   }
 }
-module.exports={storageMembers,elementWrites,validateStorage};
+module.exports={storageMembers,elementWrites,validateStorage,setEscape,SET_PROOF};

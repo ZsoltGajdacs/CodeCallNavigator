@@ -32,7 +32,7 @@ public final class SourceInventory {
         if (args.length < 3) throw new IllegalArgumentException("Usage: SourceInventory OUTPUT CLASSPATH CLASS_DIRS SOURCE_ROOT...");
         var sources = CompiledSources.collect(args[2], java.util.Arrays.copyOfRange(args, 3, args.length));
         try (var writer = Files.newBufferedWriter(Path.of(args[0]))) {
-            ContextTsv.write(writer, "kind_v6", "signature", "return_type", "start_line", "end_line",
+            ContextTsv.write(writer, "kind_v7", "signature", "return_type", "start_line", "end_line",
                     "start_column", "end_column", "context", "assigned_name");
             if (sources.isEmpty()) return;
             inventory(sources, args[1], writer);

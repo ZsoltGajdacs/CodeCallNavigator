@@ -417,6 +417,8 @@ impl<'a> BytecodeCollector<'a> {
             &self.source_inventory,
         );
         self.graph.flow_inventory = flows.inventory;
+        self.graph.export_identities.extend(flows.export_identities);
+        self.graph.diagnostics.extend(flows.unstable_identities);
         self.graph.entry_points = Some(EntryPoints {
             framework_entries: Vec::new(),
             candidates: Vec::new(),

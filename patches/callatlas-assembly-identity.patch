@@ -122,23 +122,70 @@ index 0000000..04b6183
 +    private static bool NeedsSilentSelector(AspNetRouteSpec[] routes, AspNetRouteSpec[] silent) =>
 +        routes.Length == 0 || silent.Length != 0 && routes.Where(route => !route.Silent).All(route => route.IsHttp);
 +}
+diff --git a/src/CallAtlas.Core/AspNetAwaiterResults.cs b/src/CallAtlas.Core/AspNetAwaiterResults.cs
+new file mode 100644
+index 0000000..2b8f371
+--- /dev/null
++++ b/src/CallAtlas.Core/AspNetAwaiterResults.cs
+@@ -0,0 +1,28 @@
++using Microsoft.CodeAnalysis;
++
++namespace CallAtlas.Core;
++
++/// <summary>Potential public awaiter results are inspected as symbols, never evaluated.</summary>
++internal static class AspNetAwaiterResults
++{
++    internal static IEnumerable<INamedTypeSymbol> Results(INamedTypeSymbol type) =>
++        Methods(type, "GetAwaiter").Select(method => method.ReturnType).OfType<INamedTypeSymbol>()
++            .Where(HasCompletion).SelectMany(awaiter => Methods(awaiter, "GetResult")
++                .Select(method => method.ReturnType)).OfType<INamedTypeSymbol>();
++
++    private static IEnumerable<IMethodSymbol> Methods(INamedTypeSymbol type, string name) =>
++        AspNetContracts.Ancestors(type).SelectMany(owner => owner.GetMembers(name))
++            .OfType<IMethodSymbol>().Where(ParameterlessInstance);
++
++    private static bool ParameterlessInstance(IMethodSymbol method) =>
++        method.DeclaredAccessibility == Accessibility.Public && !method.IsStatic
++        && !method.IsGenericMethod && method.Parameters.Length == 0;
++
++    private static bool HasCompletion(INamedTypeSymbol type) =>
++        AspNetContracts.Ancestors(type).SelectMany(owner => owner.GetMembers("IsCompleted"))
++            .OfType<IPropertySymbol>().Any(CompletionProperty);
++
++    private static bool CompletionProperty(IPropertySymbol property) =>
++        property.Type.SpecialType == SpecialType.System_Boolean && !property.IsStatic
++        && !property.IsIndexer && property.GetMethod?.DeclaredAccessibility == Accessibility.Public;
++}
 diff --git a/src/CallAtlas.Core/AspNetConstraints.cs b/src/CallAtlas.Core/AspNetConstraints.cs
 new file mode 100644
-index 0000000..bea1bef
+index 0000000..7e18a29
 --- /dev/null
 +++ b/src/CallAtlas.Core/AspNetConstraints.cs
-@@ -0,0 +1,28 @@
+@@ -0,0 +1,61 @@
 +using Microsoft.CodeAnalysis;
 +
 +namespace CallAtlas.Core;
 +
 +internal sealed class AspNetConstraints(AspNetContracts contracts)
 +{
-+    internal string[] Restrictions(INamedTypeSymbol controller, IMethodSymbol action) =>
-+        Attributes(controller, action).Where(RequestConstraint).Any() ? ["aspnet.request-constraints"] : [];
++    internal string[] Restrictions(INamedTypeSymbol controller, IMethodSymbol action)
++    {
++        var result = new List<string>();
++        if (Attributes(controller, action).Any(RequestConstraint)) result.Add("aspnet.request-constraints");
++        if (ReturnMetadata(action.ReturnType)) result.Add("aspnet.return-endpoint-metadata");
++        if (action.Parameters.Any(ParameterMetadata)) result.Add("aspnet.parameter-endpoint-metadata");
++        if (ModelConventions(controller, action)) result.Add("aspnet.model-convention");
++        return result.ToArray();
++    }
 +
 +    internal bool UnknownMethods(INamedTypeSymbol controller, IMethodSymbol action) =>
-+        Attributes(controller, action).Any(UnknownMethodProvider);
++        Attributes(controller, action).Any(UnknownMethodProvider) || DynamicEndpoint(controller, action);
++
++    internal bool DynamicEndpoint(INamedTypeSymbol controller, IMethodSymbol action) =>
++        ReturnMetadata(action.ReturnType) || action.Parameters.Any(ParameterMetadata) || ModelConventions(controller, action);
++
++    private bool ModelConventions(INamedTypeSymbol controller, IMethodSymbol action) =>
++        new AspNetModelConventions(contracts).Applies(controller, action);
 +
 +    private static IEnumerable<AttributeData> Attributes(INamedTypeSymbol controller, IMethodSymbol action) =>
 +        AspNetContracts.Attributes(controller).Concat(AspNetContracts.Attributes(action));
@@ -146,11 +193,31 @@ index 0000000..bea1bef
 +    private bool RequestConstraint(AttributeData attribute) =>
 +        contracts.Implements(attribute.AttributeClass, "Microsoft.AspNetCore.Mvc.ActionConstraints.IActionConstraintMetadata")
 +        || contracts.Implements(attribute.AttributeClass, "Microsoft.AspNetCore.Routing.IHostMetadata")
-+        || contracts.Implements(attribute.AttributeClass, "Microsoft.AspNetCore.Routing.ISuppressMatchingMetadata");
++        || contracts.Implements(attribute.AttributeClass, "Microsoft.AspNetCore.Routing.ISuppressMatchingMetadata")
++        || EndpointMethods(attribute.AttributeClass);
 +
 +    private bool UnknownMethodProvider(AttributeData attribute) =>
-+        contracts.Implements(attribute.AttributeClass, "Microsoft.AspNetCore.Mvc.Routing.IActionHttpMethodProvider")
-+        && !KnownMethodProvider(attribute.AttributeClass);
++        EndpointMethods(attribute.AttributeClass) || CustomActionMethods(attribute.AttributeClass);
++
++    private bool EndpointMethods(INamedTypeSymbol? type) =>
++        contracts.Implements(type, "Microsoft.AspNetCore.Routing.IHttpMethodMetadata");
++
++    private bool CustomActionMethods(INamedTypeSymbol? type) =>
++        contracts.Implements(type, "Microsoft.AspNetCore.Mvc.Routing.IActionHttpMethodProvider") && !KnownMethodProvider(type);
++
++    private bool ReturnMetadata(ITypeSymbol type)
++    {
++        if (type is not INamedTypeSymbol named) return false;
++        var effective = contracts.TaskResult(named) ?? named;
++        return MetadataProvider(effective as INamedTypeSymbol) || AspNetAwaiterResults.Results(named).Any(MetadataProvider);
++    }
++
++    private bool MetadataProvider(INamedTypeSymbol? type) =>
++        contracts.Implements(type, "Microsoft.AspNetCore.Http.Metadata.IEndpointMetadataProvider");
++
++    private bool ParameterMetadata(IParameterSymbol parameter) =>
++        contracts.Implements(parameter.Type as INamedTypeSymbol, "Microsoft.AspNetCore.Http.Metadata.IEndpointMetadataProvider")
++        || contracts.Implements(parameter.Type as INamedTypeSymbol, "Microsoft.AspNetCore.Http.Metadata.IEndpointParameterMetadataProvider");
 +
 +    private bool KnownMethodProvider(INamedTypeSymbol? type) => new[] { "Get", "Post", "Put", "Delete", "Patch", "Head", "Options" }
 +        .Any(verb => contracts.Is(type, "Microsoft.AspNetCore.Mvc.Http" + verb + "Attribute"))
@@ -158,10 +225,10 @@ index 0000000..bea1bef
 +}
 diff --git a/src/CallAtlas.Core/AspNetContracts.cs b/src/CallAtlas.Core/AspNetContracts.cs
 new file mode 100644
-index 0000000..33b59ec
+index 0000000..accd9b3
 --- /dev/null
 +++ b/src/CallAtlas.Core/AspNetContracts.cs
-@@ -0,0 +1,54 @@
+@@ -0,0 +1,75 @@
 +using Microsoft.CodeAnalysis;
 +
 +namespace CallAtlas.Core;
@@ -191,7 +258,28 @@ index 0000000..33b59ec
 +        Ancestors(symbol).Any(type => Is(type, metadataName));
 +
 +    internal bool Implements(INamedTypeSymbol? symbol, string metadataName) => symbol is not null
-+        && symbol.AllInterfaces.Any(type => Is(type, metadataName));
++        && (Is(symbol, metadataName) || symbol.AllInterfaces.Any(type => Is(type, metadataName)));
++
++    internal ITypeSymbol? TaskResult(INamedTypeSymbol type) =>
++        Ancestors(type).Select(DirectTaskResult).FirstOrDefault(result => result is not null);
++
++    private ITypeSymbol? DirectTaskResult(INamedTypeSymbol type)
++    {
++        if (type.TypeArguments.Length != 1) return null;
++        return RuntimeType(type, "System.Threading.Tasks.Task`1")
++            || RuntimeType(type, "System.Threading.Tasks.ValueTask`1") ? type.TypeArguments[0] : null;
++    }
++
++    private bool RuntimeType(INamedTypeSymbol symbol, string metadataName)
++    {
++        var expected = compilation.GetTypeByMetadataName(metadataName);
++        return expected is not null && RuntimeMetadata(expected)
++            && SymbolEqualityComparer.Default.Equals(symbol.OriginalDefinition, expected);
++    }
++
++    private static bool RuntimeMetadata(INamedTypeSymbol type) => type.Locations.All(location => !location.IsInSource)
++        && type.ContainingAssembly.Identity.Name is "System.Runtime" or "System.Private.CoreLib"
++            or "System.Threading.Tasks" or "mscorlib";
 +
 +    internal bool RouteProvider(AttributeData attribute) =>
 +        Implements(attribute.AttributeClass, "Microsoft.AspNetCore.Mvc.Routing.IRouteTemplateProvider");
@@ -260,9 +348,40 @@ index 0000000..59c3867
 +
 +    private static IMethodSymbol Root(IMethodSymbol method) => AspNetContracts.MethodChain(method).Last();
 +}
+diff --git a/src/CallAtlas.Core/AspNetModelConventions.cs b/src/CallAtlas.Core/AspNetModelConventions.cs
+new file mode 100644
+index 0000000..7615e50
+--- /dev/null
++++ b/src/CallAtlas.Core/AspNetModelConventions.cs
+@@ -0,0 +1,25 @@
++using Microsoft.CodeAnalysis;
++
++namespace CallAtlas.Core;
++
++// Mirrors default MVC attribute convention scopes. Configured global conventions are not evaluated.
++internal sealed class AspNetModelConventions(AspNetContracts contracts)
++{
++    internal bool Applies(INamedTypeSymbol controller, IMethodSymbol action) =>
++        Has(controller, "IControllerModelConvention")
++        || Has(action, "IActionModelConvention")
++        || action.Parameters.Any(ParameterConvention)
++        || AspNetContracts.Ancestors(controller).SelectMany(type => type.GetMembers())
++            .OfType<IPropertySymbol>().Any(PropertyConvention);
++
++    private bool ParameterConvention(IParameterSymbol parameter) =>
++        Has(parameter, "IParameterModelConvention") || Has(parameter, "IParameterModelBaseConvention");
++
++    private bool PropertyConvention(IPropertySymbol property) =>
++        property.DeclaredAccessibility == Accessibility.Public && !property.IsStatic
++        && Has(property, "IParameterModelBaseConvention");
++
++    private bool Has(ISymbol owner, string convention) =>
++        AspNetContracts.Attributes(owner).Any(attribute => contracts.Implements(attribute.AttributeClass,
++            "Microsoft.AspNetCore.Mvc.ApplicationModels." + convention));
++}
 diff --git a/src/CallAtlas.Core/AspNetRouteBuilder.cs b/src/CallAtlas.Core/AspNetRouteBuilder.cs
 new file mode 100644
-index 0000000..ec8dab6
+index 0000000..ace8502
 --- /dev/null
 +++ b/src/CallAtlas.Core/AspNetRouteBuilder.cs
 @@ -0,0 +1,62 @@
@@ -277,7 +396,7 @@ index 0000000..ec8dab6
 +    internal HttpRouteFact? Build(INamedTypeSymbol controller, IMethodSymbol method,
 +        AspNetRouteSpec prefix, AspNetRouteSpec selector)
 +    {
-+        var selection = new AspNetRouteSelection(prefix, selector);
++        var selection = new AspNetRouteSelection(prefix, selector, constraints.DynamicEndpoint(controller, method));
 +        if (!selection.Attributed) return null;
 +        var action = new ControllerAction(controller, method);
 +        var restrictions = selection.Restrictions();
@@ -403,22 +522,23 @@ index 0000000..a94eef5
 +}
 diff --git a/src/CallAtlas.Core/AspNetRouteSelection.cs b/src/CallAtlas.Core/AspNetRouteSelection.cs
 new file mode 100644
-index 0000000..162a09d
+index 0000000..4ec78ec
 --- /dev/null
 +++ b/src/CallAtlas.Core/AspNetRouteSelection.cs
-@@ -0,0 +1,23 @@
+@@ -0,0 +1,24 @@
 +namespace CallAtlas.Core;
 +
-+internal sealed class AspNetRouteSelection(AspNetRouteSpec prefix, AspNetRouteSpec selector)
++internal sealed class AspNetRouteSelection(AspNetRouteSpec prefix, AspNetRouteSpec selector, bool dynamicMetadata = false)
 +{
 +    internal AspNetRouteSpec Prefix { get; } = prefix;
 +    internal AspNetRouteSpec Selector { get; } = selector;
-+    internal string? Path { get; } = AspNetTemplates.Combine(prefix, selector);
-+    internal bool Attributed => Path is not null || Prefix.UnknownPath || Selector.UnknownPath;
-+    private bool KnownOrder => Prefix.OrderKnown && Selector.OrderKnown;
++    private string? DeclaredPath { get; } = AspNetTemplates.Combine(prefix, selector);
++    internal string? Path => dynamicMetadata ? null : DeclaredPath;
++    internal bool Attributed => DeclaredPath is not null || Prefix.UnknownPath || Selector.UnknownPath;
++    private bool KnownOrder => !dynamicMetadata && Prefix.OrderKnown && Selector.OrderKnown;
 +    internal int? Order => KnownOrder ? Selector.Order ?? Prefix.Order ?? 0 : null;
 +    private bool UnsupportedTemplate => UnsupportedPath || DoubleSeparator(Prefix.Template) || DoubleSeparator(Selector.Template);
-+    private bool UnsupportedPath => Path is not null && !AspNetTemplates.Supported(Path);
++    private bool UnsupportedPath => DeclaredPath is not null && !AspNetTemplates.Supported(DeclaredPath);
 +    private static bool DoubleSeparator(string? template) => template?.Contains("//", StringComparison.Ordinal) == true;
 +
 +    internal List<string> Restrictions()

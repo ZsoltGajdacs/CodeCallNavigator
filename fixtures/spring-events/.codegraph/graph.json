@@ -3997,6 +3997,9 @@
       ],
       "version": 1
     },
+    "identity_roots": [
+      "@repo/"
+    ],
     "nodes": [
       {
         "body_unavailable": false,

@@ -50,6 +50,27 @@ class SourceProvenanceTests(unittest.TestCase):
         self.assertEqual((repository / "source.rs").read_text(), "unreviewed staged source\n")
         self.assertTrue(git(repository, "diff", "--cached"))
 
+    def test_index_flags_cannot_hide_dependency_edits(self):
+        repository = self.root / "vendor/java-callgraph2"
+        for flag in ("--assume-unchanged", "--skip-worktree"):
+            git(repository, "update-index", flag, "source.rs")
+            (repository / "source.rs").write_text("unrecorded upstream change\n")
+            before = (repository / ".git/index").read_bytes()
+            with patch.object(PACKAGE, "ROOT", self.root):
+                with self.assertRaisesRegex(RuntimeError, "Unvalidated local changes"):
+                    PACKAGE.verify_dependency_sources()
+            self.assertEqual((repository / ".git/index").read_bytes(), before)
+            git(repository, "update-index", flag.replace("--", "--no-", 1), "source.rs")
+            (repository / "source.rs").write_text("reviewed source\n")
+
+    def test_external_diff_cannot_hide_dependency_edits(self):
+        repository = self.root / "vendor/java-callgraph2"
+        (repository / "source.rs").write_text("unrecorded upstream change\n")
+        git(repository, "config", "diff.external", "/usr/bin/true")
+        with patch.object(PACKAGE, "ROOT", self.root):
+            with self.assertRaisesRegex(RuntimeError, "Unvalidated local changes"):
+                PACKAGE.verify_dependency_sources()
+
     def test_matching_but_unlocked_patch_is_rejected(self):
         repository = self.root / "vendor/callatlas"
         (repository / "source.rs").write_text("different source\n")

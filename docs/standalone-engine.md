@@ -39,7 +39,11 @@ generator output changes remain observable rather than being silently masked.
 Named exported identities use logical ownership and compiler signatures.
 TypeScript adds enclosing declaration and callable role; anonymous functions use
 token fingerprints that ignore trivia and deterministic sibling disambiguation.
-Editing anonymous bodies may change their identity. Native analyzer bindings
+Java lambdas use source fingerprints where source-to-bytecode attribution is
+unique. Ambiguous same-line or overlapping lambdas, local/anonymous type owners
+and missing debug locations retain native IDs with a stability diagnostic; exact
+correlation is tracked by TASK-32. Editing anonymous bodies may change their
+identity. Native analyzer bindings
 remain intact internally. All flow and entry references use the same exported
 mapping. Collisions and unmapped owned paths reject publication.
 
@@ -192,6 +196,9 @@ possible `navigation` or `http` boundary relationships. They do not imply a
 synchronous call or a proven deployment. Routes come from Next App Router exports,
 qualified Spring Web annotations and ASP.NET MVC controller metadata. Known
 unsupported conditions, catchalls and route orders remain ambiguity blockers.
+Compiler-qualified custom ASP.NET metadata providers and MVC conventions that
+can rewrite routes also block affected application owners, including awaitable
+handler results and parameter/property hooks. Analysis never executes those hooks.
 
 Cross-language HTTP requires the owning project's `.codegraph/boundaries.yml`.
 Build selection alone does not establish a shared origin. Configuration examples,

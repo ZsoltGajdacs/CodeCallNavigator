@@ -19,9 +19,11 @@ final class SourceFlow {
     private final CompiledTypes compiled;
     private final BufferedWriter writer;
     private final Trees trees;
+    private final LambdaSourceIdentity identities;
     private final Map<CompilationUnitTree, FlowSource> sources = new IdentityHashMap<>();
     SourceFlow(JavacTask task, CompiledTypes compiled, BufferedWriter writer) {
         this.task = task; this.compiled = compiled; this.writer = writer; trees = Trees.instance(task);
+        identities = new LambdaSourceIdentity(task, compiled);
     }
     void write(List<TreePath> methods, List<TreePath> lambdas) throws IOException {
         for (TreePath path : methods) method(path);
@@ -58,7 +60,7 @@ final class SourceFlow {
         long endLine = source.unit.getLineMap().getLineNumber(source.end(lambda) - 1);
         String symbol = "@lambda:" + owner + ":" + source.start(lambda);
         var function = FlowJson.object("symbol", symbol, "file", source.file, "language", "java", "span", source.span(lambda),
-                "body", body, "diagnostics", source.diagnostics, "lambda_owner", owner, "lambda_start_line", startLine, "lambda_end_line", endLine);
+                "body", body, "diagnostics", source.diagnostics, "lambda_owner", owner, "lambda_start_line", startLine, "lambda_end_line", endLine, "export_identity", identities.key(path));
         ContextTsv.write(writer, "flow", symbol, "", FlowJson.encode(function), "", "", "", "", "");
     }
     private String lambdaOwner(TreePath path) {

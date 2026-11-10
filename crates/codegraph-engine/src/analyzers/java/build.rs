@@ -17,6 +17,8 @@ use std::{
 #[serde(rename_all = "camelCase")]
 pub(super) struct JavaSourceSet {
     pub project: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub application: Option<String>,
     pub source_set: String,
     pub compile_classpath: Vec<PathBuf>,
     #[serde(default)]

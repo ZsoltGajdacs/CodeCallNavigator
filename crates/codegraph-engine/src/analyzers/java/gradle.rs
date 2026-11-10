@@ -27,11 +27,7 @@ fn read_metadata(build: &BuildTarget, context: &AnalysisJob<'_>) -> Result<JavaB
     let mut sets: Vec<JavaSourceSet> =
         serde_json::from_slice(&fs::read(context.path.join("gradle-metadata.json"))?)?;
     for source in &mut sets {
-        source.project = if source.project == ":" {
-            build.label.clone()
-        } else {
-            format!("{}{}", build.label, source.project)
-        };
+        label_project(source, &build.label);
     }
     Ok(JavaBuildMetadata {
         modules: sets
@@ -105,4 +101,33 @@ pub(super) fn compile(build: &BuildTarget, context: &AnalysisJob<'_>) -> Result<
     }
     task(build, context, "codegraphCompileAndExport")?;
     read_metadata(build, context)
+}
+
+fn label_project(source: &mut JavaSourceSet, label: &str) {
+    source.application = Some(source.project.clone());
+    source.project = if source.project == ":" {
+        label.into()
+    } else {
+        format!("{label}{}", source.project)
+    };
+}
+
+#[cfg(test)]
+mod application_tests {
+    use super::*;
+    #[test]
+    fn application_project_paths_are_independent_of_checkout_display_labels() {
+        let source = |project: &str| {
+            serde_json::from_value::<JavaSourceSet>(serde_json::json!({"project":project,"sourceSet":"main","compileClasspath":[],"projectDir":"/tmp/app","isTest":false,"sourceRoots":[],"generatedRoots":[],"classDirs":[]})).unwrap()
+        };
+        for application in [":", ":sub"] {
+            let mut first = source(application);
+            let mut moved = source(application);
+            label_project(&mut first, "first");
+            label_project(&mut moved, "renamed");
+            assert_ne!(first.project, moved.project);
+            assert_eq!(first.application.as_deref(), Some(application));
+            assert_eq!(first.application, moved.application);
+        }
+    }
 }

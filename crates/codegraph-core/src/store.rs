@@ -136,7 +136,7 @@ impl SqliteStore {
         write_edges(&transaction, graph, cancelled)?;
         let metadata = serde_json::json!({ "diagnostics": graph.diagnostics, "roots": graph.roots,
             "fingerprints": graph.fingerprints, "engine_versions": graph.engine_versions,
-            "boundaries": graph.boundaries, "entry_points": graph.entry_points, "architecture": graph.architecture, "flow_inventory": graph.flow_inventory, "method_policy": crate::method_policy::VERSION,
+            "identity_roots": graph.identity_roots, "folder_project_builds": graph.folder_project_builds, "boundaries": graph.boundaries, "entry_points": graph.entry_points, "architecture": graph.architecture, "flow_inventory": graph.flow_inventory, "method_policy": crate::method_policy::VERSION,
             "edge_provenance": graph.edges.iter().map(|edge| &edge.provenance).collect::<Vec<_>>(),
             "edge_evidence": graph.edges.iter().map(|edge| &edge.evidence).collect::<Vec<_>>() });
         transaction.execute(
@@ -184,6 +184,18 @@ impl SqliteStore {
             entry_points: serde_json::from_value(metadata["entry_points"].clone())?,
             architecture: serde_json::from_value(metadata["architecture"].clone())?,
             boundaries: serde_json::from_value(metadata["boundaries"].clone())?,
+            identity_roots: serde_json::from_value(
+                metadata
+                    .get("identity_roots")
+                    .cloned()
+                    .unwrap_or_else(|| serde_json::json!([])),
+            )?,
+            folder_project_builds: serde_json::from_value(
+                metadata
+                    .get("folder_project_builds")
+                    .cloned()
+                    .unwrap_or_else(|| serde_json::json!([])),
+            )?,
             flow_inventory: serde_json::from_value(metadata["flow_inventory"].clone())?,
             ..Default::default()
         };

@@ -40,6 +40,7 @@ impl Composer {
         crate::analyzers::architecture::merge(&mut graph.architecture, part.architecture)?;
         crate::flow::merge_inventory(&mut graph.flow_inventory, part.flow_inventory)?;
         graph.diagnostics.extend(part.diagnostics);
+        graph.export_identities.extend(part.export_identities);
         Ok(())
     }
 }

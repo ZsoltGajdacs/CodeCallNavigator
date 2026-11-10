@@ -1,5 +1,6 @@
 'use strict';
 const {sourceSite}=require('./evidence.js');
+const {sourcePath}=require('./paths.js');
 const {hasNext}=require('./next.js');
 const {appFolders,routePath,configurationRestrictions}=require('./boundary-template.js');
 const HTTP=new Set(['GET','POST','PUT','PATCH','DELETE','HEAD','OPTIONS']);
@@ -23,7 +24,7 @@ function routes(bindings,item) {
   const module=item.checker.getSymbolAtLocation(item.file);
   if(!folders||!module) return [];
   const template=routePath(folders);
-  const isPage=/\/page\.tsx?$/.test(item.file.fileName);
+  const isPage=/\/page\.tsx?$/.test(sourcePath(item.file));
   const eligible=exported=>isPage?exported.name==='default':HTTP.has(exported.name);
   const exports=item.checker.getExportsOfModule(module);
   const result=exports.filter(eligible).map(exported=>exportedRoute(bindings,item,exported,{template,isPage}));

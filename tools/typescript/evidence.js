@@ -1,9 +1,10 @@
 'use strict';
 const {sourceOffsets}=require('./flow-source.js');
+const {sourcePath}=require('./paths.js');
 function sourceSite(node) {
   const file=node.getSourceFile(),start=node.getStart(file);
   const bytes=sourceOffsets(file),point=file.getLineAndCharacterOfPosition(start);
-  return {file:file.fileName,line:point.line+1,column:point.character+1,
+  return {file:sourcePath(file),line:point.line+1,column:point.character+1,
     span:{start:bytes[start],end:bytes[node.end]}};
 }
 function relationshipEvidence(graph,{rule,semantics,site,registration,from,to,channel}) {

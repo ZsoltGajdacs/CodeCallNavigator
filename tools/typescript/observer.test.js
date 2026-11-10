@@ -240,3 +240,13 @@ test('static private collection access through dynamic this is deferred',t=>{
   const source=`type Listener=()=>void;class Bus{static readonly #callbacks=new Set<Listener>();static subscribe(cb:Listener){this.#callbacks.add(cb)}static notify(){for(const cb of this.#callbacks)cb()}}class Derived extends Bus{}export function leaf(){}Derived.subscribe(leaf);Bus.notify();`;
   assert.deepEqual(inferred(analyze(t,source)),[]);
 });
+
+test('structural global Set replacement and prototype escapes cannot prove builtin storage',t=>{
+  const replacements=[
+    `(globalThis as unknown as {Set:typeof Set}).Set=class FakeSet<T> extends Set<T>{override add(value:T){return this}};`,
+    `const prototype:{add(value:unknown):unknown}=Set.prototype;prototype.add=function(){return this};`,
+  ];
+  for(const replacement of replacements) assert.deepEqual(inferred(analyze(t,replacement+moduleObserver)),[]);
+  const unrelated='const unused=new globalThis.Set<string>();type Names=Set<string>;';
+  assert.equal(inferred(analyze(t,unrelated+moduleObserver)).length,1);
+});

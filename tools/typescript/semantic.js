@@ -2,21 +2,38 @@
 const crypto=require('node:crypto');
 const {isCallable}=require('./syntax.js');
 
-// Scanner tokens ignore comments/whitespace without confusing strings containing them.
+// Parsed token boundaries preserve regex/template/JSX context while excluding trivia.
+function syntaxTokens(ts,node,cooked=false) {
+  const tokens=[],file=node.getSourceFile();
+  const visit=current=>{
+    if(ts.isJSDoc(current)) return;
+    const children=current.getChildren(file);
+    if(children.length) {children.forEach(visit);return;}
+    const text=tokenText(ts,current,file,cooked);
+    if(text) tokens.push([current.kind,text]);
+  };
+  visit(node);
+  return tokens;
+}
+function tokenText(ts,node,file,cooked) {
+  if(cooked&&ts.isStringLiteralLike(node)) return JSON.stringify(node.text);
+  if(cooked&&[ts.isIdentifier,ts.isPrivateIdentifier,ts.isNumericLiteral].some(check=>check(node))) return node.text;
+  return ts.isJsxText(node)?node.text:node.getText(file);
+}
 function tokenFingerprint(ts,node) {
-  const scanner=ts.createScanner(ts.ScriptTarget.Latest,true,ts.LanguageVariant.JSX,node.getText());
-  const tokens=[];
-  for(let token=scanner.scan();token!==ts.SyntaxKind.EndOfFileToken;token=scanner.scan()) {
-    tokens.push([token,scanner.getTokenText()]);
-  }
-  return crypto.createHash('sha256').update(JSON.stringify(tokens)).digest('hex');
+  return crypto.createHash('sha256').update(JSON.stringify(syntaxTokens(ts,node))).digest('hex');
+}
+function nameKey(ts,name) {
+  if(ts.isStringLiteralLike(name)) return JSON.stringify(name.text);
+  if([ts.isIdentifier,ts.isPrivateIdentifier,ts.isNumericLiteral].some(check=>check(name))) return name.text;
+  return JSON.stringify(syntaxTokens(ts,name,true));
 }
 function declarationName(ts,node) {
-  if(node.name) return node.name.getText();
+  if(node.name) return nameKey(ts,node.name);
   const parent=node.parent;
-  if(parent?.name && parent.initializer===node) return parent.name.getText();
+  if(parent?.name && parent.initializer===node) return nameKey(ts,parent.name);
   if(ts.isConstructorDeclaration(node)) return '<constructor>';
-  if(ts.isFunctionDeclaration(node)) return '<default>';
+  if(ts.isFunctionDeclaration(node)||ts.isClassDeclaration(node)) return '<default>';
   return undefined;
 }
 function role(ts,node) {

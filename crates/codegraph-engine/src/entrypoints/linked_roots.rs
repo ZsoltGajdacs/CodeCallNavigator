@@ -28,6 +28,11 @@ pub fn infer(
 
 fn owned_directories(graph: &GraphData) -> Result<Vec<PathBuf>> {
     let mut directories = BTreeSet::new();
+    for root in &graph.identity_roots {
+        let root = Path::new(root);
+        ensure!(root.is_absolute(), "Compiler identity root is not absolute");
+        directories.insert(root.to_path_buf());
+    }
     for node in &graph.nodes {
         owned_paths(&node.file, &node.build, &mut directories)?;
     }
@@ -118,6 +123,24 @@ mod tests {
             }],
             ..GraphData::default()
         }
+    }
+
+    #[test]
+    fn compiler_identity_context_roots_cover_external_java_modules() {
+        let mut value = serde_json::to_value(GraphData::default()).unwrap();
+        value["identity_roots"] = serde_json::json!(["/first/library"]);
+        let graph: GraphData = serde_json::from_value(value).unwrap();
+        let roots = infer(
+            &graph,
+            Path::new("/first/app"),
+            vec![("repo".into(), "/first/app".into())],
+        )
+        .unwrap();
+        assert!(
+            roots
+                .iter()
+                .any(|(_, root)| root == Path::new("/first/library"))
+        );
     }
 
     #[test]

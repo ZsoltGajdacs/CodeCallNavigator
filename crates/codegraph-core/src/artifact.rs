@@ -153,6 +153,10 @@ fn validate_symbols(value: &Value, ids: &HashMap<String, u32>) -> Result<()> {
     match value {
         Value::Object(fields) => {
             for (key, value) in fields {
+                if key == "qualifiers" {
+                    continue;
+                }
+                paths::validate_field(key, value)?;
                 if key == "symbol" && !value.is_null() {
                     let symbol = value
                         .as_str()
@@ -161,7 +165,7 @@ fn validate_symbols(value: &Value, ids: &HashMap<String, u32>) -> Result<()> {
                         ids.contains_key(symbol),
                         "Flow references missing symbol: {symbol}"
                     );
-                } else if key != "qualifiers" {
+                } else {
                     validate_symbols(value, ids)?;
                 }
             }

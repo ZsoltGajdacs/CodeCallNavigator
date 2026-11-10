@@ -1,9 +1,10 @@
 'use strict';
 const fs=require('node:fs');
 const path=require('node:path');
+const {sourcePath}=require('./paths.js');
 function appFolders(owner,file) {
   const root=path.dirname(owner);
-  const relative=path.relative(root,file.fileName).replaceAll(path.sep,'/');
+  const relative=path.relative(root,sourcePath(file)).replaceAll(path.sep,'/');
   const match=/^(src\/)?app\/(.*\/)?(?:page|route)\.tsx?$/.exec(relative);
   if(!match) return undefined;
   if(match[1]&&fs.existsSync(path.join(root,'app'))) return undefined;
