@@ -48,10 +48,22 @@ def apply_patch(spec, name="callatlas"):
 
 
 def checkout_patch(command):
-    untracked = subprocess.check_output([*command, "ls-files", "--others", "--exclude-standard"])
-    if untracked:
-        raise RuntimeError(f"Dependency source has unrelated untracked files; inspect {command[-1]}")
-    return subprocess.check_output([*command, "diff", "--binary", "HEAD"])
+    untracked = subprocess.check_output([*command, "ls-files", "--others", "--exclude-standard", "-z"])
+    environment = {**os.environ, "GIT_OPTIONAL_LOCKS": "0"}
+    if not untracked:
+        return subprocess.check_output([*command, "diff", "--binary", "HEAD"], env=environment)
+    # git apply leaves newly added source files untracked. Include them in the
+    # exact-patch comparison without modifying the real index or staging work.
+    # Unrelated files make the complete diff differ and are rejected by callers.
+    with tempfile.TemporaryDirectory(prefix="codegraph-patch-index-") as temporary:
+        original_index = subprocess.check_output([*command, "rev-parse", "--path-format=absolute", "--git-path", "index"],
+                                                 env=environment, text=True).strip()
+        temporary_index = Path(temporary) / "index"
+        shutil.copyfile(original_index, temporary_index)
+        environment.update(GIT_INDEX_FILE=str(temporary_index), GIT_LITERAL_PATHSPECS="1")
+        subprocess.run([*command, "add", "--intent-to-add", "--pathspec-from-file=-", "--pathspec-file-nul"],
+                       input=untracked, env=environment, check=True)
+        return subprocess.check_output([*command, "diff", "--binary", "HEAD"], env=environment)
 
 
 def upgrade_legacy_patch(command, spec, difference, patch):
@@ -59,7 +71,7 @@ def upgrade_legacy_patch(command, spec, difference, patch):
                   if f"{prefix}patch" in spec]
     legacy = next((candidate for candidate in candidates if difference == candidate.read_bytes()), None)
     if legacy is None:
-        raise RuntimeError(f"Dependency source differs from the supported patch; inspect {command[-1]}")
+        raise RuntimeError(f"Dependency source differs from the supported patch (tracked edits or unrelated untracked files); inspect {command[-1]}")
     # Upgrade only the exact previously shipped patch. git apply checks every hunk
     # before writing; restore the legacy patch if applying its replacement fails.
     subprocess.run([*command, "apply", "--reverse", str(legacy)], check=True)

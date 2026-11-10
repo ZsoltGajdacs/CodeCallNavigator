@@ -14,6 +14,7 @@ import subprocess
 import tempfile
 import time
 import zipfile
+from bootstrap import checkout_patch
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -30,7 +31,7 @@ def verify_dependency_sources():
         revision = subprocess.check_output(["git", "-C", str(repository), "rev-parse", "HEAD"], text=True).strip()
         if revision != lock[name]["revision"]:
             raise RuntimeError(f"Unvalidated {name} revision; run tools/bootstrap.py")
-        actual = subprocess.check_output(["git", "-C", str(repository), "diff", "HEAD", "--binary"])
+        actual = checkout_patch(["git", "-C", str(repository)])
         expected = expected_source_patch(lock[name])
         if actual != expected:
             raise RuntimeError(f"Unvalidated local changes in {name}; inspect its source before packaging")

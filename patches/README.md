@@ -3,7 +3,8 @@
 `callatlas-assembly-identity.patch` applies only to upstream revision
 `916c2419c0cdb91b5b86b84df4842dadb17bb6b4`.
 
-SHA-256: `a3981a0c07ef932a498f58113994c7858bd53242e0f0860355af9df56704e810`.
+SHA-256: `7b64792f14f02fafb4472402b0ab26ac53d9be6e496ef73964ad49791db1d08a`,
+also pinned in `analyzers.lock.json`.
 
 The pinned analyzer combines every solution compilation in one node dictionary,
 while its original symbol IDs omit assembly ownership. Two independent projects
@@ -106,3 +107,15 @@ segments. The upstream precompiled-library freshness tests require regeneration
 of those libraries and are not claimed to pass for this runtime-compiled patch.
 
 Patch migration tests: `python3 -m unittest discover -s tools -p test_dependency_patches.py`.
+
+# Complete patch verification
+
+Bootstrap and packaging compare the entire checkout diff with the verified patch
+bytes. A patch may add source files: `git apply` leaves those files untracked,
+so verification uses a disposable Git index to include them in the comparison.
+The upstream checkout's real index is preserved. Extra untracked files or other
+unrecorded changes make the diff differ and are rejected; no stash is used.
+
+Added-file installation, repeat verification, previous-patch migration and
+unrelated-file rejection tests:
+`python3 -m unittest discover -s tools -p 'test_dependency*.py'`.
