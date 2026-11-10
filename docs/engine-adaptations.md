@@ -1,0 +1,15 @@
+# Resolution adaptations
+
+The resolution roadmap draws on [colbymchenry/codegraph](https://github.com/colbymchenry/codegraph), reviewed at revision `f72c9d2efb14454ff4f9fd7b8460abd82f19a287` (MIT, copyright 2026 Colby Mchenry). The implementations currently described below are independent adaptations of its solutions; no upstream source has been copied into these passes.
+
+| Upstream solution | Adaptation here |
+| --- | --- |
+| [`callback-synthesizer.ts`](https://github.com/colbymchenry/codegraph/blob/f72c9d2efb14454ff4f9fd7b8460abd82f19a287/src/resolution/callback-synthesizer.ts): registration, collection and invocation form an observer channel | Join compiler-owned collection declarations and registration sites to actual callback calls. Preserve receiver distinctions and attach registration/invocation evidence to possible invocation edges. |
+| [`const-alias-synthesizer.ts`](https://github.com/colbymchenry/codegraph/blob/f72c9d2efb14454ff4f9fd7b8460abd82f19a287/src/resolution/const-alias-synthesizer.ts): logical/conditional initializers can hand on callables | Planned: use TypeScript ASTs, immutable bindings and short-circuit value semantics; create invocation relationships only where the resulting callable is invoked. |
+| [`parameter-flow.ts`](https://github.com/colbymchenry/codegraph/blob/f72c9d2efb14454ff4f9fd7b8460abd82f19a287/src/resolution/parameter-flow.ts): caller facts constrain a parameter | Planned: propagate strictly resolved callable arguments into actual parameter invocations, keeping returned values specific to each call. |
+| [`next-router-synthesizer.ts`](https://github.com/colbymchenry/codegraph/blob/f72c9d2efb14454ff4f9fd7b8460abd82f19a287/src/resolution/next-router-synthesizer.ts) and [`tier-synthesizer.ts`](https://github.com/colbymchenry/codegraph/blob/f72c9d2efb14454ff4f9fd7b8460abd82f19a287/src/resolution/tier-synthesizer.ts): navigation and HTTP connect separate programs | Planned: compiler-bound APIs, literal paths, unique destinations and explicit boundary kinds. Ambiguous routing remains unresolved. |
+| [`synthesis-stage.ts`](https://github.com/colbymchenry/codegraph/blob/f72c9d2efb14454ff4f9fd7b8460abd82f19a287/src/db/synthesis-stage.ts): private derivation overlay, explicit input ownership and atomic replacement | Planned: collect fresh compiler facts, invalidate rule-owned cached derivations by their dependencies, and publish through the existing project lock and atomic graph replacement. Previous inferred edges are never independent evidence. |
+
+The general fuzzy name matcher and monolithic synthesizer are not dependencies. Existing Java and C# compiler binding remains authoritative. Every new rule must have positive fixtures, unrelated-name and mutation controls, graph/flow agreement and removal checks.
+
+If upstream source is subsequently incorporated, preserve its MIT notice with the copied code, record its revision and exact source paths, and capture any vendored modifications as checked-in patches with checksum/bootstrap integration. Design references do not imply that an entire upstream pass was imported.

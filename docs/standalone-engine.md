@@ -98,3 +98,33 @@ execution semantics. These fields survive Git comparison, workspace caching and
 the selected-relationship inspector. Evidence sites are source constructs, not
 observations of runtime execution. References, deferred callbacks and possible
 invocations remain distinct. Old graphs without evidence remain readable.
+
+## Observer collections
+
+TypeScript observer inference connects a real callback invocation in a `for...of`
+loop with compiler-bound registrations into the same callback `Set`. Edges carry
+`possible` certainty, `codegraph.observer.v1` provenance and source evidence for the
+invocation and registrations. Multiple registrations of the same callback retain
+all evidence without multiplying the invocation count. Registration alone does
+not establish invocation, and flowchart targets use the same resolver as graph edges.
+
+The initial subset covers module-local constant collections, module/namespace
+private static readonly fields and private readonly fields on closed singleton
+classes. A singleton needs a nonexported top-level module class with no inheritance
+and one construction initializing a top-level constant. Registrar and dispatcher receivers must
+trace to that constant, immutable aliases or same-class method `this`. Static
+storage must use the lexical class or an immutable exact-class alias, rather than
+dynamic static `this`. Multiple
+instances, factories, exported or escaping constructors, untyped instance escapes
+and mutable collection access remain unresolved with diagnostics. Contextual
+type-changing aliases, parameters, containers and returns defer inference because
+method writes can bind to different source declarations. Extracted or rebound
+dispatcher methods are also deferred. Method callbacks
+require a stable static or const object-literal receiver. Decorated storage and
+method implementations, and known writes to built-in Set storage operations,
+disable inference because compiler symbols alone cannot establish their behavior.
+
+Ordinary noncallback Sets are unaffected. `Set.forEach` and nested deferred
+functions are not reconstructed. Channel names are explanatory labels; internal
+matching uses exact compiler declarations, so identically named fields in
+unrelated classes or namespaces do not join.

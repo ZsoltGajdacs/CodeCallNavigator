@@ -52,3 +52,39 @@ The fixture suite uses the installed TypeScript, React types and Next.js package
 `CODEGRAPH_TS_NODE_MODULES` can alternatively select the modules directory;
 when neither variable is present it uses the sibling PacificFateMapEditor installation.
 Tests create temporary projects and link those dependencies without modifying them.
+
+`observer.js` adds possible invocation targets for append-only callback `Set`
+channels after ordinary bindings and React props are collected. The collection,
+registrar and callback are joined by compiler declarations, never matching names.
+`Bindings.callTargets` supplies the same symbol, certainty and provenance to graph
+extraction and function-flow export. Registration arguments remain references;
+only an actual callback call in a direct `for...of` body creates an invocation.
+Evidence records that call and every supporting registration site.
+
+Supported storage is a module-local `const` empty built-in `Set`, a private static
+readonly field on a module/namespace class, or a private readonly field of a closed
+singleton class. Singleton classes are nonexported, top-level module classes
+without inheritance, with exactly one `new` initializing a top-level `const`.
+Instance registration and dispatch receivers must originate at that constant,
+an immutable alias, or the same class method's `this`. Mutable aliases do not
+establish identity. Static storage access requires its lexical class or an
+immutable exact-class alias; dynamic static `this` is deferred.
+Constructor aliases, factories, constructor metadata access, explicit untyped
+instance escapes and multiple instances are deferred.
+
+Callback values must be declarations, inline functions or immutable aliases.
+Method values require static class ownership or a const object-literal receiver;
+mutable, cast and call-valued receivers are deferred. Decorated storage owners,
+fields, registrars, dispatchers and callback methods are deferred because source
+symbols do not prove that a decorator preserved their runtime implementations.
+Mutable parameters, collection replacement, clearing/deletion, collection escape
+and computed collection access are deferred. Known project writes to the built-in
+constructor, add or iterator operations disable affected inference. Contextual
+type-changing object aliases, typed parameters, containers and returns are deferred
+because they can hide receiver method replacement behind different declarations.
+Extracted or rebound field-backed dispatcher methods are deferred as well.
+
+Collection uses are initially limited to direct `.add` and direct `for...of`;
+`Set.forEach`, extracted registrar methods and nested deferred callback calls are
+outside this rule. Recognized unsupported channels retain diagnostics. These are
+closed-source possibilities; reflection and external mutation are not reconstructed.

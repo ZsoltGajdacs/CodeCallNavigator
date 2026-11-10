@@ -15,17 +15,21 @@ import time
 from measure_analysis import process_tree_bytes
 
 
-def sample(process, stopped, observations):
+def sample(process, stopped, observations, errors):
     while not stopped.wait(0.1):
-        observations.append(process_tree_bytes(process.pid))
+        try:
+            observations.append(process_tree_bytes(process.pid))
+        except (OSError, subprocess.CalledProcessError) as error:
+            errors.append(str(error))
+            return
 
 
 def run(executable, project, targets):
     started = time.perf_counter()
     process = subprocess.Popen([str(executable), 'analyze', '--project', str(project), *targets],
                                stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, text=True)
-    stopped, observations = threading.Event(), []
-    sampler = threading.Thread(target=sample, args=(process, stopped, observations))
+    stopped, observations, errors = threading.Event(), [], []
+    sampler = threading.Thread(target=sample, args=(process, stopped, observations, errors))
     sampler.start()
     try:
         _, error = process.communicate()
@@ -36,13 +40,16 @@ def run(executable, project, targets):
         sampler.join()
     graph = json.loads((project / '.codegraph/graph.json').read_text())['graph']
     return {'seconds': time.perf_counter() - started,
-            'sampled_peak_tree_rss_bytes': max(observations, default=0),
+            'sampled_peak_tree_rss_bytes': max(observations) if observations else None,
+            'sampling_errors': errors,
             'nodes': len(graph['nodes']), 'edges': len(graph['edges'])}
 
 
 def summarize(runs):
+    samples = [item['sampled_peak_tree_rss_bytes'] for item in runs if item['sampled_peak_tree_rss_bytes'] is not None]
     return {'runs': runs, 'median_seconds': statistics.median(item['seconds'] for item in runs),
-            'median_sampled_peak_tree_rss_bytes': statistics.median(item['sampled_peak_tree_rss_bytes'] for item in runs)}
+            'median_sampled_peak_tree_rss_bytes': statistics.median(samples) if samples else None,
+            'resource_sampling_complete': len(samples) == len(runs) and not any(item['sampling_errors'] for item in runs)}
 
 
 def main():

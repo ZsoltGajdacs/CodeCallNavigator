@@ -10,10 +10,7 @@ const {reactImport}=require('./react-import.js');
 const {ReactRules}=require('./react.js');
 const {markNextEntries}=require('./next.js');
 const {semanticKeys}=require('./semantic.js');
-function callCertainty(graph,targets,to,propagated) {
-  if(propagated) return 'possible';
-  return targets.length>1 || graph.nodes[to].body_unavailable ? 'possible' : 'direct';
-}
+const {collectObservers}=require('./observer.js');
 function argumentReferences(bindings,checker,node,from) {
   const targets=(node.arguments||[]).flatMap(argument=>bindings.resolve(checker,argument));
   for(const target of targets) bindings.graph.edge(from,target,'reference',{certainty:'possible',provenance:'typescript.compiler:argument-reference'});
@@ -25,9 +22,8 @@ function reportUnresolvedCall(bindings,checker,node) {
 function ordinaryCall(bindings,checker,node,from) {
   const {ts,graph}=bindings;
   argumentReferences(bindings,checker,node,from);
-  const targets=bindings.targets(checker,node);
-  const propagated=bindings.propagatedCall(checker,node.expression||node.tag);
-  for(const to of targets) graph.edge(from,to,ts.isNewExpression(node)?'construct':'call',{certainty:callCertainty(graph,targets,to,propagated)});
+  const targets=bindings.callTargets(checker,node);
+  for(const {index,...options} of targets) graph.edge(from,index,ts.isNewExpression(node)?'construct':'call',options);
   if(!targets.length) reportUnresolvedCall(bindings,checker,node);
 }
 function visitSite(bindings,react,{checker,node,current}) {
@@ -55,6 +51,7 @@ function extract(context) {
   bindings.collect();
   const react=new ReactRules(bindings,graph,reactImport);
   react.collectProps();
+  collectObservers(bindings);
   for(const file of bindings.files) {
     walkFile(bindings,react,file);
     markNextEntries(context,bindings,graph,file);

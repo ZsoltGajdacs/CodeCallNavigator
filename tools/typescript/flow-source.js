@@ -38,9 +38,9 @@ class FlowSource {
   }
   call(node) {
     const expression=node.expression||node.tag;
-    const indices=this.bindings.targets(this.checker,node).filter(i=>!this.bindings.graph.excluded.has(i));
-    const propagated=this.bindings.propagatedCall(this.checker,expression);
-    const targets=indices.map(i=>this.target(i,indices,propagated));
+    const targets=this.bindings.callTargets(this.checker,node)
+      .filter(target=>!this.bindings.graph.excluded.has(target.index))
+      .map(({index,certainty,provenance})=>({symbol:this.bindings.graph.nodes[index].id,certainty,provenance}));
     return {span:this.span(node),label:this.label(expression),targets,
       diagnostic:targets.length?null:'No statically bound project target'};
   }

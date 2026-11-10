@@ -8,7 +8,7 @@ const {excludedMethod}=require('./method-policy.js');
 class Bindings {
   constructor(context,graph) {
     this.context=context; this.ts=context.ts; this.graph=graph;
-    this.declarations=new Map(); this.files=[]; this.props=new Map(); this.byIndex=new Map();
+    this.declarations=new Map(); this.files=[]; this.props=new Map(); this.byIndex=new Map(); this.invocations=new Map();
   }
   collect() {
     const seen=new Set();
@@ -111,6 +111,12 @@ class Bindings {
   propagatedDeclaration(checker,declaration,seen) {
     if(this.props.has(declarationKey(declaration))) return true;
     return declaration.initializer ? this.propagatedCall(checker,declaration.initializer,seen) : false;
+  }
+  callTargets(checker,node) {
+    if(this.invocations.has(node)) return this.invocations.get(node);
+    const indices=this.targets(checker,node);
+    const propagated=this.propagatedCall(checker,node.expression||node.tag);
+    return indices.map(index=>({index,certainty:propagated||indices.length>1||this.graph.nodes[index].body_unavailable?'possible':'direct',provenance:'typescript.compiler'}));
   }
   targets(checker,node) {
     const targets=this.resolve(checker,node.expression||node.tag);
