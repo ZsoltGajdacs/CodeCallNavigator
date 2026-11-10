@@ -97,7 +97,7 @@ index bf14b1d..123939d 100644
          {
              Id = id,
 diff --git a/src/CallAtlas.Core/CodeMap.cs b/src/CallAtlas.Core/CodeMap.cs
-index a720920..58149a3 100644
+index a720920..3d27d8d 100644
 --- a/src/CallAtlas.Core/CodeMap.cs
 +++ b/src/CallAtlas.Core/CodeMap.cs
 @@ -1,4 +1,5 @@
@@ -116,7 +116,7 @@ index a720920..58149a3 100644
      public required IReadOnlyList<Node> Nodes { get; init; }
      public required IReadOnlyList<Edge> Edges { get; init; }
      public required IReadOnlyList<ExternalCall> External { get; init; }
-@@ -45,6 +49,50 @@ public sealed record Node
+@@ -45,6 +49,68 @@ public sealed record Node
      public required string Container { get; init; }
      public required string Name { get; init; }
      public required string Location { get; init; }
@@ -132,6 +132,8 @@ index a720920..58149a3 100644
 +    public bool IsImplicit { get; init; }
 +    public string CallableKind { get; init; } = "";
 +    public bool IsObjectMember { get; init; }
++    public string? Visibility { get; init; }
++    public string? ContainerVisibility { get; init; }
 +
 +    public static MethodDeclarationFacts From(IMethodSymbol method) => new()
 +    {
@@ -139,7 +141,23 @@ index a720920..58149a3 100644
 +        IsImplicit = method.IsImplicitlyDeclared,
 +        CallableKind = method.MethodKind.ToString(),
 +        IsObjectMember = MatchesObjectMember(method),
++        Visibility = method.MethodKind is MethodKind.LocalFunction or MethodKind.AnonymousFunction
++            ? null : AccessName(method.DeclaredAccessibility),
++        ContainerVisibility = method.ContainingType is { IsImplicitlyDeclared: false } type
++            ? AccessName(type.DeclaredAccessibility) : null,
 +    };
++
++    private static readonly IReadOnlyDictionary<Accessibility, string> AccessNames = new Dictionary<Accessibility, string>
++    {
++        [Accessibility.Public] = "public",
++        [Accessibility.Private] = "private",
++        [Accessibility.Protected] = "protected",
++        [Accessibility.Internal] = "internal",
++        [Accessibility.ProtectedOrInternal] = "protected_internal",
++        [Accessibility.ProtectedAndInternal] = "private_protected",
++    };
++
++    private static string? AccessName(Accessibility access) => AccessNames.GetValueOrDefault(access);
 +
 +    private static bool MatchesObjectMember(IMethodSymbol method)
 +    {
@@ -167,7 +185,7 @@ index a720920..58149a3 100644
  }
  
  /// <summary>边的种类常量。</summary>
-@@ -306,27 +354,38 @@ public static class SymbolId
+@@ -306,27 +372,38 @@ public static class SymbolId
      public static string Canonical(IMethodSymbol method)
      {
          var s = (method.ReducedFrom ?? method).OriginalDefinition;
@@ -213,7 +231,7 @@ index a720920..58149a3 100644
  
      /// <summary>
      /// 委托调用的落点 id：<c>Action#delegate</c>（用委托类型本身命名）。
-@@ -337,7 +396,7 @@ public static class SymbolId
+@@ -337,7 +414,7 @@ public static class SymbolId
      /// 后缀 <c>#delegate</c> 与字段初始化器的 <c>#init</c> 同族，一眼可辨其为伪节点。
      /// </summary>
      public static string ForDelegate(ITypeSymbol delegateType) =>
@@ -222,7 +240,7 @@ index a720920..58149a3 100644
  
      private static string Params(IMethodSymbol method) =>
          string.Join(",", method.Parameters.Select(p => p.Type.ToDisplayString(QualifiedFormat)));
-@@ -385,3 +444,59 @@ internal static class EdgeTierClassifier
+@@ -385,3 +462,59 @@ internal static class EdgeTierClassifier
          return EdgeTier.Direct;
      }
  }
@@ -283,10 +301,10 @@ index a720920..58149a3 100644
 +        .Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToArray();
 +}
 diff --git a/src/CallAtlas.Core/CodeMapJson.cs b/src/CallAtlas.Core/CodeMapJson.cs
-index 9555cb4..0664181 100644
+index 9555cb4..0335b3c 100644
 --- a/src/CallAtlas.Core/CodeMapJson.cs
 +++ b/src/CallAtlas.Core/CodeMapJson.cs
-@@ -5,6 +5,58 @@ namespace CallAtlas.Core;
+@@ -5,6 +5,62 @@ namespace CallAtlas.Core;
  /// <summary>确定性 JSON 写出：字段顺序固定、排序在模型构建时完成、不含时间戳。</summary>
  public static class CodeMapJson
  {
@@ -327,6 +345,8 @@ index 9555cb4..0664181 100644
 +        writer.WriteBoolean("isImplicit", facts.IsImplicit);
 +        writer.WriteString("callableKind", facts.CallableKind);
 +        writer.WriteBoolean("isObjectMember", facts.IsObjectMember);
++        writer.WriteString("visibility", facts.Visibility);
++        writer.WriteString("containerVisibility", facts.ContainerVisibility);
 +        writer.WriteEndObject();
 +    }
 +
@@ -339,17 +359,19 @@ index 9555cb4..0664181 100644
 +            IsImplicit = facts.GetProperty("isImplicit").GetBoolean(),
 +            CallableKind = facts.GetProperty("callableKind").GetString() ?? "",
 +            IsObjectMember = facts.GetProperty("isObjectMember").GetBoolean(),
++            Visibility = facts.TryGetProperty("visibility", out var access) ? access.GetString() : null,
++            ContainerVisibility = facts.TryGetProperty("containerVisibility", out var containerAccess) ? containerAccess.GetString() : null,
 +        };
 +    }
 +
      /// <summary>写出供人读 / diff 的 JSON：缩进、字段顺序固定、排序已在模型侧完成、无时间戳。</summary>
      public static string Write(CodeMap map) => Write(map, indented: true);
  
-@@ -23,19 +75,12 @@ public static class CodeMapJson
+@@ -23,19 +79,12 @@ public static class CodeMapJson
              writer.WriteStartObject();
              writer.WriteString("schema", map.Schema);
              writer.WriteString("root", map.Root);
-+            writer.WriteString("declarationFactsVersion", "1");
++            writer.WriteString("declarationFactsVersion", "2");
  
 -            writer.WriteStartArray("nodes");
 -            foreach (var n in map.Nodes)
@@ -370,7 +392,7 @@ index 9555cb4..0664181 100644
  
              writer.WriteStartArray("edges");
              foreach (var e in map.Edges)
-@@ -175,6 +220,7 @@ public static class CodeMapJson
+@@ -175,6 +224,7 @@ public static class CodeMapJson
                          Container = Str(n, "container"),
                          Name = Str(n, "name"),
                          Location = Str(n, "location"),
@@ -378,7 +400,7 @@ index 9555cb4..0664181 100644
                      });
  
              var edges = new List<Edge>();
-@@ -236,6 +282,10 @@ public static class CodeMapJson
+@@ -236,6 +286,10 @@ public static class CodeMapJson
              {
                  Schema = CodeMap.SchemaVersion,
                  Root = Str(root, "root"),

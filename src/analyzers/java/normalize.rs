@@ -70,6 +70,7 @@ pub(super) fn with_inventories(
             "source_file",
             "flags",
             "annotations",
+            "visibility",
         ],
     )?)?;
     collector.methods(tsv_table(
@@ -364,6 +365,8 @@ impl<'a> BytecodeCollector<'a> {
             is_test: source.is_test,
             is_generated: generated,
             body_unavailable: unavailable,
+            visibility: (!unavailable).then(|| row.visibility()).flatten(),
+            container_visibility: facts.visibility,
         })
     }
 

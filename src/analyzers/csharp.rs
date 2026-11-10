@@ -4,7 +4,7 @@ use super::process::run_process;
 use super::{AnalysisJob, ensure_unchanged, find_tool, source_snapshot};
 use crate::{
     discovery::BuildTarget,
-    model::{Edge, EntryPoints, GraphData, Node},
+    model::{Edge, EntryPoints, GraphData, Node, Visibility},
 };
 use anyhow::{Context, Result, ensure};
 use serde::Deserialize;
@@ -57,6 +57,10 @@ struct DeclarationFacts {
     is_implicit: bool,
     callable_kind: String,
     is_object_member: bool,
+    #[serde(default)]
+    visibility: Option<Visibility>,
+    #[serde(default)]
+    container_visibility: Option<Visibility>,
 }
 #[derive(Deserialize)]
 struct AtlasEdge {
@@ -399,7 +403,7 @@ fn validate_atlas(map: &AtlasMap) -> Result<()> {
         map.schema
     );
     ensure!(
-        map.declaration_facts_version == "1",
+        map.declaration_facts_version == "2",
         "CallAtlas declaration facts are missing or unsupported; run tools/bootstrap.py"
     );
     ensure!(
@@ -431,6 +435,11 @@ fn atlas_node(build: &BuildTarget, root: &Path, node: AtlasNode, owners: &Source
             .map(|owner| owner.project.clone())
             .unwrap_or_else(|| "Unlocated compiler symbols".into()),
         language: "csharp".into(),
+        visibility: node.declaration.as_ref().and_then(|facts| facts.visibility),
+        container_visibility: node
+            .declaration
+            .as_ref()
+            .and_then(|facts| facts.container_visibility),
         kind: node.kind,
         label: node.name,
         signature: node.id,

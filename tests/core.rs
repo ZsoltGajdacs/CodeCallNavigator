@@ -22,6 +22,7 @@ fn sample() -> GraphData {
             is_test: i == 3,
             is_generated: false,
             body_unavailable: false,
+            ..Default::default()
         })
         .collect();
     let edges = [(0, 1), (1, 2), (2, 1), (0, 3)]
@@ -105,6 +106,37 @@ fn sqlite_roundtrip_search_session_and_failed_refresh_preserve_active_graph() {
             .is_err()
     );
     assert_eq!(store.load_active().unwrap().unwrap().nodes.len(), 4);
+}
+
+#[test]
+fn visibility_survives_publication_and_legacy_json_defaults_to_unknown() {
+    use codegraph::model::Visibility;
+    let directory = tempfile::tempdir().unwrap();
+    let store = SqliteStore::open(directory.path()).unwrap();
+    let mut data = sample();
+    for (index, visibility) in [
+        Visibility::Public,
+        Visibility::Private,
+        Visibility::ProtectedInternal,
+        Visibility::PrivateProtected,
+    ]
+    .into_iter()
+    .enumerate()
+    {
+        data.nodes[index].visibility = Some(visibility);
+        data.nodes[index].container_visibility = Some(Visibility::Internal);
+    }
+    store.publish(&data, &AtomicBool::new(false)).unwrap();
+    assert_eq!(store.load_active().unwrap().unwrap().nodes, data.nodes);
+    let mut legacy = serde_json::to_value(&data.nodes[0]).unwrap();
+    legacy.as_object_mut().unwrap().remove("visibility");
+    legacy
+        .as_object_mut()
+        .unwrap()
+        .remove("container_visibility");
+    let node: Node = serde_json::from_value(legacy).unwrap();
+    assert_eq!(node.visibility, None);
+    assert_eq!(node.container_visibility, None);
 }
 
 #[test]

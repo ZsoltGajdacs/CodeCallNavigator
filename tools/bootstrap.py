@@ -55,7 +55,7 @@ def checkout_patch(command):
 
 
 def upgrade_legacy_patch(command, spec, difference, patch):
-    candidates = [verified_patch(spec, prefix) for prefix in ("previous_", "older_", "legacy_")
+    candidates = [verified_patch(spec, prefix) for prefix in ("pre_visibility_", "previous_", "older_", "legacy_")
                   if f"{prefix}patch" in spec]
     legacy = next((candidate for candidate in candidates if difference == candidate.read_bytes()), None)
     if legacy is None:

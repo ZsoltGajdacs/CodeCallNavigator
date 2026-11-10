@@ -26,6 +26,8 @@ mod normalize;
 mod policy;
 mod source_inventory;
 mod tables;
+#[cfg(test)]
+mod visibility_tests;
 use build::JavaSourceSet;
 pub(super) use build::{PreparedJava, prepare, reject_overlaps};
 #[cfg(test)]

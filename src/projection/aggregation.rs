@@ -5,29 +5,46 @@ use super::{
 };
 use super::{
     groups::{groups, relative_file},
-    layers, ordering,
+    labels, layers, ordering,
 };
 use codegraph::{graph::GraphIndex, model::Node};
 use std::collections::{BTreeMap, HashMap, HashSet};
 
-fn visible_node(node: &Node, index: u32, request: &Request) -> ViewNode {
-    if request.scope == Scope::Overview && request.grouping != Grouping::Method {
-        for (key, label, kind) in groups(node, request) {
-            if !request.expanded.contains(&key) {
-                return ViewNode {
-                    key,
-                    label,
-                    group_kind: Some(kind),
-                    detail: node.project.clone(),
-                    layer: layers::assignment(node, request).map(str::to_owned),
-                    ..Default::default()
-                };
-            }
-        }
+fn collapsed_group(node: &Node, request: &Request) -> Option<ViewNode> {
+    if request.scope != Scope::Overview || request.grouping == Grouping::Method {
+        return None;
     }
+    let (key, label, kind) = groups(node, request)
+        .into_iter()
+        .find(|(key, _, _)| !request.expanded.contains(key))?;
+    let display = if kind == GroupKind::Class {
+        labels::class(node)
+    } else {
+        labels::Label {
+            text: label.clone(),
+            description: label,
+        }
+    };
+    Some(ViewNode {
+        key,
+        label: display.text,
+        description: display.description,
+        group_kind: Some(kind),
+        detail: node.project.clone(),
+        layer: layers::assignment(node, request).map(str::to_owned),
+        ..Default::default()
+    })
+}
+
+fn visible_node(node: &Node, index: u32, request: &Request) -> ViewNode {
+    if let Some(group) = collapsed_group(node, request) {
+        return group;
+    }
+    let display = labels::method(node);
     ViewNode {
         key: node.id.clone(),
-        label: node.label.clone(),
+        label: display.text,
+        description: display.description,
         detail: node.container.clone(),
         member: Some(index),
         layer: layers::assignment(node, request).map(str::to_owned),
@@ -90,22 +107,20 @@ fn add_member_metadata(representative: &mut ViewNode, source: &Node, index: u32)
         });
     }
     if representative.group_kind == Some(GroupKind::Class) {
-        let label = if source.signature.is_empty() {
-            &source.label
-        } else {
-            &source.signature
-        };
+        let display = labels::method(source);
         representative.methods.push(MethodRow {
             member: index,
             id: source.id.clone(),
-            label: label.clone(),
+            name: source.label.clone(),
+            label: display.text,
+            description: display.description,
         });
     }
 }
 
 fn finish_metadata(node: &mut ViewNode) {
     node.methods
-        .sort_by(|a, b| (&a.label, &a.id).cmp(&(&b.label, &b.id)));
+        .sort_by(|a, b| (&a.name, &a.id).cmp(&(&b.name, &b.id)));
     let rows = node.methods.len().min(12) as f32;
     node.size = [
         237.6,

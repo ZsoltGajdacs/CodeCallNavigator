@@ -74,6 +74,7 @@ fn fixture_nodes() -> Vec<Node> {
             is_test: index == 5,
             is_generated: index == 4,
             body_unavailable: false,
+            ..Default::default()
         })
         .collect()
 }

@@ -21,6 +21,7 @@ fn sample() -> GraphData {
             is_test: i == 3,
             is_generated: false,
             body_unavailable: false,
+            ..Default::default()
         })
         .collect();
     let edges = [(0, 1), (1, 2), (2, 1), (0, 3)]

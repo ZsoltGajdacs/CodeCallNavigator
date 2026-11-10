@@ -1,6 +1,6 @@
 use crate::{
     graph::Filter,
-    model::{Edge, GraphData, Node},
+    model::{Edge, GraphData, Node, Visibility},
 };
 use anyhow::{Context, Result, bail, ensure};
 use rusqlite::{Connection, OptionalExtension, params};
@@ -31,7 +31,8 @@ CREATE TABLE nodes (
  idx INTEGER PRIMARY KEY, id TEXT NOT NULL UNIQUE, project TEXT NOT NULL, build TEXT NOT NULL,
  language TEXT NOT NULL, kind TEXT NOT NULL, label TEXT NOT NULL, signature TEXT NOT NULL,
  namespace TEXT NOT NULL, container TEXT NOT NULL, file TEXT NOT NULL, line INTEGER NOT NULL,
- is_test INTEGER NOT NULL, is_generated INTEGER NOT NULL, body_unavailable INTEGER NOT NULL
+ is_test INTEGER NOT NULL, is_generated INTEGER NOT NULL, body_unavailable INTEGER NOT NULL,
+ visibility TEXT, container_visibility TEXT
 );
 CREATE TABLE edges (idx INTEGER PRIMARY KEY, from_idx INTEGER NOT NULL, to_idx INTEGER NOT NULL,
  kind TEXT NOT NULL, certainty TEXT NOT NULL, count INTEGER NOT NULL,
@@ -344,8 +345,9 @@ fn write_nodes(
     graph: &GraphData,
     cancelled: &AtomicBool,
 ) -> Result<()> {
-    let mut nodes = transaction
-        .prepare("INSERT INTO nodes VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15)")?;
+    let mut nodes = transaction.prepare(
+        "INSERT INTO nodes VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15,?16,?17)",
+    )?;
     let mut search = transaction.prepare("INSERT INTO node_search(rowid,label,signature,namespace,container,file) VALUES (?1,?2,?3,?4,?5,?6)")?;
     for (index, node) in graph.nodes.iter().enumerate() {
         if index % 1024 == 0 {
@@ -366,7 +368,15 @@ fn write_nodes(
             node.line,
             node.is_test,
             node.is_generated,
-            node.body_unavailable
+            node.body_unavailable,
+            node.visibility
+                .as_ref()
+                .map(serde_json::to_string)
+                .transpose()?,
+            node.container_visibility
+                .as_ref()
+                .map(serde_json::to_string)
+                .transpose()?
         ])?;
         search.execute(params![
             index as i64 + 1,
@@ -418,7 +428,24 @@ fn read_node(row: &rusqlite::Row<'_>) -> rusqlite::Result<Node> {
         is_test: row.get(12)?,
         is_generated: row.get(13)?,
         body_unavailable: row.get(14)?,
+        visibility: read_visibility(row, 15)?,
+        container_visibility: read_visibility(row, 16)?,
     })
+}
+
+fn read_visibility(row: &rusqlite::Row<'_>, index: usize) -> rusqlite::Result<Option<Visibility>> {
+    let value: Option<String> = row.get(index)?;
+    value
+        .map(|value| {
+            serde_json::from_str(&value).map_err(|error| {
+                rusqlite::Error::FromSqlConversionFailure(
+                    index,
+                    rusqlite::types::Type::Text,
+                    Box::new(error),
+                )
+            })
+        })
+        .transpose()
 }
 
 fn prefix_query(prefix: &str) -> Option<String> {

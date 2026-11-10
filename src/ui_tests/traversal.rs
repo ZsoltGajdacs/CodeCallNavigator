@@ -189,7 +189,14 @@ fn double_click_reaches_classes_then_class_method_tree_without_extra_history() {
         .unwrap();
     assert_eq!(center.methods.len(), 16);
     assert_ne!(center.methods[0].id, center.methods[1].id);
-    assert_ne!(center.methods[0].label, center.methods[1].label);
+    let overloads: Vec<_> = center
+        .methods
+        .iter()
+        .filter(|row| row.member == 1 || row.member == 2)
+        .collect();
+    assert_eq!(overloads[0].label, "work");
+    assert_eq!(overloads[1].label, "work");
+    assert_ne!(overloads[0].id, overloads[1].id);
     let key = node_control(&runtime, "Center");
     double_click(&mut runtime, &key);
     assert_eq!(runtime.state.back.len(), before + 2);
@@ -264,6 +271,89 @@ fn clicking_a_class_method_row_enters_method_tree_without_expanding_header() {
         Some(FocusTarget::Method("m1".into()))
     );
     assert!(runtime.state.flow_workspace.current.is_none());
+}
+
+fn visibility_runtime() -> Runtime<State> {
+    use codegraph::{model::Visibility, store::SqliteStore};
+    use std::sync::atomic::AtomicBool;
+    let mut runtime = runtime();
+    let mut data = (*runtime.state.graph.as_ref().unwrap().data).clone();
+    for node in &mut data.nodes {
+        node.language = "java".into();
+        node.container = format!("sample.{}", node.container);
+    }
+    for node in &mut data.nodes[1..17] {
+        node.container_visibility = Some(Visibility::Public);
+        node.visibility = Some(Visibility::Private);
+    }
+    data.nodes[2].visibility = Some(Visibility::Protected);
+    let directory = tempfile::tempdir().unwrap();
+    let store = SqliteStore::open(directory.path()).unwrap();
+    store.publish(&data, &AtomicBool::new(false)).unwrap();
+    runtime.state.graph = Some(Arc::new(
+        GraphIndex::new(Arc::new(store.load_active().unwrap().unwrap())).unwrap(),
+    ));
+    runtime.state.changed();
+    frames(&mut runtime, 3);
+    runtime
+}
+
+#[test]
+fn qualified_classes_and_overloads_show_visibility_after_storage_roundtrip() {
+    let mut runtime = visibility_runtime();
+    classes(&mut runtime);
+    let center = runtime
+        .state
+        .graph_view
+        .nodes
+        .iter()
+        .find(|node| node.label == "+ Center")
+        .unwrap();
+    assert!(center.key.contains("sample.Center"));
+    assert_eq!(center.description, "public · sample.Center");
+    let header_key = node_control(&runtime, "+ Center");
+    let header = runtime
+        .elements()
+        .into_iter()
+        .find(|element| element.key.as_deref() == Some(&header_key))
+        .unwrap();
+    assert!(
+        header
+            .label
+            .as_deref()
+            .unwrap()
+            .contains("public · sample.Center")
+    );
+    assert_eq!(header.help.as_deref(), Some("public · sample.Center"));
+    assert_eq!(center.methods[0].label, "− work");
+    assert_eq!(center.methods[1].label, "# work");
+    for (member, label, access) in [(1, "− work", "private"), (2, "# work", "protected")] {
+        let key = format!("graph-method-{member}");
+        let element = runtime
+            .elements()
+            .into_iter()
+            .find(|element| element.key.as_deref() == Some(&key))
+            .unwrap();
+        assert!(element.label.as_deref().unwrap().starts_with(label));
+        assert!(element.label.as_deref().unwrap().contains(access));
+        assert!(element.help.as_deref().unwrap().contains(access));
+        click(&mut runtime, &key);
+        frames(&mut runtime, 3);
+        assert_eq!(
+            runtime.state.nav.focus_target,
+            Some(FocusTarget::Method(format!("m{member}")))
+        );
+        assert!(
+            runtime
+                .state
+                .graph_view
+                .nodes
+                .iter()
+                .any(|node| node.member == Some(member) && node.label == label)
+        );
+        click(&mut runtime, "back");
+        frames(&mut runtime, 60);
+    }
 }
 
 #[test]

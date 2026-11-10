@@ -2,6 +2,19 @@ use anyhow::{Result, ensure};
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 
+/// Declared access; absence on a node means unknown or not applicable.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Deserialize, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum Visibility {
+    Public,
+    Private,
+    Protected,
+    Package,
+    Internal,
+    ProtectedInternal,
+    PrivateProtected,
+}
+
 #[derive(Clone, Debug, Default, PartialEq, Eq, Deserialize, Serialize)]
 pub struct Node {
     pub id: String,
@@ -11,6 +24,10 @@ pub struct Node {
     pub kind: String,
     pub label: String,
     pub signature: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub visibility: Option<Visibility>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub container_visibility: Option<Visibility>,
     pub namespace: String,
     pub container: String,
     pub file: String,

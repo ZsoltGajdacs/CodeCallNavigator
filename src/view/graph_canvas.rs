@@ -210,8 +210,11 @@ fn node_actions(header: El, node: &ViewNode) -> El {
             s.hover_source(hover_node.clone(), inside, tx)
         })
         .role("button")
-        .label(format!("{} · {}", node.label, detail))
-        .help(&node.label)
+        .label(format!(
+            "{} · {} · {}",
+            node.label, node.description, detail
+        ))
+        .help(&node.description)
         .focusable(true)
         .on_press_tx(move |state: &mut State, tx| {
             let interval = graph_interaction::double_click_interval();
@@ -237,8 +240,8 @@ fn method_list(node: &ViewNode, scale: f32, k: &Kit) -> El {
                 .radius(3.0)
                 .hover(k.c.text_accent.alpha(0.12))
                 .role("button")
-                .label(&method.label)
-                .help(&method.label)
+                .label(format!("{} · {}", method.label, method.description))
+                .help(&method.description)
                 .focusable(true)
                 .on_press(move |state: &mut State| state.focus_graph_method(member))
                 .child(

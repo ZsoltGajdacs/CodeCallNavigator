@@ -2,6 +2,7 @@
 use codegraph::{
     analyzers::{AnalyzerRuntime, analyze},
     discovery::BuildTarget,
+    model::Visibility,
 };
 use std::{fs, sync::atomic::AtomicBool};
 
@@ -29,23 +30,7 @@ fn source_callables_exclude_object_boilerplate_without_losing_overloads() {
     )
     .unwrap();
     graph.validate().unwrap();
-    for node in &graph.nodes {
-        assert!(
-            !matches!(
-                node.kind.as_str(),
-                "constructor" | "cctor" | "fieldinit" | "field" | "delegate"
-            ),
-            "Unexpected node {}",
-            node.id
-        );
-        assert!(
-            !["::ToString()", "::GetHashCode()", "::Equals(System.Object)"]
-                .iter()
-                .any(|suffix| node.id.ends_with(suffix)),
-            "Object member {}",
-            node.id
-        );
-    }
+    assert_no_boilerplate(&graph.nodes);
     for suffix in [
         "Worker::Private()",
         "Worker::Package()",
@@ -62,6 +47,7 @@ fn source_callables_exclude_object_boilerplate_without_losing_overloads() {
             "Missing {suffix}"
         );
     }
+    assert_visibility(&graph.nodes);
     let only = graph
         .nodes
         .iter()
@@ -75,6 +61,63 @@ fn source_callables_exclude_object_boilerplate_without_losing_overloads() {
             .candidates
             .contains(&only.id)
     );
+}
+
+fn assert_no_boilerplate(nodes: &[codegraph::model::Node]) {
+    for node in nodes {
+        assert!(
+            !matches!(
+                node.kind.as_str(),
+                "constructor" | "cctor" | "fieldinit" | "field" | "delegate"
+            ),
+            "Unexpected node {}",
+            node.id
+        );
+        assert!(
+            !["::ToString()", "::GetHashCode()", "::Equals(System.Object)"]
+                .iter()
+                .any(|suffix| node.id.ends_with(suffix)),
+            "Object member {}",
+            node.id
+        );
+    }
+}
+
+fn assert_visibility(nodes: &[codegraph::model::Node]) {
+    for (suffix, expected) in [
+        ("Worker::Private()", Visibility::Private),
+        ("Worker::DefaultPrivate()", Visibility::Private),
+        ("Worker::Package()", Visibility::Internal),
+        ("Worker::Protected()", Visibility::Protected),
+        ("Worker::ProtectedInternal()", Visibility::ProtectedInternal),
+        ("Worker::PrivateProtected()", Visibility::PrivateProtected),
+        ("Worker::Start()", Visibility::Public),
+    ] {
+        let node = nodes.iter().find(|node| node.id.ends_with(suffix)).unwrap();
+        assert_eq!(node.visibility, Some(expected), "{suffix}");
+        assert_eq!(
+            node.container_visibility,
+            Some(Visibility::Internal),
+            "{suffix}"
+        );
+    }
+    for (container, expected) in [
+        ("Worker.PrivateNested", Visibility::Private),
+        ("Worker.ProtectedNested", Visibility::Protected),
+        ("PublicVisibilityOwner", Visibility::Public),
+    ] {
+        let node = nodes
+            .iter()
+            .find(|node| node.container == container && node.label == "VisibleMember")
+            .unwrap();
+        assert_eq!(node.visibility, Some(Visibility::Public), "{container}");
+        assert_eq!(node.container_visibility, Some(expected), "{container}");
+    }
+    let local = nodes
+        .iter()
+        .find(|node| node.kind == "localfunction")
+        .unwrap();
+    assert_eq!(local.visibility, None);
 }
 
 #[test]

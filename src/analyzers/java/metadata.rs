@@ -1,4 +1,5 @@
 //! Validated boundary for the bytecode adapter's escaped TSV metadata.
+use crate::model::Visibility;
 use anyhow::{Context, Result, ensure};
 
 #[derive(Clone)]
@@ -7,6 +8,7 @@ pub(super) struct ClassMetadata {
     pub name: String,
     pub source_file: String,
     pub annotations: String,
+    pub visibility: Option<Visibility>,
 }
 
 pub(super) struct MethodMetadata {
@@ -21,7 +23,7 @@ pub(super) struct MethodMetadata {
 
 impl ClassMetadata {
     pub fn parse(row: &[String]) -> Result<Self> {
-        ensure!(row.len() == 7, "Malformed class metadata");
+        ensure!(row.len() == 8, "Malformed class metadata");
         let fields = row.iter().map(|value| unescape(value)).collect::<Vec<_>>();
         let input = fields[0]
             .parse::<usize>()
@@ -34,6 +36,14 @@ impl ClassMetadata {
             name: fields[3].clone(),
             source_file: fields[4].clone(),
             annotations: fields[6].clone(),
+            visibility: match fields[7].as_str() {
+                "public" => Some(Visibility::Public),
+                "private" => Some(Visibility::Private),
+                "protected" => Some(Visibility::Protected),
+                "package" => Some(Visibility::Package),
+                "" => None,
+                other => anyhow::bail!("Invalid Java class visibility: {other}"),
+            },
         })
     }
 }
@@ -50,6 +60,7 @@ impl MethodMetadata {
             row[4].clone(),
             row[7].clone(),
             row[10].clone(),
+            String::new(),
         ])?;
         ensure!(
             fields[5]
@@ -68,6 +79,19 @@ impl MethodMetadata {
             start_line: fields[8].parse()?,
             end_line,
             annotations: fields[10].clone(),
+        })
+    }
+
+    pub fn visibility(&self) -> Option<Visibility> {
+        let name = super::lambda_names::method_name(&self.signature);
+        if self.flags & 0x1000 != 0 && name.starts_with("lambda$") {
+            return None;
+        }
+        Some(match self.flags & 0x0007 {
+            0x0001 => Visibility::Public,
+            0x0002 => Visibility::Private,
+            0x0004 => Visibility::Protected,
+            _ => Visibility::Package,
         })
     }
 

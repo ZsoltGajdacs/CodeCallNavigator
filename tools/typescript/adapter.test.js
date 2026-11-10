@@ -24,6 +24,31 @@ const config = { compilerOptions: { target: 'ES2023', module: 'esnext', moduleRe
 function edges(graph, label, kind) {
   return graph.edges.filter(e => graph.nodes[e.from].label === label && (!kind || e.kind === kind)).map(e => graph.nodes[e.to].label);
 }
+test('class methods retain declared access without assigning visibility to functions or file groups', t => {
+  const root = fixture(t, { 'tsconfig.json': config, 'src/main.ts': `
+    export class Worker {
+      ordinary() { function local() {} local(); return () => {}; }
+      public exposed() {}
+      private hidden() {}
+      protected inherited() {}
+      #secret() {}
+      public static staticMethod() {}
+      private get value() { return 1; }
+    }
+    export function entry() { new Worker().ordinary(); }
+    const object = { objectMethod() {} };
+    export const detached = () => object.objectMethod();
+  ` });
+  const graph = run(root);
+  const access = Object.fromEntries(graph.nodes.map(node => [node.label, node.visibility]));
+  for (const name of ['ordinary', 'exposed', 'staticMethod']) assert.equal(access[name], 'public');
+  for (const name of ['hidden', '#secret', 'value']) assert.equal(access[name], 'private');
+  assert.equal(access.inherited, 'protected');
+  for (const name of ['local', 'entry', 'detached', 'objectMethod']) assert.equal(access[name], undefined);
+  assert.ok(graph.nodes.filter(node => node.kind === 'callback' || node.kind === 'module').every(node => node.visibility === undefined));
+  assert.ok(graph.nodes.every(node => node.container_visibility === undefined));
+  assert.ok(graph.nodes.every(node => node.container === 'src/main.ts'));
+});
 test('compiler bindings retain anonymous callback ownership and overload implementations', t => {
   const root = fixture(t, { 'tsconfig.json': config, 'src/main.ts': `function leaf() {}\nfunction f(x:string):void; function f(x:number):void; function f(x:unknown){leaf()}\nexport function start(){f(1); [1].map(()=>leaf())}\nexport const detached=()=>leaf();` });
   const g = run(root);

@@ -12,6 +12,8 @@ mod focus;
 mod geometry;
 #[path = "projection/groups.rs"]
 mod groups;
+#[path = "projection/labels.rs"]
+mod labels;
 #[path = "projection/layer_geometry.rs"]
 mod layer_geometry;
 #[path = "projection/layers.rs"]
@@ -85,6 +87,8 @@ pub enum FocusTarget {
 
 #[derive(Clone, Debug)]
 pub struct MethodRow {
+    pub name: String,
+    pub description: String,
     pub member: u32,
     pub id: String,
     pub label: String,
@@ -108,6 +112,7 @@ pub struct SourcePath {
 
 #[derive(Clone, Debug, Default)]
 pub struct ViewNode {
+    pub description: String,
     pub methods: Vec<MethodRow>,
     pub key: String,
     pub label: String,

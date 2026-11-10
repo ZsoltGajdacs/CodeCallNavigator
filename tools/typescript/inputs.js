@@ -56,7 +56,7 @@ function outputRoots(projects) {
 }
 function metadata(context, inputs) {
   const {ts,projects,owners,programs} = context;
-  const versions = {typescript:ts.version,node:process.versions.node,adapter:'2',react_rules:'1',next_rules:'1'};
+  const versions = {typescript:ts.version,node:process.versions.node,adapter:'3',react_rules:'1',next_rules:'1'};
   for (const {config} of projects.values()) {
     projectInputs(config,inputs);
     for (const name of ['typescript','react','next']) packageVersion(config,name,inputs,{versions,observations:context.observations});
