@@ -239,7 +239,9 @@ fn kit_checkbox_changes_graph_filter_and_inspector_disclosure_hides_only_its_sec
     assert!(!runtime.state.nav.filter.include_tests);
     click(&mut runtime, "filter-tests");
     assert!(runtime.state.nav.filter.include_tests);
-    runtime.state.select(0, false);
+    runtime.update(|state, _| {
+        state.select_method(0, crate::graph_interaction::SelectionAction::Inspect);
+    });
     settle(&mut runtime);
     assert!(runtime.find("path-from").is_some());
     click(&mut runtime, "path-section/trigger");
@@ -253,10 +255,9 @@ fn kit_checkbox_changes_graph_filter_and_inspector_disclosure_hides_only_its_sec
 }
 
 #[test]
-fn overlay_filters_toggle_without_moving_camera() {
+fn overlay_filters_toggle_preserving_zoom_and_centering_the_focus() {
     let mut runtime = narrow_runtime(true);
     let before = runtime.state.nav.filter.clone();
-    let pan = runtime.state.nav.camera.pan;
     let zoom = runtime.state.nav.camera.zoom;
     for key in [
         "filter-tests",
@@ -288,10 +289,20 @@ fn overlay_filters_toggle_without_moving_camera() {
             !before.include_references
         ]
     );
-    assert_eq!(
-        (runtime.state.nav.camera.pan, runtime.state.nav.camera.zoom),
-        (pan, zoom)
-    );
+    assert_eq!(runtime.state.nav.camera.zoom, zoom);
+    let anchor = runtime
+        .state
+        .graph_view
+        .nodes
+        .iter()
+        .find(|node| runtime.state.graph_view.focus_keys.contains(&node.key))
+        .unwrap();
+    let center = runtime.state.nav.camera.screen([
+        anchor.position[0] + anchor.size[0] / 2.0,
+        anchor.position[1] + anchor.size[1] / 2.0,
+    ]);
+    assert!((center[0] - runtime.state.viewport[0] / 2.0).abs() < 0.1);
+    assert!((center[1] - runtime.state.viewport[1] / 2.0).abs() < 0.1);
     let saved: crate::navigation::SavedSession =
         serde_json::from_str(&serde_json::to_string(&runtime.state.session()).unwrap()).unwrap();
     assert_eq!(
@@ -581,7 +592,7 @@ fn drawer_fields_and_long_inspector_signatures_stay_inside_their_panes() {
         state.graph = Some(std::sync::Arc::new(
             codegraph::graph::GraphIndex::new(std::sync::Arc::new(data)).unwrap(),
         ));
-        state.select(0, false);
+        state.select_method(0, crate::graph_interaction::SelectionAction::Inspect);
     });
     settle(&mut runtime);
     let inspector = element(&runtime, "inspector-pane").rect;

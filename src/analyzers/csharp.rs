@@ -1,9 +1,10 @@
+mod architecture;
 mod policy;
 use super::process::run_process;
 use super::{AnalysisJob, ensure_unchanged, find_tool, source_snapshot};
 use crate::{
     discovery::BuildTarget,
-    model::{Edge, EntryPoints, GraphData, Node},
+    model::{Edge, EntryPoints, GraphData, Node, Visibility},
 };
 use anyhow::{Context, Result, ensure};
 use serde::Deserialize;
@@ -20,6 +21,8 @@ struct AtlasMap {
     schema: String,
     #[serde(rename = "declarationFactsVersion")]
     declaration_facts_version: String,
+    #[serde(default, rename = "architectureFiles")]
+    architecture_files: Option<Vec<architecture::AtlasFileFacts>>,
     nodes: Vec<AtlasNode>,
     edges: Vec<AtlasEdge>,
     #[serde(default)]
@@ -54,6 +57,10 @@ struct DeclarationFacts {
     is_implicit: bool,
     callable_kind: String,
     is_object_member: bool,
+    #[serde(default)]
+    visibility: Option<Visibility>,
+    #[serde(default)]
+    container_visibility: Option<Visibility>,
 }
 #[derive(Deserialize)]
 struct AtlasEdge {
@@ -66,6 +73,8 @@ struct AtlasEdge {
     #[serde(default, rename = "virtualTargets")]
     virtual_targets: Vec<String>,
 }
+type SourceOwners = HashMap<PathBuf, HashMap<String, SourceOwner>>;
+
 #[derive(Clone)]
 struct SourceOwner {
     project: String,
@@ -167,7 +176,7 @@ fn csharp_sources(
     dotnet: &Path,
     job: &Path,
     cancel: &AtomicBool,
-) -> Result<(HashMap<PathBuf, SourceOwner>, Vec<PathBuf>)> {
+) -> Result<(SourceOwners, Vec<PathBuf>)> {
     let mut sources = CsharpSources {
         queue: VecDeque::from(csharp_projects(build, dotnet, job, cancel)?),
         owners: HashMap::new(),
@@ -199,7 +208,7 @@ fn csharp_sources(
 struct CsharpSources {
     assembly_names: HashMap<String, PathBuf>,
     queue: VecDeque<PathBuf>,
-    owners: HashMap<PathBuf, SourceOwner>,
+    owners: SourceOwners,
     inputs: Vec<PathBuf>,
 }
 
@@ -237,7 +246,14 @@ fn record_csharp_items(
                 .unwrap_or("")
                 .eq_ignore_ascii_case("true"),
         };
-        sources.owners.entry(path.clone()).or_insert(owner);
+        let assembly = metadata["Properties"]["AssemblyName"]
+            .as_str()
+            .context("MSBuild omitted AssemblyName")?;
+        sources
+            .owners
+            .entry(path.clone())
+            .or_default()
+            .insert(assembly.into(), owner);
         if let Some(root) = compile_source_root(item, &path) {
             sources.inputs.push(root);
         }
@@ -319,13 +335,14 @@ fn normalize_atlas(
     build: &BuildTarget,
     root: &Path,
     map: AtlasMap,
-    owners: &HashMap<PathBuf, SourceOwner>,
+    owners: &SourceOwners,
 ) -> Result<GraphData> {
     validate_atlas(&map)?;
     let mut graph = GraphData {
         roots: vec![build.path.to_string_lossy().into_owned()],
         ..GraphData::default()
     };
+    graph.architecture = architecture::normalize(build, root, map.architecture_files, owners);
     graph.entry_points = map.entry_points.map(|entries| {
         let qualify = |ids: Vec<String>| {
             ids.into_iter()
@@ -386,7 +403,7 @@ fn validate_atlas(map: &AtlasMap) -> Result<()> {
         map.schema
     );
     ensure!(
-        map.declaration_facts_version == "1",
+        map.declaration_facts_version == "2",
         "CallAtlas declaration facts are missing or unsupported; run tools/bootstrap.py"
     );
     ensure!(
@@ -403,14 +420,14 @@ fn qualified_identity(identity: &str) -> bool {
         .is_some()
 }
 
-fn atlas_node(
-    build: &BuildTarget,
-    root: &Path,
-    node: AtlasNode,
-    owners: &HashMap<PathBuf, SourceOwner>,
-) -> Node {
+fn atlas_node(build: &BuildTarget, root: &Path, node: AtlasNode, owners: &SourceOwners) -> Node {
     let (file, line) = location(&node.location, root);
-    let owner = owners.get(Path::new(&file));
+    let owner = owners.get(Path::new(&file)).and_then(|owners| {
+        owners
+            .iter()
+            .find(|(assembly, _)| node.id.starts_with(&format!("[{assembly}]::")))
+            .map(|(_, owner)| owner)
+    });
     Node {
         id: format!("{}|{}", build.path.display(), node.id),
         build: build.path.to_string_lossy().into_owned(),
@@ -418,6 +435,11 @@ fn atlas_node(
             .map(|owner| owner.project.clone())
             .unwrap_or_else(|| "Unlocated compiler symbols".into()),
         language: "csharp".into(),
+        visibility: node.declaration.as_ref().and_then(|facts| facts.visibility),
+        container_visibility: node
+            .declaration
+            .as_ref()
+            .and_then(|facts| facts.container_visibility),
         kind: node.kind,
         label: node.name,
         signature: node.id,
@@ -552,11 +574,14 @@ mod acceptance {
         };
         let owners = HashMap::from([(
             source,
-            SourceOwner {
-                project: "policy".into(),
-                is_test: false,
-                is_generated: false,
-            },
+            HashMap::from([(
+                "callatlas.snapshot".into(),
+                SourceOwner {
+                    project: "policy".into(),
+                    is_test: false,
+                    is_generated: false,
+                },
+            )]),
         )]);
         let graph = normalize_atlas(&build, root.path(), map, &owners).unwrap();
         assert_policy_graph(&graph);

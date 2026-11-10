@@ -1,0 +1,3 @@
+    Blocking waiting for file lock on build directory
+    Checking codegraph v0.1.0 (/Users/zsolt.gajdacs/Zs/Programming/CodeGraph)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 1.18s

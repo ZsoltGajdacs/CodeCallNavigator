@@ -19,8 +19,10 @@ pub fn install(state: &mut State) {
     state.nav.focus = Some("fixture/project/Start".into());
     state.nav.depth = 4;
     state.status = "Deterministic test fixture · 6 symbols · 6 relationships".into();
-    state.graph_view =
-        projection::project(state.graph.as_ref().unwrap(), &state.request().unwrap());
+    state.replace_graph_view(projection::project(
+        state.graph.as_ref().unwrap(),
+        &state.request().unwrap(),
+    ));
     position(&mut state.graph_view);
     state.nav.camera.fit(state.graph_view.size, state.viewport);
     state.auto_fit = false;
@@ -74,6 +76,7 @@ fn fixture_nodes() -> Vec<Node> {
             is_test: index == 5,
             is_generated: index == 4,
             body_unavailable: false,
+            ..Default::default()
         })
         .collect()
 }
@@ -103,25 +106,40 @@ fn fixture_edges() -> Vec<Edge> {
 }
 
 pub fn position(view: &mut GraphView) {
-    for (index, node) in view.nodes.iter_mut().enumerate() {
-        node.position = [
-            30.0 + (index % 2) as f32 * 290.0,
-            30.0 + (index / 2) as f32 * 140.0,
-        ];
-        node.size = [235.0, 68.0];
+    use std::collections::BTreeMap;
+    let mut rows: BTreeMap<i32, Vec<usize>> = BTreeMap::new();
+    for (index, order) in view.ordering.iter().enumerate() {
+        rows.entry(order.rank).or_default().push(index);
+    }
+    let mut y = 30.0;
+    let mut width: f32 = 400.0;
+    for indices in rows.values() {
+        let mut x = 30.0;
+        let mut height: f32 = 61.2;
+        for &index in indices {
+            let node = &mut view.nodes[index];
+            if node.size[0] == 0.0 {
+                node.size = [237.6, 61.2];
+            }
+            node.position = [x, y];
+            x += node.size[0] + 50.0;
+            height = height.max(node.size[1]);
+        }
+        width = width.max(x);
+        y += height + 80.0;
     }
     for edge in &mut view.edges {
         let from = &view.nodes[edge.from];
         let to = &view.nodes[edge.to];
         edge.points = vec![
-            [from.position[0] + from.size[0], from.position[1] + 34.0],
-            [to.position[0], to.position[1] + 34.0],
+            [
+                from.position[0] + from.size[0] / 2.0,
+                from.position[1] + from.size[1],
+            ],
+            [to.position[0] + to.size[0] / 2.0, to.position[1]],
         ];
     }
-    view.size = [
-        620.0,
-        (view.nodes.len().div_ceil(2) as f32 * 140.0 + 50.0).max(300.0),
-    ];
+    view.size = [width, y.max(300.0)];
 }
 
 /// Explicit tooling scene: open the actual published SQLite generation synchronously
@@ -152,11 +170,11 @@ fn cached_scene(state: &mut State, focus: bool) {
             select_cached_method(state);
         }
         let request = state.request().unwrap();
-        let graph = state.graph.as_ref().unwrap();
-        state.graph_view = projection::layout(
-            projection::project(graph, &request),
+        let graph = state.graph.as_ref().unwrap().clone();
+        state.replace_graph_view(projection::layout(
+            projection::project(&graph, &request),
             &state.runtime.as_ref().unwrap().dot,
-        )?;
+        )?);
         state.nav.camera.fit(state.graph_view.size, state.viewport);
         state.visible_revision = Some((state.epoch, state.revision));
         state.next_stale_check = f64::MAX;

@@ -52,6 +52,8 @@ mod tests {
                 is_implicit: false,
                 callable_kind: callable.into(),
                 is_object_member: false,
+                visibility: None,
+                container_visibility: None,
             }),
         }
     }

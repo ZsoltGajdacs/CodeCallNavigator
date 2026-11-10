@@ -22,6 +22,7 @@ fn sample() -> GraphData {
             is_test: i == 3,
             is_generated: false,
             body_unavailable: false,
+            ..Default::default()
         })
         .collect();
     let edges = [(0, 1), (1, 2), (2, 1), (0, 3)]
@@ -105,6 +106,37 @@ fn sqlite_roundtrip_search_session_and_failed_refresh_preserve_active_graph() {
             .is_err()
     );
     assert_eq!(store.load_active().unwrap().unwrap().nodes.len(), 4);
+}
+
+#[test]
+fn visibility_survives_publication_and_legacy_json_defaults_to_unknown() {
+    use codegraph::model::Visibility;
+    let directory = tempfile::tempdir().unwrap();
+    let store = SqliteStore::open(directory.path()).unwrap();
+    let mut data = sample();
+    for (index, visibility) in [
+        Visibility::Public,
+        Visibility::Private,
+        Visibility::ProtectedInternal,
+        Visibility::PrivateProtected,
+    ]
+    .into_iter()
+    .enumerate()
+    {
+        data.nodes[index].visibility = Some(visibility);
+        data.nodes[index].container_visibility = Some(Visibility::Internal);
+    }
+    store.publish(&data, &AtomicBool::new(false)).unwrap();
+    assert_eq!(store.load_active().unwrap().unwrap().nodes, data.nodes);
+    let mut legacy = serde_json::to_value(&data.nodes[0]).unwrap();
+    legacy.as_object_mut().unwrap().remove("visibility");
+    legacy
+        .as_object_mut()
+        .unwrap()
+        .remove("container_visibility");
+    let node: Node = serde_json::from_value(legacy).unwrap();
+    assert_eq!(node.visibility, None);
+    assert_eq!(node.container_visibility, None);
 }
 
 #[test]
@@ -225,4 +257,30 @@ fn search_pins_generation_while_a_new_analysis_is_published() {
             )
             .is_err()
     );
+}
+
+#[test]
+fn sqlite_preserves_architecture_facts_and_source_for_offline_reclassification() {
+    use codegraph::architecture::{ArchitectureFacts, FileFacts};
+    let temp = tempfile::tempdir().unwrap();
+    let store = SqliteStore::open(temp.path()).unwrap();
+    let mut data = sample();
+    data.architecture = Some(ArchitectureFacts {
+        version: 1,
+        files: vec![FileFacts {
+            build: "build".into(),
+            project: "project".into(),
+            file: "example.cs".into(),
+            language: "csharp".into(),
+            names: vec!["Example".into()],
+            annotations: vec!["Controller".into()],
+            content: "[Controller] class Example {}".into(),
+            ..Default::default()
+        }],
+    });
+    store.publish(&data, &AtomicBool::new(false)).unwrap();
+    let restored = store.load_active().unwrap().unwrap();
+    assert_eq!(restored.architecture, data.architecture);
+    assert_eq!(restored.nodes, data.nodes);
+    assert_eq!(restored.edges.len(), data.edges.len());
 }

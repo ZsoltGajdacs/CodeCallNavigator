@@ -24,13 +24,20 @@ class Worker {
  public int GetHashCode(int salt) => salt;
  public override bool Equals(object value) => false;
  public bool Equals(int value) => false;
- public void Start() { Private(); Package(); Protected(); Action run = () => Private(); run(); _ = Value; }
+ public void Start() { void Local() { Private(); } Local(); Private(); Package(); Protected(); Action run = () => Private(); run(); _ = Value; }
  private void Private() {}
  internal void Package() {}
  protected void Protected() {}
+ protected internal void ProtectedInternal() {}
+ private protected void PrivateProtected() {}
+ void DefaultPrivate() {}
+ private class PrivateNested { public void VisibleMember() {} }
+ protected class ProtectedNested { public void VisibleMember() {} }
  public int Value { get { Private(); return 1; } }
  public int Automatic { get; set; }
  public void UseAutomatic() { Automatic = 1; _ = Automatic; }
  private static void ConstructorOnly() {}
 }
 record Entry(int Number) { public void Authored() {} }
+
+public class PublicVisibilityOwner { public void VisibleMember() {} }

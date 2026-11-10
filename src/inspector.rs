@@ -39,11 +39,15 @@ fn selection(state: &State, k: &Kit) -> El {
         .and_then(|id| state.graph.as_ref()?.data.nodes.get(id as usize))
     else {
         return detail(
-            "Select a method to inspect its callers, callees and provenance. Double-click a group to expand it; double-click a method to focus its neighborhood.",
+            "Click an element to center its caller/callee tree. Double-click groups to reach classes, then click a method row or double-click the class header to explore methods.",
             k,
         );
     };
-    let mut content = method_summary(node, k)
+    let mut content = method_summary(node, k);
+    if ["java", "typescript"].contains(&node.language.as_str()) {
+        content = content.child(flow_action(k));
+    }
+    let mut content = content
         .child(
             Collapsible::new(
                 "Shortest directed path",
@@ -66,6 +70,9 @@ fn selection(state: &State, k: &Kit) -> El {
         )
         .child(neighbors(state, true, k))
         .child(neighbors(state, false, k));
+    if let Some(details) = architecture_details(state, node, k) {
+        content = content.child(details);
+    }
     if state
         .graph
         .as_ref()
@@ -81,6 +88,20 @@ fn selection(state: &State, k: &Kit) -> El {
         ));
     }
     content
+}
+
+fn architecture_details(state: &State, node: &codegraph::model::Node, k: &Kit) -> Option<El> {
+    let architecture = state.architecture.as_ref()?;
+    let key = codegraph::architecture::file_key(&node.build, &node.project, &node.file);
+    let assignment = architecture.files.get(&key)?;
+    Some(
+        col()
+            .w_full()
+            .gap(4.0)
+            .child(detail(format!("Layer: {}", assignment.layer), k))
+            .child(detail(format!("Rule: {}", assignment.rule), k))
+            .child(detail(format!("Configuration: {}", architecture.origin), k)),
+    )
 }
 
 fn method_summary(node: &codegraph::model::Node, k: &Kit) -> El {
@@ -113,7 +134,10 @@ fn method_summary(node: &codegraph::model::Node, k: &Kit) -> El {
                 .variant(ButtonVariant::Outline)
                 .on_press(|state: &mut State| {
                     if let Some(selected) = state.selected() {
-                        state.select(selected, true);
+                        state.select_method(
+                            selected,
+                            crate::graph_interaction::SelectionAction::Focus,
+                        );
                     }
                 })
                 .build(k)
@@ -280,7 +304,9 @@ fn neighbor_list(state: &State, incoming: bool, ids: &[u32], k: &Kit) -> El {
             rows = rows.item(
                 ListItem::new(graph.data.nodes[id as usize].label.clone())
                     .selected(state.selected() == Some(id))
-                    .on_select(move |state: &mut State, _| state.select(id, true)),
+                    .on_select(move |state: &mut State, _| {
+                        state.select_method(id, crate::graph_interaction::SelectionAction::Focus)
+                    }),
             );
         }
     }
@@ -319,4 +345,13 @@ fn neighbor_pager(state: &State, incoming: bool, count: usize, k: &Kit) -> El {
                 .build(k)
                 .key(format!("neighbors-next-{incoming}")),
         )
+}
+
+fn flow_action(k: &Kit) -> El {
+    Button::new("Open flowchart")
+        .help("Open this method's analyzed source and function flow")
+        .variant(ButtonVariant::Outline)
+        .on_press(State::open_selected_flow)
+        .build(k)
+        .key("open-flowchart")
 }

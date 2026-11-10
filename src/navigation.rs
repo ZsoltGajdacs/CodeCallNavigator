@@ -1,7 +1,7 @@
 //! Persisted navigation and its transitions; derived graph roots stay in projection.
 use crate::{
     camera::Camera,
-    projection::{FlowDirection, Grouping, Scope},
+    projection::{FlowDirection, FocusTarget, Grouping, Scope},
 };
 use codegraph::graph::{Filter, GraphIndex};
 use serde::{Deserialize, Serialize};
@@ -11,8 +11,10 @@ use std::{collections::HashSet, path::PathBuf};
 #[serde(default)]
 pub struct Navigation {
     pub grouping: Grouping,
+    pub layer_tab: Option<String>,
     pub expanded: HashSet<String>,
     pub focus: Option<String>,
+    pub focus_target: Option<FocusTarget>,
     pub selected: Option<String>,
     pub direction: FlowDirection,
     pub depth: u32,
@@ -28,8 +30,10 @@ impl Default for Navigation {
     fn default() -> Self {
         Self {
             grouping: Grouping::Project,
+            layer_tab: None,
             expanded: HashSet::new(),
             focus: None,
+            focus_target: None,
             selected: None,
             direction: FlowDirection::Callees,
             depth: 1,
@@ -46,6 +50,7 @@ impl Default for Navigation {
 impl Navigation {
     pub fn overview(&mut self) {
         self.focus = None;
+        self.focus_target = None;
         self.show_path = false;
         self.page = 0;
     }
@@ -66,6 +71,7 @@ impl Navigation {
     }
 
     pub fn focus_method(&mut self, identity: String) {
+        self.focus_target = Some(FocusTarget::Method(identity.clone()));
         self.focus = Some(identity);
         self.show_path = false;
         self.page = 0;
@@ -86,6 +92,11 @@ impl Navigation {
     pub fn retain_known(&mut self, graph: &GraphIndex) {
         let known = |identity: &String| graph.node_index(identity).is_some();
         self.selected = self.selected.take().filter(known);
+        if let Some(FocusTarget::Method(identity)) = &self.focus_target
+            && !known(identity)
+        {
+            self.focus_target = None;
+        }
         self.focus = self.focus.take().filter(known);
         self.path_from = self.path_from.take().filter(known);
         self.path_to = self.path_to.take().filter(known);
@@ -103,4 +114,5 @@ pub struct SavedSession {
     pub selected_targets: Option<Vec<crate::discovery::BuildIdentity>>,
     pub navigation: Navigation,
     pub presentation: crate::presentation::Preferences,
+    pub architecture_selection: Option<codegraph::architecture::Selection>,
 }

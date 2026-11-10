@@ -1,0 +1,2 @@
+# Patch checksums cover literal bytes, including empty unified-diff context lines.
+patches/*.patch -text -whitespace

@@ -1,0 +1,27 @@
+# React frontends: View/Page -> Component -> Action/state -> Endpoint/API client.
+ts:
+  tests:
+    - path: ["**/*.{test,spec}.{ts,tsx,js,jsx}", "**/__tests__/**", "**/playwright/**", "**/e2e/**", "**/cypress/**"]
+  other:
+    - path: "**/*.{css,scss,less}"
+  layers:
+    - name: View
+      match:
+        - path: ["**/pages/**", "**/views/**", "**/routes/**", "**/*{View,Page}.{tsx,jsx}"]
+    - name: Component
+      match:
+        - path: "**/components/**/*.{tsx,jsx}"
+    - name: Action
+      match:
+        - path: ["**/actions/**", "**/store/**", "**/reducers/**", "**/hooks/**", "**/use[A-Z]*.{ts,tsx}"]
+    - name: Endpoint
+      match:
+        - path: ["**/api/**", "**/urls.{ts,js}", "**/endpoints.{ts,js}"]
+    - name: Entities
+      support: true
+      match:
+        - path: ["**/types/**", "**/models/**", "**/*.types.ts"]
+    - name: Utilities
+      support: true
+      match:
+        - path: ["**/utils/**", "**/helpers/**", "**/lib/**", "**/constants/**"]

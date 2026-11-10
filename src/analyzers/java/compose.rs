@@ -35,6 +35,8 @@ impl Composer {
         if let Some(part) = part.entry_points {
             entries.application_starts.extend(part.application_starts);
         }
+        crate::analyzers::architecture::merge(&mut graph.architecture, part.architecture)?;
+        crate::flow::merge_inventory(&mut graph.flow_inventory, part.flow_inventory)?;
         graph.diagnostics.extend(part.diagnostics);
         Ok(())
     }

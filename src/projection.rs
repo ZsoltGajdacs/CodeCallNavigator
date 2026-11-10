@@ -1,12 +1,25 @@
 //! Bounded presentation of analyzed relationships, separate from graph layout.
+use codegraph::architecture::LayerAssignments;
 use codegraph::graph::{Direction, Filter, GraphIndex};
 use serde::{Deserialize, Serialize};
-use std::collections::HashSet;
+use std::{collections::HashSet, sync::Arc};
 
 #[path = "projection/aggregation.rs"]
 mod aggregation;
+#[path = "projection/focus.rs"]
+mod focus;
+#[path = "projection/focus_level.rs"]
+mod focus_level;
 #[path = "projection/geometry.rs"]
 mod geometry;
+#[path = "projection/groups.rs"]
+mod groups;
+#[path = "projection/labels.rs"]
+mod labels;
+#[path = "projection/layer_geometry.rs"]
+mod layer_geometry;
+#[path = "projection/layers.rs"]
+mod layers;
 #[path = "projection/ordering.rs"]
 mod ordering;
 #[path = "projection/selection.rs"]
@@ -22,6 +35,7 @@ pub enum Grouping {
     Project,
     Namespace,
     Folder,
+    Layer,
     Method,
 }
 
@@ -54,6 +68,7 @@ pub enum Scope {
 
 #[derive(Clone)]
 pub struct Request {
+    pub focus_target: Option<FocusTarget>,
     pub grouping: Grouping,
     pub expanded: HashSet<String>,
     pub scope: Scope,
@@ -61,6 +76,25 @@ pub struct Request {
     pub depth: u32,
     pub filter: Filter,
     pub page: usize,
+    pub architecture: Option<Arc<LayerAssignments>>,
+    pub layer_tab: Option<String>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub enum FocusTarget {
+    Method(String),
+    Group(String),
+    ClassMethods(String),
+    GroupChildren(String),
+}
+
+#[derive(Clone, Debug)]
+pub struct MethodRow {
+    pub name: String,
+    pub description: String,
+    pub member: u32,
+    pub id: String,
+    pub label: String,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -69,6 +103,7 @@ pub enum GroupKind {
     Namespace,
     Folder,
     Class,
+    Layer,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
@@ -80,6 +115,8 @@ pub struct SourcePath {
 
 #[derive(Clone, Debug, Default)]
 pub struct ViewNode {
+    pub description: String,
+    pub methods: Vec<MethodRow>,
     pub key: String,
     pub label: String,
     pub detail: String,
@@ -90,6 +127,7 @@ pub struct ViewNode {
     pub internal_edges: usize,
     pub cyclic: bool,
     pub application_start: bool,
+    pub layer: Option<String>,
     pub position: [f32; 2],
     pub size: [f32; 2],
 }
@@ -107,12 +145,14 @@ pub struct ViewEdge {
 /// A node's traversal level and owning parent, independent of geometry.
 #[derive(Clone, Debug, Default)]
 pub struct NodeOrder {
-    pub rank: usize,
+    pub rank: i32,
     pub parent: Option<usize>,
 }
 
 #[derive(Clone, Debug, Default)]
 pub struct GraphView {
+    pub focus_keys: Vec<String>,
+    pub focus_valid: bool,
     pub nodes: Vec<ViewNode>,
     pub edges: Vec<ViewEdge>,
     pub ordering: Vec<NodeOrder>,
@@ -124,6 +164,18 @@ pub struct GraphView {
     pub collapsed_edges: usize,
     pub message: String,
     pub pages: usize,
+    pub layer_bands: Vec<LayerBand>,
+}
+
+/// Presentation metadata only; relationships retain analyzer direction and certainty.
+#[derive(Clone, Debug, Default)]
+pub struct LayerBand {
+    pub name: String,
+    pub flow: Option<String>,
+    pub support: bool,
+    pub beside: Option<String>,
+    pub position: [f32; 2],
+    pub size: [f32; 2],
 }
 
 struct Selection {
@@ -137,6 +189,31 @@ struct Selection {
 }
 
 pub fn project(graph: &GraphIndex, request: &Request) -> GraphView {
-    let selection = selection::resolve(graph, request);
+    if let Some(target) = focus_target(graph, request) {
+        return aggregation::focused(graph, request, &target);
+    }
+    let mut selection = selection::resolve(graph, request);
+    layers::select(graph, request, &mut selection);
     aggregation::project_page(graph, request, selection)
+}
+
+#[cfg(test)]
+#[path = "projection/focus_tests.rs"]
+mod focus_tests;
+
+pub fn focus_target(graph: &GraphIndex, request: &Request) -> Option<FocusTarget> {
+    if matches!(request.scope, Scope::Path(..)) {
+        return None;
+    }
+    request
+        .focus_target
+        .clone()
+        .or_else(|| match request.scope {
+            Scope::Focus(node) => graph
+                .data
+                .nodes
+                .get(node as usize)
+                .map(|n| FocusTarget::Method(n.id.clone())),
+            _ => None,
+        })
 }

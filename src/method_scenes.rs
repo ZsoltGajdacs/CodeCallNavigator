@@ -33,10 +33,10 @@ fn install(state: &mut State, direction: FlowDirection) {
         let runtime = Arc::new(AnalyzerRuntime::discover()?);
         let graph = Arc::new(GraphIndex::new(Arc::new(data()))?);
         state.graph = Some(graph.clone());
-        state.graph_view = projection::layout(
+        state.replace_graph_view(projection::layout(
             projection::project(&graph, &state.request().unwrap()),
             &runtime.dot,
-        )?;
+        )?);
         state.runtime = Some(runtime);
         state.nav.camera.fit(state.graph_view.size, state.viewport);
         state.visible_revision = Some((state.epoch, state.revision));

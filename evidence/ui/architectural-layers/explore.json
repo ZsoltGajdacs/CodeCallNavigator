@@ -1,0 +1,1 @@
+{"events":[{"t":0.2,"type":"tap","key":"drawer-repository"},{"t":0.4,"type":"tap","key":"toggle-inspector"},{"t":0.7,"type":"tap","key":"fit"},{"t":1.0,"type":"move","x":800,"y":600}]}

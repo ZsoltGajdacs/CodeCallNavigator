@@ -11,8 +11,11 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.jar.JarFile;
 import java.util.stream.Collectors;
+import org.apache.bcel.Const;
 import org.apache.bcel.classfile.AnnotationEntry;
 import org.apache.bcel.classfile.ClassParser;
+import org.apache.bcel.classfile.InnerClass;
+import org.apache.bcel.classfile.InnerClasses;
 import org.apache.bcel.classfile.JavaClass;
 import org.apache.bcel.classfile.LineNumber;
 import org.apache.bcel.classfile.LineNumberTable;
@@ -28,7 +31,7 @@ final class BytecodeMetadata implements AutoCloseable {
     private BytecodeMetadata(Path outputRoot) throws IOException {
         classes = Files.newBufferedWriter(outputRoot.resolve("class_metadata.tsv"));
         methods = Files.newBufferedWriter(outputRoot.resolve("method_metadata.tsv"));
-        classes.write("input_index\tinput_path\tclass_entry\tclass_name\tsource_file\tflags\tannotations\n");
+        classes.write("input_index\tinput_path\tclass_entry\tclass_name\tsource_file\tflags\tannotations\tvisibility\n");
         methods.write("input_index\tinput_path\tclass_entry\tclass_name\tsource_file\tmethod\treturn_type\tflags\tstart_line\tend_line\tannotations\n");
     }
 
@@ -79,11 +82,37 @@ final class BytecodeMetadata implements AutoCloseable {
         }
         String sourceFile = javaClass.getSourceFileName();
         writeRow(classes, List.of(input.index(), input.path(), entry, javaClass.getClassName(),
-                sourceFile, javaClass.getAccessFlags(), annotations(javaClass.getAnnotationEntries())));
+                sourceFile, javaClass.getAccessFlags(), annotations(javaClass.getAnnotationEntries()), classVisibility(javaClass)));
         ClassOrigin origin = new ClassOrigin(input, entry, javaClass.getClassName(), sourceFile);
         for (Method method : javaClass.getMethods()) {
             writeMethod(origin, method);
         }
+    }
+
+    /** Member access is stored in InnerClasses, not the class-file access_flags. */
+    private static String classVisibility(JavaClass javaClass) {
+        var nested = ownInnerClass(javaClass);
+        if (nested == null) return visibility(javaClass.getAccessFlags());
+        if (nested.getOuterClassIndex() == 0 || nested.getInnerNameIndex() == 0) return "";
+        return visibility(nested.getInnerAccessFlags());
+    }
+
+    private static InnerClass ownInnerClass(JavaClass javaClass) {
+        return Arrays.stream(javaClass.getAttributes())
+                .filter(InnerClasses.class::isInstance)
+                .map(InnerClasses.class::cast)
+                .flatMap(attribute -> Arrays.stream(attribute.getInnerClasses()))
+                .filter(nested -> javaClass.getConstantPool()
+                        .getConstantString(nested.getInnerClassIndex(), Const.CONSTANT_Class)
+                        .replace('/', '.').equals(javaClass.getClassName()))
+                .findFirst().orElse(null);
+    }
+
+    private static String visibility(int flags) {
+        if ((flags & 0x0001) != 0) return "public";
+        if ((flags & 0x0002) != 0) return "private";
+        if ((flags & 0x0004) != 0) return "protected";
+        return "package";
     }
 
     private void writeMethod(ClassOrigin origin, Method method) throws IOException {

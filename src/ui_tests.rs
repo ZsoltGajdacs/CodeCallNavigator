@@ -1,9 +1,15 @@
 use crate::{app::State, jobs, scenes, view};
 use rune::{Env, Runtime};
 
+mod architectural_layers;
+mod canvas_gpu_performance;
+mod canvas_performance;
+mod function_flows;
+mod graph_fit;
 mod graph_studio;
 mod lambda_names;
 mod source_popup;
+mod traversal;
 
 fn runtime() -> Runtime<State> {
     let mut state = State::new();
@@ -42,10 +48,14 @@ fn native_node_selection_and_history_restore_focus_and_camera() {
 #[test]
 fn native_path_controls_show_a_real_directed_path_and_filter_can_reveal_tests() {
     let mut runtime = runtime();
-    runtime.state.select(0, false);
+    runtime
+        .state
+        .select_method(0, crate::graph_interaction::SelectionAction::Inspect);
     runtime.frame(1.0 / 60.0);
     click(&mut runtime, "path-from");
-    runtime.state.select(3, false);
+    runtime
+        .state
+        .select_method(3, crate::graph_interaction::SelectionAction::Inspect);
     runtime.frame(1.0 / 60.0);
     click(&mut runtime, "path-to");
     click(&mut runtime, "find-path");
@@ -244,7 +254,9 @@ fn search_and_neighbor_pages_can_reach_every_indexed_match() {
     found.sort_unstable();
     found.dedup();
     assert_eq!(found.len(), 95);
-    runtime.state.select(0, false);
+    runtime
+        .state
+        .select_method(0, crate::graph_interaction::SelectionAction::Inspect);
     wait_for(&mut runtime, |state| state.neighbors.1.len() == 94);
     runtime.state.step_neighbors(false, true);
     assert_eq!(runtime.state.neighbor_pages[1], 1);
@@ -291,7 +303,9 @@ fn method_control_starts_at_entries_and_overview_restores_them() {
             .as_deref()
             .is_some_and(|text| text.contains("Application start"))
     }));
-    runtime.state.select(1, true);
+    runtime
+        .state
+        .select_method(1, crate::graph_interaction::SelectionAction::Focus);
     runtime.frame(1.0 / 60.0);
     assert!(matches!(
         runtime.state.request().unwrap().scope,
@@ -321,10 +335,13 @@ fn method_control_starts_at_entries_and_overview_restores_them() {
 fn changing_flow_resets_page_refits_and_history_restores_previous_flow() {
     use crate::projection::FlowDirection;
     let mut runtime = runtime();
-    runtime.state.select(2, true);
+    runtime
+        .state
+        .select_method(2, crate::graph_interaction::SelectionAction::Focus);
     runtime.frame(1.0 / 60.0);
     runtime.state.nav.page = 3;
-    click(&mut runtime, "direction/segment0");
+    runtime.state.set_direction(FlowDirection::Callers);
+    runtime.frame(1.0 / 60.0);
     assert_eq!(runtime.state.nav.direction, FlowDirection::Callers);
     assert_eq!(runtime.state.nav.page, 0);
     assert_eq!(
@@ -341,7 +358,7 @@ fn changing_flow_resets_page_refits_and_history_restores_previous_flow() {
     );
     click(&mut runtime, "back");
     assert_eq!(runtime.state.nav.direction, FlowDirection::Callees);
-    assert_eq!(runtime.state.nav.page, 3);
+    assert_eq!(runtime.state.nav.page, 0); // History clamps obsolete page numbers.
 }
 
 #[test]
@@ -480,7 +497,7 @@ fn graph_single_click_centers_after_click_interval_and_wheel_zooms() {
 }
 
 #[test]
-fn group_double_click_expands_and_selection_is_reconciled() {
+fn group_double_click_drills_without_expanding_overview_and_selection_is_reconciled() {
     let mut runtime = runtime();
     runtime
         .state
@@ -497,8 +514,28 @@ fn group_double_click_expands_and_selection_is_reconciled() {
     runtime.pointer_down(x, y);
     runtime.pointer_up(x, y);
     runtime.frame(0.05);
-    assert!(runtime.state.nav.expanded.contains(&key));
-    assert_eq!(runtime.state.back.len(), before + 1);
+    assert_eq!(
+        (
+            runtime.state.nav.expanded.len(),
+            &runtime.state.nav.focus_target,
+            runtime.state.back.len()
+        ),
+        (
+            0,
+            &Some(crate::projection::FocusTarget::GroupChildren(key)),
+            before + 1
+        )
+    );
+    runtime.frame(1.0 / 60.0);
+    runtime.frame(1.0 / 60.0);
+    assert!(
+        runtime
+            .state
+            .graph_view
+            .nodes
+            .iter()
+            .all(|node| node.group_kind == Some(crate::projection::GroupKind::Class))
+    );
     runtime.state.graph_view.nodes.clear();
     runtime.state.reconcile_visual_selection();
     assert!(runtime.state.visual_selection.is_none());
@@ -511,7 +548,9 @@ fn inspector_selection_and_restored_selection_update_graph_emphasis() {
     let second = runtime.state.graph_view.nodes[1].member.unwrap();
     click(&mut runtime, "graph-node-0");
     assert_eq!(runtime.state.selected(), Some(first));
-    runtime.state.select(second, false);
+    runtime
+        .state
+        .select_method(second, crate::graph_interaction::SelectionAction::Inspect);
     runtime.frame(1.0 / 60.0);
     let second_key = runtime
         .state

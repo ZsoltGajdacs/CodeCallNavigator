@@ -70,6 +70,7 @@ pub(super) fn with_inventories(
             "source_file",
             "flags",
             "annotations",
+            "visibility",
         ],
     )?)?;
     collector.methods(tsv_table(
@@ -364,10 +365,60 @@ impl<'a> BytecodeCollector<'a> {
             is_test: source.is_test,
             is_generated: generated,
             body_unavailable: unavailable,
+            visibility: (!unavailable).then(|| row.visibility()).flatten(),
+            container_visibility: facts.visibility,
         })
     }
 
+    fn collect_architecture(&mut self) {
+        let mut facts = crate::architecture::ArchitectureFacts {
+            version: 1,
+            files: Vec::new(),
+        };
+        for (&input, inventory) in &self.source_inventory {
+            if !inventory.has_architecture {
+                self.graph.architecture = None;
+                return;
+            }
+            let Some(source) = self.inputs[input - 1].source_set.as_ref() else {
+                continue;
+            };
+            if self
+                .owner
+                .as_ref()
+                .is_some_and(|owner| self.prefixes[input - 1].as_ref() != Some(owner))
+            {
+                continue;
+            }
+            for raw in &inventory.architecture {
+                let mut file = raw.clone();
+                file.build = self.build.path.to_string_lossy().into_owned();
+                file.project = source.project.clone();
+                file.is_test = source.is_test;
+                facts.files.push(file);
+            }
+        }
+        facts
+            .files
+            .sort_by(|a, b| (&a.build, &a.project, &a.file).cmp(&(&b.build, &b.project, &b.file)));
+        self.graph.architecture = Some(facts);
+    }
+
     fn finish(mut self) -> Result<GraphData> {
+        self.collect_architecture();
+        let flows = super::flow_inventory::bind(
+            super::flow_inventory::BindingContext {
+                build: self.build,
+                inputs: self.inputs,
+                owner: self.owner.as_deref(),
+            },
+            &self.graph,
+            &self.source_inventory,
+        );
+        self.graph.flow_inventory = flows.inventory;
+        if flows.ambiguous_callbacks > 0 {
+            self.graph.diagnostics.push(format!("{} Java callback flow(s) remain unavailable because source-to-bytecode attribution is ambiguous", flows.ambiguous_callbacks));
+        }
         self.graph.entry_points = Some(EntryPoints {
             framework_entries: Vec::new(),
             candidates: Vec::new(),

@@ -109,6 +109,18 @@ class PatchBootstrapTests(unittest.TestCase):
         bootstrap.apply_patch(self.spec)
         self.assert_current()
 
+    def test_rune_patch_applies_idempotently_and_refuses_other_edits(self):
+        rune = self.repository.with_name("rune")
+        self.repository.rename(rune)
+        bootstrap.apply_patch(self.spec, "rune")
+        bootstrap.apply_patch(self.spec, "rune")
+        source = rune / "dependency.txt"
+        self.assertEqual(source.read_text(), "assembly identities\nentry metadata\n")
+        source.write_text("user modification\n")
+        with self.assertRaisesRegex(RuntimeError, "differs from the supported"):
+            bootstrap.apply_patch(self.spec, "rune")
+        self.assertEqual(source.read_text(), "user modification\n")
+
     def test_exact_legacy_patch_upgrades_without_resetting_checkout(self):
         self.source.write_text("assembly identities\n")
         bootstrap.apply_patch(self.spec)
@@ -116,6 +128,11 @@ class PatchBootstrapTests(unittest.TestCase):
 
     def test_exact_previous_patch_upgrades_without_losing_legacy_support(self):
         self.save_patch("previous_", "assembly identities\nprevious entry metadata\n")
+        bootstrap.apply_patch(self.spec)
+        self.assert_current()
+
+    def test_exact_older_patch_upgrades_without_losing_other_supported_versions(self):
+        self.save_patch("older_", "assembly identities\nolder entry metadata\n")
         bootstrap.apply_patch(self.spec)
         self.assert_current()
 

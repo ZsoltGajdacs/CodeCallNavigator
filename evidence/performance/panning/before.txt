@@ -1,0 +1,13 @@
+baseline dense scale=1 nodes=300 edges=6000 zoom=0.16 median_ms=3.113 p95_ms=3.350 mean_instances=55977 mean_segments=46101
+baseline dense scale=1 nodes=300 edges=6000 zoom=0.20 median_ms=3.421 p95_ms=3.647 mean_instances=69982 mean_segments=59620
+baseline dense scale=1 nodes=300 edges=6000 zoom=0.24 median_ms=3.832 p95_ms=4.259 mean_instances=80659 mean_segments=69697
+baseline dense scale=2 nodes=300 edges=6000 zoom=0.16 median_ms=3.096 p95_ms=3.241 mean_instances=55750 mean_segments=46101
+baseline dense scale=2 nodes=300 edges=6000 zoom=0.20 median_ms=3.438 p95_ms=3.745 mean_instances=69981 mean_segments=59620
+baseline dense scale=2 nodes=300 edges=6000 zoom=0.24 median_ms=4.214 p95_ms=4.435 mean_instances=80658 mean_segments=69697
+saved view nodes=31 edges=155 zoom=0.91981924 pan=[-1503.7949, -297.4431]
+segments_intersecting_clip=4868 offscreen_segments=9751
+scale=1 median_ms=1.484 p95_ms=1.700 instances=18544 segments=14619 segment_aabb_area_px=1372795 largest_aabb_px=33998 layout_nodes=1001 visible_cards=11
+after input pan=[-1346.1362, -254.01575]
+segments_intersecting_clip=4863 offscreen_segments=9756
+scale=2 median_ms=1.493 p95_ms=1.709 instances=18543 segments=14619 segment_aabb_area_px=4450603 largest_aabb_px=134083 layout_nodes=1001 visible_cards=11
+after input pan=[-1346.1362, -254.01575]

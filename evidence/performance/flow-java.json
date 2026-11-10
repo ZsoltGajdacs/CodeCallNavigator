@@ -1,0 +1,102 @@
+{
+  "after_cache_bytes": 118784,
+  "after_metrics": {
+    "complete": true,
+    "counters": {
+      "fingerprint.bytes_hashed": 1456363,
+      "fingerprint.directories_visited": 71,
+      "fingerprint.directory_scan_reuses": 25,
+      "fingerprint.files_hashed": 123,
+      "java.artifact_bytes_read": 813670,
+      "java.artifact_hits": 3,
+      "java.artifact_index_bytes": 62780,
+      "java.artifact_reads": 6,
+      "java.artifact_retained_bytes": 3080,
+      "java.classes_indexed": 400,
+      "java.source_inventories": 4,
+      "java.source_inventory_hits": 3,
+      "java.staged_bytes": 5263,
+      "relationships": 3,
+      "subprocesses": 14,
+      "symbols": 10
+    },
+    "elapsed_milliseconds": 5574.503416,
+    "schema": "codegraph.performance.v1",
+    "stages": {
+      "analysis": {
+        "calls": 1,
+        "milliseconds": 5574.498916
+      },
+      "composition": {
+        "calls": 1,
+        "milliseconds": 0.04025
+      },
+      "fingerprints.capture": {
+        "calls": 4,
+        "milliseconds": 9.372083
+      },
+      "fingerprints.discover": {
+        "calls": 11,
+        "milliseconds": 4.264958
+      },
+      "fingerprints.verify": {
+        "calls": 7,
+        "milliseconds": 20.506126
+      },
+      "java.build_preparation": {
+        "calls": 1,
+        "milliseconds": 727.74325
+      },
+      "java.bytecode": {
+        "calls": 4,
+        "milliseconds": 1556.451666
+      },
+      "java.classpath_staging": {
+        "calls": 4,
+        "milliseconds": 831.582625
+      },
+      "java.compilation": {
+        "calls": 1,
+        "milliseconds": 1150.029625
+      },
+      "java.normalization": {
+        "calls": 4,
+        "milliseconds": 1.794124
+      },
+      "java.source_attribution": {
+        "calls": 4,
+        "milliseconds": 1260.511334
+      },
+      "preparation": {
+        "calls": 1,
+        "milliseconds": 727.879708
+      },
+      "subprocess": {
+        "calls": 14,
+        "milliseconds": 5512.764372999999
+      },
+      "verification": {
+        "calls": 7,
+        "milliseconds": 20.511501
+      }
+    }
+  },
+  "after_ms": [
+    5581,
+    5744,
+    5574
+  ],
+  "baseline_revision": "1c472aa1148265f1d0c888af8533426b1aed03b8",
+  "before_cache_bytes": 110592,
+  "before_ms": [
+    5908,
+    5984,
+    5875
+  ],
+  "edges": 3,
+  "fixture": "fixtures/maven/reactor",
+  "flow_ir_json_bytes": 9183,
+  "identity_equal": true,
+  "nodes": 10,
+  "measurement_note": "Local three-pair smoke measurement with warm installed toolchains and concurrent development activity; timings are illustrative, not a performance guarantee."
+}

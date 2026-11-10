@@ -40,7 +40,7 @@ def expected_source_patch(specification):
         return b""
     patch_bytes = (ROOT / specification["patch"]).read_bytes()
     if hashlib.sha256(patch_bytes).hexdigest() != specification["patch_sha256"]:
-        raise RuntimeError("CallAtlas identity patch checksum mismatch")
+        raise RuntimeError("Dependency source patch checksum mismatch")
     return patch_bytes
 
 

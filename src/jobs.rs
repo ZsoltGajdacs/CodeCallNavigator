@@ -72,6 +72,8 @@ impl Default for Jobs {
 pub fn setup(state: &mut State, waker: Waker) {
     state.jobs.boot.set_waker(waker.clone());
     state.jobs.source.set_waker(waker.clone());
+    state.flow_workspace.job.set_waker(waker.clone());
+    state.architecture_workspace.job.set_waker(waker.clone());
     state.jobs.discovery.set_waker(waker.clone());
     state.jobs.analysis.set_waker(waker.clone());
     state.jobs.layout.set_waker(waker.clone());
@@ -100,6 +102,7 @@ impl State {
                 state.root = rune::TextEdit::new(path.to_string_lossy());
                 state.saved_builds.clear();
                 state.saved_targets = None;
+                state.reset_architecture();
                 state.discover_root();
             }
             Ok(None) => {}
@@ -186,14 +189,9 @@ impl State {
             return;
         };
         if self.scene {
-            self.graph_view = projection::project(&graph, &request);
-            crate::scenes::position(&mut self.graph_view);
-            self.reconcile_visual_selection();
-            self.visible_revision = Some((self.epoch, self.revision));
-            if self.auto_fit {
-                self.nav.camera.fit(self.graph_view.size, self.viewport);
-                self.auto_fit = false;
-            }
+            let mut view = projection::project(&graph, &request);
+            crate::scenes::position(&mut view);
+            self.complete_graph_layout(view);
             return;
         }
         let Some(runtime) = &self.runtime else {
@@ -270,7 +268,7 @@ impl State {
 
 pub fn poll(state: &mut State, time: f64, tx: &mut Tx) -> bool {
     let mut changed = crate::source_popup::poll(state, time, tx)
-        | crate::camera::poll_center(state, time, tx)
+        | crate::graph_interaction::poll(state, time, tx)
         | poll_progress(state)
         | poll_boot(state)
         | poll_discovery(state)
@@ -278,7 +276,9 @@ pub fn poll(state: &mut State, time: f64, tx: &mut Tx) -> bool {
         | poll_graph(state)
         | poll_search_input(state)
         | poll_persistence(state)
-        | poll_staleness(state, time, tx);
+        | poll_staleness(state, time, tx)
+        | crate::architecture_workspace::poll(state, time, tx)
+        | crate::flow_workspace::poll(state, tx);
     changed |= state.constrain_panes(state.ui.window_width);
     if state.needs_layout {
         state.request_layout();
@@ -340,6 +340,7 @@ fn poll_boot(state: &mut State) -> bool {
                 state.saved_builds = session.selected_builds;
                 state.saved_targets = session.selected_targets;
                 state.nav = session.navigation;
+                state.architecture_selection = session.architecture_selection;
                 state.ui.restore(session.presentation);
                 state.auto_fit = false;
             }
@@ -348,6 +349,7 @@ fn poll_boot(state: &mut State) -> bool {
             } else {
                 state.nav.selected = None;
                 state.nav.focus = None;
+                state.nav.focus_target = None;
                 state.nav.path_from = None;
                 state.nav.path_to = None;
                 state.nav.show_path = false;
@@ -426,15 +428,17 @@ fn install_graph(state: &mut State, loaded: LoadedGraph) {
     state.analysis_metrics = loaded.metrics;
     state.generation = Some(loaded.generation);
     state.next_stale_check = 0.0;
+    state.architecture = None;
+    state.architecture_workspace.invalidate();
     state.hits.clear();
     state.search_page = 0;
     state.search_more = false;
     state.selected_edge = None;
     state.last_query.clear();
-    state.graph_view = projection::GraphView::default();
+    state.replace_graph_view(projection::GraphView::default());
     state.visible_revision = None;
     state.visual_selection = None;
-    state.pending_center = None;
+    state.cancel_graph_press();
     state.status = format!(
         "{} symbols · {} relationships",
         state.graph.as_ref().unwrap().data.nodes.len(),
@@ -464,14 +468,7 @@ fn poll_layout(state: &mut State) -> bool {
     }
     match result {
         Ok(view) => {
-            state.graph_view = view;
-            state.reconcile_visual_selection();
-            state.visible_revision = Some((epoch, revision));
-            state.nav.page = state.nav.page.min(state.graph_view.pages.saturating_sub(1));
-            if state.auto_fit {
-                state.nav.camera.fit(state.graph_view.size, state.viewport);
-                state.auto_fit = false;
-            }
+            state.complete_graph_layout(view);
         }
         Err(error) => state.warning = error,
     }

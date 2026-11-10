@@ -1,10 +1,11 @@
 //! Graph Studio shell. Content and application actions live in focused modules.
 mod drawer;
+mod graph_canvas;
 mod graph_controls;
 
 use crate::{
     app::State,
-    camera, icons, inspector,
+    icons, inspector,
     presentation::{self, Drawer},
     theme,
 };
@@ -15,6 +16,13 @@ use rune_kit::{
 };
 
 pub fn view(state: &State, cx: &mut Cx<State>) -> El {
+    if state.flow_workspace.current.is_some() {
+        return crate::flow_view::view(state, cx);
+    }
+    graph_workspace(state, cx)
+}
+
+fn graph_workspace(state: &State, cx: &mut Cx<State>) -> El {
     let k = theme::kit(cx.system_dark());
     let mut layer = Vec::new();
     let main = col()
@@ -91,10 +99,11 @@ fn with_overlays(state: &State, k: &Kit, body: El, mut layer: Vec<El>) -> El {
 
 fn graph_with_filters(state: &State, cx: &mut Cx<State>, k: &Kit) -> El {
     el().key("graph-canvas-wrapper")
+        .motion(rune::Spring::NONE)
         .grow(1.0)
         .min_w(0.0)
         .min_h(0.0)
-        .child(camera::graph_canvas(state, cx, k))
+        .child(graph_canvas::graph_canvas(state, cx, k))
         .child(graph_controls::filters(state, k))
 }
 
@@ -260,6 +269,9 @@ fn status_bar(state: &State, k: &Kit) -> El {
 }
 
 pub fn key(state: &mut State, event: &KeyEvent, tx: &mut Tx) -> bool {
+    if state.flow_workspace.current.is_some() {
+        return crate::flow_view::key(state, event);
+    }
     if event.is_command('f') {
         state.open_search();
         return true;

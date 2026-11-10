@@ -1,7 +1,7 @@
 use super::Contents;
 use crate::{app::State, theme};
 use rune::{El, GrowthSpec, col, el, row, text};
-use rune_kit::{Button, ButtonVariant, Kit, syntax::SyntaxTheme};
+use rune_kit::{Button, ButtonVariant, Kit};
 
 pub fn view(state: &State, k: &Kit) -> Option<El> {
     let preview = state.source_popup.active.as_ref()?;
@@ -234,29 +234,14 @@ fn code_line(state: &State, i: usize, k: &Kit) -> El {
     let Contents::Source(file) = &preview.contents else {
         return el();
     };
-    let line = &file.lines[i];
     let selected = preview.location_warning.is_none() && preview.target == i;
-    row()
-        .h(20.0)
-        .w_full()
-        .fill(if selected {
-            k.c.text_accent.alpha(0.14)
-        } else {
-            rune::Color::TRANSPARENT
-        })
-        .child(
-            text(format!("{:>5}", i + 1))
-                .w(64.0)
-                .font(theme::mono(12.0, 400.0).lh(20.0))
-                .color(k.c.text_muted),
-        )
-        .child(
-            text(&file.text[line.range.clone()])
-                .key(format!("source-text-{i}"))
-                .font(theme::mono(12.0, 400.0).lh(20.0))
-                .color(k.c.text_base)
-                .spans(SyntaxTheme::from_kit(k).spans(&line.highlights, 0))
-                .selectable(true)
-                .selection_color(k.selection()),
-        )
+    crate::source_view::line(
+        file,
+        crate::source_view::SourceRow {
+            index: i,
+            selected,
+            key: format!("source-text-{i}"),
+        },
+        k,
+    )
 }

@@ -20,6 +20,7 @@ This patch preserves call binding and adds identity and entry-point metadata:
   per-method source-declaration, implicitness, callable-kind and Object-signature
   facts from Roslyn. CodeGraph owns inclusion policy and prunes after validation.
 - Preserve those facts when reading and writing CallAtlas snapshots.
+- Export architecture file facts directly from the same Roslyn semantic models, including type/method attributes, namespaces, declaration kinds, base types and annotated interfaces. These facts do not change call binding or graph inclusion.
 - Export `entryPoints.candidates` using the existing `CodeMapQuery.EntryPoints` query, including uncalled declarations.
 - Export `entryPoints.applicationStarts` from `Compilation.GetEntryPoint`, mapping synthesized top-level starts to the existing top-level graph identity. These verified starts are distinct from ordinary entry candidates.
 
@@ -36,7 +37,8 @@ dotnet build vendor/callatlas/src/CallAtlas.Cli/CallAtlas.Cli.csproj -c Release
 ```
 
 Bootstrap verifies the exact revision and patch hash. It accepts only a clean
-checkout, the exact current patch, the previously shipped entry-metadata patch in
+checkout, the exact current patch, the previous declaration-policy patch in
+`callatlas-assembly-identity-policy.patch`, the earlier entry-metadata patch in
 `callatlas-assembly-identity-entries.patch`, or the exact identity-only
 patch preserved in `callatlas-assembly-identity-legacy.patch` with its pinned hash.
 The legacy patch is reversed and replaced automatically; failure restores it.
@@ -65,3 +67,42 @@ Upstream limitation preserved by this patch: overloaded-operator declarations ar
 registered, but the analyzer does not report the binary operator invocation used
 by this fixture. The identity check proves that the two operator declarations stay
 separate; it does not claim that missing invocation coverage has been repaired.
+
+# Rune platform warnings patch
+
+`rune-platform-warnings.patch` applies to Rune revision
+`7ed827a2b969ec737323c3e80d2bfc1b8032b609` (SHA-256
+`ae0d3cc48c2c49e47f44e9a7e036bf41a0d901ab767488eee87d95a92a56074d`).
+It scopes platform-specific dead-code allowances and the Windows-only focus method
+to avoid warnings on macOS while preserving the shared state machines. Bootstrap
+applies it after checkout; no other Rune patches precede it. Bootstrap refuses
+unrelated Rune source changes rather than overwriting them.
+
+# Rune oriented segment quads
+
+`rune-oriented-segments.patch` replaces the warnings-only patch on Rune revision
+`7ed827a2b969ec737323c3e80d2bfc1b8032b609`. Its SHA-256 is pinned in
+`analyzers.lock.json`. It contains the existing platform-warning fixes followed
+by tightly oriented vertex quads for line segments and a GPU pixel regression.
+Apply the combined patch once to the pristine pinned revision. Do not stack the
+warnings-only patch with it. Bootstrap recognizes the exact previous
+warnings-only diff, reverses it, then applies this replacement; unrelated source
+changes are rejected and preserved.
+
+The segment endpoints, instance ABI, CPU axis-aligned bounds, antialias coverage,
+round/butt caps, and fragment distance function are unchanged. Only rasterized
+vertex bounds become a thin strip; the padding includes the same two device
+pixels of conservative fringe as the original renderer. Zero-length round
+segments retain a finite quad and their original circular coverage.
+
+The pinned precompiled uber/Windfoil libraries intentionally retain their original
+source fingerprints. Their hash guards reject the changed shader and compile
+the patched WGSL at runtime; the native built-in table also keys on shader source.
+Do not update fingerprint constants to match stale bytecode. The focused pixel
+test verifies rejection of the stale uber library and compares the new renderer
+with the original AABB vertex path at 1x and 2x, including clipping, fades,
+transparency, isolated-layer projection, caps, reversed slopes and degenerate
+segments. The upstream precompiled-library freshness tests require regeneration
+of those libraries and are not claimed to pass for this runtime-compiled patch.
+
+Patch migration tests: `python3 -m unittest discover -s tools -p test_dependency_patches.py`.

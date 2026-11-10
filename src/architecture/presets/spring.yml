@@ -1,0 +1,35 @@
+# Spring Boot + JPA backends.
+java:
+  tests:
+    - path: ["**/src/test/**", "**/src/it/**", "**/src/integrationTest/**"]
+  layers:
+    - name: Controller
+      match:
+        - annotation: [RestController, Controller, ControllerAdvice]
+    - name: Service
+      match:
+        - annotation: [Service, Component]
+        - suffix: [Service, ServiceImpl]
+    - name: Repository
+      match:
+        - annotation: Repository
+        - implements: [JpaRepository, CrudRepository, PagingAndSortingRepository, JpaSpecificationExecutor]
+        - suffix: [Repository, Dao, DAO]
+    - name: Migration
+      tab: Database
+      match:
+        - path: "**/db/migration/**"
+        - content: "<databaseChangeLog|databaseChangeLog:"
+    - name: Entities
+      support: true
+      match:
+        - annotation: [Entity, Embeddable, MappedSuperclass, Table]
+        - package: ["*.dto.*", "*.model.*", "*.models.*", "*.entity.*", "*.entities.*", "*.domain.*"]
+        - suffix: [Dto, DTO, Request, Response, Entity]
+        - kind: record
+    - name: Utilities
+      support: true
+      match:
+        - suffix: [Exception, Util, Utils, Helper, Helpers, Constants, Factory]
+        - package: ["*.util.*", "*.utils.*", "*.helper.*", "*.helpers.*", "*.common.*", "*.validation.*", "*.exception.*", "*.exceptions.*"]
+        - kind: [enum, annotation]

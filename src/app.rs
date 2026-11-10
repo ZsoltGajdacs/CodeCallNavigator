@@ -8,6 +8,7 @@ use crate::{
 use codegraph::{graph::GraphIndex, store::SqliteStore};
 use rune::TextEdit;
 use std::{
+    cell::RefCell,
     path::PathBuf,
     sync::{
         Arc,
@@ -21,12 +22,16 @@ pub struct TargetChoice {
 }
 
 pub struct State {
+    pub flow_workspace: crate::flow_workspace::Workspace,
     pub root: TextEdit,
     pub query: TextEdit,
     pub targets: Vec<TargetChoice>,
     pub saved_builds: Vec<PathBuf>,
     pub saved_targets: Option<Vec<crate::discovery::BuildIdentity>>,
     pub graph: Option<Arc<GraphIndex>>,
+    pub architecture: Option<Arc<codegraph::architecture::LayerAssignments>>,
+    pub architecture_selection: Option<codegraph::architecture::Selection>,
+    pub architecture_workspace: crate::architecture_workspace::Workspace,
     pub analysis_metrics: Option<codegraph::metrics::Metrics>,
     pub store: Option<Arc<SqliteStore>>,
     pub runtime: Option<Arc<AnalyzerRuntime>>,
@@ -36,8 +41,10 @@ pub struct State {
     pub back: Vec<Navigation>,
     pub forward: Vec<Navigation>,
     pub graph_view: GraphView,
+    pub edge_geometry: RefCell<crate::edges::GeometryCache>,
+    pub graph_emphasis: RefCell<crate::graph_emphasis::Cache>,
     pub visual_selection: Option<String>,
-    pub pending_center: Option<crate::camera::PendingCenter>,
+    pub graph_interaction: crate::graph_interaction::Interaction,
     pub hits: Vec<u32>,
     pub search_page: usize,
     pub search_more: bool,
@@ -63,6 +70,7 @@ pub struct State {
     pub last_query: String,
     pub next_stale_check: f64,
     pub viewport: [f32; 2],
+    pub graph_overlay_height: f32,
     pub auto_fit: bool,
     pub visible_revision: Option<(u64, u64)>,
     pub cancel: Arc<AtomicBool>,
@@ -72,12 +80,16 @@ pub struct State {
 impl State {
     pub fn new() -> Self {
         Self {
+            flow_workspace: crate::flow_workspace::Workspace::default(),
             root: TextEdit::new(""),
             query: TextEdit::new(""),
             targets: Vec::new(),
             saved_builds: Vec::new(),
             saved_targets: None,
             graph: None,
+            architecture: None,
+            architecture_selection: None,
+            architecture_workspace: Default::default(),
             analysis_metrics: None,
             store: None,
             runtime: None,
@@ -87,8 +99,10 @@ impl State {
             back: Vec::new(),
             forward: Vec::new(),
             graph_view: GraphView::default(),
+            edge_geometry: RefCell::default(),
+            graph_emphasis: RefCell::default(),
             visual_selection: None,
-            pending_center: None,
+            graph_interaction: Default::default(),
             hits: Vec::new(),
             search_page: 0,
             search_more: false,
@@ -114,6 +128,7 @@ impl State {
             last_query: String::new(),
             next_stale_check: 0.0,
             viewport: [720.0, 620.0],
+            graph_overlay_height: 0.0,
             auto_fit: true,
             visible_revision: None,
             cancel: Arc::new(AtomicBool::new(false)),
@@ -122,18 +137,22 @@ impl State {
     }
 
     pub fn checkpoint(&mut self) {
-        self.back.push(self.nav.clone());
-        if self.back.len() > 100 {
-            self.back.remove(0);
-        }
-        self.forward.clear();
+        self.record_graph_step(self.nav.clone());
+    }
+
+    /// Install a new layout, including same-sized replacements, before rendering it.
+    pub fn replace_graph_view(&mut self, view: GraphView) {
+        self.graph_view = view;
+        *self.edge_geometry.get_mut() = Default::default();
+        *self.graph_emphasis.get_mut() = Default::default();
     }
 
     pub fn changed(&mut self) {
         self.close_source();
-        self.pending_center = None;
+        self.cancel_graph_press();
         self.revision += 1;
         self.needs_layout = true;
+        self.graph_interaction.center_after_layout = self.has_graph_focus() && !self.nav.show_path;
         self.dirty_session = true;
         self.refresh_neighbors();
     }
@@ -144,107 +163,6 @@ impl State {
             .node_index(self.nav.selected.as_deref()?)
     }
 
-    pub fn select(&mut self, node: u32, focus: bool) {
-        let Some(graph) = &self.graph else {
-            return;
-        };
-        let Some(item) = graph.data.nodes.get(node as usize) else {
-            return;
-        };
-        let identity = item.id.clone();
-        self.checkpoint();
-        self.set_selection(identity, focus);
-    }
-
-    fn set_selection(&mut self, identity: String, focus: bool) {
-        self.visual_selection = None;
-        self.nav.selected = Some(identity.clone());
-        if focus {
-            self.nav.focus_method(identity);
-            self.auto_fit = true;
-        }
-        self.nav.page = 0;
-        self.neighbor_pages = [0, 0];
-        self.relationship_page = 0;
-        self.selected_edge = None;
-        self.changed();
-    }
-
-    pub fn reveal(&mut self, node: u32) {
-        let Some(item) = self
-            .graph
-            .as_ref()
-            .and_then(|graph| graph.data.nodes.get(node as usize))
-        else {
-            return;
-        };
-        let (identity, test, generated, unavailable) = (
-            item.id.clone(),
-            item.is_test,
-            item.is_generated,
-            item.body_unavailable,
-        );
-        self.checkpoint();
-        self.nav.filter.include_tests |= test;
-        self.nav.filter.include_generated |= generated;
-        self.nav.filter.include_unavailable |= unavailable;
-        self.set_selection(identity, true);
-    }
-
-    pub fn activate(&mut self, key: String, member: Option<u32>) {
-        if let Some(node) = member {
-            self.select(node, false);
-            return;
-        }
-        self.checkpoint();
-        self.nav.expanded.insert(key);
-        self.nav.page = 0;
-        self.auto_fit = true;
-        self.changed();
-    }
-
-    pub fn select_visible(&mut self, key: String, member: Option<u32>, interval: f64) {
-        self.visual_selection = Some(key);
-        self.pending_center = Some(crate::camera::PendingCenter {
-            deadline: None,
-            interval,
-        });
-        self.nav.selected = member.and_then(|index| {
-            self.graph
-                .as_ref()?
-                .data
-                .nodes
-                .get(index as usize)
-                .map(|node| node.id.clone())
-        });
-        self.neighbor_pages = [0, 0];
-        self.relationship_page = 0;
-        self.selected_edge = None;
-        self.dirty_session = true;
-        self.refresh_neighbors();
-    }
-
-    pub fn reconcile_visual_selection(&mut self) {
-        let selection_is_visible = self
-            .visual_selection
-            .as_ref()
-            .is_some_and(|key| self.graph_view.nodes.iter().any(|node| &node.key == key));
-        if selection_is_visible {
-            return;
-        }
-        self.pending_center = None;
-        self.visual_selection = self.selected_view_key();
-    }
-
-    fn selected_view_key(&self) -> Option<String> {
-        let selected = self.selected()?;
-        self.graph_view
-            .nodes
-            .iter()
-            .find(|node| node.member == Some(selected))
-            .map(|node| node.key.clone())
-    }
-
     pub fn overview(&mut self) {
         self.checkpoint();
         self.nav.overview();
@@ -252,6 +170,7 @@ impl State {
     }
 
     fn finish_navigation(&mut self) {
+        self.graph_interaction.center_after_layout = false;
         self.auto_fit = true;
         self.changed();
     }
@@ -293,11 +212,13 @@ impl State {
         }
         self.auto_fit = false;
         self.changed();
+        self.graph_interaction.center_after_layout = false;
     }
 
     pub fn request(&self) -> Option<Request> {
         let graph = self.graph.as_ref()?;
         Some(Request {
+            focus_target: self.nav.focus_target.clone(),
             grouping: self.nav.grouping,
             expanded: self.nav.expanded.clone(),
             scope: self.nav.scope(graph),
@@ -305,6 +226,8 @@ impl State {
             depth: self.nav.depth,
             filter: self.nav.filter.clone(),
             page: self.nav.page,
+            architecture: self.architecture.clone(),
+            layer_tab: self.nav.layer_tab.clone(),
         })
     }
 
@@ -330,6 +253,7 @@ impl State {
             ),
             navigation: self.nav.clone(),
             presentation: self.ui.preferences(),
+            architecture_selection: self.architecture_selection,
         }
     }
 
@@ -339,6 +263,7 @@ impl State {
     }
 
     pub fn root_edited(&mut self) {
+        self.reset_architecture();
         self.root_was_edited = true;
         self.jobs.discovery.cancel();
         self.targets.clear();

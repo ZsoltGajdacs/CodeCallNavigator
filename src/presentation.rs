@@ -229,21 +229,21 @@ impl State {
     }
 
     pub fn zoom(&mut self, factor: f32) {
-        self.pending_center = None;
+        self.cancel_graph_camera();
         let center = [self.viewport[0] / 2.0, self.viewport[1] / 2.0];
         self.nav.camera.zoom_at(center, factor);
         self.dirty_session = true;
     }
 
     pub fn fit_graph(&mut self) {
-        self.pending_center = None;
-        self.nav.camera.fit(self.graph_view.size, self.viewport);
+        self.cancel_graph_camera();
+        self.fit_visible_graph();
         self.dirty_session = true;
     }
 
     pub fn next_graph_page(&mut self) {
         self.nav.page = (self.nav.page + 1) % self.graph_view.pages.max(1);
-        self.auto_fit = true;
+        self.auto_fit = !self.has_graph_focus();
         self.changed();
     }
 }

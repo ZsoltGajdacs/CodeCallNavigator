@@ -335,3 +335,61 @@ fn maven_skipped_compilation_rejects_missing_expected_outputs() {
     let error = format!("{:#}", run(vec![target(&root, "maven")]).unwrap_err());
     assert!(error.contains("compiled Java output"), "{error}");
 }
+
+#[test]
+#[ignore = "requires pinned Java analyzer, Maven and JDK 25"]
+fn maven_architecture_facts_preserve_graph_and_source_annotations() {
+    let fixture = maven_fixture();
+    let build = target(&fixture.path().join("standalone"), "maven");
+    let before = run(vec![build.clone()]).unwrap();
+    let source = fixture
+        .path()
+        .join("standalone/src/main/java/fixture/Standalone.java");
+    let original = fs::read_to_string(&source).unwrap();
+    let annotated = original
+        .replace(
+            "public final class Standalone",
+            "@Architecture public final class Standalone",
+        )
+        .replace(
+            "public static void leaf()",
+            "@Architecture public static void leaf()",
+        );
+    fs::write(&source, format!("{annotated}\n@java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.SOURCE) @interface Architecture {{}}\ninterface Contract {{}}\nrecord Data(String value) {{}}\n")).unwrap();
+    let graph = run(vec![build]).unwrap();
+    let facts = graph.architecture.as_ref().unwrap();
+    assert_eq!(facts.version, 1);
+    let file = facts
+        .files
+        .iter()
+        .find(|file| file.file.ends_with("/fixture/Standalone.java"))
+        .unwrap();
+    assert_eq!(
+        (
+            file.annotations.contains(&"fixture.Architecture".into()),
+            file.method_annotations.contains(&"Architecture".into()),
+            file.names.contains(&"Data".into()),
+            file.kinds.contains(&"record".into()),
+            file.content.contains("RetentionPolicy.SOURCE")
+        ),
+        (true, true, true, true, true),
+        "Source declarations must survive bytecode erasure"
+    );
+    let ids = |graph: &GraphData| {
+        graph
+            .nodes
+            .iter()
+            .filter(|node| node.container == "fixture.Standalone")
+            .map(|node| node.id.clone())
+            .collect::<std::collections::BTreeSet<_>>()
+    };
+    assert_eq!(ids(&before), ids(&graph));
+    assert_eq!(before.edges.len(), graph.edges.len());
+    let cache = tempfile::tempdir().unwrap();
+    let store = SqliteStore::open(cache.path()).unwrap();
+    store.publish(&graph, &AtomicBool::new(false)).unwrap();
+    assert_eq!(
+        store.load_active().unwrap().unwrap().architecture,
+        graph.architecture
+    );
+}

@@ -1,0 +1,172 @@
+diff --git a/crates/rune/src/quit.rs b/crates/rune/src/quit.rs
+index 624fea31..e9403a52 100644
+--- a/crates/rune/src/quit.rs
++++ b/crates/rune/src/quit.rs
+@@ -61,6 +61,7 @@ pub(crate) enum Event {
+     /// The loop closed the windows for the session's end (`Effect::CloseAndExit`).
+     WindowsClosed,
+     /// The system took the quit back (another app refused a logoff): the app runs on.
++    #[cfg_attr(not(target_os = "windows"), allow(dead_code))]
+     Cancel,
+     /// The event loop ended.
+     Exited,
+diff --git a/crates/rune/src/render/metallib.rs b/crates/rune/src/render/metallib.rs
+index d9c8fd0e..9bb9351e 100644
+--- a/crates/rune/src/render/metallib.rs
++++ b/crates/rune/src/render/metallib.rs
+@@ -900,4 +900,91 @@ pub(super) const UBER_WGSL_BLAKE3: &str = \"{wgsl_hash}\";", uber_abi_hash());
+             }
+         }
+     }
++
++    #[cfg(target_os = "macos")]
++    #[test]
++    fn oriented_segment_quads_preserve_caps_clips_and_layer_pixels() {
++        use super::super::Gpu;
++        let gpu = Gpu::headless();
++        let current = uber_wgsl();
++        let branch = "    if (kind > 4.5 && kind < 5.5) {\n        p = segment_quad(i, corner);\n    }\n";
++        assert_eq!(current.matches(branch).count(), 1);
++        let reference = current.replacen(branch, "", 1);
++        assert!(try_uber_metallib(&gpu.device, &current, uber_metallib(&gpu.device), UBER_WGSL_BLAKE3, |_| ()).is_none(),
++            "the pinned AABB metallib must not replace the patched WGSL");
++        for scale in [1.0, 2.0] {
++            compare_segment_quads(&gpu, &current, &reference, scale);
++        }
++    }
++
++    #[cfg(target_os = "macos")]
++    fn segment_renderer(device: &wgpu::Device, source: &str) -> super::super::Renderer {
++        use super::super::{Blend, Renderer, OFFSCREEN_FORMAT};
++        let mut renderer = Renderer::new_classic(device, OFFSCREEN_FORMAT);
++        renderer.shader = super::super::dxbc::Shaders::one(wgsl_shader(device, source));
++        renderer.pipeline = Renderer::pipeline(device, &renderer.layout, &renderer.shader, OFFSCREEN_FORMAT, "vs", Blend::SourceOver);
++        renderer.extra.clear();
++        renderer
++    }
++
++    #[cfg(target_os = "macos")]
++    fn compare_segment_quads(gpu: &super::super::Gpu, current: &str, reference: &str, scale: f32) {
++        use super::super::{LayerSpec, Instance, Offscreen};
++        let mut oriented = segment_renderer(&gpu.device, current);
++        let mut aabb = segment_renderer(&gpu.device, reference);
++        let target = Offscreen::new(&gpu.device, (128.0 * scale) as u32, (96.0 * scale) as u32);
++        for instance in segment_samples(scale) {
++            let bounds = [8.0 * scale, 4.0 * scale, 112.0 * scale, 88.0 * scale];
++            let layer = Instance::begin_layer(bounds, instance.clip, LayerSpec { opacity: 0.65, ..Default::default() });
++            for instances in [vec![instance], vec![layer, instance, Instance::end_layer()]] {
++                let expected = segment_pixels(gpu, &mut aabb, &target, &instances);
++                let actual = segment_pixels(gpu, &mut oriented, &target, &instances);
++                let worst = actual.iter().zip(&expected).map(|(a, b)| a.abs_diff(*b)).max().unwrap();
++                assert!(worst <= 1, "segment pixels changed by {worst} at scale {scale}: {:?}", instance.radii);
++            }
++        }
++    }
++
++    #[cfg(target_os = "macos")]
++    fn segment_pixels(gpu: &super::super::Gpu, renderer: &mut super::super::Renderer, target: &super::super::Offscreen, instances: &[super::super::Instance]) -> Vec<u8> {
++        let mut text = crate::text::TextSystem::default();
++        let size = (target.width, target.height);
++        renderer.prepare(&gpu.device, &gpu.queue, &mut text.atlas, instances, size);
++        let mut encoder = gpu.device.create_command_encoder(&Default::default());
++        renderer.draw(&mut encoder, &target.view, [0.0; 4]);
++        target.copy(&mut encoder);
++        renderer.submit(&gpu.queue, encoder);
++        target.read(&gpu.device)
++    }
++
++    #[cfg(target_os = "macos")]
++    fn segment_samples(scale: f32) -> Vec<super::super::Instance> {
++        let ends = [
++            [10.0, 14.0, 114.0, 82.0], [114.0, 82.0, 10.0, 14.0],
++            [10.0, 82.0, 114.0, 14.0], [114.0, 14.0, 10.0, 82.0],
++            [64.0, 10.0, 64.0, 86.0], [8.0, 48.0, 120.0, 48.0],
++            [64.0, 48.0, 64.0, 48.0], [64.0, 48.0, 64.00001, 48.0],
++            [-100.0, -60.0, 220.0, 154.0], [8.0, 8.0, 120.0, 88.0],
++        ];
++        ends.into_iter().flat_map(|points| [false, true].into_iter().flat_map(move |round| {
++            [0.15, 1.2, 4.0].map(|width| segment_sample(points, round, width, scale))
++        })).collect()
++    }
++
++    #[cfg(target_os = "macos")]
++    fn segment_sample(points: [f32; 4], round: bool, width: f32, scale: f32) -> super::super::Instance {
++        use super::super::{Instance, KIND_SEGMENT, pack_fade};
++        use bytemuck::Zeroable;
++        let [ax, ay, bx, by] = points.map(|value| value * scale);
++        let half = width * scale * 0.5;
++        let pad = half.max(0.5) + 1.0;
++        let clip = [12.0 * scale, 8.0 * scale, 116.0 * scale, 88.0 * scale];
++        Instance {
++            rect: [ax.min(bx) - pad, ay.min(by) - pad, (ax - bx).abs() + pad * 2.0, (ay - by).abs() + pad * 2.0],
++            radii: [ax, ay, bx, by], fill: [0.32, 0.08, 0.16, 0.4],
++            params: [half, KIND_SEGMENT, u8::from(round) as f32, 1.0], clip,
++            fade: pack_fade([3.0 * scale; 4], clip, clip), ..Instance::zeroed()
++        }
++    }
++
+ }
+diff --git a/crates/rune/src/runtime/frame.rs b/crates/rune/src/runtime/frame.rs
+index dfda8663..69c8be69 100644
+--- a/crates/rune/src/runtime/frame.rs
++++ b/crates/rune/src/runtime/frame.rs
+@@ -46,6 +46,7 @@ impl<S: 'static> Runtime<S> {
+     }
+ 
+     /// Whether the window has the keyboard focus, as its last focus event said.
++    #[cfg(target_os = "windows")]
+     pub(crate) fn has_window_focus(&self) -> bool { self.window_focused == Some(true) }
+ 
+     /// Queue a native focus transition. Repeated notifications do not repeat the callback.
+diff --git a/crates/rune/src/shader.wgsl b/crates/rune/src/shader.wgsl
+index 19dedab0..58285152 100644
+--- a/crates/rune/src/shader.wgsl
++++ b/crates/rune/src/shader.wgsl
+@@ -52,6 +52,20 @@ fn vs(i: In) -> Out {
+     return base_vs(i);
+ }
+ 
++// Rasterize only the thin strip around a segment, rather than its axis-aligned bounds.
++// Keep the original rect for layer bounds and the original endpoints for fragment coverage.
++fn segment_quad(i: In, corner: vec2<f32>) -> vec2<f32> {
++    let delta = i.radii.zw - i.radii.xy;
++    let len = length(delta);
++    let tangent = select(vec2<f32>(1.0, 0.0), delta / max(len, 1e-4), len >= 1e-4);
++    let normal = vec2<f32>(-tangent.y, tangent.x);
++    // push_shape pads by max(half width, 0.5) + 1; base_vs adds another device pixel.
++    // This also covers round caps, subpixel strokes, and the antialias fringe.
++    let pad = max(i.params.x, 0.5) + 2.0;
++    return i.radii.xy + tangent * mix(-pad, len + pad, corner.x)
++        + normal * mix(-pad, pad, corner.y);
++}
++
+ fn base_vs(i: In) -> Out {
+     let corner = vec2<f32>(f32(i.vi & 1u), f32(i.vi >> 1u));
+     let kind = i.params.y;
+@@ -75,7 +89,10 @@ fn base_vs(i: In) -> Out {
+         lo = max(lo, i.rect.xy + i.uv.xy);
+         hi = max(min(hi, i.rect.xy + vec2<f32>(-i.uv.z, i.uv.w)), lo);
+     }
+-    let p = select(lo, hi, corner > vec2<f32>(0.5));
++    var p = select(lo, hi, corner > vec2<f32>(0.5));
++    if (kind > 4.5 && kind < 5.5) {
++        p = segment_quad(i, corner);
++    }
+     var screen = p;
+     // Icon loops rotate the quad, not its atlas allocation. Local p still samples the glyph.
+     if (kind > 1.5 && kind < 2.5 && i.params.x != 0.0) {
+diff --git a/crates/rune/src/window/redraw.rs b/crates/rune/src/window/redraw.rs
+index e819dfe2..4ae799c8 100644
+--- a/crates/rune/src/window/redraw.rs
++++ b/crates/rune/src/window/redraw.rs
+@@ -36,8 +36,10 @@ pub(super) enum RedrawEvent {
+     /// Something asks for a frame: an input, a wake, a timer, the frame that just drew.
+     Ask(Instant),
+     /// A paint starts.
++    #[cfg_attr(target_os = "macos", allow(dead_code))]
+     Paint,
+     /// The paint ends.
++    #[cfg_attr(target_os = "macos", allow(dead_code))]
+     Painted,
+     /// The loop's turn ends. `paints`: the window is on screen, and Windows puts its paint off
+     /// behind the others'.

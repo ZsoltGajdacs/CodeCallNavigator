@@ -1,89 +1,62 @@
 //! Aggregate analyzed relationships, order them, then select a bounded page.
-use super::ordering;
 use super::{
-    EDGE_LIMIT, GraphView, GroupKind, Grouping, NODE_LIMIT, NodeOrder, Request, Scope, Selection,
-    SourcePath, ViewEdge, ViewNode,
+    EDGE_LIMIT, FocusTarget, GraphView, GroupKind, Grouping, MethodRow, NODE_LIMIT, NodeOrder,
+    Request, Scope, Selection, SourcePath, ViewEdge, ViewNode,
+};
+use super::{
+    focus_level::{FocusProjection, PresentationLevel},
+    groups::{Group, groups, relative_file},
+    labels, layers, ordering,
 };
 use codegraph::{graph::GraphIndex, model::Node};
-use std::{
-    collections::{BTreeMap, HashMap, HashSet},
-    path::{Path, PathBuf},
-};
+use std::collections::{BTreeMap, HashMap, HashSet};
 
-fn key(parts: &[&str]) -> String {
-    serde_json::to_string(parts).expect("string arrays serialize")
-}
-
-fn relative_file(node: &Node) -> PathBuf {
-    let build = Path::new(&node.build);
-    let root = if build.extension().is_some() {
-        build.parent().unwrap_or(build)
+fn group_node(node: &Node, request: &Request, group: Group) -> ViewNode {
+    let display = if group.kind == GroupKind::Class {
+        labels::class(node)
     } else {
-        build
+        labels::Label {
+            text: group.label.clone(),
+            description: group.label,
+        }
     };
-    let file = Path::new(&node.file);
-    file.strip_prefix(root).unwrap_or(file).to_path_buf()
+    ViewNode {
+        key: group.key,
+        label: display.text,
+        description: display.description,
+        group_kind: Some(group.kind),
+        detail: node.project.clone(),
+        layer: layers::assignment(node, request).map(str::to_owned),
+        ..Default::default()
+    }
 }
 
-fn groups(node: &Node, grouping: Grouping) -> Vec<(String, String, GroupKind)> {
-    let scope = [&*node.build, &*node.project];
-    let mut result = vec![(
-        key(&["project", scope[0], scope[1]]),
-        node.project.clone(),
-        GroupKind::Project,
-    )];
-    match grouping {
-        Grouping::Namespace => result.push((
-            key(&["namespace", scope[0], scope[1], &node.namespace]),
-            if node.namespace.is_empty() {
-                "(global namespace)".into()
-            } else {
-                node.namespace.clone()
-            },
-            GroupKind::Namespace,
-        )),
-        Grouping::Folder => {
-            let file = relative_file(node);
-            let mut folder = PathBuf::new();
-            for part in file.parent().into_iter().flat_map(Path::components) {
-                folder.push(part);
-                let name = folder.to_string_lossy();
-                result.push((
-                    key(&["folder", scope[0], scope[1], &name]),
-                    name.into_owned(),
-                    GroupKind::Folder,
-                ));
-            }
+fn visible_node(
+    node: &Node,
+    index: u32,
+    request: &Request,
+    level: Option<PresentationLevel>,
+) -> ViewNode {
+    let group = match level {
+        Some(level) => level.representative(node, request),
+        None if request.scope == Scope::Overview && request.grouping != Grouping::Method => {
+            groups(node, request)
+                .into_iter()
+                .find(|group| !request.expanded.contains(&group.key))
         }
-        Grouping::Project | Grouping::Method => {}
+        None => None,
+    };
+    if let Some(group) = group {
+        return group_node(node, request, group);
     }
-    result.push((
-        key(&["class", scope[0], scope[1], &node.container]),
-        node.container.clone(),
-        GroupKind::Class,
-    ));
-    result
-}
-
-fn visible_node(node: &Node, index: u32, request: &Request) -> ViewNode {
-    if request.scope == Scope::Overview && request.grouping != Grouping::Method {
-        for (key, label, kind) in groups(node, request.grouping) {
-            if !request.expanded.contains(&key) {
-                return ViewNode {
-                    key,
-                    label,
-                    group_kind: Some(kind),
-                    detail: node.project.clone(),
-                    ..Default::default()
-                };
-            }
-        }
-    }
+    let display = labels::method(node);
     ViewNode {
         key: node.id.clone(),
-        label: node.label.clone(),
+        label: display.text,
+        description: display.description,
         detail: node.container.clone(),
         member: Some(index),
+        layer: layers::assignment(node, request).map(str::to_owned),
         ..Default::default()
     }
 }
@@ -95,7 +68,12 @@ struct Aggregates {
     collapsed_edges: usize,
 }
 
-fn aggregate_nodes(graph: &GraphIndex, request: &Request, selection: &Selection) -> Aggregates {
+fn aggregate_nodes(
+    graph: &GraphIndex,
+    request: &Request,
+    selection: &Selection,
+    level: Option<PresentationLevel>,
+) -> Aggregates {
     let summary = graph.filter_summary(&request.filter);
     let starts: HashSet<_> = graph
         .data
@@ -107,25 +85,16 @@ fn aggregate_nodes(graph: &GraphIndex, request: &Request, selection: &Selection)
     let mut representatives = BTreeMap::new();
     let mut members = HashMap::new();
     for &index in &selection.nodes {
-        let mut node = visible_node(&graph.data.nodes[index as usize], index, request);
+        let mut node = visible_node(&graph.data.nodes[index as usize], index, request, level);
         node.application_start = node.member.is_some() && starts.contains(&node.key);
         members.insert(index, node.key.clone());
         let representative = representatives.entry(node.key.clone()).or_insert(node);
-        if representative.group_kind.is_some() && !graph.data.nodes[index as usize].file.is_empty()
-        {
-            let source = &graph.data.nodes[index as usize];
-            representative.files.push(SourcePath {
-                label: relative_file(source).to_string_lossy().into_owned(),
-                path: source.file.clone(),
-                language: source.language.clone(),
-            });
-        }
+        add_member_metadata(representative, &graph.data.nodes[index as usize], index);
         representative.count += 1;
         representative.cyclic |= summary.cyclic[index as usize];
     }
     for node in representatives.values_mut() {
-        node.files.sort();
-        node.files.dedup_by(|a, b| a.path == b.path);
+        finish_metadata(node);
     }
     let indices: HashMap<_, _> = representatives
         .keys()
@@ -141,6 +110,38 @@ fn aggregate_nodes(graph: &GraphIndex, request: &Request, selection: &Selection)
             .map(|(member, key)| (member, indices[&key]))
             .collect(),
     }
+}
+
+fn add_member_metadata(representative: &mut ViewNode, source: &Node, index: u32) {
+    if representative.group_kind.is_some() && !source.file.is_empty() {
+        representative.files.push(SourcePath {
+            label: relative_file(source).to_string_lossy().into_owned(),
+            path: source.file.clone(),
+            language: source.language.clone(),
+        });
+    }
+    if representative.group_kind == Some(GroupKind::Class) {
+        let display = labels::method(source);
+        representative.methods.push(MethodRow {
+            member: index,
+            id: source.id.clone(),
+            name: source.label.clone(),
+            label: display.text,
+            description: display.description,
+        });
+    }
+}
+
+fn finish_metadata(node: &mut ViewNode) {
+    node.methods
+        .sort_by(|a, b| (&a.name, &a.id).cmp(&(&b.name, &b.id)));
+    let rows = node.methods.len().min(12) as f32;
+    node.size = [
+        237.6,
+        61.2 + if rows > 0.0 { 24.0 * rows + 8.0 } else { 0.0 },
+    ];
+    node.files.sort();
+    node.files.dedup_by(|a, b| a.path == b.path);
 }
 
 fn aggregate_edges(graph: &GraphIndex, selection: &Selection, aggregates: &mut Aggregates) {
@@ -181,7 +182,7 @@ pub(super) fn project_page(
     request: &Request,
     selection: Selection,
 ) -> GraphView {
-    let mut aggregates = aggregate_nodes(graph, request, &selection);
+    let mut aggregates = aggregate_nodes(graph, request, &selection, None);
     aggregate_edges(graph, &selection, &mut aggregates);
     let roots = selection
         .roots
@@ -194,7 +195,9 @@ pub(super) fn project_page(
         roots,
         selection.direction,
     );
-    let mut view = page(aggregates, ordered, request.page);
+    let ordered = layers::order(&aggregates.nodes, ordered, request);
+    let mut view = page(aggregates, ordered, request.page, &[]);
+    view.layer_bands = layers::bands(request);
     let summary = graph.filter_summary(&request.filter);
     (view.hidden_nodes, view.hidden_edges) = (summary.hidden_nodes, summary.hidden_edges);
     view.omitted_nodes += selection.omitted_nodes;
@@ -203,13 +206,59 @@ pub(super) fn project_page(
     view
 }
 
-fn page(aggregates: Aggregates, ordered: Vec<(usize, NodeOrder)>, page: usize) -> GraphView {
-    let pages = ordered.len().div_ceil(NODE_LIMIT).max(1);
-    let selected: Vec<_> = ordered
-        .into_iter()
-        .skip(page.min(pages - 1) * NODE_LIMIT)
-        .take(NODE_LIMIT)
+pub(super) fn focused(graph: &GraphIndex, request: &Request, target: &FocusTarget) -> GraphView {
+    let mut all_request = request.clone();
+    all_request.scope = Scope::Overview;
+    all_request.focus_target = None;
+    let mut selection = super::selection::all(graph, &all_request);
+    layers::select(graph, &all_request, &mut selection);
+    let Some(focus) = FocusProjection::resolve(graph, &all_request, &selection.nodes, target)
+    else {
+        return super::project(graph, &all_request);
+    };
+    let mut aggregates = aggregate_nodes(graph, &all_request, &selection, Some(focus.level));
+    aggregate_edges(graph, &selection, &mut aggregates);
+    let mut roots: Vec<_> = focus
+        .members
+        .iter()
+        .filter_map(|index| aggregates.members.get(index).copied())
         .collect();
+    roots.sort_unstable();
+    roots.dedup();
+    let focus_keys = roots
+        .iter()
+        .map(|&i| aggregates.nodes[i].key.clone())
+        .collect();
+    let ordered = if matches!(target, FocusTarget::ClassMethods(_)) {
+        super::focus::class_methods(&aggregates.nodes, &aggregates.edges, &roots, request.depth)
+    } else {
+        super::focus::traversal(&aggregates.nodes, &aggregates.edges, &roots, request.depth)
+    };
+    let visible: HashSet<_> = ordered.iter().map(|(node, _)| *node).collect();
+    aggregates
+        .edges
+        .retain(|edge| visible.contains(&edge.from) && visible.contains(&edge.to));
+    aggregates.collapsed_edges = visible
+        .iter()
+        .map(|&index| aggregates.nodes[index].internal_edges)
+        .sum();
+    let mut view = page(aggregates, ordered, request.page, &roots);
+    view.focus_keys = focus_keys;
+    view.focus_valid = true;
+    view.message = format!("Callers above · Callees below · depth {}", request.depth);
+    let summary = graph.filter_summary(&request.filter);
+    (view.hidden_nodes, view.hidden_edges) = (summary.hidden_nodes, summary.hidden_edges);
+    view
+}
+
+fn page(
+    aggregates: Aggregates,
+    ordered: Vec<(usize, NodeOrder)>,
+    page: usize,
+    roots: &[usize],
+) -> GraphView {
+    let total_nodes = ordered.len();
+    let (selected, pages) = select_page(&ordered, page, roots);
     let positions: HashMap<_, _> = selected
         .iter()
         .enumerate()
@@ -240,13 +289,54 @@ fn page(aggregates: Aggregates, ordered: Vec<(usize, NodeOrder)>, page: usize) -
     GraphView {
         nodes,
         ordering,
-        omitted_nodes: aggregates.nodes.len().saturating_sub(positions.len()),
+        omitted_nodes: total_nodes.saturating_sub(positions.len()),
         omitted_edges: total_edges.saturating_sub(edges.len()),
         edges,
         collapsed_edges: aggregates.collapsed_edges,
         pages,
         ..Default::default()
     }
+}
+
+fn select_page(
+    ordered: &[(usize, NodeOrder)],
+    page: usize,
+    roots: &[usize],
+) -> (Vec<(usize, NodeOrder)>, usize) {
+    let pinned: HashSet<_> = roots.iter().copied().take(NODE_LIMIT - 1).collect();
+    let capacity = NODE_LIMIT - pinned.len();
+    let pages = ordered
+        .len()
+        .saturating_sub(pinned.len())
+        .div_ceil(capacity)
+        .max(1);
+    let mut selected: Vec<_> = ordered
+        .iter()
+        .filter(|(node, _)| pinned.contains(node))
+        .cloned()
+        .collect();
+    let roots: HashSet<_> = roots.iter().copied().collect();
+    let mut remaining: Vec<_> = ordered
+        .iter()
+        .filter(|(node, _)| !pinned.contains(node))
+        .collect();
+    // All selected class methods take precedence over external context, including
+    // the final method when a class exactly fills the canvas node budget.
+    remaining.sort_by_key(|(node, _)| !roots.contains(node));
+    selected.extend(
+        remaining
+            .into_iter()
+            .skip(page.min(pages - 1) * capacity)
+            .take(capacity)
+            .cloned(),
+    );
+    let sequence: HashMap<_, _> = ordered
+        .iter()
+        .enumerate()
+        .map(|(i, (node, _))| (*node, i))
+        .collect();
+    selected.sort_by_key(|(node, _)| sequence[node]);
+    (selected, pages)
 }
 
 #[cfg(test)]
@@ -285,6 +375,7 @@ mod file_tests {
         }))
         .unwrap();
         let mut request = Request {
+            focus_target: None,
             grouping: Grouping::Folder,
             expanded: HashSet::new(),
             scope: Scope::Overview,
@@ -292,6 +383,8 @@ mod file_tests {
             depth: 2,
             filter: Filter::default(),
             page: 0,
+            architecture: None,
+            layer_tab: None,
         };
         request.filter.include_tests = false;
         let view = super::super::project(&graph, &request);
@@ -333,6 +426,7 @@ mod file_tests {
         }))
         .unwrap();
         let request = Request {
+            focus_target: None,
             grouping: Grouping::Namespace,
             expanded: HashSet::new(),
             scope: Scope::Overview,
@@ -340,6 +434,8 @@ mod file_tests {
             depth: 2,
             filter: Filter::default(),
             page: 0,
+            architecture: None,
+            layer_tab: None,
         };
         let view = super::super::project(&graph, &request);
         assert_eq!(view.nodes.len(), 2);

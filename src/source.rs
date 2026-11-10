@@ -53,6 +53,11 @@ pub fn load(path: &str) -> Result<SourceFile, String> {
     Ok(from_text(text, Path::new(path)))
 }
 
+/// Highlight an immutable generation snapshot without normalizing its byte offsets.
+pub fn from_snapshot(text: String, path: &Path) -> SourceFile {
+    from_text(text, path)
+}
+
 fn from_text(text: String, path: &Path) -> SourceFile {
     let mut offset = 0;
     let mut max_columns = 0;

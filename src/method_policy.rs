@@ -4,7 +4,7 @@ use anyhow::Result;
 use std::collections::HashSet;
 
 /// Persisted generations without this policy must be rebuilt from source.
-pub const VERSION: u32 = 2;
+pub const VERSION: u32 = 3;
 
 /// Remove identities and incident relationships without synthesizing shortcuts.
 /// Validate before mutation so malformed analyzer output cannot be hidden by filtering.
@@ -34,6 +34,10 @@ pub fn prune(graph: &mut GraphData, excluded: &HashSet<String>) -> Result<()> {
         ] {
             list.retain(|id| !excluded.contains(id));
         }
+    }
+    if let Some(inventory) = &mut graph.flow_inventory {
+        let symbols = graph.nodes.iter().map(|node| node.id.as_str()).collect();
+        inventory.retain_symbols(&symbols);
     }
     graph.validate()
 }

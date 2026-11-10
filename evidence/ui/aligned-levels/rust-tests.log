@@ -1,0 +1,502 @@
+   Compiling codegraph v0.1.0 (/Users/zsolt.gajdacs/Zs/Programming/CodeGraph)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.04s
+     Running unittests src/lib.rs (target/debug/deps/codegraph-fff1eca2b2112f6c)
+
+running 51 tests
+test analyzers::csharp::acceptance::real_roslyn_folder_declarations_are_pruned_and_entries_recomputed ... ignored, requires pinned CallAtlas and installed .NET SDK
+test analyzers::java::compiled_acceptance::recurring_billing_successful_build_outputs_preserve_both_generated_copies ... ignored, requires successful real-build metadata via CODEGRAPH_COMPILED_METADATA
+test analyzers::java::contexts::tests::selected_builds_share_artifact_indexes_but_keep_separate_context_ownership ... ignored, requires the pinned bytecode distribution and installed JDK 25
+test analyzers::csharp::policy::tests::constructors_and_object_members_are_excluded_but_source_accessors_remain ... ok
+test analyzers::csharp::tests::unpatched_symbol_identities_are_rejected ... ok
+test analyzers::java::lambda_tests::compiled_lambdas_have_readable_searchable_names ... ignored, requires the pinned bytecode distribution and installed JDK 25
+test analyzers::java::lambda_tests::direct_assignments_and_wrapped_lambdas_keep_their_source_names ... ignored, requires the pinned bytecode distribution and installed JDK 25
+test analyzers::java::lambda_tests::no_debug_lambdas_use_contextual_fallbacks ... ignored, requires the pinned bytecode distribution and installed JDK 25
+test analyzers::java::lambda_names::tests::overlapping_and_unlocated_lambdas_cannot_borrow_names ... ok
+test analyzers::java::lambda_names::tests::anonymous_labels_include_columns_only_when_needed ... ok
+test analyzers::java::maven::tests::extension_classpath_preserves_quoted_paths ... ok
+test analyzers::compose::tests::inconsistent_shared_declarations_and_non_typescript_duplicates_are_rejected ... ok
+test analyzers::java::maven::tests::effective_extension_definitions_override_instead_of_accumulating ... ok
+test analyzers::java::compose::tests::later_context_replaces_placeholder_and_remaps_relationships ... ok
+test analyzers::java::policy::tests::object_signatures_do_not_remove_application_overloads ... ok
+test analyzers::java::tests::authored_lambda_flow_survives_the_default_production_filter ... ignored, requires the pinned bytecode distribution and installed JDK 25
+test analyzers::java::tests::no_debug_lambda_and_constructor_only_empty_graph_are_supported ... ignored, requires the pinned bytecode distribution and installed JDK 25
+test analyzers::java::tests::real_bytecode_distinguishes_application_start_from_uncalled_and_invalid_main ... ignored, requires the pinned bytecode distribution and installed JDK 25
+test analyzers::java::tests::source_methods_exclude_initializers_object_overrides_and_compiler_helpers ... ignored, requires the pinned bytecode distribution and installed JDK 25
+test analyzers::java::visibility_tests::compiled_visibility_preserves_declared_class_and_method_access ... ignored, requires the pinned bytecode distribution and installed JDK 25
+test analyzers::compose::tests::shared_referenced_targets_preserve_edge_counts_and_provenance ... ok
+test analyzers::java::tables::tests::invalid_utf8_in_header_or_body_is_rejected ... ok
+test analyzers::java::tests::return_types_distinguish_bridge_methods_and_references_stay_uncertain ... ok
+test analyzers::java::engine::tests::cancellation_after_generation_does_not_publish ... ok
+test analyzers::java::maven::tests::native_maven_config_uses_one_literal_argument_per_line ... ok
+test analyzers::process::tests::already_cancelled_process_never_starts ... ok
+test analyzers::java::maven::tests::nearest_ancestor_wrapper_wins ... ok
+test analyzers::java::engine::tests::publication_failure_cleans_temporary_before_error_is_dropped ... ok
+test analyzers::java::contexts::tests::absent_compile_directory_becoming_populated_invalidates_snapshot ... ok
+test analyzers::csharp::tests::linked_glob_root_detects_new_files_outside_the_project_directory ... ok
+test analyzers::java::engine::tests::failed_inventory_is_cleaned_and_retry_is_cached ... ok
+test analyzers::tests::edits_after_the_pre_analysis_snapshot_are_rejected ... ok
+test discovery::tests::groups_subprojects_under_settings_but_keeps_independent_nested_builds ... ok
+test discovery::tests::maven_discovery_and_selection_keep_nested_projects_available ... ok
+test analyzers::tests::configured_java_home_requires_a_full_jdk25 ... ok
+test discovery::tests::finds_solution_projects_and_deduplicates_gradle_files ... ok
+test discovery::tests::mixed_tool_defaults_distinguish_same_directory_targets ... ok
+test fingerprint::tests::absent_explicit_inputs_detect_creation_and_old_fingerprints_still_load ... ok
+test fingerprint::tests::declared_resource_contents_are_build_inputs ... ok
+test metrics::tests::independent_jobs_restore_nested_scopes_and_collect_worker_measurements ... ok
+test fingerprint::tests::explicit_generated_roots_are_tracked_inside_excluded_outputs ... ok
+test fingerprint::tests::creating_ignored_build_outputs_does_not_stale_sources ... ok
+test fingerprint::tests::custom_outputs_do_not_hide_authored_edits_after_round_trip ... ok
+test fingerprint::tests::detects_edits_additions_and_deletions ... ok
+test fingerprint::tests::maven_root_marker_creation_keeps_sources_current_but_configuration_stales_them ... ok
+test fingerprint::tests::maven_configuration_edits_are_inputs_without_scanning_all_xml ... ok
+
+running 1 test
+test analyzers::process::tests::analyzer_children_receive_eof_instead_of_the_controlling_terminal ... test analyzers::process::worker::tests::abandoned_worker_is_terminated_and_reaped ... ok
+test analyzers::process::worker::tests::cancelled_wait_stops_worker_on_drop ... ok
+ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 50 filtered out; finished in 0.11s
+
+test analyzers::process::tests::analyzer_children_receive_eof_instead_of_the_controlling_terminal ... ok
+test analyzers::java::engine::tests::interrupted_inventory_process_does_not_poison_retry ... ok
+test analyzers::process::tests::cancellation_stops_descendants_in_the_owned_process_group ... ok
+
+test result: ok. 40 passed; 0 failed; 11 ignored; 0 measured; 0 filtered out; finished in 1.42s
+
+     Running unittests src/bin/analyzer_check.rs (target/debug/deps/analyzer_check-5cbf8c62c2a51916)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/bin/benchmark.rs (target/debug/deps/benchmark-d228f556bddab94d)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/main.rs (target/debug/deps/codegraph-37df15bcf06eecf3)
+
+running 153 tests
+test edges::tests::arrow_direction_uses_original_tangent_and_skips_repeated_controls ... ok
+test edges::tests::culling_keeps_crossing_splines_and_drops_offscreen_geometry ... ok
+test camera::tests::zoom_keeps_the_world_point_under_the_pointer ... ok
+test edges::tests::joined_cubics_preserve_the_shared_endpoint ... ok
+test edges::tests::straight_cubics_use_one_segment ... ok
+test cli::tests::layer_options_validate_before_starting_analysis ... ok
+test edges::tests::dim_edges_multiply_existing_alpha_without_changing_relationship_styles ... ok
+test edges::tests::repeated_points_and_polyline_fallback_remain_valid ... ok
+test cli::tests::timing_option_requires_a_unique_destination_and_preserves_paths ... ok
+test architecture_workspace::tests::invalid_config_preserves_last_assignments_and_recovery_installs_new_result ... ok
+test architecture_workspace::tests::changing_graph_epoch_rejects_previous_configuration_job_and_forces_reload ... ok
+test edges::tests::rendering_paints_dim_strokes_and_arrows_before_incident_edges ... ok
+test edges::tests::straight_cubic_routes_match_line_routes_including_dashes_and_arrows ... ok
+test edges::tests::zoomed_out_curves_need_less_geometry ... ok
+test architecture_workspace::tests::preset_selection_is_session_state_while_tabs_follow_navigation_history ... ok
+test graph_emphasis::tests::missing_selection_falls_back_to_all_visible_focus_anchors ... ok
+test graph_emphasis::tests::no_visible_anchor_restores_normal_brightness ... ok
+test graph_emphasis::tests::visible_selection_overrides_focus_and_rebuilding_moves_emphasis ... ok
+test graph_emphasis::tests::only_anchors_and_their_immediate_neighbors_are_bright ... ok
+test edges::tests::subdivision_work_is_bounded_for_pathological_geometry ... ok
+test pan_profile::gpu::tests::zero_equal_and_reversed_gpu_timestamps_are_unavailable_instead_of_zero_ms ... ok
+test edges::viewport_tests::pan_reuses_geometry_but_zoom_and_replacement_refresh_it ... ok
+test presentation::tests::legacy_filter_drawer_restores_repository ... ok
+test presentation::tests::narrowing_window_reserves_canvas_and_preserves_graph_state ... ok
+test presentation::tests::pane_constraint_leaves_closed_pane_preference_untouched ... ok
+test presentation::tests::legacy_session_opens_default_graph_studio_panes ... ok
+test pan_profile::tests::sustained_sweeps_keep_the_graph_near_its_saved_camera_and_return_home ... ok
+test presentation::tests::restore_clamps_widths_and_keeps_factory_reset_widths ... ok
+test presentation::tests::restoring_preferences_keeps_actual_window_width ... ok
+test presentation::tests::presentation_changes_do_not_change_graph_camera_or_history ... ok
+test presentation::tests::preferences_round_trip_without_transient_overlay_or_disclosures ... ok
+test projection::focus_tests::class_focus_expands_collapsed_neighbor_folders_before_traversing ... ok
+test projection::aggregation::file_tests::files_are_distinct_filtered_and_qualified_before_paging ... ok
+test projection::focus_tests::class_methods_focus_retains_all_its_methods_and_external_context ... ok
+test projection::focus_tests::depth_extends_both_sides_and_is_independent_of_overview_direction ... ok
+test projection::focus_tests::expanded_group_focus_keeps_its_level_and_invalid_focus_returns_overview ... ok
+test projection::focus_tests::focus_keeps_callers_above_and_callees_below_without_unrelated_nodes ... ok
+test projection::focus_tests::grouped_depth_ignores_internal_calls_and_class_rows_are_complete ... ok
+test projection::focus_tests::layer_class_method_focus_resolves_qualified_keys_and_excludes_other_tabs ... ok
+test architecture_workspace::tests::configuration_reload_reclassifies_cached_source_without_reading_source_files ... ok
+test projection::focus_tests::level_tests::folder_focus_matches_depth_across_projects_and_keeps_shallow_and_root_folders ... ok
+test projection::focus_tests::level_tests::explicit_group_children_choose_one_level_independent_of_expansions ... ok
+test projection::focus_tests::level_tests::method_focus_ignores_group_expansion_and_uses_method_hops ... ok
+test projection::focus_tests::level_tests::layer_focus_and_children_preserve_qualified_identity_and_active_tab_filtering ... ok
+test projection::focus_tests::level_tests::namespace_focus_preserves_exact_packages_and_project_qualified_global_namespaces ... ok
+test projection::focus_tests::level_tests::project_focus_collapses_connected_projects_even_when_they_are_expanded ... ok
+test projection::focus_tests::recursive_shared_nodes_are_unique_and_ties_go_above ... ok
+test projection::labels::tests::names_preserve_generic_arguments_friendly_lambdas_and_file_groups ... ok
+test projection::labels::tests::visibility_signs_have_precise_descriptions ... ok
+test source::syntax::tests::csharp_verbatim_interpolated_and_raw_literals_are_whole ... ok
+test source::syntax::tests::java_multiline_comments_text_blocks_and_unicode_keep_ranges ... ok
+test source::syntax::tests::java_textblock_escaped_triple_quotes_do_not_close_literal ... ok
+test source::syntax::tests::keyword_coverage_accepts_coalesced_ranges_without_coloring_neighbors ... ok
+test source::syntax::tests::oversized_literals_are_colored_and_following_code_is_not_lost ... ok
+test source::syntax::tests::tsx_constrained_and_defaulted_generic_arrows_are_code ... ok
+test source::syntax::tests::tsx_nested_text_and_expressions_keep_their_contexts ... ok
+test edges::tests::sampled_curves_stay_within_half_a_logical_screen_unit ... ok
+test edges::viewport_tests::hidden_prefix_keeps_original_dash_phase ... ok
+test source::syntax::tests::typescript_regex_quotes_do_not_swallow_following_code ... ok
+test source::tests::empty_source_is_one_empty_line ... ok
+test presentation::tests::polling_constrains_panes_expanded_after_initial_layout ... ok
+test source::tests::reads_real_unicode_crlf_source_and_preserves_final_empty_line ... ok
+test edges::viewport_tests::long_crossing_dash_routes_emit_only_viewport_pieces ... ok
+test source::tests::target_lines_do_not_claim_invalid_locations ... ok
+test source::tests::source_errors_are_explicit_and_bounded ... ok
+test projection::focus_tests::focused_pagination_pins_the_anchor_and_counts_only_neighborhood_omissions ... ok
+test edges::viewport_tests::arrowheads_remain_when_tips_are_just_outside_each_viewport_edge ... ok
+test ui_tests::canvas_gpu_performance::canvas_gpu_frame_completion ... ignored, release GPU throughput benchmark; requires Metal access and an explicit copied CODEGRAPH_DATA_DIR
+test ui_tests::canvas_performance::dense_canvas_frame_preparation ... ignored, release-mode canvas benchmark; run with --ignored --nocapture
+test ui_tests::canvas_performance::saved_canvas_frame_preparation ... ignored, requires an explicit copied CODEGRAPH_DATA_DIR; release CPU benchmark only
+test source::syntax::tests::tsx_text_apostrophes_preserve_following_code_even_in_large_files ... ok
+test source::syntax::tests::typescript_is_colored_beyond_kit_single_block_limit ... ok
+test projection::aggregation::file_tests::file_membership_is_complete_and_separates_identical_projects_in_other_builds ... ok
+test projection::focus_tests::real_graphviz_uses_signed_order_and_class_card_dimensions ... ok
+test projection::focus_tests::class_methods_fill_the_page_before_external_context_at_the_canvas_limit ... ok
+test pan_profile::driver::tests::native_probe_queues_the_production_pointer_drag_handler ... ok
+test ui_tests::function_flows::flow_source_and_chart_remain_inside_minimum_window ... ok
+test ui_tests::cancelling_the_folder_sheet_preserves_the_current_workspace ... ok
+test ui_tests::corrupt_session_is_recoverable_while_the_cached_graph_still_opens ... ok
+test ui_tests::a_late_discovery_result_cannot_populate_builds_for_a_different_root ... ok
+test ui_tests::architectural_layers::layer_control_exposes_presets_tabs_and_restores_navigation ... ok
+test ui_tests::function_flows::old_graph_opens_an_actionable_refresh_message ... ok
+test ui_tests::changing_flow_resets_page_refits_and_history_restores_previous_flow ... ok
+test ui_tests::function_flows::flow_reads_cached_source_and_rejects_obsolete_generation ... ok
+test ui_tests::graph_click_centers_and_double_click_focuses_without_extra_history ... ok
+test ui_tests::function_flows::selecting_another_step_moves_the_visible_source_highlight ... ok
+test edges::viewport_tests::clipping_preserves_visible_strokes_through_joins_reentry_pan_and_zoom ... ok
+test ui_tests::function_flows::inspector_action_opens_flow_and_switching_during_load_keeps_latest_function ... ok
+test ui_tests::function_flows::flow_step_highlights_snapshot_and_back_preserves_call_graph ... ok
+test ui_tests::graph_fit::fit_keeps_the_entire_class_tree_below_wrapped_filters ... ok
+test ui_tests::graph_studio::disabled_kit_analysis_control_does_not_start_work ... ok
+test ui_tests::function_flows::previous_function_restores_the_actual_source_scroll_offset ... ok
+test ui_tests::graph_studio::a_search_result_reveals_a_method_hidden_by_graph_filters ... ok
+test ui_tests::architectural_layers::layer_controls_stay_inside_the_minimum_window_with_both_panes_open ... ok
+test ui_tests::graph_studio::activity_rail_switches_and_collapses_drawers_without_navigating_the_graph ... ok
+test ui_tests::graph_single_click_centers_after_click_interval_and_wheel_zooms ... ok
+test ui_tests::graph_studio::command_f_reopens_search_and_focuses_the_actual_editor ... ok
+test ui_tests::graph_studio::kit_pane_drag_and_visibility_preserve_camera_and_persist_preferences ... ok
+test ui_tests::graph_studio::build_scrollbar_stays_at_the_bottom_while_the_list_scrolls ... ok
+test ui_tests::graph_studio::empty_workspace_shows_discovery_progress_and_a_real_directory_error ... ok
+test ui_tests::graph_studio::kit_checkbox_changes_graph_filter_and_inspector_disclosure_hides_only_its_section ... ok
+test ui_tests::graph_studio::drawer_fields_and_long_inspector_signatures_stay_inside_their_panes ... ok
+test ui_tests::graph_studio::depth_select_changes_real_neighborhood_and_escape_dismisses_before_overview ... ok
+test ui_tests::group_double_click_drills_without_expanding_overview_and_selection_is_reconciled ... ok
+test ui_tests::graph_studio::long_build_paths_scroll_horizontally ... ok
+test ui_tests::graph_studio::segmented_grouping_supports_keyboard_navigation_and_activation ... ok
+test ui_tests::legacy_navigation_directions_and_method_sessions_roundtrip ... ok
+test ui_tests::inspector_selection_and_restored_selection_update_graph_emphasis ... ok
+test ui_tests::native_command_shortcuts_focus_search_and_open_the_folder_sheet ... ok
+test ui_tests::graph_studio::reduced_motion_pane_collapse_snaps_width_and_keeps_controls_reachable ... ok
+test ui_tests::graph_studio::live_pane_drags_keep_controls_inside_the_minimum_window ... ok
+test ui_tests::method_control_starts_at_entries_and_overview_restores_them ... ok
+test ui_tests::graph_studio::virtual_calls_toggle_is_independent_and_restored_by_history ... ok
+test ui_tests::restored_navigation_keeps_exact_ids_and_discards_missing_symbols ... ok
+test ui_tests::native_node_selection_and_history_restore_focus_and_camera ... ok
+test ui_tests::native_path_controls_show_a_real_directed_path_and_filter_can_reveal_tests ... ok
+test ui_tests::lambda_names::friendly_lambda_name_is_drawn_and_searchable_by_either_name ... ok
+test ui_tests::lambda_names::virtual_call_details_explain_the_declared_target_without_reclassifying_it ... ok
+test ui_tests::saved_build_choices_distinguish_legacy_gradle_from_new_maven_selections ... ok
+test ui_tests::graph_studio::system_appearance_switch_rethemes_the_live_workspace_without_losing_search ... ok
+test ui_tests::graph_studio::overlay_filters_toggle_preserving_zoom_and_centering_the_focus ... ok
+test ui_tests::graph_studio::minimum_window_keeps_graph_controls_visible_without_toolbar_scrolling ... ok
+test ui_tests::lambda_names::neighbors_and_relationships_use_friendly_names_and_inspector_keeps_signature ... ok
+test ui_tests::search_and_neighbor_pages_can_reach_every_indexed_match ... ok
+test ui_tests::source_popup::directory_group_opens_files_and_back_returns_to_listing ... ok
+test ui_tests::source_popup::invalid_line_notice_and_stale_graph_are_local_and_navigation_clears_preview ... ok
+test ui_tests::source_popup::hover_after_idle_still_waits_the_full_open_delay ... ok
+test ui_tests::source_popup::obsolete_worker_completion_cannot_replace_current_preview ... ok
+test ui_tests::stale_worker_result_updates_the_native_status_text ... ok
+test ui_tests::source_popup::graph_hover_waits_then_allows_crossing_gap_and_closes_after_leaving ... ok
+test ui_tests::source_popup::virtual_source_selection_copies_code_without_gutters_and_unicode_tail_is_reachable ... ok
+test ui_tests::traversal::a_large_class_scrolls_to_its_last_method_without_zooming_or_drilling ... ok
+test ui_tests::traversal::changing_depth_recenters_the_existing_focus_without_changing_zoom ... ok
+test ui_tests::source_popup::popup_occludes_graph_hover_and_blank_presses_and_drags ... ok
+test ui_tests::source_popup::pin_locks_target_and_escape_and_close_dismiss_without_graph_navigation ... ok
+test ui_tests::source_popup::moving_from_popup_overlap_to_exposed_trigger_keeps_preview_open ... ok
+test ui_tests::traversal::double_click_reaches_classes_then_class_method_tree_without_extra_history ... ok
+test ui_tests::source_popup::method_source_reveals_recorded_line_and_scrolls_both_axes_without_zooming_graph ... ok
+test ui_tests::traversal::clicking_a_class_method_row_enters_method_tree_without_expanding_header ... ok
+test ui_tests::traversal::explicit_zoom_cancels_pending_focus_camera_placement ... ok
+test ui_tests::traversal::legacy_focus_restores_and_filter_removal_returns_to_overview ... ok
+test ui_tests::traversal::package_focus_and_drill_roundtrip_preserve_overview_expansion_and_history ... ok
+test ui_tests::source_popup::dragging_resize_handle_is_bounded_and_window_resize_keeps_pinned_preview_visible ... ok
+test ui_tests::traversal::folder_drill_aligns_every_branch_then_class_focus_collapses_expanded_neighbors ... ok
+test ui_tests::traversal::restored_layer_focus_survives_missing_assignments_then_validates_membership ... ok
+test ui_tests::traversal::selecting_a_class_uses_box_hops_and_omits_unrelated_classes ... ok
+test ui_tests::source_popup::unpin_restores_leave_dismissal_and_pane_resizing_preserves_open_preview ... ok
+test ui_tests::traversal::single_click_walks_both_sides_and_restores_previous_selection_and_camera ... ok
+test ui_tests::traversal::qualified_classes_and_overloads_show_visibility_after_storage_roundtrip ... ok
+test ui_tests::traversal::emphasis::depth_expands_visibility_without_extending_selection_emphasis ... ok
+test ui_tests::traversal::emphasis::dimmed_class_remains_clickable_and_method_drilldown_applies_emphasis ... ok
+test ui_tests::graph_studio::overlay_filters_fit_and_expose_full_names_in_both_themes ... ok
+test ui_tests::source_popup::resizing_a_window_constrained_popup_starts_from_its_visible_size ... ok
+
+test result: ok. 150 passed; 0 failed; 3 ignored; 0 measured; 0 filtered out; finished in 5.30s
+
+     Running tests/architecture.rs (target/debug/deps/architecture-18e0e952c8d69cc8)
+
+running 8 tests
+test build_relative_rules_keep_dotted_java_directory_names ... ok
+test invalid_imports_and_cycles_never_create_native_configuration ... ok
+test repository_rules_resolve_symlink_roots_to_analyzer_source_paths ... ok
+test native_semantic_rules_are_conjunctive_first_match_and_normalize_attributes ... ok
+test tests_take_precedence_and_missing_facts_require_refresh ... ok
+test imported_paths_remain_relative_to_nested_build_roots ... ok
+test local_inheritance_replaces_language_sections_and_unknown_native_fields_fail ... ok
+test import_resolves_presets_and_preserves_native_edits ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+
+     Running tests/core.rs (target/debug/deps/core-54a753d38e14dfa8)
+
+running 7 tests
+test reference_and_uncertain_edges_remain_distinct ... ok
+test directed_path_cycles_and_filters_use_the_same_graph ... ok
+test canvas_budget_keeps_omitted_nodes_reachable_by_identity ... ok
+test visibility_survives_publication_and_legacy_json_defaults_to_unknown ... ok
+test sqlite_preserves_architecture_facts_and_source_for_offline_reclassification ... ok
+test search_pins_generation_while_a_new_analysis_is_published ... ok
+test sqlite_roundtrip_search_session_and_failed_refresh_preserve_active_graph ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+
+     Running tests/csharp_policy.rs (target/debug/deps/csharp_policy-a2d798cb8c372e80)
+
+running 3 tests
+test architecture_facts_include_attributes_inheritance_and_type_only_files ... ignored, requires pinned CallAtlas and installed .NET SDK
+test linked_source_retains_each_compiler_projects_facts_and_node_ownership ... ignored, requires pinned CallAtlas and installed .NET SDK
+test source_callables_exclude_object_boilerplate_without_losing_overloads ... ignored, requires pinned CallAtlas and installed .NET SDK
+
+test result: ok. 0 passed; 0 failed; 3 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/entry_metadata.rs (target/debug/deps/entry_metadata-1c343c253ab69483)
+
+running 4 tests
+test real_csharp_entries_keep_uncalled_methods_and_verify_executable_starts ... ignored, requires pinned CallAtlas and installed .NET SDK
+test metadata_rejects_unknown_or_duplicate_entry_identities ... ok
+test framework_entries_and_edge_provenance_survive_cache_without_becoming_starts ... ok
+test entry_metadata_survives_sqlite_and_old_graphs_remain_readable ... ok
+
+test result: ok. 3 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 0.03s
+
+     Running tests/flow_core.rs (target/debug/deps/flow_core-5e31c4e5e71cb86d)
+
+running 11 tests
+test catch_all_handles_explicit_throw_without_an_impossible_escape ... ok
+test finally_clones_preserve_return_and_normal_completions ... ok
+test protected_call_exception_passes_through_resource_close_and_finally ... ok
+test literal_boolean_ternary_conditions_do_not_invent_opposite_branches ... ok
+test resource_acquisition_failure_closes_only_previously_acquired_resources ... ok
+test nested_try_call_exceptions_cannot_skip_inner_finally ... ok
+test labeled_loop_break_and_continue_cross_finally_before_their_real_destinations ... ok
+test short_circuit_sequences_and_deferred_callbacks_do_not_invent_eager_calls ... ok
+test finally_return_overrides_pending_throw_and_switch_yield ... ok
+test effectful_switch_tests_stop_at_match_and_default_fallthrough_skips_retesting ... ok
+test graphviz_preserves_flow_link_identity_and_opaque_boundaries ... ok
+
+test result: ok. 11 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.05s
+
+     Running tests/flow_inventory.rs (target/debug/deps/flow_inventory-d0cdd3fd033053aa)
+
+running 3 tests
+test supported_inventories_merge_across_unsupported_languages_and_reject_conflicts ... ok
+test pruning_excluded_symbols_visits_nested_callback_and_short_circuit_targets ... ok
+test oversized_function_has_a_visible_limit_error_instead_of_a_truncated_control_flow ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/flow_typescript.rs (target/debug/deps/flow_typescript-2e86dfcf154955d8)
+
+running 2 tests
+test actual_typescript_traces_follow_finally_and_never_resume_after_return ... ignored, requires Node 24+ and installed TypeScript 6.0.x
+test deep_source_flow_is_partial_without_breaking_graph_deserialization ... ignored, requires Node 24+ and installed TypeScript 6.0.x
+
+test result: ok. 0 passed; 0 failed; 2 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/java_builds.rs (target/debug/deps/java_builds-436671665294eedc)
+
+running 9 tests
+test gradle_refactoring_preserves_module_graph_and_classification ... ignored, requires pinned Java analyzer, Gradle wrapper and JDK 25
+test maven_architecture_facts_preserve_graph_and_source_annotations ... ignored, requires pinned Java analyzer, Maven and JDK 25
+test maven_project_configuration_activates_profiles_and_is_fingerprinted ... ignored, requires pinned Java analyzer, Maven and JDK 25
+test maven_reactor_preserves_graph_ownership_and_does_not_execute_tests ... ignored, requires pinned Java analyzer, Maven and JDK 25
+test maven_rejects_authored_edits_during_compilation_and_honors_cancellation ... ignored, requires pinned Java analyzer, Maven and JDK 25
+test maven_skipped_compilation_rejects_missing_expected_outputs ... ignored, requires Maven, JDK 25 and bundled metadata extension
+test maven_standalone_changes_and_failed_refresh_preserve_cached_graph ... ignored, requires pinned Java analyzer, Maven and JDK 25
+test maven_success_without_metadata_is_rejected ... ignored, requires JDK 25 and bundled metadata extension
+test overlapping_maven_reactors_fail_before_compilation ... ignored, requires Maven and the bundled metadata extension
+
+test result: ok. 0 passed; 0 failed; 9 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/java_duplicates.rs (target/debug/deps/java_duplicates-cd7491eabfa281c2)
+
+running 3 tests
+test gradle_duplicate_classes_preserve_compile_contexts_and_classpath_precedence ... ignored, requires pinned analyzer, Gradle and JDK 25
+test maven_duplicate_classes_preserve_compile_contexts_and_classpath_precedence ... ignored, requires pinned analyzer, Maven and JDK 25
+test recurring_billing_retains_duplicate_generated_declarations ... ignored, requires CODEGRAPH_RECURRING_BILLING, private Maven dependencies and JDK 25
+
+test result: ok. 0 passed; 0 failed; 3 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/java_flows.rs (target/debug/deps/java_flows-30c5ed7160237c84)
+
+running 5 tests
+test actual_java_completion_and_resource_traces_exist_in_the_source_chart ... ignored, requires pinned Java analyzer, Maven and JDK 25
+test deeply_nested_source_exports_partial_ir_without_rejecting_the_graph ... ignored, requires pinned Java analyzer, Maven and JDK 25
+test java_flow_binds_overloads_preserves_unicode_and_skips_ambiguous_lambdas ... ignored, requires pinned Java analyzer, Maven and JDK 25
+test java_labels_preserve_block_siblings_and_nested_labels ... ignored, requires pinned Java analyzer, Maven and JDK 25
+test reactor_stages_require_compiler_types_and_keep_callbacks_deferred ... ignored, requires pinned Java analyzer, Maven, JDK 25 and cached Reactor 3.8.7
+
+test result: ok. 0 passed; 0 failed; 5 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/java_lombok.rs (target/debug/deps/java_lombok-703a13aaef3726ef)
+
+running 2 tests
+test gradle_lombok_generated_signature_types_preserve_authored_methods ... ignored, requires pinned Lombok, Java analyzer, Gradle and JDK 25
+test maven_lombok_generated_signature_types_preserve_authored_methods ... ignored, requires pinned Lombok, Java analyzer, Maven and JDK 25
+
+test result: ok. 0 passed; 0 failed; 2 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/method_policy.rs (target/debug/deps/method_policy-125bed94a3359434)
+
+running 4 tests
+test pruning_does_not_hide_invalid_engine_output ... ok
+test fully_pruned_graph_can_be_published_and_searched ... ok
+test pruning_remaps_edges_and_entries_without_reconnecting_removed_methods ... ok
+test old_cached_policy_requires_refresh_without_deleting_data ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+
+     Running tests/multi_root.rs (target/debug/deps/multi_root-6954f744116337b6)
+
+running 2 tests
+test multi_root_traversal_deduplicates_roots_and_shared_descendants ... ok
+test multi_root_budget_keeps_roots_before_descendants_in_stable_identity_order ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/packaged_java.rs (target/debug/deps/packaged_java-c905f9bd6408971d)
+
+running 2 tests
+test missing_packaged_extension_does_not_fall_back_to_development_artifacts ... ignored, requires bootstrapped analyzer artifacts and JDK 25
+test packaged_resources_analyze_maven_and_gradle_without_development_paths ... ignored, requires bootstrapped analyzer artifacts, Maven, Gradle wrapper and JDK 25
+
+test result: ok. 0 passed; 0 failed; 2 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/performance_support.rs (target/debug/deps/performance_support-51063bbeaf55d07d)
+
+running 3 tests
+test summaries_preserve_all_filter_combinations_and_do_not_cross_generations ... ok
+test overlapping_snapshot_roots_preserve_explicit_generated_inputs_and_same_time_edits ... ok
+test scalar_and_legacy_policy_paths_preserve_search_order_paging_and_filters ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+     Running tests/projection.rs (target/debug/deps/projection-7ad3d2885c0494a7)
+
+running 37 tests
+test legacy_directions_deserialize_to_the_two_presentation_choices ... ok
+test framework_entry_is_a_method_root_without_verified_start_highlighting ... ok
+test cycles_without_candidates_have_an_actionable_empty_method_overview ... ok
+test method_recursion_stays_visible_when_group_internals_are_summarized ... ok
+test path_view_respects_virtual_calls_and_reports_absence_instead_of_inventing_a_bridge ... ok
+test method_overview_falls_back_to_uncalled_methods_in_legacy_graphs ... ok
+test aggregate_overview_uses_directional_component_roots_even_for_cycles ... ok
+test hierarchy_expansion_partitions_members_without_losing_global_namespace_methods ... ok
+test method_entry_filters_depth_and_manual_focus_are_independent ... ok
+test projection::aggregation::file_tests::files_are_distinct_filtered_and_qualified_before_paging ... ok
+test projection::focus_tests::class_focus_expands_collapsed_neighbor_folders_before_traversing ... ok
+test projection::focus_tests::class_methods_focus_retains_all_its_methods_and_external_context ... ok
+test projection::focus_tests::focus_keeps_callers_above_and_callees_below_without_unrelated_nodes ... ok
+test projection::focus_tests::depth_extends_both_sides_and_is_independent_of_overview_direction ... ok
+test projection::focus_tests::expanded_group_focus_keeps_its_level_and_invalid_focus_returns_overview ... ok
+test projection::focus_tests::grouped_depth_ignores_internal_calls_and_class_rows_are_complete ... ok
+test projection::focus_tests::layer_class_method_focus_resolves_qualified_keys_and_excludes_other_tabs ... ok
+test projection::focus_tests::level_tests::folder_focus_matches_depth_across_projects_and_keeps_shallow_and_root_folders ... ok
+test projection::focus_tests::level_tests::method_focus_ignores_group_expansion_and_uses_method_hops ... ok
+test projection::focus_tests::level_tests::project_focus_collapses_connected_projects_even_when_they_are_expanded ... ok
+test projection::focus_tests::level_tests::layer_focus_and_children_preserve_qualified_identity_and_active_tab_filtering ... ok
+test projection::focus_tests::recursive_shared_nodes_are_unique_and_ties_go_above ... ok
+test projection::labels::tests::visibility_signs_have_precise_descriptions ... ok
+test projection::focus_tests::level_tests::namespace_focus_preserves_exact_packages_and_project_qualified_global_namespaces ... ok
+test projection::labels::tests::names_preserve_generic_arguments_friendly_lambdas_and_file_groups ... ok
+test projection::focus_tests::level_tests::explicit_group_children_choose_one_level_independent_of_expansions ... ok
+test virtual_calls_filter_updates_grouped_counts_and_focused_neighborhoods ... ok
+test traversal_remains_stable_when_storage_order_changes ... ok
+test projection::focus_tests::focused_pagination_pins_the_anchor_and_counts_only_neighborhood_omissions ... ok
+test aggregate_pagination_follows_traversal_instead_of_symbol_names ... ok
+test page_reports_cross_page_relationships_in_omitted_counts ... ok
+test focused_callers_appear_above_with_real_call_arrows_pointing_downward ... ok
+test multiple_roots_shared_methods_cycles_and_start_highlighting_keep_stable_branches ... ok
+test real_graphviz_layout_keeps_explicit_relationship_identity ... ok
+test projection::aggregation::file_tests::file_membership_is_complete_and_separates_identical_projects_in_other_builds ... ok
+test projection::focus_tests::class_methods_fill_the_page_before_external_context_at_the_canvas_limit ... ok
+test projection::focus_tests::real_graphviz_uses_signed_order_and_class_card_dimensions ... ok
+
+test result: ok. 37 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.13s
+
+     Running tests/projection_layers.rs (target/debug/deps/projection_layers-7527b4684111cbd2)
+
+running 27 tests
+test missing_layer_facts_explain_setup_without_affecting_other_groupings ... ok
+test layer_source_paths_use_dotted_java_build_directories_as_roots ... ok
+test layer_filter_counts_do_not_report_hidden_node_relationships_as_omitted ... ok
+test projection::focus_tests::depth_extends_both_sides_and_is_independent_of_overview_direction ... ok
+test projection::focus_tests::class_focus_expands_collapsed_neighbor_folders_before_traversing ... ok
+test projection::focus_tests::class_methods_focus_retains_all_its_methods_and_external_context ... ok
+test layer_tabs_restrict_focused_methods_and_report_cross_tab_relationships ... ok
+test projection::aggregation::file_tests::files_are_distinct_filtered_and_qualified_before_paging ... ok
+test projection::focus_tests::focus_keeps_callers_above_and_callees_below_without_unrelated_nodes ... ok
+test projection::focus_tests::expanded_group_focus_keeps_its_level_and_invalid_focus_returns_overview ... ok
+test projection::focus_tests::grouped_depth_ignores_internal_calls_and_class_rows_are_complete ... ok
+test projection::focus_tests::level_tests::method_focus_ignores_group_expansion_and_uses_method_hops ... ok
+test projection::focus_tests::layer_class_method_focus_resolves_qualified_keys_and_excludes_other_tabs ... ok
+test projection::focus_tests::level_tests::project_focus_collapses_connected_projects_even_when_they_are_expanded ... ok
+test projection::focus_tests::level_tests::folder_focus_matches_depth_across_projects_and_keeps_shallow_and_root_folders ... ok
+test projection::focus_tests::recursive_shared_nodes_are_unique_and_ties_go_above ... ok
+test projection::labels::tests::names_preserve_generic_arguments_friendly_lambdas_and_file_groups ... ok
+test projection::labels::tests::visibility_signs_have_precise_descriptions ... ok
+test projection::focus_tests::level_tests::namespace_focus_preserves_exact_packages_and_project_qualified_global_namespaces ... ok
+test projection::focus_tests::level_tests::layer_focus_and_children_preserve_qualified_identity_and_active_tab_filtering ... ok
+test projection::focus_tests::level_tests::explicit_group_children_choose_one_level_independent_of_expansions ... ok
+test projection::focus_tests::focused_pagination_pins_the_anchor_and_counts_only_neighborhood_omissions ... ok
+test projection::aggregation::file_tests::file_membership_is_complete_and_separates_identical_projects_in_other_builds ... ok
+test parallel_architecture_flows_align_their_starts_and_keep_independent_band_order ... ok
+test layer_expansion_and_graphviz_bands_preserve_reverse_relationships_and_cycles ... ok
+test projection::focus_tests::real_graphviz_uses_signed_order_and_class_card_dimensions ... ok
+test projection::focus_tests::class_methods_fill_the_page_before_external_context_at_the_canvas_limit ... ok
+
+test result: ok. 27 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.11s
+
+     Running tests/relationship_classification.rs (target/debug/deps/relationship_classification-2c083a7c16d7ca97)
+
+running 4 tests
+test references_and_certainty_have_one_shared_policy ... ok
+test virtual_calls_are_visible_when_other_uncertain_targets_are_hidden ... ok
+test virtual_and_other_uncertain_calls_have_independent_filters ... ok
+test old_saved_filters_enable_virtual_calls_and_explicit_false_round_trips ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/type_script_discovery.rs (target/debug/deps/type_script_discovery-beeb402d5f9e577b)
+
+running 2 tests
+test typescript_output_conventions_do_not_hide_java_source_packages ... ok
+test finds_config_variants_but_defaults_to_main_config_in_each_directory ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests/typescript_pipeline.rs (target/debug/deps/typescript_pipeline-9be7896861393f95)
+
+running 9 tests
+test consumed_dependency_types_and_new_source_files_mark_graphs_stale ... ignored, requires Node 24+ and installed TypeScript 6.0.x
+test framework_entries_and_render_edges_survive_the_production_pipeline ... ignored, requires Node 24+ and installed TypeScript 6.0.x
+test multiple_selected_configs_bound_live_compiler_workers_and_preserve_graphs ... ignored, requires Node 24+ and installed TypeScript 6.0.x
+test overlapping_configs_are_rejected_before_graph_publication ... ignored, requires Node 24+ and installed TypeScript 6.0.x
+test packaged_resource_layout_runs_without_development_adapter_fallback ... ignored, requires Node 24+ and installed TypeScript 6.0.x
+test real_compiler_keeps_callback_calls_on_the_callback_and_roundtrips_provenance ... ignored, requires Node 24+ and installed TypeScript 6.0.x
+test source_method_policy_applies_before_storage_search_and_traversal ... ignored, requires Node 24+ and installed TypeScript 6.0.x
+test source_project_references_need_no_outputs_and_duplicate_selections_share_symbols ... ignored, requires Node 24+ and installed TypeScript 6.0.x
+test type_errors_and_cancellation_preserve_the_previous_generation ... ignored, requires Node 24+ and installed TypeScript 6.0.x
+
+test result: ok. 0 passed; 0 failed; 9 ignored; 0 measured; 0 filtered out; finished in 0.00s

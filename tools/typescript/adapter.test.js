@@ -24,6 +24,31 @@ const config = { compilerOptions: { target: 'ES2023', module: 'esnext', moduleRe
 function edges(graph, label, kind) {
   return graph.edges.filter(e => graph.nodes[e.from].label === label && (!kind || e.kind === kind)).map(e => graph.nodes[e.to].label);
 }
+test('class methods retain declared access without assigning visibility to functions or file groups', t => {
+  const root = fixture(t, { 'tsconfig.json': config, 'src/main.ts': `
+    export class Worker {
+      ordinary() { function local() {} local(); return () => {}; }
+      public exposed() {}
+      private hidden() {}
+      protected inherited() {}
+      #secret() {}
+      public static staticMethod() {}
+      private get value() { return 1; }
+    }
+    export function entry() { new Worker().ordinary(); }
+    const object = { objectMethod() {} };
+    export const detached = () => object.objectMethod();
+  ` });
+  const graph = run(root);
+  const access = Object.fromEntries(graph.nodes.map(node => [node.label, node.visibility]));
+  for (const name of ['ordinary', 'exposed', 'staticMethod']) assert.equal(access[name], 'public');
+  for (const name of ['hidden', '#secret', 'value']) assert.equal(access[name], 'private');
+  assert.equal(access.inherited, 'protected');
+  for (const name of ['local', 'entry', 'detached', 'objectMethod']) assert.equal(access[name], undefined);
+  assert.ok(graph.nodes.filter(node => node.kind === 'callback' || node.kind === 'module').every(node => node.visibility === undefined));
+  assert.ok(graph.nodes.every(node => node.container_visibility === undefined));
+  assert.ok(graph.nodes.every(node => node.container === 'src/main.ts'));
+});
 test('compiler bindings retain anonymous callback ownership and overload implementations', t => {
   const root = fixture(t, { 'tsconfig.json': config, 'src/main.ts': `function leaf() {}\nfunction f(x:string):void; function f(x:number):void; function f(x:unknown){leaf()}\nexport function start(){f(1); [1].map(()=>leaf())}\nexport const detached=()=>leaf();` });
   const g = run(root);
@@ -183,4 +208,25 @@ export function start(){toString();new Base();new Implicit();new Other().toStrin
   assert.ok(['hidden','guarded','shown','value','callback'].every(label=>g.nodes.some(n=>n.label===label&&!removed.has(n.id))));
   assert.equal(g.nodes.filter(n=>n.kind==='module').flatMap(n=>edges(g,n.label)).includes('leaf'),false);
   assert.equal(edges(g,'start').includes('leaf'),false);
+});
+
+test('architecture facts retain type-only files, decorators and inherited base types', t => {
+  const source = `function Layer(...args:any[]):any { return undefined; }
+class Grand {}
+@Layer class Base extends Grand {}
+@Layer export class Controller extends Base { @Layer run() {} }
+export interface Contract { run():void }
+export type Result = string;`;
+  const root = fixture(t, { 'tsconfig.json': {...config, compilerOptions:{...config.compilerOptions,experimentalDecorators:true}}, 'src/main.ts':source, 'src/types.ts':'export interface Data { value: string }' });
+  const graph = run(root);
+  assert.equal(graph.architecture.version,1);
+  const facts=graph.architecture.files.find(f=>f.file.endsWith('/src/main.ts'));
+  assert.ok(facts.names.includes('Controller'));
+  assert.ok(facts.kinds.includes('interface'));
+  assert.ok(facts.annotations.includes('Layer'));
+  assert.ok(facts.method_annotations.includes('Layer'));
+  assert.ok(facts.base_types.includes('Base'));
+  assert.ok(facts.base_types.includes('Grand'));
+  assert.equal(facts.content,source);
+  assert.ok(graph.architecture.files.some(f=>f.file.endsWith('/src/types.ts')&&f.names.includes('Data')));
 });

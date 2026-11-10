@@ -1,0 +1,73 @@
+test_baseline_volatility_applies_only_to_generated_hashes_and_preserves_sizes (test_analysis_graph.GraphComparisonTest) ... ok
+test_changed_label_or_edge_count_is_detected_without_scale_change (test_analysis_graph.GraphComparisonTest) ... ok
+test_dropping_freshness_inputs_is_detected_but_observation_times_are_ignored (test_analysis_graph.GraphComparisonTest) ... ok
+test_node_numbering_does_not_change_equivalence (test_analysis_graph.GraphComparisonTest) ... ok
+test_provenance_and_diagnostics_are_compared (test_analysis_graph.GraphComparisonTest) ... ok
+test_bad_patch_checksum_is_refused (test_bootstrap.PatchBootstrapTests) ... ok
+test_current_patch_is_idempotent (test_bootstrap.PatchBootstrapTests) ... ok
+test_exact_legacy_patch_upgrades_without_resetting_checkout (test_bootstrap.PatchBootstrapTests) ... ok
+test_exact_older_patch_upgrades_without_losing_other_supported_versions (test_bootstrap.PatchBootstrapTests) ... ok
+test_exact_previous_patch_upgrades_without_losing_legacy_support (test_bootstrap.PatchBootstrapTests) ... ok
+test_failed_upgrade_restores_the_legacy_patch (test_bootstrap.PatchBootstrapTests) ... error: No valid patches in input (allow with "--allow-empty")
+ok
+test_fresh_checkout_applies_current_patch (test_bootstrap.PatchBootstrapTests) ... ok
+test_unrelated_tracked_change_is_preserved_and_refused (test_bootstrap.PatchBootstrapTests) ... ok
+test_unrelated_untracked_source_is_preserved_and_refused (test_bootstrap.PatchBootstrapTests) ... ok
+test_dirty_existing_checkout_is_preserved_when_pin_differs (test_bootstrap.RepositoryBootstrapTests) ... ok
+test_fresh_clone_checks_out_pin_when_upstream_has_advanced (test_bootstrap.RepositoryBootstrapTests) ... Cloning into '/var/folders/9t/j3qnf2cn5fx1tqgq8gm50vf80000gq/T/codegraph-bootstrap-test-0efd01gw/workspace/vendor/fixture'...
+done.
+HEAD is now at b1357a4 Pinned dependency
+ok
+test_failed_artifact_inventory_does_not_poison_the_job_cache (test_java_context.JavaContextTests) ... ok
+test_filtered_marker_context_accepts_zero_methods_but_legacy_cli_rejects_it (test_java_context.JavaContextTests) ... ok
+test_filtered_staging_uses_external_visibility_without_staging_external_classes (test_java_context.JavaContextTests) ... ok
+test_first_definition_wins_and_shadow_bytes_and_escaped_origins_are_preserved (test_java_context.JavaContextTests) ... ok
+test_job_inventory_reuses_artifacts_without_changing_context_order (test_java_context.JavaContextTests) ... ok
+test_multi_release_archive_selects_supported_version_but_directory_uses_base (test_java_context.JavaContextTests) ... ok
+test_prefetch_duplicate_inputs_remain_ordered_and_are_indexed_once (test_java_context.JavaContextTests) ... ok
+test_shared_inventory_can_promote_external_artifact_without_reindexing (test_java_context.JavaContextTests) ... ok
+test_standalone_analyzer_filter_keeps_dependency_inheritance_and_project_overrides (test_java_context.JavaContextTests) ... ok
+test_architecture_retains_source_annotations_and_interface_attributes (test_java_inventory.JavaInventoryTests) ... ok
+test_compiled_lookup_does_not_load_sources_from_classpath (test_java_inventory.JavaInventoryTests) ... ok
+test_compiled_lookup_respects_first_classpath_definition (test_java_inventory.JavaInventoryTests) ... ok
+test_flow_inventory_uses_compiler_targets_and_utf8_source_offsets (test_java_inventory.JavaInventoryTests) ... ok
+test_unresolved_name_does_not_bind_to_unrelated_default_package_type (test_java_inventory.JavaInventoryTests) ... ok
+test_unresolved_signature_fails_with_declaration_and_type (test_java_inventory.JavaInventoryTests) ... ok
+test_disconnected_method_survives_empty_outgoing_list (test_jdt_extract.CollectionTests) ... Document symbols: 0/1
+Call hierarchy: 0/1
+ok
+test_error_diagnostics_prevent_complete_result (test_jdt_extract.CollectionTests) ... Document symbols: 0/1
+Call hierarchy: 0/1
+ok
+test_external_targets_are_counted_but_not_connected (test_jdt_extract.CollectionTests) ... Document symbols: 0/1
+Call hierarchy: 0/1
+ok
+test_failed_build_stops_before_source_or_call_collection (test_jdt_extract.CollectionTests) ... ok
+test_null_document_symbols_are_recorded (test_jdt_extract.CollectionTests) ... Document symbols: 0/1
+ok
+test_null_hierarchy_is_incomplete (test_jdt_extract.CollectionTests) ... Document symbols: 0/1
+Call hierarchy: 0/1
+ok
+test_null_outgoing_calls_are_not_treated_as_no_calls (test_jdt_extract.CollectionTests) ... Document symbols: 0/1
+Call hierarchy: 0/1
+ok
+test_only_analyzer_owned_source_roots_are_scanned (test_jdt_extract.CollectionTests) ... Document symbols: 0/1
+Call hierarchy: 0/1
+ok
+test_server_errors_prevent_complete_result (test_jdt_extract.CollectionTests) ... Document symbols: 0/1
+Call hierarchy: 0/1
+ok
+test_oversized_payload_is_rejected_before_reading (test_jdt_extract.FramingTests) ... ok
+test_truncated_payload_raises_instead_of_returning_partial_json (test_jdt_extract.FramingTests) ... ok
+test_utf8_frame_length_counts_bytes (test_jdt_extract.FramingTests) ... ok
+test_flat_or_incomplete_symbol_responses_are_rejected (test_jdt_extract.SymbolMappingTests) ... ok
+test_nested_parent_identity_and_overloads_are_preserved (test_jdt_extract.SymbolMappingTests) ... ok
+test_uri_ownership_uses_path_boundaries (test_jdt_extract.SymbolMappingTests) ... ok
+test_matching_but_unlocked_patch_is_rejected (test_package.SourceProvenanceTests) ... ok
+test_staged_dependency_edit_is_rejected_without_altering_it (test_package.SourceProvenanceTests) ... ok
+test_truncated_empty_patch_cannot_ship_unpatched_engine (test_package.SourceProvenanceTests) ... ok
+
+----------------------------------------------------------------------
+Ran 49 tests in 14.425s
+
+OK

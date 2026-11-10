@@ -15,6 +15,7 @@ mod class_facts;
 mod compose;
 mod contexts;
 mod engine;
+mod flow_inventory;
 mod gradle;
 mod lambda_names;
 #[cfg(test)]
@@ -25,6 +26,8 @@ mod normalize;
 mod policy;
 mod source_inventory;
 mod tables;
+#[cfg(test)]
+mod visibility_tests;
 use build::JavaSourceSet;
 pub(super) use build::{PreparedJava, prepare, reject_overlaps};
 #[cfg(test)]
@@ -67,6 +70,7 @@ fn analyze_compiled(
     let before_engine = build::snapshot(build, metadata, true)?;
     let mut graph = GraphData {
         roots: vec![build.path.to_string_lossy().into_owned()],
+        architecture: super::architecture::empty(),
         ..GraphData::default()
     };
     let mut composer = compose::Composer::default();

@@ -206,8 +206,10 @@ fn directory_group_opens_files_and_back_returns_to_listing() {
     runtime.update(|state, _| {
         state.nav.grouping = Grouping::Folder;
         state.nav.focus = None;
-        state.graph_view =
-            projection::project(state.graph.as_ref().unwrap(), &state.request().unwrap());
+        state.replace_graph_view(projection::project(
+            state.graph.as_ref().unwrap(),
+            &state.request().unwrap(),
+        ));
         scenes::position(&mut state.graph_view);
         state.nav.camera.fit(state.graph_view.size, state.viewport);
     });

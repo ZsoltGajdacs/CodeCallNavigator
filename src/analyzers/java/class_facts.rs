@@ -1,11 +1,13 @@
 //! Source facts shared by all methods of an unchanged compiled class.
 use super::{build::JavaSourceSet, metadata::ClassMetadata};
+use crate::model::Visibility;
 use std::path::{Path, PathBuf};
 
 pub(super) struct ClassFacts {
     pub namespace: String,
     pub file: String,
     pub generated_file: bool,
+    pub visibility: Option<Visibility>,
 }
 
 impl ClassFacts {
@@ -25,6 +27,7 @@ impl ClassFacts {
             namespace,
             file,
             generated_file,
+            visibility: class.visibility,
         }
     }
 }

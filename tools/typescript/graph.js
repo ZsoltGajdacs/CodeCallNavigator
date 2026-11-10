@@ -1,5 +1,6 @@
 'use strict';
 const path = require('node:path');
+const {methodVisibility} = require('./visibility.js');
 class Graph {
   constructor(context) {
     this.context=context;
@@ -17,7 +18,7 @@ class Graph {
     const generatedFolders=['/.next/','/generated/','/__generated__/'];
     const generatedOutput=this.context.metadata.output_roots.some(root=>file.fileName.startsWith(`${root}/`));
     this.nodes.push({id,project:path.basename(path.dirname(owner)),build:owner,language:'typescript',kind,label,
-      signature:signature ? checker.signatureToString(signature) : label,namespace:path.dirname(relative),container:relative,file:file.fileName,
+      signature:signature ? checker.signatureToString(signature) : label,visibility:methodVisibility(this.context.ts,declaration),namespace:path.dirname(relative),container:relative,file:file.fileName,
       line:file.getLineAndCharacterOfPosition(position).line+1,is_test:/(?:^|\/)(?:__tests__|tests?|test-support|test-fixtures)(?:\/|$)|\.(?:test|spec)\.[cm]?tsx?$/.test(relative),
       is_generated:generatedOutput || generatedFolders.some(root=>file.fileName.includes(root)),body_unavailable:!['module','implicit-constructor','initializer'].includes(kind) && !declaration.body});
     this.indices.set(id,index); return index;
