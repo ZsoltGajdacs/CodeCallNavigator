@@ -20,7 +20,7 @@
   },
   "rune": {
     "repository": "https://github.com/anomalyco/rune.git",
-    "revision": "5526e3fce196a05a78d26996e60458635a764b65"
+    "revision": "7ed827a2b969ec737323c3e80d2bfc1b8032b609"
   },
   "lombok": {
     "version": "1.18.48",

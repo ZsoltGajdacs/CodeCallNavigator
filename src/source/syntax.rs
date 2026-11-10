@@ -126,8 +126,8 @@ impl Scanner<'_> {
         }
     }
 
-    // The Kit scanner caps each invocation at 32 KiB/8192 tokens. These chunks stay
-    // below both limits. Multiline strings/comments were already consumed whole.
+    // Kit caps each invocation at 128 KiB/32,768 ranges. Small chunks keep source
+    // previews colored beyond those limits; multiline literals are already whole.
     fn typescript(&mut self, range: Range<usize>) {
         // JSX tags/prose have already been separated by the context tracker.
         // Use TS here so generic arrow declarations are not re-read as JSX.
@@ -225,9 +225,32 @@ fn word_kind(word: &str, language: Language) -> Option<Syntax> {
 mod tests {
     use super::*;
     fn found(path: &str, text: &str, expected: &str, kind: Syntax) -> bool {
-        highlight(Path::new(path), text)
-            .iter()
-            .any(|(range, paint)| &text[range.clone()] == expected && *paint == Paint::Kind(kind))
+        let highlights = highlight(Path::new(path), text);
+        text.match_indices(expected).any(|(start, _)| {
+            let end = start + expected.len();
+            (start..end).all(|offset| {
+                highlights
+                    .iter()
+                    .any(|(range, paint)| range.contains(&offset) && *paint == Paint::Kind(kind))
+            })
+        })
+    }
+
+    #[test]
+    fn keyword_coverage_accepts_coalesced_ranges_without_coloring_neighbors() {
+        let text = "export const answer = 42;";
+        for (fragment, expected) in [
+            ("export", true),
+            ("const", true),
+            ("answer", false),
+            ("const answer", false),
+        ] {
+            assert_eq!(
+                found("Demo.ts", text, fragment, Syntax::Keyword),
+                expected,
+                "{fragment}"
+            );
+        }
     }
 
     #[test]
