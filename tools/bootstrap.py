@@ -30,13 +30,13 @@ def fetch_repository(name, spec):
 def verified_patch(spec, prefix=""):
     patch = ROOT / spec[f"{prefix}patch"]
     if hashlib.sha256(patch.read_bytes()).hexdigest() != spec[f"{prefix}patch_sha256"]:
-        raise RuntimeError("CallAtlas identity patch checksum mismatch")
+        raise RuntimeError(f"Patch checksum mismatch: {patch}")
     return patch
 
 
-def apply_patch(spec):
+def apply_patch(spec, name="callatlas"):
     patch = verified_patch(spec)
-    repository = ROOT / "vendor/callatlas"
+    repository = ROOT / "vendor" / name
     command = ["git", "-C", str(repository)]
     difference = checkout_patch(command)
     if difference == patch.read_bytes():
@@ -44,13 +44,15 @@ def apply_patch(spec):
     if not difference:
         subprocess.run([*command, "apply", str(patch)], check=True)
         return
+    if name != "callatlas":
+        raise RuntimeError(f"Dependency source differs from the supported patch; inspect {repository}")
     upgrade_legacy_patch(command, spec, difference, patch)
 
 
 def checkout_patch(command):
     untracked = subprocess.check_output([*command, "ls-files", "--others", "--exclude-standard"])
     if untracked:
-        raise RuntimeError("CallAtlas source has unrelated untracked files; inspect vendor/callatlas")
+        raise RuntimeError(f"Dependency source has unrelated untracked files; inspect {command[-1]}")
     return subprocess.check_output([*command, "diff", "--binary", "HEAD"])
 
 
@@ -142,6 +144,7 @@ def main():
     for name in ("callatlas", "rune", "java-callgraph2"):
         fetch_repository(name, lock[name])
     apply_patch(lock["callatlas"])
+    apply_patch(lock["rune"], "rune")
     if args.jdt_investigation:
         fetch_jdt(lock["jdtls"])
         fetch_lombok(lock["lombok"])

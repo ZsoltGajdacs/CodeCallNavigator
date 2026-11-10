@@ -20,7 +20,9 @@
   },
   "rune": {
     "repository": "https://github.com/anomalyco/rune.git",
-    "revision": "7ed827a2b969ec737323c3e80d2bfc1b8032b609"
+    "revision": "7ed827a2b969ec737323c3e80d2bfc1b8032b609",
+    "patch": "patches/rune-platform-warnings.patch",
+    "patch_sha256": "ae0d3cc48c2c49e47f44e9a7e036bf41a0d901ab767488eee87d95a92a56074d"
   },
   "lombok": {
     "version": "1.18.48",

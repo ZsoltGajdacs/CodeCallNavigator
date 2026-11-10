@@ -67,3 +67,13 @@ Upstream limitation preserved by this patch: overloaded-operator declarations ar
 registered, but the analyzer does not report the binary operator invocation used
 by this fixture. The identity check proves that the two operator declarations stay
 separate; it does not claim that missing invocation coverage has been repaired.
+
+# Rune platform warnings patch
+
+`rune-platform-warnings.patch` applies to Rune revision
+`7ed827a2b969ec737323c3e80d2bfc1b8032b609` (SHA-256
+`ae0d3cc48c2c49e47f44e9a7e036bf41a0d901ab767488eee87d95a92a56074d`).
+It scopes platform-specific dead-code allowances and the Windows-only focus method
+to avoid warnings on macOS while preserving the shared state machines. Bootstrap
+applies it after checkout; no other Rune patches precede it. Bootstrap refuses
+unrelated Rune source changes rather than overwriting them.
