@@ -4,6 +4,154 @@
       "files": [
         {
           "annotated_interfaces": [
+            "FunctionalInterface",
+            "java.lang.FunctionalInterface"
+          ],
+          "annotations": [
+            "Component",
+            "org.springframework.stereotype.Component"
+          ],
+          "base_types": [
+            "ApplicationListener",
+            "EventListener",
+            "Object",
+            "java.lang.Object",
+            "java.util.EventListener",
+            "org.springframework.context.ApplicationListener"
+          ],
+          "build": "@repo/spring-events",
+          "content": "package fixture.spring;\n\nimport fixture.spring.events.Started;\nimport org.springframework.context.ApplicationListener;\nimport org.springframework.stereotype.Component;\n\n@Component\npublic final class InterfaceListener implements ApplicationListener<Started> {\n    @Override\n    public void onApplicationEvent(Started event) { Sink.record(\"typed interface listener\"); }\n}\n",
+          "file": "@repo/spring-events/src/main/java/fixture/spring/InterfaceListener.java",
+          "is_interface": false,
+          "is_test": false,
+          "kinds": [
+            "class"
+          ],
+          "language": "java",
+          "method_annotations": [
+            "Override",
+            "java.lang.Override"
+          ],
+          "names": [
+            "InterfaceListener",
+            "fixture.spring.InterfaceListener"
+          ],
+          "namespaces": [
+            "fixture.spring"
+          ],
+          "project": "codegraph.fixture:spring-events"
+        },
+        {
+          "annotated_interfaces": [
+            "NullableContextAttribute",
+            "System.Runtime.CompilerServices.NullableContextAttribute"
+          ],
+          "annotations": [],
+          "base_types": [
+            "BaseRequest",
+            "DispatchContracts.BaseRequest",
+            "IBaseRequest",
+            "IEquatable",
+            "INotification",
+            "IRequest",
+            "MediatR.IBaseRequest",
+            "MediatR.INotification",
+            "MediatR.IRequest",
+            "MediatR.IRequest<T>",
+            "MediatR.IRequest<int>",
+            "Object",
+            "System.IEquatable<DispatchContracts.BaseRequest>",
+            "System.IEquatable<DispatchContracts.Changed>",
+            "System.IEquatable<DispatchContracts.DerivedRequest>",
+            "System.IEquatable<DispatchContracts.GenericRequest<T>>",
+            "System.IEquatable<DispatchContracts.Ping>",
+            "System.IEquatable<DispatchContracts.Reset>",
+            "System.IEquatable<DispatchContracts.Unhandled>",
+            "object"
+          ],
+          "build": "@repo/mediatr-dispatch/MediatRDispatch.sln",
+          "content": "using MediatR;\n\nnamespace DispatchContracts;\n\npublic sealed record Ping(int Value) : IRequest<int>;\npublic sealed record Reset : IRequest;\npublic sealed record Changed(string Value) : INotification;\npublic record BaseRequest : IRequest<int>;\npublic sealed record DerivedRequest : BaseRequest;\npublic sealed record Unhandled : IRequest<int>;\npublic sealed record GenericRequest<T>(T Value) : IRequest<T>;\n",
+          "file": "@repo/mediatr-dispatch/Contracts/Messages.cs",
+          "is_interface": false,
+          "is_test": false,
+          "kinds": [
+            "record"
+          ],
+          "language": "csharp",
+          "method_annotations": [],
+          "names": [
+            "BaseRequest",
+            "Changed",
+            "DerivedRequest",
+            "DispatchContracts.BaseRequest",
+            "DispatchContracts.Changed",
+            "DispatchContracts.DerivedRequest",
+            "DispatchContracts.GenericRequest<T>",
+            "DispatchContracts.Ping",
+            "DispatchContracts.Reset",
+            "DispatchContracts.Unhandled",
+            "GenericRequest",
+            "Ping",
+            "Reset",
+            "Unhandled"
+          ],
+          "namespaces": [
+            "DispatchContracts"
+          ],
+          "project": "Contracts"
+        },
+        {
+          "annotated_interfaces": [
+            "NullableContextAttribute",
+            "System.Runtime.CompilerServices.NullableContextAttribute"
+          ],
+          "annotations": [],
+          "base_types": [
+            "ChangedHandlerBase",
+            "DispatchAppA.ChangedHandlerBase",
+            "INotificationHandler",
+            "IRequestHandler",
+            "MediatR.INotificationHandler<DispatchContracts.Changed>",
+            "MediatR.IRequestHandler<DispatchContracts.BaseRequest, int>",
+            "MediatR.IRequestHandler<DispatchContracts.GenericRequest<T>, T>",
+            "MediatR.IRequestHandler<DispatchContracts.Ping, int>",
+            "MediatR.IRequestHandler<DispatchContracts.Reset>",
+            "Object",
+            "object"
+          ],
+          "build": "@repo/mediatr-dispatch/MediatRDispatch.sln",
+          "content": "using DispatchContracts;\nusing MediatR;\n\nnamespace DispatchAppA;\n\npublic sealed class PingHandler : IRequestHandler<Ping, int>\n{\n    public Task<int> Handle(Ping request, CancellationToken cancellationToken) =>\n        Task.FromResult(request.Value + 1);\n}\n\npublic sealed class ResetHandler : IRequestHandler<Reset>\n{\n    Task IRequestHandler<Reset>.Handle(Reset request, CancellationToken cancellationToken) =>\n        Task.CompletedTask;\n}\n\npublic sealed class FirstChangedHandler : INotificationHandler<Changed>\n{\n    public Task Handle(Changed notification, CancellationToken cancellationToken) => Task.CompletedTask;\n}\n\npublic abstract class ChangedHandlerBase : INotificationHandler<Changed>\n{\n    public Task Handle(Changed notification, CancellationToken cancellationToken) => Task.CompletedTask;\n}\n\npublic sealed class InheritedChangedHandler : ChangedHandlerBase;\n\npublic sealed class BaseRequestHandler : IRequestHandler<BaseRequest, int>\n{\n    public Task<int> Handle(BaseRequest request, CancellationToken cancellationToken) => Task.FromResult(1);\n}\n\npublic sealed class OpenGenericHandler<T> : IRequestHandler<GenericRequest<T>, T>\n{\n    public Task<T> Handle(GenericRequest<T> request, CancellationToken cancellationToken) =>\n        Task.FromResult(request.Value);\n}\n",
+          "file": "@repo/mediatr-dispatch/AppA/Handlers.cs",
+          "is_interface": false,
+          "is_test": false,
+          "kinds": [
+            "class"
+          ],
+          "language": "csharp",
+          "method_annotations": [],
+          "names": [
+            "BaseRequestHandler",
+            "ChangedHandlerBase",
+            "DispatchAppA.BaseRequestHandler",
+            "DispatchAppA.ChangedHandlerBase",
+            "DispatchAppA.FirstChangedHandler",
+            "DispatchAppA.InheritedChangedHandler",
+            "DispatchAppA.OpenGenericHandler<T>",
+            "DispatchAppA.PingHandler",
+            "DispatchAppA.ResetHandler",
+            "FirstChangedHandler",
+            "InheritedChangedHandler",
+            "OpenGenericHandler",
+            "PingHandler",
+            "ResetHandler"
+          ],
+          "namespaces": [
+            "DispatchAppA"
+          ],
+          "project": "AppA"
+        },
+        {
+          "annotated_interfaces": [
             "NullableContextAttribute",
             "System.Runtime.CompilerServices.NullableContextAttribute"
           ],
@@ -79,6 +227,199 @@
             "<global namespace>"
           ],
           "project": "EntryB"
+        },
+        {
+          "annotated_interfaces": [
+            "NullableContextAttribute",
+            "System.Runtime.CompilerServices.NullableContextAttribute"
+          ],
+          "annotations": [],
+          "base_types": [
+            "INotificationHandler",
+            "IRequestHandler",
+            "MediatR.INotificationHandler<DispatchContracts.Changed>",
+            "MediatR.IRequestHandler<DispatchContracts.Ping, int>",
+            "Object",
+            "object"
+          ],
+          "build": "@repo/mediatr-dispatch/MediatRDispatch.sln",
+          "content": "using DispatchContracts;\nusing MediatR;\n\nnamespace DispatchAppB;\n\npublic static class Dispatch\n{\n    public static Task<int> SendPing(ISender sender, CancellationToken token) =>\n        sender.Send(new Ping(20), token);\n\n    public static Task PublishChanged(IPublisher publisher, CancellationToken token) =>\n        publisher.Publish(new Changed(\"b\"), token);\n}\n\npublic sealed class PingHandler : IRequestHandler<Ping, int>\n{\n    public Task<int> Handle(Ping request, CancellationToken cancellationToken) =>\n        Task.FromResult(request.Value + 100);\n}\n\npublic sealed class ChangedHandler : INotificationHandler<Changed>\n{\n    public Task Handle(Changed notification, CancellationToken cancellationToken) => Task.CompletedTask;\n}\n",
+          "file": "@repo/mediatr-dispatch/AppB/Dispatch.cs",
+          "is_interface": false,
+          "is_test": false,
+          "kinds": [
+            "class"
+          ],
+          "language": "csharp",
+          "method_annotations": [],
+          "names": [
+            "ChangedHandler",
+            "Dispatch",
+            "DispatchAppB.ChangedHandler",
+            "DispatchAppB.Dispatch",
+            "DispatchAppB.PingHandler",
+            "PingHandler"
+          ],
+          "namespaces": [
+            "DispatchAppB"
+          ],
+          "project": "AppB"
+        },
+        {
+          "annotated_interfaces": [],
+          "annotations": [
+            "Component",
+            "org.springframework.stereotype.Component"
+          ],
+          "base_types": [
+            "Object",
+            "java.lang.Object"
+          ],
+          "build": "@repo/spring-events",
+          "content": "package fixture.spring;\n\nimport fixture.spring.events.Created;\nimport org.springframework.context.ApplicationEvent;\nimport org.springframework.context.PayloadApplicationEvent;\nimport org.springframework.context.event.EventListener;\nimport org.springframework.scheduling.annotation.Async;\nimport org.springframework.stereotype.Component;\nimport org.springframework.transaction.event.TransactionPhase;\nimport org.springframework.transaction.event.TransactionalEventListener;\n\n@Component\npublic final class Listeners {\n    @EventListener\n    public void onPayload(Created event) { Sink.record(\"payload\"); }\n\n    @EventListener(classes = Created.class)\n    public void onExplicitPayload() { Sink.record(\"explicit payload\"); }\n\n    @EventListener(condition = \"#root.args[0].id == 'enabled'\")\n    public void onConditionalPayload(Created event) { Sink.record(\"conditional payload\"); }\n\n    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)\n    public void onCommittedPayload(Created event) { Sink.record(\"committed payload\"); }\n\n    @Async\n    @EventListener\n    public void onAsyncPayload(Created event) { Sink.record(\"async payload\"); }\n\n    @EventListener\n    public void onPayloadEnvelope(PayloadApplicationEvent<Created> event) { Sink.record(\"payload envelope\"); }\n\n    @EventListener\n    public void onAnyApplicationEvent(ApplicationEvent event) { Sink.record(\"application event\"); }\n\n    @EventListener\n    public void onOtherCreated(fixture.spring.other.Created event) { Sink.record(\"different qualified payload\"); }\n\n    @fixture.spring.fake.EventListener\n    public void onPretendAnnotation(Created event) { Sink.record(\"pretend annotation\"); }\n\n    public void ordinaryMethod(Created event) { Sink.record(\"not a listener\"); }\n}\n",
+          "file": "@repo/spring-events/src/main/java/fixture/spring/Listeners.java",
+          "is_interface": false,
+          "is_test": false,
+          "kinds": [
+            "class"
+          ],
+          "language": "java",
+          "method_annotations": [
+            "Async",
+            "EventListener",
+            "TransactionalEventListener",
+            "fixture.spring.fake.EventListener",
+            "org.springframework.context.event.EventListener",
+            "org.springframework.scheduling.annotation.Async",
+            "org.springframework.transaction.event.TransactionalEventListener"
+          ],
+          "names": [
+            "Listeners",
+            "fixture.spring.Listeners"
+          ],
+          "namespaces": [
+            "fixture.spring"
+          ],
+          "project": "codegraph.fixture:spring-events"
+        },
+        {
+          "annotated_interfaces": [],
+          "annotations": [
+            "Retention",
+            "Target",
+            "java.lang.annotation.Retention",
+            "java.lang.annotation.Target"
+          ],
+          "base_types": [
+            "Annotation",
+            "java.lang.annotation.Annotation"
+          ],
+          "build": "@repo/spring-events",
+          "content": "package fixture.spring.fake;\n\nimport java.lang.annotation.ElementType;\nimport java.lang.annotation.Retention;\nimport java.lang.annotation.RetentionPolicy;\nimport java.lang.annotation.Target;\n\n@Target(ElementType.METHOD)\n@Retention(RetentionPolicy.RUNTIME)\npublic @interface EventListener {}\n",
+          "file": "@repo/spring-events/src/main/java/fixture/spring/fake/EventListener.java",
+          "is_interface": false,
+          "is_test": false,
+          "kinds": [
+            "annotation"
+          ],
+          "language": "java",
+          "method_annotations": [],
+          "names": [
+            "EventListener",
+            "fixture.spring.fake.EventListener"
+          ],
+          "namespaces": [
+            "fixture.spring.fake"
+          ],
+          "project": "codegraph.fixture:spring-events"
+        },
+        {
+          "annotated_interfaces": [],
+          "annotations": [],
+          "base_types": [
+            "ApplicationEvent",
+            "EventObject",
+            "Object",
+            "Serializable",
+            "java.io.Serializable",
+            "java.lang.Object",
+            "java.util.EventObject",
+            "org.springframework.context.ApplicationEvent"
+          ],
+          "build": "@repo/spring-events",
+          "content": "package fixture.spring.events;\n\nimport org.springframework.context.ApplicationEvent;\n\n/** An ApplicationEvent is published directly, without a payload wrapper. */\npublic final class Started extends ApplicationEvent {\n    public Started(Object source) { super(source); }\n}\n",
+          "file": "@repo/spring-events/src/main/java/fixture/spring/events/Started.java",
+          "is_interface": false,
+          "is_test": false,
+          "kinds": [
+            "class"
+          ],
+          "language": "java",
+          "method_annotations": [],
+          "names": [
+            "Started",
+            "fixture.spring.events.Started"
+          ],
+          "namespaces": [
+            "fixture.spring.events"
+          ],
+          "project": "codegraph.fixture:spring-events"
+        },
+        {
+          "annotated_interfaces": [],
+          "annotations": [],
+          "base_types": [
+            "Object",
+            "Record",
+            "java.lang.Object",
+            "java.lang.Record"
+          ],
+          "build": "@repo/spring-events",
+          "content": "package fixture.spring.events;\n\n/** A plain payload that Spring wraps in PayloadApplicationEvent. */\npublic record Created(String id) {}\n",
+          "file": "@repo/spring-events/src/main/java/fixture/spring/events/Created.java",
+          "is_interface": false,
+          "is_test": false,
+          "kinds": [
+            "record"
+          ],
+          "language": "java",
+          "method_annotations": [],
+          "names": [
+            "Created",
+            "fixture.spring.events.Created"
+          ],
+          "namespaces": [
+            "fixture.spring.events"
+          ],
+          "project": "codegraph.fixture:spring-events"
+        },
+        {
+          "annotated_interfaces": [],
+          "annotations": [],
+          "base_types": [
+            "Object",
+            "Record",
+            "java.lang.Object",
+            "java.lang.Record"
+          ],
+          "build": "@repo/spring-events",
+          "content": "package fixture.spring.other;\n\n/** A different qualified type; no publisher in this fixture publishes it. */\npublic record Created(String id) {}\n",
+          "file": "@repo/spring-events/src/main/java/fixture/spring/other/Created.java",
+          "is_interface": false,
+          "is_test": false,
+          "kinds": [
+            "record"
+          ],
+          "language": "java",
+          "method_annotations": [],
+          "names": [
+            "Created",
+            "fixture.spring.other.Created"
+          ],
+          "namespaces": [
+            "fixture.spring.other"
+          ],
+          "project": "codegraph.fixture:spring-events"
         },
         {
           "annotated_interfaces": [],
@@ -218,6 +559,84 @@
           "annotations": [],
           "base_types": [
             "Object",
+            "java.lang.Object"
+          ],
+          "build": "@repo/spring-events",
+          "content": "package fixture.spring;\n\nimport fixture.spring.events.Created;\n\n/** A matching method name does not make this a Spring publisher. */\npublic final class PretendPublisher {\n    public void publishEvent(Created event) { Sink.record(\"pretend publisher\"); }\n}\n",
+          "file": "@repo/spring-events/src/main/java/fixture/spring/PretendPublisher.java",
+          "is_interface": false,
+          "is_test": false,
+          "kinds": [
+            "class"
+          ],
+          "language": "java",
+          "method_annotations": [],
+          "names": [
+            "PretendPublisher",
+            "fixture.spring.PretendPublisher"
+          ],
+          "namespaces": [
+            "fixture.spring"
+          ],
+          "project": "codegraph.fixture:spring-events"
+        },
+        {
+          "annotated_interfaces": [],
+          "annotations": [],
+          "base_types": [
+            "Object",
+            "java.lang.Object"
+          ],
+          "build": "@repo/spring-events",
+          "content": "package fixture.spring;\n\nimport fixture.spring.events.Created;\nimport fixture.spring.events.Started;\nimport org.springframework.context.ApplicationEventPublisher;\n\npublic final class Publisher {\n    public void publishPayload(ApplicationEventPublisher publisher) {\n        publisher.publishEvent(new Created(\"enabled\"));\n    }\n\n    public void publishPayloadTwice(ApplicationEventPublisher publisher) {\n        publisher.publishEvent(new Created(\"first\"));\n        publisher.publishEvent(new Created(\"second\"));\n    }\n\n    public void publishApplicationEvent(ApplicationEventPublisher publisher) {\n        publisher.publishEvent(new Started(this));\n    }\n\n    public void publishErased(ApplicationEventPublisher publisher, Object event) {\n        publisher.publishEvent(event);\n    }\n\n    public <T> void publishGeneric(ApplicationEventPublisher publisher, T event) {\n        publisher.publishEvent(event);\n    }\n\n    public void sameNamedApi(PretendPublisher publisher) {\n        publisher.publishEvent(new Created(\"not a Spring publication\"));\n    }\n}\n",
+          "file": "@repo/spring-events/src/main/java/fixture/spring/Publisher.java",
+          "is_interface": false,
+          "is_test": false,
+          "kinds": [
+            "class"
+          ],
+          "language": "java",
+          "method_annotations": [],
+          "names": [
+            "Publisher",
+            "fixture.spring.Publisher"
+          ],
+          "namespaces": [
+            "fixture.spring"
+          ],
+          "project": "codegraph.fixture:spring-events"
+        },
+        {
+          "annotated_interfaces": [],
+          "annotations": [],
+          "base_types": [
+            "Object",
+            "java.lang.Object"
+          ],
+          "build": "@repo/spring-events",
+          "content": "package fixture.spring;\n\npublic final class Sink {\n    private Sink() {}\n    public static void record(String handler) {}\n}\n",
+          "file": "@repo/spring-events/src/main/java/fixture/spring/Sink.java",
+          "is_interface": false,
+          "is_test": false,
+          "kinds": [
+            "class"
+          ],
+          "language": "java",
+          "method_annotations": [],
+          "names": [
+            "Sink",
+            "fixture.spring.Sink"
+          ],
+          "namespaces": [
+            "fixture.spring"
+          ],
+          "project": "codegraph.fixture:spring-events"
+        },
+        {
+          "annotated_interfaces": [],
+          "annotations": [],
+          "base_types": [
+            "Object",
             "object"
           ],
           "build": "@repo/dotnet-collisions/Collisions.sln",
@@ -262,6 +681,34 @@
             "<global namespace>"
           ],
           "project": "TopB"
+        },
+        {
+          "annotated_interfaces": [],
+          "annotations": [],
+          "base_types": [
+            "Object",
+            "object"
+          ],
+          "build": "@repo/mediatr-dispatch/MediatRDispatch.sln",
+          "content": "using DispatchContracts;\nusing MediatR;\n\nnamespace DispatchAppA;\n\npublic static class Dispatch\n{\n    public static Task<int> SendPing(ISender sender, CancellationToken token) =>\n        sender.Send<int>(new Ping(7), token);\n\n    public static Task SendReset(ISender sender, CancellationToken token) =>\n        sender.Send(new Reset(), token);\n\n    public static Task PublishChanged(IPublisher publisher, CancellationToken token) =>\n        publisher.Publish(new Changed(\"a\"), token);\n\n    public static Task<int> NamedArguments(ISender sender, CancellationToken token) =>\n        sender.Send(cancellationToken: token, request: new Ping(8));\n\n    public static async Task<int> Conditional(ISender sender, bool enabled, CancellationToken token)\n    {\n        if (enabled)\n            return await sender.Send(new Ping(9), token);\n        return 0;\n    }\n\n    public static Task<int> LocalFunction(ISender sender, CancellationToken token)\n    {\n        Task<int> Invoke() => sender.Send(new Ping(10), token);\n        return Invoke();\n    }\n\n    public static Task<object?> ErasedObject(ISender sender, object request, CancellationToken token) =>\n        sender.Send(request, token);\n\n    public static Task<int> ErasedContract(ISender sender, IRequest<int> request, CancellationToken token) =>\n        sender.Send(request, token);\n\n    public static Task<int> UnknownRequest(ISender sender, CancellationToken token) =>\n        sender.Send(new Unhandled(), token);\n\n    public static Task<int> DerivedDoesNotUseBaseHandler(ISender sender, CancellationToken token) =>\n        sender.Send<int>(new DerivedRequest(), token);\n\n    public static Task<int> OpenGenericDeferred(ISender sender, CancellationToken token) =>\n        sender.Send(new GenericRequest<int>(12), token);\n\n    public static Func<Task<int>> AnonymousDeferred(ISender sender, CancellationToken token) =>\n        () => sender.Send(new Ping(13), token);\n\n    public static Task<int> CustomSend(FakeSender sender) => sender.Send(new Ping(14));\n}\n\npublic sealed class FakeSender\n{\n    public Task<int> Send(Ping request) => Task.FromResult(request.Value);\n}\n",
+          "file": "@repo/mediatr-dispatch/AppA/Dispatch.cs",
+          "is_interface": false,
+          "is_test": false,
+          "kinds": [
+            "class"
+          ],
+          "language": "csharp",
+          "method_annotations": [],
+          "names": [
+            "Dispatch",
+            "DispatchAppA.Dispatch",
+            "DispatchAppA.FakeSender",
+            "FakeSender"
+          ],
+          "namespaces": [
+            "DispatchAppA"
+          ],
+          "project": "AppA"
         },
         {
           "annotated_interfaces": [],
@@ -344,14 +791,18 @@
       "3 unresolved callable flow: mutable or decorated callable binding",
       "4 unresolved dynamic call sites",
       "CallAtlas omits most source-generator output; cross-assembly interface implementation candidates are limited; operator invocations are not fully reported. Reflection, dynamic calls, framework callbacks and unsupported DI wiring are not inferred.",
+      "CallAtlas omits most source-generator output; cross-assembly interface implementation candidates are limited; operator invocations are not fully reported. Reflection, dynamic calls, framework callbacks and unsupported DI wiring are not inferred.",
+      "Java DI, reflection, framework callback ordering and dynamic runtime targets are supported only where reported by java-callgraph2. Bytecode source columns are unavailable.",
       "Java DI, reflection, framework callback ordering and dynamic runtime targets are supported only where reported by java-callgraph2. Bytecode source columns are unavailable.",
       "Java DI, reflection, framework callback ordering and dynamic runtime targets are supported only where reported by java-callgraph2. Bytecode source columns are unavailable.",
       "Java DI, reflection, framework callback ordering and dynamic runtime targets are supported only where reported by java-callgraph2. Bytecode source columns are unavailable.",
       "Java DI, reflection, framework callback ordering and dynamic runtime targets are supported only where reported by java-callgraph2. Bytecode source columns are unavailable.",
       "Java combined declarations use each caller's owning compile context. Paths may cross incompatible consumer contexts and do not describe a single runtime classpath.",
+      "Java combined declarations use each caller's owning compile context. Paths may cross incompatible consumer contexts and do not describe a single runtime classpath.",
       "Java: 0 inherited/reference symbols without declared bodies excluded; 1 external relationships excluded. These references are engine-reported, not resolved by name.",
       "Java: 0 inherited/reference symbols without declared bodies excluded; 1 external relationships excluded. These references are engine-reported, not resolved by name.",
       "Java: 0 inherited/reference symbols without declared bodies excluded; 2 external relationships excluded. These references are engine-reported, not resolved by name.",
+      "Java: 0 inherited/reference symbols without declared bodies excluded; 20 external relationships excluded. These references are engine-reported, not resolved by name.",
       "Java: 0 inherited/reference symbols without declared bodies excluded; 3 external relationships excluded. These references are engine-reported, not resolved by name."
     ],
     "edges": [
@@ -454,6 +905,22 @@
       {
         "certainty": "direct",
         "count": 1,
+        "from": "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Dispatch.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.Dispatch::CustomSend(DispatchAppA.FakeSender)\"]",
+        "kind": "call",
+        "provenance": "",
+        "to": "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Dispatch.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.FakeSender::Send(DispatchContracts.Ping)\"]"
+      },
+      {
+        "certainty": "direct",
+        "count": 1,
+        "from": "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Dispatch.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.Dispatch::LocalFunction(MediatR.ISender,System.Threading.CancellationToken)\"]",
+        "kind": "call",
+        "provenance": "",
+        "to": "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Dispatch.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.Dispatch::LocalFunction(MediatR.ISender,System.Threading.CancellationToken)::Invoke#local\"]"
+      },
+      {
+        "certainty": "direct",
+        "count": 1,
         "from": "[\"java\",\"@repo/maven/reactor\",\"@repo/maven/reactor/app/src/main-custom/java/fixture/App.java\",\"[\\\"@repo/maven/reactor\\\",\\\"@repo/maven/reactor/app\\\",\\\"main\\\"]|fixture.App:main(java.lang.String[])|void\"]",
         "kind": "STA",
         "provenance": "",
@@ -474,6 +941,102 @@
         "kind": "STA",
         "provenance": "",
         "to": "[\"java\",\"@repo/maven/reactor\",\"@repo/maven/library/src/main/java/fixture/Service.java\",\"[\\\"@repo/maven/reactor\\\",\\\"@repo/maven/library\\\",\\\"main\\\"]|fixture.Service:work()|void\"]"
+      },
+      {
+        "certainty": "direct",
+        "count": 1,
+        "from": "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/InterfaceListener.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.InterfaceListener:onApplicationEvent(fixture.spring.events.Started)|void\"]",
+        "kind": "STA",
+        "provenance": "",
+        "to": "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/Sink.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.Sink:record(java.lang.String)|void\"]"
+      },
+      {
+        "certainty": "direct",
+        "count": 1,
+        "from": "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/Listeners.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.Listeners:onAnyApplicationEvent(org.springframework.context.ApplicationEvent)|void\"]",
+        "kind": "STA",
+        "provenance": "",
+        "to": "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/Sink.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.Sink:record(java.lang.String)|void\"]"
+      },
+      {
+        "certainty": "direct",
+        "count": 1,
+        "from": "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/Listeners.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.Listeners:onAsyncPayload(fixture.spring.events.Created)|void\"]",
+        "kind": "STA",
+        "provenance": "",
+        "to": "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/Sink.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.Sink:record(java.lang.String)|void\"]"
+      },
+      {
+        "certainty": "direct",
+        "count": 1,
+        "from": "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/Listeners.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.Listeners:onCommittedPayload(fixture.spring.events.Created)|void\"]",
+        "kind": "STA",
+        "provenance": "",
+        "to": "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/Sink.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.Sink:record(java.lang.String)|void\"]"
+      },
+      {
+        "certainty": "direct",
+        "count": 1,
+        "from": "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/Listeners.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.Listeners:onConditionalPayload(fixture.spring.events.Created)|void\"]",
+        "kind": "STA",
+        "provenance": "",
+        "to": "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/Sink.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.Sink:record(java.lang.String)|void\"]"
+      },
+      {
+        "certainty": "direct",
+        "count": 1,
+        "from": "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/Listeners.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.Listeners:onExplicitPayload()|void\"]",
+        "kind": "STA",
+        "provenance": "",
+        "to": "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/Sink.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.Sink:record(java.lang.String)|void\"]"
+      },
+      {
+        "certainty": "direct",
+        "count": 1,
+        "from": "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/Listeners.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.Listeners:onOtherCreated(fixture.spring.other.Created)|void\"]",
+        "kind": "STA",
+        "provenance": "",
+        "to": "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/Sink.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.Sink:record(java.lang.String)|void\"]"
+      },
+      {
+        "certainty": "direct",
+        "count": 1,
+        "from": "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/Listeners.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.Listeners:onPayload(fixture.spring.events.Created)|void\"]",
+        "kind": "STA",
+        "provenance": "",
+        "to": "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/Sink.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.Sink:record(java.lang.String)|void\"]"
+      },
+      {
+        "certainty": "direct",
+        "count": 1,
+        "from": "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/Listeners.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.Listeners:onPayloadEnvelope(org.springframework.context.PayloadApplicationEvent)|void\"]",
+        "kind": "STA",
+        "provenance": "",
+        "to": "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/Sink.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.Sink:record(java.lang.String)|void\"]"
+      },
+      {
+        "certainty": "direct",
+        "count": 1,
+        "from": "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/Listeners.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.Listeners:onPretendAnnotation(fixture.spring.events.Created)|void\"]",
+        "kind": "STA",
+        "provenance": "",
+        "to": "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/Sink.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.Sink:record(java.lang.String)|void\"]"
+      },
+      {
+        "certainty": "direct",
+        "count": 1,
+        "from": "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/Listeners.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.Listeners:ordinaryMethod(fixture.spring.events.Created)|void\"]",
+        "kind": "STA",
+        "provenance": "",
+        "to": "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/Sink.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.Sink:record(java.lang.String)|void\"]"
+      },
+      {
+        "certainty": "direct",
+        "count": 1,
+        "from": "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/PretendPublisher.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.PretendPublisher:publishEvent(fixture.spring.events.Created)|void\"]",
+        "kind": "STA",
+        "provenance": "",
+        "to": "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/Sink.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.Sink:record(java.lang.String)|void\"]"
       },
       {
         "certainty": "direct",
@@ -594,6 +1157,14 @@
         "kind": "call",
         "provenance": "typescript.compiler",
         "to": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/observers.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"subscribe\\\\\\\",\\\\\\\"(callback: Listener): void\\\\\\\"]\\\",0]\"]"
+      },
+      {
+        "certainty": "dispatch",
+        "count": 1,
+        "from": "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/Publisher.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.Publisher:sameNamedApi(fixture.spring.PretendPublisher)|void\"]",
+        "kind": "VIR",
+        "provenance": "",
+        "to": "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/PretendPublisher.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.PretendPublisher:publishEvent(fixture.spring.events.Created)|void\"]"
       },
       {
         "certainty": "possible",
@@ -1505,6 +2076,29 @@
         "[\"csharp\",\"@repo/dotnet-collisions/Collisions.sln\",\"@repo/dotnet-collisions/EntryB/Program.cs\",\"@repo/dotnet-collisions/Collisions.sln|[EntryB]::Program::Main()\"]",
         "[\"csharp\",\"@repo/dotnet-collisions/Collisions.sln\",\"@repo/dotnet-collisions/EntryB/Program.cs\",\"@repo/dotnet-collisions/Collisions.sln|[EntryB]::Worker::Seed()\"]",
         "[\"csharp\",\"@repo/dotnet-collisions/Collisions.sln\",\"@repo/dotnet-collisions/EntryB/Program.cs\",\"@repo/dotnet-collisions/Collisions.sln|[EntryB]::Worker::op_Addition(Worker,Worker)\"]",
+        "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Dispatch.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.Dispatch::AnonymousDeferred(MediatR.ISender,System.Threading.CancellationToken)\"]",
+        "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Dispatch.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.Dispatch::Conditional(MediatR.ISender,System.Boolean,System.Threading.CancellationToken)\"]",
+        "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Dispatch.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.Dispatch::CustomSend(DispatchAppA.FakeSender)\"]",
+        "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Dispatch.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.Dispatch::DerivedDoesNotUseBaseHandler(MediatR.ISender,System.Threading.CancellationToken)\"]",
+        "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Dispatch.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.Dispatch::ErasedContract(MediatR.ISender,MediatR.IRequest<System.Int32>,System.Threading.CancellationToken)\"]",
+        "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Dispatch.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.Dispatch::ErasedObject(MediatR.ISender,System.Object,System.Threading.CancellationToken)\"]",
+        "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Dispatch.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.Dispatch::LocalFunction(MediatR.ISender,System.Threading.CancellationToken)\"]",
+        "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Dispatch.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.Dispatch::NamedArguments(MediatR.ISender,System.Threading.CancellationToken)\"]",
+        "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Dispatch.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.Dispatch::OpenGenericDeferred(MediatR.ISender,System.Threading.CancellationToken)\"]",
+        "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Dispatch.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.Dispatch::PublishChanged(MediatR.IPublisher,System.Threading.CancellationToken)\"]",
+        "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Dispatch.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.Dispatch::SendPing(MediatR.ISender,System.Threading.CancellationToken)\"]",
+        "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Dispatch.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.Dispatch::SendReset(MediatR.ISender,System.Threading.CancellationToken)\"]",
+        "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Dispatch.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.Dispatch::UnknownRequest(MediatR.ISender,System.Threading.CancellationToken)\"]",
+        "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Handlers.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.BaseRequestHandler::Handle(DispatchContracts.BaseRequest,System.Threading.CancellationToken)\"]",
+        "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Handlers.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.ChangedHandlerBase::Handle(DispatchContracts.Changed,System.Threading.CancellationToken)\"]",
+        "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Handlers.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.FirstChangedHandler::Handle(DispatchContracts.Changed,System.Threading.CancellationToken)\"]",
+        "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Handlers.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.OpenGenericHandler<T>::Handle(DispatchContracts.GenericRequest<T>,System.Threading.CancellationToken)\"]",
+        "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Handlers.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.PingHandler::Handle(DispatchContracts.Ping,System.Threading.CancellationToken)\"]",
+        "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Handlers.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.ResetHandler::MediatR.IRequestHandler<DispatchContracts.Reset>.Handle(DispatchContracts.Reset,System.Threading.CancellationToken)\"]",
+        "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppB/Dispatch.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppB]::DispatchAppB.ChangedHandler::Handle(DispatchContracts.Changed,System.Threading.CancellationToken)\"]",
+        "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppB/Dispatch.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppB]::DispatchAppB.Dispatch::PublishChanged(MediatR.IPublisher,System.Threading.CancellationToken)\"]",
+        "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppB/Dispatch.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppB]::DispatchAppB.Dispatch::SendPing(MediatR.ISender,System.Threading.CancellationToken)\"]",
+        "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppB/Dispatch.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppB]::DispatchAppB.PingHandler::Handle(DispatchContracts.Ping,System.Threading.CancellationToken)\"]",
         "[\"java\",\"@repo/maven/reactor\",\"@repo/maven/profile-library/src/main/java/fixture/ProfileOnly.java\",\"[\\\"@repo/maven/reactor\\\",\\\"@repo/maven/profile-library\\\",\\\"main\\\"]|fixture.ProfileOnly:fromActiveProfile()|void\"]",
         "[\"java\",\"@repo/maven/reactor\",\"@repo/maven/reactor/app/src/main-custom/java/fixture/App.java\",\"[\\\"@repo/maven/reactor\\\",\\\"@repo/maven/reactor/app\\\",\\\"main\\\"]|fixture.App:constructorOnly()|void\"]",
         "[\"java\",\"@repo/maven/reactor\",\"@repo/maven/reactor/app/src/main-custom/java/fixture/App.java\",\"[\\\"@repo/maven/reactor\\\",\\\"@repo/maven/reactor/app\\\",\\\"main\\\"]|fixture.App:disconnected()|void\"]",
@@ -1513,6 +2107,23 @@
         "[\"java\",\"@repo/maven/reactor\",\"@repo/maven/reactor/app/src/main-custom/java/fixture/App.java\",\"[\\\"@repo/maven/reactor\\\",\\\"@repo/maven/reactor/app\\\",\\\"main\\\"]|fixture.App:protectedMethod()|void\"]",
         "[\"java\",\"@repo/maven/reactor\",\"@repo/maven/reactor/app/src/main-custom/java/fixture/App.java\",\"[\\\"@repo/maven/reactor\\\",\\\"@repo/maven/reactor/app\\\",\\\"main\\\"]|fixture.App:toString(int)|java.lang.String\"]",
         "[\"java\",\"@repo/maven/reactor\",\"@repo/maven/reactor/app/src/test/java/fixture/AppTest.java\",\"[\\\"@repo/maven/reactor\\\",\\\"@repo/maven/reactor/app\\\",\\\"test\\\"]|fixture.AppTest:testOnly()|void\"]",
+        "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/InterfaceListener.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.InterfaceListener:onApplicationEvent(fixture.spring.events.Started)|void\"]",
+        "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/Listeners.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.Listeners:onAnyApplicationEvent(org.springframework.context.ApplicationEvent)|void\"]",
+        "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/Listeners.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.Listeners:onAsyncPayload(fixture.spring.events.Created)|void\"]",
+        "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/Listeners.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.Listeners:onCommittedPayload(fixture.spring.events.Created)|void\"]",
+        "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/Listeners.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.Listeners:onConditionalPayload(fixture.spring.events.Created)|void\"]",
+        "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/Listeners.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.Listeners:onExplicitPayload()|void\"]",
+        "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/Listeners.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.Listeners:onOtherCreated(fixture.spring.other.Created)|void\"]",
+        "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/Listeners.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.Listeners:onPayload(fixture.spring.events.Created)|void\"]",
+        "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/Listeners.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.Listeners:onPayloadEnvelope(org.springframework.context.PayloadApplicationEvent)|void\"]",
+        "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/Listeners.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.Listeners:onPretendAnnotation(fixture.spring.events.Created)|void\"]",
+        "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/Listeners.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.Listeners:ordinaryMethod(fixture.spring.events.Created)|void\"]",
+        "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/Publisher.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.Publisher:publishApplicationEvent(org.springframework.context.ApplicationEventPublisher)|void\"]",
+        "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/Publisher.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.Publisher:publishErased(org.springframework.context.ApplicationEventPublisher,java.lang.Object)|void\"]",
+        "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/Publisher.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.Publisher:publishGeneric(org.springframework.context.ApplicationEventPublisher,java.lang.Object)|void\"]",
+        "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/Publisher.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.Publisher:publishPayload(org.springframework.context.ApplicationEventPublisher)|void\"]",
+        "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/Publisher.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.Publisher:publishPayloadTwice(org.springframework.context.ApplicationEventPublisher)|void\"]",
+        "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/Publisher.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.Publisher:sameNamedApi(fixture.spring.PretendPublisher)|void\"]",
         "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/app/api/route.ts\",\"<module>\"]",
         "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/app/api/route.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"GET\\\\\\\",\\\\\\\"(): Response\\\\\\\"]\\\",0]\"]",
         "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/app/page.tsx\",\"<module>\"]",
@@ -1635,6 +2246,19 @@
             "start": 47
           },
           "symbol": "[\"java\",\"@repo/maven/reactor\",\"@repo/maven/reactor/app/target/generated-sources/fixture/fixture/GeneratedThing.java\",\"[\\\"@repo/maven/reactor\\\",\\\"@repo/maven/reactor/app\\\",\\\"main\\\"]|fixture.GeneratedThing:generated()|void\"]"
+        },
+        {
+          "body": [],
+          "build": "@repo/spring-events",
+          "diagnostics": [],
+          "file": "@repo/spring-events/src/main/java/fixture/spring/Sink.java",
+          "language": "java",
+          "project": "codegraph.fixture:spring-events",
+          "span": {
+            "end": 121,
+            "start": 77
+          },
+          "symbol": "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/Sink.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.Sink:record(java.lang.String)|void\"]"
         },
         {
           "body": [
@@ -1762,6 +2386,177 @@
             {
               "kind": "evaluate",
               "span": {
+                "end": 1036,
+                "start": 1003
+              },
+              "value": {
+                "items": [
+                  {
+                    "calls": [],
+                    "kind": "value",
+                    "regions": [],
+                    "span": {
+                      "end": 1034,
+                      "start": 1015
+                    },
+                    "text": "\"committed payload\""
+                  },
+                  {
+                    "calls": [
+                      {
+                        "diagnostic": null,
+                        "label": "Sink.record(\"committed payload\")",
+                        "span": {
+                          "end": 1035,
+                          "start": 1003
+                        },
+                        "targets": [
+                          {
+                            "certainty": "direct",
+                            "provenance": "java.javac.source-call",
+                            "symbol": "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/Sink.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.Sink:record(java.lang.String)|void\"]"
+                          }
+                        ]
+                      }
+                    ],
+                    "kind": "value",
+                    "regions": [],
+                    "span": {
+                      "end": 1035,
+                      "start": 1003
+                    },
+                    "text": "Sink.record(\"committed payload\")"
+                  }
+                ],
+                "kind": "sequence",
+                "span": {
+                  "end": 1035,
+                  "start": 1003
+                }
+              }
+            }
+          ],
+          "build": "@repo/spring-events",
+          "diagnostics": [],
+          "file": "@repo/spring-events/src/main/java/fixture/spring/Listeners.java",
+          "language": "java",
+          "project": "codegraph.fixture:spring-events",
+          "span": {
+            "end": 1038,
+            "start": 884
+          },
+          "symbol": "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/Listeners.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.Listeners:onCommittedPayload(fixture.spring.events.Created)|void\"]"
+        },
+        {
+          "body": [
+            {
+              "kind": "evaluate",
+              "span": {
+                "end": 1045,
+                "start": 981
+              },
+              "value": {
+                "items": [
+                  {
+                    "calls": [],
+                    "kind": "value",
+                    "regions": [],
+                    "span": {
+                      "end": 990,
+                      "start": 981
+                    },
+                    "text": "publisher"
+                  },
+                  {
+                    "items": [
+                      {
+                        "calls": [],
+                        "kind": "value",
+                        "regions": [],
+                        "span": {
+                          "end": 1042,
+                          "start": 1016
+                        },
+                        "text": "\"not a Spring publication\""
+                      },
+                      {
+                        "calls": [
+                          {
+                            "diagnostic": "Some call targets are excluded from the indexed graph",
+                            "label": "new Created(\"not a Spring publication\")",
+                            "span": {
+                              "end": 1043,
+                              "start": 1004
+                            },
+                            "targets": []
+                          }
+                        ],
+                        "kind": "value",
+                        "regions": [],
+                        "span": {
+                          "end": 1043,
+                          "start": 1004
+                        },
+                        "text": "new Created(\"not a Spring publication\")"
+                      }
+                    ],
+                    "kind": "sequence",
+                    "span": {
+                      "end": 1043,
+                      "start": 1004
+                    }
+                  },
+                  {
+                    "calls": [
+                      {
+                        "diagnostic": null,
+                        "label": "publisher.publishEvent(new Created(\"not a Spring publication\"))",
+                        "span": {
+                          "end": 1044,
+                          "start": 981
+                        },
+                        "targets": [
+                          {
+                            "certainty": "direct",
+                            "provenance": "java.javac.source-call",
+                            "symbol": "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/PretendPublisher.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.PretendPublisher:publishEvent(fixture.spring.events.Created)|void\"]"
+                          }
+                        ]
+                      }
+                    ],
+                    "kind": "value",
+                    "regions": [],
+                    "span": {
+                      "end": 1044,
+                      "start": 981
+                    },
+                    "text": "publisher.publishEvent(new Created(\"not a Spring publication\"))"
+                  }
+                ],
+                "kind": "sequence",
+                "span": {
+                  "end": 1044,
+                  "start": 981
+                }
+              }
+            }
+          ],
+          "build": "@repo/spring-events",
+          "diagnostics": [],
+          "file": "@repo/spring-events/src/main/java/fixture/spring/Publisher.java",
+          "language": "java",
+          "project": "codegraph.fixture:spring-events",
+          "span": {
+            "end": 1051,
+            "start": 918
+          },
+          "symbol": "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/Publisher.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.Publisher:sameNamedApi(fixture.spring.PretendPublisher)|void\"]"
+        },
+        {
+          "body": [
+            {
+              "kind": "evaluate",
+              "span": {
                 "end": 1088,
                 "start": 1074
               },
@@ -1845,6 +2640,72 @@
             "start": 1033
           },
           "symbol": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/observers.ts\",\"[\\\"[\\\\\\\"[\\\\\\\\\\\\\\\"[\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"<module>\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"ClassDeclaration\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"MultipleInstances\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"]\\\\\\\\\\\\\\\",0]\\\\\\\",\\\\\\\"MethodDeclaration\\\\\\\",\\\\\\\"triggerUpdate\\\\\\\",\\\\\\\"(): void\\\\\\\"]\\\",0]\"]"
+        },
+        {
+          "body": [
+            {
+              "kind": "evaluate",
+              "span": {
+                "end": 1147,
+                "start": 1118
+              },
+              "value": {
+                "items": [
+                  {
+                    "calls": [],
+                    "kind": "value",
+                    "regions": [],
+                    "span": {
+                      "end": 1145,
+                      "start": 1130
+                    },
+                    "text": "\"async payload\""
+                  },
+                  {
+                    "calls": [
+                      {
+                        "diagnostic": null,
+                        "label": "Sink.record(\"async payload\")",
+                        "span": {
+                          "end": 1146,
+                          "start": 1118
+                        },
+                        "targets": [
+                          {
+                            "certainty": "direct",
+                            "provenance": "java.javac.source-call",
+                            "symbol": "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/Sink.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.Sink:record(java.lang.String)|void\"]"
+                          }
+                        ]
+                      }
+                    ],
+                    "kind": "value",
+                    "regions": [],
+                    "span": {
+                      "end": 1146,
+                      "start": 1118
+                    },
+                    "text": "Sink.record(\"async payload\")"
+                  }
+                ],
+                "kind": "sequence",
+                "span": {
+                  "end": 1146,
+                  "start": 1118
+                }
+              }
+            }
+          ],
+          "build": "@repo/spring-events",
+          "diagnostics": [],
+          "file": "@repo/spring-events/src/main/java/fixture/spring/Listeners.java",
+          "language": "java",
+          "project": "codegraph.fixture:spring-events",
+          "span": {
+            "end": 1149,
+            "start": 1044
+          },
+          "symbol": "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/Listeners.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.Listeners:onAsyncPayload(fixture.spring.events.Created)|void\"]"
         },
         {
           "body": [
@@ -1940,6 +2801,72 @@
             {
               "kind": "evaluate",
               "span": {
+                "end": 1278,
+                "start": 1246
+              },
+              "value": {
+                "items": [
+                  {
+                    "calls": [],
+                    "kind": "value",
+                    "regions": [],
+                    "span": {
+                      "end": 1276,
+                      "start": 1258
+                    },
+                    "text": "\"payload envelope\""
+                  },
+                  {
+                    "calls": [
+                      {
+                        "diagnostic": null,
+                        "label": "Sink.record(\"payload envelope\")",
+                        "span": {
+                          "end": 1277,
+                          "start": 1246
+                        },
+                        "targets": [
+                          {
+                            "certainty": "direct",
+                            "provenance": "java.javac.source-call",
+                            "symbol": "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/Sink.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.Sink:record(java.lang.String)|void\"]"
+                          }
+                        ]
+                      }
+                    ],
+                    "kind": "value",
+                    "regions": [],
+                    "span": {
+                      "end": 1277,
+                      "start": 1246
+                    },
+                    "text": "Sink.record(\"payload envelope\")"
+                  }
+                ],
+                "kind": "sequence",
+                "span": {
+                  "end": 1277,
+                  "start": 1246
+                }
+              }
+            }
+          ],
+          "build": "@repo/spring-events",
+          "diagnostics": [],
+          "file": "@repo/spring-events/src/main/java/fixture/spring/Listeners.java",
+          "language": "java",
+          "project": "codegraph.fixture:spring-events",
+          "span": {
+            "end": 1280,
+            "start": 1155
+          },
+          "symbol": "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/Listeners.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.Listeners:onPayloadEnvelope(org.springframework.context.PayloadApplicationEvent)|void\"]"
+        },
+        {
+          "body": [
+            {
+              "kind": "evaluate",
+              "span": {
                 "end": 1335,
                 "start": 1314
               },
@@ -2029,6 +2956,72 @@
             {
               "kind": "evaluate",
               "span": {
+                "end": 1398,
+                "start": 1365
+              },
+              "value": {
+                "items": [
+                  {
+                    "calls": [],
+                    "kind": "value",
+                    "regions": [],
+                    "span": {
+                      "end": 1396,
+                      "start": 1377
+                    },
+                    "text": "\"application event\""
+                  },
+                  {
+                    "calls": [
+                      {
+                        "diagnostic": null,
+                        "label": "Sink.record(\"application event\")",
+                        "span": {
+                          "end": 1397,
+                          "start": 1365
+                        },
+                        "targets": [
+                          {
+                            "certainty": "direct",
+                            "provenance": "java.javac.source-call",
+                            "symbol": "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/Sink.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.Sink:record(java.lang.String)|void\"]"
+                          }
+                        ]
+                      }
+                    ],
+                    "kind": "value",
+                    "regions": [],
+                    "span": {
+                      "end": 1397,
+                      "start": 1365
+                    },
+                    "text": "Sink.record(\"application event\")"
+                  }
+                ],
+                "kind": "sequence",
+                "span": {
+                  "end": 1397,
+                  "start": 1365
+                }
+              }
+            }
+          ],
+          "build": "@repo/spring-events",
+          "diagnostics": [],
+          "file": "@repo/spring-events/src/main/java/fixture/spring/Listeners.java",
+          "language": "java",
+          "project": "codegraph.fixture:spring-events",
+          "span": {
+            "end": 1400,
+            "start": 1286
+          },
+          "symbol": "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/Listeners.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.Listeners:onAnyApplicationEvent(org.springframework.context.ApplicationEvent)|void\"]"
+        },
+        {
+          "body": [
+            {
+              "kind": "evaluate",
+              "span": {
                 "end": 141,
                 "start": 118
               },
@@ -2064,6 +3057,72 @@
             "start": 70
           },
           "symbol": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/observers.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"subscribe\\\\\\\",\\\\\\\"(callback: Listener): void\\\\\\\"]\\\",0]\"]"
+        },
+        {
+          "body": [
+            {
+              "kind": "evaluate",
+              "span": {
+                "end": 1533,
+                "start": 1490
+              },
+              "value": {
+                "items": [
+                  {
+                    "calls": [],
+                    "kind": "value",
+                    "regions": [],
+                    "span": {
+                      "end": 1531,
+                      "start": 1502
+                    },
+                    "text": "\"different qualified payload\""
+                  },
+                  {
+                    "calls": [
+                      {
+                        "diagnostic": null,
+                        "label": "Sink.record(\"different qualified payload\")",
+                        "span": {
+                          "end": 1532,
+                          "start": 1490
+                        },
+                        "targets": [
+                          {
+                            "certainty": "direct",
+                            "provenance": "java.javac.source-call",
+                            "symbol": "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/Sink.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.Sink:record(java.lang.String)|void\"]"
+                          }
+                        ]
+                      }
+                    ],
+                    "kind": "value",
+                    "regions": [],
+                    "span": {
+                      "end": 1532,
+                      "start": 1490
+                    },
+                    "text": "Sink.record(\"different qualified payload\")"
+                  }
+                ],
+                "kind": "sequence",
+                "span": {
+                  "end": 1532,
+                  "start": 1490
+                }
+              }
+            }
+          ],
+          "build": "@repo/spring-events",
+          "diagnostics": [],
+          "file": "@repo/spring-events/src/main/java/fixture/spring/Listeners.java",
+          "language": "java",
+          "project": "codegraph.fixture:spring-events",
+          "span": {
+            "end": 1535,
+            "start": 1406
+          },
+          "symbol": "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/Listeners.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.Listeners:onOtherCreated(fixture.spring.other.Created)|void\"]"
         },
         {
           "body": [
@@ -2134,6 +3193,72 @@
             {
               "kind": "evaluate",
               "span": {
+                "end": 1663,
+                "start": 1629
+              },
+              "value": {
+                "items": [
+                  {
+                    "calls": [],
+                    "kind": "value",
+                    "regions": [],
+                    "span": {
+                      "end": 1661,
+                      "start": 1641
+                    },
+                    "text": "\"pretend annotation\""
+                  },
+                  {
+                    "calls": [
+                      {
+                        "diagnostic": null,
+                        "label": "Sink.record(\"pretend annotation\")",
+                        "span": {
+                          "end": 1662,
+                          "start": 1629
+                        },
+                        "targets": [
+                          {
+                            "certainty": "direct",
+                            "provenance": "java.javac.source-call",
+                            "symbol": "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/Sink.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.Sink:record(java.lang.String)|void\"]"
+                          }
+                        ]
+                      }
+                    ],
+                    "kind": "value",
+                    "regions": [],
+                    "span": {
+                      "end": 1662,
+                      "start": 1629
+                    },
+                    "text": "Sink.record(\"pretend annotation\")"
+                  }
+                ],
+                "kind": "sequence",
+                "span": {
+                  "end": 1662,
+                  "start": 1629
+                }
+              }
+            }
+          ],
+          "build": "@repo/spring-events",
+          "diagnostics": [],
+          "file": "@repo/spring-events/src/main/java/fixture/spring/Listeners.java",
+          "language": "java",
+          "project": "codegraph.fixture:spring-events",
+          "span": {
+            "end": 1665,
+            "start": 1541
+          },
+          "symbol": "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/Listeners.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.Listeners:onPretendAnnotation(fixture.spring.events.Created)|void\"]"
+        },
+        {
+          "body": [
+            {
+              "kind": "evaluate",
+              "span": {
                 "end": 1714,
                 "start": 1690
               },
@@ -2186,6 +3311,72 @@
             "start": 1638
           },
           "symbol": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/callables.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"mutatedParameter\\\\\\\",\\\\\\\"(callback: () => number): number\\\\\\\"]\\\",0]\"]"
+        },
+        {
+          "body": [
+            {
+              "kind": "evaluate",
+              "span": {
+                "end": 1745,
+                "start": 1715
+              },
+              "value": {
+                "items": [
+                  {
+                    "calls": [],
+                    "kind": "value",
+                    "regions": [],
+                    "span": {
+                      "end": 1743,
+                      "start": 1727
+                    },
+                    "text": "\"not a listener\""
+                  },
+                  {
+                    "calls": [
+                      {
+                        "diagnostic": null,
+                        "label": "Sink.record(\"not a listener\")",
+                        "span": {
+                          "end": 1744,
+                          "start": 1715
+                        },
+                        "targets": [
+                          {
+                            "certainty": "direct",
+                            "provenance": "java.javac.source-call",
+                            "symbol": "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/Sink.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.Sink:record(java.lang.String)|void\"]"
+                          }
+                        ]
+                      }
+                    ],
+                    "kind": "value",
+                    "regions": [],
+                    "span": {
+                      "end": 1744,
+                      "start": 1715
+                    },
+                    "text": "Sink.record(\"not a listener\")"
+                  }
+                ],
+                "kind": "sequence",
+                "span": {
+                  "end": 1744,
+                  "start": 1715
+                }
+              }
+            }
+          ],
+          "build": "@repo/spring-events",
+          "diagnostics": [],
+          "file": "@repo/spring-events/src/main/java/fixture/spring/Listeners.java",
+          "language": "java",
+          "project": "codegraph.fixture:spring-events",
+          "span": {
+            "end": 1747,
+            "start": 1671
+          },
+          "symbol": "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/Listeners.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.Listeners:ordinaryMethod(fixture.spring.events.Created)|void\"]"
         },
         {
           "body": [
@@ -2573,6 +3764,72 @@
             {
               "kind": "evaluate",
               "span": {
+                "end": 250,
+                "start": 217
+              },
+              "value": {
+                "items": [
+                  {
+                    "calls": [],
+                    "kind": "value",
+                    "regions": [],
+                    "span": {
+                      "end": 248,
+                      "start": 229
+                    },
+                    "text": "\"pretend publisher\""
+                  },
+                  {
+                    "calls": [
+                      {
+                        "diagnostic": null,
+                        "label": "Sink.record(\"pretend publisher\")",
+                        "span": {
+                          "end": 249,
+                          "start": 217
+                        },
+                        "targets": [
+                          {
+                            "certainty": "direct",
+                            "provenance": "java.javac.source-call",
+                            "symbol": "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/Sink.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.Sink:record(java.lang.String)|void\"]"
+                          }
+                        ]
+                      }
+                    ],
+                    "kind": "value",
+                    "regions": [],
+                    "span": {
+                      "end": 249,
+                      "start": 217
+                    },
+                    "text": "Sink.record(\"pretend publisher\")"
+                  }
+                ],
+                "kind": "sequence",
+                "span": {
+                  "end": 249,
+                  "start": 217
+                }
+              }
+            }
+          ],
+          "build": "@repo/spring-events",
+          "diagnostics": [],
+          "file": "@repo/spring-events/src/main/java/fixture/spring/PretendPublisher.java",
+          "language": "java",
+          "project": "codegraph.fixture:spring-events",
+          "span": {
+            "end": 252,
+            "start": 175
+          },
+          "symbol": "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/PretendPublisher.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.PretendPublisher:publishEvent(fixture.spring.events.Created)|void\"]"
+        },
+        {
+          "body": [
+            {
+              "kind": "evaluate",
+              "span": {
                 "end": 258,
                 "start": 184
               },
@@ -2906,6 +4163,105 @@
             {
               "kind": "evaluate",
               "span": {
+                "end": 320,
+                "start": 273
+              },
+              "value": {
+                "items": [
+                  {
+                    "calls": [],
+                    "kind": "value",
+                    "regions": [],
+                    "span": {
+                      "end": 282,
+                      "start": 273
+                    },
+                    "text": "publisher"
+                  },
+                  {
+                    "items": [
+                      {
+                        "calls": [],
+                        "kind": "value",
+                        "regions": [],
+                        "span": {
+                          "end": 317,
+                          "start": 308
+                        },
+                        "text": "\"enabled\""
+                      },
+                      {
+                        "calls": [
+                          {
+                            "diagnostic": "Some call targets are excluded from the indexed graph",
+                            "label": "new Created(\"enabled\")",
+                            "span": {
+                              "end": 318,
+                              "start": 296
+                            },
+                            "targets": []
+                          }
+                        ],
+                        "kind": "value",
+                        "regions": [],
+                        "span": {
+                          "end": 318,
+                          "start": 296
+                        },
+                        "text": "new Created(\"enabled\")"
+                      }
+                    ],
+                    "kind": "sequence",
+                    "span": {
+                      "end": 318,
+                      "start": 296
+                    }
+                  },
+                  {
+                    "calls": [
+                      {
+                        "diagnostic": "Compiler target is external, excluded or ambiguous in this compile context",
+                        "label": "publisher.publishEvent(new Created(\"enabled\"))",
+                        "span": {
+                          "end": 319,
+                          "start": 273
+                        },
+                        "targets": []
+                      }
+                    ],
+                    "kind": "value",
+                    "regions": [],
+                    "span": {
+                      "end": 319,
+                      "start": 273
+                    },
+                    "text": "publisher.publishEvent(new Created(\"enabled\"))"
+                  }
+                ],
+                "kind": "sequence",
+                "span": {
+                  "end": 319,
+                  "start": 273
+                }
+              }
+            }
+          ],
+          "build": "@repo/spring-events",
+          "diagnostics": [],
+          "file": "@repo/spring-events/src/main/java/fixture/spring/Publisher.java",
+          "language": "java",
+          "project": "codegraph.fixture:spring-events",
+          "span": {
+            "end": 326,
+            "start": 199
+          },
+          "symbol": "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/Publisher.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.Publisher:publishPayload(org.springframework.context.ApplicationEventPublisher)|void\"]"
+        },
+        {
+          "body": [
+            {
+              "kind": "evaluate",
+              "span": {
                 "end": 325,
                 "start": 319
               },
@@ -3056,6 +4412,256 @@
             "start": 334
           },
           "symbol": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/app/page.tsx\",\"[\\\"[\\\\\\\"[\\\\\\\\\\\\\\\"[\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"[\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"[\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"<module>\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"FunctionDeclaration\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"Page\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"(): Element\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"]\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",0]\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"ArrowFunction\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"argument:0\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"a9626b658fcf55fa3ae99d3b717c6b03b415c2bdb246a8a538d72beff607706e\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"]\\\\\\\\\\\\\\\",0]\\\\\\\",\\\\\\\"ArrowFunction\\\\\\\",\\\\\\\"return\\\\\\\",\\\\\\\"c4dfcc9e9a3530d572814c5a04475249bfba1d614145dde1c36a1dd4722a5656\\\\\\\"]\\\",0]\"]"
+        },
+        {
+          "body": [
+            {
+              "kind": "evaluate",
+              "span": {
+                "end": 365,
+                "start": 325
+              },
+              "value": {
+                "items": [
+                  {
+                    "calls": [],
+                    "kind": "value",
+                    "regions": [],
+                    "span": {
+                      "end": 363,
+                      "start": 337
+                    },
+                    "text": "\"typed interface listener\""
+                  },
+                  {
+                    "calls": [
+                      {
+                        "diagnostic": null,
+                        "label": "Sink.record(\"typed interface listener\")",
+                        "span": {
+                          "end": 364,
+                          "start": 325
+                        },
+                        "targets": [
+                          {
+                            "certainty": "direct",
+                            "provenance": "java.javac.source-call",
+                            "symbol": "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/Sink.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.Sink:record(java.lang.String)|void\"]"
+                          }
+                        ]
+                      }
+                    ],
+                    "kind": "value",
+                    "regions": [],
+                    "span": {
+                      "end": 364,
+                      "start": 325
+                    },
+                    "text": "Sink.record(\"typed interface listener\")"
+                  }
+                ],
+                "kind": "sequence",
+                "span": {
+                  "end": 364,
+                  "start": 325
+                }
+              }
+            }
+          ],
+          "build": "@repo/spring-events",
+          "diagnostics": [],
+          "file": "@repo/spring-events/src/main/java/fixture/spring/InterfaceListener.java",
+          "language": "java",
+          "project": "codegraph.fixture:spring-events",
+          "span": {
+            "end": 367,
+            "start": 263
+          },
+          "symbol": "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/InterfaceListener.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.InterfaceListener:onApplicationEvent(fixture.spring.events.Started)|void\"]"
+        },
+        {
+          "body": [
+            {
+              "kind": "evaluate",
+              "span": {
+                "end": 456,
+                "start": 411
+              },
+              "value": {
+                "items": [
+                  {
+                    "calls": [],
+                    "kind": "value",
+                    "regions": [],
+                    "span": {
+                      "end": 420,
+                      "start": 411
+                    },
+                    "text": "publisher"
+                  },
+                  {
+                    "items": [
+                      {
+                        "calls": [],
+                        "kind": "value",
+                        "regions": [],
+                        "span": {
+                          "end": 453,
+                          "start": 446
+                        },
+                        "text": "\"first\""
+                      },
+                      {
+                        "calls": [
+                          {
+                            "diagnostic": "Some call targets are excluded from the indexed graph",
+                            "label": "new Created(\"first\")",
+                            "span": {
+                              "end": 454,
+                              "start": 434
+                            },
+                            "targets": []
+                          }
+                        ],
+                        "kind": "value",
+                        "regions": [],
+                        "span": {
+                          "end": 454,
+                          "start": 434
+                        },
+                        "text": "new Created(\"first\")"
+                      }
+                    ],
+                    "kind": "sequence",
+                    "span": {
+                      "end": 454,
+                      "start": 434
+                    }
+                  },
+                  {
+                    "calls": [
+                      {
+                        "diagnostic": "Compiler target is external, excluded or ambiguous in this compile context",
+                        "label": "publisher.publishEvent(new Created(\"first\"))",
+                        "span": {
+                          "end": 455,
+                          "start": 411
+                        },
+                        "targets": []
+                      }
+                    ],
+                    "kind": "value",
+                    "regions": [],
+                    "span": {
+                      "end": 455,
+                      "start": 411
+                    },
+                    "text": "publisher.publishEvent(new Created(\"first\"))"
+                  }
+                ],
+                "kind": "sequence",
+                "span": {
+                  "end": 455,
+                  "start": 411
+                }
+              }
+            },
+            {
+              "kind": "evaluate",
+              "span": {
+                "end": 511,
+                "start": 465
+              },
+              "value": {
+                "items": [
+                  {
+                    "calls": [],
+                    "kind": "value",
+                    "regions": [],
+                    "span": {
+                      "end": 474,
+                      "start": 465
+                    },
+                    "text": "publisher"
+                  },
+                  {
+                    "items": [
+                      {
+                        "calls": [],
+                        "kind": "value",
+                        "regions": [],
+                        "span": {
+                          "end": 508,
+                          "start": 500
+                        },
+                        "text": "\"second\""
+                      },
+                      {
+                        "calls": [
+                          {
+                            "diagnostic": "Some call targets are excluded from the indexed graph",
+                            "label": "new Created(\"second\")",
+                            "span": {
+                              "end": 509,
+                              "start": 488
+                            },
+                            "targets": []
+                          }
+                        ],
+                        "kind": "value",
+                        "regions": [],
+                        "span": {
+                          "end": 509,
+                          "start": 488
+                        },
+                        "text": "new Created(\"second\")"
+                      }
+                    ],
+                    "kind": "sequence",
+                    "span": {
+                      "end": 509,
+                      "start": 488
+                    }
+                  },
+                  {
+                    "calls": [
+                      {
+                        "diagnostic": "Compiler target is external, excluded or ambiguous in this compile context",
+                        "label": "publisher.publishEvent(new Created(\"second\"))",
+                        "span": {
+                          "end": 510,
+                          "start": 465
+                        },
+                        "targets": []
+                      }
+                    ],
+                    "kind": "value",
+                    "regions": [],
+                    "span": {
+                      "end": 510,
+                      "start": 465
+                    },
+                    "text": "publisher.publishEvent(new Created(\"second\"))"
+                  }
+                ],
+                "kind": "sequence",
+                "span": {
+                  "end": 510,
+                  "start": 465
+                }
+              }
+            }
+          ],
+          "build": "@repo/spring-events",
+          "diagnostics": [],
+          "file": "@repo/spring-events/src/main/java/fixture/spring/Publisher.java",
+          "language": "java",
+          "project": "codegraph.fixture:spring-events",
+          "span": {
+            "end": 517,
+            "start": 332
+          },
+          "symbol": "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/Publisher.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.Publisher:publishPayloadTwice(org.springframework.context.ApplicationEventPublisher)|void\"]"
         },
         {
           "body": [
@@ -3331,6 +4937,237 @@
             {
               "kind": "evaluate",
               "span": {
+                "end": 601,
+                "start": 578
+              },
+              "value": {
+                "items": [
+                  {
+                    "calls": [],
+                    "kind": "value",
+                    "regions": [],
+                    "span": {
+                      "end": 599,
+                      "start": 590
+                    },
+                    "text": "\"payload\""
+                  },
+                  {
+                    "calls": [
+                      {
+                        "diagnostic": null,
+                        "label": "Sink.record(\"payload\")",
+                        "span": {
+                          "end": 600,
+                          "start": 578
+                        },
+                        "targets": [
+                          {
+                            "certainty": "direct",
+                            "provenance": "java.javac.source-call",
+                            "symbol": "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/Sink.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.Sink:record(java.lang.String)|void\"]"
+                          }
+                        ]
+                      }
+                    ],
+                    "kind": "value",
+                    "regions": [],
+                    "span": {
+                      "end": 600,
+                      "start": 578
+                    },
+                    "text": "Sink.record(\"payload\")"
+                  }
+                ],
+                "kind": "sequence",
+                "span": {
+                  "end": 600,
+                  "start": 578
+                }
+              }
+            }
+          ],
+          "build": "@repo/spring-events",
+          "diagnostics": [],
+          "file": "@repo/spring-events/src/main/java/fixture/spring/Listeners.java",
+          "language": "java",
+          "project": "codegraph.fixture:spring-events",
+          "span": {
+            "end": 603,
+            "start": 520
+          },
+          "symbol": "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/Listeners.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.Listeners:onPayload(fixture.spring.events.Created)|void\"]"
+        },
+        {
+          "body": [
+            {
+              "kind": "evaluate",
+              "span": {
+                "end": 648,
+                "start": 606
+              },
+              "value": {
+                "items": [
+                  {
+                    "calls": [],
+                    "kind": "value",
+                    "regions": [],
+                    "span": {
+                      "end": 615,
+                      "start": 606
+                    },
+                    "text": "publisher"
+                  },
+                  {
+                    "items": [
+                      {
+                        "calls": [],
+                        "kind": "value",
+                        "regions": [],
+                        "span": {
+                          "end": 645,
+                          "start": 641
+                        },
+                        "text": "this"
+                      },
+                      {
+                        "calls": [
+                          {
+                            "diagnostic": "Some call targets are excluded from the indexed graph",
+                            "label": "new Started(this)",
+                            "span": {
+                              "end": 646,
+                              "start": 629
+                            },
+                            "targets": []
+                          }
+                        ],
+                        "kind": "value",
+                        "regions": [],
+                        "span": {
+                          "end": 646,
+                          "start": 629
+                        },
+                        "text": "new Started(this)"
+                      }
+                    ],
+                    "kind": "sequence",
+                    "span": {
+                      "end": 646,
+                      "start": 629
+                    }
+                  },
+                  {
+                    "calls": [
+                      {
+                        "diagnostic": "Compiler target is external, excluded or ambiguous in this compile context",
+                        "label": "publisher.publishEvent(new Started(this))",
+                        "span": {
+                          "end": 647,
+                          "start": 606
+                        },
+                        "targets": []
+                      }
+                    ],
+                    "kind": "value",
+                    "regions": [],
+                    "span": {
+                      "end": 647,
+                      "start": 606
+                    },
+                    "text": "publisher.publishEvent(new Started(this))"
+                  }
+                ],
+                "kind": "sequence",
+                "span": {
+                  "end": 647,
+                  "start": 606
+                }
+              }
+            }
+          ],
+          "build": "@repo/spring-events",
+          "diagnostics": [],
+          "file": "@repo/spring-events/src/main/java/fixture/spring/Publisher.java",
+          "language": "java",
+          "project": "codegraph.fixture:spring-events",
+          "span": {
+            "end": 654,
+            "start": 523
+          },
+          "symbol": "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/Publisher.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.Publisher:publishApplicationEvent(org.springframework.context.ApplicationEventPublisher)|void\"]"
+        },
+        {
+          "body": [
+            {
+              "kind": "evaluate",
+              "span": {
+                "end": 719,
+                "start": 687
+              },
+              "value": {
+                "items": [
+                  {
+                    "calls": [],
+                    "kind": "value",
+                    "regions": [],
+                    "span": {
+                      "end": 717,
+                      "start": 699
+                    },
+                    "text": "\"explicit payload\""
+                  },
+                  {
+                    "calls": [
+                      {
+                        "diagnostic": null,
+                        "label": "Sink.record(\"explicit payload\")",
+                        "span": {
+                          "end": 718,
+                          "start": 687
+                        },
+                        "targets": [
+                          {
+                            "certainty": "direct",
+                            "provenance": "java.javac.source-call",
+                            "symbol": "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/Sink.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.Sink:record(java.lang.String)|void\"]"
+                          }
+                        ]
+                      }
+                    ],
+                    "kind": "value",
+                    "regions": [],
+                    "span": {
+                      "end": 718,
+                      "start": 687
+                    },
+                    "text": "Sink.record(\"explicit payload\")"
+                  }
+                ],
+                "kind": "sequence",
+                "span": {
+                  "end": 718,
+                  "start": 687
+                }
+              }
+            }
+          ],
+          "build": "@repo/spring-events",
+          "diagnostics": [],
+          "file": "@repo/spring-events/src/main/java/fixture/spring/Listeners.java",
+          "language": "java",
+          "project": "codegraph.fixture:spring-events",
+          "span": {
+            "end": 721,
+            "start": 609
+          },
+          "symbol": "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/Listeners.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.Listeners:onExplicitPayload()|void\"]"
+        },
+        {
+          "body": [
+            {
+              "kind": "evaluate",
+              "span": {
                 "end": 726,
                 "start": 696
               },
@@ -3514,6 +5351,76 @@
             "start": 694
           },
           "symbol": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/observers.ts\",\"[\\\"[\\\\\\\"[\\\\\\\\\\\\\\\"[\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"<module>\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"ClassDeclaration\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"StaticBus\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"]\\\\\\\\\\\\\\\",0]\\\\\\\",\\\\\\\"MethodDeclaration\\\\\\\",\\\\\\\"onUpdate\\\\\\\",\\\\\\\"(callback: Listener): void\\\\\\\"]\\\",0]\"]"
+        },
+        {
+          "body": [
+            {
+              "kind": "evaluate",
+              "span": {
+                "end": 777,
+                "start": 747
+              },
+              "value": {
+                "items": [
+                  {
+                    "calls": [],
+                    "kind": "value",
+                    "regions": [],
+                    "span": {
+                      "end": 756,
+                      "start": 747
+                    },
+                    "text": "publisher"
+                  },
+                  {
+                    "calls": [],
+                    "kind": "value",
+                    "regions": [],
+                    "span": {
+                      "end": 775,
+                      "start": 770
+                    },
+                    "text": "event"
+                  },
+                  {
+                    "calls": [
+                      {
+                        "diagnostic": "Compiler target is external, excluded or ambiguous in this compile context",
+                        "label": "publisher.publishEvent(event)",
+                        "span": {
+                          "end": 776,
+                          "start": 747
+                        },
+                        "targets": []
+                      }
+                    ],
+                    "kind": "value",
+                    "regions": [],
+                    "span": {
+                      "end": 776,
+                      "start": 747
+                    },
+                    "text": "publisher.publishEvent(event)"
+                  }
+                ],
+                "kind": "sequence",
+                "span": {
+                  "end": 776,
+                  "start": 747
+                }
+              }
+            }
+          ],
+          "build": "@repo/spring-events",
+          "diagnostics": [],
+          "file": "@repo/spring-events/src/main/java/fixture/spring/Publisher.java",
+          "language": "java",
+          "project": "codegraph.fixture:spring-events",
+          "span": {
+            "end": 783,
+            "start": 660
+          },
+          "symbol": "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/Publisher.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.Publisher:publishErased(org.springframework.context.ApplicationEventPublisher,java.lang.Object)|void\"]"
         },
         {
           "body": [
@@ -3768,6 +5675,142 @@
             "start": 791
           },
           "symbol": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/callables.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"immutableAlias\\\\\\\",\\\\\\\"(): number\\\\\\\"]\\\",0]\"]"
+        },
+        {
+          "body": [
+            {
+              "kind": "evaluate",
+              "span": {
+                "end": 876,
+                "start": 841
+              },
+              "value": {
+                "items": [
+                  {
+                    "calls": [],
+                    "kind": "value",
+                    "regions": [],
+                    "span": {
+                      "end": 874,
+                      "start": 853
+                    },
+                    "text": "\"conditional payload\""
+                  },
+                  {
+                    "calls": [
+                      {
+                        "diagnostic": null,
+                        "label": "Sink.record(\"conditional payload\")",
+                        "span": {
+                          "end": 875,
+                          "start": 841
+                        },
+                        "targets": [
+                          {
+                            "certainty": "direct",
+                            "provenance": "java.javac.source-call",
+                            "symbol": "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/Sink.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.Sink:record(java.lang.String)|void\"]"
+                          }
+                        ]
+                      }
+                    ],
+                    "kind": "value",
+                    "regions": [],
+                    "span": {
+                      "end": 875,
+                      "start": 841
+                    },
+                    "text": "Sink.record(\"conditional payload\")"
+                  }
+                ],
+                "kind": "sequence",
+                "span": {
+                  "end": 875,
+                  "start": 841
+                }
+              }
+            }
+          ],
+          "build": "@repo/spring-events",
+          "diagnostics": [],
+          "file": "@repo/spring-events/src/main/java/fixture/spring/Listeners.java",
+          "language": "java",
+          "project": "codegraph.fixture:spring-events",
+          "span": {
+            "end": 878,
+            "start": 727
+          },
+          "symbol": "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/Listeners.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.Listeners:onConditionalPayload(fixture.spring.events.Created)|void\"]"
+        },
+        {
+          "body": [
+            {
+              "kind": "evaluate",
+              "span": {
+                "end": 906,
+                "start": 876
+              },
+              "value": {
+                "items": [
+                  {
+                    "calls": [],
+                    "kind": "value",
+                    "regions": [],
+                    "span": {
+                      "end": 885,
+                      "start": 876
+                    },
+                    "text": "publisher"
+                  },
+                  {
+                    "calls": [],
+                    "kind": "value",
+                    "regions": [],
+                    "span": {
+                      "end": 904,
+                      "start": 899
+                    },
+                    "text": "event"
+                  },
+                  {
+                    "calls": [
+                      {
+                        "diagnostic": "Compiler target is external, excluded or ambiguous in this compile context",
+                        "label": "publisher.publishEvent(event)",
+                        "span": {
+                          "end": 905,
+                          "start": 876
+                        },
+                        "targets": []
+                      }
+                    ],
+                    "kind": "value",
+                    "regions": [],
+                    "span": {
+                      "end": 905,
+                      "start": 876
+                    },
+                    "text": "publisher.publishEvent(event)"
+                  }
+                ],
+                "kind": "sequence",
+                "span": {
+                  "end": 905,
+                  "start": 876
+                }
+              }
+            }
+          ],
+          "build": "@repo/spring-events",
+          "diagnostics": [],
+          "file": "@repo/spring-events/src/main/java/fixture/spring/Publisher.java",
+          "language": "java",
+          "project": "codegraph.fixture:spring-events",
+          "span": {
+            "end": 912,
+            "start": 789
+          },
+          "symbol": "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/Publisher.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.Publisher:publishGeneric(org.springframework.context.ApplicationEventPublisher,java.lang.Object)|void\"]"
         },
         {
           "body": [
@@ -5148,6 +7191,797 @@
       },
       {
         "body_unavailable": false,
+        "build": "@repo/mediatr-dispatch/MediatRDispatch.sln",
+        "container": "DispatchAppA.BaseRequestHandler",
+        "container_visibility": "public",
+        "file": "@repo/mediatr-dispatch/AppA/Handlers.cs",
+        "id": "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Handlers.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.BaseRequestHandler::Handle(DispatchContracts.BaseRequest,System.Threading.CancellationToken)\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "method",
+        "label": "Handle",
+        "language": "csharp",
+        "line": 32,
+        "namespace": "DispatchAppA",
+        "project": "AppA",
+        "signature": "[AppA]::DispatchAppA.BaseRequestHandler::Handle(DispatchContracts.BaseRequest,System.Threading.CancellationToken)",
+        "visibility": "public"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/mediatr-dispatch/MediatRDispatch.sln",
+        "container": "DispatchAppA.ChangedHandlerBase",
+        "container_visibility": "public",
+        "file": "@repo/mediatr-dispatch/AppA/Handlers.cs",
+        "id": "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Handlers.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.ChangedHandlerBase::Handle(DispatchContracts.Changed,System.Threading.CancellationToken)\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "method",
+        "label": "Handle",
+        "language": "csharp",
+        "line": 25,
+        "namespace": "DispatchAppA",
+        "project": "AppA",
+        "signature": "[AppA]::DispatchAppA.ChangedHandlerBase::Handle(DispatchContracts.Changed,System.Threading.CancellationToken)",
+        "visibility": "public"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/mediatr-dispatch/MediatRDispatch.sln",
+        "container": "DispatchAppA.Dispatch",
+        "container_visibility": "public",
+        "file": "@repo/mediatr-dispatch/AppA/Dispatch.cs",
+        "id": "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Dispatch.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.Dispatch::AnonymousDeferred(MediatR.ISender,System.Threading.CancellationToken)\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "method",
+        "label": "AnonymousDeferred",
+        "language": "csharp",
+        "line": 48,
+        "namespace": "DispatchAppA",
+        "project": "AppA",
+        "signature": "[AppA]::DispatchAppA.Dispatch::AnonymousDeferred(MediatR.ISender,System.Threading.CancellationToken)",
+        "visibility": "public"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/mediatr-dispatch/MediatRDispatch.sln",
+        "container": "DispatchAppA.Dispatch",
+        "container_visibility": "public",
+        "file": "@repo/mediatr-dispatch/AppA/Dispatch.cs",
+        "id": "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Dispatch.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.Dispatch::Conditional(MediatR.ISender,System.Boolean,System.Threading.CancellationToken)\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "method",
+        "label": "Conditional",
+        "language": "csharp",
+        "line": 20,
+        "namespace": "DispatchAppA",
+        "project": "AppA",
+        "signature": "[AppA]::DispatchAppA.Dispatch::Conditional(MediatR.ISender,System.Boolean,System.Threading.CancellationToken)",
+        "visibility": "public"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/mediatr-dispatch/MediatRDispatch.sln",
+        "container": "DispatchAppA.Dispatch",
+        "container_visibility": "public",
+        "file": "@repo/mediatr-dispatch/AppA/Dispatch.cs",
+        "id": "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Dispatch.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.Dispatch::CustomSend(DispatchAppA.FakeSender)\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "method",
+        "label": "CustomSend",
+        "language": "csharp",
+        "line": 51,
+        "namespace": "DispatchAppA",
+        "project": "AppA",
+        "signature": "[AppA]::DispatchAppA.Dispatch::CustomSend(DispatchAppA.FakeSender)",
+        "visibility": "public"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/mediatr-dispatch/MediatRDispatch.sln",
+        "container": "DispatchAppA.Dispatch",
+        "container_visibility": "public",
+        "file": "@repo/mediatr-dispatch/AppA/Dispatch.cs",
+        "id": "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Dispatch.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.Dispatch::DerivedDoesNotUseBaseHandler(MediatR.ISender,System.Threading.CancellationToken)\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "method",
+        "label": "DerivedDoesNotUseBaseHandler",
+        "language": "csharp",
+        "line": 42,
+        "namespace": "DispatchAppA",
+        "project": "AppA",
+        "signature": "[AppA]::DispatchAppA.Dispatch::DerivedDoesNotUseBaseHandler(MediatR.ISender,System.Threading.CancellationToken)",
+        "visibility": "public"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/mediatr-dispatch/MediatRDispatch.sln",
+        "container": "DispatchAppA.Dispatch",
+        "container_visibility": "public",
+        "file": "@repo/mediatr-dispatch/AppA/Dispatch.cs",
+        "id": "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Dispatch.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.Dispatch::ErasedContract(MediatR.ISender,MediatR.IRequest<System.Int32>,System.Threading.CancellationToken)\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "method",
+        "label": "ErasedContract",
+        "language": "csharp",
+        "line": 36,
+        "namespace": "DispatchAppA",
+        "project": "AppA",
+        "signature": "[AppA]::DispatchAppA.Dispatch::ErasedContract(MediatR.ISender,MediatR.IRequest<System.Int32>,System.Threading.CancellationToken)",
+        "visibility": "public"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/mediatr-dispatch/MediatRDispatch.sln",
+        "container": "DispatchAppA.Dispatch",
+        "container_visibility": "public",
+        "file": "@repo/mediatr-dispatch/AppA/Dispatch.cs",
+        "id": "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Dispatch.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.Dispatch::ErasedObject(MediatR.ISender,System.Object,System.Threading.CancellationToken)\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "method",
+        "label": "ErasedObject",
+        "language": "csharp",
+        "line": 33,
+        "namespace": "DispatchAppA",
+        "project": "AppA",
+        "signature": "[AppA]::DispatchAppA.Dispatch::ErasedObject(MediatR.ISender,System.Object,System.Threading.CancellationToken)",
+        "visibility": "public"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/mediatr-dispatch/MediatRDispatch.sln",
+        "container": "DispatchAppA.Dispatch",
+        "container_visibility": "public",
+        "file": "@repo/mediatr-dispatch/AppA/Dispatch.cs",
+        "id": "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Dispatch.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.Dispatch::LocalFunction(MediatR.ISender,System.Threading.CancellationToken)::Invoke#local\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "localfunction",
+        "label": "Invoke",
+        "language": "csharp",
+        "line": 29,
+        "namespace": "DispatchAppA",
+        "project": "AppA",
+        "signature": "[AppA]::DispatchAppA.Dispatch::LocalFunction(MediatR.ISender,System.Threading.CancellationToken)::Invoke#local"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/mediatr-dispatch/MediatRDispatch.sln",
+        "container": "DispatchAppA.Dispatch",
+        "container_visibility": "public",
+        "file": "@repo/mediatr-dispatch/AppA/Dispatch.cs",
+        "id": "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Dispatch.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.Dispatch::LocalFunction(MediatR.ISender,System.Threading.CancellationToken)\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "method",
+        "label": "LocalFunction",
+        "language": "csharp",
+        "line": 27,
+        "namespace": "DispatchAppA",
+        "project": "AppA",
+        "signature": "[AppA]::DispatchAppA.Dispatch::LocalFunction(MediatR.ISender,System.Threading.CancellationToken)",
+        "visibility": "public"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/mediatr-dispatch/MediatRDispatch.sln",
+        "container": "DispatchAppA.Dispatch",
+        "container_visibility": "public",
+        "file": "@repo/mediatr-dispatch/AppA/Dispatch.cs",
+        "id": "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Dispatch.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.Dispatch::NamedArguments(MediatR.ISender,System.Threading.CancellationToken)\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "method",
+        "label": "NamedArguments",
+        "language": "csharp",
+        "line": 17,
+        "namespace": "DispatchAppA",
+        "project": "AppA",
+        "signature": "[AppA]::DispatchAppA.Dispatch::NamedArguments(MediatR.ISender,System.Threading.CancellationToken)",
+        "visibility": "public"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/mediatr-dispatch/MediatRDispatch.sln",
+        "container": "DispatchAppA.Dispatch",
+        "container_visibility": "public",
+        "file": "@repo/mediatr-dispatch/AppA/Dispatch.cs",
+        "id": "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Dispatch.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.Dispatch::OpenGenericDeferred(MediatR.ISender,System.Threading.CancellationToken)\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "method",
+        "label": "OpenGenericDeferred",
+        "language": "csharp",
+        "line": 45,
+        "namespace": "DispatchAppA",
+        "project": "AppA",
+        "signature": "[AppA]::DispatchAppA.Dispatch::OpenGenericDeferred(MediatR.ISender,System.Threading.CancellationToken)",
+        "visibility": "public"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/mediatr-dispatch/MediatRDispatch.sln",
+        "container": "DispatchAppA.Dispatch",
+        "container_visibility": "public",
+        "file": "@repo/mediatr-dispatch/AppA/Dispatch.cs",
+        "id": "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Dispatch.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.Dispatch::PublishChanged(MediatR.IPublisher,System.Threading.CancellationToken)\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "method",
+        "label": "PublishChanged",
+        "language": "csharp",
+        "line": 14,
+        "namespace": "DispatchAppA",
+        "project": "AppA",
+        "signature": "[AppA]::DispatchAppA.Dispatch::PublishChanged(MediatR.IPublisher,System.Threading.CancellationToken)",
+        "visibility": "public"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/mediatr-dispatch/MediatRDispatch.sln",
+        "container": "DispatchAppA.Dispatch",
+        "container_visibility": "public",
+        "file": "@repo/mediatr-dispatch/AppA/Dispatch.cs",
+        "id": "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Dispatch.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.Dispatch::SendPing(MediatR.ISender,System.Threading.CancellationToken)\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "method",
+        "label": "SendPing",
+        "language": "csharp",
+        "line": 8,
+        "namespace": "DispatchAppA",
+        "project": "AppA",
+        "signature": "[AppA]::DispatchAppA.Dispatch::SendPing(MediatR.ISender,System.Threading.CancellationToken)",
+        "visibility": "public"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/mediatr-dispatch/MediatRDispatch.sln",
+        "container": "DispatchAppA.Dispatch",
+        "container_visibility": "public",
+        "file": "@repo/mediatr-dispatch/AppA/Dispatch.cs",
+        "id": "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Dispatch.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.Dispatch::SendReset(MediatR.ISender,System.Threading.CancellationToken)\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "method",
+        "label": "SendReset",
+        "language": "csharp",
+        "line": 11,
+        "namespace": "DispatchAppA",
+        "project": "AppA",
+        "signature": "[AppA]::DispatchAppA.Dispatch::SendReset(MediatR.ISender,System.Threading.CancellationToken)",
+        "visibility": "public"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/mediatr-dispatch/MediatRDispatch.sln",
+        "container": "DispatchAppA.Dispatch",
+        "container_visibility": "public",
+        "file": "@repo/mediatr-dispatch/AppA/Dispatch.cs",
+        "id": "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Dispatch.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.Dispatch::UnknownRequest(MediatR.ISender,System.Threading.CancellationToken)\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "method",
+        "label": "UnknownRequest",
+        "language": "csharp",
+        "line": 39,
+        "namespace": "DispatchAppA",
+        "project": "AppA",
+        "signature": "[AppA]::DispatchAppA.Dispatch::UnknownRequest(MediatR.ISender,System.Threading.CancellationToken)",
+        "visibility": "public"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/mediatr-dispatch/MediatRDispatch.sln",
+        "container": "DispatchAppA.FakeSender",
+        "container_visibility": "public",
+        "file": "@repo/mediatr-dispatch/AppA/Dispatch.cs",
+        "id": "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Dispatch.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.FakeSender::Send(DispatchContracts.Ping)\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "method",
+        "label": "Send",
+        "language": "csharp",
+        "line": 56,
+        "namespace": "DispatchAppA",
+        "project": "AppA",
+        "signature": "[AppA]::DispatchAppA.FakeSender::Send(DispatchContracts.Ping)",
+        "visibility": "public"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/mediatr-dispatch/MediatRDispatch.sln",
+        "container": "DispatchAppA.FirstChangedHandler",
+        "container_visibility": "public",
+        "file": "@repo/mediatr-dispatch/AppA/Handlers.cs",
+        "id": "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Handlers.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.FirstChangedHandler::Handle(DispatchContracts.Changed,System.Threading.CancellationToken)\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "method",
+        "label": "Handle",
+        "language": "csharp",
+        "line": 20,
+        "namespace": "DispatchAppA",
+        "project": "AppA",
+        "signature": "[AppA]::DispatchAppA.FirstChangedHandler::Handle(DispatchContracts.Changed,System.Threading.CancellationToken)",
+        "visibility": "public"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/mediatr-dispatch/MediatRDispatch.sln",
+        "container": "DispatchAppA.OpenGenericHandler<T>",
+        "container_visibility": "public",
+        "file": "@repo/mediatr-dispatch/AppA/Handlers.cs",
+        "id": "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Handlers.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.OpenGenericHandler<T>::Handle(DispatchContracts.GenericRequest<T>,System.Threading.CancellationToken)\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "method",
+        "label": "Handle",
+        "language": "csharp",
+        "line": 37,
+        "namespace": "DispatchAppA",
+        "project": "AppA",
+        "signature": "[AppA]::DispatchAppA.OpenGenericHandler<T>::Handle(DispatchContracts.GenericRequest<T>,System.Threading.CancellationToken)",
+        "visibility": "public"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/mediatr-dispatch/MediatRDispatch.sln",
+        "container": "DispatchAppA.PingHandler",
+        "container_visibility": "public",
+        "file": "@repo/mediatr-dispatch/AppA/Handlers.cs",
+        "id": "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Handlers.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.PingHandler::Handle(DispatchContracts.Ping,System.Threading.CancellationToken)\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "method",
+        "label": "Handle",
+        "language": "csharp",
+        "line": 8,
+        "namespace": "DispatchAppA",
+        "project": "AppA",
+        "signature": "[AppA]::DispatchAppA.PingHandler::Handle(DispatchContracts.Ping,System.Threading.CancellationToken)",
+        "visibility": "public"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/mediatr-dispatch/MediatRDispatch.sln",
+        "container": "DispatchAppA.ResetHandler",
+        "container_visibility": "public",
+        "file": "@repo/mediatr-dispatch/AppA/Handlers.cs",
+        "id": "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppA/Handlers.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppA]::DispatchAppA.ResetHandler::MediatR.IRequestHandler<DispatchContracts.Reset>.Handle(DispatchContracts.Reset,System.Threading.CancellationToken)\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "method",
+        "label": "MediatR.IRequestHandler<DispatchContracts.Reset>.Handle",
+        "language": "csharp",
+        "line": 14,
+        "namespace": "DispatchAppA",
+        "project": "AppA",
+        "signature": "[AppA]::DispatchAppA.ResetHandler::MediatR.IRequestHandler<DispatchContracts.Reset>.Handle(DispatchContracts.Reset,System.Threading.CancellationToken)",
+        "visibility": "private"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/mediatr-dispatch/MediatRDispatch.sln",
+        "container": "DispatchAppB.ChangedHandler",
+        "container_visibility": "public",
+        "file": "@repo/mediatr-dispatch/AppB/Dispatch.cs",
+        "id": "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppB/Dispatch.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppB]::DispatchAppB.ChangedHandler::Handle(DispatchContracts.Changed,System.Threading.CancellationToken)\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "method",
+        "label": "Handle",
+        "language": "csharp",
+        "line": 23,
+        "namespace": "DispatchAppB",
+        "project": "AppB",
+        "signature": "[AppB]::DispatchAppB.ChangedHandler::Handle(DispatchContracts.Changed,System.Threading.CancellationToken)",
+        "visibility": "public"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/mediatr-dispatch/MediatRDispatch.sln",
+        "container": "DispatchAppB.Dispatch",
+        "container_visibility": "public",
+        "file": "@repo/mediatr-dispatch/AppB/Dispatch.cs",
+        "id": "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppB/Dispatch.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppB]::DispatchAppB.Dispatch::PublishChanged(MediatR.IPublisher,System.Threading.CancellationToken)\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "method",
+        "label": "PublishChanged",
+        "language": "csharp",
+        "line": 11,
+        "namespace": "DispatchAppB",
+        "project": "AppB",
+        "signature": "[AppB]::DispatchAppB.Dispatch::PublishChanged(MediatR.IPublisher,System.Threading.CancellationToken)",
+        "visibility": "public"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/mediatr-dispatch/MediatRDispatch.sln",
+        "container": "DispatchAppB.Dispatch",
+        "container_visibility": "public",
+        "file": "@repo/mediatr-dispatch/AppB/Dispatch.cs",
+        "id": "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppB/Dispatch.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppB]::DispatchAppB.Dispatch::SendPing(MediatR.ISender,System.Threading.CancellationToken)\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "method",
+        "label": "SendPing",
+        "language": "csharp",
+        "line": 8,
+        "namespace": "DispatchAppB",
+        "project": "AppB",
+        "signature": "[AppB]::DispatchAppB.Dispatch::SendPing(MediatR.ISender,System.Threading.CancellationToken)",
+        "visibility": "public"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/mediatr-dispatch/MediatRDispatch.sln",
+        "container": "DispatchAppB.PingHandler",
+        "container_visibility": "public",
+        "file": "@repo/mediatr-dispatch/AppB/Dispatch.cs",
+        "id": "[\"csharp\",\"@repo/mediatr-dispatch/MediatRDispatch.sln\",\"@repo/mediatr-dispatch/AppB/Dispatch.cs\",\"@repo/mediatr-dispatch/MediatRDispatch.sln|[AppB]::DispatchAppB.PingHandler::Handle(DispatchContracts.Ping,System.Threading.CancellationToken)\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "method",
+        "label": "Handle",
+        "language": "csharp",
+        "line": 17,
+        "namespace": "DispatchAppB",
+        "project": "AppB",
+        "signature": "[AppB]::DispatchAppB.PingHandler::Handle(DispatchContracts.Ping,System.Threading.CancellationToken)",
+        "visibility": "public"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/spring-events",
+        "container": "fixture.spring.InterfaceListener",
+        "container_visibility": "public",
+        "file": "@repo/spring-events/src/main/java/fixture/spring/InterfaceListener.java",
+        "id": "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/InterfaceListener.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.InterfaceListener:onApplicationEvent(fixture.spring.events.Started)|void\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "method",
+        "label": "onApplicationEvent",
+        "language": "java",
+        "line": 10,
+        "namespace": "fixture.spring",
+        "project": "codegraph.fixture:spring-events",
+        "signature": "fixture.spring.InterfaceListener:onApplicationEvent(fixture.spring.events.Started) -> void",
+        "visibility": "public"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/spring-events",
+        "container": "fixture.spring.Listeners",
+        "container_visibility": "public",
+        "file": "@repo/spring-events/src/main/java/fixture/spring/Listeners.java",
+        "id": "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/Listeners.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.Listeners:onAnyApplicationEvent(org.springframework.context.ApplicationEvent)|void\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "method",
+        "label": "onAnyApplicationEvent",
+        "language": "java",
+        "line": 34,
+        "namespace": "fixture.spring",
+        "project": "codegraph.fixture:spring-events",
+        "signature": "fixture.spring.Listeners:onAnyApplicationEvent(org.springframework.context.ApplicationEvent) -> void",
+        "visibility": "public"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/spring-events",
+        "container": "fixture.spring.Listeners",
+        "container_visibility": "public",
+        "file": "@repo/spring-events/src/main/java/fixture/spring/Listeners.java",
+        "id": "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/Listeners.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.Listeners:onAsyncPayload(fixture.spring.events.Created)|void\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "method",
+        "label": "onAsyncPayload",
+        "language": "java",
+        "line": 28,
+        "namespace": "fixture.spring",
+        "project": "codegraph.fixture:spring-events",
+        "signature": "fixture.spring.Listeners:onAsyncPayload(fixture.spring.events.Created) -> void",
+        "visibility": "public"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/spring-events",
+        "container": "fixture.spring.Listeners",
+        "container_visibility": "public",
+        "file": "@repo/spring-events/src/main/java/fixture/spring/Listeners.java",
+        "id": "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/Listeners.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.Listeners:onCommittedPayload(fixture.spring.events.Created)|void\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "method",
+        "label": "onCommittedPayload",
+        "language": "java",
+        "line": 24,
+        "namespace": "fixture.spring",
+        "project": "codegraph.fixture:spring-events",
+        "signature": "fixture.spring.Listeners:onCommittedPayload(fixture.spring.events.Created) -> void",
+        "visibility": "public"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/spring-events",
+        "container": "fixture.spring.Listeners",
+        "container_visibility": "public",
+        "file": "@repo/spring-events/src/main/java/fixture/spring/Listeners.java",
+        "id": "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/Listeners.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.Listeners:onConditionalPayload(fixture.spring.events.Created)|void\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "method",
+        "label": "onConditionalPayload",
+        "language": "java",
+        "line": 21,
+        "namespace": "fixture.spring",
+        "project": "codegraph.fixture:spring-events",
+        "signature": "fixture.spring.Listeners:onConditionalPayload(fixture.spring.events.Created) -> void",
+        "visibility": "public"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/spring-events",
+        "container": "fixture.spring.Listeners",
+        "container_visibility": "public",
+        "file": "@repo/spring-events/src/main/java/fixture/spring/Listeners.java",
+        "id": "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/Listeners.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.Listeners:onExplicitPayload()|void\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "method",
+        "label": "onExplicitPayload",
+        "language": "java",
+        "line": 18,
+        "namespace": "fixture.spring",
+        "project": "codegraph.fixture:spring-events",
+        "signature": "fixture.spring.Listeners:onExplicitPayload() -> void",
+        "visibility": "public"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/spring-events",
+        "container": "fixture.spring.Listeners",
+        "container_visibility": "public",
+        "file": "@repo/spring-events/src/main/java/fixture/spring/Listeners.java",
+        "id": "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/Listeners.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.Listeners:onOtherCreated(fixture.spring.other.Created)|void\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "method",
+        "label": "onOtherCreated",
+        "language": "java",
+        "line": 37,
+        "namespace": "fixture.spring",
+        "project": "codegraph.fixture:spring-events",
+        "signature": "fixture.spring.Listeners:onOtherCreated(fixture.spring.other.Created) -> void",
+        "visibility": "public"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/spring-events",
+        "container": "fixture.spring.Listeners",
+        "container_visibility": "public",
+        "file": "@repo/spring-events/src/main/java/fixture/spring/Listeners.java",
+        "id": "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/Listeners.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.Listeners:onPayload(fixture.spring.events.Created)|void\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "method",
+        "label": "onPayload",
+        "language": "java",
+        "line": 15,
+        "namespace": "fixture.spring",
+        "project": "codegraph.fixture:spring-events",
+        "signature": "fixture.spring.Listeners:onPayload(fixture.spring.events.Created) -> void",
+        "visibility": "public"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/spring-events",
+        "container": "fixture.spring.Listeners",
+        "container_visibility": "public",
+        "file": "@repo/spring-events/src/main/java/fixture/spring/Listeners.java",
+        "id": "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/Listeners.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.Listeners:onPayloadEnvelope(org.springframework.context.PayloadApplicationEvent)|void\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "method",
+        "label": "onPayloadEnvelope",
+        "language": "java",
+        "line": 31,
+        "namespace": "fixture.spring",
+        "project": "codegraph.fixture:spring-events",
+        "signature": "fixture.spring.Listeners:onPayloadEnvelope(org.springframework.context.PayloadApplicationEvent) -> void",
+        "visibility": "public"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/spring-events",
+        "container": "fixture.spring.Listeners",
+        "container_visibility": "public",
+        "file": "@repo/spring-events/src/main/java/fixture/spring/Listeners.java",
+        "id": "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/Listeners.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.Listeners:onPretendAnnotation(fixture.spring.events.Created)|void\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "method",
+        "label": "onPretendAnnotation",
+        "language": "java",
+        "line": 40,
+        "namespace": "fixture.spring",
+        "project": "codegraph.fixture:spring-events",
+        "signature": "fixture.spring.Listeners:onPretendAnnotation(fixture.spring.events.Created) -> void",
+        "visibility": "public"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/spring-events",
+        "container": "fixture.spring.Listeners",
+        "container_visibility": "public",
+        "file": "@repo/spring-events/src/main/java/fixture/spring/Listeners.java",
+        "id": "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/Listeners.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.Listeners:ordinaryMethod(fixture.spring.events.Created)|void\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "method",
+        "label": "ordinaryMethod",
+        "language": "java",
+        "line": 42,
+        "namespace": "fixture.spring",
+        "project": "codegraph.fixture:spring-events",
+        "signature": "fixture.spring.Listeners:ordinaryMethod(fixture.spring.events.Created) -> void",
+        "visibility": "public"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/spring-events",
+        "container": "fixture.spring.PretendPublisher",
+        "container_visibility": "public",
+        "file": "@repo/spring-events/src/main/java/fixture/spring/PretendPublisher.java",
+        "id": "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/PretendPublisher.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.PretendPublisher:publishEvent(fixture.spring.events.Created)|void\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "method",
+        "label": "publishEvent",
+        "language": "java",
+        "line": 7,
+        "namespace": "fixture.spring",
+        "project": "codegraph.fixture:spring-events",
+        "signature": "fixture.spring.PretendPublisher:publishEvent(fixture.spring.events.Created) -> void",
+        "visibility": "public"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/spring-events",
+        "container": "fixture.spring.Publisher",
+        "container_visibility": "public",
+        "file": "@repo/spring-events/src/main/java/fixture/spring/Publisher.java",
+        "id": "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/Publisher.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.Publisher:publishApplicationEvent(org.springframework.context.ApplicationEventPublisher)|void\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "method",
+        "label": "publishApplicationEvent",
+        "language": "java",
+        "line": 18,
+        "namespace": "fixture.spring",
+        "project": "codegraph.fixture:spring-events",
+        "signature": "fixture.spring.Publisher:publishApplicationEvent(org.springframework.context.ApplicationEventPublisher) -> void",
+        "visibility": "public"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/spring-events",
+        "container": "fixture.spring.Publisher",
+        "container_visibility": "public",
+        "file": "@repo/spring-events/src/main/java/fixture/spring/Publisher.java",
+        "id": "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/Publisher.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.Publisher:publishErased(org.springframework.context.ApplicationEventPublisher,java.lang.Object)|void\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "method",
+        "label": "publishErased",
+        "language": "java",
+        "line": 22,
+        "namespace": "fixture.spring",
+        "project": "codegraph.fixture:spring-events",
+        "signature": "fixture.spring.Publisher:publishErased(org.springframework.context.ApplicationEventPublisher,java.lang.Object) -> void",
+        "visibility": "public"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/spring-events",
+        "container": "fixture.spring.Publisher",
+        "container_visibility": "public",
+        "file": "@repo/spring-events/src/main/java/fixture/spring/Publisher.java",
+        "id": "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/Publisher.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.Publisher:publishGeneric(org.springframework.context.ApplicationEventPublisher,java.lang.Object)|void\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "method",
+        "label": "publishGeneric",
+        "language": "java",
+        "line": 26,
+        "namespace": "fixture.spring",
+        "project": "codegraph.fixture:spring-events",
+        "signature": "fixture.spring.Publisher:publishGeneric(org.springframework.context.ApplicationEventPublisher,java.lang.Object) -> void",
+        "visibility": "public"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/spring-events",
+        "container": "fixture.spring.Publisher",
+        "container_visibility": "public",
+        "file": "@repo/spring-events/src/main/java/fixture/spring/Publisher.java",
+        "id": "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/Publisher.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.Publisher:publishPayload(org.springframework.context.ApplicationEventPublisher)|void\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "method",
+        "label": "publishPayload",
+        "language": "java",
+        "line": 9,
+        "namespace": "fixture.spring",
+        "project": "codegraph.fixture:spring-events",
+        "signature": "fixture.spring.Publisher:publishPayload(org.springframework.context.ApplicationEventPublisher) -> void",
+        "visibility": "public"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/spring-events",
+        "container": "fixture.spring.Publisher",
+        "container_visibility": "public",
+        "file": "@repo/spring-events/src/main/java/fixture/spring/Publisher.java",
+        "id": "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/Publisher.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.Publisher:publishPayloadTwice(org.springframework.context.ApplicationEventPublisher)|void\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "method",
+        "label": "publishPayloadTwice",
+        "language": "java",
+        "line": 13,
+        "namespace": "fixture.spring",
+        "project": "codegraph.fixture:spring-events",
+        "signature": "fixture.spring.Publisher:publishPayloadTwice(org.springframework.context.ApplicationEventPublisher) -> void",
+        "visibility": "public"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/spring-events",
+        "container": "fixture.spring.Publisher",
+        "container_visibility": "public",
+        "file": "@repo/spring-events/src/main/java/fixture/spring/Publisher.java",
+        "id": "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/Publisher.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.Publisher:sameNamedApi(fixture.spring.PretendPublisher)|void\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "method",
+        "label": "sameNamedApi",
+        "language": "java",
+        "line": 30,
+        "namespace": "fixture.spring",
+        "project": "codegraph.fixture:spring-events",
+        "signature": "fixture.spring.Publisher:sameNamedApi(fixture.spring.PretendPublisher) -> void",
+        "visibility": "public"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/spring-events",
+        "container": "fixture.spring.Sink",
+        "container_visibility": "public",
+        "file": "@repo/spring-events/src/main/java/fixture/spring/Sink.java",
+        "id": "[\"java\",\"@repo/spring-events\",\"@repo/spring-events/src/main/java/fixture/spring/Sink.java\",\"[\\\"@repo/spring-events\\\",\\\"@repo/spring-events\\\",\\\"main\\\"]|fixture.spring.Sink:record(java.lang.String)|void\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "method",
+        "label": "record",
+        "language": "java",
+        "line": 5,
+        "namespace": "fixture.spring",
+        "project": "codegraph.fixture:spring-events",
+        "signature": "fixture.spring.Sink:record(java.lang.String) -> void",
+        "visibility": "public"
+      },
+      {
+        "body_unavailable": false,
         "build": "@repo/typescript-corpus/tsconfig.json",
         "container": "src/app/api/route.ts",
         "file": "@repo/typescript-corpus/src/app/api/route.ts",
@@ -5940,6 +8774,8 @@
     "roots": [
       "@repo/dotnet-collisions/Collisions.sln",
       "@repo/maven/reactor",
+      "@repo/mediatr-dispatch/MediatRDispatch.sln",
+      "@repo/spring-events",
       "@repo/typescript-corpus/tsconfig.json"
     ]
   },

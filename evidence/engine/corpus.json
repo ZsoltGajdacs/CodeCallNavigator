@@ -7,6 +7,8 @@
     {"name": "gradle", "source": "fixtures/gradle-regression", "targets": ["."], "wrapper": "fixtures/gradle/gradlew", "checks": "tests/java_builds.rs"},
     {"name": "csharp", "source": "fixtures/dotnet-collisions", "targets": ["Collisions.sln"], "checks": "tests/csharp_policy.rs"},
     {"name": "typescript", "source": "fixtures/typescript-corpus", "targets": ["tsconfig.json"], "dependencies": "CODEGRAPH_TS_NODE_MODULES", "checks": "tests/typescript_pipeline.rs"},
-    {"name": "mixed", "components": ["maven", "csharp", "typescript"], "checks": "tests/multi_root.rs"}
+    {"name": "spring", "source": "fixtures/spring-events", "targets": ["pom.xml"], "libraries": {"spring-context": "6.2.5", "spring-tx": "6.2.5", "maven-compiler-plugin": "3.14.1"}, "checks": "tests/spring_events.rs"},
+    {"name": "mediatr", "source": "fixtures/mediatr-dispatch", "targets": ["MediatRDispatch.sln"], "libraries": {"MediatR": "12.4.1"}, "checks": "tests/mediatr_dispatch.rs"},
+    {"name": "mixed", "components": ["maven", "csharp", "typescript", "spring", "mediatr"], "checks": "tests/multi_root.rs"}
   ]
 }
