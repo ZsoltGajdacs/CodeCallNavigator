@@ -62,10 +62,10 @@ pub fn install(state: &mut State) {
     }
     let result = (|| {
         let runtime = Arc::new(AnalyzerRuntime::discover()?);
-        state.graph_view = projection::layout(
+        state.replace_graph_view(projection::layout(
             projection::project(&graph, &state.request().unwrap()),
             &runtime.dot,
-        )?;
+        )?);
         state.runtime = Some(runtime);
         state.nav.camera.fit(state.graph_view.size, state.viewport);
         state.visible_revision = Some((state.epoch, state.revision));

@@ -19,8 +19,10 @@ pub fn install(state: &mut State) {
     state.nav.focus = Some("fixture/project/Start".into());
     state.nav.depth = 4;
     state.status = "Deterministic test fixture · 6 symbols · 6 relationships".into();
-    state.graph_view =
-        projection::project(state.graph.as_ref().unwrap(), &state.request().unwrap());
+    state.replace_graph_view(projection::project(
+        state.graph.as_ref().unwrap(),
+        &state.request().unwrap(),
+    ));
     position(&mut state.graph_view);
     state.nav.camera.fit(state.graph_view.size, state.viewport);
     state.auto_fit = false;
@@ -168,11 +170,11 @@ fn cached_scene(state: &mut State, focus: bool) {
             select_cached_method(state);
         }
         let request = state.request().unwrap();
-        let graph = state.graph.as_ref().unwrap();
-        state.graph_view = projection::layout(
-            projection::project(graph, &request),
+        let graph = state.graph.as_ref().unwrap().clone();
+        state.replace_graph_view(projection::layout(
+            projection::project(&graph, &request),
             &state.runtime.as_ref().unwrap().dot,
-        )?;
+        )?);
         state.nav.camera.fit(state.graph_view.size, state.viewport);
         state.visible_revision = Some((state.epoch, state.revision));
         state.next_stale_check = f64::MAX;

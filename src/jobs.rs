@@ -435,7 +435,7 @@ fn install_graph(state: &mut State, loaded: LoadedGraph) {
     state.search_more = false;
     state.selected_edge = None;
     state.last_query.clear();
-    state.graph_view = projection::GraphView::default();
+    state.replace_graph_view(projection::GraphView::default());
     state.visible_revision = None;
     state.visual_selection = None;
     state.cancel_graph_press();

@@ -14,7 +14,7 @@ impl State {
             self.changed();
             return;
         }
-        self.graph_view = view;
+        self.replace_graph_view(view);
         self.reconcile_visual_selection();
         self.visible_revision = Some((self.epoch, self.revision));
         self.nav.page = self.nav.page.min(self.graph_view.pages.saturating_sub(1));

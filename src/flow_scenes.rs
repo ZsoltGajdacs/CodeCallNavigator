@@ -162,8 +162,10 @@ pub fn install(state: &mut State) {
     state.graph = Some(Arc::new(GraphIndex::new(Arc::new(data())).unwrap()));
     state.nav = crate::app::Navigation::default();
     state.nav.selected = Some("flow/load".into());
-    state.graph_view =
-        crate::projection::project(state.graph.as_ref().unwrap(), &state.request().unwrap());
+    state.replace_graph_view(crate::projection::project(
+        state.graph.as_ref().unwrap(),
+        &state.request().unwrap(),
+    ));
     crate::scenes::position(&mut state.graph_view);
     state.runtime = codegraph::analyzers::AnalyzerRuntime::discover()
         .ok()

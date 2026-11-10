@@ -8,6 +8,7 @@ use crate::{
 use codegraph::{graph::GraphIndex, store::SqliteStore};
 use rune::TextEdit;
 use std::{
+    cell::RefCell,
     path::PathBuf,
     sync::{
         Arc,
@@ -40,6 +41,8 @@ pub struct State {
     pub back: Vec<Navigation>,
     pub forward: Vec<Navigation>,
     pub graph_view: GraphView,
+    pub edge_geometry: RefCell<crate::edges::GeometryCache>,
+    pub graph_emphasis: RefCell<crate::graph_emphasis::Cache>,
     pub visual_selection: Option<String>,
     pub graph_interaction: crate::graph_interaction::Interaction,
     pub hits: Vec<u32>,
@@ -96,6 +99,8 @@ impl State {
             back: Vec::new(),
             forward: Vec::new(),
             graph_view: GraphView::default(),
+            edge_geometry: RefCell::default(),
+            graph_emphasis: RefCell::default(),
             visual_selection: None,
             graph_interaction: Default::default(),
             hits: Vec::new(),
@@ -133,6 +138,13 @@ impl State {
 
     pub fn checkpoint(&mut self) {
         self.record_graph_step(self.nav.clone());
+    }
+
+    /// Install a new layout, including same-sized replacements, before rendering it.
+    pub fn replace_graph_view(&mut self, view: GraphView) {
+        self.graph_view = view;
+        *self.edge_geometry.get_mut() = Default::default();
+        *self.graph_emphasis.get_mut() = Default::default();
     }
 
     pub fn changed(&mut self) {

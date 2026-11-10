@@ -49,8 +49,10 @@ pub fn files(state: &mut State) {
     state.graph = Some(Arc::new(GraphIndex::new(Arc::new(data)).unwrap()));
     state.nav.focus = None;
     state.nav.grouping = Grouping::Namespace;
-    state.graph_view =
-        projection::project(state.graph.as_ref().unwrap(), &state.request().unwrap());
+    state.replace_graph_view(projection::project(
+        state.graph.as_ref().unwrap(),
+        &state.request().unwrap(),
+    ));
     crate::scenes::position(&mut state.graph_view);
     state.nav.camera.fit(state.graph_view.size, state.viewport);
 }

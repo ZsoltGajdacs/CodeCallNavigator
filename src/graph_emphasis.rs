@@ -1,8 +1,33 @@
 //! Selection emphasis over the visible graph, independent of depth and geometry.
 use crate::projection::GraphView;
+use std::rc::Rc;
 
 const DIM_CARD_OPACITY: f32 = 0.35;
 const DIM_EDGE_OPACITY: f32 = 0.08;
+
+/// View replacement clears the cache; camera and theme changes do not affect emphasis.
+#[derive(Default)]
+pub struct Cache {
+    selection: Option<String>,
+    focus_keys: Vec<String>,
+    emphasis: Option<Rc<GraphEmphasis>>,
+}
+
+impl Cache {
+    pub fn get(&mut self, view: &GraphView, selection: Option<&str>) -> Rc<GraphEmphasis> {
+        if !self.matches(view, selection) {
+            self.selection = selection.map(str::to_owned);
+            self.focus_keys.clone_from(&view.focus_keys);
+            self.emphasis = Some(Rc::new(GraphEmphasis::new(view, selection)));
+        }
+        Rc::clone(self.emphasis.as_ref().unwrap())
+    }
+
+    fn matches(&self, view: &GraphView, selection: Option<&str>) -> bool {
+        self.emphasis.is_some()
+            && (self.selection.as_deref(), &self.focus_keys) == (selection, &view.focus_keys)
+    }
+}
 
 pub struct GraphEmphasis {
     anchors: Vec<bool>,
