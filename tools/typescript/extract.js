@@ -11,6 +11,7 @@ const {ReactRules}=require('./react.js');
 const {markNextEntries}=require('./next.js');
 const {semanticKeys}=require('./semantic.js');
 const {collectObservers}=require('./observer.js');
+const {collectCallables}=require('./callable.js');
 function argumentReferences(bindings,checker,node,from) {
   const targets=(node.arguments||[]).flatMap(argument=>bindings.resolve(checker,argument));
   for(const target of targets) bindings.graph.edge(from,target,'reference',{certainty:'possible',provenance:'typescript.compiler:argument-reference'});
@@ -25,6 +26,8 @@ function ordinaryCall(bindings,checker,node,from) {
   const targets=bindings.callTargets(checker,node);
   for(const {index,...options} of targets) graph.edge(from,index,ts.isNewExpression(node)?'construct':'call',options);
   if(!targets.length) reportUnresolvedCall(bindings,checker,node);
+  const diagnostic=bindings.callDiagnostic(checker,node);
+  if(diagnostic) graph.diagnostic(diagnostic);
 }
 function visitSite(bindings,react,{checker,node,current}) {
   if(isCallSite(bindings.ts,node)) ordinaryCall(bindings,checker,node,current);
@@ -51,6 +54,7 @@ function extract(context) {
   bindings.collect();
   const react=new ReactRules(bindings,graph,reactImport);
   react.collectProps();
+  collectCallables(bindings);
   collectObservers(bindings);
   for(const file of bindings.files) {
     walkFile(bindings,react,file);

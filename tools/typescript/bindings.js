@@ -117,14 +117,20 @@ class Bindings {
     return declaration.initializer ? this.propagatedCall(checker,declaration.initializer,seen) : false;
   }
   callTargets(checker,node) {
-    if(this.invocations.has(node)) return this.invocations.get(node);
+    if(this.invocations.has(node)) return this.invocations.get(node).concat(this.callableTargets(checker,node));
     const indices=this.targets(checker,node);
+    if(!indices.length) return this.callableTargets(checker,node);
     const propagated=this.propagatedCall(checker,node.expression||node.tag);
     return indices.map(index=>({index,certainty:propagated||indices.length>1||this.graph.nodes[index].body_unavailable?'possible':'direct',provenance:'typescript.compiler'}));
   }
+  callableTargets(checker,node) {return this.callables?this.callables.targets(checker,node):[];}
   targets(checker,node) {
     const targets=this.resolve(checker,node.expression||node.tag);
     return targets;
+  }
+  callDiagnostic(checker,node) {
+    if(this.invocations.has(node)||this.targets(checker,node).length) return undefined;
+    return this.callables?.diagnostic(checker,node);
   }
 }
 module.exports={Bindings};

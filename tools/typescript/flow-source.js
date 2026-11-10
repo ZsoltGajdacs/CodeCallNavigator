@@ -42,7 +42,7 @@ class FlowSource {
       .filter(target=>!this.bindings.graph.excluded.has(target.index))
       .map(({index,certainty,provenance})=>({symbol:this.bindings.graph.nodes[index].id,certainty,provenance}));
     return {span:this.span(node),label:this.label(expression),targets,
-      diagnostic:targets.length?null:'No statically bound project target'};
+      diagnostic:this.bindings.callDiagnostic(this.checker,node)||(targets.length?null:'No statically bound project target')};
   }
   accessor(node) {
     const indices=accessorTargets(this.bindings,this.checker,node).filter(i=>!this.bindings.graph.excluded.has(i));

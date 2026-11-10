@@ -37,10 +37,10 @@ so excluding their nodes never assigns their calls to a module or enclosing meth
 Authored nested callbacks retain their own callable scopes.
 `graph.js` owns identities, edge aggregation and serialization.
 
-Framework relationships are static possibilities. Generic callback arguments are
-references, not calls. Mutation through refs/maps, arbitrary higher-order return
-values, dynamic keys, spread-prop delegation and framework routing configuration
-are not reconstructed. Counts for unresolved bindings remain in graph diagnostics.
+Framework relationships are static possibilities. Passing or returning a callback
+does not invoke it. Mutation through refs/maps, arbitrary higher-order wrappers,
+dynamic keys, spread-prop delegation and framework routing configuration are not
+reconstructed. Counts for unresolved bindings remain in graph diagnostics.
 
 Run the real-compiler fixture suite with:
 
@@ -88,3 +88,27 @@ Collection uses are initially limited to direct `.add` and direct `for...of`;
 `Set.forEach`, extracted registrar methods and nested deferred callback calls are
 outside this rule. Recognized unsupported channels retain diagnostics. These are
 closed-source possibilities; reflection and external mutation are not reconstructed.
+
+`callable.js` adds possible calls for immutable `??`/`||` aliases, identifier
+parameters invoked directly, and simple project-owned function-return expressions.
+The strict resolver is separate from legacy compiler/React prop binding sets;
+those sets cannot prove new incoming callable values are immutable. Direct project
+call sites contribute finite parameter target sets until they stop growing.
+Per-call return environments keep `identity(a)` separate from `identity(b)`.
+Return summaries support concise bodies or const aliases followed by one return;
+conditional function references are possible alternatives. Logical evaluation
+retains short-circuit semantics and distinguishes nullish from other falsy values.
+
+New callable facts reject mutable aliases and parameters, property/registry values,
+dynamic keys, spread/rest forwarding, destructured parameters and decorated owners.
+Returned closures capturing factory parameters or local aliases are deferred;
+capture-free returned callbacks are supported. Return summaries exclude
+async/generator factories, optional factory calls and arbitrary bodies.
+Inference diagnostics describe
+unsupported value paths; explicit possibly-nullish default arguments are deferred
+because the abstract value does not distinguish null from undefined. Omitted
+defaults and proven non-nullish arguments remain supported. Existing compiler-bound
+calls retain their old behavior.
+Graph and flow use the same invocation descriptors, with possible certainty,
+`codegraph.callable.v1` provenance and source-backed rule evidence. Callable flow
+does not replace observer targets or convert argument references into invocations.

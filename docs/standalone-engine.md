@@ -128,3 +128,16 @@ Ordinary noncallback Sets are unaffected. `Set.forEach` and nested deferred
 functions are not reconstructed. Channel names are explanatory labels; internal
 matching uses exact compiler declarations, so identically named fields in
 unrelated classes or namespaces do not join.
+
+## Callable values
+
+TypeScript callable inference follows immutable `??`/`||` aliases, direct
+callable parameters and simple returned functions. It adds `possible` invocation
+edges with `codegraph.callable.v1` provenance only at actual calls; argument and
+return references do not become invocations. Graphs and flowcharts share targets
+and diagnostics. Return environments are specific to each call.
+
+Mutable/property paths, spread/rest forwarding, captured factories, optional
+factories and explicit possibly-nullish default arguments remain unresolved.
+See `tools/typescript/README.md` for the supported subset and
+`docs/engine-adaptations.md` for upstream solution references.
