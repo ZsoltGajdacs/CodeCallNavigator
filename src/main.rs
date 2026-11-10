@@ -7,6 +7,7 @@ mod edges;
 mod flow_scenes;
 mod flow_view;
 mod flow_workspace;
+mod graph_emphasis;
 mod graph_interaction;
 mod graph_layout;
 mod icons;

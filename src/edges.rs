@@ -1,6 +1,6 @@
 //! Paint Graphviz's reported geometry through Rune; no layout or call inference.
 use crate::theme;
-use crate::{app::State, projection::ViewEdge};
+use crate::{app::State, graph_emphasis::GraphEmphasis, projection::ViewEdge};
 use rune::{Color, LineCap, Shape};
 use rune_kit::Kit;
 
@@ -14,24 +14,34 @@ struct Style {
     dashed: bool,
 }
 
-pub fn render(state: &State, k: &Kit) -> Shape {
+pub fn render(state: &State, k: &Kit, emphasis: &GraphEmphasis) -> Shape {
     let mut shape = Shape::new();
-    for edge in &state.graph_view.edges {
-        let points: Vec<_> = edge
-            .points
-            .iter()
-            .map(|&point| state.nav.camera.screen(point))
-            .collect();
-        if !visible(&points, state.viewport) {
-            continue;
+    // Paint context first so bright connections stay on top at crossings.
+    for emphasized in [false, true] {
+        for (index, edge) in state.graph_view.edges.iter().enumerate() {
+            if emphasis.edge_emphasized(index) != emphasized {
+                continue;
+            }
+            let edge_style = style(edge, k, emphasis.edge_opacity(index));
+            shape = render_edge(shape, state, edge, edge_style);
         }
-        let edge_style = style(edge, k);
-        shape = stroke(shape, &points, edge_style);
     }
     shape
 }
 
-fn style(edge: &ViewEdge, k: &Kit) -> Style {
+fn render_edge(shape: Shape, state: &State, edge: &ViewEdge, style: Style) -> Shape {
+    let points: Vec<_> = edge
+        .points
+        .iter()
+        .map(|&point| state.nav.camera.screen(point))
+        .collect();
+    if !visible(&points, state.viewport) {
+        return shape;
+    }
+    stroke(shape, &points, style)
+}
+
+fn style(edge: &ViewEdge, k: &Kit, opacity: f32) -> Style {
     let reference = codegraph::model::relationship_is_reference(&edge.kind);
     let direct = !codegraph::model::relationship_is_uncertain(&edge.certainty);
     let color = if reference {
@@ -42,7 +52,7 @@ fn style(edge: &ViewEdge, k: &Kit) -> Style {
         theme::uncertain(k)
     };
     Style {
-        color,
+        color: color.alpha(color.a * opacity),
         width: (1.2 + (edge.count as f32).ln_1p() * 0.12).min(2.4),
         dashed: !direct || reference,
     }

@@ -1,5 +1,7 @@
 //! Graph canvas and cards render projection metadata; interaction policy lives in its controller.
-use crate::{app::State, graph_interaction, projection::ViewNode, theme};
+use crate::{
+    app::State, graph_emphasis::GraphEmphasis, graph_interaction, projection::ViewNode, theme,
+};
 use rune::{Cx, Drag, El, MagnifyEvent, ScrollSpec, TextStyle, WheelEvent, canvas, col, el, text};
 use rune_kit::{Kit, ScrollBar};
 use std::time::Duration;
@@ -42,18 +44,19 @@ pub fn graph_canvas(state: &State, _: &mut Cx<State>, k: &Kit) -> El {
 }
 
 fn graph_content(state: &State, k: &Kit) -> El {
+    let emphasis = GraphEmphasis::new(&state.graph_view, state.visual_selection.as_deref());
     let mut content = el().key("graph-world").w_full().h_full();
     for (index, band) in state.graph_view.layer_bands.iter().enumerate() {
         content = content.child(layer_band(state, index, band, k));
     }
-    let shapes = crate::edges::render(state, k);
+    let shapes = crate::edges::render(state, k, &emphasis);
     content = content.child(canvas(shapes).w_full().h_full().inert());
     if !state.view_is_current() {
         content = content.inert().opacity(0.45);
     }
     for (index, node) in state.graph_view.nodes.iter().enumerate() {
         if state.nav.camera.shows(node, state.viewport) {
-            let card = node_card(state, index, k);
+            let card = node_card(state, index, k, &emphasis);
             content = content.child(if state.view_is_current() {
                 card
             } else {
@@ -139,10 +142,9 @@ fn empty_message(state: &State) -> (&str, &str) {
     )
 }
 
-fn node_card(state: &State, index: usize, k: &Kit) -> El {
+fn node_card(state: &State, index: usize, k: &Kit, emphasis: &GraphEmphasis) -> El {
     let node = &state.graph_view.nodes[index];
-    let selected = state.visual_selection.as_ref() == Some(&node.key)
-        || state.graph_view.focus_keys.contains(&node.key);
+    let selected = emphasis.is_anchor(index);
     let accent = k.c.text_accent;
     let border = if node.cyclic {
         theme::uncertain(k)
@@ -173,7 +175,7 @@ fn node_card(state: &State, index: usize, k: &Kit) -> El {
     if !node.methods.is_empty() {
         card = card.child(method_list(node, scale, k));
     }
-    card
+    card.opacity(emphasis.card_opacity(index))
 }
 
 fn node_header(node: &ViewNode, index: usize, scale: f32, k: &Kit) -> El {

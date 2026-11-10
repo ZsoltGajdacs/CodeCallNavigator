@@ -1,4 +1,99 @@
 use super::*;
+use crate::projection::{GraphView, ViewNode};
+
+#[test]
+fn dim_edges_multiply_existing_alpha_without_changing_relationship_styles() {
+    for dark in [false, true] {
+        let kit = theme::kit(dark);
+        for (kind, certainty, color, dashed) in [
+            ("call", "direct", kit.c.text_muted.alpha(0.7), false),
+            ("call", "possible", theme::uncertain(&kit), true),
+            ("callback", "direct", theme::callback(&kit), true),
+        ] {
+            let edge = ViewEdge {
+                kind: kind.into(),
+                certainty: certainty.into(),
+                count: 10,
+                ..Default::default()
+            };
+            let bright = style(&edge, &kit, 1.0);
+            let dim = style(&edge, &kit, 0.08);
+            assert_eq!(bright.color, color);
+            assert_eq!(bright.dashed, dashed);
+            assert_eq!(dim.color, color.alpha(color.a * 0.08));
+            assert_eq!(dim.width, bright.width);
+            assert_eq!(dim.dashed, bright.dashed);
+        }
+    }
+}
+
+#[test]
+fn rendering_paints_dim_strokes_and_arrows_before_incident_edges() {
+    let mut state = State::new();
+    state.jobs.boot.cancel();
+    state.viewport = [300.0, 300.0];
+    state.nav.camera.pan = [0.0, 0.0];
+    state.graph_view = GraphView {
+        nodes: ["anchor", "neighbor", "context"]
+            .into_iter()
+            .map(|key| ViewNode {
+                key: key.into(),
+                ..Default::default()
+            })
+            .collect(),
+        edges: [(0, 1), (1, 2)]
+            .into_iter()
+            .map(|(from, to)| ViewEdge {
+                from,
+                to,
+                kind: "call".into(),
+                certainty: "direct".into(),
+                points: vec![[10.0, 10.0 + from as f32 * 20.0], [100.0, 100.0]],
+                ..Default::default()
+            })
+            .collect(),
+        ..Default::default()
+    };
+    let kit = theme::kit(true);
+    let emphasis = GraphEmphasis::new(&state.graph_view, Some("anchor"));
+    let expected = stroke(
+        Shape::new(),
+        &state.graph_view.edges[1].points,
+        Style {
+            color: kit.c.text_muted.alpha(0.7 * 0.08),
+            width: 1.2,
+            dashed: false,
+        },
+    );
+    let expected = stroke(
+        expected,
+        &state.graph_view.edges[0].points,
+        Style {
+            color: kit.c.text_muted.alpha(0.7),
+            width: 1.2,
+            dashed: false,
+        },
+    );
+    assert_eq!(render(&state, &kit, &emphasis), expected);
+
+    let normal = GraphEmphasis::new(&state.graph_view, None);
+    let expected = state
+        .graph_view
+        .edges
+        .iter()
+        .fold(Shape::new(), |shape, edge| {
+            stroke(
+                shape,
+                &edge.points,
+                Style {
+                    color: kit.c.text_muted.alpha(0.7),
+                    width: 1.2,
+                    dashed: false,
+                },
+            )
+        });
+    assert_eq!(render(&state, &kit, &normal), expected);
+}
 
 #[test]
 fn culling_keeps_crossing_splines_and_drops_offscreen_geometry() {

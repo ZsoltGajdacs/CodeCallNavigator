@@ -505,3 +505,6 @@ fn restored_layer_focus_survives_missing_assignments_then_validates_membership()
     frames(&mut runtime, 4);
     assert!(!runtime.state.has_graph_focus());
 }
+
+#[path = "traversal/emphasis.rs"]
+mod emphasis;
