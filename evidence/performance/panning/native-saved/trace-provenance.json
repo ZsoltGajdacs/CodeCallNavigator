@@ -1,0 +1,5 @@
+{
+  "original_trace_sha256": "d25110b1a6c2a3d5f0288f5058dcb17b9a85c7d8b6ddae29380313e3f3a88a97",
+  "retained_frames": 4042,
+  "filter": "Exact native timing fields and codegraph.* channels retained; UI element metadata and geometry omitted."
+}

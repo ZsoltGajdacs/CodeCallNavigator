@@ -1,0 +1,19 @@
+{
+  "binary": "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/dist/CodeGraph.app/Contents/MacOS/CodeGraph",
+  "sha256": "353d491d204acf3060043b570354fff0326eca12a8c829acc30144b9fe025afc",
+  "scene": "saved-canvas",
+  "requested_size": "1900x1100",
+  "expected_native_scale": 1.0,
+  "command": [
+    "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/dist/CodeGraph.app/Contents/MacOS/CodeGraph",
+    "--native",
+    "--scene",
+    "saved-canvas",
+    "--trace",
+    "/private/tmp/codegraph-native-final-saved-unlocked/native.jsonl",
+    "--size",
+    "1900x1100"
+  ],
+  "exit_code": 0,
+  "binary_unchanged": true
+}

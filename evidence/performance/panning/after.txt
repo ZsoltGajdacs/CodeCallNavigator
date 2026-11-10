@@ -1,0 +1,14 @@
+
+running 2 tests
+test ui_tests::canvas_performance::dense_canvas_frame_preparation ... canvas scale=1 nodes=300 edges=6000 zoom=0.16 frames=60 median_ms=2.932 p95_ms=3.559 mean_instances=55563 mean_segments=46101 layout_nodes=1354
+canvas scale=1 nodes=300 edges=6000 zoom=0.20 frames=60 median_ms=3.433 p95_ms=3.722 mean_instances=69982 mean_segments=59620 layout_nodes=1354
+canvas scale=1 nodes=300 edges=6000 zoom=0.24 frames=60 median_ms=4.220 p95_ms=4.603 mean_instances=80659 mean_segments=69697 layout_nodes=1354
+canvas scale=2 nodes=300 edges=6000 zoom=0.16 frames=60 median_ms=3.121 p95_ms=3.544 mean_instances=55142 mean_segments=46101 layout_nodes=1354
+canvas scale=2 nodes=300 edges=6000 zoom=0.20 frames=60 median_ms=3.544 p95_ms=3.805 mean_instances=69981 mean_segments=59620 layout_nodes=1354
+canvas scale=2 nodes=300 edges=6000 zoom=0.24 frames=60 median_ms=3.918 p95_ms=4.126 mean_instances=80658 mean_segments=69697 layout_nodes=1354
+ok
+test ui_tests::canvas_performance::saved_canvas_frame_preparation ... saved scale=1 nodes=31 edges=155 median_ms=1.246 p95_ms=1.419 instances=8811 segments=4930 offscreen_segments=62 geometry_builds=1
+saved scale=2 nodes=31 edges=155 median_ms=1.237 p95_ms=1.424 instances=8810 segments=4930 offscreen_segments=68 geometry_builds=1
+ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 142 filtered out; finished in 3.93s

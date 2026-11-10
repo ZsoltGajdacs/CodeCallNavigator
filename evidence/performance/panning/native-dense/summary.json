@@ -1,0 +1,104 @@
+{
+  "status": "passed",
+  "native_scale": 1,
+  "native_size_points": [
+    1147,
+    1344
+  ],
+  "native_target_pixels": [
+    1147,
+    1344
+  ],
+  "startup_header": {
+    "clock": "wall",
+    "height": 1100.0,
+    "hz": 60.0000024000001,
+    "launch": "rune",
+    "platform": "rune",
+    "scale": 1.0,
+    "timestamp": "cpu-submit",
+    "type": "header",
+    "units": "pt",
+    "width": 1900.0
+  },
+  "input_model": "Synthetic pointer events queued through production Runtime drag handlers; OS mouse delivery is not measured.",
+  "drags": [
+    {
+      "drag": 0,
+      "seconds": 10.0,
+      "distinct_camera_presentations": 1011,
+      "fps": 100.90808282735256,
+      "input_window_fps": 101.1,
+      "presented_seconds": 10.009109,
+      "full_drag_covered": true,
+      "present_interval_ms": {
+        "samples": 1010,
+        "median": 8.333999999999833,
+        "p95": 16.66800000000012,
+        "max": 25.001999999999498
+      },
+      "passed": true
+    },
+    {
+      "drag": 1,
+      "seconds": 10.0,
+      "distinct_camera_presentations": 967,
+      "fps": 96.59247544616277,
+      "input_window_fps": 96.7,
+      "presented_seconds": 10.000778999999998,
+      "full_drag_covered": true,
+      "present_interval_ms": {
+        "samples": 966,
+        "median": 8.334000000000742,
+        "p95": 16.668000000001484,
+        "max": 25.002000000000407
+      },
+      "passed": true
+    },
+    {
+      "drag": 2,
+      "seconds": 10.0,
+      "distinct_camera_presentations": 1017,
+      "fps": 101.507465794182,
+      "input_window_fps": 101.7,
+      "presented_seconds": 10.009116000000002,
+      "full_drag_covered": true,
+      "present_interval_ms": {
+        "samples": 1016,
+        "median": 8.333999999998923,
+        "p95": 16.668000000001484,
+        "max": 25.002000000000407
+      },
+      "passed": true
+    }
+  ],
+  "update_ms": {
+    "samples": 2995,
+    "median": 3.576,
+    "p95": 4.035,
+    "max": 4.963875000000001
+  },
+  "encode_ms": {
+    "samples": 2995,
+    "median": 0.4871669999999999,
+    "p95": 0.6769160000000003,
+    "max": 1.7741669999999998
+  },
+  "synthetic_queue_wait_ms": {
+    "samples": 2995,
+    "median": 5.05670900000041,
+    "p95": 10.652291999999761,
+    "max": 13.525332999999591
+  },
+  "gpu_draw_ms": {
+    "samples": 1664,
+    "median": 3.8335,
+    "p95": 6.1842,
+    "max": 10.0383
+  },
+  "gpu_invalid_samples": 1413,
+  "unavailable_metrics": [
+    "OS input-arrival latency and drawable-acquisition waits are not exposed by Rune's public hooks.",
+    "Zero or reversed GPU timestamp pairs were rejected; GPU timings are incomplete and cannot establish a whole-run GPU distribution."
+  ]
+}

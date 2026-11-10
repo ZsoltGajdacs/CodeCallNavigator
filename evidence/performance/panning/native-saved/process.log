@@ -1,0 +1,2 @@
+rune: frames main: 120 redraws/s (0 unpaced), 120 presents/s, 0 failed acquires/s (occluded 0, timeout 0, outdated 0), 0 skipped/s, 154 loop turns/s (0 wakes); totals 4042 presents, 0 failed, 0 skipped; pacing: display link
+present: 4042 frames, 4038 presented, 4 skipped at 60 Hz; interval p50 8.33 p95 8.33 max 16.67 ms; 0 bunched (<2 ms), 0 missed (>25.00 ms); lag p50 8.33 p95 16.67 max 25.00 ms
