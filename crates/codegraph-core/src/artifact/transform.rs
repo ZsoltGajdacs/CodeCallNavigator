@@ -43,6 +43,7 @@ impl Transform<'_> {
 
     fn field(&self, key: &str, value: &mut Value) -> Result<()> {
         match key {
+            "qualifiers" => Ok(()),
             "id" | "symbol" => self.symbol(value),
             "file" | "build" => self.paths.rewrite(value, self.hydrate),
             "project" => {

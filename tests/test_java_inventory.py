@@ -70,7 +70,7 @@ record Data(String value) {}
         result = self.inventory(source, classes, [classes])
         self.assertEqual(result.returncode, 0, result.stderr)
         rows = (self.root / "inventory.tsv").read_text().splitlines()
-        self.assertTrue(rows[0].startswith("kind_v4\t"))
+        self.assertTrue(rows[0].startswith("kind_v5\t"))
         row = next(row.split("\t") for row in rows if row.startswith("architecture\t"))
         self.assertEqual(Path(row[1]), source.resolve())
         self.assertIn("Flow", row[3].split(","))
@@ -96,7 +96,7 @@ public class Flow {
         flow_rows = [row.split("\t") for row in rows if row.startswith("flow\t")]
         self.assertTrue(flow_rows, "Source inventory must export source flow IR")
         from test_java_context import tsv
-        flows = [json.loads(row["start_line"]) for row in tsv(self.root / "inventory.tsv") if row["kind_v4"] == "flow"]
+        flows = [json.loads(row["start_line"]) for row in tsv(self.root / "inventory.tsv") if row["kind_v5"] == "flow"]
         flow = next(flow for flow in flows if flow["symbol"] == "fixture.Flow:run(int)|int")
         body = flow["body"]
         self.assertEqual(body[1]["kind"], "try")

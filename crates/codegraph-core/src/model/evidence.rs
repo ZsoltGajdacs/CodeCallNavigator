@@ -2,7 +2,7 @@
 use crate::flow::SourceSpan;
 use anyhow::{Result, ensure};
 use serde::{Deserialize, Serialize};
-use std::collections::HashSet;
+use std::collections::{BTreeMap, HashSet};
 
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
@@ -28,6 +28,10 @@ pub struct RelationshipEvidence {
     pub supporting_symbols: Vec<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub channel: Option<String>,
+    /// Opaque rule-specific restrictions, not observed runtime state or references.
+    /// Symbol and path references belong in supporting_symbols and SourceSite.
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub qualifiers: BTreeMap<String, String>,
     pub semantics: String,
 }
 
@@ -59,6 +63,10 @@ impl RelationshipEvidence {
         if let Some(site) = &self.registration {
             site.validate()?;
         }
+        ensure!(
+            self.qualifiers.keys().all(|key| !key.trim().is_empty()),
+            "Relationship qualifier needs a name"
+        );
         for symbol in &self.supporting_symbols {
             ensure!(
                 identities.contains(symbol.as_str()),

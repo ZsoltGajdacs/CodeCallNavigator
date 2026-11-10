@@ -210,6 +210,7 @@ mod tests {
             registration: None,
             supporting_symbols: vec!["caller".into(), "target".into()],
             channel: None,
+            qualifiers: Default::default(),
         }];
         let mut reordered = first.clone();
         reordered.nodes.swap(0, 1);

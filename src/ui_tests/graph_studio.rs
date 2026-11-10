@@ -124,6 +124,10 @@ fn selected_relationship_shows_rule_source_construct_and_supporting_symbol() {
         }),
         supporting_symbols: vec![supporting],
         channel: Some("onClick".into()),
+        qualifiers: std::collections::BTreeMap::from([(
+            "spring.condition".into(),
+            "#event.enabled".into(),
+        )]),
     }];
     runtime.state.graph = Some(Arc::new(GraphIndex::new(Arc::new(data)).unwrap()));
     runtime
@@ -138,6 +142,7 @@ fn selected_relationship_shows_rule_source_construct_and_supporting_symbol() {
         "Evidence site: /fixture/Page.tsx:12:8 · bytes 40..50".into(),
         "Registration: /fixture/Page.tsx:12".into(),
         "Channel: onClick".into(),
+        "spring.condition: #event.enabled".into(),
         format!("Supporting symbol: {signature}"),
     ] {
         assert!(

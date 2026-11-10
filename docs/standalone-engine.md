@@ -98,6 +98,8 @@ execution semantics. These fields survive Git comparison, workspace caching and
 the selected-relationship inspector. Evidence sites are source constructs, not
 observations of runtime execution. References, deferred callbacks and possible
 invocations remain distinct. Old graphs without evidence remain readable.
+Optional `qualifiers` retain rule-specific restrictions as opaque string values;
+symbol and path references use supporting identities and source sites instead.
 
 ## Observer collections
 
@@ -141,3 +143,20 @@ Mutable/property paths, spread/rest forwarding, captured factories, optional
 factories and explicit possibly-nullish default arguments remain unresolved.
 See `tools/typescript/README.md` for the supported subset and
 `docs/engine-adaptations.md` for upstream solution references.
+
+## Spring event dispatch
+
+Java analysis connects compiler-resolved `ApplicationEventPublisher.publishEvent`
+sites to supported `EventListener`, `TransactionalEventListener` and
+`ApplicationListener` methods in the same compiled source context. Relationships
+use kind `spring-event`, possible certainty and `codegraph.spring.event.v1`
+provenance. Flow targets share their exact source call spans. Evidence preserves
+conditions, transaction phase/fallback settings and async annotations; these do
+not prove bean registration or runtime execution.
+
+Recognized listeners remain framework entries without a publisher. Catalog
+membership alone creates no invocation edge. Raw or erased generic payloads,
+directly parameterized payload classes whose type arguments disappear at runtime,
+lambda publishers, custom composed annotations and cross-context wiring remain
+unresolved. A concrete nongeneric subclass can retain generic superclass metadata.
+Runtime analysis requires the matching v5 Java source adapter.

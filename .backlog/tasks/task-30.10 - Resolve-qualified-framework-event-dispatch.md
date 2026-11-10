@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-11-10T13:42:00Z'
-updated_date: '2026-11-10T16:39:00Z'
+updated_date: '2026-11-10T17:12:00Z'
 labels: []
 dependencies:
   - TASK-30.9
@@ -36,4 +36,6 @@ Freeze the completed callable distribution, create real Spring6.2.5 and pinned M
 Dependency completed in a22e651; frozen matching executable/resources at /private/tmp/codegraph-stage3-a22e651, rebuildable from commit. Bootstrap added-file prerequisite273cd2c passed independent review and exact patch verification. No framework source changes yet.
 
 Real framework fixtures compiled before inference: Spring Maven test-compile succeeds offline (9 source files); MediatR12.4.1 locked public-only restore and Release build succeed (.NET10.0.403, zero warnings/errors). Frozen a22e651 graphs recorded: Spring19nodes13edges; MediatR25nodes2edges; expanded mixed119nodes76edges. No Spring/MediatR inferred edges present. Fixtures cover source-bound positives, type/API collisions, erasure, async/transaction conditions and unrelated application scopes. Fixture reviews10.0/no eligible findings, pre-commit safeguard passed13eligible source files.
+
+Stage4A Spring verified:3realcompiled acceptance tests,6inventory tests,5existing Javaflow tests,28engineunit tests, five common evidence tests and Runeinspector qualifier test passed. Independent review reproduced raw/inherited/enclosing generic unchecked matches; actual Spring6.2.5 runtime also rejects direct Box<String> where javac assignability accepts. Guards defer erased generic payloads while retaining concrete StringBox metadata. Runtime requires matching v5 capability. Listener catalog persists9entries after publishers removed with0inferrededges. Corpus adds exact16edges23source sites; prior nodes/edges unchanged; Spring19/29 and mixed119/92. Repeated/relocated/reordered Spring+mixed artifacts byte-identical. Final3run median2.631550958s baseline vs2.660514959s candidate (+1.10%); sampledRSS227704832 vs212303872bytes. Structured opaque qualifiers survive SQLite/canonical/Git comparison and inspector, including reserved dictionary keys. All source reviews10.0; strictworkspaceClippy and precommit safeguard21eligible files passed. MediatR remains pending; its draft9target/6deferral check passes outside vendor checkout, with actual production test red before integration.
 <!-- SECTION:NOTES:END -->

@@ -50,6 +50,7 @@ fn graph(root: &str) -> GraphData {
                 }),
                 supporting_symbols,
                 channel: Some("update".into()),
+                qualifiers: Default::default(),
             }],
         }],
         ..Default::default()
@@ -58,6 +59,44 @@ fn graph(root: &str) -> GraphData {
 
 fn roots(root: &str) -> Vec<(String, PathBuf)> {
     vec![("repo".into(), root.into())]
+}
+
+#[test]
+fn framework_qualifiers_survive_canonical_comparison_and_workspace_storage() {
+    let root = "/tmp/framework";
+    let mut value = serde_json::to_value(graph(root)).unwrap();
+    value["edges"][0]["evidence"][0]["qualifiers"] = serde_json::json!({
+        "spring.condition": "#event.enabled",
+        "spring.transaction_phase": "AFTER_COMMIT",
+        "spring.async": "true",
+        "file": "raw-condition",
+        "symbol": "raw-symbol",
+        "roots": "raw-root-description",
+        "diagnostics": "raw-diagnostic-description",
+        "supporting_symbols": "raw-support-description"
+    });
+    let graph: GraphData = serde_json::from_value(value).unwrap();
+    graph.validate().unwrap();
+    let before = canonical(&graph, &roots(root)).unwrap();
+    let hydrated = before.hydrate(&roots("/tmp/relocated-framework")).unwrap();
+    assert_eq!(
+        hydrated.edges[0].evidence[0].qualifiers,
+        graph.edges[0].evidence[0].qualifiers
+    );
+    let directory = tempfile::tempdir().unwrap();
+    let store = SqliteStore::open(directory.path()).unwrap();
+    store.publish(&graph, &AtomicBool::new(false)).unwrap();
+    let restored = store.load_active().unwrap().unwrap();
+    assert_eq!(
+        before.bytes().unwrap(),
+        canonical(&restored, &roots(root)).unwrap().bytes().unwrap()
+    );
+    let mut changed = serde_json::to_value(&graph).unwrap();
+    changed["edges"][0]["evidence"][0]["qualifiers"]["spring.transaction_phase"] =
+        "BEFORE_COMMIT".into();
+    let changed: GraphData = serde_json::from_value(changed).unwrap();
+    let comparison = compare(&before, &canonical(&changed, &roots(root)).unwrap()).unwrap();
+    assert_eq!(comparison.edges.changed.len(), 1);
 }
 
 #[test]
@@ -108,6 +147,7 @@ fn invalid_evidence_is_rejected_without_hiding_graph_relationships() {
             serde_json::json!({"file":"main.cs","line":1,"span":{"start":3,"end":3}}),
         ),
         ("registration", serde_json::json!({"file":"","line":1})),
+        ("qualifiers", serde_json::json!({" ":"value"})),
     ];
     for (field, value) in invalid {
         let mut graph = valid.clone();

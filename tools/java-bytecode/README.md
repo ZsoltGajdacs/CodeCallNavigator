@@ -86,3 +86,25 @@ failed or interrupted writes are removed before retry. Body-only attribution err
 from disabled annotation processing do not change successfully resolved source
 method identities; the actual build and bytecode completeness checks remain
 mandatory.
+
+The source inventory's `kind_v5` format adds Spring event candidate pairs, a
+supported source-listener catalog and framework diagnostics. `SourceFramework` first collects source-owned listeners,
+then checks compiler-bound `ApplicationEventPublisher.publishEvent` sites using
+live javac `Types` assignability, including `PayloadApplicationEvent<T>` wrapping.
+The Rust adapter maps exact source declaration keys through the existing bytecode
+identities and requires a matching UTF-8 flow call site before adding a possible
+`spring-event` edge. Recognized listeners remain framework entry points when
+there is no publisher; registration alone creates no invocation edge. The bytecode
+driver's native call relationships are unchanged.
+
+Direct Spring `@EventListener`, `@TransactionalEventListener`, `@Async` and typed
+`ApplicationListener<T>` are supported. Evidence retains conditions, transaction
+phase/fallback/default-execution values and async boundaries. These are static
+possibilities; DI registration and runtime execution are not proven. Only parsed
+method publishers and listeners in the same source inventory are paired. Erased,
+raw or directly parameterized payload runtime classes remain unresolved because
+javac unchecked assignment and source generic arguments do not prove Spring runtime
+resolvable types. Concrete nongeneric subclasses retain compiler generic-supertype
+metadata. Unresolved payloads, lambda publishers, custom composed annotations and
+cross-context wiring remain unresolved, with diagnostics. No joins use simple
+payload names, display labels or unrelated selected-build facts.

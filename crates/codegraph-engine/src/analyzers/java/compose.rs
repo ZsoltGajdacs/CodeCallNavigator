@@ -34,6 +34,7 @@ impl Composer {
         let entries = graph.entry_points.get_or_insert_with(EntryPoints::default);
         if let Some(part) = part.entry_points {
             entries.application_starts.extend(part.application_starts);
+            entries.framework_entries.extend(part.framework_entries);
         }
         crate::analyzers::architecture::merge(&mut graph.architecture, part.architecture)?;
         crate::flow::merge_inventory(&mut graph.flow_inventory, part.flow_inventory)?;
@@ -58,6 +59,8 @@ fn merge_declaration(old: &mut crate::model::Node, node: crate::model::Node) -> 
 pub(super) fn finalize_entries(graph: &mut GraphData) {
     let called: HashSet<_> = graph.edges.iter().map(|edge| edge.to).collect();
     let entries = graph.entry_points.get_or_insert_with(EntryPoints::default);
+    entries.framework_entries.sort();
+    entries.framework_entries.dedup();
     entries.application_starts.sort();
     entries.application_starts.dedup();
     entries.candidates = graph

@@ -161,7 +161,7 @@ fn validate_symbols(value: &Value, ids: &HashMap<String, u32>) -> Result<()> {
                         ids.contains_key(symbol),
                         "Flow references missing symbol: {symbol}"
                     );
-                } else {
+                } else if key != "qualifiers" {
                     validate_symbols(value, ids)?;
                 }
             }

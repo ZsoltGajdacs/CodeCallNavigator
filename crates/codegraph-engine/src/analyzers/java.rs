@@ -16,6 +16,7 @@ mod compose;
 mod contexts;
 mod engine;
 mod flow_inventory;
+mod framework;
 mod gradle;
 mod lambda_names;
 #[cfg(test)]

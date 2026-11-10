@@ -79,7 +79,7 @@ impl SourceInventories {
                 .to_string();
             if !self.parsed.contains_key(&key) {
                 let path = generate_inventory(source, &key, output, job)?;
-                let inventory = super::source_inventory::SourceInventory::read(&path)?;
+                let inventory = super::source_inventory::SourceInventory::read_current(&path)?;
                 self.parsed.insert(key.clone(), Arc::new(inventory));
                 crate::metrics::count("java.source_inventories", 1);
             } else {

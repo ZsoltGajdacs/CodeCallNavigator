@@ -43,6 +43,9 @@ fn lines(evidence: &RelationshipEvidence, graph: &GraphIndex) -> Vec<String> {
     if let Some(channel) = &evidence.channel {
         lines.push(format!("Channel: {channel}"));
     }
+    for (name, value) in &evidence.qualifiers {
+        lines.push(format!("{name}: {value}"));
+    }
     for id in &evidence.supporting_symbols {
         if let Some(index) = graph.node_index(id) {
             lines.push(format!(

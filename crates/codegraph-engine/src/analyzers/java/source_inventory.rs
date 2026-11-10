@@ -22,21 +22,39 @@ pub(super) struct SourceInventory {
     pub architecture: Vec<crate::architecture::FileFacts>,
     pub has_architecture: bool,
     pub has_flow: bool,
+    pub has_framework: bool,
     pub flows: Vec<super::flow_inventory::SourceFlow>,
+    pub framework: Vec<super::framework::SourcePair>,
+    pub framework_diagnostics: Vec<String>,
+    pub framework_listeners: Vec<String>,
 }
 
 impl SourceInventory {
+    pub fn read_current(path: &Path) -> Result<Self> {
+        let inventory = Self::read(path)?;
+        ensure!(
+            inventory.has_framework,
+            "Java source inventory lacks framework capability kind_v5; rebuild the matching Java adapter"
+        );
+        Ok(inventory)
+    }
+
     pub fn read(path: &Path) -> Result<Self> {
         let mut inventory = Self::default();
         let mut rows = tsv_rows(path)?;
         let mut header = rows.next().transpose()?;
-        inventory.has_flow = header
+        inventory.has_framework = header
             .as_ref()
-            .is_some_and(|fields| fields.first().is_some_and(|field| field == "kind_v4"));
+            .is_some_and(|fields| fields.first().is_some_and(|field| field == "kind_v5"));
+        inventory.has_flow = header.as_ref().is_some_and(|fields| {
+            fields
+                .first()
+                .is_some_and(|field| matches!(field.as_str(), "kind_v4" | "kind_v5"))
+        });
         inventory.has_architecture = header.as_ref().is_some_and(|fields| {
             fields
                 .first()
-                .is_some_and(|field| field == "kind_v3" || field == "kind_v4")
+                .is_some_and(|field| matches!(field.as_str(), "kind_v3" | "kind_v4" | "kind_v5"))
         });
         if inventory.has_architecture {
             header.as_mut().unwrap()[0] = "kind_v2".into();
@@ -70,6 +88,9 @@ impl SourceInventory {
                 "flow" => {
                     inventory.flows.push(serde_json::from_str(&fields[3])?);
                 }
+                "framework" => inventory.framework.push(serde_json::from_str(&fields[3])?),
+                "framework-listener" => inventory.framework_listeners.push(fields[3].clone()),
+                "framework-diagnostic" => inventory.framework_diagnostics.push(fields[3].clone()),
                 "architecture" => {
                     inventory.architecture.push(architecture_row(&fields)?);
                 }
@@ -158,4 +179,28 @@ fn architecture_row(fields: &[String]) -> Result<crate::architecture::FileFacts>
         content: std::fs::read_to_string(file)?,
         ..Default::default()
     })
+}
+
+#[cfg(test)]
+mod capability_tests {
+    use super::SourceInventory;
+    #[test]
+    fn legacy_inventory_is_readable_but_cannot_satisfy_current_runtime() {
+        let directory = tempfile::tempdir().unwrap();
+        let path = directory.path().join("source.tsv");
+        let suffix = "\tsignature\treturn_type\tstart_line\tend_line\tstart_column\tend_column\tcontext\tassigned_name\n";
+        for version in ["kind_v2", "kind_v3", "kind_v4"] {
+            std::fs::write(&path, format!("{version}{suffix}")).unwrap();
+            assert!(!SourceInventory::read(&path).unwrap().has_framework);
+            assert!(
+                SourceInventory::read_current(&path)
+                    .err()
+                    .unwrap()
+                    .to_string()
+                    .contains("rebuild the matching Java adapter")
+            );
+        }
+        std::fs::write(&path, format!("kind_v5{suffix}")).unwrap();
+        assert!(SourceInventory::read_current(&path).unwrap().has_framework);
+    }
 }
