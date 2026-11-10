@@ -1,5 +1,5 @@
 //! Acceptance against the pinned Roslyn analyzer, not fabricated compiler metadata.
-use codegraph::{
+use codegraph_engine::{
     analyzers::{AnalyzerRuntime, analyze},
     discovery::BuildTarget,
     model::Visibility,

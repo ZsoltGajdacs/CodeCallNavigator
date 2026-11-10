@@ -10,7 +10,7 @@ const FRAMES: usize = 60;
 #[test]
 #[ignore = "release-mode canvas benchmark; run with --ignored --nocapture"]
 fn dense_canvas_frame_preparation() {
-    assert!(!cfg!(debug_assertions), "Run this benchmark with --release");
+    assert!(!std::hint::black_box(cfg!(debug_assertions)), "Run this benchmark with --release");
     for scale in [1.0, 2.0] {
         let mut runtime = Runtime::new(
             fixture(),
@@ -77,7 +77,7 @@ fn fixture() -> State {
 #[test]
 #[ignore = "requires an explicit copied CODEGRAPH_DATA_DIR; release CPU benchmark only"]
 fn saved_canvas_frame_preparation() {
-    assert!(!cfg!(debug_assertions), "Run this benchmark with --release");
+    assert!(!std::hint::black_box(cfg!(debug_assertions)), "Run this benchmark with --release");
     assert!(
         std::env::var_os("CODEGRAPH_DATA_DIR").is_some(),
         "Use a copied profiling workspace"

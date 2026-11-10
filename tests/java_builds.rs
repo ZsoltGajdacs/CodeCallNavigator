@@ -1,7 +1,7 @@
 //! Real build-tool acceptance checks.
 #[path = "support/java.rs"]
 mod support;
-use codegraph::{
+use codegraph_engine::{
     analyzers::{AnalyzerRuntime, analyze},
     fingerprint,
     model::{GraphData, Node},

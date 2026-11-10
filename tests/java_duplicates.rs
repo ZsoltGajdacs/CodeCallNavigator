@@ -198,7 +198,7 @@ fn duplicates_acceptance(gradle: bool) {
 }
 
 fn external_archive(root: &Path) -> PathBuf {
-    let java = codegraph::analyzers::AnalyzerRuntime::discover()
+    let java = codegraph_engine::analyzers::AnalyzerRuntime::discover()
         .unwrap()
         .java_home
         .unwrap();

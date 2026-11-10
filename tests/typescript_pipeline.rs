@@ -1,6 +1,6 @@
 //! Compiler-backed acceptance. No dependency installation or project build is performed.
 //! Set CODEGRAPH_TEST_TYPESCRIPT_ROOT to an installed TypeScript 6.0.x package.
-use codegraph::{
+use codegraph_engine::{
     analyzers::{AnalyzerRuntime, analyze},
     discovery::{BuildTarget, target_from_file},
     fingerprint,

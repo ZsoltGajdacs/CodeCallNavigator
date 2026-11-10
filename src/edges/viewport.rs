@@ -41,8 +41,8 @@ impl Viewport {
     /// Visible parameter interval on the original segment, for preserving dash phase.
     pub fn interval(self, segment: [[f32; 2]; 2]) -> Option<[f64; 2]> {
         let mut interval = [0.0_f64, 1.0_f64];
-        for axis in 0..2 {
-            let origin = f64::from(segment[0][axis]);
+        for (axis, coordinate) in segment[0].iter().enumerate() {
+            let origin = f64::from(*coordinate);
             let delta = f64::from(segment[1][axis]) - origin;
             if delta == 0.0 {
                 if origin < f64::from(self.bounds[axis])

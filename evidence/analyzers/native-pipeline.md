@@ -1,7 +1,8 @@
 # Native analyzer pipeline acceptance
 
 Validated on 2026-11-07 using the Rust pipeline shared by the app and
-`src/bin/analyzer_check.rs`. These checks compile projects but do not launch the
+the helper now at `crates/codegraph-engine/src/bin/analyzer_check.rs`
+(`cargo run -p codegraph-engine --bin analyzer_check -- ...`). These checks compile projects but do not launch the
 applications or run their tests. Engine revisions and the CallAtlas identity
 serialization patch are pinned in `analyzers.lock.json`.
 

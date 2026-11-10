@@ -144,9 +144,18 @@ All content snapshots and per-context classpath rules remain enforced.
 The same production analyzer pipeline is available without opening a window:
 
 ```sh
+cargo build --locked -p codegraph-engine --bin codegraph-engine
+cargo run -p codegraph-engine --bin codegraph-engine -- analyze --project /path/to/project tsconfig.json
 cargo run --bin codegraph -- analyze fixtures/dotnet/Fixture.sln fixtures/gradle fixtures/maven/standalone/pom.xml
 cargo run --bin codegraph -- analyze /path/to/project/tsconfig.json
 ```
+
+The standalone engine updates the single `.codegraph/graph.json` beside project
+configuration. Commit that file to retain graph history in Git. Compare revisions
+with `codegraph-engine compare --project /path/to/project --base HEAD~1 --head HEAD`
+or compare a committed graph with `--head WORKTREE`. See
+[the engine contract](docs/standalone-engine.md) for packaging, identities and
+language extension boundaries.
 
 Collect stage timings and work counters with an optional JSON report:
 
@@ -252,8 +261,8 @@ and [pipeline evidence](evidence/analyzers/native-pipeline.md).
 ## Validation
 
 ```sh
-cargo clippy --all-targets --no-deps -- -D warnings
-cargo test --all-targets -- --include-ignored
+cargo clippy --workspace --all-targets --no-deps -- -D warnings
+cargo test --workspace --all-targets -- --include-ignored
 python3.13 -m unittest discover -s tests -v
 cargo run --release --bin benchmark -- evidence/performance/cache-local
 ```

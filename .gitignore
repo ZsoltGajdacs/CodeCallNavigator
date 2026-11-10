@@ -16,3 +16,4 @@
 /.serena/
 **/.codegraph/graph.lock
 **/.codegraph/.graph-publish-*
+**/node_modules

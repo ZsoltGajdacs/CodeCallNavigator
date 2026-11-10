@@ -64,7 +64,7 @@ fn metadata_rejects_unknown_or_duplicate_entry_identities() {
 #[test]
 #[ignore = "requires pinned CallAtlas and installed .NET SDK"]
 fn real_csharp_entries_keep_uncalled_methods_and_verify_executable_starts() {
-    use codegraph::{
+    use codegraph_engine::{
         analyzers::{AnalyzerRuntime, analyze},
         discovery::BuildTarget,
     };

@@ -1,20 +1,37 @@
-//! Desktop runtime adds layout tooling to the standalone analyzer resources.
-use anyhow::Result;
-use codegraph::analyzers::AnalyzerRuntime;
-use std::{ops::Deref, path::PathBuf};
+//! Desktop executable/resource discovery, independent of analyzer implementation.
+use anyhow::{Context, Result, ensure};
+use std::path::{Path, PathBuf};
 
 #[derive(Clone, Debug)]
 pub struct Runtime {
-    analyzer: AnalyzerRuntime,
+    pub engine: PathBuf,
+    pub resources: PathBuf,
     pub dot: PathBuf,
 }
 
 impl Runtime {
     pub fn discover() -> Result<Self> {
-        let analyzer = AnalyzerRuntime::discover()?;
-        let bundled = analyzer.bundle_root.join("analyzers/graphviz/bin/dot");
-        let dot = if bundled.is_file() {
-            bundled
+        let executable = std::env::current_exe()?;
+        let directory = executable.parent().context("Executable has no directory")?;
+        let engine = engine_path(directory)?;
+        let bundled = directory.parent().unwrap_or(directory).join("Resources");
+        let resources = std::env::var_os("CODEGRAPH_RESOURCES")
+            .map(PathBuf::from)
+            .unwrap_or_else(|| {
+                if bundled.join("analyzers").is_dir() {
+                    bundled
+                } else {
+                    PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+                }
+            });
+        ensure!(
+            resources.is_dir(),
+            "Analyzer resources are missing: {}",
+            resources.display()
+        );
+        let bundled_dot = resources.join("analyzers/graphviz/bin/dot");
+        let dot = if bundled_dot.is_file() {
+            bundled_dot
         } else {
             std::env::split_paths(&std::env::var_os("PATH").unwrap_or_default())
                 .chain([
@@ -26,13 +43,33 @@ impl Runtime {
                 .find(|path| path.is_file())
                 .unwrap_or_default()
         };
-        Ok(Self { analyzer, dot })
+        Ok(Self {
+            engine,
+            resources,
+            dot,
+        })
     }
 }
 
-impl Deref for Runtime {
-    type Target = AnalyzerRuntime;
-    fn deref(&self) -> &Self::Target {
-        &self.analyzer
+fn engine_path(directory: &Path) -> Result<PathBuf> {
+    if let Some(path) = std::env::var_os("CODEGRAPH_ENGINE") {
+        let path = PathBuf::from(path);
+        ensure!(
+            path.is_file(),
+            "CODEGRAPH_ENGINE is not a file: {}",
+            path.display()
+        );
+        return path.canonicalize().context("Cannot open configured engine");
     }
+    let sibling = directory.join("codegraph-engine");
+    let development = directory
+        .parent()
+        .unwrap_or(directory)
+        .join("codegraph-engine");
+    [sibling, development]
+        .into_iter()
+        .find(|path| path.is_file())
+        .context(
+            "Cannot find codegraph-engine beside CodeGraph; build or install the matching engine",
+        )
 }

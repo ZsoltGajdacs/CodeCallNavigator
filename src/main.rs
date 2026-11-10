@@ -1,10 +1,11 @@
-pub use codegraph::{analyzers, discovery, fingerprint};
+pub use codegraph::{discovery, fingerprint};
 mod app;
 mod architecture_workspace;
 mod camera;
 mod canvas_fixture;
 mod cli;
 mod edges;
+mod engine_client;
 mod flow_scenes;
 mod flow_view;
 mod flow_workspace;

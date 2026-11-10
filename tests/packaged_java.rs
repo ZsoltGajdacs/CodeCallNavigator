@@ -1,5 +1,5 @@
 //! Exercise the analyzer resource layout without using repository-local adapter paths.
-use codegraph::{
+use codegraph_engine::{
     analyzers::{AnalyzerRuntime, analyze},
     discovery::BuildTarget,
 };

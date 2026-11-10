@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import argparse
 import hashlib
 import os
 from pathlib import Path
@@ -121,7 +122,7 @@ def bundle_graphviz(destination):
     return Path(executable).resolve().parent.parent
 
 
-def dependency_notices(resources, graphviz_prefix):
+def dependency_notices(resources, graphviz_prefix=None):
     notices = resources / "Licenses"
     notices.mkdir()
     shutil.copy2(ROOT / "THIRD_PARTY_NOTICES.md", notices)
@@ -129,8 +130,9 @@ def dependency_notices(resources, graphviz_prefix):
         shutil.copy2(ROOT / "vendor" / name / "LICENSE", notices / f"{name}-LICENSE")
     for font_notice in (ROOT / "vendor/rune/crates/rune/assets").glob("*-LICENSE.txt"):
         shutil.copy2(font_notice, notices)
-    shutil.copy2(graphviz_prefix / "COPYING", notices / "graphviz-COPYING")
-    shutil.copy2("/opt/homebrew/opt/libtool/share/libtool/COPYING.LIB", notices / "libltdl-COPYING.LIB")
+    if graphviz_prefix:
+        shutil.copy2(graphviz_prefix / "COPYING", notices / "graphviz-COPYING")
+        shutil.copy2("/opt/homebrew/opt/libtool/share/libtool/COPYING.LIB", notices / "libltdl-COPYING.LIB")
     shutil.copy2(ROOT / "patches/callatlas-assembly-identity.patch", notices)
     copy_tree(ROOT / "tools/licenses", notices / "supplemental")
     jars = resources / "analyzers" / "java-bytecode" / "lib"
@@ -197,12 +199,7 @@ def notice_file(source):
     return source.is_file() and relevant
 
 
-def make_app(app):
-    contents = app / "Contents"
-    resources = contents / "Resources"
-    (contents / "MacOS").mkdir(parents=True)
-    resources.mkdir()
-    shutil.copy2(ROOT / "target/release/codegraph", contents / "MacOS/CodeGraph")
+def copy_analyzers(resources):
     analyzers = resources / "analyzers"
     analyzers.mkdir()
     copy_tree(ROOT / "vendor/callatlas/src/CallAtlas.Cli/bin/Release/net10.0", analyzers / "callatlas")
@@ -211,9 +208,30 @@ def make_app(app):
     shutil.copy2(ROOT / "tools/gradle-metadata.gradle", analyzers)
     shutil.copy2(ROOT / "tools/maven-metadata/build/libs/codegraph-maven-metadata.jar",
                  analyzers / "maven-metadata.jar")
+    shutil.copy2(ROOT / "analyzers.lock.json", resources)
+    return analyzers
+
+
+def make_engine(destination):
+    binary = destination / "bin"
+    resources = destination / "Resources"
+    binary.mkdir(parents=True)
+    resources.mkdir()
+    shutil.copy2(ROOT / "target/release/codegraph-engine", binary)
+    copy_analyzers(resources)
+    dependency_notices(resources)
+
+
+def make_app(app):
+    contents = app / "Contents"
+    resources = contents / "Resources"
+    (contents / "MacOS").mkdir(parents=True)
+    resources.mkdir()
+    shutil.copy2(ROOT / "target/release/codegraph", contents / "MacOS/CodeGraph")
+    shutil.copy2(ROOT / "target/release/codegraph-engine", contents / "MacOS/codegraph-engine")
+    analyzers = copy_analyzers(resources)
     graphviz_prefix = bundle_graphviz(analyzers / "graphviz")
     dependency_notices(resources, graphviz_prefix)
-    shutil.copy2(ROOT / "analyzers.lock.json", resources)
     with (contents / "Info.plist").open("wb") as stream:
         plistlib.dump({"CFBundleIdentifier": "dev.codegraph.app", "CFBundleName": "CodeGraph",
             "CFBundleExecutable": "CodeGraph", "CFBundlePackageType": "APPL",
@@ -224,12 +242,25 @@ def make_app(app):
 
 
 def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--engine-only', action='store_true', help='Package engine without desktop or Graphviz')
+    args = parser.parse_args()
     if platform.system() != "Darwin" or platform.machine() != "arm64":
         raise SystemExit("This package targets local Apple Silicon macOS")
     verify_dependency_sources()
-    run("cargo", "build", "--release", "--locked", "--bin", "codegraph", cwd=ROOT)
+    run("cargo", "build", "--release", "--locked", "-p", "codegraph-engine", "--bin", "codegraph-engine", cwd=ROOT)
     output = ROOT / "dist"
     output.mkdir(exist_ok=True)
+    with tempfile.TemporaryDirectory(prefix="codegraph-engine-package-", dir=output) as temporary:
+        engine = Path(temporary) / "CodeGraphEngine"
+        make_engine(engine)
+        destination = output / "CodeGraphEngine"
+        if destination.exists():
+            shutil.rmtree(destination)
+        engine.rename(destination)
+    if args.engine_only:
+        return
+    run("cargo", "build", "--release", "--locked", "--bin", "codegraph", cwd=ROOT)
     with tempfile.TemporaryDirectory(prefix="codegraph-package-", dir=output) as temporary:
         app = Path(temporary) / "CodeGraph.app"
         make_app(app)

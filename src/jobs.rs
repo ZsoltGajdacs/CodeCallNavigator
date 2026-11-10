@@ -1,8 +1,7 @@
 pub(crate) use crate::workspace::{Boot, LoadedGraph, data_directory, load_boot};
 use crate::{
-    analyzers,
     app::{RESULT_PAGE_SIZE, State, TargetChoice},
-    discovery, fingerprint, projection,
+    discovery, engine_client, fingerprint, projection,
 };
 use codegraph::graph::{Direction, GraphIndex};
 use rune::{Latest, Tx, Waker};
@@ -114,11 +113,19 @@ impl State {
         let root = PathBuf::from(self.root.text.trim());
         self.targets.clear();
         self.status = "Finding solutions, Java builds and TypeScript projects…".into();
-        self.jobs.discovery.request(root, |path| {
+        let runtime = self.runtime.clone();
+        self.jobs.discovery.request(root, move |path| {
             let root = path.to_string_lossy().into_owned();
             DiscoveryOutput {
                 root,
-                result: discovery::discover(&path).map_err(|error| error.to_string()),
+                result: (|| {
+                    let runtime = match runtime {
+                        Some(runtime) => runtime,
+                        None => Arc::new(crate::runtime::Runtime::discover()?),
+                    };
+                    engine_client::discover(&runtime, &path)
+                })()
+                .map_err(|error: anyhow::Error| error.to_string()),
             }
         });
     }
@@ -154,6 +161,7 @@ impl State {
             "Preparing project analysis…"
         }
         .into();
+        let project = PathBuf::from(self.root.text.trim());
         self.jobs.analysis.request(targets, move |targets| {
             let metrics = codegraph::metrics::Metrics::default();
             let _scope = metrics.enter();
@@ -164,7 +172,12 @@ impl State {
                 }
             };
             let result = (|| {
-                let data = Arc::new(analyzers::analyze(targets, &runtime, &cancel, &report)?);
+                let data = Arc::new(engine_client::analyze(
+                    &runtime,
+                    engine_client::Analysis { project, targets },
+                    &cancel,
+                    &report,
+                )?);
                 let graph = {
                     let _timer = codegraph::metrics::stage("indexing");
                     Arc::new(GraphIndex::new(data.clone())?)

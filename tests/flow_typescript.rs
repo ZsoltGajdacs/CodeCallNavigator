@@ -1,5 +1,5 @@
 //! Real TypeScript execution traces must be paths through the compiler-exported flow.
-use codegraph::{
+use codegraph_engine::{
     analyzers::{AnalyzerRuntime, analyze},
     discovery::target_from_file,
     flow::{FlowChart, build},

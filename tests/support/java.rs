@@ -1,4 +1,4 @@
-use codegraph::{
+use codegraph_engine::{
     analyzers::{AnalyzerRuntime, analyze},
     discovery::BuildTarget,
     model::GraphData,

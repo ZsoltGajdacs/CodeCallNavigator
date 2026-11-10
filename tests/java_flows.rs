@@ -174,7 +174,7 @@ fn assert_reactor_execution(
             })
             .map(|entry| std::path::PathBuf::from(&entry.path)),
     );
-    let runtime = codegraph::analyzers::AnalyzerRuntime::discover().unwrap();
+    let runtime = codegraph_engine::analyzers::AnalyzerRuntime::discover().unwrap();
     let output = std::process::Command::new(runtime.java_home.unwrap().join("bin/java"))
         .arg("-cp")
         .arg(std::env::join_paths(classpath).unwrap())
@@ -303,7 +303,7 @@ fn actual_java_completion_and_resource_traces_exist_in_the_source_chart() {
         false,
     );
     let graph = run(&directory);
-    let runtime = codegraph::analyzers::AnalyzerRuntime::discover().unwrap();
+    let runtime = codegraph_engine::analyzers::AnalyzerRuntime::discover().unwrap();
     let java = runtime.java_home.unwrap().join("bin/java");
     for mode in 0..8 {
         let output = std::process::Command::new(&java)
