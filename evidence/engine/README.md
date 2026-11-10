@@ -80,3 +80,30 @@ before desktop boot finished, and linked project-owned sources outside the
 selected folder. The machine protocol now derives stable logical aliases from
 compiler-owned paths for the desktop; explicit human CLI roots remain strict.
 The legacy timing destination rejects graph publication paths and symlink aliases.
+
+## Resolution checkpoints and final verification
+
+The foundation gate preceded every resolution stage. Subsequent checkpoints:
+
+| Checkpoint | Verification |
+| --- | --- |
+| `91e666f` — explainable evidence | `tests/relationship_evidence.rs` and production inspector tests |
+| `00db2bc` — observer channels | `tools/typescript/observer.test.js`; registration alone adds no invocation |
+| `a22e651` — callable propagation | `tools/typescript/callable.test.js`; native bindings and graph/flow agreement |
+| `008575b`, `b7207e2` — Spring and MediatR | `tests/java_spring.rs`, `tests/mediatr_dispatch.rs` and qualified-type controls |
+| `3f8b652` — navigation and HTTP | [Boundary evidence](stages/boundaries.md) |
+| `b839ba3` — incremental decisions | [Incremental evidence](stages/incremental.md) |
+
+The final packaged engine reproduces all seven stored corpus graphs byte for
+byte against the boundary checkpoint. Cold/warm, reordered and relocated runs
+agree; failure and cancellation preserve successful graph/cache state. Controlled
+final runtime medians stay within 1.5% of the previous checkpoint. Both measurement
+rounds are retained because JVM RSS/timing varied substantially; no general
+speedup or memory improvement is claimed.
+
+All 12 tracked tasks are complete. Incremental caching currently covers pure
+boundary decisions; compiler extraction and earlier inference conservatively
+recompute from fresh facts. C# flow inventories remain unavailable, matching the
+prior behavior. The full CallAtlas suite has 262 passes and the same 29 preexisting
+failure IDs; all five new HTTP cases pass. See
+[the exact upstream comparison](stages/http-upstream-tests.json).

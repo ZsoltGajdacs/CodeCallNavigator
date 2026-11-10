@@ -1,11 +1,11 @@
 ---
 id: TASK-30
 title: Extract standalone graph engine and improve resolution against Git baselines
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-11-10T13:41:00Z'
-updated_date: '2026-11-10T16:19:00Z'
+updated_date: '2026-11-10T20:02:00Z'
 labels: []
 dependencies: []
 ordinal: 30000
@@ -22,7 +22,7 @@ Approved roadmap: preserve merged baseline, extract independent engine, publish 
 - [x] #1 Foundation verified against master fb54f5f before resolution changes
 - [x] #2 One deterministic .codegraph/graph.json per project and Git comparator
 - [x] #3 Desktop invokes packaged standalone engine
-- [ ] #4 Resolution stages verified in dependency order
+- [x] #4 Resolution stages verified in dependency order
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -34,11 +34,17 @@ Complete foundation 0A-0F in separate commits, verifying frozen native payload e
 ## Implementation Notes
 
 <!-- SECTION:NOTES:BEGIN -->
-Foundation completed and verified before any inference changes. Master baseline fb54f5f; extraction commits 8fff86a, 2d92b77, b663649, cf0d8fd. Proceed to evidence and resolution stages in dependency order.
+Completed all 12 foundation and resolution tasks in dependency order.
 
-Preparing a required bootstrap prerequisite for the approved framework stage: dependency patch verification must include patch-added upstream files without modifying the real upstream index or relying on unrecorded edits/stashes. Use a temporary Git index to obtain the complete diff; exact checked-in patch-byte matching remains the acceptance gate. Add real Git migration/idempotence/rejection tests before changing the helper.
+Local master preserves immutable baseline fb54f5f789d94c6cbc5fe86bf20010edea815b33. The foundation gate at e23420c passed before inference work. Subsequent work remains on codex/standalone-graph-engine; nothing was pushed and remote master was not modified.
 
-Patch-bootstrap prerequisite implemented and independently reviewed: temporary copy of the real index includes patch-added files and staged additions, without real-index mutation. Tests first reproduced repeat-verification rejection, then found/fixed a staged-added omission in an earlier read-tree-based approach. Six dependency tests, existing54 Python root tests and new4 packaging tests pass; actual vendor verification passes with byte-identical normal/split indexes and literal/space/newline paths. Source reviews10.0. Repo-wide safeguard is temporarily pending the concurrent callable implementation cleanup; no commit yet.
+Delivered codegraph-core, independently buildable codegraph-engine, desktop subprocess integration, one atomic canonical graph per project, portable identities, complete graph/flow/architecture export and direct Git comparison. Existing language/build adapters and checked-in upstream patch bootstrap are preserved. The engine does not require Rune, WGPU or Graphviz.
 
-Bootstrap prerequisite final gate passed: repo-wide CodeScene safeguard now passes15eligible files after callable cleanup; no regressions in the prerequisite source. Existing root54tests, six dependency tests, four packaging tests, real normal/split-index probes and actual three-vendor verification passed. Ready for the separately scoped bootstrap support commit.
+Resolution checkpoints: evidence 91e666f; observers 00db2bc; portable identity correction 3a261b6; callable propagation a22e651; Spring 008575b; MediatR b7207e2; navigation/HTTP 3f8b652; incremental decisions b839ba3. Fixtures were frozen separately before behavior changes, with real compiler positive and negative controls. Upstream adaptations and attribution are documented in docs/engine-adaptations.md.
+
+Final verification: all seven packaged corpus graphs are byte-identical to 3f8b652. Cold/warm/reordered/relocated output agrees. Fourteen SQLite tests and three real CLI tests cover dependency invalidation, full equality, corruption and failure/cancellation preservation. Workspace all-target tests, strict Clippy, CodeScene safeguards and signed app/standalone packaging pass. Controlled final runtime medians stay within 1.5%; raw JVM/RSS variability is retained and explained.
+
+Limits: only pure boundary decisions are cached; compiler extraction and earlier inference remain fresh/full. Dynamic, ambiguous or unsupported wiring remains unresolved as documented. C# flow inventories remain unavailable. CallAtlas has 262 passing tests and the same 29 preexisting failures; all five new HTTP cases pass. Private/GPU/toolchain exclusions remain explicitly documented rather than claimed as passing.
+
+Usage and architecture: docs/standalone-engine.md. Consolidated evidence: evidence/engine/README.md, with linked boundary and incremental reports. Built artifacts: dist/CodeGraphEngine/bin/codegraph-engine and dist/CodeGraph.app. Matching frozen distributions record their exact source checkpoints for rebuilding and comparison.
 <!-- SECTION:NOTES:END -->
