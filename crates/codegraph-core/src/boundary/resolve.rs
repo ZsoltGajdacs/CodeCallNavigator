@@ -6,22 +6,39 @@ use anyhow::Result;
 use std::collections::{BTreeMap, HashMap};
 
 pub fn resolve(graph: &mut GraphData, configuration: &Configuration) -> Result<()> {
+    run(graph, configuration, None)
+}
+pub fn resolve_cached(
+    graph: &mut GraphData,
+    configuration: &Configuration,
+    cache: &mut super::DecisionCache,
+) -> Result<()> {
+    run(graph, configuration, Some(cache))
+}
+fn run(
+    graph: &mut GraphData,
+    configuration: &Configuration,
+    mut cache: Option<&mut super::DecisionCache>,
+) -> Result<()> {
     configuration.validate()?;
     graph.validate()?;
     validate_scopes(graph, configuration)?;
     graph.edges.retain(|edge| edge.provenance != PROVENANCE);
+    graph.diagnostics.retain(|text| {
+        !text.starts_with("http boundary unresolved at ")
+            && !text.starts_with("navigation boundary unresolved at ")
+    });
     super::flow::clear(graph);
     let Some(inventory) = graph.boundaries.clone() else {
         return Ok(());
     };
     for usage in &inventory.uses {
-        if usage.kind == "http" && usage.method.is_none() {
-            unresolved(graph, usage, "unknown request method");
-            continue;
-        }
-        let Some(path) = matcher::path(&usage.path) else {
-            unresolved(graph, usage, "unsupported or ambiguous URL");
-            continue;
+        let path = match request_path(usage) {
+            Ok(path) => path,
+            Err(reason) => {
+                unresolved(graph, usage, reason);
+                continue;
+            }
         };
         let candidates: Vec<_> = inventory
             .routes
@@ -31,7 +48,12 @@ pub fn resolve(graph: &mut GraphData, configuration: &Configuration) -> Result<(
                     && matcher::potential(route, usage.method.as_deref(), path)
             })
             .collect();
-        if let Some(route) = winner(&candidates) {
+        let context = super::cache_key::Context {
+            configuration,
+            engine_versions: &graph.engine_versions,
+        };
+        let decision = decision(usage, &candidates, &context, cache.as_deref_mut())?;
+        if let Some(route) = decision {
             attach(graph, usage, route)?;
         } else {
             unresolved(
@@ -43,6 +65,13 @@ pub fn resolve(graph: &mut GraphData, configuration: &Configuration) -> Result<(
     }
     graph.validate()
 }
+fn request_path(usage: &BoundaryUse) -> std::result::Result<&str, &'static str> {
+    if usage.kind == "http" && usage.method.is_none() {
+        return Err("unknown request method");
+    }
+    matcher::path(&usage.path).ok_or("unsupported or ambiguous URL")
+}
+
 fn in_scope(route: &RouteFact, usage: &BoundaryUse, configuration: &Configuration) -> bool {
     if route.kind != usage.kind {
         return false;
@@ -94,15 +123,38 @@ fn winner<'a>(candidates: &[&'a RouteFact]) -> Option<&'a RouteFact> {
     let winners: Vec<_> = candidates
         .iter()
         .copied()
-        .filter(|candidate| {
-            matcher::supported(candidate)
-                && candidates.iter().all(|other| {
-                    std::ptr::eq(*other, *candidate) || matcher::dominates(candidate, other)
-                })
-        })
+        .filter(|candidate| is_winner(candidate, candidates))
         .collect();
     (winners.len() == 1).then(|| winners[0])
 }
+pub(super) fn is_winner(candidate: &RouteFact, candidates: &[&RouteFact]) -> bool {
+    matcher::supported(candidate)
+        && candidates.iter().all(|other| {
+            same_owner(candidate, other)
+                && (std::ptr::eq(*other, candidate) || matcher::dominates(candidate, other))
+        })
+}
+fn same_owner(left: &RouteFact, right: &RouteFact) -> bool {
+    left.build == right.build && left.application == right.application
+}
+fn decision<'a>(
+    usage: &BoundaryUse,
+    candidates: &[&'a RouteFact],
+    context: &super::cache_key::Context<'_>,
+    cache: Option<&mut super::DecisionCache>,
+) -> Result<Option<&'a RouteFact>> {
+    let Some(cache) = cache else {
+        return Ok(winner(candidates));
+    };
+    let key = super::cache_key::key(usage, candidates, context, cache.implementation())?;
+    if let Some(decision) = cache.lookup(&key, candidates) {
+        return Ok(decision);
+    }
+    let selected = winner(candidates);
+    cache.record(key, selected)?;
+    Ok(selected)
+}
+
 fn unresolved(graph: &mut GraphData, usage: &BoundaryUse, reason: &str) {
     graph.diagnostics.push(format!(
         "{} boundary unresolved at {}:{}: {reason}",

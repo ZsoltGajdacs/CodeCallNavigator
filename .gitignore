@@ -16,4 +16,8 @@
 /.serena/
 **/.codegraph/graph.lock
 **/.codegraph/.graph-publish-*
+**/.codegraph/inference.sqlite3
+**/.codegraph/inference.sqlite3-wal
+**/.codegraph/inference.sqlite3-shm
+**/.codegraph/inference.sqlite3-journal
 **/node_modules

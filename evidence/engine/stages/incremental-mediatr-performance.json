@@ -1,0 +1,59 @@
+{
+  "baseline": {
+    "runs": [
+      {
+        "seconds": 3.4448335000000014,
+        "sampled_peak_tree_rss_bytes": 293502976,
+        "sampling_errors": [],
+        "nodes": 49,
+        "edges": 11
+      },
+      {
+        "seconds": 3.2443771249999998,
+        "sampled_peak_tree_rss_bytes": 284311552,
+        "sampling_errors": [],
+        "nodes": 49,
+        "edges": 11
+      },
+      {
+        "seconds": 3.3227800840000015,
+        "sampled_peak_tree_rss_bytes": 294273024,
+        "sampling_errors": [],
+        "nodes": 49,
+        "edges": 11
+      }
+    ],
+    "median_seconds": 3.3227800840000015,
+    "median_sampled_peak_tree_rss_bytes": 293502976,
+    "resource_sampling_complete": true
+  },
+  "candidate": {
+    "runs": [
+      {
+        "seconds": 3.3246747909999996,
+        "sampled_peak_tree_rss_bytes": 293552128,
+        "sampling_errors": [],
+        "nodes": 49,
+        "edges": 11
+      },
+      {
+        "seconds": 3.3182922920000024,
+        "sampled_peak_tree_rss_bytes": 294453248,
+        "sampling_errors": [],
+        "nodes": 49,
+        "edges": 11
+      },
+      {
+        "seconds": 3.206784082999995,
+        "sampled_peak_tree_rss_bytes": 284835840,
+        "sampling_errors": [],
+        "nodes": 49,
+        "edges": 11
+      }
+    ],
+    "median_seconds": 3.3182922920000024,
+    "median_sampled_peak_tree_rss_bytes": 293552128,
+    "resource_sampling_complete": true
+  },
+  "protocol": "Cache and sidecars retained in memory and hidden only during baseline runs; restored before candidate; graph path unchanged."
+}

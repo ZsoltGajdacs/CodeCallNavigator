@@ -1,0 +1,44 @@
+[
+  {
+    "workload": "maven",
+    "byte_equal": true,
+    "sha256": "d49431880d034cae0397585d28c741d9b815d537b6fc940a9fd98c10a9e6972b",
+    "bytes": 30601
+  },
+  {
+    "workload": "gradle",
+    "byte_equal": true,
+    "sha256": "f72187e18874ba69bfdc4f92256064e29771619e0d6031b9d5a8f4be07972e5f",
+    "bytes": 22727
+  },
+  {
+    "workload": "csharp",
+    "byte_equal": true,
+    "sha256": "925b3b865955ce0bae009e670586cc302b7a06dd025689d5934defab2205f491",
+    "bytes": 21709
+  },
+  {
+    "workload": "typescript",
+    "byte_equal": true,
+    "sha256": "57656ebe78774c1109a40acc93f85652df3e0a5ba12e901c2f91e5e34fac9440",
+    "bytes": 307959
+  },
+  {
+    "workload": "spring",
+    "byte_equal": true,
+    "sha256": "aa0f0bd99b2ce72d0925a36c4a871f5efb17e10a03ae4fc4cbfb54d602b01f23",
+    "bytes": 200702
+  },
+  {
+    "workload": "mediatr",
+    "byte_equal": true,
+    "sha256": "3795676ff3b78a8607bb0db1e760a04f41edcc844e6411777c17b65c4ffb6e68",
+    "bytes": 97224
+  },
+  {
+    "workload": "mixed",
+    "byte_equal": true,
+    "sha256": "76188f0324bdd5ee33ba905da94e11db6875520ed970a4c636fd1accffbef9bd",
+    "bytes": 718120
+  }
+]

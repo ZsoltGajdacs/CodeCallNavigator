@@ -1,0 +1,16 @@
+[
+  {
+    "workload": "typescript",
+    "equal": true,
+    "repeat_equal": true,
+    "relocation_equal": true,
+    "bytes": 307959
+  },
+  {
+    "workload": "mixed",
+    "equal": true,
+    "repeat_equal": true,
+    "relocation_equal": true,
+    "bytes": 691208
+  }
+]

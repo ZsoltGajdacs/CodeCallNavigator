@@ -2,6 +2,7 @@
 mod analysis;
 mod arguments;
 mod cancellation;
+mod inference;
 mod linked_roots;
 mod machine;
 use anyhow::Result;

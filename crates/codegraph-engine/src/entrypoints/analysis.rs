@@ -110,12 +110,7 @@ pub fn analyze_with_linked_roots(
         codegraph_core::boundary::Configuration::load(&project, &targets)?;
     let mut graph = native(targets, progress)?;
     graph.fingerprints.extend(boundary_inputs);
-    let relationships = graph.edges.len();
-    codegraph_core::boundary::resolve(&mut graph, &boundaries)?;
-    metrics::count(
-        "relationships",
-        graph.edges.len().saturating_sub(relationships) as u64,
-    );
+    let cache = super::inference::resolve(&project, &mut graph, &boundaries)?;
     let roots = if options.infer_linked {
         super::linked_roots::infer(&graph, &project, roots)?
     } else {
@@ -128,6 +123,7 @@ pub fn analyze_with_linked_roots(
         "Project inputs changed before graph publication"
     );
     lock.publish(&artifact, &CANCELLED)?;
+    super::inference::finish(cache, progress);
     metrics.finish();
     Ok(Event::Complete {
         roots,

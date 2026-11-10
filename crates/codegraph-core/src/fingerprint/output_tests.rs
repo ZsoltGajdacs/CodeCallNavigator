@@ -7,7 +7,15 @@ fn graph_publication_does_not_invalidate_sources_but_configuration_does() {
     let before = capture(source_paths(&[project.path().into()]).unwrap()).unwrap();
     let directory = project.path().join(".codegraph");
     fs::create_dir(&directory).unwrap();
-    for name in ["graph.json", "graph.lock", ".graph-publish-before"] {
+    for name in [
+        "graph.json",
+        "graph.lock",
+        ".graph-publish-before",
+        "inference.sqlite3",
+        "inference.sqlite3-wal",
+        "inference.sqlite3-shm",
+        "inference.sqlite3-journal",
+    ] {
         fs::write(directory.join(name), "generated").unwrap();
     }
     assert!(!is_stale(&before).unwrap());
@@ -35,6 +43,11 @@ fn resource_collection_excludes_only_project_graph_outputs() {
         ".graph-publish-active",
         "layers.yml",
         "other.json",
+        "inference.sqlite3",
+        "inference.sqlite3-wal",
+        "inference.sqlite3-shm",
+        "inference.sqlite3-journal",
+        "inference.sqlite3.authored",
     ] {
         fs::write(directory.join(name), "content").unwrap();
     }
@@ -43,7 +56,16 @@ fn resource_collection_excludes_only_project_graph_outputs() {
     assert!(paths.contains(&directory.join("layers.yml")));
     assert!(paths.contains(&directory.join("other.json")));
     assert!(paths.contains(&project.path().join("graph.json")));
-    for name in ["graph.json", "graph.lock", ".graph-publish-active"] {
+    assert!(paths.contains(&directory.join("inference.sqlite3.authored")));
+    for name in [
+        "graph.json",
+        "graph.lock",
+        ".graph-publish-active",
+        "inference.sqlite3",
+        "inference.sqlite3-wal",
+        "inference.sqlite3-shm",
+        "inference.sqlite3-journal",
+    ] {
         assert!(
             !paths.contains(&directory.join(name)),
             "Unexpected generated input {name}"
@@ -61,10 +83,19 @@ fn resource_collection_excludes_only_project_graph_outputs() {
 #[test]
 fn explicit_observations_of_generated_graph_files_are_excluded() {
     let project = tempfile::tempdir().unwrap();
-    let path = project.path().join(".codegraph/graph.json");
-    fs::create_dir(path.parent().unwrap()).unwrap();
-    fs::write(&path, "generated").unwrap();
-    assert!(capture([path.clone()]).unwrap().is_empty());
-    assert!(capture_excluding([path.clone()], &[]).unwrap().is_empty());
-    assert!(input_paths_excluding(&[path], &[]).unwrap().is_empty());
+    let directory = project.path().join(".codegraph");
+    fs::create_dir(&directory).unwrap();
+    for name in [
+        "graph.json",
+        "inference.sqlite3",
+        "inference.sqlite3-wal",
+        "inference.sqlite3-shm",
+        "inference.sqlite3-journal",
+    ] {
+        let path = directory.join(name);
+        fs::write(&path, "generated").unwrap();
+        assert!(capture([path.clone()]).unwrap().is_empty());
+        assert!(capture_excluding([path.clone()], &[]).unwrap().is_empty());
+        assert!(input_paths_excluding(&[path], &[]).unwrap().is_empty());
+    }
 }

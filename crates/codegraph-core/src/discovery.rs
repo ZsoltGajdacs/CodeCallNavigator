@@ -47,7 +47,7 @@ pub(crate) fn excluded_directory(name: &str) -> bool {
     )
 }
 
-/// Only generated artifact files directly inside a project's configuration folder.
+/// Only generated analysis artifacts directly inside a project's configuration folder.
 pub fn generated_graph_output(path: &Path) -> bool {
     if path
         .parent()
@@ -58,9 +58,19 @@ pub fn generated_graph_output(path: &Path) -> bool {
     }
     path.file_name()
         .and_then(|name| name.to_str())
-        .is_some_and(|name| {
-            matches!(name, "graph.json" | "graph.lock") || name.starts_with(".graph-publish-")
-        })
+        .is_some_and(generated_analysis_name)
+}
+
+fn generated_analysis_name(name: &str) -> bool {
+    matches!(
+        name,
+        "graph.json"
+            | "graph.lock"
+            | "inference.sqlite3"
+            | "inference.sqlite3-wal"
+            | "inference.sqlite3-shm"
+            | "inference.sqlite3-journal"
+    ) || name.starts_with(".graph-publish-")
 }
 
 pub fn discover(root: &Path) -> Result<Vec<BuildTarget>> {

@@ -1,5 +1,10 @@
 //! Compiler-owned HTTP and navigation facts, including unresolved route blockers.
+mod cache;
+mod cache_key;
+mod cache_paths;
+mod cache_store;
 mod config;
+pub use cache::{CacheStats, DecisionCache};
 mod contracts;
 mod flow;
 mod matcher;
@@ -9,3 +14,4 @@ pub use config::{Configuration, HttpScope, Server};
 pub use contracts::merge;
 pub use contracts::{BoundaryInventory, BoundaryUse, RouteFact};
 pub use resolve::resolve;
+pub use resolve::resolve_cached;

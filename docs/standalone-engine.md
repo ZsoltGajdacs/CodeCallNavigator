@@ -205,3 +205,35 @@ Shadowed/replaced APIs, mutable or escaped routers, dynamic URL/options and
 unmodeled deployment/route behavior stay unresolved. Next configuration or
 middleware/proxy presence conservatively blocks its route candidates; the
 analyzer does not execute project configuration.
+
+## Incremental inference
+
+Each run still extracts and validates fresh compiler facts. Observer, callable,
+Spring and MediatR inference currently recompute from those facts. The boundary
+pass reuses dependency-keyed routing decisions in the disposable project-local
+`.codegraph/inference.sqlite3`; it never loads prior graph edges as evidence.
+The SQLite file and its exact journal/WAL/SHM names are excluded from discovery,
+source fingerprints and refresh triggers. Continue committing only the single
+graph file and authored configuration, not this derived cache.
+
+A decision depends on its current source use, configured application scope,
+toolchain, complete matching route/blocker membership and supported symbols.
+Negative lookups track empty membership, so adding a matching handler invalidates
+a cached miss. An automatic implementation digest invalidates decisions when the
+rule implementation changes. Hits rebind current symbols and construct fresh
+edge evidence and flow targets; unrelated node index changes cannot replay old
+indexes. Flow attachment always checks the current exact source call site.
+
+Cache reads are optional and read-only. Missing, incompatible or malformed data
+falls back to full inference and reports a volatile warning. Unowned, corrupt or
+nonregular cache files are preserved rather than overwritten; remove the derived
+cache to rebuild it. Successful input verification and atomic graph publication
+happen before the cache replaces its current rows in one transaction under the
+same project lock. Cache persistence failure cannot turn a published graph into a
+failed analysis. Failed or cancelled analysis preserves the successful graph and
+previous cache. The cache stores no graph history.
+
+Set `CODEGRAPH_DISABLE_INFERENCE_CACHE=1` to run the full reference path without
+reading or writing the cache. Canonical graph bytes are identical in both modes.
+Cache hit/miss/rejection counters and warnings use progress/performance reporting,
+not canonical graph content.
