@@ -268,6 +268,22 @@
           "annotations": [],
           "base_types": [],
           "build": "@repo/typescript-corpus/tsconfig.json",
+          "content": "const choose = Date.now() > 0;\nfunction nullishPrimary() { return 1; }\nfunction nullishFallback() { return 2; }\nfunction orPrimary() { return 3; }\nfunction orFallback() { return 4; }\nfunction aliasPrimary() { return 5; }\nfunction aliasFallback() { return 6; }\nfunction parameterLeaf() { return 7; }\nfunction returnLeafA() { return 8; }\nfunction returnLeafB() { return 9; }\nfunction mutationLeafA() { return 10; }\nfunction mutationLeafB() { return 11; }\nfunction forwardedLeaf() { return 12; }\n\nexport function logicalNullish() {\n  const maybe = choose ? nullishPrimary : undefined;\n  const selected = maybe ?? nullishFallback;\n  return selected();\n}\nexport function logicalOr() {\n  const maybe = choose ? orPrimary : undefined;\n  const selected = maybe || orFallback;\n  return selected();\n}\nexport function immutableAlias() {\n  const maybe = choose ? aliasPrimary : undefined;\n  const selected = maybe ?? aliasFallback;\n  const alias = selected;\n  return alias();\n}\nfunction invokeParameter(callback: () => number) { return callback(); }\nexport function callParameter() { return invokeParameter(parameterLeaf); }\nfunction identity(callback: () => number) { return callback; }\nexport function returnedA() { const callback = identity(returnLeafA); return callback(); }\nexport function returnedB() { const callback = identity(returnLeafB); return callback(); }\nexport function immediateReturned() { return identity(returnLeafA)(); }\nfunction relay(callback: () => number) { return callback; }\nfunction forwardOnly(callback: () => number) { return relay(callback); }\nexport function forwardingOnly() { forwardOnly(forwardedLeaf); return 0; }\nfunction mutatedParameter(callback: () => number) { callback = mutationLeafB; return callback(); }\nexport function parameterMutationNegative() { return mutatedParameter(mutationLeafA); }\nexport function mutableAliasNegative() {\n  let callback = choose ? mutationLeafA : mutationLeafB;\n  callback = mutationLeafB;\n  const selected = callback ?? mutationLeafA;\n  return selected();\n}\nexport function mutableReturnNegative() {\n  let callback = identity(mutationLeafA);\n  callback = identity(mutationLeafB);\n  const alias = callback;\n  return alias();\n}\n",
+          "file": "@repo/typescript-corpus/src/callables.ts",
+          "is_interface": false,
+          "is_test": false,
+          "kinds": [],
+          "language": "typescript",
+          "method_annotations": [],
+          "names": [],
+          "namespaces": [],
+          "project": "typescript-corpus"
+        },
+        {
+          "annotated_interfaces": [],
+          "annotations": [],
+          "base_types": [],
+          "build": "@repo/typescript-corpus/tsconfig.json",
           "content": "export function GET() { return new Response('ok'); }\n",
           "file": "@repo/typescript-corpus/src/app/api/route.ts",
           "is_interface": false,
@@ -323,8 +339,8 @@
       "version": 1
     },
     "diagnostics": [
-      "1 unresolved dynamic call sites",
       "1 unresolved observer instance channels (constructor escape or multiple allocations)",
+      "11 unresolved dynamic call sites",
       "CallAtlas omits most source-generator output; cross-assembly interface implementation candidates are limited; operator invocations are not fully reported. Reflection, dynamic calls, framework callbacks and unsupported DI wiring are not inferred.",
       "Java DI, reflection, framework callback ordering and dynamic runtime targets are supported only where reported by java-callgraph2. Bytecode source columns are unavailable.",
       "Java DI, reflection, framework callback ordering and dynamic runtime targets are supported only where reported by java-callgraph2. Bytecode source columns are unavailable.",
@@ -476,6 +492,62 @@
       {
         "certainty": "direct",
         "count": 1,
+        "from": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/callables.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"callParameter\\\\\\\",\\\\\\\"(): number\\\\\\\"]\\\",0]\"]",
+        "kind": "call",
+        "provenance": "typescript.compiler",
+        "to": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/callables.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"invokeParameter\\\\\\\",\\\\\\\"(callback: () => number): number\\\\\\\"]\\\",0]\"]"
+      },
+      {
+        "certainty": "direct",
+        "count": 1,
+        "from": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/callables.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"forwardOnly\\\\\\\",\\\\\\\"(callback: () => number): () => number\\\\\\\"]\\\",0]\"]",
+        "kind": "call",
+        "provenance": "typescript.compiler",
+        "to": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/callables.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"relay\\\\\\\",\\\\\\\"(callback: () => number): () => number\\\\\\\"]\\\",0]\"]"
+      },
+      {
+        "certainty": "direct",
+        "count": 1,
+        "from": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/callables.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"forwardingOnly\\\\\\\",\\\\\\\"(): number\\\\\\\"]\\\",0]\"]",
+        "kind": "call",
+        "provenance": "typescript.compiler",
+        "to": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/callables.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"forwardOnly\\\\\\\",\\\\\\\"(callback: () => number): () => number\\\\\\\"]\\\",0]\"]"
+      },
+      {
+        "certainty": "direct",
+        "count": 1,
+        "from": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/callables.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"immediateReturned\\\\\\\",\\\\\\\"(): number\\\\\\\"]\\\",0]\"]",
+        "kind": "call",
+        "provenance": "typescript.compiler",
+        "to": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/callables.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"identity\\\\\\\",\\\\\\\"(callback: () => number): () => number\\\\\\\"]\\\",0]\"]"
+      },
+      {
+        "certainty": "direct",
+        "count": 1,
+        "from": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/callables.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"parameterMutationNegative\\\\\\\",\\\\\\\"(): number\\\\\\\"]\\\",0]\"]",
+        "kind": "call",
+        "provenance": "typescript.compiler",
+        "to": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/callables.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"mutatedParameter\\\\\\\",\\\\\\\"(callback: () => number): number\\\\\\\"]\\\",0]\"]"
+      },
+      {
+        "certainty": "direct",
+        "count": 1,
+        "from": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/callables.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"returnedA\\\\\\\",\\\\\\\"(): number\\\\\\\"]\\\",0]\"]",
+        "kind": "call",
+        "provenance": "typescript.compiler",
+        "to": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/callables.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"identity\\\\\\\",\\\\\\\"(callback: () => number): () => number\\\\\\\"]\\\",0]\"]"
+      },
+      {
+        "certainty": "direct",
+        "count": 1,
+        "from": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/callables.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"returnedB\\\\\\\",\\\\\\\"(): number\\\\\\\"]\\\",0]\"]",
+        "kind": "call",
+        "provenance": "typescript.compiler",
+        "to": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/callables.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"identity\\\\\\\",\\\\\\\"(callback: () => number): () => number\\\\\\\"]\\\",0]\"]"
+      },
+      {
+        "certainty": "direct",
+        "count": 1,
         "from": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/observers.ts\",\"<module>\"]",
         "kind": "call",
         "provenance": "typescript.compiler",
@@ -504,6 +576,14 @@
         "kind": "call",
         "provenance": "typescript.compiler",
         "to": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/observers.ts\",\"[\\\"[\\\\\\\"[\\\\\\\\\\\\\\\"[\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"<module>\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"ClassDeclaration\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"StaticBus\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"]\\\\\\\\\\\\\\\",0]\\\\\\\",\\\\\\\"MethodDeclaration\\\\\\\",\\\\\\\"onUpdate\\\\\\\",\\\\\\\"(callback: Listener): void\\\\\\\"]\\\",0]\"]"
+      },
+      {
+        "certainty": "direct",
+        "count": 2,
+        "from": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/callables.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"mutableReturnNegative\\\\\\\",\\\\\\\"(): number\\\\\\\"]\\\",0]\"]",
+        "kind": "call",
+        "provenance": "typescript.compiler",
+        "to": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/callables.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"identity\\\\\\\",\\\\\\\"(callback: () => number): () => number\\\\\\\"]\\\",0]\"]"
       },
       {
         "certainty": "direct",
@@ -872,6 +952,70 @@
       },
       {
         "certainty": "possible",
+        "count": 1,
+        "from": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/callables.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"callParameter\\\\\\\",\\\\\\\"(): number\\\\\\\"]\\\",0]\"]",
+        "kind": "reference",
+        "provenance": "typescript.compiler:argument-reference",
+        "to": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/callables.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"parameterLeaf\\\\\\\",\\\\\\\"(): number\\\\\\\"]\\\",0]\"]"
+      },
+      {
+        "certainty": "possible",
+        "count": 1,
+        "from": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/callables.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"forwardingOnly\\\\\\\",\\\\\\\"(): number\\\\\\\"]\\\",0]\"]",
+        "kind": "reference",
+        "provenance": "typescript.compiler:argument-reference",
+        "to": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/callables.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"forwardedLeaf\\\\\\\",\\\\\\\"(): number\\\\\\\"]\\\",0]\"]"
+      },
+      {
+        "certainty": "possible",
+        "count": 1,
+        "from": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/callables.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"immediateReturned\\\\\\\",\\\\\\\"(): number\\\\\\\"]\\\",0]\"]",
+        "kind": "reference",
+        "provenance": "typescript.compiler:argument-reference",
+        "to": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/callables.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"returnLeafA\\\\\\\",\\\\\\\"(): number\\\\\\\"]\\\",0]\"]"
+      },
+      {
+        "certainty": "possible",
+        "count": 1,
+        "from": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/callables.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"mutableReturnNegative\\\\\\\",\\\\\\\"(): number\\\\\\\"]\\\",0]\"]",
+        "kind": "reference",
+        "provenance": "typescript.compiler:argument-reference",
+        "to": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/callables.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"mutationLeafA\\\\\\\",\\\\\\\"(): number\\\\\\\"]\\\",0]\"]"
+      },
+      {
+        "certainty": "possible",
+        "count": 1,
+        "from": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/callables.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"mutableReturnNegative\\\\\\\",\\\\\\\"(): number\\\\\\\"]\\\",0]\"]",
+        "kind": "reference",
+        "provenance": "typescript.compiler:argument-reference",
+        "to": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/callables.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"mutationLeafB\\\\\\\",\\\\\\\"(): number\\\\\\\"]\\\",0]\"]"
+      },
+      {
+        "certainty": "possible",
+        "count": 1,
+        "from": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/callables.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"parameterMutationNegative\\\\\\\",\\\\\\\"(): number\\\\\\\"]\\\",0]\"]",
+        "kind": "reference",
+        "provenance": "typescript.compiler:argument-reference",
+        "to": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/callables.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"mutationLeafA\\\\\\\",\\\\\\\"(): number\\\\\\\"]\\\",0]\"]"
+      },
+      {
+        "certainty": "possible",
+        "count": 1,
+        "from": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/callables.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"returnedA\\\\\\\",\\\\\\\"(): number\\\\\\\"]\\\",0]\"]",
+        "kind": "reference",
+        "provenance": "typescript.compiler:argument-reference",
+        "to": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/callables.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"returnLeafA\\\\\\\",\\\\\\\"(): number\\\\\\\"]\\\",0]\"]"
+      },
+      {
+        "certainty": "possible",
+        "count": 1,
+        "from": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/callables.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"returnedB\\\\\\\",\\\\\\\"(): number\\\\\\\"]\\\",0]\"]",
+        "kind": "reference",
+        "provenance": "typescript.compiler:argument-reference",
+        "to": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/callables.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"returnLeafB\\\\\\\",\\\\\\\"(): number\\\\\\\"]\\\",0]\"]"
+      },
+      {
+        "certainty": "possible",
         "count": 2,
         "from": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/observers.ts\",\"<module>\"]",
         "kind": "reference",
@@ -915,6 +1059,30 @@
         "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/app/page.tsx\",\"<module>\"]",
         "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/app/page.tsx\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"Page\\\\\\\",\\\\\\\"(): Element\\\\\\\"]\\\",0]\"]",
         "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/app/page.tsx\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"disconnected\\\\\\\",\\\\\\\"(): number\\\\\\\"]\\\",0]\"]",
+        "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/callables.ts\",\"<module>\"]",
+        "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/callables.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"aliasFallback\\\\\\\",\\\\\\\"(): number\\\\\\\"]\\\",0]\"]",
+        "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/callables.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"aliasPrimary\\\\\\\",\\\\\\\"(): number\\\\\\\"]\\\",0]\"]",
+        "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/callables.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"callParameter\\\\\\\",\\\\\\\"(): number\\\\\\\"]\\\",0]\"]",
+        "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/callables.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"forwardedLeaf\\\\\\\",\\\\\\\"(): number\\\\\\\"]\\\",0]\"]",
+        "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/callables.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"forwardingOnly\\\\\\\",\\\\\\\"(): number\\\\\\\"]\\\",0]\"]",
+        "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/callables.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"immediateReturned\\\\\\\",\\\\\\\"(): number\\\\\\\"]\\\",0]\"]",
+        "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/callables.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"immutableAlias\\\\\\\",\\\\\\\"(): number\\\\\\\"]\\\",0]\"]",
+        "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/callables.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"logicalNullish\\\\\\\",\\\\\\\"(): number\\\\\\\"]\\\",0]\"]",
+        "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/callables.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"logicalOr\\\\\\\",\\\\\\\"(): number\\\\\\\"]\\\",0]\"]",
+        "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/callables.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"mutableAliasNegative\\\\\\\",\\\\\\\"(): number\\\\\\\"]\\\",0]\"]",
+        "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/callables.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"mutableReturnNegative\\\\\\\",\\\\\\\"(): number\\\\\\\"]\\\",0]\"]",
+        "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/callables.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"mutationLeafA\\\\\\\",\\\\\\\"(): number\\\\\\\"]\\\",0]\"]",
+        "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/callables.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"mutationLeafB\\\\\\\",\\\\\\\"(): number\\\\\\\"]\\\",0]\"]",
+        "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/callables.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"nullishFallback\\\\\\\",\\\\\\\"(): number\\\\\\\"]\\\",0]\"]",
+        "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/callables.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"nullishPrimary\\\\\\\",\\\\\\\"(): number\\\\\\\"]\\\",0]\"]",
+        "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/callables.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"orFallback\\\\\\\",\\\\\\\"(): number\\\\\\\"]\\\",0]\"]",
+        "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/callables.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"orPrimary\\\\\\\",\\\\\\\"(): number\\\\\\\"]\\\",0]\"]",
+        "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/callables.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"parameterLeaf\\\\\\\",\\\\\\\"(): number\\\\\\\"]\\\",0]\"]",
+        "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/callables.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"parameterMutationNegative\\\\\\\",\\\\\\\"(): number\\\\\\\"]\\\",0]\"]",
+        "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/callables.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"returnLeafA\\\\\\\",\\\\\\\"(): number\\\\\\\"]\\\",0]\"]",
+        "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/callables.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"returnLeafB\\\\\\\",\\\\\\\"(): number\\\\\\\"]\\\",0]\"]",
+        "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/callables.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"returnedA\\\\\\\",\\\\\\\"(): number\\\\\\\"]\\\",0]\"]",
+        "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/callables.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"returnedB\\\\\\\",\\\\\\\"(): number\\\\\\\"]\\\",0]\"]",
         "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/observers.ts\",\"<module>\"]",
         "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/observers.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"notify\\\\\\\",\\\\\\\"(): void\\\\\\\"]\\\",0]\"]",
         "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/observers.ts\",\"[\\\"[\\\\\\\"[\\\\\\\\\\\\\\\"[\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"<module>\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"ClassDeclaration\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"Scene\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"]\\\\\\\\\\\\\\\",0]\\\\\\\",\\\\\\\"MethodDeclaration\\\\\\\",\\\\\\\"triggerUpdate\\\\\\\",\\\\\\\"(): void\\\\\\\"]\\\",0]\"]",
@@ -1233,6 +1401,172 @@
             {
               "kind": "evaluate",
               "span": {
+                "end": 1244,
+                "start": 1223
+              },
+              "value": {
+                "calls": [
+                  {
+                    "diagnostic": null,
+                    "label": "identity",
+                    "span": {
+                      "end": 1244,
+                      "start": 1223
+                    },
+                    "targets": [
+                      {
+                        "certainty": "direct",
+                        "provenance": "typescript.compiler",
+                        "symbol": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/callables.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"identity\\\\\\\",\\\\\\\"(callback: () => number): () => number\\\\\\\"]\\\",0]\"]"
+                      }
+                    ]
+                  }
+                ],
+                "kind": "value",
+                "regions": [],
+                "span": {
+                  "end": 1244,
+                  "start": 1223
+                },
+                "text": "identity(returnLeafA)"
+              }
+            },
+            {
+              "calls": [],
+              "kind": "action",
+              "span": {
+                "end": 1244,
+                "start": 1212
+              },
+              "text": "Bind callback"
+            },
+            {
+              "kind": "return",
+              "span": {
+                "end": 1264,
+                "start": 1246
+              },
+              "value": {
+                "calls": [
+                  {
+                    "diagnostic": "No statically bound project target",
+                    "label": "callback",
+                    "span": {
+                      "end": 1263,
+                      "start": 1253
+                    },
+                    "targets": []
+                  }
+                ],
+                "kind": "value",
+                "regions": [],
+                "span": {
+                  "end": 1263,
+                  "start": 1253
+                },
+                "text": "callback()"
+              }
+            }
+          ],
+          "build": "@repo/typescript-corpus/tsconfig.json",
+          "diagnostics": [],
+          "file": "@repo/typescript-corpus/src/callables.ts",
+          "language": "typescript",
+          "project": "typescript-corpus",
+          "span": {
+            "end": 1266,
+            "start": 1176
+          },
+          "symbol": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/callables.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"returnedA\\\\\\\",\\\\\\\"(): number\\\\\\\"]\\\",0]\"]"
+        },
+        {
+          "body": [
+            {
+              "kind": "evaluate",
+              "span": {
+                "end": 1335,
+                "start": 1314
+              },
+              "value": {
+                "calls": [
+                  {
+                    "diagnostic": null,
+                    "label": "identity",
+                    "span": {
+                      "end": 1335,
+                      "start": 1314
+                    },
+                    "targets": [
+                      {
+                        "certainty": "direct",
+                        "provenance": "typescript.compiler",
+                        "symbol": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/callables.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"identity\\\\\\\",\\\\\\\"(callback: () => number): () => number\\\\\\\"]\\\",0]\"]"
+                      }
+                    ]
+                  }
+                ],
+                "kind": "value",
+                "regions": [],
+                "span": {
+                  "end": 1335,
+                  "start": 1314
+                },
+                "text": "identity(returnLeafB)"
+              }
+            },
+            {
+              "calls": [],
+              "kind": "action",
+              "span": {
+                "end": 1335,
+                "start": 1303
+              },
+              "text": "Bind callback"
+            },
+            {
+              "kind": "return",
+              "span": {
+                "end": 1355,
+                "start": 1337
+              },
+              "value": {
+                "calls": [
+                  {
+                    "diagnostic": "No statically bound project target",
+                    "label": "callback",
+                    "span": {
+                      "end": 1354,
+                      "start": 1344
+                    },
+                    "targets": []
+                  }
+                ],
+                "kind": "value",
+                "regions": [],
+                "span": {
+                  "end": 1354,
+                  "start": 1344
+                },
+                "text": "callback()"
+              }
+            }
+          ],
+          "build": "@repo/typescript-corpus/tsconfig.json",
+          "diagnostics": [],
+          "file": "@repo/typescript-corpus/src/callables.ts",
+          "language": "typescript",
+          "project": "typescript-corpus",
+          "span": {
+            "end": 1357,
+            "start": 1267
+          },
+          "symbol": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/callables.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"returnedB\\\\\\\",\\\\\\\"(): number\\\\\\\"]\\\",0]\"]"
+        },
+        {
+          "body": [
+            {
+              "kind": "evaluate",
+              "span": {
                 "end": 141,
                 "start": 118
               },
@@ -1268,6 +1602,267 @@
             "start": 70
           },
           "symbol": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/observers.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"subscribe\\\\\\\",\\\\\\\"(callback: Listener): void\\\\\\\"]\\\",0]\"]"
+        },
+        {
+          "body": [
+            {
+              "kind": "evaluate",
+              "span": {
+                "end": 1624,
+                "start": 1598
+              },
+              "value": {
+                "calls": [
+                  {
+                    "diagnostic": null,
+                    "label": "forwardOnly",
+                    "span": {
+                      "end": 1624,
+                      "start": 1598
+                    },
+                    "targets": [
+                      {
+                        "certainty": "direct",
+                        "provenance": "typescript.compiler",
+                        "symbol": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/callables.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"forwardOnly\\\\\\\",\\\\\\\"(callback: () => number): () => number\\\\\\\"]\\\",0]\"]"
+                      }
+                    ]
+                  }
+                ],
+                "kind": "value",
+                "regions": [],
+                "span": {
+                  "end": 1624,
+                  "start": 1598
+                },
+                "text": "forwardOnly(forwardedLeaf)"
+              }
+            },
+            {
+              "kind": "return",
+              "span": {
+                "end": 1635,
+                "start": 1626
+              },
+              "value": {
+                "calls": [],
+                "kind": "value",
+                "regions": [],
+                "span": {
+                  "end": 1634,
+                  "start": 1633
+                },
+                "text": "0"
+              }
+            }
+          ],
+          "build": "@repo/typescript-corpus/tsconfig.json",
+          "diagnostics": [],
+          "file": "@repo/typescript-corpus/src/callables.ts",
+          "language": "typescript",
+          "project": "typescript-corpus",
+          "span": {
+            "end": 1637,
+            "start": 1563
+          },
+          "symbol": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/callables.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"forwardingOnly\\\\\\\",\\\\\\\"(): number\\\\\\\"]\\\",0]\"]"
+        },
+        {
+          "body": [
+            {
+              "kind": "evaluate",
+              "span": {
+                "end": 1714,
+                "start": 1690
+              },
+              "value": {
+                "calls": [],
+                "kind": "value",
+                "regions": [],
+                "span": {
+                  "end": 1714,
+                  "start": 1690
+                },
+                "text": "callback = mutationLeafB"
+              }
+            },
+            {
+              "kind": "return",
+              "span": {
+                "end": 1734,
+                "start": 1716
+              },
+              "value": {
+                "calls": [
+                  {
+                    "diagnostic": "No statically bound project target",
+                    "label": "callback",
+                    "span": {
+                      "end": 1733,
+                      "start": 1723
+                    },
+                    "targets": []
+                  }
+                ],
+                "kind": "value",
+                "regions": [],
+                "span": {
+                  "end": 1733,
+                  "start": 1723
+                },
+                "text": "callback()"
+              }
+            }
+          ],
+          "build": "@repo/typescript-corpus/tsconfig.json",
+          "diagnostics": [],
+          "file": "@repo/typescript-corpus/src/callables.ts",
+          "language": "typescript",
+          "project": "typescript-corpus",
+          "span": {
+            "end": 1736,
+            "start": 1638
+          },
+          "symbol": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/callables.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"mutatedParameter\\\\\\\",\\\\\\\"(callback: () => number): number\\\\\\\"]\\\",0]\"]"
+        },
+        {
+          "body": [
+            {
+              "kind": "evaluate",
+              "span": {
+                "end": 1921,
+                "start": 1883
+              },
+              "value": {
+                "condition": {
+                  "calls": [],
+                  "kind": "value",
+                  "regions": [],
+                  "span": {
+                    "end": 1889,
+                    "start": 1883
+                  },
+                  "text": "choose"
+                },
+                "kind": "conditional",
+                "span": {
+                  "end": 1921,
+                  "start": 1883
+                },
+                "when_false": {
+                  "calls": [],
+                  "kind": "value",
+                  "regions": [],
+                  "span": {
+                    "end": 1921,
+                    "start": 1908
+                  },
+                  "text": "mutationLeafB"
+                },
+                "when_true": {
+                  "calls": [],
+                  "kind": "value",
+                  "regions": [],
+                  "span": {
+                    "end": 1905,
+                    "start": 1892
+                  },
+                  "text": "mutationLeafA"
+                }
+              }
+            },
+            {
+              "calls": [],
+              "kind": "action",
+              "span": {
+                "end": 1921,
+                "start": 1872
+              },
+              "text": "Bind callback"
+            },
+            {
+              "kind": "evaluate",
+              "span": {
+                "end": 1949,
+                "start": 1925
+              },
+              "value": {
+                "calls": [],
+                "kind": "value",
+                "regions": [],
+                "span": {
+                  "end": 1949,
+                  "start": 1925
+                },
+                "text": "callback = mutationLeafB"
+              }
+            },
+            {
+              "kind": "evaluate",
+              "span": {
+                "end": 1995,
+                "start": 1970
+              },
+              "value": {
+                "calls": [],
+                "kind": "value",
+                "regions": [],
+                "span": {
+                  "end": 1995,
+                  "start": 1970
+                },
+                "text": "callback ?? mutationLeafA"
+              }
+            },
+            {
+              "calls": [],
+              "kind": "action",
+              "span": {
+                "end": 1995,
+                "start": 1959
+              },
+              "text": "Bind selected"
+            },
+            {
+              "kind": "return",
+              "span": {
+                "end": 2017,
+                "start": 1999
+              },
+              "value": {
+                "calls": [
+                  {
+                    "diagnostic": "No statically bound project target",
+                    "label": "selected",
+                    "span": {
+                      "end": 2016,
+                      "start": 2006
+                    },
+                    "targets": []
+                  }
+                ],
+                "kind": "value",
+                "regions": [],
+                "span": {
+                  "end": 2016,
+                  "start": 2006
+                },
+                "text": "selected()"
+              }
+            }
+          ],
+          "build": "@repo/typescript-corpus/tsconfig.json",
+          "diagnostics": [
+            "Nullish-coalescing internals are shown as one source step; operand calls may be skipped."
+          ],
+          "file": "@repo/typescript-corpus/src/callables.ts",
+          "language": "typescript",
+          "project": "typescript-corpus",
+          "span": {
+            "end": 2019,
+            "start": 1825
+          },
+          "symbol": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/callables.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"mutableAliasNegative\\\\\\\",\\\\\\\"(): number\\\\\\\"]\\\",0]\"]"
         },
         {
           "body": [
@@ -1368,6 +1963,148 @@
             "start": 145
           },
           "symbol": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/observers.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"notify\\\\\\\",\\\\\\\"(): void\\\\\\\"]\\\",0]\"]"
+        },
+        {
+          "body": [
+            {
+              "kind": "evaluate",
+              "span": {
+                "end": 2102,
+                "start": 2079
+              },
+              "value": {
+                "calls": [
+                  {
+                    "diagnostic": null,
+                    "label": "identity",
+                    "span": {
+                      "end": 2102,
+                      "start": 2079
+                    },
+                    "targets": [
+                      {
+                        "certainty": "direct",
+                        "provenance": "typescript.compiler",
+                        "symbol": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/callables.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"identity\\\\\\\",\\\\\\\"(callback: () => number): () => number\\\\\\\"]\\\",0]\"]"
+                      }
+                    ]
+                  }
+                ],
+                "kind": "value",
+                "regions": [],
+                "span": {
+                  "end": 2102,
+                  "start": 2079
+                },
+                "text": "identity(mutationLeafA)"
+              }
+            },
+            {
+              "calls": [],
+              "kind": "action",
+              "span": {
+                "end": 2102,
+                "start": 2068
+              },
+              "text": "Bind callback"
+            },
+            {
+              "kind": "evaluate",
+              "span": {
+                "end": 2140,
+                "start": 2106
+              },
+              "value": {
+                "calls": [
+                  {
+                    "diagnostic": null,
+                    "label": "identity",
+                    "span": {
+                      "end": 2140,
+                      "start": 2117
+                    },
+                    "targets": [
+                      {
+                        "certainty": "direct",
+                        "provenance": "typescript.compiler",
+                        "symbol": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/callables.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"identity\\\\\\\",\\\\\\\"(callback: () => number): () => number\\\\\\\"]\\\",0]\"]"
+                      }
+                    ]
+                  }
+                ],
+                "kind": "value",
+                "regions": [],
+                "span": {
+                  "end": 2140,
+                  "start": 2106
+                },
+                "text": "callback = identity(mutationLeafB)"
+              }
+            },
+            {
+              "kind": "evaluate",
+              "span": {
+                "end": 2166,
+                "start": 2158
+              },
+              "value": {
+                "calls": [],
+                "kind": "value",
+                "regions": [],
+                "span": {
+                  "end": 2166,
+                  "start": 2158
+                },
+                "text": "callback"
+              }
+            },
+            {
+              "calls": [],
+              "kind": "action",
+              "span": {
+                "end": 2166,
+                "start": 2150
+              },
+              "text": "Bind alias"
+            },
+            {
+              "kind": "return",
+              "span": {
+                "end": 2185,
+                "start": 2170
+              },
+              "value": {
+                "calls": [
+                  {
+                    "diagnostic": "No statically bound project target",
+                    "label": "alias",
+                    "span": {
+                      "end": 2184,
+                      "start": 2177
+                    },
+                    "targets": []
+                  }
+                ],
+                "kind": "value",
+                "regions": [],
+                "span": {
+                  "end": 2184,
+                  "start": 2177
+                },
+                "text": "alias()"
+              }
+            }
+          ],
+          "build": "@repo/typescript-corpus/tsconfig.json",
+          "diagnostics": [],
+          "file": "@repo/typescript-corpus/src/callables.ts",
+          "language": "typescript",
+          "project": "typescript-corpus",
+          "span": {
+            "end": 2187,
+            "start": 2020
+          },
+          "symbol": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/callables.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"mutableReturnNegative\\\\\\\",\\\\\\\"(): number\\\\\\\"]\\\",0]\"]"
         },
         {
           "body": [
@@ -1999,6 +2736,265 @@
             {
               "kind": "evaluate",
               "span": {
+                "end": 580,
+                "start": 545
+              },
+              "value": {
+                "condition": {
+                  "calls": [],
+                  "kind": "value",
+                  "regions": [],
+                  "span": {
+                    "end": 551,
+                    "start": 545
+                  },
+                  "text": "choose"
+                },
+                "kind": "conditional",
+                "span": {
+                  "end": 580,
+                  "start": 545
+                },
+                "when_false": {
+                  "calls": [],
+                  "kind": "value",
+                  "regions": [],
+                  "span": {
+                    "end": 580,
+                    "start": 571
+                  },
+                  "text": "undefined"
+                },
+                "when_true": {
+                  "calls": [],
+                  "kind": "value",
+                  "regions": [],
+                  "span": {
+                    "end": 568,
+                    "start": 554
+                  },
+                  "text": "nullishPrimary"
+                }
+              }
+            },
+            {
+              "calls": [],
+              "kind": "action",
+              "span": {
+                "end": 580,
+                "start": 537
+              },
+              "text": "Bind maybe"
+            },
+            {
+              "kind": "evaluate",
+              "span": {
+                "end": 625,
+                "start": 601
+              },
+              "value": {
+                "calls": [],
+                "kind": "value",
+                "regions": [],
+                "span": {
+                  "end": 625,
+                  "start": 601
+                },
+                "text": "maybe ?? nullishFallback"
+              }
+            },
+            {
+              "calls": [],
+              "kind": "action",
+              "span": {
+                "end": 625,
+                "start": 590
+              },
+              "text": "Bind selected"
+            },
+            {
+              "kind": "return",
+              "span": {
+                "end": 647,
+                "start": 629
+              },
+              "value": {
+                "calls": [
+                  {
+                    "diagnostic": "No statically bound project target",
+                    "label": "selected",
+                    "span": {
+                      "end": 646,
+                      "start": 636
+                    },
+                    "targets": []
+                  }
+                ],
+                "kind": "value",
+                "regions": [],
+                "span": {
+                  "end": 646,
+                  "start": 636
+                },
+                "text": "selected()"
+              }
+            }
+          ],
+          "build": "@repo/typescript-corpus/tsconfig.json",
+          "diagnostics": [
+            "Nullish-coalescing internals are shown as one source step; operand calls may be skipped."
+          ],
+          "file": "@repo/typescript-corpus/src/callables.ts",
+          "language": "typescript",
+          "project": "typescript-corpus",
+          "span": {
+            "end": 649,
+            "start": 494
+          },
+          "symbol": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/callables.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"logicalNullish\\\\\\\",\\\\\\\"(): number\\\\\\\"]\\\",0]\"]"
+        },
+        {
+          "body": [
+            {
+              "kind": "evaluate",
+              "span": {
+                "end": 726,
+                "start": 696
+              },
+              "value": {
+                "condition": {
+                  "calls": [],
+                  "kind": "value",
+                  "regions": [],
+                  "span": {
+                    "end": 702,
+                    "start": 696
+                  },
+                  "text": "choose"
+                },
+                "kind": "conditional",
+                "span": {
+                  "end": 726,
+                  "start": 696
+                },
+                "when_false": {
+                  "calls": [],
+                  "kind": "value",
+                  "regions": [],
+                  "span": {
+                    "end": 726,
+                    "start": 717
+                  },
+                  "text": "undefined"
+                },
+                "when_true": {
+                  "calls": [],
+                  "kind": "value",
+                  "regions": [],
+                  "span": {
+                    "end": 714,
+                    "start": 705
+                  },
+                  "text": "orPrimary"
+                }
+              }
+            },
+            {
+              "calls": [],
+              "kind": "action",
+              "span": {
+                "end": 726,
+                "start": 688
+              },
+              "text": "Bind maybe"
+            },
+            {
+              "kind": "evaluate",
+              "span": {
+                "end": 766,
+                "start": 747
+              },
+              "value": {
+                "kind": "or",
+                "left": {
+                  "calls": [],
+                  "kind": "value",
+                  "regions": [],
+                  "span": {
+                    "end": 752,
+                    "start": 747
+                  },
+                  "text": "maybe"
+                },
+                "right": {
+                  "calls": [],
+                  "kind": "value",
+                  "regions": [],
+                  "span": {
+                    "end": 766,
+                    "start": 756
+                  },
+                  "text": "orFallback"
+                },
+                "span": {
+                  "end": 766,
+                  "start": 747
+                }
+              }
+            },
+            {
+              "calls": [],
+              "kind": "action",
+              "span": {
+                "end": 766,
+                "start": 736
+              },
+              "text": "Bind selected"
+            },
+            {
+              "kind": "return",
+              "span": {
+                "end": 788,
+                "start": 770
+              },
+              "value": {
+                "calls": [
+                  {
+                    "diagnostic": "No statically bound project target",
+                    "label": "selected",
+                    "span": {
+                      "end": 787,
+                      "start": 777
+                    },
+                    "targets": []
+                  }
+                ],
+                "kind": "value",
+                "regions": [],
+                "span": {
+                  "end": 787,
+                  "start": 777
+                },
+                "text": "selected()"
+              }
+            }
+          ],
+          "build": "@repo/typescript-corpus/tsconfig.json",
+          "diagnostics": [],
+          "file": "@repo/typescript-corpus/src/callables.ts",
+          "language": "typescript",
+          "project": "typescript-corpus",
+          "span": {
+            "end": 790,
+            "start": 650
+          },
+          "symbol": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/callables.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"logicalOr\\\\\\\",\\\\\\\"(): number\\\\\\\"]\\\",0]\"]"
+        },
+        {
+          "body": [
+            {
+              "kind": "evaluate",
+              "span": {
                 "end": 765,
                 "start": 732
               },
@@ -2133,6 +3129,304 @@
         {
           "body": [
             {
+              "kind": "evaluate",
+              "span": {
+                "end": 875,
+                "start": 842
+              },
+              "value": {
+                "condition": {
+                  "calls": [],
+                  "kind": "value",
+                  "regions": [],
+                  "span": {
+                    "end": 848,
+                    "start": 842
+                  },
+                  "text": "choose"
+                },
+                "kind": "conditional",
+                "span": {
+                  "end": 875,
+                  "start": 842
+                },
+                "when_false": {
+                  "calls": [],
+                  "kind": "value",
+                  "regions": [],
+                  "span": {
+                    "end": 875,
+                    "start": 866
+                  },
+                  "text": "undefined"
+                },
+                "when_true": {
+                  "calls": [],
+                  "kind": "value",
+                  "regions": [],
+                  "span": {
+                    "end": 863,
+                    "start": 851
+                  },
+                  "text": "aliasPrimary"
+                }
+              }
+            },
+            {
+              "calls": [],
+              "kind": "action",
+              "span": {
+                "end": 875,
+                "start": 834
+              },
+              "text": "Bind maybe"
+            },
+            {
+              "kind": "evaluate",
+              "span": {
+                "end": 918,
+                "start": 896
+              },
+              "value": {
+                "calls": [],
+                "kind": "value",
+                "regions": [],
+                "span": {
+                  "end": 918,
+                  "start": 896
+                },
+                "text": "maybe ?? aliasFallback"
+              }
+            },
+            {
+              "calls": [],
+              "kind": "action",
+              "span": {
+                "end": 918,
+                "start": 885
+              },
+              "text": "Bind selected"
+            },
+            {
+              "kind": "evaluate",
+              "span": {
+                "end": 944,
+                "start": 936
+              },
+              "value": {
+                "calls": [],
+                "kind": "value",
+                "regions": [],
+                "span": {
+                  "end": 944,
+                  "start": 936
+                },
+                "text": "selected"
+              }
+            },
+            {
+              "calls": [],
+              "kind": "action",
+              "span": {
+                "end": 944,
+                "start": 928
+              },
+              "text": "Bind alias"
+            },
+            {
+              "kind": "return",
+              "span": {
+                "end": 963,
+                "start": 948
+              },
+              "value": {
+                "calls": [
+                  {
+                    "diagnostic": "No statically bound project target",
+                    "label": "alias",
+                    "span": {
+                      "end": 962,
+                      "start": 955
+                    },
+                    "targets": []
+                  }
+                ],
+                "kind": "value",
+                "regions": [],
+                "span": {
+                  "end": 962,
+                  "start": 955
+                },
+                "text": "alias()"
+              }
+            }
+          ],
+          "build": "@repo/typescript-corpus/tsconfig.json",
+          "diagnostics": [
+            "Nullish-coalescing internals are shown as one source step; operand calls may be skipped."
+          ],
+          "file": "@repo/typescript-corpus/src/callables.ts",
+          "language": "typescript",
+          "project": "typescript-corpus",
+          "span": {
+            "end": 965,
+            "start": 791
+          },
+          "symbol": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/callables.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"immutableAlias\\\\\\\",\\\\\\\"(): number\\\\\\\"]\\\",0]\"]"
+        },
+        {
+          "body": [
+            {
+              "kind": "return",
+              "span": {
+                "end": 1035,
+                "start": 1017
+              },
+              "value": {
+                "calls": [
+                  {
+                    "diagnostic": "No statically bound project target",
+                    "label": "callback",
+                    "span": {
+                      "end": 1034,
+                      "start": 1024
+                    },
+                    "targets": []
+                  }
+                ],
+                "kind": "value",
+                "regions": [],
+                "span": {
+                  "end": 1034,
+                  "start": 1024
+                },
+                "text": "callback()"
+              }
+            }
+          ],
+          "build": "@repo/typescript-corpus/tsconfig.json",
+          "diagnostics": [],
+          "file": "@repo/typescript-corpus/src/callables.ts",
+          "language": "typescript",
+          "project": "typescript-corpus",
+          "span": {
+            "end": 1037,
+            "start": 966
+          },
+          "symbol": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/callables.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"invokeParameter\\\\\\\",\\\\\\\"(callback: () => number): number\\\\\\\"]\\\",0]\"]"
+        },
+        {
+          "body": [
+            {
+              "kind": "return",
+              "span": {
+                "end": 109,
+                "start": 100
+              },
+              "value": {
+                "calls": [],
+                "kind": "value",
+                "regions": [],
+                "span": {
+                  "end": 108,
+                  "start": 107
+                },
+                "text": "2"
+              }
+            }
+          ],
+          "build": "@repo/typescript-corpus/tsconfig.json",
+          "diagnostics": [],
+          "file": "@repo/typescript-corpus/src/callables.ts",
+          "language": "typescript",
+          "project": "typescript-corpus",
+          "span": {
+            "end": 111,
+            "start": 71
+          },
+          "symbol": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/callables.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"nullishFallback\\\\\\\",\\\\\\\"(): number\\\\\\\"]\\\",0]\"]"
+        },
+        {
+          "body": [
+            {
+              "kind": "return",
+              "span": {
+                "end": 1110,
+                "start": 1072
+              },
+              "value": {
+                "calls": [
+                  {
+                    "diagnostic": null,
+                    "label": "invokeParameter",
+                    "span": {
+                      "end": 1109,
+                      "start": 1079
+                    },
+                    "targets": [
+                      {
+                        "certainty": "direct",
+                        "provenance": "typescript.compiler",
+                        "symbol": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/callables.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"invokeParameter\\\\\\\",\\\\\\\"(callback: () => number): number\\\\\\\"]\\\",0]\"]"
+                      }
+                    ]
+                  }
+                ],
+                "kind": "value",
+                "regions": [],
+                "span": {
+                  "end": 1109,
+                  "start": 1079
+                },
+                "text": "invokeParameter(parameterLeaf)"
+              }
+            }
+          ],
+          "build": "@repo/typescript-corpus/tsconfig.json",
+          "diagnostics": [],
+          "file": "@repo/typescript-corpus/src/callables.ts",
+          "language": "typescript",
+          "project": "typescript-corpus",
+          "span": {
+            "end": 1112,
+            "start": 1038
+          },
+          "symbol": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/callables.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"callParameter\\\\\\\",\\\\\\\"(): number\\\\\\\"]\\\",0]\"]"
+        },
+        {
+          "body": [
+            {
+              "kind": "return",
+              "span": {
+                "end": 1173,
+                "start": 1157
+              },
+              "value": {
+                "calls": [],
+                "kind": "value",
+                "regions": [],
+                "span": {
+                  "end": 1172,
+                  "start": 1164
+                },
+                "text": "callback"
+              }
+            }
+          ],
+          "build": "@repo/typescript-corpus/tsconfig.json",
+          "diagnostics": [],
+          "file": "@repo/typescript-corpus/src/callables.ts",
+          "language": "typescript",
+          "project": "typescript-corpus",
+          "span": {
+            "end": 1175,
+            "start": 1113
+          },
+          "symbol": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/callables.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"identity\\\\\\\",\\\\\\\"(callback: () => number): () => number\\\\\\\"]\\\",0]\"]"
+        },
+        {
+          "body": [
+            {
               "kind": "return",
               "span": {
                 "end": 126,
@@ -2160,6 +3454,280 @@
             "start": 84
           },
           "symbol": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/app/page.tsx\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"disconnected\\\\\\\",\\\\\\\"(): number\\\\\\\"]\\\",0]\"]"
+        },
+        {
+          "body": [
+            {
+              "kind": "return",
+              "span": {
+                "end": 1427,
+                "start": 1396
+              },
+              "value": {
+                "calls": [
+                  {
+                    "diagnostic": null,
+                    "label": "identity",
+                    "span": {
+                      "end": 1424,
+                      "start": 1403
+                    },
+                    "targets": [
+                      {
+                        "certainty": "direct",
+                        "provenance": "typescript.compiler",
+                        "symbol": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/callables.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"identity\\\\\\\",\\\\\\\"(callback: () => number): () => number\\\\\\\"]\\\",0]\"]"
+                      }
+                    ]
+                  },
+                  {
+                    "diagnostic": "No statically bound project target",
+                    "label": "identity(returnLeafA)",
+                    "span": {
+                      "end": 1426,
+                      "start": 1403
+                    },
+                    "targets": []
+                  }
+                ],
+                "kind": "value",
+                "regions": [],
+                "span": {
+                  "end": 1426,
+                  "start": 1403
+                },
+                "text": "identity(returnLeafA)()"
+              }
+            }
+          ],
+          "build": "@repo/typescript-corpus/tsconfig.json",
+          "diagnostics": [],
+          "file": "@repo/typescript-corpus/src/callables.ts",
+          "language": "typescript",
+          "project": "typescript-corpus",
+          "span": {
+            "end": 1429,
+            "start": 1358
+          },
+          "symbol": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/callables.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"immediateReturned\\\\\\\",\\\\\\\"(): number\\\\\\\"]\\\",0]\"]"
+        },
+        {
+          "body": [
+            {
+              "kind": "return",
+              "span": {
+                "end": 144,
+                "start": 135
+              },
+              "value": {
+                "calls": [],
+                "kind": "value",
+                "regions": [],
+                "span": {
+                  "end": 143,
+                  "start": 142
+                },
+                "text": "3"
+              }
+            }
+          ],
+          "build": "@repo/typescript-corpus/tsconfig.json",
+          "diagnostics": [],
+          "file": "@repo/typescript-corpus/src/callables.ts",
+          "language": "typescript",
+          "project": "typescript-corpus",
+          "span": {
+            "end": 146,
+            "start": 112
+          },
+          "symbol": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/callables.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"orPrimary\\\\\\\",\\\\\\\"(): number\\\\\\\"]\\\",0]\"]"
+        },
+        {
+          "body": [
+            {
+              "kind": "return",
+              "span": {
+                "end": 1487,
+                "start": 1471
+              },
+              "value": {
+                "calls": [],
+                "kind": "value",
+                "regions": [],
+                "span": {
+                  "end": 1486,
+                  "start": 1478
+                },
+                "text": "callback"
+              }
+            }
+          ],
+          "build": "@repo/typescript-corpus/tsconfig.json",
+          "diagnostics": [],
+          "file": "@repo/typescript-corpus/src/callables.ts",
+          "language": "typescript",
+          "project": "typescript-corpus",
+          "span": {
+            "end": 1489,
+            "start": 1430
+          },
+          "symbol": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/callables.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"relay\\\\\\\",\\\\\\\"(callback: () => number): () => number\\\\\\\"]\\\",0]\"]"
+        },
+        {
+          "body": [
+            {
+              "kind": "return",
+              "span": {
+                "end": 1560,
+                "start": 1537
+              },
+              "value": {
+                "calls": [
+                  {
+                    "diagnostic": null,
+                    "label": "relay",
+                    "span": {
+                      "end": 1559,
+                      "start": 1544
+                    },
+                    "targets": [
+                      {
+                        "certainty": "direct",
+                        "provenance": "typescript.compiler",
+                        "symbol": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/callables.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"relay\\\\\\\",\\\\\\\"(callback: () => number): () => number\\\\\\\"]\\\",0]\"]"
+                      }
+                    ]
+                  }
+                ],
+                "kind": "value",
+                "regions": [],
+                "span": {
+                  "end": 1559,
+                  "start": 1544
+                },
+                "text": "relay(callback)"
+              }
+            }
+          ],
+          "build": "@repo/typescript-corpus/tsconfig.json",
+          "diagnostics": [],
+          "file": "@repo/typescript-corpus/src/callables.ts",
+          "language": "typescript",
+          "project": "typescript-corpus",
+          "span": {
+            "end": 1562,
+            "start": 1490
+          },
+          "symbol": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/callables.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"forwardOnly\\\\\\\",\\\\\\\"(callback: () => number): () => number\\\\\\\"]\\\",0]\"]"
+        },
+        {
+          "body": [
+            {
+              "kind": "return",
+              "span": {
+                "end": 180,
+                "start": 171
+              },
+              "value": {
+                "calls": [],
+                "kind": "value",
+                "regions": [],
+                "span": {
+                  "end": 179,
+                  "start": 178
+                },
+                "text": "4"
+              }
+            }
+          ],
+          "build": "@repo/typescript-corpus/tsconfig.json",
+          "diagnostics": [],
+          "file": "@repo/typescript-corpus/src/callables.ts",
+          "language": "typescript",
+          "project": "typescript-corpus",
+          "span": {
+            "end": 182,
+            "start": 147
+          },
+          "symbol": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/callables.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"orFallback\\\\\\\",\\\\\\\"(): number\\\\\\\"]\\\",0]\"]"
+        },
+        {
+          "body": [
+            {
+              "kind": "return",
+              "span": {
+                "end": 1822,
+                "start": 1783
+              },
+              "value": {
+                "calls": [
+                  {
+                    "diagnostic": null,
+                    "label": "mutatedParameter",
+                    "span": {
+                      "end": 1821,
+                      "start": 1790
+                    },
+                    "targets": [
+                      {
+                        "certainty": "direct",
+                        "provenance": "typescript.compiler",
+                        "symbol": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/callables.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"mutatedParameter\\\\\\\",\\\\\\\"(callback: () => number): number\\\\\\\"]\\\",0]\"]"
+                      }
+                    ]
+                  }
+                ],
+                "kind": "value",
+                "regions": [],
+                "span": {
+                  "end": 1821,
+                  "start": 1790
+                },
+                "text": "mutatedParameter(mutationLeafA)"
+              }
+            }
+          ],
+          "build": "@repo/typescript-corpus/tsconfig.json",
+          "diagnostics": [],
+          "file": "@repo/typescript-corpus/src/callables.ts",
+          "language": "typescript",
+          "project": "typescript-corpus",
+          "span": {
+            "end": 1824,
+            "start": 1737
+          },
+          "symbol": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/callables.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"parameterMutationNegative\\\\\\\",\\\\\\\"(): number\\\\\\\"]\\\",0]\"]"
+        },
+        {
+          "body": [
+            {
+              "kind": "return",
+              "span": {
+                "end": 218,
+                "start": 209
+              },
+              "value": {
+                "calls": [],
+                "kind": "value",
+                "regions": [],
+                "span": {
+                  "end": 217,
+                  "start": 216
+                },
+                "text": "5"
+              }
+            }
+          ],
+          "build": "@repo/typescript-corpus/tsconfig.json",
+          "diagnostics": [],
+          "file": "@repo/typescript-corpus/src/callables.ts",
+          "language": "typescript",
+          "project": "typescript-corpus",
+          "span": {
+            "end": 220,
+            "start": 183
+          },
+          "symbol": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/callables.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"aliasPrimary\\\\\\\",\\\\\\\"(): number\\\\\\\"]\\\",0]\"]"
         },
         {
           "body": [
@@ -2228,6 +3796,68 @@
             {
               "kind": "return",
               "span": {
+                "end": 257,
+                "start": 248
+              },
+              "value": {
+                "calls": [],
+                "kind": "value",
+                "regions": [],
+                "span": {
+                  "end": 256,
+                  "start": 255
+                },
+                "text": "6"
+              }
+            }
+          ],
+          "build": "@repo/typescript-corpus/tsconfig.json",
+          "diagnostics": [],
+          "file": "@repo/typescript-corpus/src/callables.ts",
+          "language": "typescript",
+          "project": "typescript-corpus",
+          "span": {
+            "end": 259,
+            "start": 221
+          },
+          "symbol": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/callables.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"aliasFallback\\\\\\\",\\\\\\\"(): number\\\\\\\"]\\\",0]\"]"
+        },
+        {
+          "body": [
+            {
+              "kind": "return",
+              "span": {
+                "end": 296,
+                "start": 287
+              },
+              "value": {
+                "calls": [],
+                "kind": "value",
+                "regions": [],
+                "span": {
+                  "end": 295,
+                  "start": 294
+                },
+                "text": "7"
+              }
+            }
+          ],
+          "build": "@repo/typescript-corpus/tsconfig.json",
+          "diagnostics": [],
+          "file": "@repo/typescript-corpus/src/callables.ts",
+          "language": "typescript",
+          "project": "typescript-corpus",
+          "span": {
+            "end": 298,
+            "start": 260
+          },
+          "symbol": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/callables.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"parameterLeaf\\\\\\\",\\\\\\\"(): number\\\\\\\"]\\\",0]\"]"
+        },
+        {
+          "body": [
+            {
+              "kind": "return",
+              "span": {
                 "end": 298,
                 "start": 289
               },
@@ -2259,6 +3889,99 @@
             {
               "kind": "return",
               "span": {
+                "end": 333,
+                "start": 324
+              },
+              "value": {
+                "calls": [],
+                "kind": "value",
+                "regions": [],
+                "span": {
+                  "end": 332,
+                  "start": 331
+                },
+                "text": "8"
+              }
+            }
+          ],
+          "build": "@repo/typescript-corpus/tsconfig.json",
+          "diagnostics": [],
+          "file": "@repo/typescript-corpus/src/callables.ts",
+          "language": "typescript",
+          "project": "typescript-corpus",
+          "span": {
+            "end": 335,
+            "start": 299
+          },
+          "symbol": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/callables.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"returnLeafA\\\\\\\",\\\\\\\"(): number\\\\\\\"]\\\",0]\"]"
+        },
+        {
+          "body": [
+            {
+              "kind": "return",
+              "span": {
+                "end": 370,
+                "start": 361
+              },
+              "value": {
+                "calls": [],
+                "kind": "value",
+                "regions": [],
+                "span": {
+                  "end": 369,
+                  "start": 368
+                },
+                "text": "9"
+              }
+            }
+          ],
+          "build": "@repo/typescript-corpus/tsconfig.json",
+          "diagnostics": [],
+          "file": "@repo/typescript-corpus/src/callables.ts",
+          "language": "typescript",
+          "project": "typescript-corpus",
+          "span": {
+            "end": 372,
+            "start": 336
+          },
+          "symbol": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/callables.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"returnLeafB\\\\\\\",\\\\\\\"(): number\\\\\\\"]\\\",0]\"]"
+        },
+        {
+          "body": [
+            {
+              "kind": "return",
+              "span": {
+                "end": 410,
+                "start": 400
+              },
+              "value": {
+                "calls": [],
+                "kind": "value",
+                "regions": [],
+                "span": {
+                  "end": 409,
+                  "start": 407
+                },
+                "text": "10"
+              }
+            }
+          ],
+          "build": "@repo/typescript-corpus/tsconfig.json",
+          "diagnostics": [],
+          "file": "@repo/typescript-corpus/src/callables.ts",
+          "language": "typescript",
+          "project": "typescript-corpus",
+          "span": {
+            "end": 412,
+            "start": 373
+          },
+          "symbol": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/callables.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"mutationLeafA\\\\\\\",\\\\\\\"(): number\\\\\\\"]\\\",0]\"]"
+        },
+        {
+          "body": [
+            {
+              "kind": "return",
+              "span": {
                 "end": 418,
                 "start": 400
               },
@@ -2284,6 +4007,68 @@
             "start": 364
           },
           "symbol": "[\"java\",\"@repo/maven/reactor\",\"@repo/maven/reactor/app/src/main-custom/java/fixture/App.java\",\"[\\\"@repo/maven/reactor\\\",\\\"@repo/maven/reactor/app\\\",\\\"main\\\"]|fixture.App:toString(int)|java.lang.String\"]"
+        },
+        {
+          "body": [
+            {
+              "kind": "return",
+              "span": {
+                "end": 450,
+                "start": 440
+              },
+              "value": {
+                "calls": [],
+                "kind": "value",
+                "regions": [],
+                "span": {
+                  "end": 449,
+                  "start": 447
+                },
+                "text": "11"
+              }
+            }
+          ],
+          "build": "@repo/typescript-corpus/tsconfig.json",
+          "diagnostics": [],
+          "file": "@repo/typescript-corpus/src/callables.ts",
+          "language": "typescript",
+          "project": "typescript-corpus",
+          "span": {
+            "end": 452,
+            "start": 413
+          },
+          "symbol": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/callables.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"mutationLeafB\\\\\\\",\\\\\\\"(): number\\\\\\\"]\\\",0]\"]"
+        },
+        {
+          "body": [
+            {
+              "kind": "return",
+              "span": {
+                "end": 490,
+                "start": 480
+              },
+              "value": {
+                "calls": [],
+                "kind": "value",
+                "regions": [],
+                "span": {
+                  "end": 489,
+                  "start": 487
+                },
+                "text": "12"
+              }
+            }
+          ],
+          "build": "@repo/typescript-corpus/tsconfig.json",
+          "diagnostics": [],
+          "file": "@repo/typescript-corpus/src/callables.ts",
+          "language": "typescript",
+          "project": "typescript-corpus",
+          "span": {
+            "end": 492,
+            "start": 453
+          },
+          "symbol": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/callables.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"forwardedLeaf\\\\\\\",\\\\\\\"(): number\\\\\\\"]\\\",0]\"]"
         },
         {
           "body": [
@@ -2325,6 +4110,37 @@
             "start": 0
           },
           "symbol": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/app/api/route.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"GET\\\\\\\",\\\\\\\"(): Response\\\\\\\"]\\\",0]\"]"
+        },
+        {
+          "body": [
+            {
+              "kind": "return",
+              "span": {
+                "end": 68,
+                "start": 59
+              },
+              "value": {
+                "calls": [],
+                "kind": "value",
+                "regions": [],
+                "span": {
+                  "end": 67,
+                  "start": 66
+                },
+                "text": "1"
+              }
+            }
+          ],
+          "build": "@repo/typescript-corpus/tsconfig.json",
+          "diagnostics": [],
+          "file": "@repo/typescript-corpus/src/callables.ts",
+          "language": "typescript",
+          "project": "typescript-corpus",
+          "span": {
+            "end": 70,
+            "start": 31
+          },
+          "symbol": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/callables.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"nullishPrimary\\\\\\\",\\\\\\\"(): number\\\\\\\"]\\\",0]\"]"
         },
         {
           "body": [
@@ -2966,6 +4782,470 @@
         "namespace": "src/app",
         "project": "typescript-corpus",
         "signature": "(): void"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/typescript-corpus/tsconfig.json",
+        "container": "src/callables.ts",
+        "file": "@repo/typescript-corpus/src/callables.ts",
+        "id": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/callables.ts\",\"<module>\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "module",
+        "label": "<module:callables.ts>",
+        "language": "typescript",
+        "line": 1,
+        "namespace": "src",
+        "project": "typescript-corpus",
+        "signature": "<module:callables.ts>"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/typescript-corpus/tsconfig.json",
+        "container": "src/callables.ts",
+        "file": "@repo/typescript-corpus/src/callables.ts",
+        "id": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/callables.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"aliasFallback\\\\\\\",\\\\\\\"(): number\\\\\\\"]\\\",0]\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "function",
+        "label": "aliasFallback",
+        "language": "typescript",
+        "line": 7,
+        "namespace": "src",
+        "project": "typescript-corpus",
+        "signature": "(): number"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/typescript-corpus/tsconfig.json",
+        "container": "src/callables.ts",
+        "file": "@repo/typescript-corpus/src/callables.ts",
+        "id": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/callables.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"aliasPrimary\\\\\\\",\\\\\\\"(): number\\\\\\\"]\\\",0]\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "function",
+        "label": "aliasPrimary",
+        "language": "typescript",
+        "line": 6,
+        "namespace": "src",
+        "project": "typescript-corpus",
+        "signature": "(): number"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/typescript-corpus/tsconfig.json",
+        "container": "src/callables.ts",
+        "file": "@repo/typescript-corpus/src/callables.ts",
+        "id": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/callables.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"callParameter\\\\\\\",\\\\\\\"(): number\\\\\\\"]\\\",0]\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "function",
+        "label": "callParameter",
+        "language": "typescript",
+        "line": 32,
+        "namespace": "src",
+        "project": "typescript-corpus",
+        "signature": "(): number"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/typescript-corpus/tsconfig.json",
+        "container": "src/callables.ts",
+        "file": "@repo/typescript-corpus/src/callables.ts",
+        "id": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/callables.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"forwardOnly\\\\\\\",\\\\\\\"(callback: () => number): () => number\\\\\\\"]\\\",0]\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "function",
+        "label": "forwardOnly",
+        "language": "typescript",
+        "line": 38,
+        "namespace": "src",
+        "project": "typescript-corpus",
+        "signature": "(callback: () => number): () => number"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/typescript-corpus/tsconfig.json",
+        "container": "src/callables.ts",
+        "file": "@repo/typescript-corpus/src/callables.ts",
+        "id": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/callables.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"forwardedLeaf\\\\\\\",\\\\\\\"(): number\\\\\\\"]\\\",0]\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "function",
+        "label": "forwardedLeaf",
+        "language": "typescript",
+        "line": 13,
+        "namespace": "src",
+        "project": "typescript-corpus",
+        "signature": "(): number"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/typescript-corpus/tsconfig.json",
+        "container": "src/callables.ts",
+        "file": "@repo/typescript-corpus/src/callables.ts",
+        "id": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/callables.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"forwardingOnly\\\\\\\",\\\\\\\"(): number\\\\\\\"]\\\",0]\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "function",
+        "label": "forwardingOnly",
+        "language": "typescript",
+        "line": 39,
+        "namespace": "src",
+        "project": "typescript-corpus",
+        "signature": "(): number"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/typescript-corpus/tsconfig.json",
+        "container": "src/callables.ts",
+        "file": "@repo/typescript-corpus/src/callables.ts",
+        "id": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/callables.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"identity\\\\\\\",\\\\\\\"(callback: () => number): () => number\\\\\\\"]\\\",0]\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "function",
+        "label": "identity",
+        "language": "typescript",
+        "line": 33,
+        "namespace": "src",
+        "project": "typescript-corpus",
+        "signature": "(callback: () => number): () => number"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/typescript-corpus/tsconfig.json",
+        "container": "src/callables.ts",
+        "file": "@repo/typescript-corpus/src/callables.ts",
+        "id": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/callables.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"immediateReturned\\\\\\\",\\\\\\\"(): number\\\\\\\"]\\\",0]\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "function",
+        "label": "immediateReturned",
+        "language": "typescript",
+        "line": 36,
+        "namespace": "src",
+        "project": "typescript-corpus",
+        "signature": "(): number"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/typescript-corpus/tsconfig.json",
+        "container": "src/callables.ts",
+        "file": "@repo/typescript-corpus/src/callables.ts",
+        "id": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/callables.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"immutableAlias\\\\\\\",\\\\\\\"(): number\\\\\\\"]\\\",0]\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "function",
+        "label": "immutableAlias",
+        "language": "typescript",
+        "line": 25,
+        "namespace": "src",
+        "project": "typescript-corpus",
+        "signature": "(): number"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/typescript-corpus/tsconfig.json",
+        "container": "src/callables.ts",
+        "file": "@repo/typescript-corpus/src/callables.ts",
+        "id": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/callables.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"invokeParameter\\\\\\\",\\\\\\\"(callback: () => number): number\\\\\\\"]\\\",0]\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "function",
+        "label": "invokeParameter",
+        "language": "typescript",
+        "line": 31,
+        "namespace": "src",
+        "project": "typescript-corpus",
+        "signature": "(callback: () => number): number"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/typescript-corpus/tsconfig.json",
+        "container": "src/callables.ts",
+        "file": "@repo/typescript-corpus/src/callables.ts",
+        "id": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/callables.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"logicalNullish\\\\\\\",\\\\\\\"(): number\\\\\\\"]\\\",0]\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "function",
+        "label": "logicalNullish",
+        "language": "typescript",
+        "line": 15,
+        "namespace": "src",
+        "project": "typescript-corpus",
+        "signature": "(): number"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/typescript-corpus/tsconfig.json",
+        "container": "src/callables.ts",
+        "file": "@repo/typescript-corpus/src/callables.ts",
+        "id": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/callables.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"logicalOr\\\\\\\",\\\\\\\"(): number\\\\\\\"]\\\",0]\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "function",
+        "label": "logicalOr",
+        "language": "typescript",
+        "line": 20,
+        "namespace": "src",
+        "project": "typescript-corpus",
+        "signature": "(): number"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/typescript-corpus/tsconfig.json",
+        "container": "src/callables.ts",
+        "file": "@repo/typescript-corpus/src/callables.ts",
+        "id": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/callables.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"mutableAliasNegative\\\\\\\",\\\\\\\"(): number\\\\\\\"]\\\",0]\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "function",
+        "label": "mutableAliasNegative",
+        "language": "typescript",
+        "line": 42,
+        "namespace": "src",
+        "project": "typescript-corpus",
+        "signature": "(): number"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/typescript-corpus/tsconfig.json",
+        "container": "src/callables.ts",
+        "file": "@repo/typescript-corpus/src/callables.ts",
+        "id": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/callables.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"mutableReturnNegative\\\\\\\",\\\\\\\"(): number\\\\\\\"]\\\",0]\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "function",
+        "label": "mutableReturnNegative",
+        "language": "typescript",
+        "line": 48,
+        "namespace": "src",
+        "project": "typescript-corpus",
+        "signature": "(): number"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/typescript-corpus/tsconfig.json",
+        "container": "src/callables.ts",
+        "file": "@repo/typescript-corpus/src/callables.ts",
+        "id": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/callables.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"mutatedParameter\\\\\\\",\\\\\\\"(callback: () => number): number\\\\\\\"]\\\",0]\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "function",
+        "label": "mutatedParameter",
+        "language": "typescript",
+        "line": 40,
+        "namespace": "src",
+        "project": "typescript-corpus",
+        "signature": "(callback: () => number): number"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/typescript-corpus/tsconfig.json",
+        "container": "src/callables.ts",
+        "file": "@repo/typescript-corpus/src/callables.ts",
+        "id": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/callables.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"mutationLeafA\\\\\\\",\\\\\\\"(): number\\\\\\\"]\\\",0]\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "function",
+        "label": "mutationLeafA",
+        "language": "typescript",
+        "line": 11,
+        "namespace": "src",
+        "project": "typescript-corpus",
+        "signature": "(): number"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/typescript-corpus/tsconfig.json",
+        "container": "src/callables.ts",
+        "file": "@repo/typescript-corpus/src/callables.ts",
+        "id": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/callables.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"mutationLeafB\\\\\\\",\\\\\\\"(): number\\\\\\\"]\\\",0]\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "function",
+        "label": "mutationLeafB",
+        "language": "typescript",
+        "line": 12,
+        "namespace": "src",
+        "project": "typescript-corpus",
+        "signature": "(): number"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/typescript-corpus/tsconfig.json",
+        "container": "src/callables.ts",
+        "file": "@repo/typescript-corpus/src/callables.ts",
+        "id": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/callables.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"nullishFallback\\\\\\\",\\\\\\\"(): number\\\\\\\"]\\\",0]\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "function",
+        "label": "nullishFallback",
+        "language": "typescript",
+        "line": 3,
+        "namespace": "src",
+        "project": "typescript-corpus",
+        "signature": "(): number"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/typescript-corpus/tsconfig.json",
+        "container": "src/callables.ts",
+        "file": "@repo/typescript-corpus/src/callables.ts",
+        "id": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/callables.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"nullishPrimary\\\\\\\",\\\\\\\"(): number\\\\\\\"]\\\",0]\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "function",
+        "label": "nullishPrimary",
+        "language": "typescript",
+        "line": 2,
+        "namespace": "src",
+        "project": "typescript-corpus",
+        "signature": "(): number"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/typescript-corpus/tsconfig.json",
+        "container": "src/callables.ts",
+        "file": "@repo/typescript-corpus/src/callables.ts",
+        "id": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/callables.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"orFallback\\\\\\\",\\\\\\\"(): number\\\\\\\"]\\\",0]\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "function",
+        "label": "orFallback",
+        "language": "typescript",
+        "line": 5,
+        "namespace": "src",
+        "project": "typescript-corpus",
+        "signature": "(): number"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/typescript-corpus/tsconfig.json",
+        "container": "src/callables.ts",
+        "file": "@repo/typescript-corpus/src/callables.ts",
+        "id": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/callables.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"orPrimary\\\\\\\",\\\\\\\"(): number\\\\\\\"]\\\",0]\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "function",
+        "label": "orPrimary",
+        "language": "typescript",
+        "line": 4,
+        "namespace": "src",
+        "project": "typescript-corpus",
+        "signature": "(): number"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/typescript-corpus/tsconfig.json",
+        "container": "src/callables.ts",
+        "file": "@repo/typescript-corpus/src/callables.ts",
+        "id": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/callables.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"parameterLeaf\\\\\\\",\\\\\\\"(): number\\\\\\\"]\\\",0]\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "function",
+        "label": "parameterLeaf",
+        "language": "typescript",
+        "line": 8,
+        "namespace": "src",
+        "project": "typescript-corpus",
+        "signature": "(): number"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/typescript-corpus/tsconfig.json",
+        "container": "src/callables.ts",
+        "file": "@repo/typescript-corpus/src/callables.ts",
+        "id": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/callables.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"parameterMutationNegative\\\\\\\",\\\\\\\"(): number\\\\\\\"]\\\",0]\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "function",
+        "label": "parameterMutationNegative",
+        "language": "typescript",
+        "line": 41,
+        "namespace": "src",
+        "project": "typescript-corpus",
+        "signature": "(): number"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/typescript-corpus/tsconfig.json",
+        "container": "src/callables.ts",
+        "file": "@repo/typescript-corpus/src/callables.ts",
+        "id": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/callables.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"relay\\\\\\\",\\\\\\\"(callback: () => number): () => number\\\\\\\"]\\\",0]\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "function",
+        "label": "relay",
+        "language": "typescript",
+        "line": 37,
+        "namespace": "src",
+        "project": "typescript-corpus",
+        "signature": "(callback: () => number): () => number"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/typescript-corpus/tsconfig.json",
+        "container": "src/callables.ts",
+        "file": "@repo/typescript-corpus/src/callables.ts",
+        "id": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/callables.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"returnLeafA\\\\\\\",\\\\\\\"(): number\\\\\\\"]\\\",0]\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "function",
+        "label": "returnLeafA",
+        "language": "typescript",
+        "line": 9,
+        "namespace": "src",
+        "project": "typescript-corpus",
+        "signature": "(): number"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/typescript-corpus/tsconfig.json",
+        "container": "src/callables.ts",
+        "file": "@repo/typescript-corpus/src/callables.ts",
+        "id": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/callables.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"returnLeafB\\\\\\\",\\\\\\\"(): number\\\\\\\"]\\\",0]\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "function",
+        "label": "returnLeafB",
+        "language": "typescript",
+        "line": 10,
+        "namespace": "src",
+        "project": "typescript-corpus",
+        "signature": "(): number"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/typescript-corpus/tsconfig.json",
+        "container": "src/callables.ts",
+        "file": "@repo/typescript-corpus/src/callables.ts",
+        "id": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/callables.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"returnedA\\\\\\\",\\\\\\\"(): number\\\\\\\"]\\\",0]\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "function",
+        "label": "returnedA",
+        "language": "typescript",
+        "line": 34,
+        "namespace": "src",
+        "project": "typescript-corpus",
+        "signature": "(): number"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/typescript-corpus/tsconfig.json",
+        "container": "src/callables.ts",
+        "file": "@repo/typescript-corpus/src/callables.ts",
+        "id": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/callables.ts\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"returnedB\\\\\\\",\\\\\\\"(): number\\\\\\\"]\\\",0]\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "function",
+        "label": "returnedB",
+        "language": "typescript",
+        "line": 35,
+        "namespace": "src",
+        "project": "typescript-corpus",
+        "signature": "(): number"
       },
       {
         "body_unavailable": false,
