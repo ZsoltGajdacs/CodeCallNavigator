@@ -2,6 +2,7 @@ pub use codegraph::{analyzers, discovery, fingerprint};
 mod app;
 mod architecture_workspace;
 mod camera;
+mod canvas_fixture;
 mod cli;
 mod edges;
 mod flow_scenes;
@@ -16,6 +17,7 @@ mod jobs;
 mod layer_scenes;
 mod method_scenes;
 mod navigation;
+mod pan_profile;
 mod presentation;
 mod projection;
 mod relationship;
@@ -43,6 +45,8 @@ fn main() {
         min_size: Some((1050.0, 680.0)),
         scenes: &[
             ("fixture", scenes::install),
+            ("dense-canvas", canvas_fixture::install),
+            ("saved-canvas", canvas_fixture::saved),
             ("class-tree", traversal_scenes::classes),
             ("method-tree", traversal_scenes::methods),
             ("function-flow", flow_scenes::install),
@@ -59,9 +63,15 @@ fn main() {
         on_key: Some(view::key),
         ..rune::AppSpec::new("CodeGraph", (1420.0, 900.0), app::State::new, view::view)
     };
-    rune::App::new(spec)
+    let app = rune::App::new(spec)
         .standard_menus()
         .keep_running()
-        .on_close(jobs::close)
-        .run();
+        .on_close(jobs::close);
+    match pan_profile::attach(app) {
+        Ok(app) => app.run(),
+        Err(error) => {
+            eprintln!("{error:#}");
+            std::process::exit(1);
+        }
+    }
 }
