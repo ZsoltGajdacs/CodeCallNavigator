@@ -96,6 +96,9 @@ pub struct EntryPoints {
 
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
 pub struct GraphData {
+    /// Adapter-owned export keys; native bindings and graph identity stay intact.
+    #[serde(default, skip_serializing_if = "std::collections::HashMap::is_empty")]
+    pub export_identities: std::collections::HashMap<String, String>,
     #[serde(default)]
     pub flow_inventory: Option<crate::flow::FlowInventory>,
     #[serde(default)]

@@ -9,6 +9,7 @@ const {isCallable,isCallSite,isJsxSite,isAccess}=require('./syntax.js');
 const {reactImport}=require('./react-import.js');
 const {ReactRules}=require('./react.js');
 const {markNextEntries}=require('./next.js');
+const {semanticKeys}=require('./semantic.js');
 function callCertainty(graph,targets,to,propagated) {
   if(propagated) return 'possible';
   return targets.length>1 || graph.nodes[to].body_unavailable ? 'possible' : 'direct';
@@ -58,6 +59,6 @@ function extract(context) {
     walkFile(bindings,react,file);
     markNextEntries(context,bindings,graph,file);
   }
-  return {...graph.result(),flow_inventory:flowInventory(bindings),architecture:{version:1,files:bindings.files.map(file=>architectureFacts(context,file))}};
+  return {...graph.result(),export_identities:semanticKeys(bindings),flow_inventory:flowInventory(bindings),architecture:{version:1,files:bindings.files.map(file=>architectureFacts(context,file))}};
 }
 module.exports={extract};

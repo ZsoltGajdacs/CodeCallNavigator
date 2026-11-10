@@ -1,4 +1,7 @@
-use crate::{discovery::excluded_directory, model::FileFingerprint};
+use crate::{
+    discovery::{excluded_directory, generated_graph_output},
+    model::FileFingerprint,
+};
 use anyhow::{Context, Result};
 use std::{
     collections::BTreeSet,
@@ -8,12 +11,16 @@ use std::{
     time::UNIX_EPOCH,
 };
 
+#[cfg(test)]
+mod output_tests;
+
 pub fn capture(paths: impl IntoIterator<Item = PathBuf>) -> Result<Vec<FileFingerprint>> {
     let _stage = crate::metrics::stage("fingerprints.capture");
     paths
         .into_iter()
         .collect::<BTreeSet<_>>()
         .into_iter()
+        .filter(|path| !generated_graph_output(path))
         .map(|path| fingerprint(&path, &[], false))
         .collect()
 }
@@ -29,6 +36,7 @@ pub fn capture_excluding(
         .into_iter()
         .collect::<BTreeSet<_>>()
         .into_iter()
+        .filter(|path| !generated_graph_output(path))
         .map(|path| {
             let excluded_children = excluded_children(&path, output_roots);
             fingerprint(&path, &excluded_children, true)
@@ -82,6 +90,9 @@ fn collect_roots(
         all_files,
     };
     for root in roots {
+        if generated_graph_output(root) {
+            continue;
+        }
         let descendant_outputs: Vec<_> = output_roots
             .iter()
             .filter(|output| *output != root && output.starts_with(root))
@@ -120,18 +131,24 @@ impl SourceCollector {
         crate::metrics::count("fingerprint.directories_visited", 1);
         self.paths.insert(root.into());
         for entry in fs::read_dir(root)? {
-            let entry = entry?;
-            let kind = entry.file_type()?;
-            let path = entry.path();
-            let name = entry.file_name().to_string_lossy().into_owned();
-            if output_roots.iter().any(|output| path.starts_with(output)) {
-                continue;
-            }
-            if kind.is_dir() && !excluded_directory(&name) {
-                self.visit(&path, output_roots)?;
-            } else if kind.is_file() && tracked_file(&path, self.all_files) {
-                self.paths.insert(path);
-            }
+            self.collect_entry(entry?, output_roots)?;
+        }
+        Ok(())
+    }
+
+    fn collect_entry(&mut self, entry: fs::DirEntry, output_roots: &[PathBuf]) -> Result<()> {
+        let path = entry.path();
+        if generated_graph_output(&path)
+            || output_roots.iter().any(|output| path.starts_with(output))
+        {
+            return Ok(());
+        }
+        let kind = entry.file_type()?;
+        let name = entry.file_name().to_string_lossy().into_owned();
+        if kind.is_dir() && !excluded_directory(&name) {
+            self.visit(&path, output_roots)?;
+        } else if kind.is_file() && tracked_file(&path, self.all_files) {
+            self.paths.insert(path);
         }
         Ok(())
     }
@@ -142,6 +159,14 @@ fn tracked_file(path: &Path, all_files: bool) -> bool {
 }
 
 fn relevant_file(path: &Path) -> bool {
+    if path
+        .parent()
+        .and_then(Path::file_name)
+        .is_some_and(|name| name == ".codegraph")
+        && path.file_name().is_some_and(|name| name == "layers.yml")
+    {
+        return true;
+    }
     let name = path
         .file_name()
         .unwrap_or_default()
@@ -234,6 +259,9 @@ fn directory_hash(path: &Path, excluded_children: &[String]) -> Result<String> {
         if excluded_directory(&name) || excluded_children.contains(&name) {
             continue;
         }
+        if generated_graph_output(&entry.path()) || generated_graph_directory(&entry)? {
+            continue;
+        }
         if generated_maven_marker(&entry)? {
             continue;
         }
@@ -244,6 +272,18 @@ fn directory_hash(path: &Path, excluded_children: &[String]) -> Result<String> {
             .to_hex()
             .to_string(),
     )
+}
+
+fn generated_graph_directory(entry: &fs::DirEntry) -> Result<bool> {
+    if entry.file_name() != ".codegraph" || !entry.file_type()?.is_dir() {
+        return Ok(false);
+    }
+    for child in fs::read_dir(entry.path())? {
+        if !generated_graph_output(&child?.path()) {
+            return Ok(false);
+        }
+    }
+    Ok(true)
 }
 
 fn generated_maven_marker(entry: &fs::DirEntry) -> Result<bool> {

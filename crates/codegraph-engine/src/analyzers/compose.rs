@@ -34,6 +34,7 @@ impl GraphComposition {
         super::architecture::merge(&mut self.graph.architecture, part.architecture)?;
         crate::flow::merge_inventory(&mut self.graph.flow_inventory, part.flow_inventory)?;
         self.graph.diagnostics.extend(part.diagnostics);
+        self.graph.export_identities.extend(part.export_identities);
         self.graph.roots.extend(part.roots);
         self.graph.fingerprints.extend(part.fingerprints);
         Ok(())

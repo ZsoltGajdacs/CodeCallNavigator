@@ -1,0 +1,5 @@
+{"workload": "maven", "equal": true, "different_fields": [], "nodes": 10, "edges": 3}
+{"workload": "gradle", "equal": true, "different_fields": [], "nodes": 9, "edges": 3}
+{"workload": "csharp", "equal": true, "different_fields": [], "nodes": 16, "edges": 12}
+{"workload": "typescript", "equal": true, "different_fields": [], "nodes": 9, "edges": 9}
+{"workload": "mixed", "equal": true, "different_fields": [], "nodes": 35, "edges": 24}

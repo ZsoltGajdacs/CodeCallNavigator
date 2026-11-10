@@ -21,6 +21,37 @@ function run(root, config = 'tsconfig.json', mode = 'analyze') {
   return JSON.parse(fs.readFileSync(output, 'utf8'));
 }
 const config = { compilerOptions: { target: 'ES2023', module: 'esnext', moduleResolution: 'bundler', strict: true, skipLibCheck: true, jsx: 'react-jsx', types: [], noEmit: true }, include: ['src/**/*'] };
+test('semantic export keys survive comments and declaration movement within a file',t=>{
+  const source='export function a(){return 1}\nexport function b(){return a()}\n';
+  const root=fixture(t,{'tsconfig.json':config,'src/main.ts':source});
+  const before=run(root);
+  fs.writeFileSync(path.join(root,'src/main.ts'),'// moved declarations\nexport function b(){return a()}\n\nexport function a(){/* comment */return 1}\n');
+  const after=run(root);
+  const named=graph=>Object.fromEntries(graph.nodes.filter(node=>['a','b'].includes(node.label)).map(node=>[node.label,graph.export_identities[node.id]]));
+  assert.deepEqual(named(before),named(after));
+  assert.notDeepEqual(before.nodes.map(n=>n.id),after.nodes.map(n=>n.id));
+});
+test('anonymous export keys ignore trivia and distinguish owning classes',t=>{
+  const source='export class A{run(){return ()=>1}} export class B{run(){return ()=>1}}';
+  const root=fixture(t,{'tsconfig.json':config,'src/main.ts':source});
+  const before=run(root);
+  fs.writeFileSync(path.join(root,'src/main.ts'),source.replaceAll('()=>1','() => /* comment */ 1'));
+  const after=run(root);
+  const callbacks=graph=>graph.nodes.filter(node=>node.kind==='callback').map(node=>graph.export_identities[node.id]).sort();
+  assert.equal(new Set(callbacks(before)).size,2);
+  assert.deepEqual(callbacks(before),callbacks(after));
+});
+test('semantic keys distinguish namespace, interface and object owners and ignore implicit constructors',t=>{
+  const source='export namespace A{export function run(){}} export namespace B{export function run(){}} export interface X{run():void} export interface Y{run():void} export const first={run(){}}; export const second={run(){}}; export class C{run(){}}';
+  const root=fixture(t,{'tsconfig.json':config,'src/main.ts':source});
+  const before=run(root);
+  const keys=before.nodes.filter(node=>node.label==='run').map(node=>before.export_identities[node.id]);
+  assert.equal(new Set(keys).size,keys.length);
+  fs.writeFileSync(path.join(root,'src/main.ts'),source.replace('class C{','class C{constructor(){}'));
+  const after=run(root);
+  const last=graph=>graph.nodes.filter(node=>node.label==='run').at(-1);
+  assert.equal(before.export_identities[last(before).id],after.export_identities[last(after).id]);
+});
 function edges(graph, label, kind) {
   return graph.edges.filter(e => graph.nodes[e.from].label === label && (!kind || e.kind === kind)).map(e => graph.nodes[e.to].label);
 }

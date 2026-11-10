@@ -47,6 +47,22 @@ pub(crate) fn excluded_directory(name: &str) -> bool {
     )
 }
 
+/// Only generated artifact files directly inside a project's configuration folder.
+pub fn generated_graph_output(path: &Path) -> bool {
+    if path
+        .parent()
+        .and_then(Path::file_name)
+        .is_none_or(|name| name != ".codegraph")
+    {
+        return false;
+    }
+    path.file_name()
+        .and_then(|name| name.to_str())
+        .is_some_and(|name| {
+            matches!(name, "graph.json" | "graph.lock") || name.starts_with(".graph-publish-")
+        })
+}
+
 pub fn discover(root: &Path) -> Result<Vec<BuildTarget>> {
     let root = root
         .canonicalize()
@@ -166,6 +182,9 @@ fn discover_directory(
         let path = entry.path();
         let name = entry.file_name().to_string_lossy().into_owned();
         let kind = entry.file_type()?;
+        if generated_graph_output(&path) {
+            continue;
+        }
         if kind.is_dir() && !excluded_directory(&name) {
             discover_directory(&path, targets, gradle)?;
         } else if kind.is_file() {

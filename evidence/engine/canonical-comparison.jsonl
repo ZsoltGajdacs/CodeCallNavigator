@@ -1,0 +1,5 @@
+{"workload": "maven", "equal": true, "repeat_equal": true, "relocation_equal": true, "bytes": 30601}
+{"workload": "gradle", "equal": true, "repeat_equal": true, "relocation_equal": true, "bytes": 22727}
+{"workload": "csharp", "equal": true, "repeat_equal": true, "relocation_equal": true, "bytes": 21597}
+{"workload": "typescript", "equal": true, "repeat_equal": true, "relocation_equal": true, "bytes": 51890}
+{"workload": "mixed", "equal": true, "repeat_equal": true, "relocation_equal": true, "bytes": 107367}

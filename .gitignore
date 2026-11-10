@@ -2,6 +2,8 @@
 **/target/
 /dist/
 **/bin/
+!/crates/codegraph-engine/src/bin/
+!/crates/codegraph-engine/src/bin/*.rs
 **/obj/
 **/.gradle/
 **/build/
@@ -12,3 +14,5 @@
 /evidence/analyzers/workspaces/
 /evidence/performance/cache*/
 /.serena/
+**/.codegraph/graph.lock
+**/.codegraph/.graph-publish-*

@@ -1,5 +1,5 @@
 //! Job-scoped measurements shared by native UI, CLI and analyzer adapters.
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use std::{
     cell::RefCell,
     collections::BTreeMap,
@@ -7,7 +7,7 @@ use std::{
     time::Instant,
 };
 
-#[derive(Clone, Debug, Default, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, Serialize)]
 pub struct Stage {
     pub calls: u64,
     pub milliseconds: f64,
@@ -120,6 +120,26 @@ pub fn count(name: &str, amount: u64) {
             }
         }
     });
+}
+
+/// Merge a subprocess report into the active parent job without resetting its clock.
+pub fn absorb(value: &serde_json::Value) -> anyhow::Result<()> {
+    let stages: BTreeMap<String, Stage> = serde_json::from_value(value["stages"].clone())?;
+    let counters: BTreeMap<String, u64> = serde_json::from_value(value["counters"].clone())?;
+    CURRENT.with(|current| {
+        let active = current.borrow();
+        let Some(metrics) = active.as_ref() else { return; };
+        let mut report = metrics.report.lock().expect("metrics lock");
+        for (name, stage) in stages {
+            let target = report.stages.entry(name).or_default();
+            target.calls += stage.calls;
+            target.milliseconds += stage.milliseconds;
+        }
+        for (name, count) in counters {
+            *report.counters.entry(name).or_default() += count;
+        }
+    });
+    Ok(())
 }
 
 #[cfg(test)]

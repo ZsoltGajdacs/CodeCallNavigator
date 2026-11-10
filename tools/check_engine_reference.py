@@ -37,6 +37,8 @@ def prepare(workload, directory):
 
 
 def from_native(graph):
+    # Export-only semantic keys do not change native binding or graph behavior.
+    graph.pop('export_identities', None)
     identities = [node['id'] for node in graph['nodes']]
     for node in graph['nodes']:
         node.setdefault('visibility', None)
