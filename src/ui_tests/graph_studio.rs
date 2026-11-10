@@ -93,6 +93,63 @@ fn long_build_paths_scroll_horizontally() {
 }
 
 #[test]
+fn selected_relationship_shows_rule_source_construct_and_supporting_symbol() {
+    use codegraph::{
+        flow::SourceSpan,
+        graph::GraphIndex,
+        model::{RelationshipEvidence, SourceSite},
+    };
+    use std::sync::Arc;
+    let mut runtime = runtime();
+    let mut data = (*runtime.state.graph.as_ref().unwrap().data).clone();
+    let edge = &mut data.edges[0];
+    let selected = edge.from;
+    let supporting = data.nodes[edge.to as usize].id.clone();
+    let signature = data.nodes[edge.to as usize].signature.clone();
+    edge.evidence = vec![RelationshipEvidence {
+        rule: "codegraph.react.v1:react-event".into(),
+        version: 1,
+        semantics: "reference".into(),
+        invocation: SourceSite {
+            file: "/fixture/Page.tsx".into(),
+            line: 12,
+            column: Some(8),
+            span: Some(SourceSpan { start: 40, end: 50 }),
+        },
+        registration: Some(SourceSite {
+            file: "/fixture/Page.tsx".into(),
+            line: 12,
+            column: None,
+            span: None,
+        }),
+        supporting_symbols: vec![supporting],
+        channel: Some("onClick".into()),
+    }];
+    runtime.state.graph = Some(Arc::new(GraphIndex::new(Arc::new(data)).unwrap()));
+    runtime
+        .state
+        .select_method(selected, crate::graph_interaction::SelectionAction::Inspect);
+    runtime.state.selected_edge = Some(0);
+    settle(&mut runtime);
+    let elements = runtime.elements();
+    for label in [
+        "Rule: codegraph.react.v1:react-event · v1".to_string(),
+        "Semantics: reference".into(),
+        "Evidence site: /fixture/Page.tsx:12:8 · bytes 40..50".into(),
+        "Registration: /fixture/Page.tsx:12".into(),
+        "Channel: onClick".into(),
+        format!("Supporting symbol: {signature}"),
+    ] {
+        assert!(
+            elements
+                .iter()
+                .any(|element| element.text.as_deref() == Some(&label)),
+            "Missing evidence detail: {label}"
+        );
+    }
+}
+
+#[test]
 fn build_scrollbar_stays_at_the_bottom_while_the_list_scrolls() {
     let mut runtime = narrow_runtime(false);
     runtime.update(|state, _| {

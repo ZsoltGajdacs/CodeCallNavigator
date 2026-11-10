@@ -222,6 +222,7 @@ fn search_and_neighbor_pages_can_reach_every_indexed_match() {
         .collect();
     let edges = (1..95)
         .map(|to| Edge {
+            evidence: Vec::new(),
             provenance: String::new(),
             from: 0,
             to,

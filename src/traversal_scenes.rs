@@ -111,6 +111,7 @@ fn data() -> GraphData {
     let edges = [(0, 1), (0, 2), (1, 3), (1, 17), (2, 17), (3, 17)]
         .into_iter()
         .map(|(from, to)| Edge {
+            evidence: Vec::new(),
             from,
             to,
             kind: "call".into(),

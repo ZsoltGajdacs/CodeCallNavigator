@@ -104,6 +104,7 @@ mod tests {
                 GraphData {
                     nodes: vec![declaration("caller", false), declaration("target", true)],
                     edges: vec![Edge {
+                        evidence: Vec::new(),
                         from: 0,
                         to: 1,
                         kind: "call".into(),
@@ -121,6 +122,7 @@ mod tests {
                 GraphData {
                     nodes: vec![declaration("target", false), declaration("leaf", false)],
                     edges: vec![Edge {
+                        evidence: Vec::new(),
                         from: 0,
                         to: 1,
                         kind: "call".into(),

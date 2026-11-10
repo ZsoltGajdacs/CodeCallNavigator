@@ -27,6 +27,7 @@ fn sample() -> GraphData {
     let edges = [(0, 1), (1, 2), (2, 1), (0, 3)]
         .into_iter()
         .map(|(from, to)| Edge {
+            evidence: Vec::new(),
             provenance: String::new(),
             from,
             to,
@@ -97,6 +98,7 @@ fn multi_root_budget_keeps_roots_before_descendants_in_stable_identity_order() {
         .collect();
     data.edges = (1..1601)
         .map(|to| Edge {
+            evidence: Vec::new(),
             provenance: String::new(),
             from: 0,
             to,

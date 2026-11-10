@@ -26,21 +26,25 @@ def typescript_dependencies():
         link.symlink_to(modules, target_is_directory=True)
 
 
+def workload_targets(workload, workloads):
+    if 'components' not in workload:
+        return ROOT / workload['source'], workload['targets']
+    targets = [str(ROOT / workloads[name]['source'] / target)
+               for name in workload['components'] for target in workloads[name]['targets']]
+    return ROOT / 'fixtures', targets
+
+
 def main():
+    corpus = json.loads((ROOT / 'evidence/engine/corpus.json').read_text())
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--executable', type=Path, required=True)
+    parser.add_argument('--workload', action='append', choices=[item['name'] for item in corpus['workloads']])
     args = parser.parse_args()
     typescript_dependencies()
-    corpus = json.loads((ROOT / 'evidence/engine/corpus.json').read_text())
     workloads = {item['name']: item for item in corpus['workloads']}
-    for workload in workloads.values():
-        if 'components' in workload:
-            project = ROOT / 'fixtures'
-            targets = [str(ROOT / workloads[name]['source'] / target)
-                       for name in workload['components'] for target in workloads[name]['targets']]
-        else:
-            project = ROOT / workload['source']
-            targets = workload['targets']
+    for name in args.workload or workloads:
+        workload = workloads[name]
+        project, targets = workload_targets(workload, workloads)
         subprocess.run([str(args.executable.resolve()), 'analyze', '--project', str(project), *targets], check=True)
 
 

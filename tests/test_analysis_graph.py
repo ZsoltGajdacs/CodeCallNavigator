@@ -75,6 +75,17 @@ class GraphComparisonTest(unittest.TestCase):
         self.assertEqual(compare(self.reference, self.current)['different_fields'],
                          ['architecture', 'flow_inventory'])
 
+    def test_relationship_evidence_changes_are_compared_but_empty_legacy_evidence_is_not_added(self):
+        with sqlite3.connect(self.current / 'graph.sqlite3') as connection:
+            metadata = json.loads(connection.execute('SELECT value FROM metadata').fetchone()[0])
+            metadata['edge_evidence'] = [[]]
+            connection.execute('UPDATE metadata SET value=?', (json.dumps(metadata),))
+        self.assertTrue(compare(self.reference, self.current)['equal'])
+        with sqlite3.connect(self.current / 'graph.sqlite3') as connection:
+            metadata['edge_evidence'] = [[{'rule': 'react.event', 'version': 1}]]
+            connection.execute('UPDATE metadata SET value=?', (json.dumps(metadata),))
+        self.assertEqual(compare(self.reference, self.current)['different_fields'], ['edges'])
+
     def test_dropping_freshness_inputs_is_detected_but_observation_times_are_ignored(self):
         self.assertTrue(compare(self.reference, self.current)['equal'])
         with sqlite3.connect(self.current / 'graph.sqlite3') as connection:

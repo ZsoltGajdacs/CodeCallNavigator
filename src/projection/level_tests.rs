@@ -36,6 +36,7 @@ fn folder_graph() -> GraphIndex {
     let edges = [(0, 1), (1, 2), (1, 3), (1, 4), (5, 6)]
         .into_iter()
         .map(|(from, to)| Edge {
+            evidence: Vec::new(),
             from,
             to,
             kind: "call".into(),

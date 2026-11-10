@@ -136,6 +136,7 @@ fn graph_data() -> GraphData {
         })
         .collect(),
         edges: vec![Edge {
+            evidence: Vec::new(),
             from: 0,
             to: 1,
             kind: "call".into(),

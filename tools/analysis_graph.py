@@ -18,6 +18,7 @@ def graph_snapshot(cache):
         identities = {node["idx"]: node["id"] for node in nodes}
         metadata = json.loads(connection.execute("SELECT value FROM metadata WHERE key='graph'").fetchone()[0])
         provenance = metadata.get("edge_provenance", [])
+        evidence = metadata.get("edge_evidence", [])
         edges = []
         for row in connection.execute("SELECT * FROM edges ORDER BY idx"):
             edge = dict(row)
@@ -25,6 +26,8 @@ def graph_snapshot(cache):
             edge["from"] = identities[edge.pop("from_idx")]
             edge["to"] = identities[edge.pop("to_idx")]
             edge["provenance"] = provenance[index] if provenance else ""
+            if evidence and evidence[index]:
+                edge["evidence"] = evidence[index]
             edges.append(edge)
     for node in nodes:
         del node["idx"]
@@ -46,12 +49,25 @@ def graph_snapshot(cache):
 
 
 def normalize_sets(graph):
+    normalize_edges(graph.get('edges', []))
     for field in ('roots', 'diagnostics'):
         graph.get(field, []).sort()
     for section, field in [('architecture', 'files'), ('flow_inventory', 'functions')]:
         if graph.get(section):
             graph[section][field].sort(key=canonical)
     return graph
+
+
+def normalize_edges(edges):
+    for edge in edges:
+        normalize_evidence(edge.get('evidence', []))
+    edges.sort(key=canonical)
+
+
+def normalize_evidence(records):
+    for record in records:
+        record.get('supporting_symbols', []).sort()
+    records.sort(key=canonical)
 
 
 def decode_visibility(node):

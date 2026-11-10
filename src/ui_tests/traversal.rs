@@ -51,6 +51,7 @@ fn runtime() -> Runtime<State> {
     let edges = [(0, 1), (1, 2), (2, 17)]
         .into_iter()
         .map(|(from, to)| Edge {
+            evidence: Vec::new(),
             from,
             to,
             kind: "call".into(),

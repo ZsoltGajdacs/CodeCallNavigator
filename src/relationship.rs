@@ -1,4 +1,5 @@
 //! Relationship details and paged, selectable Kit rows.
+mod evidence;
 use crate::app::{RESULT_PAGE_SIZE, State};
 use rune::{El, col, row, text};
 use rune_kit::{Button, ButtonVariant, Kit, List, ListItem};
@@ -88,7 +89,7 @@ pub fn selected(state: &State, k: &Kit) -> El {
                 .color(k.c.text_muted),
         );
     }
-    panel
+    panel.child(evidence::panel(edge, graph, k))
 }
 
 fn pager(state: &State, k: &Kit) -> El {

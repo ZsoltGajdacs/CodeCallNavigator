@@ -1,6 +1,7 @@
 'use strict';
 const path = require('node:path');
 const {methodVisibility} = require('./visibility.js');
+const {mergeEvidence}=require('./evidence.js');
 class Graph {
   constructor(context) {
     this.context=context;
@@ -23,13 +24,15 @@ class Graph {
       is_generated:generatedOutput || generatedFolders.some(root=>file.fileName.includes(root)),body_unavailable:!['module','implicit-constructor','initializer'].includes(kind) && !declaration.body});
     this.indices.set(id,index); return index;
   }
-  edge(from,to,kind='call',{certainty='direct',provenance='typescript.compiler'}={}) {
+  edge(from,to,kind='call',{certainty='direct',provenance='typescript.compiler',evidence=[]}={}) {
     if (from===undefined || to===undefined) return;
     const key=JSON.stringify([from,to,kind,certainty,provenance]);
     const previous=this.edgeIndices.get(key);
-    if (previous!==undefined) { this.edges[previous].count++; return; }
+    if (previous!==undefined) { this.edges[previous].count++; mergeEvidence(this.edges[previous],evidence); return; }
     this.edgeIndices.set(key,this.edges.length);
-    this.edges.push({from,to,kind,certainty,count:1,provenance});
+    const edge={from,to,kind,certainty,count:1,provenance};
+    mergeEvidence(edge,evidence);
+    this.edges.push(edge);
   }
   diagnostic(kind) { this.unresolved.set(kind,(this.unresolved.get(kind)||0)+1); }
   result() {

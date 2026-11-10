@@ -1,0 +1,50 @@
+{
+  "baseline": {
+    "runs": [
+      {
+        "seconds": 0.8203007919946685,
+        "sampled_peak_tree_rss_bytes": 309264384,
+        "nodes": 9,
+        "edges": 9
+      },
+      {
+        "seconds": 0.5205965829954948,
+        "sampled_peak_tree_rss_bytes": 321617920,
+        "nodes": 9,
+        "edges": 9
+      },
+      {
+        "seconds": 0.5284753330051899,
+        "sampled_peak_tree_rss_bytes": 324239360,
+        "nodes": 9,
+        "edges": 9
+      }
+    ],
+    "median_seconds": 0.5284753330051899,
+    "median_sampled_peak_tree_rss_bytes": 321617920
+  },
+  "candidate": {
+    "runs": [
+      {
+        "seconds": 0.9749617499765009,
+        "sampled_peak_tree_rss_bytes": 293355520,
+        "nodes": 9,
+        "edges": 9
+      },
+      {
+        "seconds": 0.5370327500277199,
+        "sampled_peak_tree_rss_bytes": 321110016,
+        "nodes": 9,
+        "edges": 9
+      },
+      {
+        "seconds": 0.5287440420070197,
+        "sampled_peak_tree_rss_bytes": 334053376,
+        "nodes": 9,
+        "edges": 9
+      }
+    ],
+    "median_seconds": 0.5370327500277199,
+    "median_sampled_peak_tree_rss_bytes": 321110016
+  }
+}

@@ -19,6 +19,7 @@ fn graph() -> GraphData {
         edges: [(0, 1), (1, 2), (0, 2)]
             .into_iter()
             .map(|(from, to)| Edge {
+                evidence: Vec::new(),
                 from,
                 to,
                 count: 2,

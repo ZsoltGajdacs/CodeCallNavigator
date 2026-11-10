@@ -50,7 +50,9 @@ impl Transform<'_> {
                 Ok(())
             }
             "roots" => self.roots(value),
-            "candidates" | "application_starts" | "framework_entries" => self.entries(value),
+            "candidates" | "application_starts" | "framework_entries" | "supporting_symbols" => {
+                self.entries(value)
+            }
             "diagnostics" if !self.hydrate => self.diagnostics(value),
             _ => self.visit(value),
         }
@@ -112,6 +114,8 @@ fn unordered(field: &str) -> bool {
     matches!(
         field,
         "nodes"
+            | "evidence"
+            | "supporting_symbols"
             | "edges"
             | "roots"
             | "diagnostics"

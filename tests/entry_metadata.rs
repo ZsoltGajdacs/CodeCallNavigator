@@ -120,6 +120,7 @@ fn framework_entries_and_edge_provenance_survive_cache_without_becoming_starts()
     entries.application_starts.clear();
     entries.framework_entries.push("main".into());
     data.edges.push(Edge {
+        evidence: Vec::new(),
         from: 0,
         to: 0,
         kind: "react-render".into(),

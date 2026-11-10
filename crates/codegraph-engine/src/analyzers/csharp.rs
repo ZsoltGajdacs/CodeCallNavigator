@@ -491,6 +491,7 @@ fn append_atlas_edge(
         edge.tier
     };
     graph.edges.push(Edge {
+        evidence: Vec::new(),
         provenance: String::new(),
         from,
         to,
@@ -501,6 +502,7 @@ fn append_atlas_edge(
     for candidate in edge.virtual_targets {
         if let Some(target) = indices.get(&candidate) {
             graph.edges.push(Edge {
+                evidence: Vec::new(),
                 provenance: String::new(),
                 from,
                 to: *target,

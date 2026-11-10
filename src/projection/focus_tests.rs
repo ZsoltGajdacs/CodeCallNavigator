@@ -16,6 +16,7 @@ fn graph() -> GraphIndex {
         edges: [(0, 1), (1, 2), (2, 3), (3, 4)]
             .into_iter()
             .map(|(from, to)| Edge {
+                evidence: Vec::new(),
                 from,
                 to,
                 kind: "call".into(),
@@ -94,6 +95,7 @@ fn class_focus_expands_collapsed_neighbor_folders_before_traversing() {
         ..Default::default()
     });
     data.edges.push(Edge {
+        evidence: Vec::new(),
         from: 5,
         to: 6,
         kind: "call".into(),
@@ -177,6 +179,7 @@ fn recursive_shared_nodes_are_unique_and_ties_go_above() {
     let mut data = graph().data.as_ref().clone();
     data.edges
         .extend([(2, 1), (3, 2), (2, 2)].into_iter().map(|(from, to)| Edge {
+            evidence: Vec::new(),
             from,
             to,
             kind: "call".into(),
@@ -238,6 +241,7 @@ fn focused_pagination_pins_the_anchor_and_counts_only_neighborhood_omissions() {
         .collect();
     data.edges = (1..NODE_LIMIT + 4)
         .map(|to| Edge {
+            evidence: Vec::new(),
             from: 0,
             to: to as u32,
             kind: "call".into(),
@@ -374,6 +378,7 @@ fn class_methods_fill_the_page_before_external_context_at_the_canvas_limit() {
         let graph = GraphIndex::new(Arc::new(GraphData {
             nodes,
             edges: vec![Edge {
+                evidence: Vec::new(),
                 from: count as u32,
                 to: 0,
                 kind: "call".into(),

@@ -1,9 +1,17 @@
 //! Accumulate selected targets without rebuilding identity indexes for each target.
-use crate::model::{Edge, EntryPoints, GraphData, Node};
+use crate::model::{Edge, EntryPoints, GraphData, Node, RelationshipEvidence};
 use anyhow::{Context, Result, ensure};
 use std::collections::{HashMap, HashSet};
 
-type EdgeKey = (u32, u32, String, String, String, u32);
+type EdgeKey = (
+    u32,
+    u32,
+    String,
+    String,
+    String,
+    u32,
+    Vec<RelationshipEvidence>,
+);
 
 pub(super) struct GraphComposition {
     graph: GraphData,
@@ -89,6 +97,13 @@ impl GraphComposition {
 }
 
 fn edge_key(edge: &Edge) -> EdgeKey {
+    let mut evidence = edge.evidence.clone();
+    for item in &mut evidence {
+        item.supporting_symbols.sort();
+        item.supporting_symbols.dedup();
+    }
+    evidence.sort();
+    evidence.dedup();
     (
         edge.from,
         edge.to,
@@ -96,6 +111,7 @@ fn edge_key(edge: &Edge) -> EdgeKey {
         edge.certainty.clone(),
         edge.provenance.clone(),
         edge.count,
+        evidence,
     )
 }
 
@@ -133,6 +149,7 @@ mod tests {
                 })
                 .collect(),
             edges: vec![Edge {
+                evidence: Vec::new(),
                 from: 0,
                 to: 1,
                 kind: "call".into(),
@@ -174,5 +191,45 @@ mod tests {
         let mut changed = part();
         changed.nodes[0].language = "java".into();
         assert!(composition.append(changed).is_err());
+    }
+
+    #[test]
+    fn shared_edges_preserve_distinct_evidence_and_native_supporting_identities() {
+        use crate::model::SourceSite;
+        let mut first = part();
+        first.edges[0].evidence = vec![RelationshipEvidence {
+            rule: "react.render".into(),
+            version: 1,
+            semantics: "possible-invocation".into(),
+            invocation: SourceSite {
+                file: "/fixture.ts".into(),
+                line: 1,
+                column: None,
+                span: None,
+            },
+            registration: None,
+            supporting_symbols: vec!["caller".into(), "target".into()],
+            channel: None,
+        }];
+        let mut reordered = first.clone();
+        reordered.nodes.swap(0, 1);
+        reordered.edges[0].from = 1;
+        reordered.edges[0].to = 0;
+        reordered.edges[0].evidence[0].supporting_symbols.reverse();
+        let mut distinct = first.clone();
+        distinct.edges[0].evidence[0].invocation.line = 2;
+        let mut composition = GraphComposition::default();
+        composition.append(first).unwrap();
+        composition.append(reordered).unwrap();
+        composition.append(distinct).unwrap();
+        let graph = composition.finish();
+        graph.validate().unwrap();
+        assert_eq!(graph.edges.len(), 2);
+        assert!(graph.edges.iter().all(|edge| edge.count == 2));
+        assert!(graph.edges.iter().all(|edge| {
+            edge.evidence[0]
+                .supporting_symbols
+                .contains(&"target".into())
+        }));
     }
 }

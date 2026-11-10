@@ -137,7 +137,8 @@ impl SqliteStore {
         let metadata = serde_json::json!({ "diagnostics": graph.diagnostics, "roots": graph.roots,
             "fingerprints": graph.fingerprints, "engine_versions": graph.engine_versions,
             "entry_points": graph.entry_points, "architecture": graph.architecture, "flow_inventory": graph.flow_inventory, "method_policy": crate::method_policy::VERSION,
-            "edge_provenance": graph.edges.iter().map(|edge| &edge.provenance).collect::<Vec<_>>() });
+            "edge_provenance": graph.edges.iter().map(|edge| &edge.provenance).collect::<Vec<_>>(),
+            "edge_evidence": graph.edges.iter().map(|edge| &edge.evidence).collect::<Vec<_>>() });
         transaction.execute(
             "INSERT INTO metadata VALUES ('graph', ?1)",
             [metadata.to_string()],
@@ -193,6 +194,7 @@ impl SqliteStore {
             .prepare("SELECT from_idx,to_idx,kind,certainty,count FROM edges ORDER BY idx")?
             .query_map([], |row| {
                 Ok(Edge {
+                    evidence: Vec::new(),
                     provenance: String::new(),
                     from: row.get(0)?,
                     to: row.get(1)?,
@@ -212,6 +214,7 @@ impl SqliteStore {
                 edge.provenance = value;
             }
         }
+        restore_evidence(&mut graph, &metadata)?;
         graph.validate()?;
         Ok(graph)
     }
@@ -331,6 +334,22 @@ impl SqliteStore {
             .map(|json| serde_json::from_str(&json).context("Invalid stored navigation session"))
             .transpose()
     }
+}
+
+fn restore_evidence(graph: &mut GraphData, metadata: &Value) -> Result<()> {
+    let Some(values) = metadata.get("edge_evidence") else {
+        return Ok(());
+    };
+    let evidence: Vec<Vec<crate::model::RelationshipEvidence>> =
+        serde_json::from_value(values.clone())?;
+    ensure!(
+        evidence.len() == graph.edges.len(),
+        "Edge evidence count differs from graph"
+    );
+    for (edge, evidence) in graph.edges.iter_mut().zip(evidence) {
+        edge.evidence = evidence;
+    }
+    Ok(())
 }
 
 fn check_cancelled(cancelled: &AtomicBool) -> Result<()> {

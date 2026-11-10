@@ -227,6 +227,7 @@ impl<'a> BytecodeCollector<'a> {
         self.graph.edges = aggregate
             .into_iter()
             .map(|((from, to, kind, certainty), count)| Edge {
+                evidence: Vec::new(),
                 provenance: String::new(),
                 from,
                 to,

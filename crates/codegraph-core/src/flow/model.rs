@@ -1,7 +1,9 @@
 use serde::{Deserialize, Serialize};
 
 /// Half-open UTF-8 byte offsets into the immutable analyzed source snapshot.
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(
+    Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize,
+)]
 pub struct SourceSpan {
     pub start: usize,
     pub end: usize,

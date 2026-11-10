@@ -15,10 +15,15 @@ function byteOffsets(text) {
   }
   return offsets;
 }
+const sourceOffsetsCache=new WeakMap();
+function sourceOffsets(file) {
+  if(!sourceOffsetsCache.has(file)) sourceOffsetsCache.set(file,byteOffsets(file.text));
+  return sourceOffsetsCache.get(file);
+}
 class FlowSource {
   constructor(bindings,{file,checker,owner}) {
     this.bindings=bindings;this.ts=bindings.ts;this.file=file;this.checker=checker;this.owner=owner;
-    this.offsets=byteOffsets(file.text);this.limits=new FlowLimits();
+    this.offsets=sourceOffsets(file);this.limits=new FlowLimits();
   }
   span(node) {return {start:this.offsets[node.getStart(this.file)],end:this.offsets[node.end]};}
   text(node) {return node.getText(this.file);}
@@ -58,4 +63,4 @@ class FlowSource {
     visit(node);return calls;
   }
 }
-module.exports={FlowSource,byteOffsets};
+module.exports={FlowSource,byteOffsets,sourceOffsets};

@@ -1,6 +1,8 @@
 use anyhow::{Result, ensure};
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
+mod evidence;
+pub use evidence::{RelationshipEvidence, SourceSite};
 
 /// Declared access; absence on a node means unknown or not applicable.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Deserialize, Serialize)]
@@ -39,6 +41,8 @@ pub struct Node {
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Edge {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub evidence: Vec<RelationshipEvidence>,
     #[serde(default)]
     pub provenance: String,
     pub from: u32,
@@ -145,6 +149,9 @@ impl GraphData {
                 "Relationship references a missing graph node"
             );
             ensure!(edge.count > 0, "Relationship count must be positive");
+            for evidence in &edge.evidence {
+                evidence.validate(&identities)?;
+            }
         }
         Ok(())
     }

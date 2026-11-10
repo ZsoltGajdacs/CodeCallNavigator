@@ -88,6 +88,7 @@ fn data() -> GraphData {
         ]
         .into_iter()
         .map(|(from, to)| Edge {
+            evidence: Vec::new(),
             provenance: String::new(),
             from,
             to,

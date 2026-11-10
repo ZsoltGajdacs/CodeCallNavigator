@@ -37,9 +37,10 @@ fn architecture_graph() -> (GraphIndex, Arc<codegraph::architecture::LayerAssign
                 ..Default::default()
             })
             .collect(),
-        edges: [(0, 1), (1, 2)]
+        edges: [(0, 1), (1, 2), (1, 0)]
             .into_iter()
             .map(|(from, to)| Edge {
+                evidence: Vec::new(),
                 from,
                 to,
                 kind: "call".into(),
@@ -54,14 +55,6 @@ fn architecture_graph() -> (GraphIndex, Arc<codegraph::architecture::LayerAssign
         node.file = format!("/example/{name}.cs");
         node.container = name.into();
     }
-    data.edges.push(Edge {
-        from: 1,
-        to: 0,
-        kind: "call".into(),
-        certainty: "direct".into(),
-        provenance: "compiler".into(),
-        count: 1,
-    });
     let files = data
         .nodes
         .iter()

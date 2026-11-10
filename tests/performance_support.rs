@@ -34,6 +34,7 @@ fn graph() -> GraphData {
     ]
     .into_iter()
     .map(|(from, to, kind, certainty)| Edge {
+        evidence: Vec::new(),
         from,
         to,
         kind: kind.into(),

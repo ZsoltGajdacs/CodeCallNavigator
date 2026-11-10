@@ -85,6 +85,7 @@ fn fixture_edges() -> Vec<Edge> {
     [(0, 1), (1, 2), (2, 3), (3, 2), (1, 4), (5, 1)]
         .into_iter()
         .map(|(from, to)| Edge {
+            evidence: Vec::new(),
             provenance: String::new(),
             from,
             to,

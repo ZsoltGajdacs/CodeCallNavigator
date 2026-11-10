@@ -24,6 +24,7 @@ fn fixture(root: &str) -> GraphData {
     GraphData {
         nodes,
         edges: vec![Edge {
+            evidence: Vec::new(),
             from: 0,
             to: 1,
             kind: "call".into(),

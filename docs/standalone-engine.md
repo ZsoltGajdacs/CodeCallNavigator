@@ -89,3 +89,12 @@ framework and does not substitute name matching for compiler bindings.
 Run `cargo test --workspace --all-targets` so moved package tests remain covered.
 The frozen baseline and reproducible corpus are described in
 `evidence/engine/README.md` and `evidence/engine/corpus.json`.
+
+## Relationship evidence
+
+Inferred relationships include versioned rule evidence: the source construct,
+registration location when known, supporting callable identities, channel and
+execution semantics. These fields survive Git comparison, workspace caching and
+the selected-relationship inspector. Evidence sites are source constructs, not
+observations of runtime execution. References, deferred callbacks and possible
+invocations remain distinct. Old graphs without evidence remain readable.

@@ -52,6 +52,22 @@ test('semantic keys distinguish namespace, interface and object owners and ignor
   const last=graph=>graph.nodes.filter(node=>node.label==='run').at(-1);
   assert.equal(before.export_identities[last(before).id],after.export_identities[last(after).id]);
 });
+test('framework evidence records distinct source sites and deferred versus referenced callbacks',t=>{
+  const source='import {useEffect} from "react"; function leaf(){} export function Page(){const emoji="🧭";useEffect(()=>{leaf()},[]);return <><button onClick={leaf}/><button onClick={leaf}/></>}';
+  const root=fixture(t,{'tsconfig.json':config,'src/main.tsx':source});
+  const graph=run(root);
+  const event=graph.edges.find(edge=>edge.kind==='react-event');
+  assert.equal(event.count,2);
+  assert.equal(event.evidence.length,2);
+  assert.ok(event.evidence.every(item=>item.version===1&&item.semantics==='reference'));
+  assert.equal(new Set(event.evidence.map(item=>item.invocation.span.start)).size,2);
+  const effect=graph.edges.find(edge=>edge.kind==='react-effect');
+  assert.equal(effect.evidence[0].semantics,'deferred');
+  const site=effect.evidence[0].invocation;
+  assert.equal(Buffer.from(source).subarray(site.span.start,site.span.end).toString(),'useEffect(()=>{leaf()},[])');
+  assert.ok(effect.evidence[0].supporting_symbols.every(id=>graph.nodes.some(node=>node.id===id)));
+  assert.ok(graph.edges.filter(edge=>edge.certainty==='direct').every(edge=>!edge.evidence));
+});
 function edges(graph, label, kind) {
   return graph.edges.filter(e => graph.nodes[e.from].label === label && (!kind || e.kind === kind)).map(e => graph.nodes[e.to].label);
 }

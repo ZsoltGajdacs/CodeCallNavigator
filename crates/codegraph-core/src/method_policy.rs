@@ -24,6 +24,11 @@ pub fn prune(graph: &mut GraphData, excluded: &HashSet<String>) -> Result<()> {
         };
         edge.from = from;
         edge.to = to;
+        for evidence in &mut edge.evidence {
+            evidence
+                .supporting_symbols
+                .retain(|id| !excluded.contains(id));
+        }
         true
     });
     if let Some(entries) = &mut graph.entry_points {

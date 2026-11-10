@@ -7,6 +7,7 @@ fn virtual_calls_are_visible_when_other_uncertain_targets_are_hidden() {
         ..Default::default()
     };
     let edge = codegraph::model::Edge {
+        evidence: Vec::new(),
         from: 0,
         to: 1,
         kind: "VIR".into(),
@@ -35,6 +36,7 @@ fn virtual_and_other_uncertain_calls_have_independent_filters() {
                 ("analyzer-reported", uncertain),
             ] {
                 let mut edge = Edge {
+                    evidence: Vec::new(),
                     from: 0,
                     to: 1,
                     kind: "call".into(),
