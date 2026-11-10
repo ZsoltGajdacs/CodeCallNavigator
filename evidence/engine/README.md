@@ -32,3 +32,51 @@ volatility produces an explicit differing-field result; it is never silently
 removed from graph semantics. The TypeScript fixture records the installed exact
 direct dependency versions; the runner uses existing dependencies and never
 installs packages. Each analysis additionally records evaluated engine versions.
+
+## Foundation gate — 2026-11-10
+
+The complete extraction matched the frozen native payload on Maven, Gradle, C#,
+TypeScript and mixed workloads. `extraction-comparison.jsonl` records the first
+check; `foundation-performance.jsonl` records three further comparisons per
+workload against the frozen release and the packaged standalone release. Every
+comparison matched. Only unordered graph collections and SQLite representation
+details are normalized; statement/control-flow order stays strict.
+
+The timing medians did not regress on this corpus. These measurements compare
+headless native output against baseline SQLite publication; they do not measure
+desktop rendering or claim a production speedup. Memory was not sampled in this
+reference check.
+
+`canonical-comparison.jsonl` records repeated and relocated exports (including
+reversed selected-target order). The initial Gradle relocation test exposed
+checkout-derived project display names; canonical export now maps that prefix to
+the logical root and hydration restores the local display name. All five cases
+then produced identical bytes.
+
+Full workspace tests and strict workspace Clippy passed. Real-toolchain
+acceptance passed with private billing-data tests and explicit GPU/CPU profiling
+benchmarks excluded. Those prerequisites are unchanged from baseline. The four
+pre-existing Clippy diagnostics were resolved without changing graph behavior.
+Python tests passed (53 at foundation integration); TypeScript adapter and flow
+tests passed, including semantic identities under comments and movement.
+
+Both distributions were built, and the app was code-signed and verified.
+`packaged-smoke.json` records identical output from packaged standalone analysis
+and the packaged desktop compatibility CLI. Actual-executable tests cover invalid
+protocol/version, EOF, idle SIGTERM, active cancellation, descendant reaping,
+failed-publication preservation, linked sources and stalled terminal responses.
+Detached-child forced cleanup was verified outside the macOS sandbox; that
+specific regression is ignored by default because sandbox process-table access
+is denied. Runtime reports when forced cleanup cannot be verified.
+
+Each acceptance fixture now has one checked-in `.codegraph/graph.json`; the mixed
+artifact belongs to `fixtures/`. Update them with
+`python3.13 tools/update_engine_corpus.py --executable /path/to/codegraph-engine`,
+then review changes with the engine's Git comparator before committing. The
+updater never installs dependencies, stages files or creates commits.
+
+Foundation review found and fixed two client boundary regressions: discovery
+before desktop boot finished, and linked project-owned sources outside the
+selected folder. The machine protocol now derives stable logical aliases from
+compiler-owned paths for the desktop; explicit human CLI roots remain strict.
+The legacy timing destination rejects graph publication paths and symlink aliases.

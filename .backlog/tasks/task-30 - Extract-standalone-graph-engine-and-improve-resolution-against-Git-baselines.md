@@ -5,6 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-11-10T13:41:00Z'
+updated_date: '2026-11-10T14:21:00Z'
 labels: []
 dependencies: []
 ordinal: 30000
@@ -18,9 +19,9 @@ Approved roadmap: preserve merged baseline, extract independent engine, publish 
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Foundation verified against master fb54f5f before resolution changes
-- [ ] #2 One deterministic .codegraph/graph.json per project and Git comparator
-- [ ] #3 Desktop invokes packaged standalone engine
+- [x] #1 Foundation verified against master fb54f5f before resolution changes
+- [x] #2 One deterministic .codegraph/graph.json per project and Git comparator
+- [x] #3 Desktop invokes packaged standalone engine
 - [ ] #4 Resolution stages verified in dependency order
 <!-- AC:END -->
 
@@ -29,3 +30,9 @@ Approved roadmap: preserve merged baseline, extract independent engine, publish 
 <!-- SECTION:PLAN:BEGIN -->
 Complete foundation 0A-0F in separate commits, verifying frozen native payload equivalence before inferred relationships. Then implement evidence, observer channels, callable propagation, framework dispatch, HTTP/navigation and incremental inference.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Foundation completed and verified before any inference changes. Master baseline fb54f5f; extraction commits 8fff86a, 2d92b77, b663649, cf0d8fd. Proceed to evidence and resolution stages in dependency order.
+<!-- SECTION:NOTES:END -->

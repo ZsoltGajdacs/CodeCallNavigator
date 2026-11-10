@@ -1,0 +1,1986 @@
+{
+  "graph": {
+    "architecture": {
+      "files": [
+        {
+          "annotated_interfaces": [
+            "NullableContextAttribute",
+            "System.Runtime.CompilerServices.NullableContextAttribute"
+          ],
+          "annotations": [],
+          "base_types": [
+            "Delegate",
+            "ICloneable",
+            "ISerializable",
+            "MulticastDelegate",
+            "Object",
+            "System.Delegate",
+            "System.ICloneable",
+            "System.MulticastDelegate",
+            "System.Runtime.Serialization.ISerializable",
+            "object"
+          ],
+          "build": "@repo/dotnet-collisions/Collisions.sln",
+          "content": "public delegate void Callback();\npublic class Worker {\n    public static int Counter = Seed();\n    public int Value { get; } = 2;\n    public static int Seed() => 1;\n    public static void Work() { Counter++; }\n    public static Worker operator +(Worker a, Worker b) => a;\n}\npublic class Program {\n    public static void Main() {\n        Worker.Work();\n        var first = new Worker();\n        var second = first + new Worker();\n        var value = second.Value;\n        Callback callback = Worker.Work;\n        callback();\n        void Local() { Worker.Work(); }\n        Local();\n    }\n}\n",
+          "file": "@repo/dotnet-collisions/EntryA/Program.cs",
+          "is_interface": false,
+          "is_test": false,
+          "kinds": [
+            "class",
+            "delegate"
+          ],
+          "language": "csharp",
+          "method_annotations": [],
+          "names": [
+            "Callback",
+            "Program",
+            "Worker"
+          ],
+          "namespaces": [
+            "<global namespace>"
+          ],
+          "project": "EntryA"
+        },
+        {
+          "annotated_interfaces": [
+            "NullableContextAttribute",
+            "System.Runtime.CompilerServices.NullableContextAttribute"
+          ],
+          "annotations": [],
+          "base_types": [
+            "Delegate",
+            "ICloneable",
+            "ISerializable",
+            "MulticastDelegate",
+            "Object",
+            "System.Delegate",
+            "System.ICloneable",
+            "System.MulticastDelegate",
+            "System.Runtime.Serialization.ISerializable",
+            "object"
+          ],
+          "build": "@repo/dotnet-collisions/Collisions.sln",
+          "content": "public delegate void Callback();\npublic class Worker {\n    public static int Counter = Seed();\n    public int Value { get; } = 2;\n    public static int Seed() => 1;\n    public static void Work() { Counter++; }\n    public static Worker operator +(Worker a, Worker b) => a;\n}\npublic class Program {\n    public static void Main() {\n        Worker.Work();\n        var first = new Worker();\n        var second = first + new Worker();\n        var value = second.Value;\n        Callback callback = Worker.Work;\n        callback();\n        void Local() { Worker.Work(); }\n        Local();\n    }\n}\n",
+          "file": "@repo/dotnet-collisions/EntryB/Program.cs",
+          "is_interface": false,
+          "is_test": false,
+          "kinds": [
+            "class",
+            "delegate"
+          ],
+          "language": "csharp",
+          "method_annotations": [],
+          "names": [
+            "Callback",
+            "Program",
+            "Worker"
+          ],
+          "namespaces": [
+            "<global namespace>"
+          ],
+          "project": "EntryB"
+        },
+        {
+          "annotated_interfaces": [],
+          "annotations": [],
+          "base_types": [
+            "Object",
+            "java.lang.Object"
+          ],
+          "build": "@repo/maven/reactor",
+          "content": "package fixture; public class GeneratedThing { public static void generated() {} }",
+          "file": "@repo/maven/reactor/app/target/generated-sources/fixture/fixture/GeneratedThing.java",
+          "is_interface": false,
+          "is_test": false,
+          "kinds": [
+            "class"
+          ],
+          "language": "java",
+          "method_annotations": [],
+          "names": [
+            "GeneratedThing",
+            "fixture.GeneratedThing"
+          ],
+          "namespaces": [
+            "fixture"
+          ],
+          "project": "codegraph.fixture:app"
+        },
+        {
+          "annotated_interfaces": [],
+          "annotations": [],
+          "base_types": [
+            "Object",
+            "java.lang.Object"
+          ],
+          "build": "@repo/maven/reactor",
+          "content": "package fixture; public final class ProfileOnly { public void fromActiveProfile() {} }\n",
+          "file": "@repo/maven/profile-library/src/main/java/fixture/ProfileOnly.java",
+          "is_interface": false,
+          "is_test": false,
+          "kinds": [
+            "class"
+          ],
+          "language": "java",
+          "method_annotations": [],
+          "names": [
+            "ProfileOnly",
+            "fixture.ProfileOnly"
+          ],
+          "namespaces": [
+            "fixture"
+          ],
+          "project": "codegraph.fixture:profile-library"
+        },
+        {
+          "annotated_interfaces": [],
+          "annotations": [],
+          "base_types": [
+            "Object",
+            "java.lang.Object"
+          ],
+          "build": "@repo/maven/reactor",
+          "content": "package fixture; public final class Service { public static void work() {} }\n",
+          "file": "@repo/maven/library/src/main/java/fixture/Service.java",
+          "is_interface": false,
+          "is_test": false,
+          "kinds": [
+            "class"
+          ],
+          "language": "java",
+          "method_annotations": [],
+          "names": [
+            "Service",
+            "fixture.Service"
+          ],
+          "namespaces": [
+            "fixture"
+          ],
+          "project": "codegraph.fixture:library"
+        },
+        {
+          "annotated_interfaces": [],
+          "annotations": [],
+          "base_types": [
+            "Object",
+            "java.lang.Object"
+          ],
+          "build": "@repo/maven/reactor",
+          "content": "package fixture;\nimport org.junit.Test;\nimport java.nio.file.Files;\nimport java.nio.file.Path;\npublic final class AppTest {\n    @Test public void testOnly() throws Exception {\n        Files.writeString(Path.of(\"tests-executed\"), \"unexpected test execution\");\n        Service.work();\n    }\n}\n",
+          "file": "@repo/maven/reactor/app/src/test/java/fixture/AppTest.java",
+          "is_interface": false,
+          "is_test": true,
+          "kinds": [
+            "class"
+          ],
+          "language": "java",
+          "method_annotations": [
+            "Test",
+            "org.junit.Test"
+          ],
+          "names": [
+            "AppTest",
+            "fixture.AppTest"
+          ],
+          "namespaces": [
+            "fixture"
+          ],
+          "project": "codegraph.fixture:app"
+        },
+        {
+          "annotated_interfaces": [],
+          "annotations": [],
+          "base_types": [
+            "Object",
+            "java.lang.Object"
+          ],
+          "build": "@repo/maven/reactor",
+          "content": "package fixture;\npublic final class App {\n    public static void main(String[] args) { Service.work(); GeneratedThing.generated(); }\n    public void disconnected() {}\n    public App() { constructorOnly(); }\n    private void constructorOnly() {}\n    void packageMethod() {}\n    protected void protectedMethod() {}\n    public String toString() { return \"app\"; }\n    public String toString(int value) { return \"overload\"; }\n    public int hashCode() { return 1; }\n    public boolean equals(Object other) { return this == other; }\n}\n",
+          "file": "@repo/maven/reactor/app/src/main-custom/java/fixture/App.java",
+          "is_interface": false,
+          "is_test": false,
+          "kinds": [
+            "class"
+          ],
+          "language": "java",
+          "method_annotations": [],
+          "names": [
+            "App",
+            "fixture.App"
+          ],
+          "namespaces": [
+            "fixture"
+          ],
+          "project": "codegraph.fixture:app"
+        },
+        {
+          "annotated_interfaces": [],
+          "annotations": [],
+          "base_types": [
+            "Object",
+            "object"
+          ],
+          "build": "@repo/dotnet-collisions/Collisions.sln",
+          "content": "Worker.Work();\npublic static class Worker { public static void Work() { } }\n",
+          "file": "@repo/dotnet-collisions/TopA/Program.cs",
+          "is_interface": false,
+          "is_test": false,
+          "kinds": [
+            "class"
+          ],
+          "language": "csharp",
+          "method_annotations": [],
+          "names": [
+            "Worker"
+          ],
+          "namespaces": [
+            "<global namespace>"
+          ],
+          "project": "TopA"
+        },
+        {
+          "annotated_interfaces": [],
+          "annotations": [],
+          "base_types": [
+            "Object",
+            "object"
+          ],
+          "build": "@repo/dotnet-collisions/Collisions.sln",
+          "content": "Worker.Work();\npublic static class Worker { public static void Work() { } }\n",
+          "file": "@repo/dotnet-collisions/TopB/Program.cs",
+          "is_interface": false,
+          "is_test": false,
+          "kinds": [
+            "class"
+          ],
+          "language": "csharp",
+          "method_annotations": [],
+          "names": [
+            "Worker"
+          ],
+          "namespaces": [
+            "<global namespace>"
+          ],
+          "project": "TopB"
+        },
+        {
+          "annotated_interfaces": [],
+          "annotations": [],
+          "base_types": [],
+          "build": "@repo/typescript-corpus/tsconfig.json",
+          "content": "export function GET() { return new Response('ok'); }\n",
+          "file": "@repo/typescript-corpus/src/app/api/route.ts",
+          "is_interface": false,
+          "is_test": false,
+          "kinds": [],
+          "language": "typescript",
+          "method_annotations": [],
+          "names": [],
+          "namespaces": [],
+          "project": "typescript-corpus"
+        },
+        {
+          "annotated_interfaces": [],
+          "annotations": [],
+          "base_types": [],
+          "build": "@repo/typescript-corpus/tsconfig.json",
+          "content": "import {useCallback, useEffect} from 'react';\n\nexport function leaf() { return 1; }\nexport function disconnected() { return 2; }\nfunction Child({onGo}: {onGo: () => number}) {\n  return <button onClick={onGo}>Run</button>;\n}\nexport default function Page() {\n  const callback = useCallback(leaf, []);\n  useEffect(() => { leaf(); return () => { leaf(); }; }, []);\n  return <Child onGo={callback}/>;\n}\n",
+          "file": "@repo/typescript-corpus/src/app/page.tsx",
+          "is_interface": false,
+          "is_test": false,
+          "kinds": [],
+          "language": "typescript",
+          "method_annotations": [],
+          "names": [],
+          "namespaces": [],
+          "project": "typescript-corpus"
+        }
+      ],
+      "version": 1
+    },
+    "diagnostics": [
+      "CallAtlas omits most source-generator output; cross-assembly interface implementation candidates are limited; operator invocations are not fully reported. Reflection, dynamic calls, framework callbacks and unsupported DI wiring are not inferred.",
+      "Java DI, reflection, framework callback ordering and dynamic runtime targets are supported only where reported by java-callgraph2. Bytecode source columns are unavailable.",
+      "Java DI, reflection, framework callback ordering and dynamic runtime targets are supported only where reported by java-callgraph2. Bytecode source columns are unavailable.",
+      "Java DI, reflection, framework callback ordering and dynamic runtime targets are supported only where reported by java-callgraph2. Bytecode source columns are unavailable.",
+      "Java DI, reflection, framework callback ordering and dynamic runtime targets are supported only where reported by java-callgraph2. Bytecode source columns are unavailable.",
+      "Java combined declarations use each caller's owning compile context. Paths may cross incompatible consumer contexts and do not describe a single runtime classpath.",
+      "Java: 0 inherited/reference symbols without declared bodies excluded; 1 external relationships excluded. These references are engine-reported, not resolved by name.",
+      "Java: 0 inherited/reference symbols without declared bodies excluded; 1 external relationships excluded. These references are engine-reported, not resolved by name.",
+      "Java: 0 inherited/reference symbols without declared bodies excluded; 2 external relationships excluded. These references are engine-reported, not resolved by name.",
+      "Java: 0 inherited/reference symbols without declared bodies excluded; 3 external relationships excluded. These references are engine-reported, not resolved by name."
+    ],
+    "edges": [
+      {
+        "certainty": "direct",
+        "count": 1,
+        "from": "[\"csharp\",\"@repo/dotnet-collisions/Collisions.sln\",\"@repo/dotnet-collisions/EntryA/Program.cs\",\"@repo/dotnet-collisions/Collisions.sln|[EntryA]::Program::Main()::Local#local\"]",
+        "kind": "call",
+        "provenance": "",
+        "to": "[\"csharp\",\"@repo/dotnet-collisions/Collisions.sln\",\"@repo/dotnet-collisions/EntryA/Program.cs\",\"@repo/dotnet-collisions/Collisions.sln|[EntryA]::Worker::Work()\"]"
+      },
+      {
+        "certainty": "direct",
+        "count": 1,
+        "from": "[\"csharp\",\"@repo/dotnet-collisions/Collisions.sln\",\"@repo/dotnet-collisions/EntryA/Program.cs\",\"@repo/dotnet-collisions/Collisions.sln|[EntryA]::Program::Main()\"]",
+        "kind": "call",
+        "provenance": "",
+        "to": "[\"csharp\",\"@repo/dotnet-collisions/Collisions.sln\",\"@repo/dotnet-collisions/EntryA/Program.cs\",\"@repo/dotnet-collisions/Collisions.sln|[EntryA]::Program::Main()::Local#local\"]"
+      },
+      {
+        "certainty": "direct",
+        "count": 1,
+        "from": "[\"csharp\",\"@repo/dotnet-collisions/Collisions.sln\",\"@repo/dotnet-collisions/EntryA/Program.cs\",\"@repo/dotnet-collisions/Collisions.sln|[EntryA]::Program::Main()\"]",
+        "kind": "call",
+        "provenance": "",
+        "to": "[\"csharp\",\"@repo/dotnet-collisions/Collisions.sln\",\"@repo/dotnet-collisions/EntryA/Program.cs\",\"@repo/dotnet-collisions/Collisions.sln|[EntryA]::Worker::Work()\"]"
+      },
+      {
+        "certainty": "direct",
+        "count": 1,
+        "from": "[\"csharp\",\"@repo/dotnet-collisions/Collisions.sln\",\"@repo/dotnet-collisions/EntryA/Program.cs\",\"@repo/dotnet-collisions/Collisions.sln|[EntryA]::Program::Main()\"]",
+        "kind": "get",
+        "provenance": "",
+        "to": "[\"csharp\",\"@repo/dotnet-collisions/Collisions.sln\",\"@repo/dotnet-collisions/EntryA/Program.cs\",\"@repo/dotnet-collisions/Collisions.sln|[EntryA]::Worker::get_Value()\"]"
+      },
+      {
+        "certainty": "direct",
+        "count": 1,
+        "from": "[\"csharp\",\"@repo/dotnet-collisions/Collisions.sln\",\"@repo/dotnet-collisions/EntryA/Program.cs\",\"@repo/dotnet-collisions/Collisions.sln|[EntryA]::Program::Main()\"]",
+        "kind": "methodgroup",
+        "provenance": "",
+        "to": "[\"csharp\",\"@repo/dotnet-collisions/Collisions.sln\",\"@repo/dotnet-collisions/EntryA/Program.cs\",\"@repo/dotnet-collisions/Collisions.sln|[EntryA]::Worker::Work()\"]"
+      },
+      {
+        "certainty": "direct",
+        "count": 1,
+        "from": "[\"csharp\",\"@repo/dotnet-collisions/Collisions.sln\",\"@repo/dotnet-collisions/EntryB/Program.cs\",\"@repo/dotnet-collisions/Collisions.sln|[EntryB]::Program::Main()::Local#local\"]",
+        "kind": "call",
+        "provenance": "",
+        "to": "[\"csharp\",\"@repo/dotnet-collisions/Collisions.sln\",\"@repo/dotnet-collisions/EntryB/Program.cs\",\"@repo/dotnet-collisions/Collisions.sln|[EntryB]::Worker::Work()\"]"
+      },
+      {
+        "certainty": "direct",
+        "count": 1,
+        "from": "[\"csharp\",\"@repo/dotnet-collisions/Collisions.sln\",\"@repo/dotnet-collisions/EntryB/Program.cs\",\"@repo/dotnet-collisions/Collisions.sln|[EntryB]::Program::Main()\"]",
+        "kind": "call",
+        "provenance": "",
+        "to": "[\"csharp\",\"@repo/dotnet-collisions/Collisions.sln\",\"@repo/dotnet-collisions/EntryB/Program.cs\",\"@repo/dotnet-collisions/Collisions.sln|[EntryB]::Program::Main()::Local#local\"]"
+      },
+      {
+        "certainty": "direct",
+        "count": 1,
+        "from": "[\"csharp\",\"@repo/dotnet-collisions/Collisions.sln\",\"@repo/dotnet-collisions/EntryB/Program.cs\",\"@repo/dotnet-collisions/Collisions.sln|[EntryB]::Program::Main()\"]",
+        "kind": "call",
+        "provenance": "",
+        "to": "[\"csharp\",\"@repo/dotnet-collisions/Collisions.sln\",\"@repo/dotnet-collisions/EntryB/Program.cs\",\"@repo/dotnet-collisions/Collisions.sln|[EntryB]::Worker::Work()\"]"
+      },
+      {
+        "certainty": "direct",
+        "count": 1,
+        "from": "[\"csharp\",\"@repo/dotnet-collisions/Collisions.sln\",\"@repo/dotnet-collisions/EntryB/Program.cs\",\"@repo/dotnet-collisions/Collisions.sln|[EntryB]::Program::Main()\"]",
+        "kind": "get",
+        "provenance": "",
+        "to": "[\"csharp\",\"@repo/dotnet-collisions/Collisions.sln\",\"@repo/dotnet-collisions/EntryB/Program.cs\",\"@repo/dotnet-collisions/Collisions.sln|[EntryB]::Worker::get_Value()\"]"
+      },
+      {
+        "certainty": "direct",
+        "count": 1,
+        "from": "[\"csharp\",\"@repo/dotnet-collisions/Collisions.sln\",\"@repo/dotnet-collisions/EntryB/Program.cs\",\"@repo/dotnet-collisions/Collisions.sln|[EntryB]::Program::Main()\"]",
+        "kind": "methodgroup",
+        "provenance": "",
+        "to": "[\"csharp\",\"@repo/dotnet-collisions/Collisions.sln\",\"@repo/dotnet-collisions/EntryB/Program.cs\",\"@repo/dotnet-collisions/Collisions.sln|[EntryB]::Worker::Work()\"]"
+      },
+      {
+        "certainty": "direct",
+        "count": 1,
+        "from": "[\"csharp\",\"@repo/dotnet-collisions/Collisions.sln\",\"@repo/dotnet-collisions/TopA/Program.cs\",\"@repo/dotnet-collisions/Collisions.sln|[TopA]::Program::<top-level>\"]",
+        "kind": "call",
+        "provenance": "",
+        "to": "[\"csharp\",\"@repo/dotnet-collisions/Collisions.sln\",\"@repo/dotnet-collisions/TopA/Program.cs\",\"@repo/dotnet-collisions/Collisions.sln|[TopA]::Worker::Work()\"]"
+      },
+      {
+        "certainty": "direct",
+        "count": 1,
+        "from": "[\"csharp\",\"@repo/dotnet-collisions/Collisions.sln\",\"@repo/dotnet-collisions/TopB/Program.cs\",\"@repo/dotnet-collisions/Collisions.sln|[TopB]::Program::<top-level>\"]",
+        "kind": "call",
+        "provenance": "",
+        "to": "[\"csharp\",\"@repo/dotnet-collisions/Collisions.sln\",\"@repo/dotnet-collisions/TopB/Program.cs\",\"@repo/dotnet-collisions/Collisions.sln|[TopB]::Worker::Work()\"]"
+      },
+      {
+        "certainty": "direct",
+        "count": 1,
+        "from": "[\"java\",\"@repo/maven/reactor\",\"@repo/maven/reactor/app/src/main-custom/java/fixture/App.java\",\"[\\\"@repo/maven/reactor\\\",\\\"@repo/maven/reactor/app\\\",\\\"main\\\"]|fixture.App:main(java.lang.String[])|void\"]",
+        "kind": "STA",
+        "provenance": "",
+        "to": "[\"java\",\"@repo/maven/reactor\",\"@repo/maven/library/src/main/java/fixture/Service.java\",\"[\\\"@repo/maven/reactor\\\",\\\"@repo/maven/library\\\",\\\"main\\\"]|fixture.Service:work()|void\"]"
+      },
+      {
+        "certainty": "direct",
+        "count": 1,
+        "from": "[\"java\",\"@repo/maven/reactor\",\"@repo/maven/reactor/app/src/main-custom/java/fixture/App.java\",\"[\\\"@repo/maven/reactor\\\",\\\"@repo/maven/reactor/app\\\",\\\"main\\\"]|fixture.App:main(java.lang.String[])|void\"]",
+        "kind": "STA",
+        "provenance": "",
+        "to": "[\"java\",\"@repo/maven/reactor\",\"@repo/maven/reactor/app/target/generated-sources/fixture/fixture/GeneratedThing.java\",\"[\\\"@repo/maven/reactor\\\",\\\"@repo/maven/reactor/app\\\",\\\"main\\\"]|fixture.GeneratedThing:generated()|void\"]"
+      },
+      {
+        "certainty": "direct",
+        "count": 1,
+        "from": "[\"java\",\"@repo/maven/reactor\",\"@repo/maven/reactor/app/src/test/java/fixture/AppTest.java\",\"[\\\"@repo/maven/reactor\\\",\\\"@repo/maven/reactor/app\\\",\\\"test\\\"]|fixture.AppTest:testOnly()|void\"]",
+        "kind": "STA",
+        "provenance": "",
+        "to": "[\"java\",\"@repo/maven/reactor\",\"@repo/maven/library/src/main/java/fixture/Service.java\",\"[\\\"@repo/maven/reactor\\\",\\\"@repo/maven/library\\\",\\\"main\\\"]|fixture.Service:work()|void\"]"
+      },
+      {
+        "certainty": "direct",
+        "count": 1,
+        "from": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/app/page.tsx\",\"[\\\"[\\\\\\\"[\\\\\\\\\\\\\\\"[\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"<module>\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"FunctionDeclaration\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"Page\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"(): Element\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"]\\\\\\\\\\\\\\\",0]\\\\\\\",\\\\\\\"ArrowFunction\\\\\\\",\\\\\\\"argument:0\\\\\\\",\\\\\\\"a9626b658fcf55fa3ae99d3b717c6b03b415c2bdb246a8a538d72beff607706e\\\\\\\"]\\\",0]\"]",
+        "kind": "call",
+        "provenance": "typescript.compiler",
+        "to": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/app/page.tsx\",\"[\\\"[\\\\\\\"[\\\\\\\\\\\\\\\"[\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"<module>\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"FunctionDeclaration\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"leaf\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"(): number\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"]\\\\\\\\\\\\\\\",0]\\\\\\\",\\\\\\\"ExportKeyword\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"5aa1cbacc4e46d6ffa59b589018639dd7abe0aacf2c71ca82a8c7937457da0cf\\\\\\\"]\\\",0]\"]"
+      },
+      {
+        "certainty": "direct",
+        "count": 1,
+        "from": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/app/page.tsx\",\"[\\\"[\\\\\\\"[\\\\\\\\\\\\\\\"[\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"[\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"[\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"<module>\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"FunctionDeclaration\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"Page\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"(): Element\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"]\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",0]\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"ArrowFunction\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"argument:0\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"a9626b658fcf55fa3ae99d3b717c6b03b415c2bdb246a8a538d72beff607706e\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"]\\\\\\\\\\\\\\\",0]\\\\\\\",\\\\\\\"ArrowFunction\\\\\\\",\\\\\\\"return\\\\\\\",\\\\\\\"c4dfcc9e9a3530d572814c5a04475249bfba1d614145dde1c36a1dd4722a5656\\\\\\\"]\\\",0]\"]",
+        "kind": "call",
+        "provenance": "typescript.compiler",
+        "to": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/app/page.tsx\",\"[\\\"[\\\\\\\"[\\\\\\\\\\\\\\\"[\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"<module>\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"FunctionDeclaration\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"leaf\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"(): number\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"]\\\\\\\\\\\\\\\",0]\\\\\\\",\\\\\\\"ExportKeyword\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"5aa1cbacc4e46d6ffa59b589018639dd7abe0aacf2c71ca82a8c7937457da0cf\\\\\\\"]\\\",0]\"]"
+      },
+      {
+        "certainty": "possible",
+        "count": 1,
+        "from": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/app/page.tsx\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"Child\\\\\\\",\\\\\\\"({ onGo }: { onGo: () => number; }): Element\\\\\\\"]\\\",0]\"]",
+        "kind": "react-event",
+        "provenance": "codegraph.react.v1:react-event",
+        "to": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/app/page.tsx\",\"[\\\"[\\\\\\\"[\\\\\\\\\\\\\\\"[\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"<module>\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"FunctionDeclaration\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"leaf\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"(): number\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"]\\\\\\\\\\\\\\\",0]\\\\\\\",\\\\\\\"ExportKeyword\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"5aa1cbacc4e46d6ffa59b589018639dd7abe0aacf2c71ca82a8c7937457da0cf\\\\\\\"]\\\",0]\"]"
+      },
+      {
+        "certainty": "possible",
+        "count": 1,
+        "from": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/app/page.tsx\",\"[\\\"[\\\\\\\"[\\\\\\\\\\\\\\\"[\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"<module>\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"FunctionDeclaration\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"Page\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"(): Element\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"]\\\\\\\\\\\\\\\",0]\\\\\\\",\\\\\\\"ArrowFunction\\\\\\\",\\\\\\\"argument:0\\\\\\\",\\\\\\\"a9626b658fcf55fa3ae99d3b717c6b03b415c2bdb246a8a538d72beff607706e\\\\\\\"]\\\",0]\"]",
+        "kind": "react-cleanup",
+        "provenance": "codegraph.react.v1:react-cleanup",
+        "to": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/app/page.tsx\",\"[\\\"[\\\\\\\"[\\\\\\\\\\\\\\\"[\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"[\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"[\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"<module>\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"FunctionDeclaration\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"Page\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"(): Element\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"]\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",0]\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"ArrowFunction\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"argument:0\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"a9626b658fcf55fa3ae99d3b717c6b03b415c2bdb246a8a538d72beff607706e\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"]\\\\\\\\\\\\\\\",0]\\\\\\\",\\\\\\\"ArrowFunction\\\\\\\",\\\\\\\"return\\\\\\\",\\\\\\\"c4dfcc9e9a3530d572814c5a04475249bfba1d614145dde1c36a1dd4722a5656\\\\\\\"]\\\",0]\"]"
+      },
+      {
+        "certainty": "possible",
+        "count": 1,
+        "from": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/app/page.tsx\",\"[\\\"[\\\\\\\"[\\\\\\\\\\\\\\\"[\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"<module>\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"FunctionDeclaration\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"Page\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"(): Element\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"]\\\\\\\\\\\\\\\",0]\\\\\\\",\\\\\\\"ExportKeyword\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"5aa1cbacc4e46d6ffa59b589018639dd7abe0aacf2c71ca82a8c7937457da0cf\\\\\\\"]\\\",0]\"]",
+        "kind": "react-effect",
+        "provenance": "codegraph.react.v1:react-effect",
+        "to": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/app/page.tsx\",\"[\\\"[\\\\\\\"[\\\\\\\\\\\\\\\"[\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"<module>\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"FunctionDeclaration\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"Page\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"(): Element\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"]\\\\\\\\\\\\\\\",0]\\\\\\\",\\\\\\\"ArrowFunction\\\\\\\",\\\\\\\"argument:0\\\\\\\",\\\\\\\"a9626b658fcf55fa3ae99d3b717c6b03b415c2bdb246a8a538d72beff607706e\\\\\\\"]\\\",0]\"]"
+      },
+      {
+        "certainty": "possible",
+        "count": 1,
+        "from": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/app/page.tsx\",\"[\\\"[\\\\\\\"[\\\\\\\\\\\\\\\"[\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"<module>\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"FunctionDeclaration\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"Page\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"(): Element\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"]\\\\\\\\\\\\\\\",0]\\\\\\\",\\\\\\\"ExportKeyword\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"5aa1cbacc4e46d6ffa59b589018639dd7abe0aacf2c71ca82a8c7937457da0cf\\\\\\\"]\\\",0]\"]",
+        "kind": "react-event",
+        "provenance": "codegraph.react.v1:react-event",
+        "to": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/app/page.tsx\",\"[\\\"[\\\\\\\"[\\\\\\\\\\\\\\\"[\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"<module>\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"FunctionDeclaration\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"leaf\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"(): number\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"]\\\\\\\\\\\\\\\",0]\\\\\\\",\\\\\\\"ExportKeyword\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"5aa1cbacc4e46d6ffa59b589018639dd7abe0aacf2c71ca82a8c7937457da0cf\\\\\\\"]\\\",0]\"]"
+      },
+      {
+        "certainty": "possible",
+        "count": 1,
+        "from": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/app/page.tsx\",\"[\\\"[\\\\\\\"[\\\\\\\\\\\\\\\"[\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"<module>\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"FunctionDeclaration\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"Page\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"(): Element\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"]\\\\\\\\\\\\\\\",0]\\\\\\\",\\\\\\\"ExportKeyword\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"5aa1cbacc4e46d6ffa59b589018639dd7abe0aacf2c71ca82a8c7937457da0cf\\\\\\\"]\\\",0]\"]",
+        "kind": "react-render",
+        "provenance": "codegraph.react.v1:react-render",
+        "to": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/app/page.tsx\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"Child\\\\\\\",\\\\\\\"({ onGo }: { onGo: () => number; }): Element\\\\\\\"]\\\",0]\"]"
+      },
+      {
+        "certainty": "possible",
+        "count": 1,
+        "from": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/app/page.tsx\",\"[\\\"[\\\\\\\"[\\\\\\\\\\\\\\\"[\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"<module>\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"FunctionDeclaration\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"Page\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"(): Element\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"]\\\\\\\\\\\\\\\",0]\\\\\\\",\\\\\\\"ExportKeyword\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"5aa1cbacc4e46d6ffa59b589018639dd7abe0aacf2c71ca82a8c7937457da0cf\\\\\\\"]\\\",0]\"]",
+        "kind": "reference",
+        "provenance": "typescript.compiler:argument-reference",
+        "to": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/app/page.tsx\",\"[\\\"[\\\\\\\"[\\\\\\\\\\\\\\\"[\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"<module>\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"FunctionDeclaration\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"Page\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"(): Element\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"]\\\\\\\\\\\\\\\",0]\\\\\\\",\\\\\\\"ArrowFunction\\\\\\\",\\\\\\\"argument:0\\\\\\\",\\\\\\\"a9626b658fcf55fa3ae99d3b717c6b03b415c2bdb246a8a538d72beff607706e\\\\\\\"]\\\",0]\"]"
+      },
+      {
+        "certainty": "possible",
+        "count": 1,
+        "from": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/app/page.tsx\",\"[\\\"[\\\\\\\"[\\\\\\\\\\\\\\\"[\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"<module>\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"FunctionDeclaration\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"Page\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"(): Element\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"]\\\\\\\\\\\\\\\",0]\\\\\\\",\\\\\\\"ExportKeyword\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"5aa1cbacc4e46d6ffa59b589018639dd7abe0aacf2c71ca82a8c7937457da0cf\\\\\\\"]\\\",0]\"]",
+        "kind": "reference",
+        "provenance": "typescript.compiler:argument-reference",
+        "to": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/app/page.tsx\",\"[\\\"[\\\\\\\"[\\\\\\\\\\\\\\\"[\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"<module>\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"FunctionDeclaration\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"leaf\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"(): number\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"]\\\\\\\\\\\\\\\",0]\\\\\\\",\\\\\\\"ExportKeyword\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"5aa1cbacc4e46d6ffa59b589018639dd7abe0aacf2c71ca82a8c7937457da0cf\\\\\\\"]\\\",0]\"]"
+      }
+    ],
+    "entry_points": {
+      "application_starts": [
+        "[\"csharp\",\"@repo/dotnet-collisions/Collisions.sln\",\"@repo/dotnet-collisions/EntryA/Program.cs\",\"@repo/dotnet-collisions/Collisions.sln|[EntryA]::Program::Main()\"]",
+        "[\"csharp\",\"@repo/dotnet-collisions/Collisions.sln\",\"@repo/dotnet-collisions/EntryB/Program.cs\",\"@repo/dotnet-collisions/Collisions.sln|[EntryB]::Program::Main()\"]",
+        "[\"csharp\",\"@repo/dotnet-collisions/Collisions.sln\",\"@repo/dotnet-collisions/TopA/Program.cs\",\"@repo/dotnet-collisions/Collisions.sln|[TopA]::Program::<top-level>\"]",
+        "[\"csharp\",\"@repo/dotnet-collisions/Collisions.sln\",\"@repo/dotnet-collisions/TopB/Program.cs\",\"@repo/dotnet-collisions/Collisions.sln|[TopB]::Program::<top-level>\"]",
+        "[\"java\",\"@repo/maven/reactor\",\"@repo/maven/reactor/app/src/main-custom/java/fixture/App.java\",\"[\\\"@repo/maven/reactor\\\",\\\"@repo/maven/reactor/app\\\",\\\"main\\\"]|fixture.App:main(java.lang.String[])|void\"]"
+      ],
+      "candidates": [
+        "[\"csharp\",\"@repo/dotnet-collisions/Collisions.sln\",\"@repo/dotnet-collisions/EntryA/Program.cs\",\"@repo/dotnet-collisions/Collisions.sln|[EntryA]::Program::Main()\"]",
+        "[\"csharp\",\"@repo/dotnet-collisions/Collisions.sln\",\"@repo/dotnet-collisions/EntryA/Program.cs\",\"@repo/dotnet-collisions/Collisions.sln|[EntryA]::Worker::Seed()\"]",
+        "[\"csharp\",\"@repo/dotnet-collisions/Collisions.sln\",\"@repo/dotnet-collisions/EntryA/Program.cs\",\"@repo/dotnet-collisions/Collisions.sln|[EntryA]::Worker::op_Addition(Worker,Worker)\"]",
+        "[\"csharp\",\"@repo/dotnet-collisions/Collisions.sln\",\"@repo/dotnet-collisions/EntryB/Program.cs\",\"@repo/dotnet-collisions/Collisions.sln|[EntryB]::Program::Main()\"]",
+        "[\"csharp\",\"@repo/dotnet-collisions/Collisions.sln\",\"@repo/dotnet-collisions/EntryB/Program.cs\",\"@repo/dotnet-collisions/Collisions.sln|[EntryB]::Worker::Seed()\"]",
+        "[\"csharp\",\"@repo/dotnet-collisions/Collisions.sln\",\"@repo/dotnet-collisions/EntryB/Program.cs\",\"@repo/dotnet-collisions/Collisions.sln|[EntryB]::Worker::op_Addition(Worker,Worker)\"]",
+        "[\"java\",\"@repo/maven/reactor\",\"@repo/maven/profile-library/src/main/java/fixture/ProfileOnly.java\",\"[\\\"@repo/maven/reactor\\\",\\\"@repo/maven/profile-library\\\",\\\"main\\\"]|fixture.ProfileOnly:fromActiveProfile()|void\"]",
+        "[\"java\",\"@repo/maven/reactor\",\"@repo/maven/reactor/app/src/main-custom/java/fixture/App.java\",\"[\\\"@repo/maven/reactor\\\",\\\"@repo/maven/reactor/app\\\",\\\"main\\\"]|fixture.App:constructorOnly()|void\"]",
+        "[\"java\",\"@repo/maven/reactor\",\"@repo/maven/reactor/app/src/main-custom/java/fixture/App.java\",\"[\\\"@repo/maven/reactor\\\",\\\"@repo/maven/reactor/app\\\",\\\"main\\\"]|fixture.App:disconnected()|void\"]",
+        "[\"java\",\"@repo/maven/reactor\",\"@repo/maven/reactor/app/src/main-custom/java/fixture/App.java\",\"[\\\"@repo/maven/reactor\\\",\\\"@repo/maven/reactor/app\\\",\\\"main\\\"]|fixture.App:main(java.lang.String[])|void\"]",
+        "[\"java\",\"@repo/maven/reactor\",\"@repo/maven/reactor/app/src/main-custom/java/fixture/App.java\",\"[\\\"@repo/maven/reactor\\\",\\\"@repo/maven/reactor/app\\\",\\\"main\\\"]|fixture.App:packageMethod()|void\"]",
+        "[\"java\",\"@repo/maven/reactor\",\"@repo/maven/reactor/app/src/main-custom/java/fixture/App.java\",\"[\\\"@repo/maven/reactor\\\",\\\"@repo/maven/reactor/app\\\",\\\"main\\\"]|fixture.App:protectedMethod()|void\"]",
+        "[\"java\",\"@repo/maven/reactor\",\"@repo/maven/reactor/app/src/main-custom/java/fixture/App.java\",\"[\\\"@repo/maven/reactor\\\",\\\"@repo/maven/reactor/app\\\",\\\"main\\\"]|fixture.App:toString(int)|java.lang.String\"]",
+        "[\"java\",\"@repo/maven/reactor\",\"@repo/maven/reactor/app/src/test/java/fixture/AppTest.java\",\"[\\\"@repo/maven/reactor\\\",\\\"@repo/maven/reactor/app\\\",\\\"test\\\"]|fixture.AppTest:testOnly()|void\"]",
+        "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/app/api/route.ts\",\"[\\\"[\\\\\\\"[\\\\\\\\\\\\\\\"[\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"<module>\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"FunctionDeclaration\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"GET\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"(): Response\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"]\\\\\\\\\\\\\\\",0]\\\\\\\",\\\\\\\"ExportKeyword\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"5aa1cbacc4e46d6ffa59b589018639dd7abe0aacf2c71ca82a8c7937457da0cf\\\\\\\"]\\\",0]\"]",
+        "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/app/api/route.ts\",\"[\\\"src/app/api/route.ts\\\",\\\"module\\\",\\\"<module:route.ts>\\\",\\\"<module:route.ts>\\\"]\"]",
+        "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/app/page.tsx\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"ImportDeclaration\\\\\\\",\\\\\\\"SourceFile\\\\\\\",\\\\\\\"2d0ea08804d55920b88c5fe7cdbcc2bdca6607ba9ab751ee1f6adfd051e1c10a\\\\\\\"]\\\",0]\"]",
+        "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/app/page.tsx\",\"[\\\"[\\\\\\\"[\\\\\\\\\\\\\\\"[\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"<module>\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"FunctionDeclaration\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"Page\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"(): Element\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"]\\\\\\\\\\\\\\\",0]\\\\\\\",\\\\\\\"ExportKeyword\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"5aa1cbacc4e46d6ffa59b589018639dd7abe0aacf2c71ca82a8c7937457da0cf\\\\\\\"]\\\",0]\"]",
+        "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/app/page.tsx\",\"[\\\"[\\\\\\\"[\\\\\\\\\\\\\\\"[\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"<module>\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"FunctionDeclaration\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"disconnected\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"(): number\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"]\\\\\\\\\\\\\\\",0]\\\\\\\",\\\\\\\"ExportKeyword\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"5aa1cbacc4e46d6ffa59b589018639dd7abe0aacf2c71ca82a8c7937457da0cf\\\\\\\"]\\\",0]\"]"
+      ],
+      "framework_entries": [
+        "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/app/api/route.ts\",\"[\\\"[\\\\\\\"[\\\\\\\\\\\\\\\"[\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"<module>\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"FunctionDeclaration\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"GET\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"(): Response\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"]\\\\\\\\\\\\\\\",0]\\\\\\\",\\\\\\\"ExportKeyword\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"5aa1cbacc4e46d6ffa59b589018639dd7abe0aacf2c71ca82a8c7937457da0cf\\\\\\\"]\\\",0]\"]",
+        "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/app/page.tsx\",\"[\\\"[\\\\\\\"[\\\\\\\\\\\\\\\"[\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"<module>\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"FunctionDeclaration\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"Page\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"(): Element\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"]\\\\\\\\\\\\\\\",0]\\\\\\\",\\\\\\\"ExportKeyword\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"5aa1cbacc4e46d6ffa59b589018639dd7abe0aacf2c71ca82a8c7937457da0cf\\\\\\\"]\\\",0]\"]"
+      ]
+    },
+    "flow_inventory": {
+      "functions": [
+        {
+          "body": [],
+          "build": "@repo/maven/reactor",
+          "diagnostics": [],
+          "file": "@repo/maven/library/src/main/java/fixture/Service.java",
+          "language": "java",
+          "project": "codegraph.fixture:library",
+          "span": {
+            "end": 74,
+            "start": 46
+          },
+          "symbol": "[\"java\",\"@repo/maven/reactor\",\"@repo/maven/library/src/main/java/fixture/Service.java\",\"[\\\"@repo/maven/reactor\\\",\\\"@repo/maven/library\\\",\\\"main\\\"]|fixture.Service:work()|void\"]"
+        },
+        {
+          "body": [],
+          "build": "@repo/maven/reactor",
+          "diagnostics": [],
+          "file": "@repo/maven/profile-library/src/main/java/fixture/ProfileOnly.java",
+          "language": "java",
+          "project": "codegraph.fixture:profile-library",
+          "span": {
+            "end": 84,
+            "start": 50
+          },
+          "symbol": "[\"java\",\"@repo/maven/reactor\",\"@repo/maven/profile-library/src/main/java/fixture/ProfileOnly.java\",\"[\\\"@repo/maven/reactor\\\",\\\"@repo/maven/profile-library\\\",\\\"main\\\"]|fixture.ProfileOnly:fromActiveProfile()|void\"]"
+        },
+        {
+          "body": [],
+          "build": "@repo/maven/reactor",
+          "diagnostics": [],
+          "file": "@repo/maven/reactor/app/src/main-custom/java/fixture/App.java",
+          "language": "java",
+          "project": "codegraph.fixture:app",
+          "span": {
+            "end": 166,
+            "start": 137
+          },
+          "symbol": "[\"java\",\"@repo/maven/reactor\",\"@repo/maven/reactor/app/src/main-custom/java/fixture/App.java\",\"[\\\"@repo/maven/reactor\\\",\\\"@repo/maven/reactor/app\\\",\\\"main\\\"]|fixture.App:disconnected()|void\"]"
+        },
+        {
+          "body": [],
+          "build": "@repo/maven/reactor",
+          "diagnostics": [],
+          "file": "@repo/maven/reactor/app/src/main-custom/java/fixture/App.java",
+          "language": "java",
+          "project": "codegraph.fixture:app",
+          "span": {
+            "end": 244,
+            "start": 211
+          },
+          "symbol": "[\"java\",\"@repo/maven/reactor\",\"@repo/maven/reactor/app/src/main-custom/java/fixture/App.java\",\"[\\\"@repo/maven/reactor\\\",\\\"@repo/maven/reactor/app\\\",\\\"main\\\"]|fixture.App:constructorOnly()|void\"]"
+        },
+        {
+          "body": [],
+          "build": "@repo/maven/reactor",
+          "diagnostics": [],
+          "file": "@repo/maven/reactor/app/src/main-custom/java/fixture/App.java",
+          "language": "java",
+          "project": "codegraph.fixture:app",
+          "span": {
+            "end": 272,
+            "start": 249
+          },
+          "symbol": "[\"java\",\"@repo/maven/reactor\",\"@repo/maven/reactor/app/src/main-custom/java/fixture/App.java\",\"[\\\"@repo/maven/reactor\\\",\\\"@repo/maven/reactor/app\\\",\\\"main\\\"]|fixture.App:packageMethod()|void\"]"
+        },
+        {
+          "body": [],
+          "build": "@repo/maven/reactor",
+          "diagnostics": [],
+          "file": "@repo/maven/reactor/app/src/main-custom/java/fixture/App.java",
+          "language": "java",
+          "project": "codegraph.fixture:app",
+          "span": {
+            "end": 312,
+            "start": 277
+          },
+          "symbol": "[\"java\",\"@repo/maven/reactor\",\"@repo/maven/reactor/app/src/main-custom/java/fixture/App.java\",\"[\\\"@repo/maven/reactor\\\",\\\"@repo/maven/reactor/app\\\",\\\"main\\\"]|fixture.App:protectedMethod()|void\"]"
+        },
+        {
+          "body": [],
+          "build": "@repo/maven/reactor",
+          "diagnostics": [],
+          "file": "@repo/maven/reactor/app/target/generated-sources/fixture/fixture/GeneratedThing.java",
+          "language": "java",
+          "project": "codegraph.fixture:app",
+          "span": {
+            "end": 80,
+            "start": 47
+          },
+          "symbol": "[\"java\",\"@repo/maven/reactor\",\"@repo/maven/reactor/app/target/generated-sources/fixture/fixture/GeneratedThing.java\",\"[\\\"@repo/maven/reactor\\\",\\\"@repo/maven/reactor/app\\\",\\\"main\\\"]|fixture.GeneratedThing:generated()|void\"]"
+        },
+        {
+          "body": [
+            {
+              "kind": "evaluate",
+              "span": {
+                "end": 102,
+                "start": 87
+              },
+              "value": {
+                "calls": [
+                  {
+                    "diagnostic": null,
+                    "label": "Service.work()",
+                    "span": {
+                      "end": 101,
+                      "start": 87
+                    },
+                    "targets": [
+                      {
+                        "certainty": "direct",
+                        "provenance": "java.javac.source-call",
+                        "symbol": "[\"java\",\"@repo/maven/reactor\",\"@repo/maven/library/src/main/java/fixture/Service.java\",\"[\\\"@repo/maven/reactor\\\",\\\"@repo/maven/library\\\",\\\"main\\\"]|fixture.Service:work()|void\"]"
+                      }
+                    ]
+                  }
+                ],
+                "kind": "value",
+                "regions": [],
+                "span": {
+                  "end": 101,
+                  "start": 87
+                },
+                "text": "Service.work()"
+              }
+            },
+            {
+              "kind": "evaluate",
+              "span": {
+                "end": 130,
+                "start": 103
+              },
+              "value": {
+                "calls": [
+                  {
+                    "diagnostic": null,
+                    "label": "GeneratedThing.generated()",
+                    "span": {
+                      "end": 129,
+                      "start": 103
+                    },
+                    "targets": [
+                      {
+                        "certainty": "direct",
+                        "provenance": "java.javac.source-call",
+                        "symbol": "[\"java\",\"@repo/maven/reactor\",\"@repo/maven/reactor/app/target/generated-sources/fixture/fixture/GeneratedThing.java\",\"[\\\"@repo/maven/reactor\\\",\\\"@repo/maven/reactor/app\\\",\\\"main\\\"]|fixture.GeneratedThing:generated()|void\"]"
+                      }
+                    ]
+                  }
+                ],
+                "kind": "value",
+                "regions": [],
+                "span": {
+                  "end": 129,
+                  "start": 103
+                },
+                "text": "GeneratedThing.generated()"
+              }
+            }
+          ],
+          "build": "@repo/maven/reactor",
+          "diagnostics": [],
+          "file": "@repo/maven/reactor/app/src/main-custom/java/fixture/App.java",
+          "language": "java",
+          "project": "codegraph.fixture:app",
+          "span": {
+            "end": 132,
+            "start": 46
+          },
+          "symbol": "[\"java\",\"@repo/maven/reactor\",\"@repo/maven/reactor/app/src/main-custom/java/fixture/App.java\",\"[\\\"@repo/maven/reactor\\\",\\\"@repo/maven/reactor/app\\\",\\\"main\\\"]|fixture.App:main(java.lang.String[])|void\"]"
+        },
+        {
+          "body": [
+            {
+              "kind": "evaluate",
+              "span": {
+                "end": 258,
+                "start": 184
+              },
+              "value": {
+                "items": [
+                  {
+                    "items": [
+                      {
+                        "calls": [],
+                        "kind": "value",
+                        "regions": [],
+                        "span": {
+                          "end": 226,
+                          "start": 210
+                        },
+                        "text": "\"tests-executed\""
+                      },
+                      {
+                        "calls": [
+                          {
+                            "diagnostic": "Compiler target is external, excluded or ambiguous in this compile context",
+                            "label": "Path.of(\"tests-executed\")",
+                            "span": {
+                              "end": 227,
+                              "start": 202
+                            },
+                            "targets": []
+                          }
+                        ],
+                        "kind": "value",
+                        "regions": [],
+                        "span": {
+                          "end": 227,
+                          "start": 202
+                        },
+                        "text": "Path.of(\"tests-executed\")"
+                      }
+                    ],
+                    "kind": "sequence",
+                    "span": {
+                      "end": 227,
+                      "start": 202
+                    }
+                  },
+                  {
+                    "calls": [],
+                    "kind": "value",
+                    "regions": [],
+                    "span": {
+                      "end": 256,
+                      "start": 229
+                    },
+                    "text": "\"unexpected test execution\""
+                  },
+                  {
+                    "calls": [
+                      {
+                        "diagnostic": "Compiler target is external, excluded or ambiguous in this compile context",
+                        "label": "Files.writeString(Path.of(\"tests-executed\"), \"unexpected test execution\")",
+                        "span": {
+                          "end": 257,
+                          "start": 184
+                        },
+                        "targets": []
+                      }
+                    ],
+                    "kind": "value",
+                    "regions": [],
+                    "span": {
+                      "end": 257,
+                      "start": 184
+                    },
+                    "text": "Files.writeString(Path.of(\"tests-executed\"), \"unexpected test execution\")"
+                  }
+                ],
+                "kind": "sequence",
+                "span": {
+                  "end": 257,
+                  "start": 184
+                }
+              }
+            },
+            {
+              "kind": "evaluate",
+              "span": {
+                "end": 282,
+                "start": 267
+              },
+              "value": {
+                "calls": [
+                  {
+                    "diagnostic": null,
+                    "label": "Service.work()",
+                    "span": {
+                      "end": 281,
+                      "start": 267
+                    },
+                    "targets": [
+                      {
+                        "certainty": "direct",
+                        "provenance": "java.javac.source-call",
+                        "symbol": "[\"java\",\"@repo/maven/reactor\",\"@repo/maven/library/src/main/java/fixture/Service.java\",\"[\\\"@repo/maven/reactor\\\",\\\"@repo/maven/library\\\",\\\"main\\\"]|fixture.Service:work()|void\"]"
+                      }
+                    ]
+                  }
+                ],
+                "kind": "value",
+                "regions": [],
+                "span": {
+                  "end": 281,
+                  "start": 267
+                },
+                "text": "Service.work()"
+              }
+            }
+          ],
+          "build": "@repo/maven/reactor",
+          "diagnostics": [],
+          "file": "@repo/maven/reactor/app/src/test/java/fixture/AppTest.java",
+          "language": "java",
+          "project": "codegraph.fixture:app",
+          "span": {
+            "end": 288,
+            "start": 128
+          },
+          "symbol": "[\"java\",\"@repo/maven/reactor\",\"@repo/maven/reactor/app/src/test/java/fixture/AppTest.java\",\"[\\\"@repo/maven/reactor\\\",\\\"@repo/maven/reactor/app\\\",\\\"test\\\"]|fixture.AppTest:testOnly()|void\"]"
+        },
+        {
+          "body": [
+            {
+              "kind": "evaluate",
+              "span": {
+                "end": 297,
+                "start": 276
+              },
+              "value": {
+                "calls": [
+                  {
+                    "diagnostic": "No statically bound project target",
+                    "label": "useCallback",
+                    "span": {
+                      "end": 297,
+                      "start": 276
+                    },
+                    "targets": []
+                  }
+                ],
+                "kind": "value",
+                "regions": [],
+                "span": {
+                  "end": 297,
+                  "start": 276
+                },
+                "text": "useCallback(leaf, [])"
+              }
+            },
+            {
+              "calls": [],
+              "kind": "action",
+              "span": {
+                "end": 297,
+                "start": 265
+              },
+              "text": "Bind callback"
+            },
+            {
+              "kind": "evaluate",
+              "span": {
+                "end": 359,
+                "start": 301
+              },
+              "value": {
+                "calls": [
+                  {
+                    "diagnostic": "No statically bound project target",
+                    "label": "useEffect",
+                    "span": {
+                      "end": 359,
+                      "start": 301
+                    },
+                    "targets": []
+                  }
+                ],
+                "kind": "value",
+                "regions": [
+                  {
+                    "body": [
+                      {
+                        "kind": "evaluate",
+                        "span": {
+                          "end": 325,
+                          "start": 319
+                        },
+                        "value": {
+                          "calls": [
+                            {
+                              "diagnostic": null,
+                              "label": "leaf",
+                              "span": {
+                                "end": 325,
+                                "start": 319
+                              },
+                              "targets": [
+                                {
+                                  "certainty": "direct",
+                                  "provenance": "typescript.compiler",
+                                  "symbol": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/app/page.tsx\",\"[\\\"[\\\\\\\"[\\\\\\\\\\\\\\\"[\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"<module>\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"FunctionDeclaration\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"leaf\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"(): number\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"]\\\\\\\\\\\\\\\",0]\\\\\\\",\\\\\\\"ExportKeyword\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"5aa1cbacc4e46d6ffa59b589018639dd7abe0aacf2c71ca82a8c7937457da0cf\\\\\\\"]\\\",0]\"]"
+                                }
+                              ]
+                            }
+                          ],
+                          "kind": "value",
+                          "regions": [],
+                          "span": {
+                            "end": 325,
+                            "start": 319
+                          },
+                          "text": "leaf()"
+                        }
+                      },
+                      {
+                        "kind": "return",
+                        "span": {
+                          "end": 352,
+                          "start": 327
+                        },
+                        "value": {
+                          "calls": [],
+                          "kind": "value",
+                          "regions": [
+                            {
+                              "body": [
+                                {
+                                  "kind": "evaluate",
+                                  "span": {
+                                    "end": 348,
+                                    "start": 342
+                                  },
+                                  "value": {
+                                    "calls": [
+                                      {
+                                        "diagnostic": null,
+                                        "label": "leaf",
+                                        "span": {
+                                          "end": 348,
+                                          "start": 342
+                                        },
+                                        "targets": [
+                                          {
+                                            "certainty": "direct",
+                                            "provenance": "typescript.compiler",
+                                            "symbol": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/app/page.tsx\",\"[\\\"[\\\\\\\"[\\\\\\\\\\\\\\\"[\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"<module>\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"FunctionDeclaration\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"leaf\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"(): number\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"]\\\\\\\\\\\\\\\",0]\\\\\\\",\\\\\\\"ExportKeyword\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"5aa1cbacc4e46d6ffa59b589018639dd7abe0aacf2c71ca82a8c7937457da0cf\\\\\\\"]\\\",0]\"]"
+                                          }
+                                        ]
+                                      }
+                                    ],
+                                    "kind": "value",
+                                    "regions": [],
+                                    "span": {
+                                      "end": 348,
+                                      "start": 342
+                                    },
+                                    "text": "leaf()"
+                                  }
+                                }
+                              ],
+                              "deferred": true,
+                              "kind": "region",
+                              "label": "Separate function body: <callback:10:36>",
+                              "span": {
+                                "end": 351,
+                                "start": 334
+                              }
+                            }
+                          ],
+                          "span": {
+                            "end": 351,
+                            "start": 334
+                          },
+                          "text": "() => { leaf(); }"
+                        }
+                      }
+                    ],
+                    "deferred": true,
+                    "kind": "region",
+                    "label": "Separate function body: <callback:10:13>",
+                    "span": {
+                      "end": 354,
+                      "start": 311
+                    }
+                  }
+                ],
+                "span": {
+                  "end": 359,
+                  "start": 301
+                },
+                "text": "useEffect(() => { leaf(); return () => { leaf(); }; }, [])"
+              }
+            },
+            {
+              "kind": "return",
+              "span": {
+                "end": 395,
+                "start": 363
+              },
+              "value": {
+                "calls": [],
+                "kind": "value",
+                "regions": [],
+                "span": {
+                  "end": 394,
+                  "start": 370
+                },
+                "text": "<Child onGo={callback}/>"
+              }
+            }
+          ],
+          "build": "@repo/typescript-corpus/tsconfig.json",
+          "diagnostics": [],
+          "file": "@repo/typescript-corpus/src/app/page.tsx",
+          "language": "typescript",
+          "project": "typescript-corpus",
+          "span": {
+            "end": 397,
+            "start": 224
+          },
+          "symbol": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/app/page.tsx\",\"[\\\"[\\\\\\\"[\\\\\\\\\\\\\\\"[\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"<module>\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"FunctionDeclaration\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"Page\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"(): Element\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"]\\\\\\\\\\\\\\\",0]\\\\\\\",\\\\\\\"ExportKeyword\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"5aa1cbacc4e46d6ffa59b589018639dd7abe0aacf2c71ca82a8c7937457da0cf\\\\\\\"]\\\",0]\"]"
+        },
+        {
+          "body": [
+            {
+              "kind": "evaluate",
+              "span": {
+                "end": 325,
+                "start": 319
+              },
+              "value": {
+                "calls": [
+                  {
+                    "diagnostic": null,
+                    "label": "leaf",
+                    "span": {
+                      "end": 325,
+                      "start": 319
+                    },
+                    "targets": [
+                      {
+                        "certainty": "direct",
+                        "provenance": "typescript.compiler",
+                        "symbol": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/app/page.tsx\",\"[\\\"[\\\\\\\"[\\\\\\\\\\\\\\\"[\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"<module>\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"FunctionDeclaration\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"leaf\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"(): number\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"]\\\\\\\\\\\\\\\",0]\\\\\\\",\\\\\\\"ExportKeyword\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"5aa1cbacc4e46d6ffa59b589018639dd7abe0aacf2c71ca82a8c7937457da0cf\\\\\\\"]\\\",0]\"]"
+                      }
+                    ]
+                  }
+                ],
+                "kind": "value",
+                "regions": [],
+                "span": {
+                  "end": 325,
+                  "start": 319
+                },
+                "text": "leaf()"
+              }
+            },
+            {
+              "kind": "return",
+              "span": {
+                "end": 352,
+                "start": 327
+              },
+              "value": {
+                "calls": [],
+                "kind": "value",
+                "regions": [
+                  {
+                    "body": [
+                      {
+                        "kind": "evaluate",
+                        "span": {
+                          "end": 348,
+                          "start": 342
+                        },
+                        "value": {
+                          "calls": [
+                            {
+                              "diagnostic": null,
+                              "label": "leaf",
+                              "span": {
+                                "end": 348,
+                                "start": 342
+                              },
+                              "targets": [
+                                {
+                                  "certainty": "direct",
+                                  "provenance": "typescript.compiler",
+                                  "symbol": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/app/page.tsx\",\"[\\\"[\\\\\\\"[\\\\\\\\\\\\\\\"[\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"<module>\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"FunctionDeclaration\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"leaf\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"(): number\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"]\\\\\\\\\\\\\\\",0]\\\\\\\",\\\\\\\"ExportKeyword\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"5aa1cbacc4e46d6ffa59b589018639dd7abe0aacf2c71ca82a8c7937457da0cf\\\\\\\"]\\\",0]\"]"
+                                }
+                              ]
+                            }
+                          ],
+                          "kind": "value",
+                          "regions": [],
+                          "span": {
+                            "end": 348,
+                            "start": 342
+                          },
+                          "text": "leaf()"
+                        }
+                      }
+                    ],
+                    "deferred": true,
+                    "kind": "region",
+                    "label": "Separate function body: <callback:10:36>",
+                    "span": {
+                      "end": 351,
+                      "start": 334
+                    }
+                  }
+                ],
+                "span": {
+                  "end": 351,
+                  "start": 334
+                },
+                "text": "() => { leaf(); }"
+              }
+            }
+          ],
+          "build": "@repo/typescript-corpus/tsconfig.json",
+          "diagnostics": [],
+          "file": "@repo/typescript-corpus/src/app/page.tsx",
+          "language": "typescript",
+          "project": "typescript-corpus",
+          "span": {
+            "end": 354,
+            "start": 311
+          },
+          "symbol": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/app/page.tsx\",\"[\\\"[\\\\\\\"[\\\\\\\\\\\\\\\"[\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"<module>\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"FunctionDeclaration\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"Page\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"(): Element\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"]\\\\\\\\\\\\\\\",0]\\\\\\\",\\\\\\\"ArrowFunction\\\\\\\",\\\\\\\"argument:0\\\\\\\",\\\\\\\"a9626b658fcf55fa3ae99d3b717c6b03b415c2bdb246a8a538d72beff607706e\\\\\\\"]\\\",0]\"]"
+        },
+        {
+          "body": [
+            {
+              "kind": "evaluate",
+              "span": {
+                "end": 348,
+                "start": 342
+              },
+              "value": {
+                "calls": [
+                  {
+                    "diagnostic": null,
+                    "label": "leaf",
+                    "span": {
+                      "end": 348,
+                      "start": 342
+                    },
+                    "targets": [
+                      {
+                        "certainty": "direct",
+                        "provenance": "typescript.compiler",
+                        "symbol": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/app/page.tsx\",\"[\\\"[\\\\\\\"[\\\\\\\\\\\\\\\"[\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"<module>\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"FunctionDeclaration\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"leaf\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"(): number\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"]\\\\\\\\\\\\\\\",0]\\\\\\\",\\\\\\\"ExportKeyword\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"5aa1cbacc4e46d6ffa59b589018639dd7abe0aacf2c71ca82a8c7937457da0cf\\\\\\\"]\\\",0]\"]"
+                      }
+                    ]
+                  }
+                ],
+                "kind": "value",
+                "regions": [],
+                "span": {
+                  "end": 348,
+                  "start": 342
+                },
+                "text": "leaf()"
+              }
+            }
+          ],
+          "build": "@repo/typescript-corpus/tsconfig.json",
+          "diagnostics": [],
+          "file": "@repo/typescript-corpus/src/app/page.tsx",
+          "language": "typescript",
+          "project": "typescript-corpus",
+          "span": {
+            "end": 351,
+            "start": 334
+          },
+          "symbol": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/app/page.tsx\",\"[\\\"[\\\\\\\"[\\\\\\\\\\\\\\\"[\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"[\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"[\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"<module>\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"FunctionDeclaration\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"Page\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"(): Element\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"]\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",0]\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"ArrowFunction\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"argument:0\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"a9626b658fcf55fa3ae99d3b717c6b03b415c2bdb246a8a538d72beff607706e\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"]\\\\\\\\\\\\\\\",0]\\\\\\\",\\\\\\\"ArrowFunction\\\\\\\",\\\\\\\"return\\\\\\\",\\\\\\\"c4dfcc9e9a3530d572814c5a04475249bfba1d614145dde1c36a1dd4722a5656\\\\\\\"]\\\",0]\"]"
+        },
+        {
+          "body": [
+            {
+              "kind": "return",
+              "span": {
+                "end": 126,
+                "start": 117
+              },
+              "value": {
+                "calls": [],
+                "kind": "value",
+                "regions": [],
+                "span": {
+                  "end": 125,
+                  "start": 124
+                },
+                "text": "2"
+              }
+            }
+          ],
+          "build": "@repo/typescript-corpus/tsconfig.json",
+          "diagnostics": [],
+          "file": "@repo/typescript-corpus/src/app/page.tsx",
+          "language": "typescript",
+          "project": "typescript-corpus",
+          "span": {
+            "end": 128,
+            "start": 84
+          },
+          "symbol": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/app/page.tsx\",\"[\\\"[\\\\\\\"[\\\\\\\\\\\\\\\"[\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"<module>\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"FunctionDeclaration\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"disconnected\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"(): number\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"]\\\\\\\\\\\\\\\",0]\\\\\\\",\\\\\\\"ExportKeyword\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"5aa1cbacc4e46d6ffa59b589018639dd7abe0aacf2c71ca82a8c7937457da0cf\\\\\\\"]\\\",0]\"]"
+        },
+        {
+          "body": [
+            {
+              "kind": "return",
+              "span": {
+                "end": 221,
+                "start": 178
+              },
+              "value": {
+                "calls": [],
+                "kind": "value",
+                "regions": [],
+                "span": {
+                  "end": 220,
+                  "start": 185
+                },
+                "text": "<button onClick={onGo}>Run</button>"
+              }
+            }
+          ],
+          "build": "@repo/typescript-corpus/tsconfig.json",
+          "diagnostics": [],
+          "file": "@repo/typescript-corpus/src/app/page.tsx",
+          "language": "typescript",
+          "project": "typescript-corpus",
+          "span": {
+            "end": 223,
+            "start": 129
+          },
+          "symbol": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/app/page.tsx\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"Child\\\\\\\",\\\\\\\"({ onGo }: { onGo: () => number; }): Element\\\\\\\"]\\\",0]\"]"
+        },
+        {
+          "body": [
+            {
+              "kind": "return",
+              "span": {
+                "end": 418,
+                "start": 400
+              },
+              "value": {
+                "calls": [],
+                "kind": "value",
+                "regions": [],
+                "span": {
+                  "end": 417,
+                  "start": 407
+                },
+                "text": "\"overload\""
+              }
+            }
+          ],
+          "build": "@repo/maven/reactor",
+          "diagnostics": [],
+          "file": "@repo/maven/reactor/app/src/main-custom/java/fixture/App.java",
+          "language": "java",
+          "project": "codegraph.fixture:app",
+          "span": {
+            "end": 420,
+            "start": 364
+          },
+          "symbol": "[\"java\",\"@repo/maven/reactor\",\"@repo/maven/reactor/app/src/main-custom/java/fixture/App.java\",\"[\\\"@repo/maven/reactor\\\",\\\"@repo/maven/reactor/app\\\",\\\"main\\\"]|fixture.App:toString(int)|java.lang.String\"]"
+        },
+        {
+          "body": [
+            {
+              "kind": "return",
+              "span": {
+                "end": 50,
+                "start": 24
+              },
+              "value": {
+                "calls": [
+                  {
+                    "diagnostic": "No statically bound project target",
+                    "label": "Response",
+                    "span": {
+                      "end": 49,
+                      "start": 31
+                    },
+                    "targets": []
+                  }
+                ],
+                "kind": "value",
+                "regions": [],
+                "span": {
+                  "end": 49,
+                  "start": 31
+                },
+                "text": "new Response('ok')"
+              }
+            }
+          ],
+          "build": "@repo/typescript-corpus/tsconfig.json",
+          "diagnostics": [],
+          "file": "@repo/typescript-corpus/src/app/api/route.ts",
+          "language": "typescript",
+          "project": "typescript-corpus",
+          "span": {
+            "end": 52,
+            "start": 0
+          },
+          "symbol": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/app/api/route.ts\",\"[\\\"[\\\\\\\"[\\\\\\\\\\\\\\\"[\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"<module>\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"FunctionDeclaration\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"GET\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"(): Response\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"]\\\\\\\\\\\\\\\",0]\\\\\\\",\\\\\\\"ExportKeyword\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"5aa1cbacc4e46d6ffa59b589018639dd7abe0aacf2c71ca82a8c7937457da0cf\\\\\\\"]\\\",0]\"]"
+        },
+        {
+          "body": [
+            {
+              "kind": "return",
+              "span": {
+                "end": 81,
+                "start": 72
+              },
+              "value": {
+                "calls": [],
+                "kind": "value",
+                "regions": [],
+                "span": {
+                  "end": 80,
+                  "start": 79
+                },
+                "text": "1"
+              }
+            }
+          ],
+          "build": "@repo/typescript-corpus/tsconfig.json",
+          "diagnostics": [],
+          "file": "@repo/typescript-corpus/src/app/page.tsx",
+          "language": "typescript",
+          "project": "typescript-corpus",
+          "span": {
+            "end": 83,
+            "start": 47
+          },
+          "symbol": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/app/page.tsx\",\"[\\\"[\\\\\\\"[\\\\\\\\\\\\\\\"[\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"<module>\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"FunctionDeclaration\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"leaf\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"(): number\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"]\\\\\\\\\\\\\\\",0]\\\\\\\",\\\\\\\"ExportKeyword\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"5aa1cbacc4e46d6ffa59b589018639dd7abe0aacf2c71ca82a8c7937457da0cf\\\\\\\"]\\\",0]\"]"
+        }
+      ],
+      "version": 1
+    },
+    "nodes": [
+      {
+        "body_unavailable": false,
+        "build": "@repo/dotnet-collisions/Collisions.sln",
+        "container": "Program",
+        "container_visibility": "public",
+        "file": "@repo/dotnet-collisions/EntryA/Program.cs",
+        "id": "[\"csharp\",\"@repo/dotnet-collisions/Collisions.sln\",\"@repo/dotnet-collisions/EntryA/Program.cs\",\"@repo/dotnet-collisions/Collisions.sln|[EntryA]::Program::Main()::Local#local\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "localfunction",
+        "label": "Local",
+        "language": "csharp",
+        "line": 17,
+        "namespace": "",
+        "project": "EntryA",
+        "signature": "[EntryA]::Program::Main()::Local#local"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/dotnet-collisions/Collisions.sln",
+        "container": "Program",
+        "container_visibility": "public",
+        "file": "@repo/dotnet-collisions/EntryA/Program.cs",
+        "id": "[\"csharp\",\"@repo/dotnet-collisions/Collisions.sln\",\"@repo/dotnet-collisions/EntryA/Program.cs\",\"@repo/dotnet-collisions/Collisions.sln|[EntryA]::Program::Main()\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "method",
+        "label": "Main",
+        "language": "csharp",
+        "line": 10,
+        "namespace": "",
+        "project": "EntryA",
+        "signature": "[EntryA]::Program::Main()",
+        "visibility": "public"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/dotnet-collisions/Collisions.sln",
+        "container": "Program",
+        "container_visibility": "public",
+        "file": "@repo/dotnet-collisions/EntryB/Program.cs",
+        "id": "[\"csharp\",\"@repo/dotnet-collisions/Collisions.sln\",\"@repo/dotnet-collisions/EntryB/Program.cs\",\"@repo/dotnet-collisions/Collisions.sln|[EntryB]::Program::Main()::Local#local\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "localfunction",
+        "label": "Local",
+        "language": "csharp",
+        "line": 17,
+        "namespace": "",
+        "project": "EntryB",
+        "signature": "[EntryB]::Program::Main()::Local#local"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/dotnet-collisions/Collisions.sln",
+        "container": "Program",
+        "container_visibility": "public",
+        "file": "@repo/dotnet-collisions/EntryB/Program.cs",
+        "id": "[\"csharp\",\"@repo/dotnet-collisions/Collisions.sln\",\"@repo/dotnet-collisions/EntryB/Program.cs\",\"@repo/dotnet-collisions/Collisions.sln|[EntryB]::Program::Main()\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "method",
+        "label": "Main",
+        "language": "csharp",
+        "line": 10,
+        "namespace": "",
+        "project": "EntryB",
+        "signature": "[EntryB]::Program::Main()",
+        "visibility": "public"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/dotnet-collisions/Collisions.sln",
+        "container": "Program",
+        "file": "@repo/dotnet-collisions/TopA/Program.cs",
+        "id": "[\"csharp\",\"@repo/dotnet-collisions/Collisions.sln\",\"@repo/dotnet-collisions/TopA/Program.cs\",\"@repo/dotnet-collisions/Collisions.sln|[TopA]::Program::<top-level>\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "toplevel",
+        "label": "<top-level>",
+        "language": "csharp",
+        "line": 1,
+        "namespace": "",
+        "project": "TopA",
+        "signature": "[TopA]::Program::<top-level>"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/dotnet-collisions/Collisions.sln",
+        "container": "Program",
+        "file": "@repo/dotnet-collisions/TopB/Program.cs",
+        "id": "[\"csharp\",\"@repo/dotnet-collisions/Collisions.sln\",\"@repo/dotnet-collisions/TopB/Program.cs\",\"@repo/dotnet-collisions/Collisions.sln|[TopB]::Program::<top-level>\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "toplevel",
+        "label": "<top-level>",
+        "language": "csharp",
+        "line": 1,
+        "namespace": "",
+        "project": "TopB",
+        "signature": "[TopB]::Program::<top-level>"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/dotnet-collisions/Collisions.sln",
+        "container": "Worker",
+        "container_visibility": "public",
+        "file": "@repo/dotnet-collisions/EntryA/Program.cs",
+        "id": "[\"csharp\",\"@repo/dotnet-collisions/Collisions.sln\",\"@repo/dotnet-collisions/EntryA/Program.cs\",\"@repo/dotnet-collisions/Collisions.sln|[EntryA]::Worker::Seed()\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "method",
+        "label": "Seed",
+        "language": "csharp",
+        "line": 5,
+        "namespace": "",
+        "project": "EntryA",
+        "signature": "[EntryA]::Worker::Seed()",
+        "visibility": "public"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/dotnet-collisions/Collisions.sln",
+        "container": "Worker",
+        "container_visibility": "public",
+        "file": "@repo/dotnet-collisions/EntryA/Program.cs",
+        "id": "[\"csharp\",\"@repo/dotnet-collisions/Collisions.sln\",\"@repo/dotnet-collisions/EntryA/Program.cs\",\"@repo/dotnet-collisions/Collisions.sln|[EntryA]::Worker::Work()\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "method",
+        "label": "Work",
+        "language": "csharp",
+        "line": 6,
+        "namespace": "",
+        "project": "EntryA",
+        "signature": "[EntryA]::Worker::Work()",
+        "visibility": "public"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/dotnet-collisions/Collisions.sln",
+        "container": "Worker",
+        "container_visibility": "public",
+        "file": "@repo/dotnet-collisions/EntryA/Program.cs",
+        "id": "[\"csharp\",\"@repo/dotnet-collisions/Collisions.sln\",\"@repo/dotnet-collisions/EntryA/Program.cs\",\"@repo/dotnet-collisions/Collisions.sln|[EntryA]::Worker::get_Value()\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "accessor",
+        "label": "Value",
+        "language": "csharp",
+        "line": 4,
+        "namespace": "",
+        "project": "EntryA",
+        "signature": "[EntryA]::Worker::get_Value()",
+        "visibility": "public"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/dotnet-collisions/Collisions.sln",
+        "container": "Worker",
+        "container_visibility": "public",
+        "file": "@repo/dotnet-collisions/EntryA/Program.cs",
+        "id": "[\"csharp\",\"@repo/dotnet-collisions/Collisions.sln\",\"@repo/dotnet-collisions/EntryA/Program.cs\",\"@repo/dotnet-collisions/Collisions.sln|[EntryA]::Worker::op_Addition(Worker,Worker)\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "operator",
+        "label": "op_Addition",
+        "language": "csharp",
+        "line": 7,
+        "namespace": "",
+        "project": "EntryA",
+        "signature": "[EntryA]::Worker::op_Addition(Worker,Worker)",
+        "visibility": "public"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/dotnet-collisions/Collisions.sln",
+        "container": "Worker",
+        "container_visibility": "public",
+        "file": "@repo/dotnet-collisions/EntryB/Program.cs",
+        "id": "[\"csharp\",\"@repo/dotnet-collisions/Collisions.sln\",\"@repo/dotnet-collisions/EntryB/Program.cs\",\"@repo/dotnet-collisions/Collisions.sln|[EntryB]::Worker::Seed()\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "method",
+        "label": "Seed",
+        "language": "csharp",
+        "line": 5,
+        "namespace": "",
+        "project": "EntryB",
+        "signature": "[EntryB]::Worker::Seed()",
+        "visibility": "public"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/dotnet-collisions/Collisions.sln",
+        "container": "Worker",
+        "container_visibility": "public",
+        "file": "@repo/dotnet-collisions/EntryB/Program.cs",
+        "id": "[\"csharp\",\"@repo/dotnet-collisions/Collisions.sln\",\"@repo/dotnet-collisions/EntryB/Program.cs\",\"@repo/dotnet-collisions/Collisions.sln|[EntryB]::Worker::Work()\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "method",
+        "label": "Work",
+        "language": "csharp",
+        "line": 6,
+        "namespace": "",
+        "project": "EntryB",
+        "signature": "[EntryB]::Worker::Work()",
+        "visibility": "public"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/dotnet-collisions/Collisions.sln",
+        "container": "Worker",
+        "container_visibility": "public",
+        "file": "@repo/dotnet-collisions/EntryB/Program.cs",
+        "id": "[\"csharp\",\"@repo/dotnet-collisions/Collisions.sln\",\"@repo/dotnet-collisions/EntryB/Program.cs\",\"@repo/dotnet-collisions/Collisions.sln|[EntryB]::Worker::get_Value()\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "accessor",
+        "label": "Value",
+        "language": "csharp",
+        "line": 4,
+        "namespace": "",
+        "project": "EntryB",
+        "signature": "[EntryB]::Worker::get_Value()",
+        "visibility": "public"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/dotnet-collisions/Collisions.sln",
+        "container": "Worker",
+        "container_visibility": "public",
+        "file": "@repo/dotnet-collisions/EntryB/Program.cs",
+        "id": "[\"csharp\",\"@repo/dotnet-collisions/Collisions.sln\",\"@repo/dotnet-collisions/EntryB/Program.cs\",\"@repo/dotnet-collisions/Collisions.sln|[EntryB]::Worker::op_Addition(Worker,Worker)\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "operator",
+        "label": "op_Addition",
+        "language": "csharp",
+        "line": 7,
+        "namespace": "",
+        "project": "EntryB",
+        "signature": "[EntryB]::Worker::op_Addition(Worker,Worker)",
+        "visibility": "public"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/dotnet-collisions/Collisions.sln",
+        "container": "Worker",
+        "container_visibility": "public",
+        "file": "@repo/dotnet-collisions/TopA/Program.cs",
+        "id": "[\"csharp\",\"@repo/dotnet-collisions/Collisions.sln\",\"@repo/dotnet-collisions/TopA/Program.cs\",\"@repo/dotnet-collisions/Collisions.sln|[TopA]::Worker::Work()\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "method",
+        "label": "Work",
+        "language": "csharp",
+        "line": 2,
+        "namespace": "",
+        "project": "TopA",
+        "signature": "[TopA]::Worker::Work()",
+        "visibility": "public"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/dotnet-collisions/Collisions.sln",
+        "container": "Worker",
+        "container_visibility": "public",
+        "file": "@repo/dotnet-collisions/TopB/Program.cs",
+        "id": "[\"csharp\",\"@repo/dotnet-collisions/Collisions.sln\",\"@repo/dotnet-collisions/TopB/Program.cs\",\"@repo/dotnet-collisions/Collisions.sln|[TopB]::Worker::Work()\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "method",
+        "label": "Work",
+        "language": "csharp",
+        "line": 2,
+        "namespace": "",
+        "project": "TopB",
+        "signature": "[TopB]::Worker::Work()",
+        "visibility": "public"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/maven/reactor",
+        "container": "fixture.App",
+        "container_visibility": "public",
+        "file": "@repo/maven/reactor/app/src/main-custom/java/fixture/App.java",
+        "id": "[\"java\",\"@repo/maven/reactor\",\"@repo/maven/reactor/app/src/main-custom/java/fixture/App.java\",\"[\\\"@repo/maven/reactor\\\",\\\"@repo/maven/reactor/app\\\",\\\"main\\\"]|fixture.App:constructorOnly()|void\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "method",
+        "label": "constructorOnly",
+        "language": "java",
+        "line": 6,
+        "namespace": "fixture",
+        "project": "codegraph.fixture:app",
+        "signature": "fixture.App:constructorOnly() -> void",
+        "visibility": "private"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/maven/reactor",
+        "container": "fixture.App",
+        "container_visibility": "public",
+        "file": "@repo/maven/reactor/app/src/main-custom/java/fixture/App.java",
+        "id": "[\"java\",\"@repo/maven/reactor\",\"@repo/maven/reactor/app/src/main-custom/java/fixture/App.java\",\"[\\\"@repo/maven/reactor\\\",\\\"@repo/maven/reactor/app\\\",\\\"main\\\"]|fixture.App:disconnected()|void\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "method",
+        "label": "disconnected",
+        "language": "java",
+        "line": 4,
+        "namespace": "fixture",
+        "project": "codegraph.fixture:app",
+        "signature": "fixture.App:disconnected() -> void",
+        "visibility": "public"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/maven/reactor",
+        "container": "fixture.App",
+        "container_visibility": "public",
+        "file": "@repo/maven/reactor/app/src/main-custom/java/fixture/App.java",
+        "id": "[\"java\",\"@repo/maven/reactor\",\"@repo/maven/reactor/app/src/main-custom/java/fixture/App.java\",\"[\\\"@repo/maven/reactor\\\",\\\"@repo/maven/reactor/app\\\",\\\"main\\\"]|fixture.App:main(java.lang.String[])|void\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "method",
+        "label": "main",
+        "language": "java",
+        "line": 3,
+        "namespace": "fixture",
+        "project": "codegraph.fixture:app",
+        "signature": "fixture.App:main(java.lang.String[]) -> void",
+        "visibility": "public"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/maven/reactor",
+        "container": "fixture.App",
+        "container_visibility": "public",
+        "file": "@repo/maven/reactor/app/src/main-custom/java/fixture/App.java",
+        "id": "[\"java\",\"@repo/maven/reactor\",\"@repo/maven/reactor/app/src/main-custom/java/fixture/App.java\",\"[\\\"@repo/maven/reactor\\\",\\\"@repo/maven/reactor/app\\\",\\\"main\\\"]|fixture.App:packageMethod()|void\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "method",
+        "label": "packageMethod",
+        "language": "java",
+        "line": 7,
+        "namespace": "fixture",
+        "project": "codegraph.fixture:app",
+        "signature": "fixture.App:packageMethod() -> void",
+        "visibility": "package"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/maven/reactor",
+        "container": "fixture.App",
+        "container_visibility": "public",
+        "file": "@repo/maven/reactor/app/src/main-custom/java/fixture/App.java",
+        "id": "[\"java\",\"@repo/maven/reactor\",\"@repo/maven/reactor/app/src/main-custom/java/fixture/App.java\",\"[\\\"@repo/maven/reactor\\\",\\\"@repo/maven/reactor/app\\\",\\\"main\\\"]|fixture.App:protectedMethod()|void\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "method",
+        "label": "protectedMethod",
+        "language": "java",
+        "line": 8,
+        "namespace": "fixture",
+        "project": "codegraph.fixture:app",
+        "signature": "fixture.App:protectedMethod() -> void",
+        "visibility": "protected"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/maven/reactor",
+        "container": "fixture.App",
+        "container_visibility": "public",
+        "file": "@repo/maven/reactor/app/src/main-custom/java/fixture/App.java",
+        "id": "[\"java\",\"@repo/maven/reactor\",\"@repo/maven/reactor/app/src/main-custom/java/fixture/App.java\",\"[\\\"@repo/maven/reactor\\\",\\\"@repo/maven/reactor/app\\\",\\\"main\\\"]|fixture.App:toString(int)|java.lang.String\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "method",
+        "label": "toString",
+        "language": "java",
+        "line": 10,
+        "namespace": "fixture",
+        "project": "codegraph.fixture:app",
+        "signature": "fixture.App:toString(int) -> java.lang.String",
+        "visibility": "public"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/maven/reactor",
+        "container": "fixture.AppTest",
+        "container_visibility": "public",
+        "file": "@repo/maven/reactor/app/src/test/java/fixture/AppTest.java",
+        "id": "[\"java\",\"@repo/maven/reactor\",\"@repo/maven/reactor/app/src/test/java/fixture/AppTest.java\",\"[\\\"@repo/maven/reactor\\\",\\\"@repo/maven/reactor/app\\\",\\\"test\\\"]|fixture.AppTest:testOnly()|void\"]",
+        "is_generated": false,
+        "is_test": true,
+        "kind": "method",
+        "label": "testOnly",
+        "language": "java",
+        "line": 7,
+        "namespace": "fixture",
+        "project": "codegraph.fixture:app",
+        "signature": "fixture.AppTest:testOnly() -> void",
+        "visibility": "public"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/maven/reactor",
+        "container": "fixture.GeneratedThing",
+        "container_visibility": "public",
+        "file": "@repo/maven/reactor/app/target/generated-sources/fixture/fixture/GeneratedThing.java",
+        "id": "[\"java\",\"@repo/maven/reactor\",\"@repo/maven/reactor/app/target/generated-sources/fixture/fixture/GeneratedThing.java\",\"[\\\"@repo/maven/reactor\\\",\\\"@repo/maven/reactor/app\\\",\\\"main\\\"]|fixture.GeneratedThing:generated()|void\"]",
+        "is_generated": true,
+        "is_test": false,
+        "kind": "method",
+        "label": "generated",
+        "language": "java",
+        "line": 1,
+        "namespace": "fixture",
+        "project": "codegraph.fixture:app",
+        "signature": "fixture.GeneratedThing:generated() -> void",
+        "visibility": "public"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/maven/reactor",
+        "container": "fixture.ProfileOnly",
+        "container_visibility": "public",
+        "file": "@repo/maven/profile-library/src/main/java/fixture/ProfileOnly.java",
+        "id": "[\"java\",\"@repo/maven/reactor\",\"@repo/maven/profile-library/src/main/java/fixture/ProfileOnly.java\",\"[\\\"@repo/maven/reactor\\\",\\\"@repo/maven/profile-library\\\",\\\"main\\\"]|fixture.ProfileOnly:fromActiveProfile()|void\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "method",
+        "label": "fromActiveProfile",
+        "language": "java",
+        "line": 1,
+        "namespace": "fixture",
+        "project": "codegraph.fixture:profile-library",
+        "signature": "fixture.ProfileOnly:fromActiveProfile() -> void",
+        "visibility": "public"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/maven/reactor",
+        "container": "fixture.Service",
+        "container_visibility": "public",
+        "file": "@repo/maven/library/src/main/java/fixture/Service.java",
+        "id": "[\"java\",\"@repo/maven/reactor\",\"@repo/maven/library/src/main/java/fixture/Service.java\",\"[\\\"@repo/maven/reactor\\\",\\\"@repo/maven/library\\\",\\\"main\\\"]|fixture.Service:work()|void\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "method",
+        "label": "work",
+        "language": "java",
+        "line": 1,
+        "namespace": "fixture",
+        "project": "codegraph.fixture:library",
+        "signature": "fixture.Service:work() -> void",
+        "visibility": "public"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/typescript-corpus/tsconfig.json",
+        "container": "src/app/api/route.ts",
+        "file": "@repo/typescript-corpus/src/app/api/route.ts",
+        "id": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/app/api/route.ts\",\"[\\\"[\\\\\\\"[\\\\\\\\\\\\\\\"[\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"<module>\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"FunctionDeclaration\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"GET\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"(): Response\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"]\\\\\\\\\\\\\\\",0]\\\\\\\",\\\\\\\"ExportKeyword\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"5aa1cbacc4e46d6ffa59b589018639dd7abe0aacf2c71ca82a8c7937457da0cf\\\\\\\"]\\\",0]\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "function",
+        "label": "GET",
+        "language": "typescript",
+        "line": 1,
+        "namespace": "src/app/api",
+        "project": "typescript-corpus",
+        "signature": "(): Response"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/typescript-corpus/tsconfig.json",
+        "container": "src/app/api/route.ts",
+        "file": "@repo/typescript-corpus/src/app/api/route.ts",
+        "id": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/app/api/route.ts\",\"[\\\"src/app/api/route.ts\\\",\\\"module\\\",\\\"<module:route.ts>\\\",\\\"<module:route.ts>\\\"]\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "module",
+        "label": "<module:route.ts>",
+        "language": "typescript",
+        "line": 1,
+        "namespace": "src/app/api",
+        "project": "typescript-corpus",
+        "signature": "<module:route.ts>"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/typescript-corpus/tsconfig.json",
+        "container": "src/app/page.tsx",
+        "file": "@repo/typescript-corpus/src/app/page.tsx",
+        "id": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/app/page.tsx\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"Child\\\\\\\",\\\\\\\"({ onGo }: { onGo: () => number; }): Element\\\\\\\"]\\\",0]\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "function",
+        "label": "Child",
+        "language": "typescript",
+        "line": 5,
+        "namespace": "src/app",
+        "project": "typescript-corpus",
+        "signature": "({ onGo }: { onGo: () => number; }): Element"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/typescript-corpus/tsconfig.json",
+        "container": "src/app/page.tsx",
+        "file": "@repo/typescript-corpus/src/app/page.tsx",
+        "id": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/app/page.tsx\",\"[\\\"[\\\\\\\"<module>\\\\\\\",\\\\\\\"ImportDeclaration\\\\\\\",\\\\\\\"SourceFile\\\\\\\",\\\\\\\"2d0ea08804d55920b88c5fe7cdbcc2bdca6607ba9ab751ee1f6adfd051e1c10a\\\\\\\"]\\\",0]\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "module",
+        "label": "<module:page.tsx>",
+        "language": "typescript",
+        "line": 1,
+        "namespace": "src/app",
+        "project": "typescript-corpus",
+        "signature": "<module:page.tsx>"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/typescript-corpus/tsconfig.json",
+        "container": "src/app/page.tsx",
+        "file": "@repo/typescript-corpus/src/app/page.tsx",
+        "id": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/app/page.tsx\",\"[\\\"[\\\\\\\"[\\\\\\\\\\\\\\\"[\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"<module>\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"FunctionDeclaration\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"Page\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"(): Element\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"]\\\\\\\\\\\\\\\",0]\\\\\\\",\\\\\\\"ArrowFunction\\\\\\\",\\\\\\\"argument:0\\\\\\\",\\\\\\\"a9626b658fcf55fa3ae99d3b717c6b03b415c2bdb246a8a538d72beff607706e\\\\\\\"]\\\",0]\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "callback",
+        "label": "<callback:10:13>",
+        "language": "typescript",
+        "line": 10,
+        "namespace": "src/app",
+        "project": "typescript-corpus",
+        "signature": "(): () => void"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/typescript-corpus/tsconfig.json",
+        "container": "src/app/page.tsx",
+        "file": "@repo/typescript-corpus/src/app/page.tsx",
+        "id": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/app/page.tsx\",\"[\\\"[\\\\\\\"[\\\\\\\\\\\\\\\"[\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"<module>\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"FunctionDeclaration\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"Page\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"(): Element\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"]\\\\\\\\\\\\\\\",0]\\\\\\\",\\\\\\\"ExportKeyword\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"5aa1cbacc4e46d6ffa59b589018639dd7abe0aacf2c71ca82a8c7937457da0cf\\\\\\\"]\\\",0]\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "function",
+        "label": "Page",
+        "language": "typescript",
+        "line": 8,
+        "namespace": "src/app",
+        "project": "typescript-corpus",
+        "signature": "(): Element"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/typescript-corpus/tsconfig.json",
+        "container": "src/app/page.tsx",
+        "file": "@repo/typescript-corpus/src/app/page.tsx",
+        "id": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/app/page.tsx\",\"[\\\"[\\\\\\\"[\\\\\\\\\\\\\\\"[\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"<module>\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"FunctionDeclaration\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"disconnected\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"(): number\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"]\\\\\\\\\\\\\\\",0]\\\\\\\",\\\\\\\"ExportKeyword\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"5aa1cbacc4e46d6ffa59b589018639dd7abe0aacf2c71ca82a8c7937457da0cf\\\\\\\"]\\\",0]\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "function",
+        "label": "disconnected",
+        "language": "typescript",
+        "line": 4,
+        "namespace": "src/app",
+        "project": "typescript-corpus",
+        "signature": "(): number"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/typescript-corpus/tsconfig.json",
+        "container": "src/app/page.tsx",
+        "file": "@repo/typescript-corpus/src/app/page.tsx",
+        "id": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/app/page.tsx\",\"[\\\"[\\\\\\\"[\\\\\\\\\\\\\\\"[\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"<module>\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"FunctionDeclaration\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"leaf\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"(): number\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"]\\\\\\\\\\\\\\\",0]\\\\\\\",\\\\\\\"ExportKeyword\\\\\\\",\\\\\\\"FunctionDeclaration\\\\\\\",\\\\\\\"5aa1cbacc4e46d6ffa59b589018639dd7abe0aacf2c71ca82a8c7937457da0cf\\\\\\\"]\\\",0]\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "function",
+        "label": "leaf",
+        "language": "typescript",
+        "line": 3,
+        "namespace": "src/app",
+        "project": "typescript-corpus",
+        "signature": "(): number"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/typescript-corpus/tsconfig.json",
+        "container": "src/app/page.tsx",
+        "file": "@repo/typescript-corpus/src/app/page.tsx",
+        "id": "[\"typescript\",\"@repo/typescript-corpus/tsconfig.json\",\"@repo/typescript-corpus/src/app/page.tsx\",\"[\\\"[\\\\\\\"[\\\\\\\\\\\\\\\"[\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"[\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"[\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"<module>\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"FunctionDeclaration\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"Page\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"(): Element\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"]\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",0]\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"ArrowFunction\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"argument:0\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"a9626b658fcf55fa3ae99d3b717c6b03b415c2bdb246a8a538d72beff607706e\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"]\\\\\\\\\\\\\\\",0]\\\\\\\",\\\\\\\"ArrowFunction\\\\\\\",\\\\\\\"return\\\\\\\",\\\\\\\"c4dfcc9e9a3530d572814c5a04475249bfba1d614145dde1c36a1dd4722a5656\\\\\\\"]\\\",0]\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "callback",
+        "label": "<callback:10:36>",
+        "language": "typescript",
+        "line": 10,
+        "namespace": "src/app",
+        "project": "typescript-corpus",
+        "signature": "(): void"
+      }
+    ],
+    "roots": [
+      "@repo/dotnet-collisions/Collisions.sln",
+      "@repo/maven/reactor",
+      "@repo/typescript-corpus/tsconfig.json"
+    ]
+  },
+  "schema": "codegraph.graph.v1"
+}

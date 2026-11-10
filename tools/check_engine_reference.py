@@ -12,8 +12,10 @@ import shutil
 import shlex
 import subprocess
 import tempfile
+import time
+import statistics
 
-from analysis_graph import canonical, graph_snapshot
+from analysis_graph import canonical, graph_snapshot, normalize_sets
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -54,7 +56,7 @@ def from_native(graph):
         'excluded_children': item.get('excluded_children', [])
     } for item in graph['fingerprints']), key=canonical)
     graph.pop('method_policy', None)
-    return graph
+    return normalize_sets(graph)
 
 
 def reference(executable, targets, cache):
@@ -76,24 +78,48 @@ def check_workload(args, workload, targets, root):
     name = workload['name']
     selected = targets.get(name) or [target for component in workload['components']
                                     for target in targets[component]]
-    old = reference(args.reference.resolve(), selected, root / f'{name}-reference')
-    new = (candidate(args.candidate, selected) if args.candidate else
-           reference(args.reference.resolve(), selected, root / f'{name}-repeat'))
-    differences = [key for key in old if old[key] != new.get(key)]
+    results = [check_run(args, selected, root / f'{name}-{number}') for number in range(args.runs)]
+    return report_results(name, results)
+
+
+def report_results(name, results):
+    differences = sorted({field for item in results for field in item['differences']})
     print(json.dumps({'workload': name, 'equal': not differences,
-                      'different_fields': differences, 'nodes': len(new['nodes']),
-                      'edges': len(new['edges'])}), flush=True)
+                      'different_fields': differences, 'nodes': results[-1]['nodes'],
+                      'edges': results[-1]['edges'], 'runs': results,
+                      'reference_median_seconds': statistics.median(item['reference_seconds'] for item in results),
+                      'candidate_median_seconds': statistics.median(item['candidate_seconds'] for item in results)}), flush=True)
     return bool(differences)
+
+
+def check_run(args, selected, prefix):
+    started = time.perf_counter()
+    old = reference(args.reference.resolve(), selected, prefix.with_name(prefix.name + '-reference'))
+    reference_seconds = time.perf_counter() - started
+    started = time.perf_counter()
+    new = (candidate(args.candidate, selected) if args.candidate else
+           reference(args.reference.resolve(), selected, prefix.with_name(prefix.name + '-repeat')))
+    return {'differences': [key for key in old if old[key] != new.get(key)],
+            'reference_seconds': reference_seconds, 'candidate_seconds': time.perf_counter() - started,
+            'nodes': len(new['nodes']), 'edges': len(new['edges'])}
+
+
+def arguments(corpus):
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--reference', type=Path, required=True)
+    parser.add_argument('--candidate', type=Path)
+    parser.add_argument('--runs', type=int, default=1)
+    parser.add_argument('--workload', action='append',
+                        choices=[item['name'] for item in corpus['workloads']])
+    args = parser.parse_args()
+    if args.runs < 1:
+        parser.error('--runs must be positive')
+    return args
 
 
 def main():
     corpus = json.loads((ROOT / 'evidence/engine/corpus.json').read_text())
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--reference', type=Path, required=True)
-    parser.add_argument('--candidate', type=Path)
-    parser.add_argument('--workload', action='append',
-                        choices=[item['name'] for item in corpus['workloads']])
-    args = parser.parse_args()
+    args = arguments(corpus)
     selected = [item for item in corpus['workloads']
                 if not args.workload or item['name'] in args.workload]
     required = {name for item in selected

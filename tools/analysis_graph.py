@@ -29,7 +29,7 @@ def graph_snapshot(cache):
     for node in nodes:
         del node["idx"]
         decode_visibility(node)
-    return {
+    return normalize_sets({
         "nodes": sorted(nodes, key=lambda node: node["id"]),
         "edges": sorted(edges, key=canonical),
         "entry_points": metadata.get("entry_points"),
@@ -42,7 +42,16 @@ def graph_snapshot(cache):
         # Builds can rewrite identical outputs with new mtimes. Keep all content
         # and membership facts used for freshness; only omit observation times.
         "fingerprints": sorted((fingerprint_facts(item) for item in metadata.get("fingerprints", [])), key=canonical),
-    }
+    })
+
+
+def normalize_sets(graph):
+    for field in ('roots', 'diagnostics'):
+        graph.get(field, []).sort()
+    for section, field in [('architecture', 'files'), ('flow_inventory', 'functions')]:
+        if graph.get(section):
+            graph[section][field].sort(key=canonical)
+    return graph
 
 
 def decode_visibility(node):

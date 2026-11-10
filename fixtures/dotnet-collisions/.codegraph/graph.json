@@ -1,0 +1,544 @@
+{
+  "graph": {
+    "architecture": {
+      "files": [
+        {
+          "annotated_interfaces": [
+            "NullableContextAttribute",
+            "System.Runtime.CompilerServices.NullableContextAttribute"
+          ],
+          "annotations": [],
+          "base_types": [
+            "Delegate",
+            "ICloneable",
+            "ISerializable",
+            "MulticastDelegate",
+            "Object",
+            "System.Delegate",
+            "System.ICloneable",
+            "System.MulticastDelegate",
+            "System.Runtime.Serialization.ISerializable",
+            "object"
+          ],
+          "build": "@repo/Collisions.sln",
+          "content": "public delegate void Callback();\npublic class Worker {\n    public static int Counter = Seed();\n    public int Value { get; } = 2;\n    public static int Seed() => 1;\n    public static void Work() { Counter++; }\n    public static Worker operator +(Worker a, Worker b) => a;\n}\npublic class Program {\n    public static void Main() {\n        Worker.Work();\n        var first = new Worker();\n        var second = first + new Worker();\n        var value = second.Value;\n        Callback callback = Worker.Work;\n        callback();\n        void Local() { Worker.Work(); }\n        Local();\n    }\n}\n",
+          "file": "@repo/EntryA/Program.cs",
+          "is_interface": false,
+          "is_test": false,
+          "kinds": [
+            "class",
+            "delegate"
+          ],
+          "language": "csharp",
+          "method_annotations": [],
+          "names": [
+            "Callback",
+            "Program",
+            "Worker"
+          ],
+          "namespaces": [
+            "<global namespace>"
+          ],
+          "project": "EntryA"
+        },
+        {
+          "annotated_interfaces": [
+            "NullableContextAttribute",
+            "System.Runtime.CompilerServices.NullableContextAttribute"
+          ],
+          "annotations": [],
+          "base_types": [
+            "Delegate",
+            "ICloneable",
+            "ISerializable",
+            "MulticastDelegate",
+            "Object",
+            "System.Delegate",
+            "System.ICloneable",
+            "System.MulticastDelegate",
+            "System.Runtime.Serialization.ISerializable",
+            "object"
+          ],
+          "build": "@repo/Collisions.sln",
+          "content": "public delegate void Callback();\npublic class Worker {\n    public static int Counter = Seed();\n    public int Value { get; } = 2;\n    public static int Seed() => 1;\n    public static void Work() { Counter++; }\n    public static Worker operator +(Worker a, Worker b) => a;\n}\npublic class Program {\n    public static void Main() {\n        Worker.Work();\n        var first = new Worker();\n        var second = first + new Worker();\n        var value = second.Value;\n        Callback callback = Worker.Work;\n        callback();\n        void Local() { Worker.Work(); }\n        Local();\n    }\n}\n",
+          "file": "@repo/EntryB/Program.cs",
+          "is_interface": false,
+          "is_test": false,
+          "kinds": [
+            "class",
+            "delegate"
+          ],
+          "language": "csharp",
+          "method_annotations": [],
+          "names": [
+            "Callback",
+            "Program",
+            "Worker"
+          ],
+          "namespaces": [
+            "<global namespace>"
+          ],
+          "project": "EntryB"
+        },
+        {
+          "annotated_interfaces": [],
+          "annotations": [],
+          "base_types": [
+            "Object",
+            "object"
+          ],
+          "build": "@repo/Collisions.sln",
+          "content": "Worker.Work();\npublic static class Worker { public static void Work() { } }\n",
+          "file": "@repo/TopA/Program.cs",
+          "is_interface": false,
+          "is_test": false,
+          "kinds": [
+            "class"
+          ],
+          "language": "csharp",
+          "method_annotations": [],
+          "names": [
+            "Worker"
+          ],
+          "namespaces": [
+            "<global namespace>"
+          ],
+          "project": "TopA"
+        },
+        {
+          "annotated_interfaces": [],
+          "annotations": [],
+          "base_types": [
+            "Object",
+            "object"
+          ],
+          "build": "@repo/Collisions.sln",
+          "content": "Worker.Work();\npublic static class Worker { public static void Work() { } }\n",
+          "file": "@repo/TopB/Program.cs",
+          "is_interface": false,
+          "is_test": false,
+          "kinds": [
+            "class"
+          ],
+          "language": "csharp",
+          "method_annotations": [],
+          "names": [
+            "Worker"
+          ],
+          "namespaces": [
+            "<global namespace>"
+          ],
+          "project": "TopB"
+        }
+      ],
+      "version": 1
+    },
+    "diagnostics": [
+      "CallAtlas omits most source-generator output; cross-assembly interface implementation candidates are limited; operator invocations are not fully reported. Reflection, dynamic calls, framework callbacks and unsupported DI wiring are not inferred."
+    ],
+    "edges": [
+      {
+        "certainty": "direct",
+        "count": 1,
+        "from": "[\"csharp\",\"@repo/Collisions.sln\",\"@repo/EntryA/Program.cs\",\"@repo/Collisions.sln|[EntryA]::Program::Main()::Local#local\"]",
+        "kind": "call",
+        "provenance": "",
+        "to": "[\"csharp\",\"@repo/Collisions.sln\",\"@repo/EntryA/Program.cs\",\"@repo/Collisions.sln|[EntryA]::Worker::Work()\"]"
+      },
+      {
+        "certainty": "direct",
+        "count": 1,
+        "from": "[\"csharp\",\"@repo/Collisions.sln\",\"@repo/EntryA/Program.cs\",\"@repo/Collisions.sln|[EntryA]::Program::Main()\"]",
+        "kind": "call",
+        "provenance": "",
+        "to": "[\"csharp\",\"@repo/Collisions.sln\",\"@repo/EntryA/Program.cs\",\"@repo/Collisions.sln|[EntryA]::Program::Main()::Local#local\"]"
+      },
+      {
+        "certainty": "direct",
+        "count": 1,
+        "from": "[\"csharp\",\"@repo/Collisions.sln\",\"@repo/EntryA/Program.cs\",\"@repo/Collisions.sln|[EntryA]::Program::Main()\"]",
+        "kind": "call",
+        "provenance": "",
+        "to": "[\"csharp\",\"@repo/Collisions.sln\",\"@repo/EntryA/Program.cs\",\"@repo/Collisions.sln|[EntryA]::Worker::Work()\"]"
+      },
+      {
+        "certainty": "direct",
+        "count": 1,
+        "from": "[\"csharp\",\"@repo/Collisions.sln\",\"@repo/EntryA/Program.cs\",\"@repo/Collisions.sln|[EntryA]::Program::Main()\"]",
+        "kind": "get",
+        "provenance": "",
+        "to": "[\"csharp\",\"@repo/Collisions.sln\",\"@repo/EntryA/Program.cs\",\"@repo/Collisions.sln|[EntryA]::Worker::get_Value()\"]"
+      },
+      {
+        "certainty": "direct",
+        "count": 1,
+        "from": "[\"csharp\",\"@repo/Collisions.sln\",\"@repo/EntryA/Program.cs\",\"@repo/Collisions.sln|[EntryA]::Program::Main()\"]",
+        "kind": "methodgroup",
+        "provenance": "",
+        "to": "[\"csharp\",\"@repo/Collisions.sln\",\"@repo/EntryA/Program.cs\",\"@repo/Collisions.sln|[EntryA]::Worker::Work()\"]"
+      },
+      {
+        "certainty": "direct",
+        "count": 1,
+        "from": "[\"csharp\",\"@repo/Collisions.sln\",\"@repo/EntryB/Program.cs\",\"@repo/Collisions.sln|[EntryB]::Program::Main()::Local#local\"]",
+        "kind": "call",
+        "provenance": "",
+        "to": "[\"csharp\",\"@repo/Collisions.sln\",\"@repo/EntryB/Program.cs\",\"@repo/Collisions.sln|[EntryB]::Worker::Work()\"]"
+      },
+      {
+        "certainty": "direct",
+        "count": 1,
+        "from": "[\"csharp\",\"@repo/Collisions.sln\",\"@repo/EntryB/Program.cs\",\"@repo/Collisions.sln|[EntryB]::Program::Main()\"]",
+        "kind": "call",
+        "provenance": "",
+        "to": "[\"csharp\",\"@repo/Collisions.sln\",\"@repo/EntryB/Program.cs\",\"@repo/Collisions.sln|[EntryB]::Program::Main()::Local#local\"]"
+      },
+      {
+        "certainty": "direct",
+        "count": 1,
+        "from": "[\"csharp\",\"@repo/Collisions.sln\",\"@repo/EntryB/Program.cs\",\"@repo/Collisions.sln|[EntryB]::Program::Main()\"]",
+        "kind": "call",
+        "provenance": "",
+        "to": "[\"csharp\",\"@repo/Collisions.sln\",\"@repo/EntryB/Program.cs\",\"@repo/Collisions.sln|[EntryB]::Worker::Work()\"]"
+      },
+      {
+        "certainty": "direct",
+        "count": 1,
+        "from": "[\"csharp\",\"@repo/Collisions.sln\",\"@repo/EntryB/Program.cs\",\"@repo/Collisions.sln|[EntryB]::Program::Main()\"]",
+        "kind": "get",
+        "provenance": "",
+        "to": "[\"csharp\",\"@repo/Collisions.sln\",\"@repo/EntryB/Program.cs\",\"@repo/Collisions.sln|[EntryB]::Worker::get_Value()\"]"
+      },
+      {
+        "certainty": "direct",
+        "count": 1,
+        "from": "[\"csharp\",\"@repo/Collisions.sln\",\"@repo/EntryB/Program.cs\",\"@repo/Collisions.sln|[EntryB]::Program::Main()\"]",
+        "kind": "methodgroup",
+        "provenance": "",
+        "to": "[\"csharp\",\"@repo/Collisions.sln\",\"@repo/EntryB/Program.cs\",\"@repo/Collisions.sln|[EntryB]::Worker::Work()\"]"
+      },
+      {
+        "certainty": "direct",
+        "count": 1,
+        "from": "[\"csharp\",\"@repo/Collisions.sln\",\"@repo/TopA/Program.cs\",\"@repo/Collisions.sln|[TopA]::Program::<top-level>\"]",
+        "kind": "call",
+        "provenance": "",
+        "to": "[\"csharp\",\"@repo/Collisions.sln\",\"@repo/TopA/Program.cs\",\"@repo/Collisions.sln|[TopA]::Worker::Work()\"]"
+      },
+      {
+        "certainty": "direct",
+        "count": 1,
+        "from": "[\"csharp\",\"@repo/Collisions.sln\",\"@repo/TopB/Program.cs\",\"@repo/Collisions.sln|[TopB]::Program::<top-level>\"]",
+        "kind": "call",
+        "provenance": "",
+        "to": "[\"csharp\",\"@repo/Collisions.sln\",\"@repo/TopB/Program.cs\",\"@repo/Collisions.sln|[TopB]::Worker::Work()\"]"
+      }
+    ],
+    "entry_points": {
+      "application_starts": [
+        "[\"csharp\",\"@repo/Collisions.sln\",\"@repo/EntryA/Program.cs\",\"@repo/Collisions.sln|[EntryA]::Program::Main()\"]",
+        "[\"csharp\",\"@repo/Collisions.sln\",\"@repo/EntryB/Program.cs\",\"@repo/Collisions.sln|[EntryB]::Program::Main()\"]",
+        "[\"csharp\",\"@repo/Collisions.sln\",\"@repo/TopA/Program.cs\",\"@repo/Collisions.sln|[TopA]::Program::<top-level>\"]",
+        "[\"csharp\",\"@repo/Collisions.sln\",\"@repo/TopB/Program.cs\",\"@repo/Collisions.sln|[TopB]::Program::<top-level>\"]"
+      ],
+      "candidates": [
+        "[\"csharp\",\"@repo/Collisions.sln\",\"@repo/EntryA/Program.cs\",\"@repo/Collisions.sln|[EntryA]::Program::Main()\"]",
+        "[\"csharp\",\"@repo/Collisions.sln\",\"@repo/EntryA/Program.cs\",\"@repo/Collisions.sln|[EntryA]::Worker::Seed()\"]",
+        "[\"csharp\",\"@repo/Collisions.sln\",\"@repo/EntryA/Program.cs\",\"@repo/Collisions.sln|[EntryA]::Worker::op_Addition(Worker,Worker)\"]",
+        "[\"csharp\",\"@repo/Collisions.sln\",\"@repo/EntryB/Program.cs\",\"@repo/Collisions.sln|[EntryB]::Program::Main()\"]",
+        "[\"csharp\",\"@repo/Collisions.sln\",\"@repo/EntryB/Program.cs\",\"@repo/Collisions.sln|[EntryB]::Worker::Seed()\"]",
+        "[\"csharp\",\"@repo/Collisions.sln\",\"@repo/EntryB/Program.cs\",\"@repo/Collisions.sln|[EntryB]::Worker::op_Addition(Worker,Worker)\"]"
+      ],
+      "framework_entries": []
+    },
+    "flow_inventory": null,
+    "nodes": [
+      {
+        "body_unavailable": false,
+        "build": "@repo/Collisions.sln",
+        "container": "Program",
+        "container_visibility": "public",
+        "file": "@repo/EntryA/Program.cs",
+        "id": "[\"csharp\",\"@repo/Collisions.sln\",\"@repo/EntryA/Program.cs\",\"@repo/Collisions.sln|[EntryA]::Program::Main()::Local#local\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "localfunction",
+        "label": "Local",
+        "language": "csharp",
+        "line": 17,
+        "namespace": "",
+        "project": "EntryA",
+        "signature": "[EntryA]::Program::Main()::Local#local"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/Collisions.sln",
+        "container": "Program",
+        "container_visibility": "public",
+        "file": "@repo/EntryA/Program.cs",
+        "id": "[\"csharp\",\"@repo/Collisions.sln\",\"@repo/EntryA/Program.cs\",\"@repo/Collisions.sln|[EntryA]::Program::Main()\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "method",
+        "label": "Main",
+        "language": "csharp",
+        "line": 10,
+        "namespace": "",
+        "project": "EntryA",
+        "signature": "[EntryA]::Program::Main()",
+        "visibility": "public"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/Collisions.sln",
+        "container": "Program",
+        "container_visibility": "public",
+        "file": "@repo/EntryB/Program.cs",
+        "id": "[\"csharp\",\"@repo/Collisions.sln\",\"@repo/EntryB/Program.cs\",\"@repo/Collisions.sln|[EntryB]::Program::Main()::Local#local\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "localfunction",
+        "label": "Local",
+        "language": "csharp",
+        "line": 17,
+        "namespace": "",
+        "project": "EntryB",
+        "signature": "[EntryB]::Program::Main()::Local#local"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/Collisions.sln",
+        "container": "Program",
+        "container_visibility": "public",
+        "file": "@repo/EntryB/Program.cs",
+        "id": "[\"csharp\",\"@repo/Collisions.sln\",\"@repo/EntryB/Program.cs\",\"@repo/Collisions.sln|[EntryB]::Program::Main()\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "method",
+        "label": "Main",
+        "language": "csharp",
+        "line": 10,
+        "namespace": "",
+        "project": "EntryB",
+        "signature": "[EntryB]::Program::Main()",
+        "visibility": "public"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/Collisions.sln",
+        "container": "Program",
+        "file": "@repo/TopA/Program.cs",
+        "id": "[\"csharp\",\"@repo/Collisions.sln\",\"@repo/TopA/Program.cs\",\"@repo/Collisions.sln|[TopA]::Program::<top-level>\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "toplevel",
+        "label": "<top-level>",
+        "language": "csharp",
+        "line": 1,
+        "namespace": "",
+        "project": "TopA",
+        "signature": "[TopA]::Program::<top-level>"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/Collisions.sln",
+        "container": "Program",
+        "file": "@repo/TopB/Program.cs",
+        "id": "[\"csharp\",\"@repo/Collisions.sln\",\"@repo/TopB/Program.cs\",\"@repo/Collisions.sln|[TopB]::Program::<top-level>\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "toplevel",
+        "label": "<top-level>",
+        "language": "csharp",
+        "line": 1,
+        "namespace": "",
+        "project": "TopB",
+        "signature": "[TopB]::Program::<top-level>"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/Collisions.sln",
+        "container": "Worker",
+        "container_visibility": "public",
+        "file": "@repo/EntryA/Program.cs",
+        "id": "[\"csharp\",\"@repo/Collisions.sln\",\"@repo/EntryA/Program.cs\",\"@repo/Collisions.sln|[EntryA]::Worker::Seed()\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "method",
+        "label": "Seed",
+        "language": "csharp",
+        "line": 5,
+        "namespace": "",
+        "project": "EntryA",
+        "signature": "[EntryA]::Worker::Seed()",
+        "visibility": "public"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/Collisions.sln",
+        "container": "Worker",
+        "container_visibility": "public",
+        "file": "@repo/EntryA/Program.cs",
+        "id": "[\"csharp\",\"@repo/Collisions.sln\",\"@repo/EntryA/Program.cs\",\"@repo/Collisions.sln|[EntryA]::Worker::Work()\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "method",
+        "label": "Work",
+        "language": "csharp",
+        "line": 6,
+        "namespace": "",
+        "project": "EntryA",
+        "signature": "[EntryA]::Worker::Work()",
+        "visibility": "public"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/Collisions.sln",
+        "container": "Worker",
+        "container_visibility": "public",
+        "file": "@repo/EntryA/Program.cs",
+        "id": "[\"csharp\",\"@repo/Collisions.sln\",\"@repo/EntryA/Program.cs\",\"@repo/Collisions.sln|[EntryA]::Worker::get_Value()\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "accessor",
+        "label": "Value",
+        "language": "csharp",
+        "line": 4,
+        "namespace": "",
+        "project": "EntryA",
+        "signature": "[EntryA]::Worker::get_Value()",
+        "visibility": "public"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/Collisions.sln",
+        "container": "Worker",
+        "container_visibility": "public",
+        "file": "@repo/EntryA/Program.cs",
+        "id": "[\"csharp\",\"@repo/Collisions.sln\",\"@repo/EntryA/Program.cs\",\"@repo/Collisions.sln|[EntryA]::Worker::op_Addition(Worker,Worker)\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "operator",
+        "label": "op_Addition",
+        "language": "csharp",
+        "line": 7,
+        "namespace": "",
+        "project": "EntryA",
+        "signature": "[EntryA]::Worker::op_Addition(Worker,Worker)",
+        "visibility": "public"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/Collisions.sln",
+        "container": "Worker",
+        "container_visibility": "public",
+        "file": "@repo/EntryB/Program.cs",
+        "id": "[\"csharp\",\"@repo/Collisions.sln\",\"@repo/EntryB/Program.cs\",\"@repo/Collisions.sln|[EntryB]::Worker::Seed()\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "method",
+        "label": "Seed",
+        "language": "csharp",
+        "line": 5,
+        "namespace": "",
+        "project": "EntryB",
+        "signature": "[EntryB]::Worker::Seed()",
+        "visibility": "public"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/Collisions.sln",
+        "container": "Worker",
+        "container_visibility": "public",
+        "file": "@repo/EntryB/Program.cs",
+        "id": "[\"csharp\",\"@repo/Collisions.sln\",\"@repo/EntryB/Program.cs\",\"@repo/Collisions.sln|[EntryB]::Worker::Work()\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "method",
+        "label": "Work",
+        "language": "csharp",
+        "line": 6,
+        "namespace": "",
+        "project": "EntryB",
+        "signature": "[EntryB]::Worker::Work()",
+        "visibility": "public"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/Collisions.sln",
+        "container": "Worker",
+        "container_visibility": "public",
+        "file": "@repo/EntryB/Program.cs",
+        "id": "[\"csharp\",\"@repo/Collisions.sln\",\"@repo/EntryB/Program.cs\",\"@repo/Collisions.sln|[EntryB]::Worker::get_Value()\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "accessor",
+        "label": "Value",
+        "language": "csharp",
+        "line": 4,
+        "namespace": "",
+        "project": "EntryB",
+        "signature": "[EntryB]::Worker::get_Value()",
+        "visibility": "public"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/Collisions.sln",
+        "container": "Worker",
+        "container_visibility": "public",
+        "file": "@repo/EntryB/Program.cs",
+        "id": "[\"csharp\",\"@repo/Collisions.sln\",\"@repo/EntryB/Program.cs\",\"@repo/Collisions.sln|[EntryB]::Worker::op_Addition(Worker,Worker)\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "operator",
+        "label": "op_Addition",
+        "language": "csharp",
+        "line": 7,
+        "namespace": "",
+        "project": "EntryB",
+        "signature": "[EntryB]::Worker::op_Addition(Worker,Worker)",
+        "visibility": "public"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/Collisions.sln",
+        "container": "Worker",
+        "container_visibility": "public",
+        "file": "@repo/TopA/Program.cs",
+        "id": "[\"csharp\",\"@repo/Collisions.sln\",\"@repo/TopA/Program.cs\",\"@repo/Collisions.sln|[TopA]::Worker::Work()\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "method",
+        "label": "Work",
+        "language": "csharp",
+        "line": 2,
+        "namespace": "",
+        "project": "TopA",
+        "signature": "[TopA]::Worker::Work()",
+        "visibility": "public"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/Collisions.sln",
+        "container": "Worker",
+        "container_visibility": "public",
+        "file": "@repo/TopB/Program.cs",
+        "id": "[\"csharp\",\"@repo/Collisions.sln\",\"@repo/TopB/Program.cs\",\"@repo/Collisions.sln|[TopB]::Worker::Work()\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "method",
+        "label": "Work",
+        "language": "csharp",
+        "line": 2,
+        "namespace": "",
+        "project": "TopB",
+        "signature": "[TopB]::Worker::Work()",
+        "visibility": "public"
+      }
+    ],
+    "roots": [
+      "@repo/Collisions.sln"
+    ]
+  },
+  "schema": "codegraph.graph.v1"
+}

@@ -1,0 +1,572 @@
+{
+  "graph": {
+    "architecture": {
+      "files": [
+        {
+          "annotated_interfaces": [],
+          "annotations": [],
+          "base_types": [
+            "Object",
+            "java.lang.Object"
+          ],
+          "build": "@repo/",
+          "content": "package fixture; public class GeneratedThing { public static void generated() {} }",
+          "file": "@repo/app/build/generated/sources/fixture/fixture/GeneratedThing.java",
+          "is_interface": false,
+          "is_test": false,
+          "kinds": [
+            "class"
+          ],
+          "language": "java",
+          "method_annotations": [],
+          "names": [
+            "GeneratedThing",
+            "fixture.GeneratedThing"
+          ],
+          "namespaces": [
+            "fixture"
+          ],
+          "project": "@repo:app"
+        },
+        {
+          "annotated_interfaces": [],
+          "annotations": [],
+          "base_types": [
+            "Object",
+            "java.lang.Object"
+          ],
+          "build": "@repo/",
+          "content": "package fixture;\npublic final class App {\n    public static void main(String[] args) { Service.work(); GeneratedThing.generated(); }\n    public void disconnected() {}\n    public App() { constructorOnly(); }\n    private void constructorOnly() {}\n    void packageMethod() {}\n    protected void protectedMethod() {}\n    public String toString() { return \"app\"; }\n    public String toString(int value) { return \"overload\"; }\n    public int hashCode() { return 1; }\n    public boolean equals(Object other) { return this == other; }\n}\n",
+          "file": "@repo/app/src/main/java/fixture/App.java",
+          "is_interface": false,
+          "is_test": false,
+          "kinds": [
+            "class"
+          ],
+          "language": "java",
+          "method_annotations": [],
+          "names": [
+            "App",
+            "fixture.App"
+          ],
+          "namespaces": [
+            "fixture"
+          ],
+          "project": "@repo:app"
+        },
+        {
+          "annotated_interfaces": [],
+          "annotations": [],
+          "base_types": [
+            "Object",
+            "java.lang.Object"
+          ],
+          "build": "@repo/",
+          "content": "package fixture;\npublic final class AppTest { public void testOnly() { Service.work(); } }\n",
+          "file": "@repo/app/src/test/java/fixture/AppTest.java",
+          "is_interface": false,
+          "is_test": true,
+          "kinds": [
+            "class"
+          ],
+          "language": "java",
+          "method_annotations": [],
+          "names": [
+            "AppTest",
+            "fixture.AppTest"
+          ],
+          "namespaces": [
+            "fixture"
+          ],
+          "project": "@repo:app"
+        },
+        {
+          "annotated_interfaces": [],
+          "annotations": [],
+          "base_types": [
+            "Object",
+            "java.lang.Object"
+          ],
+          "build": "@repo/",
+          "content": "package fixture;\npublic final class Service { public static void work() {} }\n",
+          "file": "@repo/library/src/main/java/fixture/Service.java",
+          "is_interface": false,
+          "is_test": false,
+          "kinds": [
+            "class"
+          ],
+          "language": "java",
+          "method_annotations": [],
+          "names": [
+            "Service",
+            "fixture.Service"
+          ],
+          "namespaces": [
+            "fixture"
+          ],
+          "project": "@repo:library"
+        }
+      ],
+      "version": 1
+    },
+    "diagnostics": [
+      "Java DI, reflection, framework callback ordering and dynamic runtime targets are supported only where reported by java-callgraph2. Bytecode source columns are unavailable.",
+      "Java DI, reflection, framework callback ordering and dynamic runtime targets are supported only where reported by java-callgraph2. Bytecode source columns are unavailable.",
+      "Java DI, reflection, framework callback ordering and dynamic runtime targets are supported only where reported by java-callgraph2. Bytecode source columns are unavailable.",
+      "Java combined declarations use each caller's owning compile context. Paths may cross incompatible consumer contexts and do not describe a single runtime classpath.",
+      "Java: 0 inherited/reference symbols without declared bodies excluded; 1 external relationships excluded. These references are engine-reported, not resolved by name.",
+      "Java: 0 inherited/reference symbols without declared bodies excluded; 1 external relationships excluded. These references are engine-reported, not resolved by name.",
+      "Java: 0 inherited/reference symbols without declared bodies excluded; 2 external relationships excluded. These references are engine-reported, not resolved by name."
+    ],
+    "edges": [
+      {
+        "certainty": "direct",
+        "count": 1,
+        "from": "[\"java\",\"@repo/\",\"@repo/app/src/main/java/fixture/App.java\",\"[\\\"@repo/\\\",\\\"@repo/app\\\",\\\"main\\\"]|fixture.App:main(java.lang.String[])|void\"]",
+        "kind": "STA",
+        "provenance": "",
+        "to": "[\"java\",\"@repo/\",\"@repo/app/build/generated/sources/fixture/fixture/GeneratedThing.java\",\"[\\\"@repo/\\\",\\\"@repo/app\\\",\\\"main\\\"]|fixture.GeneratedThing:generated()|void\"]"
+      },
+      {
+        "certainty": "direct",
+        "count": 1,
+        "from": "[\"java\",\"@repo/\",\"@repo/app/src/main/java/fixture/App.java\",\"[\\\"@repo/\\\",\\\"@repo/app\\\",\\\"main\\\"]|fixture.App:main(java.lang.String[])|void\"]",
+        "kind": "STA",
+        "provenance": "",
+        "to": "[\"java\",\"@repo/\",\"@repo/library/src/main/java/fixture/Service.java\",\"[\\\"@repo/\\\",\\\"@repo/library\\\",\\\"main\\\"]|fixture.Service:work()|void\"]"
+      },
+      {
+        "certainty": "direct",
+        "count": 1,
+        "from": "[\"java\",\"@repo/\",\"@repo/app/src/test/java/fixture/AppTest.java\",\"[\\\"@repo/\\\",\\\"@repo/app\\\",\\\"test\\\"]|fixture.AppTest:testOnly()|void\"]",
+        "kind": "STA",
+        "provenance": "",
+        "to": "[\"java\",\"@repo/\",\"@repo/library/src/main/java/fixture/Service.java\",\"[\\\"@repo/\\\",\\\"@repo/library\\\",\\\"main\\\"]|fixture.Service:work()|void\"]"
+      }
+    ],
+    "entry_points": {
+      "application_starts": [
+        "[\"java\",\"@repo/\",\"@repo/app/src/main/java/fixture/App.java\",\"[\\\"@repo/\\\",\\\"@repo/app\\\",\\\"main\\\"]|fixture.App:main(java.lang.String[])|void\"]"
+      ],
+      "candidates": [
+        "[\"java\",\"@repo/\",\"@repo/app/src/main/java/fixture/App.java\",\"[\\\"@repo/\\\",\\\"@repo/app\\\",\\\"main\\\"]|fixture.App:constructorOnly()|void\"]",
+        "[\"java\",\"@repo/\",\"@repo/app/src/main/java/fixture/App.java\",\"[\\\"@repo/\\\",\\\"@repo/app\\\",\\\"main\\\"]|fixture.App:disconnected()|void\"]",
+        "[\"java\",\"@repo/\",\"@repo/app/src/main/java/fixture/App.java\",\"[\\\"@repo/\\\",\\\"@repo/app\\\",\\\"main\\\"]|fixture.App:main(java.lang.String[])|void\"]",
+        "[\"java\",\"@repo/\",\"@repo/app/src/main/java/fixture/App.java\",\"[\\\"@repo/\\\",\\\"@repo/app\\\",\\\"main\\\"]|fixture.App:packageMethod()|void\"]",
+        "[\"java\",\"@repo/\",\"@repo/app/src/main/java/fixture/App.java\",\"[\\\"@repo/\\\",\\\"@repo/app\\\",\\\"main\\\"]|fixture.App:protectedMethod()|void\"]",
+        "[\"java\",\"@repo/\",\"@repo/app/src/main/java/fixture/App.java\",\"[\\\"@repo/\\\",\\\"@repo/app\\\",\\\"main\\\"]|fixture.App:toString(int)|java.lang.String\"]",
+        "[\"java\",\"@repo/\",\"@repo/app/src/test/java/fixture/AppTest.java\",\"[\\\"@repo/\\\",\\\"@repo/app\\\",\\\"test\\\"]|fixture.AppTest:testOnly()|void\"]"
+      ],
+      "framework_entries": []
+    },
+    "flow_inventory": {
+      "functions": [
+        {
+          "body": [],
+          "build": "@repo/",
+          "diagnostics": [],
+          "file": "@repo/app/build/generated/sources/fixture/fixture/GeneratedThing.java",
+          "language": "java",
+          "project": "@repo:app",
+          "span": {
+            "end": 80,
+            "start": 47
+          },
+          "symbol": "[\"java\",\"@repo/\",\"@repo/app/build/generated/sources/fixture/fixture/GeneratedThing.java\",\"[\\\"@repo/\\\",\\\"@repo/app\\\",\\\"main\\\"]|fixture.GeneratedThing:generated()|void\"]"
+        },
+        {
+          "body": [],
+          "build": "@repo/",
+          "diagnostics": [],
+          "file": "@repo/app/src/main/java/fixture/App.java",
+          "language": "java",
+          "project": "@repo:app",
+          "span": {
+            "end": 166,
+            "start": 137
+          },
+          "symbol": "[\"java\",\"@repo/\",\"@repo/app/src/main/java/fixture/App.java\",\"[\\\"@repo/\\\",\\\"@repo/app\\\",\\\"main\\\"]|fixture.App:disconnected()|void\"]"
+        },
+        {
+          "body": [],
+          "build": "@repo/",
+          "diagnostics": [],
+          "file": "@repo/app/src/main/java/fixture/App.java",
+          "language": "java",
+          "project": "@repo:app",
+          "span": {
+            "end": 244,
+            "start": 211
+          },
+          "symbol": "[\"java\",\"@repo/\",\"@repo/app/src/main/java/fixture/App.java\",\"[\\\"@repo/\\\",\\\"@repo/app\\\",\\\"main\\\"]|fixture.App:constructorOnly()|void\"]"
+        },
+        {
+          "body": [],
+          "build": "@repo/",
+          "diagnostics": [],
+          "file": "@repo/app/src/main/java/fixture/App.java",
+          "language": "java",
+          "project": "@repo:app",
+          "span": {
+            "end": 272,
+            "start": 249
+          },
+          "symbol": "[\"java\",\"@repo/\",\"@repo/app/src/main/java/fixture/App.java\",\"[\\\"@repo/\\\",\\\"@repo/app\\\",\\\"main\\\"]|fixture.App:packageMethod()|void\"]"
+        },
+        {
+          "body": [],
+          "build": "@repo/",
+          "diagnostics": [],
+          "file": "@repo/app/src/main/java/fixture/App.java",
+          "language": "java",
+          "project": "@repo:app",
+          "span": {
+            "end": 312,
+            "start": 277
+          },
+          "symbol": "[\"java\",\"@repo/\",\"@repo/app/src/main/java/fixture/App.java\",\"[\\\"@repo/\\\",\\\"@repo/app\\\",\\\"main\\\"]|fixture.App:protectedMethod()|void\"]"
+        },
+        {
+          "body": [],
+          "build": "@repo/",
+          "diagnostics": [],
+          "file": "@repo/library/src/main/java/fixture/Service.java",
+          "language": "java",
+          "project": "@repo:library",
+          "span": {
+            "end": 74,
+            "start": 46
+          },
+          "symbol": "[\"java\",\"@repo/\",\"@repo/library/src/main/java/fixture/Service.java\",\"[\\\"@repo/\\\",\\\"@repo/library\\\",\\\"main\\\"]|fixture.Service:work()|void\"]"
+        },
+        {
+          "body": [
+            {
+              "kind": "evaluate",
+              "span": {
+                "end": 102,
+                "start": 87
+              },
+              "value": {
+                "calls": [
+                  {
+                    "diagnostic": null,
+                    "label": "Service.work()",
+                    "span": {
+                      "end": 101,
+                      "start": 87
+                    },
+                    "targets": [
+                      {
+                        "certainty": "direct",
+                        "provenance": "java.javac.source-call",
+                        "symbol": "[\"java\",\"@repo/\",\"@repo/library/src/main/java/fixture/Service.java\",\"[\\\"@repo/\\\",\\\"@repo/library\\\",\\\"main\\\"]|fixture.Service:work()|void\"]"
+                      }
+                    ]
+                  }
+                ],
+                "kind": "value",
+                "regions": [],
+                "span": {
+                  "end": 101,
+                  "start": 87
+                },
+                "text": "Service.work()"
+              }
+            },
+            {
+              "kind": "evaluate",
+              "span": {
+                "end": 130,
+                "start": 103
+              },
+              "value": {
+                "calls": [
+                  {
+                    "diagnostic": null,
+                    "label": "GeneratedThing.generated()",
+                    "span": {
+                      "end": 129,
+                      "start": 103
+                    },
+                    "targets": [
+                      {
+                        "certainty": "direct",
+                        "provenance": "java.javac.source-call",
+                        "symbol": "[\"java\",\"@repo/\",\"@repo/app/build/generated/sources/fixture/fixture/GeneratedThing.java\",\"[\\\"@repo/\\\",\\\"@repo/app\\\",\\\"main\\\"]|fixture.GeneratedThing:generated()|void\"]"
+                      }
+                    ]
+                  }
+                ],
+                "kind": "value",
+                "regions": [],
+                "span": {
+                  "end": 129,
+                  "start": 103
+                },
+                "text": "GeneratedThing.generated()"
+              }
+            }
+          ],
+          "build": "@repo/",
+          "diagnostics": [],
+          "file": "@repo/app/src/main/java/fixture/App.java",
+          "language": "java",
+          "project": "@repo:app",
+          "span": {
+            "end": 132,
+            "start": 46
+          },
+          "symbol": "[\"java\",\"@repo/\",\"@repo/app/src/main/java/fixture/App.java\",\"[\\\"@repo/\\\",\\\"@repo/app\\\",\\\"main\\\"]|fixture.App:main(java.lang.String[])|void\"]"
+        },
+        {
+          "body": [
+            {
+              "kind": "evaluate",
+              "span": {
+                "end": 86,
+                "start": 71
+              },
+              "value": {
+                "calls": [
+                  {
+                    "diagnostic": null,
+                    "label": "Service.work()",
+                    "span": {
+                      "end": 85,
+                      "start": 71
+                    },
+                    "targets": [
+                      {
+                        "certainty": "direct",
+                        "provenance": "java.javac.source-call",
+                        "symbol": "[\"java\",\"@repo/\",\"@repo/library/src/main/java/fixture/Service.java\",\"[\\\"@repo/\\\",\\\"@repo/library\\\",\\\"main\\\"]|fixture.Service:work()|void\"]"
+                      }
+                    ]
+                  }
+                ],
+                "kind": "value",
+                "regions": [],
+                "span": {
+                  "end": 85,
+                  "start": 71
+                },
+                "text": "Service.work()"
+              }
+            }
+          ],
+          "build": "@repo/",
+          "diagnostics": [],
+          "file": "@repo/app/src/test/java/fixture/AppTest.java",
+          "language": "java",
+          "project": "@repo:app",
+          "span": {
+            "end": 88,
+            "start": 46
+          },
+          "symbol": "[\"java\",\"@repo/\",\"@repo/app/src/test/java/fixture/AppTest.java\",\"[\\\"@repo/\\\",\\\"@repo/app\\\",\\\"test\\\"]|fixture.AppTest:testOnly()|void\"]"
+        },
+        {
+          "body": [
+            {
+              "kind": "return",
+              "span": {
+                "end": 418,
+                "start": 400
+              },
+              "value": {
+                "calls": [],
+                "kind": "value",
+                "regions": [],
+                "span": {
+                  "end": 417,
+                  "start": 407
+                },
+                "text": "\"overload\""
+              }
+            }
+          ],
+          "build": "@repo/",
+          "diagnostics": [],
+          "file": "@repo/app/src/main/java/fixture/App.java",
+          "language": "java",
+          "project": "@repo:app",
+          "span": {
+            "end": 420,
+            "start": 364
+          },
+          "symbol": "[\"java\",\"@repo/\",\"@repo/app/src/main/java/fixture/App.java\",\"[\\\"@repo/\\\",\\\"@repo/app\\\",\\\"main\\\"]|fixture.App:toString(int)|java.lang.String\"]"
+        }
+      ],
+      "version": 1
+    },
+    "nodes": [
+      {
+        "body_unavailable": false,
+        "build": "@repo/",
+        "container": "fixture.App",
+        "container_visibility": "public",
+        "file": "@repo/app/src/main/java/fixture/App.java",
+        "id": "[\"java\",\"@repo/\",\"@repo/app/src/main/java/fixture/App.java\",\"[\\\"@repo/\\\",\\\"@repo/app\\\",\\\"main\\\"]|fixture.App:constructorOnly()|void\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "method",
+        "label": "constructorOnly",
+        "language": "java",
+        "line": 6,
+        "namespace": "fixture",
+        "project": "@repo:app",
+        "signature": "fixture.App:constructorOnly() -> void",
+        "visibility": "private"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/",
+        "container": "fixture.App",
+        "container_visibility": "public",
+        "file": "@repo/app/src/main/java/fixture/App.java",
+        "id": "[\"java\",\"@repo/\",\"@repo/app/src/main/java/fixture/App.java\",\"[\\\"@repo/\\\",\\\"@repo/app\\\",\\\"main\\\"]|fixture.App:disconnected()|void\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "method",
+        "label": "disconnected",
+        "language": "java",
+        "line": 4,
+        "namespace": "fixture",
+        "project": "@repo:app",
+        "signature": "fixture.App:disconnected() -> void",
+        "visibility": "public"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/",
+        "container": "fixture.App",
+        "container_visibility": "public",
+        "file": "@repo/app/src/main/java/fixture/App.java",
+        "id": "[\"java\",\"@repo/\",\"@repo/app/src/main/java/fixture/App.java\",\"[\\\"@repo/\\\",\\\"@repo/app\\\",\\\"main\\\"]|fixture.App:main(java.lang.String[])|void\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "method",
+        "label": "main",
+        "language": "java",
+        "line": 3,
+        "namespace": "fixture",
+        "project": "@repo:app",
+        "signature": "fixture.App:main(java.lang.String[]) -> void",
+        "visibility": "public"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/",
+        "container": "fixture.App",
+        "container_visibility": "public",
+        "file": "@repo/app/src/main/java/fixture/App.java",
+        "id": "[\"java\",\"@repo/\",\"@repo/app/src/main/java/fixture/App.java\",\"[\\\"@repo/\\\",\\\"@repo/app\\\",\\\"main\\\"]|fixture.App:packageMethod()|void\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "method",
+        "label": "packageMethod",
+        "language": "java",
+        "line": 7,
+        "namespace": "fixture",
+        "project": "@repo:app",
+        "signature": "fixture.App:packageMethod() -> void",
+        "visibility": "package"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/",
+        "container": "fixture.App",
+        "container_visibility": "public",
+        "file": "@repo/app/src/main/java/fixture/App.java",
+        "id": "[\"java\",\"@repo/\",\"@repo/app/src/main/java/fixture/App.java\",\"[\\\"@repo/\\\",\\\"@repo/app\\\",\\\"main\\\"]|fixture.App:protectedMethod()|void\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "method",
+        "label": "protectedMethod",
+        "language": "java",
+        "line": 8,
+        "namespace": "fixture",
+        "project": "@repo:app",
+        "signature": "fixture.App:protectedMethod() -> void",
+        "visibility": "protected"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/",
+        "container": "fixture.App",
+        "container_visibility": "public",
+        "file": "@repo/app/src/main/java/fixture/App.java",
+        "id": "[\"java\",\"@repo/\",\"@repo/app/src/main/java/fixture/App.java\",\"[\\\"@repo/\\\",\\\"@repo/app\\\",\\\"main\\\"]|fixture.App:toString(int)|java.lang.String\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "method",
+        "label": "toString",
+        "language": "java",
+        "line": 10,
+        "namespace": "fixture",
+        "project": "@repo:app",
+        "signature": "fixture.App:toString(int) -> java.lang.String",
+        "visibility": "public"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/",
+        "container": "fixture.AppTest",
+        "container_visibility": "public",
+        "file": "@repo/app/src/test/java/fixture/AppTest.java",
+        "id": "[\"java\",\"@repo/\",\"@repo/app/src/test/java/fixture/AppTest.java\",\"[\\\"@repo/\\\",\\\"@repo/app\\\",\\\"test\\\"]|fixture.AppTest:testOnly()|void\"]",
+        "is_generated": false,
+        "is_test": true,
+        "kind": "method",
+        "label": "testOnly",
+        "language": "java",
+        "line": 2,
+        "namespace": "fixture",
+        "project": "@repo:app",
+        "signature": "fixture.AppTest:testOnly() -> void",
+        "visibility": "public"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/",
+        "container": "fixture.GeneratedThing",
+        "container_visibility": "public",
+        "file": "@repo/app/build/generated/sources/fixture/fixture/GeneratedThing.java",
+        "id": "[\"java\",\"@repo/\",\"@repo/app/build/generated/sources/fixture/fixture/GeneratedThing.java\",\"[\\\"@repo/\\\",\\\"@repo/app\\\",\\\"main\\\"]|fixture.GeneratedThing:generated()|void\"]",
+        "is_generated": true,
+        "is_test": false,
+        "kind": "method",
+        "label": "generated",
+        "language": "java",
+        "line": 1,
+        "namespace": "fixture",
+        "project": "@repo:app",
+        "signature": "fixture.GeneratedThing:generated() -> void",
+        "visibility": "public"
+      },
+      {
+        "body_unavailable": false,
+        "build": "@repo/",
+        "container": "fixture.Service",
+        "container_visibility": "public",
+        "file": "@repo/library/src/main/java/fixture/Service.java",
+        "id": "[\"java\",\"@repo/\",\"@repo/library/src/main/java/fixture/Service.java\",\"[\\\"@repo/\\\",\\\"@repo/library\\\",\\\"main\\\"]|fixture.Service:work()|void\"]",
+        "is_generated": false,
+        "is_test": false,
+        "kind": "method",
+        "label": "work",
+        "language": "java",
+        "line": 2,
+        "namespace": "fixture",
+        "project": "@repo:library",
+        "signature": "fixture.Service:work() -> void",
+        "visibility": "public"
+      }
+    ],
+    "roots": [
+      "@repo/"
+    ]
+  },
+  "schema": "codegraph.graph.v1"
+}
