@@ -8,6 +8,8 @@ use std::{collections::HashSet, sync::Arc};
 mod aggregation;
 #[path = "projection/focus.rs"]
 mod focus;
+#[path = "projection/focus_level.rs"]
+mod focus_level;
 #[path = "projection/geometry.rs"]
 mod geometry;
 #[path = "projection/groups.rs"]
@@ -83,6 +85,7 @@ pub enum FocusTarget {
     Method(String),
     Group(String),
     ClassMethods(String),
+    GroupChildren(String),
 }
 
 #[derive(Clone, Debug)]

@@ -101,11 +101,10 @@ impl State {
             .nodes
             .iter()
             .any(|node| node.key == key && node.group_kind == Some(GroupKind::Class));
-        self.nav.expanded.insert(key.clone());
         let target = if class {
             FocusTarget::ClassMethods(key)
         } else {
-            FocusTarget::Group(key)
+            FocusTarget::GroupChildren(key)
         };
         self.apply_focus(target);
     }

@@ -128,8 +128,10 @@ fn centered(runtime: &Runtime<State>, member: u32) {
 }
 
 fn classes(runtime: &mut Runtime<State>) {
+    let expanded = runtime.state.nav.expanded.clone();
     let key = node_control(runtime, "app");
     double_click(runtime, &key);
+    assert_eq!(runtime.state.nav.expanded, expanded);
     assert!(
         runtime
             .state
@@ -137,6 +139,151 @@ fn classes(runtime: &mut Runtime<State>) {
             .nodes
             .iter()
             .all(|n| n.group_kind == Some(GroupKind::Class))
+    );
+}
+
+fn grouped_runtime(grouping: crate::projection::Grouping) -> Runtime<State> {
+    let mut runtime = runtime();
+    let mut data = runtime.state.graph.as_ref().unwrap().data.as_ref().clone();
+    for node in &mut data.nodes {
+        node.namespace = format!("sample.{}", node.container.to_lowercase());
+        node.file = format!(
+            "/build/src/{}/{}.java",
+            node.container.to_lowercase(),
+            node.container
+        );
+    }
+    runtime.state.graph = Some(Arc::new(GraphIndex::new(Arc::new(data)).unwrap()));
+    runtime.state.set_grouping(grouping);
+    frames(&mut runtime, 3);
+    runtime
+}
+
+#[test]
+fn package_focus_and_drill_roundtrip_preserve_overview_expansion_and_history() {
+    use crate::projection::Grouping;
+    let mut runtime = grouped_runtime(Grouping::Namespace);
+    let expanded = runtime.state.nav.expanded.clone();
+    let project = node_control(&runtime, "app");
+    double_click(&mut runtime, &project);
+    assert!(matches!(
+        runtime.state.nav.focus_target,
+        Some(FocusTarget::GroupChildren(_))
+    ));
+    assert_eq!(runtime.state.nav.expanded, expanded);
+    // Persisted explicit drill state restores the same namespace-level graph.
+    let saved = serde_json::to_value(&runtime.state.nav).unwrap();
+    runtime.state.nav = serde_json::from_value(saved).unwrap();
+    runtime.state.changed();
+    frames(&mut runtime, 3);
+    assert!(
+        runtime
+            .state
+            .graph_view
+            .nodes
+            .iter()
+            .all(|node| node.group_kind == Some(GroupKind::Namespace))
+    );
+    let center = node_control(&runtime, "sample.center");
+    click(&mut runtime, &center);
+    frames(&mut runtime, 40);
+    assert_eq!(runtime.state.graph_view.nodes.len(), 3);
+    assert!(
+        runtime
+            .state
+            .graph_view
+            .nodes
+            .iter()
+            .all(|node| node.group_kind == Some(GroupKind::Namespace))
+    );
+    let focused = serde_json::to_value(&runtime.state.nav).unwrap();
+    let center = node_control(&runtime, "sample.center");
+    double_click(&mut runtime, &center);
+    assert!(
+        runtime
+            .state
+            .graph_view
+            .nodes
+            .iter()
+            .all(|node| node.group_kind == Some(GroupKind::Class))
+    );
+    assert_eq!(runtime.state.nav.expanded, expanded);
+    click(&mut runtime, "back");
+    assert_eq!(serde_json::to_value(&runtime.state.nav).unwrap(), focused);
+    click(&mut runtime, "forward");
+    assert!(
+        runtime
+            .state
+            .graph_view
+            .nodes
+            .iter()
+            .all(|node| node.group_kind == Some(GroupKind::Class))
+    );
+}
+
+#[test]
+fn folder_drill_aligns_every_branch_then_class_focus_collapses_expanded_neighbors() {
+    use crate::projection::Grouping;
+    let mut runtime = grouped_runtime(Grouping::Folder);
+    let project = node_control(&runtime, "app");
+    double_click(&mut runtime, &project);
+    let src = node_control(&runtime, "src");
+    double_click(&mut runtime, &src);
+    assert!(
+        runtime
+            .state
+            .graph_view
+            .nodes
+            .iter()
+            .all(|node| node.group_kind == Some(GroupKind::Folder))
+    );
+    let folder = node_control(&runtime, "src/center");
+    click(&mut runtime, &folder);
+    frames(&mut runtime, 40);
+    assert_eq!(runtime.state.graph_view.nodes.len(), 3);
+    let folder = node_control(&runtime, "src/center");
+    double_click(&mut runtime, &folder);
+    assert!(
+        runtime
+            .state
+            .graph_view
+            .nodes
+            .iter()
+            .all(|node| node.group_kind == Some(GroupKind::Class))
+    );
+    let caller = runtime
+        .state
+        .graph_view
+        .nodes
+        .iter()
+        .find(|node| node.label == "Caller")
+        .unwrap()
+        .key
+        .clone();
+    runtime.state.nav.expanded.insert(caller);
+    let before = runtime.state.nav.expanded.clone();
+    let center = node_control(&runtime, "Center");
+    click(&mut runtime, &center);
+    frames(&mut runtime, 40);
+    assert_eq!(runtime.state.nav.expanded, before);
+    assert!(
+        runtime
+            .state
+            .graph_view
+            .nodes
+            .iter()
+            .all(|node| node.group_kind == Some(GroupKind::Class))
+    );
+    assert_eq!(runtime.state.graph_view.nodes.len(), 3);
+    runtime.state.set_depth(2);
+    frames(&mut runtime, 3);
+    assert!(
+        runtime
+            .state
+            .graph_view
+            .nodes
+            .iter()
+            .all(|node| node.group_kind == Some(GroupKind::Class))
     );
 }
 

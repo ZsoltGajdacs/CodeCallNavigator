@@ -72,6 +72,60 @@ fn grouped_depth_ignores_internal_calls_and_class_rows_are_complete() {
         [-1, 0, 1]
     );
 }
+
+#[test]
+fn class_focus_expands_collapsed_neighbor_folders_before_traversing() {
+    let mut data = graph().data.as_ref().clone();
+    for (index, node) in data.nodes.iter_mut().enumerate() {
+        node.file = format!(
+            "/build/{}/{}.java",
+            if index < 2 { "callers" } else { "services" },
+            node.container
+        );
+    }
+    // Class2 shares a folder with the selected class, but its unrelated method
+    // must not turn the folder into an extra root or a connection hub.
+    data.nodes.push(Node {
+        id: "unrelated".into(),
+        build: "/build".into(),
+        project: "app".into(),
+        container: "Unrelated".into(),
+        file: "/build/services/Unrelated.java".into(),
+        ..Default::default()
+    });
+    data.edges.push(Edge {
+        from: 5,
+        to: 6,
+        kind: "call".into(),
+        certainty: "direct".into(),
+        count: 1,
+        provenance: String::new(),
+    });
+    let graph = GraphIndex::new(Arc::new(data)).unwrap();
+    let mut req = request(FocusTarget::Group(
+        "[\"class\",\"/build\",\"app\",\"Class1\"]".into(),
+    ));
+    req.grouping = Grouping::Folder;
+    req.expanded.extend([
+        "[\"project\",\"/build\",\"app\"]".into(),
+        "[\"folder\",\"/build\",\"app\",\"services\"]".into(),
+    ]);
+    let view = project(&graph, &req);
+    assert!(
+        view.nodes
+            .iter()
+            .all(|node| node.group_kind == Some(GroupKind::Class))
+    );
+    assert_eq!(
+        view.nodes
+            .iter()
+            .map(|node| node.label.as_str())
+            .collect::<Vec<_>>(),
+        ["Class0", "Class1", "Class2"]
+    );
+    assert_eq!(view.edges.len(), 2);
+    assert_eq!(view.focus_keys.len(), 1);
+}
 #[test]
 fn class_methods_focus_retains_all_its_methods_and_external_context() {
     let graph = graph();
@@ -148,7 +202,7 @@ fn recursive_shared_nodes_are_unique_and_ties_go_above() {
 }
 
 #[test]
-fn expanded_group_focus_resolves_to_children_and_invalid_focus_returns_overview() {
+fn expanded_group_focus_keeps_its_level_and_invalid_focus_returns_overview() {
     let graph = graph();
     let mut req = request(FocusTarget::Group(
         "[\"project\",\"/build\",\"app\"]".into(),
@@ -157,17 +211,20 @@ fn expanded_group_focus_resolves_to_children_and_invalid_focus_returns_overview(
     req.expanded
         .insert("[\"project\",\"/build\",\"app\"]".into());
     let view = project(&graph, &req);
-    assert_eq!(view.focus_keys.len(), 3);
+    assert_eq!(view.focus_keys.len(), 1);
     assert!(
         view.nodes
             .iter()
-            .all(|n| n.group_kind == Some(GroupKind::Class))
+            .all(|n| n.group_kind == Some(GroupKind::Project))
     );
     req.focus_target = Some(FocusTarget::Method("missing".into()));
     let fallback = project(&graph, &req);
     assert!(!fallback.focus_valid);
     assert_eq!(fallback.nodes.len(), 3);
 }
+
+#[path = "level_tests.rs"]
+mod level_tests;
 
 #[test]
 fn focused_pagination_pins_the_anchor_and_counts_only_neighborhood_omissions() {

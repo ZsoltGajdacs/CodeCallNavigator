@@ -60,6 +60,12 @@ Click an element to center its call tree: callers appear above, callees below,
 and unrelated elements are omitted. Depth applies independently to both sides;
 click a neighbor to continue walking the tree. A single-click waits for the system
 double-click interval before moving the graph, so the second click can land reliably.
+Focused connections match the selected element: classes connect to classes,
+methods to methods, and namespaces/packages to complete namespaces/packages.
+Folders connect at the selected directory depth, using shallower containing folders
+where needed. Project and layer selections likewise show their own level. Focus
+automatically aligns previously expanded or collapsed branches without changing
+the saved overview expansion state.
 Double-click a group to drill through its hierarchy to classes. Each class box
 lists its filtered methods, with up to 12 rows visible and independent scrolling
 for longer lists. Click a method row to enter that method's tree, or double-click

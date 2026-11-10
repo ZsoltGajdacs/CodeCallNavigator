@@ -1,0 +1,8 @@
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.22s
+     Running tests/packaged_java.rs (target/debug/deps/packaged_java-c905f9bd6408971d)
+
+running 2 tests
+test missing_packaged_extension_does_not_fall_back_to_development_artifacts ... ok
+test packaged_resources_analyze_maven_and_gradle_without_development_paths ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 16.31s

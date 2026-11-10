@@ -4,41 +4,50 @@ use super::{
     Request, Scope, Selection, SourcePath, ViewEdge, ViewNode,
 };
 use super::{
-    groups::{groups, relative_file},
+    focus_level::{FocusProjection, PresentationLevel},
+    groups::{Group, groups, relative_file},
     labels, layers, ordering,
 };
 use codegraph::{graph::GraphIndex, model::Node};
 use std::collections::{BTreeMap, HashMap, HashSet};
 
-fn collapsed_group(node: &Node, request: &Request) -> Option<ViewNode> {
-    if request.scope != Scope::Overview || request.grouping == Grouping::Method {
-        return None;
-    }
-    let (key, label, kind) = groups(node, request)
-        .into_iter()
-        .find(|(key, _, _)| !request.expanded.contains(key))?;
-    let display = if kind == GroupKind::Class {
+fn group_node(node: &Node, request: &Request, group: Group) -> ViewNode {
+    let display = if group.kind == GroupKind::Class {
         labels::class(node)
     } else {
         labels::Label {
-            text: label.clone(),
-            description: label,
+            text: group.label.clone(),
+            description: group.label,
         }
     };
-    Some(ViewNode {
-        key,
+    ViewNode {
+        key: group.key,
         label: display.text,
         description: display.description,
-        group_kind: Some(kind),
+        group_kind: Some(group.kind),
         detail: node.project.clone(),
         layer: layers::assignment(node, request).map(str::to_owned),
         ..Default::default()
-    })
+    }
 }
 
-fn visible_node(node: &Node, index: u32, request: &Request) -> ViewNode {
-    if let Some(group) = collapsed_group(node, request) {
-        return group;
+fn visible_node(
+    node: &Node,
+    index: u32,
+    request: &Request,
+    level: Option<PresentationLevel>,
+) -> ViewNode {
+    let group = match level {
+        Some(level) => level.representative(node, request),
+        None if request.scope == Scope::Overview && request.grouping != Grouping::Method => {
+            groups(node, request)
+                .into_iter()
+                .find(|group| !request.expanded.contains(&group.key))
+        }
+        None => None,
+    };
+    if let Some(group) = group {
+        return group_node(node, request, group);
     }
     let display = labels::method(node);
     ViewNode {
@@ -59,7 +68,12 @@ struct Aggregates {
     collapsed_edges: usize,
 }
 
-fn aggregate_nodes(graph: &GraphIndex, request: &Request, selection: &Selection) -> Aggregates {
+fn aggregate_nodes(
+    graph: &GraphIndex,
+    request: &Request,
+    selection: &Selection,
+    level: Option<PresentationLevel>,
+) -> Aggregates {
     let summary = graph.filter_summary(&request.filter);
     let starts: HashSet<_> = graph
         .data
@@ -71,7 +85,7 @@ fn aggregate_nodes(graph: &GraphIndex, request: &Request, selection: &Selection)
     let mut representatives = BTreeMap::new();
     let mut members = HashMap::new();
     for &index in &selection.nodes {
-        let mut node = visible_node(&graph.data.nodes[index as usize], index, request);
+        let mut node = visible_node(&graph.data.nodes[index as usize], index, request, level);
         node.application_start = node.member.is_some() && starts.contains(&node.key);
         members.insert(index, node.key.clone());
         let representative = representatives.entry(node.key.clone()).or_insert(node);
@@ -168,7 +182,7 @@ pub(super) fn project_page(
     request: &Request,
     selection: Selection,
 ) -> GraphView {
-    let mut aggregates = aggregate_nodes(graph, request, &selection);
+    let mut aggregates = aggregate_nodes(graph, request, &selection, None);
     aggregate_edges(graph, &selection, &mut aggregates);
     let roots = selection
         .roots
@@ -198,29 +212,19 @@ pub(super) fn focused(graph: &GraphIndex, request: &Request, target: &FocusTarge
     all_request.focus_target = None;
     let mut selection = super::selection::all(graph, &all_request);
     layers::select(graph, &all_request, &mut selection);
-    let method_view = matches!(
-        target,
-        FocusTarget::Method(_) | FocusTarget::ClassMethods(_)
-    );
-    if method_view {
-        all_request.grouping = Grouping::Method;
-    }
-    let mut aggregates = aggregate_nodes(graph, &all_request, &selection);
+    let Some(focus) = FocusProjection::resolve(graph, &all_request, &selection.nodes, target)
+    else {
+        return super::project(graph, &all_request);
+    };
+    let mut aggregates = aggregate_nodes(graph, &all_request, &selection, Some(focus.level));
     aggregate_edges(graph, &selection, &mut aggregates);
-    let mut roots: Vec<_> = selection
-        .nodes
+    let mut roots: Vec<_> = focus
+        .members
         .iter()
-        .filter(|&&index| target_contains(graph, index, request, target))
         .filter_map(|index| aggregates.members.get(index).copied())
         .collect();
     roots.sort_unstable();
     roots.dedup();
-    if roots.is_empty() {
-        let mut fallback = request.clone();
-        fallback.focus_target = None;
-        fallback.scope = Scope::Overview;
-        return super::project(graph, &fallback);
-    }
     let focus_keys = roots
         .iter()
         .map(|&i| aggregates.nodes[i].key.clone())
@@ -245,21 +249,6 @@ pub(super) fn focused(graph: &GraphIndex, request: &Request, target: &FocusTarge
     let summary = graph.filter_summary(&request.filter);
     (view.hidden_nodes, view.hidden_edges) = (summary.hidden_nodes, summary.hidden_edges);
     view
-}
-
-fn target_contains(
-    graph: &GraphIndex,
-    index: u32,
-    request: &Request,
-    target: &FocusTarget,
-) -> bool {
-    let node = &graph.data.nodes[index as usize];
-    match target {
-        FocusTarget::Method(id) => &node.id == id,
-        FocusTarget::Group(key) | FocusTarget::ClassMethods(key) => {
-            groups(node, request).iter().any(|(id, _, _)| id == key)
-        }
-    }
 }
 
 fn page(

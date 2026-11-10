@@ -497,7 +497,7 @@ fn graph_single_click_centers_after_click_interval_and_wheel_zooms() {
 }
 
 #[test]
-fn group_double_click_expands_and_selection_is_reconciled() {
+fn group_double_click_drills_without_expanding_overview_and_selection_is_reconciled() {
     let mut runtime = runtime();
     runtime
         .state
@@ -514,8 +514,28 @@ fn group_double_click_expands_and_selection_is_reconciled() {
     runtime.pointer_down(x, y);
     runtime.pointer_up(x, y);
     runtime.frame(0.05);
-    assert!(runtime.state.nav.expanded.contains(&key));
-    assert_eq!(runtime.state.back.len(), before + 1);
+    assert_eq!(
+        (
+            runtime.state.nav.expanded.len(),
+            &runtime.state.nav.focus_target,
+            runtime.state.back.len()
+        ),
+        (
+            0,
+            &Some(crate::projection::FocusTarget::GroupChildren(key)),
+            before + 1
+        )
+    );
+    runtime.frame(1.0 / 60.0);
+    runtime.frame(1.0 / 60.0);
+    assert!(
+        runtime
+            .state
+            .graph_view
+            .nodes
+            .iter()
+            .all(|node| node.group_kind == Some(crate::projection::GroupKind::Class))
+    );
     runtime.state.graph_view.nodes.clear();
     runtime.state.reconcile_visual_selection();
     assert!(runtime.state.visual_selection.is_none());

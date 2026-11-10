@@ -48,6 +48,7 @@ fn main() {
             ("dense-canvas", canvas_fixture::install),
             ("saved-canvas", canvas_fixture::saved),
             ("class-tree", traversal_scenes::classes),
+            ("aligned-classes", traversal_scenes::aligned_classes),
             ("method-tree", traversal_scenes::methods),
             ("function-flow", flow_scenes::install),
             ("source-preview", source_popup::scenes::source),

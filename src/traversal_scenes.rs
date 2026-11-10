@@ -1,7 +1,7 @@
 //! Explicit class and method fixtures exercising production traversal and Graphviz geometry.
 use crate::{
     app::{Navigation, State},
-    projection::{self, FocusTarget},
+    projection::{self, FocusTarget, Grouping},
 };
 use codegraph::{
     analyzers::AnalyzerRuntime,
@@ -11,18 +11,23 @@ use codegraph::{
 use std::sync::Arc;
 
 pub fn classes(state: &mut State) {
-    install(state, false);
+    install(state, false, Grouping::Project);
 }
 
 pub fn methods(state: &mut State) {
-    install(state, true);
+    install(state, true, Grouping::Project);
 }
 
-fn install(state: &mut State, method: bool) {
+pub fn aligned_classes(state: &mut State) {
+    install(state, false, Grouping::Folder);
+}
+
+fn install(state: &mut State, method: bool, grouping: Grouping) {
     state.deterministic = true;
     state.jobs.boot.cancel();
     state.root = rune::TextEdit::new("Centered traversal fixture · no project scanned");
     state.nav = Navigation::default();
+    state.nav.grouping = grouping;
     state.nav.depth = 1;
     let result = (|| {
         let runtime = Arc::new(AnalyzerRuntime::discover()?);
@@ -31,16 +36,30 @@ fn install(state: &mut State, method: bool) {
         let project_view = projection::project(&graph, &state.request().unwrap());
         let project = project_view.nodes.first().expect("fixture project");
         state.nav.expanded.insert(project.key.clone());
-        let class_view = projection::project(&graph, &state.request().unwrap());
-        let center = class_view
-            .nodes
-            .iter()
-            .find(|n| n.label == "OrderService")
-            .expect("fixture center class");
+        // Only the center's branch is expanded; connected callers and callees
+        // live under collapsed folders, while a caller class was expanded before.
+        if grouping == Grouping::Folder {
+            state.nav.expanded.insert(
+                serde_json::to_string(&["folder", "fixture", "Order application", "services"])
+                    .unwrap(),
+            );
+            state.nav.expanded.insert(
+                serde_json::to_string(&[
+                    "class",
+                    "fixture",
+                    "Order application",
+                    "OrderController",
+                ])
+                .unwrap(),
+            );
+        }
         state.nav.focus_target = Some(if method {
             FocusTarget::Method("traversal/1".into())
         } else {
-            FocusTarget::Group(center.key.clone())
+            FocusTarget::Group(
+                serde_json::to_string(&["class", "fixture", "Order application", "OrderService"])
+                    .unwrap(),
+            )
         });
         state.nav.selected = method.then(|| "traversal/1".into());
         let view = projection::layout(
@@ -118,6 +137,14 @@ fn node(index: usize, container: &str, label: &str, signature: &str) -> Node {
         signature: signature.into(),
         kind: "method".into(),
         language: "java".into(),
+        file: format!(
+            "fixture/{}/{container}.java",
+            match container {
+                "OrderController" => "api",
+                "OrderService" => "services",
+                _ => "utilities",
+            }
+        ),
         ..Default::default()
     }
 }
