@@ -9,6 +9,7 @@ class Bindings {
   constructor(context,graph) {
     this.context=context; this.ts=context.ts; this.graph=graph;
     this.declarations=new Map(); this.files=[]; this.props=new Map(); this.byIndex=new Map(); this.invocations=new Map();
+    this.exportDeclarations=new WeakMap();
   }
   collect() {
     const seen=new Set();
@@ -24,6 +25,7 @@ class Bindings {
     seen.add(source);
     const module=this.graph.node(file,owner,'module',{label:`<module:${path.basename(source)}>`,checker});
     this.declarations.set(declarationKey(file),module);
+    this.exportDeclarations.set(file,module);
     const visit=node=>{this.collectDeclaration(node,owner,checker);this.ts.forEachChild(node,visit);};
     visit(file);
     this.files.push({file,checker,module,owner});
@@ -45,10 +47,12 @@ class Bindings {
   registerDeclaration(node,owner,checker,facts) {
     const index=this.graph.node(node,owner,facts.kind,{label:facts.label,checker});
     this.declarations.set(declarationKey(node),index);
+    this.exportDeclarations.set(node,index);
     if(excludedMethod(facts)) this.graph.excluded.add(index);
     return index;
   }
   index(node) { return node && this.declarations.get(declarationKey(node)); }
+  exportIndex(node) { return node && this.exportDeclarations.get(node); }
   unalias(checker,symbol) { return symbol && (symbol.flags & this.ts.SymbolFlags.Alias ? checker.getAliasedSymbol(symbol) : symbol); }
   symbol(checker,node) {
     const symbol=checker.getSymbolAtLocation(node);

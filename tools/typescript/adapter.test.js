@@ -31,6 +31,34 @@ test('semantic export keys survive comments and declaration movement within a fi
   assert.deepEqual(named(before),named(after));
   assert.notDeepEqual(before.nodes.map(n=>n.id),after.nodes.map(n=>n.id));
 });
+test('exact semantic export identities keep module declarations and named callable kinds',t=>{
+  const declarations=[
+    'export function first():number{return 1}',
+    'export function overloaded(value:string):string; export function overloaded(value:number):number; export function overloaded(value:string|number){return value}',
+    'export class A{public run():number{return 1}}',
+    'export class B{public run():number{return 2}}',
+    'export function entry(){return first()}',
+  ];
+  const root=fixture(t,{'tsconfig.json':config,'src/main.ts':declarations.join('\n')});
+  const before=run(root);
+  const modules=before.nodes.filter(node=>node.kind==='module');
+  assert.equal(modules.length,1);
+  assert.equal(before.export_identities[modules[0].id],'<module>');
+  const callables=graph=>graph.nodes.filter(node=>node.kind==='function');
+  for(const node of callables(before)) {
+    const base=JSON.parse(JSON.parse(before.export_identities[node.id])[0]);
+    assert.equal(base[1],node.label==='run'?'MethodDeclaration':'FunctionDeclaration');
+    assert.equal(base[2],node.label);
+    assert.equal(base[3],node.signature);
+  }
+  const keys=graph=>callables(graph).map(node=>graph.export_identities[node.id]).sort();
+  assert.equal(new Set(keys(before)).size,callables(before).length);
+  fs.writeFileSync(path.join(root,'src/main.ts'),'// reordered and edited named bodies\n'+declarations.toReversed().join('\n').replaceAll('return 1','return 3'));
+  const after=run(root);
+  assert.deepEqual(keys(before),keys(after));
+  assert.equal(after.export_identities[after.nodes.find(node=>node.kind==='module').id],'<module>');
+  assert.deepEqual(edges(before,'entry'),edges(after,'entry'));
+});
 test('anonymous export keys ignore trivia and distinguish owning classes',t=>{
   const source='export class A{run(){return ()=>1}} export class B{run(){return ()=>1}}';
   const root=fixture(t,{'tsconfig.json':config,'src/main.ts':source});

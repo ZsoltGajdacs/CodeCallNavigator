@@ -42,7 +42,7 @@ class SemanticKeys {
   }
   base(node) {
     const owner=this.owner(node),name=declarationName(this.ts,node);
-    const index=this.bindings.index(node);
+    const index=this.bindings.exportIndex(node);
     const callable=isCallable(this.ts,node)&&index!==undefined;
     const signature=callable?this.bindings.graph.nodes[index].signature:'';
     if(name) return JSON.stringify([owner,this.ts.SyntaxKind[node.kind],name,signature]);
@@ -62,7 +62,7 @@ function semanticKeys(bindings) {
   const {ts,graph}=bindings,keys={},semantic=new SemanticKeys(bindings);
   for(const {file} of bindings.files) {
     const visit=node=>{
-      const index=bindings.index(node);
+      const index=bindings.exportIndex(node);
       if(index!==undefined) keys[graph.nodes[index].id]=ts.isSourceFile(node)?'<module>':semantic.key(node);
       ts.forEachChild(node,visit);
     };
