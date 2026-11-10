@@ -548,7 +548,7 @@ mod acceptance {
         let source = root.path().join("Program.cs");
         fs::write(
             &source,
-            include_str!("../../fixtures/dotnet-policy/Program.cs"),
+            include_str!("../../../../fixtures/dotnet-policy/Program.cs"),
         )
         .unwrap();
         let runtime = super::super::AnalyzerRuntime::discover().unwrap();

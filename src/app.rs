@@ -1,9 +1,9 @@
 pub use crate::navigation::{Navigation, SavedSession};
 use crate::{
-    analyzers::AnalyzerRuntime,
     discovery::BuildTarget,
     jobs::Jobs,
     projection::{FlowDirection, GraphView, Grouping, Request},
+    runtime::Runtime as AnalyzerRuntime,
 };
 use codegraph::{graph::GraphIndex, store::SqliteStore};
 use rune::TextEdit;

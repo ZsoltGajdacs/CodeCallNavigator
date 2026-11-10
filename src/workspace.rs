@@ -1,4 +1,4 @@
-use crate::{analyzers::AnalyzerRuntime, app::SavedSession};
+use crate::{app::SavedSession, runtime::Runtime as AnalyzerRuntime};
 use codegraph::{graph::GraphIndex, store::SqliteStore};
 use std::{path::PathBuf, sync::Arc};
 

@@ -24,7 +24,6 @@ use std::{
 pub struct AnalyzerRuntime {
     pub bundle_root: PathBuf,
     pub java_home: Option<PathBuf>,
-    pub dot: PathBuf,
 }
 
 impl AnalyzerRuntime {
@@ -35,22 +34,23 @@ impl AnalyzerRuntime {
             .and_then(Path::parent)
             .unwrap_or(Path::new("."))
             .join("Resources");
-        let bundle_root = if resources.join("analyzers").is_dir() {
+        let bundle_root = if let Some(configured) = std::env::var_os("CODEGRAPH_RESOURCES") {
+            let root = PathBuf::from(configured);
+            ensure!(
+                root.is_dir(),
+                "CODEGRAPH_RESOURCES is not a directory: {}",
+                root.display()
+            );
+            root
+        } else if resources.join("analyzers").is_dir() {
             resources
         } else {
-            PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            crate::repository_root()
         };
         let java_home = discover_jdk25();
-        let bundled_dot = bundle_root.join("analyzers/graphviz/bin/dot");
-        let dot = if bundled_dot.is_file() {
-            bundled_dot
-        } else {
-            find_tool("dot").unwrap_or_default()
-        };
         Ok(Self {
             bundle_root,
             java_home,
-            dot,
         })
     }
 
@@ -298,7 +298,8 @@ fn source_snapshot(roots: &[PathBuf]) -> Result<Vec<FileFingerprint>> {
 }
 
 fn engine_versions() -> Result<String> {
-    let lock: serde_json::Value = serde_json::from_str(include_str!("../analyzers.lock.json"))?;
+    let lock: serde_json::Value =
+        serde_json::from_str(include_str!("../../../analyzers.lock.json"))?;
     Ok(serde_json::json!({"callatlas": lock["callatlas"], "callatlas_protocol": "callatlas.ir.v3", "java-callgraph2": lock["java-callgraph2"]}).to_string())
 }
 

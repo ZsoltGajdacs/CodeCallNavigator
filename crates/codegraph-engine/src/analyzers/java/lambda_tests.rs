@@ -13,7 +13,7 @@ fn analyze(debug: &str) -> (tempfile::TempDir, GraphData) {
     let input = tests::compile_source_fixture(
         &runtime,
         directory.path(),
-        include_str!("../../../fixtures/java-lambda-names/Flow.java"),
+        include_str!("../../../../../fixtures/java-lambda-names/Flow.java"),
         debug,
     );
     let output = tests::run_callback_engine(&runtime, directory.path(), &input);

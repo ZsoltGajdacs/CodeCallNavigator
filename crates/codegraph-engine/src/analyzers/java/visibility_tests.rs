@@ -11,7 +11,7 @@ fn analyze_fixture() -> GraphData {
     let input = tests::compile_source_fixture(
         &runtime,
         directory.path(),
-        include_str!("../../../fixtures/java-visibility/Flow.java"),
+        include_str!("../../../../../fixtures/java-visibility/Flow.java"),
         "-g",
     );
     let output = tests::run_callback_engine(&runtime, directory.path(), &input);

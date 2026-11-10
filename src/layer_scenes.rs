@@ -1,12 +1,10 @@
 //! Explicit architecture fixture using the production Graphviz band layout.
+use crate::runtime::Runtime as AnalyzerRuntime;
 use crate::{
     app::{Navigation, State},
     projection::{self, Grouping},
 };
-use codegraph::{
-    analyzers::AnalyzerRuntime,
-    architecture::{Assignment, LayerAssignments, LayerDefinition, Selection, file_key},
-};
+use codegraph::architecture::{Assignment, LayerAssignments, LayerDefinition, Selection, file_key};
 use std::sync::Arc;
 
 pub fn install(state: &mut State) {

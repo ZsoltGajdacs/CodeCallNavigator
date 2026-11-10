@@ -103,7 +103,7 @@ mod tests {
         }
         let directory = tempfile::tempdir().unwrap();
         let status = Command::new("python3")
-            .arg(Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/process_tty.py"))
+            .arg(crate::repository_root().join("tests/process_tty.py"))
             .arg(std::env::current_exe().unwrap())
             .arg("analyzers::process::tests::analyzer_children_receive_eof_instead_of_the_controlling_terminal")
             .arg(directory.path())

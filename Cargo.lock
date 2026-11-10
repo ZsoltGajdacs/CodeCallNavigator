@@ -573,6 +573,8 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "blake3",
+ "codegraph-core",
+ "codegraph-engine",
  "globset",
  "libc",
  "objc2-app-kit 0.2.2",
@@ -587,6 +589,36 @@ dependencies = [
  "shlex",
  "tempfile",
  "wgpu",
+]
+
+[[package]]
+name = "codegraph-core"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "blake3",
+ "globset",
+ "petgraph",
+ "regex",
+ "rusqlite",
+ "serde",
+ "serde_json",
+ "serde_yaml",
+ "tempfile",
+]
+
+[[package]]
+name = "codegraph-engine"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "blake3",
+ "codegraph-core",
+ "libc",
+ "serde",
+ "serde_json",
+ "shlex",
+ "tempfile",
 ]
 
 [[package]]

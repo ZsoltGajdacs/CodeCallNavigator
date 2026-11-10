@@ -1,10 +1,10 @@
 //! Explicit class and method fixtures exercising production traversal and Graphviz geometry.
+use crate::runtime::Runtime as AnalyzerRuntime;
 use crate::{
     app::{Navigation, State},
     projection::{self, FocusTarget, Grouping},
 };
 use codegraph::{
-    analyzers::AnalyzerRuntime,
     graph::GraphIndex,
     model::{Edge, GraphData, Node},
 };

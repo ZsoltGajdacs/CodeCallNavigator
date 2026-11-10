@@ -1,11 +1,3 @@
-pub mod analyzers;
-pub mod architecture;
-pub mod discovery;
-pub mod fingerprint;
-pub mod flow;
-pub mod graph;
-pub mod graphviz;
-pub mod method_policy;
-pub mod metrics;
-pub mod model;
-pub mod store;
+//! Compatibility exports for the desktop and existing acceptance harness.
+pub use codegraph_core::*;
+pub use codegraph_engine::analyzers;

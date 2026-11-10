@@ -167,9 +167,7 @@ pub fn install(state: &mut State) {
         &state.request().unwrap(),
     ));
     crate::scenes::position(&mut state.graph_view);
-    state.runtime = codegraph::analyzers::AnalyzerRuntime::discover()
-        .ok()
-        .map(Arc::new);
+    state.runtime = crate::runtime::Runtime::discover().ok().map(Arc::new);
     state.needs_layout = false;
     state.open_selected_flow();
 }

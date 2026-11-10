@@ -1,10 +1,10 @@
 //! Explicit branching fixtures rendered with the production Graphviz layout.
+use crate::runtime::Runtime as AnalyzerRuntime;
 use crate::{
     app::{Navigation, State},
     projection::{self, FlowDirection, Grouping},
 };
 use codegraph::{
-    analyzers::AnalyzerRuntime,
     graph::GraphIndex,
     model::{Edge, EntryPoints, GraphData, Node},
 };
