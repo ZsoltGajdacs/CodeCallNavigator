@@ -239,9 +239,9 @@ fn kit_checkbox_changes_graph_filter_and_inspector_disclosure_hides_only_its_sec
     assert!(!runtime.state.nav.filter.include_tests);
     click(&mut runtime, "filter-tests");
     assert!(runtime.state.nav.filter.include_tests);
-    runtime
-        .state
-        .select_method(0, crate::graph_interaction::SelectionAction::Inspect);
+    runtime.update(|state, _| {
+        state.select_method(0, crate::graph_interaction::SelectionAction::Inspect);
+    });
     settle(&mut runtime);
     assert!(runtime.find("path-from").is_some());
     click(&mut runtime, "path-section/trigger");

@@ -4,6 +4,9 @@ use crate::{app::State, projection::ViewEdge};
 use rune::{Color, LineCap, Shape};
 use rune_kit::Kit;
 
+#[path = "edges/geometry.rs"]
+mod geometry;
+
 #[derive(Clone, Copy)]
 struct Style {
     color: Color,
@@ -72,37 +75,17 @@ pub(crate) fn visible(points: &[[f32; 2]], viewport: [f32; 2]) -> bool {
 
 fn stroke(mut shape: Shape, control_points: &[[f32; 2]], style: Style) -> Shape {
     let points = spline_points(control_points);
+    let arrow_direction = geometry::arrow_direction(control_points);
     if style.dashed {
         shape = dashed(shape, &points, style);
     } else {
-        shape = shape.stroke(points.clone(), style.width, style.color);
+        shape = shape.stroke(points, style.width, style.color);
     }
-    arrow(shape, &points, style.color)
+    arrow(shape, arrow_direction, style.color)
 }
 
 fn spline_points(points: &[[f32; 2]]) -> Vec<[f32; 2]> {
-    if !(points.len() - 1).is_multiple_of(3) {
-        return points.to_vec();
-    }
-    let mut flattened = vec![points[0]];
-    for start in (0..points.len() - 1).step_by(3) {
-        for step in 1..=24 {
-            flattened.push(cubic(&points[start..start + 4], step as f32 / 24.0));
-        }
-    }
-    flattened
-}
-
-fn cubic(points: &[[f32; 2]], t: f32) -> [f32; 2] {
-    let u = 1.0 - t;
-    let weights = [u * u * u, 3.0 * u * u * t, 3.0 * u * t * t, t * t * t];
-    [0, 1].map(|axis| {
-        weights
-            .iter()
-            .zip(points)
-            .map(|(weight, point)| weight * point[axis])
-            .sum()
-    })
+    geometry::flatten(points)
 }
 
 fn dashed(mut shape: Shape, points: &[[f32; 2]], style: Style) -> Shape {
@@ -170,10 +153,10 @@ fn lerp(segment: &[[f32; 2]], fraction: f32) -> [f32; 2] {
     [0, 1].map(|axis| segment[0][axis] + (segment[1][axis] - segment[0][axis]) * fraction)
 }
 
-fn arrow(shape: Shape, points: &[[f32; 2]], color: Color) -> Shape {
-    let tip = points[points.len() - 1];
-    let previous = points[points.len() - 2];
-    let angle = (tip[1] - previous[1]).atan2(tip[0] - previous[0]);
+fn arrow(shape: Shape, direction: Option<([f32; 2], f32)>, color: Color) -> Shape {
+    let Some((tip, angle)) = direction else {
+        return shape;
+    };
     let rear = [tip[0] - 7.0 * angle.cos(), tip[1] - 7.0 * angle.sin()];
     shape.fill(
         vec![
@@ -202,16 +185,5 @@ pub fn route(shape: Shape, points: &[[f32; 2]], color: Color, dashed: bool) -> S
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-    #[test]
-    fn culling_keeps_crossing_splines_and_drops_offscreen_geometry() {
-        assert!(visible(&[[-20.0, 50.0], [150.0, 50.0]], [100.0, 100.0]));
-        assert!(!visible(&[[-20.0, -50.0], [150.0, -50.0]], [100.0, 100.0]));
-        let controls = [[0.0, 0.0], [10.0, 20.0], [30.0, 20.0], [40.0, 0.0]];
-        let spline = spline_points(&controls);
-        assert_eq!(spline.first(), Some(&controls[0]));
-        assert_eq!(spline.last(), Some(&controls[3]));
-        assert!(spline[12][1] > 0.0);
-    }
-}
+#[path = "edges/tests.rs"]
+mod tests;

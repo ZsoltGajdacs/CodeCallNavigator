@@ -1,0 +1,6 @@
+Release production-view CPU frame preparation; excludes GPU presentation.
+300 visible nodes, 6000 edges, 60 samples per zoom after 12 warmup frames.
+canvas nodes=300 edges=6000 zoom=0.16 frames=60 median_ms=3.283 p95_ms=3.739 mean_instances=55977 mean_segments=46101 layout_nodes=1354
+canvas nodes=300 edges=6000 zoom=0.20 frames=60 median_ms=3.662 p95_ms=4.286 mean_instances=69982 mean_segments=59620 layout_nodes=1354
+canvas nodes=300 edges=6000 zoom=0.24 frames=60 median_ms=4.344 p95_ms=5.204 mean_instances=80659 mean_segments=69697 layout_nodes=1354
+Result: 1 benchmark passed; 124 tests filtered out. Geometry tests: 8 passed.
