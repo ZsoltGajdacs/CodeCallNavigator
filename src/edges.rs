@@ -1,6 +1,7 @@
 //! Paint Graphviz's reported geometry through Rune; no layout or call inference.
 use crate::theme;
 use crate::{app::State, graph_emphasis::GraphEmphasis, projection::ViewEdge};
+use codecallnavigator::model::{RelationshipKind, TargetResolution};
 use rune::{Color, Shape};
 use rune_kit::Kit;
 
@@ -50,8 +51,9 @@ pub fn render(state: &State, k: &Kit, emphasis: &GraphEmphasis) -> Shape {
 }
 
 fn style(edge: &ViewEdge, k: &Kit, opacity: f32) -> Style {
-    let reference = codecallnavigator::model::relationship_is_reference(&edge.kind);
-    let direct = !codecallnavigator::model::relationship_is_uncertain(&edge.certainty);
+    let reference = edge.classification.kind == RelationshipKind::FunctionReference;
+    let direct = edge.classification.kind == RelationshipKind::Call
+        && edge.classification.resolution == TargetResolution::Direct;
     let color = if reference {
         theme::callback(k)
     } else if direct {

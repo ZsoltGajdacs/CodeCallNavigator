@@ -101,12 +101,25 @@ paths are not reconnected through excluded code. Methods declared in generated
 source files remain available through the generated-code filter. A project with
 only excluded symbols produces a valid empty graph.
 
-Production code is the default. Test, generated and body-unavailable filters are
-explicit, with hidden/omitted counts. Virtual / interface calls have their own
-filter, enabled by default even for older saved views, independently of other
-uncertain targets. These calls identify a declared method; an override may execute
-at runtime. Gold dashed edges mean virtual/interface calls or other uncertain
-targets; purple dashed edges mean callbacks/references. Amber outlines mark cycles.
+Production code is the default. The canvas filters separate three dimensions:
+
+- **Code:** test code, generated code, and methods without implementation.
+- **Relationship type:** calls, function references, framework/lifecycle,
+  HTTP/navigation, and other relationships (including structural and bootstrap links).
+- **Target resolution:** directly resolved, virtual/interface dispatch, possible
+  targets, and other/unspecified analyzer certainty.
+
+Both a relationship's type and its target resolution must be enabled, and both
+endpoint methods must pass the code filters. Resolving a target does not prove
+execution; passing, storing or registering a function does not establish invocation.
+Details show these categories alongside the original analyzer facts and evidence.
+New views enable all relationship categories. Upgrading an older saved view keeps
+its code filters and resets all relationship choices to enabled once; subsequent
+choices persist through reload and navigation history.
+
+Muted solid edges are directly resolved calls. Purple dashed edges are function
+references; amber dashed edges are remaining relationships. Amber outlines mark cycles.
+Hidden and omitted counts reflect the active filters.
 A canvas is capped at 1,500 nodes and 6,000 edges; full search, refocusing and
 paged neighborhoods keep the remaining indexed methods reachable.
 

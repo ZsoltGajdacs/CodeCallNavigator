@@ -29,12 +29,7 @@ impl State {
     }
 
     pub fn fit_visible_graph(&mut self) {
-        let inset = self
-            .graph_overlay_height
-            .min((self.viewport[1] - 48.0).max(0.0));
-        let available = [self.viewport[0], self.viewport[1] - inset];
-        self.nav.camera.fit(self.graph_view.size, available);
-        self.nav.camera.pan[1] += inset;
+        self.nav.camera.fit(self.graph_view.size, self.viewport);
     }
 
     fn focus_was_removed(&self, view: &GraphView) -> bool {

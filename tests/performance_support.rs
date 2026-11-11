@@ -51,14 +51,30 @@ fn graph() -> GraphData {
 }
 
 fn filter(bits: u8) -> Filter {
-    Filter {
+    use codecallnavigator::model::{RelationshipKind, TargetResolution};
+    let mut filter = Filter {
         include_tests: bits & 1 != 0,
         include_generated: bits & 2 != 0,
         include_unavailable: bits & 4 != 0,
-        include_uncertain: bits & 8 != 0,
-        include_references: bits & 16 != 0,
-        include_virtual_calls: bits & 32 != 0,
+        ..Default::default()
+    };
+    if bits & 8 == 0 {
+        filter
+            .target_resolutions
+            .remove(&TargetResolution::Possible);
+        filter.target_resolutions.remove(&TargetResolution::Other);
     }
+    if bits & 16 == 0 {
+        filter
+            .relationship_kinds
+            .remove(&RelationshipKind::FunctionReference);
+    }
+    if bits & 32 == 0 {
+        filter
+            .target_resolutions
+            .remove(&TargetResolution::VirtualDispatch);
+    }
+    filter
 }
 
 fn reference_cycles(data: &GraphData, filter: &Filter) -> Vec<bool> {

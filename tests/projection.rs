@@ -106,9 +106,19 @@ fn path_view_respects_virtual_calls_and_reports_absence_instead_of_inventing_a_b
     let mut query = request();
     query.scope = Scope::Path(0, 2);
     assert_eq!(project(&graph, &query).nodes.len(), 3);
-    query.filter.include_uncertain = false;
+    query
+        .filter
+        .target_resolutions
+        .remove(&codecallnavigator::model::TargetResolution::Possible);
+    query
+        .filter
+        .target_resolutions
+        .remove(&codecallnavigator::model::TargetResolution::Other);
     assert_eq!(project(&graph, &query).nodes.len(), 3);
-    query.filter.include_virtual_calls = false;
+    query
+        .filter
+        .target_resolutions
+        .remove(&codecallnavigator::model::TargetResolution::VirtualDispatch);
     let hidden = project(&graph, &query);
     assert!(hidden.nodes.is_empty());
     assert!(hidden.message.starts_with("No directed path"));
@@ -119,18 +129,34 @@ fn path_view_respects_virtual_calls_and_reports_absence_instead_of_inventing_a_b
 fn virtual_calls_filter_updates_grouped_counts_and_focused_neighborhoods() {
     let graph = sample();
     let mut query = request();
-    query.filter.include_uncertain = false;
+    query
+        .filter
+        .target_resolutions
+        .remove(&codecallnavigator::model::TargetResolution::Possible);
+    query
+        .filter
+        .target_resolutions
+        .remove(&codecallnavigator::model::TargetResolution::Other);
     assert_eq!(project(&graph, &query).collapsed_edges, 2);
-    query.filter.include_virtual_calls = false;
+    query
+        .filter
+        .target_resolutions
+        .remove(&codecallnavigator::model::TargetResolution::VirtualDispatch);
     let hidden = project(&graph, &query);
     assert_eq!((hidden.collapsed_edges, hidden.hidden_edges), (1, 1));
     query.grouping = Grouping::Method;
     query.scope = Scope::Focus(0);
     assert_eq!(project(&graph, &query).nodes.len(), 2);
-    query.filter.include_virtual_calls = true;
+    query
+        .filter
+        .target_resolutions
+        .insert(codecallnavigator::model::TargetResolution::VirtualDispatch);
     let visible = project(&graph, &query);
     assert_eq!((visible.nodes.len(), visible.edges.len()), (3, 2));
-    assert_eq!(visible.edges[1].certainty, "dispatch");
+    assert_eq!(
+        visible.edges[1].classification.resolution,
+        codecallnavigator::model::TargetResolution::VirtualDispatch
+    );
 }
 
 #[test]
@@ -517,4 +543,57 @@ fn framework_entry_is_a_method_root_without_verified_start_highlighting() {
             .iter()
             .any(|node| node.key == id && !node.application_start)
     );
+}
+
+#[test]
+fn equal_raw_relationships_keep_distinct_framework_classification_when_grouped() {
+    use codecallnavigator::model::{RelationshipKind, TargetResolution};
+    let mut data = sample().data.as_ref().clone();
+    data.nodes[1].container = "OtherType".into();
+    data.nodes[1].file = "/example/other/OtherType.cs".into();
+    data.edges.truncate(1);
+    data.edges[0].certainty = "possible".into();
+    let mut framework = data.edges[0].clone();
+    framework.provenance = "codecallnavigator.mediatr.v1".into();
+    data.edges.push(framework);
+    let graph = GraphIndex::new(Arc::new(data)).unwrap();
+    let mut query = request();
+    query.grouping = Grouping::Method;
+    query.scope = Scope::Focus(0);
+    let view = project(&graph, &query);
+    assert_eq!(
+        view.edges.len(),
+        2,
+        "Raw call/possible links must retain distinct meanings"
+    );
+    assert_eq!(
+        view.edges
+            .iter()
+            .map(|edge| edge.classification.kind)
+            .collect::<HashSet<_>>(),
+        [RelationshipKind::Call, RelationshipKind::FrameworkLifecycle].into()
+    );
+    query
+        .filter
+        .relationship_kinds
+        .remove(&RelationshipKind::FrameworkLifecycle);
+    let calls = project(&graph, &query);
+    assert_eq!(calls.edges.len(), 1);
+    assert_eq!(calls.edges[0].classification.kind, RelationshipKind::Call);
+    assert_eq!(calls.hidden_edges, 1);
+    query
+        .filter
+        .target_resolutions
+        .remove(&TargetResolution::Possible);
+    assert!(project(&graph, &query).edges.is_empty());
+    assert_eq!(project(&graph, &query).hidden_edges, 2);
+    query = request();
+    // A folder-level overview uses the same selection and aggregation policy.
+    query.grouping = Grouping::Folder;
+    query.expanded = project(&graph, &query)
+        .nodes
+        .iter()
+        .map(|node| node.key.clone())
+        .collect();
+    assert_eq!(project(&graph, &query).edges.len(), 2);
 }

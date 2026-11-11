@@ -161,16 +161,21 @@ fn aggregate_edges(graph: &GraphIndex, selection: &Selection, aggregates: &mut A
             continue;
         }
         *relations
-            .entry((from, to, edge.kind.clone(), edge.certainty.clone()))
+            .entry((
+                from,
+                to,
+                edge.kind.clone(),
+                edge.certainty.clone(),
+                graph.classification(index),
+            ))
             .or_insert(0_u64) += u64::from(edge.count);
     }
     aggregates.edges = relations
         .into_iter()
-        .map(|((from, to, kind, certainty), count)| ViewEdge {
+        .map(|((from, to, _, _, classification), count)| ViewEdge {
+            classification,
             from,
             to,
-            kind,
-            certainty,
             count,
             ..Default::default()
         })

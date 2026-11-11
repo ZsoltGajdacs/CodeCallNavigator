@@ -23,8 +23,14 @@ fn graph(points: Vec<[f32; 2]>, dashed: bool) -> State {
             from: 0,
             to: 1,
             points,
-            kind: "call".into(),
-            certainty: if dashed { "dispatch" } else { "direct" }.into(),
+            classification: codecallnavigator::model::RelationshipClassification {
+                kind: RelationshipKind::Call,
+                resolution: if dashed {
+                    TargetResolution::VirtualDispatch
+                } else {
+                    TargetResolution::Direct
+                },
+            },
             ..Default::default()
         }],
         ..Default::default()

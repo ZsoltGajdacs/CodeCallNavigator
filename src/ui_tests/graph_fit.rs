@@ -1,4 +1,4 @@
-//! Explicit Fit accounts for the persistent filter overlay at the minimum window size.
+//! Explicit Fit uses the canvas below the grouped filter panel at minimum window size.
 use super::click;
 use crate::{app::State, jobs, projection, view};
 use codecallnavigator::{
@@ -31,19 +31,25 @@ fn fit_keeps_the_entire_class_tree_below_wrapped_filters() {
         runtime.frame(1.0 / 60.0);
     }
     assert_eq!(runtime.state.graph_view.nodes.len(), 3);
+    let elements = runtime.elements();
+    let panel = elements
+        .iter()
+        .find(|e| e.key.as_deref() == Some("graph-filters"))
+        .unwrap();
+    let canvas = elements
+        .iter()
+        .find(|e| e.key.as_deref() == Some("graph-canvas"))
+        .unwrap();
+    assert!(panel.rect[3] > 60.0, "Filters should wrap at minimum width");
     assert!(
-        runtime.state.graph_overlay_height > 60.0,
-        "Filters should wrap at minimum width"
+        canvas.rect[1] >= panel.rect[1] + panel.rect[3] - 0.5,
+        "The filter panel must not cover graph content"
     );
     click(&mut runtime, "fit");
     for node in &runtime.state.graph_view.nodes {
         let top = runtime.state.nav.camera.screen(node.position);
         let bottom = top[1] + node.size[1] * runtime.state.nav.camera.zoom;
-        assert!(
-            top[1] >= runtime.state.graph_overlay_height,
-            "{} is obscured by filters",
-            node.label
-        );
+        assert!(top[1] >= 0.0, "{} is obscured by filters", node.label);
         assert!(
             bottom <= runtime.state.viewport[1],
             "{} extends below the canvas",

@@ -86,7 +86,7 @@ fn neighbors_and_relationships_use_friendly_names_and_inspector_keeps_signature(
         runtime.elements().iter().any(|element| {
             element.role == "option"
                 && element.label.as_deref().is_some_and(|label| {
-                    label.ends_with(NAME) && label.contains("Virtual / interface call")
+                    label.ends_with(NAME) && label.contains("Virtual / interface dispatch")
                 })
         }),
         "Relationship list must show the source name"
@@ -126,11 +126,9 @@ fn virtual_call_details_explain_the_declared_target_without_reclassifying_it() {
         state.selected_edge = Some(edge as u32);
     });
     settle(&mut runtime);
-    assert!(
-        runtime.elements().iter().any(|element| {
-            element.text.as_deref() == Some("Certainty: Virtual / interface call")
-        })
-    );
+    assert!(runtime.elements().iter().any(|element| {
+        element.text.as_deref() == Some("Target resolution: Virtual / interface dispatch")
+    }));
     let edge = runtime.state.selected_edge.unwrap();
     assert_eq!(
         runtime.state.graph.as_ref().unwrap().data.edges[edge as usize].certainty,

@@ -34,10 +34,16 @@ pub fn install(state: &mut State) {
                 _ => 180.0,
             };
             ViewEdge {
+                classification: codecallnavigator::model::RelationshipClassification {
+                    kind: codecallnavigator::model::RelationshipKind::Call,
+                    resolution: if index % 4 == 0 {
+                        codecallnavigator::model::TargetResolution::VirtualDispatch
+                    } else {
+                        codecallnavigator::model::TargetResolution::Direct
+                    },
+                },
                 from,
                 to,
-                kind: "call".into(),
-                certainty: if index % 4 == 0 { "dispatch" } else { "direct" }.into(),
                 count: 1,
                 points: vec![
                     start,

@@ -1,6 +1,8 @@
+mod filter;
 mod filter_summary;
-use crate::model::{Edge, GraphData, Node};
+use crate::model::{Edge, GraphData, RelationshipClassification};
 use anyhow::Result;
+pub use filter::Filter;
 pub use filter_summary::FilterSummary;
 use filter_summary::SummaryCache;
 use petgraph::{algo::kosaraju_scc, graph::DiGraph};
@@ -18,51 +20,6 @@ pub enum Direction {
     Incoming,
     Outgoing,
     Both,
-}
-
-#[derive(Clone, Debug, PartialEq, Eq, Deserialize, Serialize)]
-pub struct Filter {
-    pub include_tests: bool,
-    pub include_generated: bool,
-    pub include_unavailable: bool,
-    #[serde(default = "virtual_calls_default")]
-    pub include_virtual_calls: bool,
-    pub include_uncertain: bool,
-    pub include_references: bool,
-}
-
-fn virtual_calls_default() -> bool {
-    true
-}
-
-impl Default for Filter {
-    fn default() -> Self {
-        Self {
-            include_tests: false,
-            include_generated: false,
-            include_unavailable: false,
-            include_virtual_calls: true,
-            include_uncertain: true,
-            include_references: true,
-        }
-    }
-}
-
-impl Filter {
-    pub fn accepts_node(&self, node: &Node) -> bool {
-        (self.include_tests || !node.is_test)
-            && (self.include_generated || !node.is_generated)
-            && (self.include_unavailable || !node.body_unavailable)
-    }
-
-    pub fn accepts_edge(&self, edge: &Edge) -> bool {
-        let category_visible = if edge.certainty == "dispatch" {
-            self.include_virtual_calls
-        } else {
-            self.include_uncertain || !edge.is_uncertain()
-        };
-        category_visible && (self.include_references || !edge.is_reference())
-    }
 }
 
 /// Bounded traversal centered on one method.
@@ -153,6 +110,7 @@ pub struct GraphIndex {
     incoming: Adjacency,
     outgoing: Adjacency,
     summaries: SummaryCache,
+    classifications: Vec<RelationshipClassification>,
 }
 
 impl GraphIndex {
@@ -166,13 +124,27 @@ impl GraphIndex {
             .collect();
         let incoming = Adjacency::build(&data, Direction::Incoming);
         let outgoing = Adjacency::build(&data, Direction::Outgoing);
+        let classifications = data.edges.iter().map(Edge::classification).collect();
         Ok(Self {
+            classifications,
             data,
             identities,
             incoming,
             outgoing,
             summaries: SummaryCache::default(),
         })
+    }
+
+    /// The classification cache has the same lifetime and ordering as this graph generation.
+    pub fn classification(&self, edge: u32) -> RelationshipClassification {
+        self.classifications[edge as usize]
+    }
+
+    pub fn accepts_edge(&self, edge: u32, filter: &Filter) -> bool {
+        let relation = &self.data.edges[edge as usize];
+        filter.accepts_classification(self.classification(edge))
+            && self.visible(relation.from, filter)
+            && self.visible(relation.to, filter)
     }
 
     pub fn node_index(&self, identity: &str) -> Option<u32> {
@@ -221,12 +193,7 @@ impl GraphIndex {
         if direction != Direction::Outgoing {
             edges.extend_from_slice(self.incoming.get(node));
         }
-        edges.retain(|&id| {
-            let edge = &self.data.edges[id as usize];
-            filter.accepts_edge(edge)
-                && self.visible(edge.from, filter)
-                && self.visible(edge.to, filter)
-        });
+        edges.retain(|&id| self.accepts_edge(id, filter));
         edges.sort_unstable();
         edges.dedup();
         edges
@@ -240,8 +207,8 @@ impl GraphIndex {
     ) -> impl Iterator<Item = u32> + 'a {
         edges
             .iter()
+            .filter(|&&id| self.accepts_edge(id, filter))
             .map(|&id| &self.data.edges[id as usize])
-            .filter(|edge| filter.accepts_edge(edge))
             .map(move |edge| {
                 if direction == Direction::Incoming {
                     edge.from
@@ -331,7 +298,7 @@ impl GraphIndex {
         let mut edges = Vec::new();
         let mut matching_edges = 0;
         for (id, edge) in self.data.edges.iter().enumerate() {
-            if !edge_in_nodes(edge, visited) || !filter.accepts_edge(edge) {
+            if !edge_in_nodes(edge, visited) || !self.accepts_edge(id as u32, filter) {
                 continue;
             }
             matching_edges += 1;
@@ -349,7 +316,7 @@ impl GraphIndex {
 
     pub fn filter_summary(&self, filter: &Filter) -> Arc<FilterSummary> {
         self.summaries.get(filter, || {
-            FilterSummary::new(&self.data, filter, self.compute_cycles(filter))
+            FilterSummary::new(self, filter, self.compute_cycles(filter))
         })
     }
 
@@ -370,8 +337,9 @@ impl GraphIndex {
             .data
             .edges
             .iter()
-            .filter(|edge| filter.accepts_edge(edge))
-            .filter_map(|edge| indices[edge.from as usize].zip(indices[edge.to as usize]));
+            .enumerate()
+            .filter(|(id, _)| self.accepts_edge(*id as u32, filter))
+            .filter_map(|(_, edge)| indices[edge.from as usize].zip(indices[edge.to as usize]));
         for (from, to) in edges {
             graph.add_edge(from, to, ());
         }

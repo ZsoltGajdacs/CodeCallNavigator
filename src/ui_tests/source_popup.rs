@@ -463,10 +463,7 @@ fn moving_from_popup_overlap_to_exposed_trigger_keeps_preview_open() {
     runtime.update(|state, _| {
         state.nav.camera.zoom = 1.0;
         state.nav.camera.pan = [0.0, 0.0];
-        state.graph_view.nodes[0].position = [
-            650.0 - state.source_popup.canvas[0],
-            200.0 - state.source_popup.canvas[1],
-        ];
+        state.graph_view.nodes[0].position = [650.0 - state.source_popup.canvas[0], 60.0];
         state.graph_view.nodes[0].size = [235.0, 68.0];
     });
     frames(&mut runtime, 60);

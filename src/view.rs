@@ -10,7 +10,7 @@ use crate::{
     presentation::{self, Drawer},
     theme,
 };
-use rune::{Cx, El, Key, KeyEvent, Tx, col, el, row, text};
+use rune::{Cx, El, Key, KeyEvent, Tx, col, row, text};
 use rune_kit::{
     Button, ButtonVariant, IconButton, IconButtonVariant, Kit,
     shell::{SplitView, Toolbar},
@@ -51,24 +51,7 @@ fn graph_workspace(state: &State, cx: &mut Cx<State>) -> El {
         .hide_sidebar_toggle()
         .frame_inset(0.0)
         .reduced_motion(cx.is_reduced_motion())
-        .toolbar(
-            Toolbar::new()
-                .leading(text("CodeCallNavigator").font(k.ty.ui_medium).color(k.c.text_base))
-                .leading(workspace_identity(state, &k))
-                .trailing(search_modal::button(&k))
-                .trailing(clear_cache_action(state, &k))
-                .trailing(analysis_action(state, &k))
-                .trailing(
-                    IconButton::new(&icons::LAYOUT_RIGHT)
-                        .label("Inspector")
-                        .help("Show or hide inspector")
-                        .variant(IconButtonVariant::GhostMuted)
-                        .expanded(state.ui.inspector.is_open())
-                        .on_press(State::toggle_inspector)
-                        .build(&k)
-                        .key("toggle-inspector"),
-                ),
-        )
+        .toolbar(workspace_toolbar(state, &k))
         .build(&k)
         .grow(1.0)
         .min_w(0.0);
@@ -93,6 +76,29 @@ fn graph_workspace(state: &State, cx: &mut Cx<State>) -> El {
     with_overlays(state, &k, body, layer)
 }
 
+fn workspace_toolbar(state: &State, k: &Kit) -> Toolbar {
+    Toolbar::new()
+        .leading(
+            text("CodeCallNavigator")
+                .font(k.ty.ui_medium)
+                .color(k.c.text_base),
+        )
+        .leading(workspace_identity(state, k))
+        .trailing(search_modal::button(k))
+        .trailing(clear_cache_action(state, k))
+        .trailing(analysis_action(state, k))
+        .trailing(
+            IconButton::new(&icons::LAYOUT_RIGHT)
+                .label("Inspector")
+                .help("Show or hide inspector")
+                .variant(IconButtonVariant::GhostMuted)
+                .expanded(state.ui.inspector.is_open())
+                .on_press(State::toggle_inspector)
+                .build(k)
+                .key("toggle-inspector"),
+        )
+}
+
 pub(crate) fn search_button(k: &Kit) -> El {
     search_modal::button(k)
 }
@@ -106,13 +112,14 @@ pub(crate) fn with_overlays(state: &State, k: &Kit, body: El, mut layer: Vec<El>
 }
 
 fn graph_with_filters(state: &State, cx: &mut Cx<State>, k: &Kit) -> El {
-    el().key("graph-canvas-wrapper")
+    col()
+        .key("graph-canvas-wrapper")
         .motion(rune::Spring::NONE)
         .grow(1.0)
         .min_w(0.0)
         .min_h(0.0)
-        .child(graph_canvas::graph_canvas(state, cx, k))
         .child(graph_controls::filters(state, k))
+        .child(graph_canvas::graph_canvas(state, cx, k))
 }
 
 fn activity_rail(state: &State, k: &Kit) -> El {

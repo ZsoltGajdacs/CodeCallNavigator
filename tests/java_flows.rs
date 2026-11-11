@@ -52,6 +52,20 @@ fn java_flow_binds_overloads_unicode_and_verified_same_line_lambdas() {
     let source = "package fixture;\npublic final class Standalone {\n static int leaf(int x) { return x; }\n static int leaf(String x) { return x.length(); }\n int run(int x) { String text = \"é😀\"; outer: for(int i=0;i<2;i++) { try { if(x>i) return leaf(x); if(x<0) continue outer; break; } finally { leaf(0); } } return switch(x) { case 0 -> leaf(1); default -> { yield leaf(\"s\"); } }; }\n void callbacks() {\n  Runnable unique = () -> { leaf(10); };\n  Runnable first = () -> leaf(1), second = () -> leaf(2);\n  unique.run();\n }\n}\n";
     let directory = fixture(source, false);
     let graph = run(&directory);
+    use codecallnavigator::model::{RelationshipKind, TargetResolution};
+    assert!(graph.edges.iter().any(|edge| edge.kind == "_LM"));
+    for edge in &graph.edges {
+        let classification = edge.classification();
+        match edge.kind.as_str() {
+            "_LM" => assert_eq!(classification.kind, RelationshipKind::FunctionReference),
+            "STA" | "SPE" => assert_eq!(classification.resolution, TargetResolution::Direct),
+            "VIR" | "INT" => {
+                assert_eq!(classification.resolution, TargetResolution::VirtualDispatch)
+            }
+            _ => {}
+        }
+    }
+
     let run_function = function(&graph, ":run(int)");
     let chart = flow::build(run_function).unwrap();
     let graph_ids: HashSet<_> = graph.nodes.iter().map(|node| node.id.as_str()).collect();

@@ -146,7 +146,10 @@ fn reference_and_uncertain_edges_remain_distinct() {
     data.edges[0].kind = "methodgroup".into();
     let graph = GraphIndex::new(Arc::new(data)).unwrap();
     let filter = Filter {
-        include_references: false,
+        relationship_kinds: codecallnavigator::model::RelationshipKind::ALL
+            .into_iter()
+            .filter(|k| *k != codecallnavigator::model::RelationshipKind::FunctionReference)
+            .collect(),
         ..Default::default()
     };
     assert_eq!(graph.shortest_path(0, 2, &filter), None);
@@ -158,7 +161,11 @@ fn reference_and_uncertain_edges_remain_distinct() {
     uncertain.edges[0].certainty = "framework-possible".into();
     let uncertain = GraphIndex::new(Arc::new(uncertain)).unwrap();
     let filter = Filter {
-        include_uncertain: false,
+        target_resolutions: [
+            codecallnavigator::model::TargetResolution::Direct,
+            codecallnavigator::model::TargetResolution::VirtualDispatch,
+        ]
+        .into(),
         ..Default::default()
     };
     assert_eq!(uncertain.shortest_path(0, 2, &filter), None);

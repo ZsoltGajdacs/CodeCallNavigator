@@ -110,7 +110,7 @@ fn path(graph: &GraphIndex, from: u32, to: u32, filter: &Filter) -> Selection {
         .edges
         .iter()
         .enumerate()
-        .filter(|(_, e)| pairs.contains(&(e.from, e.to)) && filter.accepts_edge(e))
+        .filter(|(id, e)| pairs.contains(&(e.from, e.to)) && graph.accepts_edge(*id as u32, filter))
         .map(|(i, _)| i as u32)
         .collect();
     let message = format!(
@@ -143,7 +143,7 @@ pub(super) fn all(graph: &GraphIndex, request: &Request) -> Selection {
             .edges
             .iter()
             .enumerate()
-            .filter(|(_, e)| request.filter.accepts_edge(e))
+            .filter(|(id, _)| graph.accepts_edge(*id as u32, &request.filter))
             .map(|(i, _)| i as u32)
             .collect(),
         roots: Vec::new(),

@@ -32,6 +32,13 @@ fn spring_dispatch_is_compiler_bound_possible_and_matches_flow_sites() {
         let from = &graph.nodes[edge.from as usize];
         let to = &graph.nodes[edge.to as usize];
         assert_eq!(edge.certainty, "possible");
+        assert_eq!(
+            edge.classification(),
+            codecallnavigator::model::RelationshipClassification {
+                kind: codecallnavigator::model::RelationshipKind::FrameworkLifecycle,
+                resolution: codecallnavigator::model::TargetResolution::Possible,
+            }
+        );
         assert_eq!(edge.count as usize, edge.evidence.len());
         assert_supported(&from.label, &to.label);
         let expected_count = if from.label == "publishPayloadTwice" {

@@ -3,16 +3,43 @@ use crate::projection::{GraphView, ViewNode};
 
 #[test]
 fn dim_edges_multiply_existing_alpha_without_changing_relationship_styles() {
+    use codecallnavigator::model::RelationshipClassification;
     for dark in [false, true] {
         let kit = theme::kit(dark);
-        for (kind, certainty, color, dashed) in [
-            ("call", "direct", kit.c.text_muted.alpha(0.7), false),
-            ("call", "possible", theme::uncertain(&kit), true),
-            ("callback", "direct", theme::callback(&kit), true),
+        for (kind, resolution, color, dashed) in [
+            (
+                RelationshipKind::Call,
+                TargetResolution::Direct,
+                kit.c.text_muted.alpha(0.7),
+                false,
+            ),
+            (
+                RelationshipKind::Call,
+                TargetResolution::Possible,
+                theme::uncertain(&kit),
+                true,
+            ),
+            (
+                RelationshipKind::FunctionReference,
+                TargetResolution::Direct,
+                theme::callback(&kit),
+                true,
+            ),
+            (
+                RelationshipKind::FrameworkLifecycle,
+                TargetResolution::Direct,
+                theme::uncertain(&kit),
+                true,
+            ),
+            (
+                RelationshipKind::Other,
+                TargetResolution::Direct,
+                theme::uncertain(&kit),
+                true,
+            ),
         ] {
             let edge = ViewEdge {
-                kind: kind.into(),
-                certainty: certainty.into(),
+                classification: RelationshipClassification { kind, resolution },
                 count: 10,
                 ..Default::default()
             };
@@ -46,8 +73,10 @@ fn rendering_paints_dim_strokes_and_arrows_before_incident_edges() {
             .map(|(from, to)| ViewEdge {
                 from,
                 to,
-                kind: "call".into(),
-                certainty: "direct".into(),
+                classification: codecallnavigator::model::RelationshipClassification {
+                    kind: RelationshipKind::Call,
+                    resolution: TargetResolution::Direct,
+                },
                 points: vec![[10.0, 10.0 + from as f32 * 20.0], [100.0, 100.0]],
                 ..Default::default()
             })

@@ -1,15 +1,9 @@
 //! Relationship details and paged, selectable Kit rows.
 mod evidence;
+pub(crate) mod labels;
 use crate::app::{RESULT_PAGE_SIZE, State};
 use rune::{El, col, row, text};
 use rune_kit::{Button, ButtonVariant, Kit, List, ListItem};
-
-fn certainty_label(certainty: &str) -> &str {
-    match certainty {
-        "dispatch" => "Virtual / interface call",
-        other => other,
-    }
-}
 
 pub fn list(state: &State, k: &Kit) -> El {
     let mut rows = List::new()
@@ -30,10 +24,11 @@ pub fn list(state: &State, k: &Kit) -> El {
             } else {
                 edge.from
             };
+            let classification = graph.classification(id);
             let label = format!(
                 "{} · {} ×{} · {}",
-                edge.kind,
-                certainty_label(&edge.certainty),
+                labels::kind(classification.kind),
+                labels::resolution(classification.resolution),
                 edge.count,
                 graph.data.nodes[other as usize].label
             );
@@ -57,12 +52,13 @@ pub fn selected(state: &State, k: &Kit) -> El {
     let Some(graph) = &state.graph else {
         return panel;
     };
-    let Some(edge) = state
+    let Some((id, edge)) = state
         .selected_edge
-        .and_then(|id| graph.data.edges.get(id as usize))
+        .and_then(|id| graph.data.edges.get(id as usize).map(|edge| (id, edge)))
     else {
         return panel;
     };
+    let classification = graph.classification(id);
     let from = &graph.data.nodes[edge.from as usize];
     let to = &graph.data.nodes[edge.to as usize];
     panel = panel.child(
@@ -73,8 +69,15 @@ pub fn selected(state: &State, k: &Kit) -> El {
     for line in [
         format!("From: {}", from.signature),
         format!("To: {}", to.signature),
-        format!("Kind: {}", edge.kind),
-        format!("Certainty: {}", certainty_label(&edge.certainty)),
+        format!("Relationship type: {}", labels::kind(classification.kind)),
+        format!(
+            "Target resolution: {}",
+            labels::resolution(classification.resolution)
+        ),
+        labels::kind_help(classification.kind).into(),
+        labels::resolution_help(classification.resolution).into(),
+        format!("Analyzer kind: {}", edge.kind),
+        format!("Analyzer certainty: {}", edge.certainty),
         format!("Provenance: {}", edge.provenance),
         format!("Occurrences: {}", edge.count),
         format!("Build: {}", from.build),

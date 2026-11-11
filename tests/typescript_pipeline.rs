@@ -78,6 +78,13 @@ fn real_compiler_keeps_callback_calls_on_the_callback_and_roundtrips_provenance(
     assert!(!has_edge(&graph, "start", "leaf"));
     assert!(graph.nodes.iter().any(|node| node.label == "disconnected"));
     assert!(graph.edges.iter().all(|edge| !edge.provenance.is_empty()));
+    assert!(
+        graph
+            .edges
+            .iter()
+            .all(|edge| edge.classification().kind
+                == codecallnavigator::model::RelationshipKind::Call)
+    );
     assert!(graph.engine_versions.contains("6.0."));
     let facts = graph.architecture.as_ref().unwrap();
     let source = facts
@@ -313,7 +320,13 @@ fn framework_entries_and_render_edges_survive_the_production_pipeline() {
         .unwrap();
     assert_eq!(graph.nodes[render.from as usize].label, "Page");
     assert_eq!(graph.nodes[render.to as usize].label, "Child");
-    assert!(render.is_uncertain());
+    assert_eq!(
+        render.classification(),
+        codecallnavigator::model::RelationshipClassification {
+            kind: codecallnavigator::model::RelationshipKind::FrameworkLifecycle,
+            resolution: codecallnavigator::model::TargetResolution::Possible,
+        }
+    );
     assert!(render.provenance.contains("react"));
     assert!(!has_edge(&graph, "Page", "effectLeaf"));
     let cache = tempfile::tempdir().unwrap();
@@ -342,7 +355,9 @@ fn packaged_resource_layout_runs_without_development_adapter_fallback() {
         "export function main() { return 1; }\n",
     );
     let bundle = tempfile::tempdir().unwrap();
-    let resources = bundle.path().join("CodeCallNavigator.app/Contents/Resources");
+    let resources = bundle
+        .path()
+        .join("CodeCallNavigator.app/Contents/Resources");
     let destination = resources.join("analyzers/typescript");
     fs::create_dir_all(&destination).unwrap();
     let source = Path::new(env!("CARGO_MANIFEST_DIR")).join("tools/typescript");

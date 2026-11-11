@@ -247,3 +247,75 @@ public class Service { public void Run() {} }
         );
     }
 }
+
+#[test]
+#[ignore = "requires pinned CallAtlas and installed .NET SDK"]
+fn compiler_method_references_and_invocations_have_independent_classifications() {
+    use codecallnavigator::model::{RelationshipKind as Kind, TargetResolution as Resolution};
+    let root = tempfile::tempdir().unwrap();
+    let project = root.path().join("Classification.csproj");
+    fs::write(&project, "<Project Sdk=\"Microsoft.NET.Sdk\"><PropertyGroup><TargetFramework>net10.0</TargetFramework></PropertyGroup></Project>").unwrap();
+    fs::write(
+        root.path().join("Entry.cs"),
+        r#"
+using System;
+public interface IWorker { void Work(); }
+public sealed class Worker : IWorker { public void Work() {} }
+public static class Entry {
+    static void Leaf() {}
+    public static void Run(IWorker worker) {
+        Action directReference = Leaf;
+        Action virtualReference = worker.Work;
+        worker.Work();
+        directReference();
+    }
+}
+"#,
+    )
+    .unwrap();
+    let graph = analyze(
+        vec![BuildTarget {
+            path: project,
+            language: "csharp".into(),
+            kind: "project".into(),
+            label: "classification".into(),
+        }],
+        &AnalyzerRuntime::discover().unwrap(),
+        &AtomicBool::new(false),
+        &|_| {},
+    )
+    .unwrap();
+    for (kind, certainty, expected_kind, resolution) in [
+        (
+            "methodgroup",
+            "direct",
+            Kind::FunctionReference,
+            Resolution::Direct,
+        ),
+        (
+            "methodgroup",
+            "dispatch",
+            Kind::FunctionReference,
+            Resolution::VirtualDispatch,
+        ),
+        ("call", "dispatch", Kind::Call, Resolution::VirtualDispatch),
+    ] {
+        let edge = graph
+            .edges
+            .iter()
+            .find(|edge| edge.kind == kind && edge.certainty == certainty)
+            .unwrap_or_else(|| {
+                panic!(
+                    "Missing compiler relationship {kind}/{certainty}: {:?}",
+                    graph.edges
+                )
+            });
+        assert_eq!(
+            edge.classification(),
+            codecallnavigator::model::RelationshipClassification {
+                kind: expected_kind,
+                resolution
+            }
+        );
+    }
+}

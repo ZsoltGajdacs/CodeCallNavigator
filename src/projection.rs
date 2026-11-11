@@ -137,10 +137,9 @@ pub struct ViewNode {
 
 #[derive(Clone, Debug, Default)]
 pub struct ViewEdge {
+    pub classification: codecallnavigator::model::RelationshipClassification,
     pub from: usize,
     pub to: usize,
-    pub kind: String,
-    pub certainty: String,
     pub count: u64,
     pub points: Vec<[f32; 2]>,
 }

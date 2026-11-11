@@ -1,5 +1,5 @@
 //! Small generation-owned cache for full-graph facts used by bounded projections.
-use super::{Filter, GraphData};
+use super::{Filter, GraphIndex};
 use std::{
     collections::VecDeque,
     sync::{Arc, Mutex},
@@ -15,7 +15,8 @@ pub struct FilterSummary {
 }
 
 impl FilterSummary {
-    pub(super) fn new(data: &GraphData, filter: &Filter, cycles: Vec<Vec<u32>>) -> Self {
+    pub(super) fn new(graph: &GraphIndex, filter: &Filter, cycles: Vec<Vec<u32>>) -> Self {
+        let data = &graph.data;
         let mut cyclic = vec![false; data.nodes.len()];
         for &node in cycles.iter().flatten() {
             cyclic[node as usize] = true;
@@ -28,11 +29,8 @@ impl FilterSummary {
         let hidden_edges = data
             .edges
             .iter()
-            .filter(|edge| {
-                !filter.accepts_edge(edge)
-                    || !filter.accepts_node(&data.nodes[edge.from as usize])
-                    || !filter.accepts_node(&data.nodes[edge.to as usize])
-            })
+            .enumerate()
+            .filter(|(id, _)| !graph.accepts_edge(*id as u32, filter))
             .count();
         Self {
             cyclic,

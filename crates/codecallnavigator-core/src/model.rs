@@ -2,7 +2,9 @@ use anyhow::{Result, ensure};
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 mod evidence;
+mod relationship;
 pub use evidence::{RelationshipEvidence, SourceSite};
+pub use relationship::{RelationshipClassification, RelationshipKind, TargetResolution};
 
 /// Declared access; absence on a node means unknown or not applicable.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Deserialize, Serialize)]
@@ -50,28 +52,6 @@ pub struct Edge {
     pub kind: String,
     pub certainty: String,
     pub count: u32,
-}
-
-/// Shared by graph filtering and canvas rendering, including projected edges.
-pub fn relationship_is_reference(kind: &str) -> bool {
-    matches!(
-        kind,
-        "methodgroup" | "reference" | "callback" | "_LM" | "_BSM" | "react-event" | "react-prop"
-    )
-}
-
-pub fn relationship_is_uncertain(certainty: &str) -> bool {
-    !matches!(certainty, "direct" | "proven-direct")
-}
-
-impl Edge {
-    pub fn is_reference(&self) -> bool {
-        relationship_is_reference(&self.kind)
-    }
-
-    pub fn is_uncertain(&self) -> bool {
-        relationship_is_uncertain(&self.certainty)
-    }
 }
 
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]

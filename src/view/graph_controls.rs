@@ -2,13 +2,13 @@
 use crate::{
     app::State,
     icons,
-    presentation::{FilterKind, Overlay},
+    presentation::Overlay,
     projection::{FlowDirection, Grouping},
     theme,
 };
 use rune::{El, col, el, row, text};
 use rune_kit::{
-    Button, ButtonVariant, Checkbox, IconButton, IconButtonVariant, Kit, SegmentedControl, Select,
+    Button, ButtonVariant, IconButton, IconButtonVariant, Kit, SegmentedControl, Select,
 };
 
 #[path = "architecture_controls.rs"]
@@ -23,91 +23,9 @@ const GROUPS: [Grouping; 5] = [
 ];
 const DIRECTIONS: [FlowDirection; 2] = [FlowDirection::Callers, FlowDirection::Callees];
 
-fn filter_help(kind: FilterKind, label: &str) -> &str {
-    match kind {
-        FilterKind::VirtualCalls => {
-            "Calls to declared virtual or interface methods. An override may execute at runtime."
-        }
-        _ => label,
-    }
-}
-
-pub fn filters(state: &State, k: &Kit) -> El {
-    let compact = state.viewport[0] < 1150.0;
-    let mut controls = row()
-        .key("graph-filters")
-        .absolute(8.0, 8.0)
-        .on_layout(|state: &mut State, rect| state.graph_overlay_height = rect[3] + 16.0)
-        .padding(8.0)
-        .max_w((state.viewport[0] - 16.0).max(0.0))
-        .flex_wrap()
-        .gap(8.0)
-        .center_y()
-        .radius(k.radius.sm)
-        .fill(k.c.bg_base);
-    for (label, short, key, checked, kind) in filter_items(state) {
-        controls = controls.child(
-            Checkbox::new(checked)
-                .label(if compact { short } else { label })
-                .on_toggle(move |s: &mut State| s.toggle_filter(kind))
-                .build(k)
-                .label(label)
-                .help(filter_help(kind, label))
-                .key(key),
-        );
-    }
-    controls
-}
-
-type FilterItem = (&'static str, &'static str, &'static str, bool, FilterKind);
-
-fn filter_items(state: &State) -> [FilterItem; 6] {
-    let f = &state.nav.filter;
-    [
-        (
-            "Test code",
-            "Tests",
-            "filter-tests",
-            f.include_tests,
-            FilterKind::Tests,
-        ),
-        (
-            "Generated code",
-            "Gen",
-            "filter-generated",
-            f.include_generated,
-            FilterKind::Generated,
-        ),
-        (
-            "Unavailable bodies",
-            "No body",
-            "filter-unavailable",
-            f.include_unavailable,
-            FilterKind::Unavailable,
-        ),
-        (
-            "Virtual / interface calls",
-            "Virtual calls",
-            "filter-virtual-calls",
-            f.include_virtual_calls,
-            FilterKind::VirtualCalls,
-        ),
-        (
-            "Possible / uncertain targets",
-            "Uncertain",
-            "filter-uncertain",
-            f.include_uncertain,
-            FilterKind::Uncertain,
-        ),
-        (
-            "Callbacks / references",
-            "Refs",
-            "filter-references",
-            f.include_references,
-            FilterKind::References,
-        ),
-    ]
-}
+#[path = "graph_filters.rs"]
+mod graph_filters;
+pub use graph_filters::filters;
 
 pub fn toolbar(state: &State, k: &Kit) -> El {
     let navigation = navigation_controls(state, k);
@@ -308,12 +226,12 @@ pub fn legend(k: &Kit) -> El {
         .py(6.0)
         .gap(2.0)
         .child(
-            text("Solid · direct     Amber dashes · virtual/interface or uncertain")
+            text("Solid · directly resolved calls     Amber dashes · other relationships")
                 .font(k.ty.small)
                 .color(k.c.text_muted),
         )
         .child(
-            text("Purple dashes · callback     Amber outline · cycle")
+            text("Purple dashes · function references     Amber outline · cycle")
                 .font(k.ty.small)
                 .color(k.c.text_muted),
         )

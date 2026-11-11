@@ -1,5 +1,9 @@
 //! Presentation state is independent of graph navigation and projection.
 use crate::app::State;
+use codecallnavigator::{
+    graph::Filter,
+    model::{RelationshipKind, TargetResolution},
+};
 use rune_kit::PaneState;
 use serde::{Deserialize, Serialize};
 
@@ -30,9 +34,38 @@ pub enum FilterKind {
     Tests,
     Generated,
     Unavailable,
-    VirtualCalls,
-    Uncertain,
-    References,
+    Relationship(RelationshipKind),
+    Resolution(TargetResolution),
+}
+
+impl FilterKind {
+    pub(crate) fn enabled(self, filter: &Filter) -> bool {
+        match self {
+            Self::Tests => filter.include_tests,
+            Self::Generated => filter.include_generated,
+            Self::Unavailable => filter.include_unavailable,
+            Self::Relationship(kind) => filter.relationship_kinds.contains(&kind),
+            Self::Resolution(resolution) => filter.target_resolutions.contains(&resolution),
+        }
+    }
+
+    fn toggle(self, filter: &mut Filter) {
+        match self {
+            Self::Tests => filter.include_tests = !filter.include_tests,
+            Self::Generated => filter.include_generated = !filter.include_generated,
+            Self::Unavailable => filter.include_unavailable = !filter.include_unavailable,
+            Self::Relationship(kind) => {
+                if !filter.relationship_kinds.remove(&kind) {
+                    filter.relationship_kinds.insert(kind);
+                }
+            }
+            Self::Resolution(resolution) => {
+                if !filter.target_resolutions.remove(&resolution) {
+                    filter.target_resolutions.insert(resolution);
+                }
+            }
+        }
+    }
 }
 
 /// Only stable preferences are serialized, not transient pane drags or popovers.
@@ -193,16 +226,7 @@ impl State {
 
     pub fn toggle_filter(&mut self, kind: FilterKind) {
         self.checkpoint();
-        let filter = &mut self.nav.filter;
-        let flag = match kind {
-            FilterKind::Tests => &mut filter.include_tests,
-            FilterKind::Generated => &mut filter.include_generated,
-            FilterKind::Unavailable => &mut filter.include_unavailable,
-            FilterKind::VirtualCalls => &mut filter.include_virtual_calls,
-            FilterKind::Uncertain => &mut filter.include_uncertain,
-            FilterKind::References => &mut filter.include_references,
-        };
-        *flag = !*flag;
+        kind.toggle(&mut self.nav.filter);
         self.changed();
     }
 

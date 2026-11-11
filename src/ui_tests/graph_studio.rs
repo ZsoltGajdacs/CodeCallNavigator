@@ -1,4 +1,6 @@
 //! User-visible Rune Kit interactions, using the real runtime and production view.
+#[path = "graph_studio_filters.rs"]
+mod filters;
 use super::{click, runtime};
 use crate::{
     app::State,
@@ -227,7 +229,13 @@ fn minimum_window_keeps_graph_controls_visible_without_toolbar_scrolling() {
             "filter-tests",
             "filter-generated",
             "filter-unavailable",
-            "filter-uncertain",
+            "filter-possible",
+            "filter-direct",
+            "filter-other-resolution",
+            "filter-calls",
+            "filter-framework",
+            "filter-http-navigation",
+            "filter-other-relationships",
             "filter-references",
             "overview",
             "collapse-all",
@@ -312,174 +320,6 @@ fn kit_checkbox_changes_graph_filter_and_inspector_disclosure_hides_only_its_sec
     click(&mut runtime, "path-section/trigger");
     settle(&mut runtime);
     assert!(runtime.find("path-from").is_some());
-}
-
-#[test]
-fn overlay_filters_toggle_preserving_zoom_and_centering_the_focus() {
-    let mut runtime = narrow_runtime(true);
-    let before = runtime.state.nav.filter.clone();
-    let zoom = runtime.state.nav.camera.zoom;
-    for key in [
-        "filter-tests",
-        "filter-generated",
-        "filter-unavailable",
-        "filter-virtual-calls",
-        "filter-uncertain",
-        "filter-references",
-    ] {
-        click(&mut runtime, key);
-        settle(&mut runtime);
-    }
-    let after = &runtime.state.nav.filter;
-    assert_eq!(
-        [
-            after.include_tests,
-            after.include_generated,
-            after.include_unavailable,
-            after.include_virtual_calls,
-            after.include_uncertain,
-            after.include_references
-        ],
-        [
-            !before.include_tests,
-            !before.include_generated,
-            !before.include_unavailable,
-            !before.include_virtual_calls,
-            !before.include_uncertain,
-            !before.include_references
-        ]
-    );
-    assert_eq!(runtime.state.nav.camera.zoom, zoom);
-    let anchor = runtime
-        .state
-        .graph_view
-        .nodes
-        .iter()
-        .find(|node| runtime.state.graph_view.focus_keys.contains(&node.key))
-        .unwrap();
-    let center = runtime.state.nav.camera.screen([
-        anchor.position[0] + anchor.size[0] / 2.0,
-        anchor.position[1] + anchor.size[1] / 2.0,
-    ]);
-    assert!((center[0] - runtime.state.viewport[0] / 2.0).abs() < 0.1);
-    assert!((center[1] - runtime.state.viewport[1] / 2.0).abs() < 0.1);
-    let saved: crate::navigation::SavedSession =
-        serde_json::from_str(&serde_json::to_string(&runtime.state.session()).unwrap()).unwrap();
-    assert_eq!(
-        serde_json::to_value(saved.navigation.filter).unwrap(),
-        serde_json::to_value(&runtime.state.nav.filter).unwrap()
-    );
-}
-
-#[test]
-fn virtual_calls_toggle_is_independent_and_restored_by_history() {
-    let mut runtime = runtime();
-    click(&mut runtime, "filter-uncertain");
-    settle(&mut runtime);
-    assert!(!runtime.state.nav.filter.include_uncertain);
-    assert!(runtime.state.nav.filter.include_virtual_calls);
-    click(&mut runtime, "filter-virtual-calls");
-    settle(&mut runtime);
-    assert!(!runtime.state.nav.filter.include_virtual_calls);
-    assert!(!runtime.state.nav.filter.include_uncertain);
-    click(&mut runtime, "back");
-    settle(&mut runtime);
-    assert!(runtime.state.nav.filter.include_virtual_calls);
-    assert!(!runtime.state.nav.filter.include_uncertain);
-    click(&mut runtime, "forward");
-    settle(&mut runtime);
-    assert!(!runtime.state.nav.filter.include_virtual_calls);
-}
-
-fn assert_filter_bar(runtime: &Runtime<State>) {
-    let elements = runtime.elements();
-    let canvas = elements
-        .iter()
-        .find(|e| e.key.as_deref() == Some("graph-canvas"))
-        .unwrap();
-    let virtual_label = if canvas.rect[2] < 1150.0 {
-        "Virtual calls"
-    } else {
-        "Virtual / interface calls"
-    };
-    assert!(
-        elements
-            .iter()
-            .any(|e| e.text.as_deref() == Some(virtual_label))
-    );
-    let mut previous: Option<[f32; 4]> = None;
-    for (key, label) in [
-        ("filter-tests", "Test code"),
-        ("filter-generated", "Generated code"),
-        ("filter-unavailable", "Unavailable bodies"),
-        ("filter-virtual-calls", "Virtual / interface calls"),
-        ("filter-uncertain", "Possible / uncertain targets"),
-        ("filter-references", "Callbacks / references"),
-    ] {
-        let control = elements
-            .iter()
-            .find(|e| e.key.as_deref() == Some(key))
-            .unwrap();
-        assert_filter_accessibility(control, label);
-        assert!(
-            control.rect[0] >= canvas.rect[0]
-                && control.rect[0] + control.rect[2] <= canvas.rect[0] + canvas.rect[2] + 0.5
-                && control.visible[2] >= control.rect[2] - 0.5,
-            "{key} exceeds the graph or is clipped: {:?}",
-            control.rect
-        );
-        if let Some(previous) = previous {
-            assert!(
-                control.rect[0] >= previous[0] + previous[2] - 0.5
-                    || control.rect[1] >= previous[1] + previous[3] - 0.5,
-                "{key} overlaps the preceding filter"
-            );
-        }
-        previous = Some(control.rect);
-    }
-}
-
-fn assert_filter_accessibility(control: &rune::ElementInfo, label: &str) {
-    let help = if control.key.as_deref() == Some("filter-virtual-calls") {
-        "Calls to declared virtual or interface methods. An override may execute at runtime."
-    } else {
-        label
-    };
-    assert_eq!(
-        (
-            control.role,
-            control.label.as_deref(),
-            control.help.as_deref(),
-            control.focusable
-        ),
-        ("checkbox", Some(label), Some(help), true),
-        "{label} accessibility"
-    );
-}
-
-#[test]
-fn overlay_filters_fit_and_expose_full_names_in_both_themes() {
-    for dark in [false, true] {
-        for (width, height, panes) in [
-            (1050.0, 680.0, true),
-            (1420.0, 900.0, true),
-            (1030.0, 680.0, false),
-            (1130.0, 680.0, false),
-            (1230.0, 900.0, false),
-            (1420.0, 900.0, false),
-        ] {
-            let mut state = State::new();
-            scenes::install(&mut state);
-            state.ui.sidebar.set_width(400.0);
-            state.ui.inspector.set_width(420.0);
-            state.ui.sidebar.set_open(panes);
-            state.ui.inspector.set_open(panes);
-            let mut runtime = Runtime::new(state, view::view, (width, height), Env::new(dark, 1.0));
-            runtime.poll = Some(jobs::poll);
-            settle(&mut runtime);
-            assert_filter_bar(&runtime);
-        }
-    }
 }
 
 #[test]
