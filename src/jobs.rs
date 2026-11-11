@@ -34,6 +34,7 @@ pub struct Jobs {
     pub source: Latest<crate::source_popup::SourceOutput>,
     pub discovery: Latest<DiscoveryOutput>,
     pub analysis: Latest<Fallible<LoadedGraph>>,
+    pub cache_clear: Latest<crate::cache_jobs::Output>,
     pub layout: Latest<(u64, u64, Fallible<projection::GraphView>)>,
     pub search: Latest<crate::search::SearchOutput>,
     pub neighbors: Latest<NeighborOutput>,
@@ -54,6 +55,7 @@ impl Default for Jobs {
             source: Latest::default(),
             discovery: Latest::default(),
             analysis: Latest::default(),
+            cache_clear: Latest::default(),
             layout: Latest::default().debounce(Duration::from_millis(50)),
             search: Latest::default().debounce(Duration::from_millis(100)),
             neighbors: Latest::default(),
@@ -75,6 +77,7 @@ pub fn setup(state: &mut State, waker: Waker) {
     state.architecture_workspace.job.set_waker(waker.clone());
     state.jobs.discovery.set_waker(waker.clone());
     state.jobs.analysis.set_waker(waker.clone());
+    state.jobs.cache_clear.set_waker(waker.clone());
     state.jobs.layout.set_waker(waker.clone());
     state.jobs.search.set_waker(waker.clone());
     state.jobs.neighbors.set_waker(waker.clone());
@@ -131,7 +134,7 @@ impl State {
     }
 
     pub fn analyze_selected(&mut self) {
-        if self.analyzing {
+        if self.project_job_busy() {
             return;
         }
         let targets: Vec<_> = self
@@ -286,6 +289,7 @@ pub fn poll(state: &mut State, time: f64, tx: &mut Tx) -> bool {
         | poll_boot(state)
         | poll_discovery(state)
         | poll_analysis(state)
+        | crate::cache_jobs::poll(state)
         | poll_graph(state)
         | poll_search_input(state)
         | poll_persistence(state)
@@ -334,7 +338,10 @@ fn poll_persistence(state: &mut State) -> bool {
 }
 
 fn ready_to_quit(state: &State) -> bool {
-    state.closing && !state.jobs.analysis.is_pending() && !state.jobs.persistence.is_pending()
+    state.closing
+        && !state.jobs.analysis.is_pending()
+        && !state.jobs.cache_clear.is_pending()
+        && !state.jobs.persistence.is_pending()
 }
 
 fn poll_boot(state: &mut State) -> bool {

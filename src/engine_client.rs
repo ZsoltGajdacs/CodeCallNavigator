@@ -28,6 +28,17 @@ pub fn discover(runtime: &Runtime, project: &Path) -> Result<Vec<BuildTarget>> {
     }
 }
 
+pub fn clear_cache(runtime: &Runtime, project: &Path) -> Result<u32> {
+    let request = Request::ClearCache {
+        version: VERSION,
+        project: project.to_owned(),
+    };
+    match exchange(runtime, &request, &AtomicBool::new(false), &|_| {})? {
+        Event::CacheCleared { removed_files } => Ok(removed_files),
+        _ => bail!("Engine returned an unexpected result for cache clearing"),
+    }
+}
+
 pub struct Analysis {
     pub project: std::path::PathBuf,
     pub targets: Vec<BuildTarget>,

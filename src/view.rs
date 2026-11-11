@@ -54,6 +54,7 @@ fn graph_workspace(state: &State, cx: &mut Cx<State>) -> El {
             Toolbar::new()
                 .leading(text("CodeGraph").font(k.ty.ui_medium).color(k.c.text_base))
                 .leading(workspace_identity(state, &k))
+                .trailing(clear_cache_action(state, &k))
                 .trailing(analysis_action(state, &k))
                 .trailing(
                     IconButton::new(&icons::LAYOUT_RIGHT)
@@ -165,6 +166,19 @@ fn workspace_identity(state: &State, k: &Kit) -> El {
         .help(path)
 }
 
+fn clear_cache_action(state: &State, k: &Kit) -> El {
+    Button::new(if state.clearing_cache {
+        "Clearing…"
+    } else {
+        "Clear cache"
+    })
+    .disabled(!state.can_clear_cache())
+    .on_press(State::clear_cache)
+    .build(k)
+    .key("clear-cache")
+    .help("Clear this project's analysis cache before starting a full analysis")
+}
+
 fn analysis_action(state: &State, k: &Kit) -> El {
     if state.analyzing {
         Button::new("Cancel analysis")
@@ -178,7 +192,12 @@ fn analysis_action(state: &State, k: &Kit) -> El {
         } else {
             "Generate graph"
         })
-        .disabled(state.store.is_none() || state.targets.iter().all(|t| !t.selected))
+        .disabled(
+            state.clearing_cache
+                || state.closing
+                || state.store.is_none()
+                || state.targets.iter().all(|t| !t.selected),
+        )
         .on_press(State::analyze_selected)
         .build(k)
         .key("analyze")
@@ -224,7 +243,7 @@ fn active_analysis(state: &State, k: &Kit) -> El {
 fn status_bar(state: &State, k: &Kit) -> El {
     let status = if !state.warning.is_empty() {
         &state.warning
-    } else if state.stale {
+    } else if state.stale && !state.cache_status_visible() {
         "Source files changed · refresh to update this graph"
     } else {
         &state.status

@@ -2,6 +2,7 @@ use crate::{app::State, jobs, scenes, view};
 use rune::{Env, Runtime};
 
 mod architectural_layers;
+mod cache_clear;
 mod canvas_gpu_performance;
 mod canvas_performance;
 mod function_flows;

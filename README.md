@@ -112,6 +112,23 @@ generation and publishes only on success. Failure/cancellation preserves the las
 successful graph. Source/build changes mark it stale; refresh is manual.
 `CODEGRAPH_DATA_DIR` selects an isolated cache for development or acceptance checks.
 
+**Clear cache**, beside Generate graph / Refresh, removes the selected project's
+reusable inference cache. Wait for “Cache cleared · start analysis to rebuild.”,
+then start analysis manually. The last successful graph and navigation remain
+available. This does not clean build outputs or dependency caches. Clearing and
+analysis cannot run together for the same project.
+
+The same operation is available without opening the desktop:
+
+```sh
+codegraph-engine clear-cache --project /path/to/project
+```
+
+It removes only `.codegraph/inference.sqlite3` and its SQLite sidecars; an absent
+cache is already clear. It preserves `.codegraph/graph.json` and project files.
+Unsafe cache paths, deletion errors and a project lock held by analysis cause a
+reported failure; retry after resolving the error.
+
 ## Reproduce the build
 
 Prerequisites: Apple Silicon macOS, Rust/Cargo, Xcode command-line tools, Python

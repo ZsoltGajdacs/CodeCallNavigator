@@ -50,6 +50,9 @@ fn request() -> Result<Event> {
         Request::Discover { project, .. } => Ok(Event::Discovered {
             targets: discovery::discover(&project)?,
         }),
+        Request::ClearCache { project, .. } => Ok(Event::CacheCleared {
+            removed_files: codegraph_core::boundary::clear_inference_cache(&project)?,
+        }),
         Request::Analyze {
             project,
             roots,

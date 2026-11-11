@@ -12,6 +12,10 @@ pub enum Request {
         version: u32,
         project: PathBuf,
     },
+    ClearCache {
+        version: u32,
+        project: PathBuf,
+    },
     Analyze {
         version: u32,
         project: PathBuf,
@@ -26,7 +30,9 @@ pub enum Request {
 impl Request {
     pub fn version(&self) -> u32 {
         match self {
-            Self::Discover { version, .. } | Self::Analyze { version, .. } => *version,
+            Self::Discover { version, .. }
+            | Self::ClearCache { version, .. }
+            | Self::Analyze { version, .. } => *version,
         }
     }
 }
@@ -42,6 +48,9 @@ pub enum Event {
     },
     Discovered {
         targets: Vec<BuildTarget>,
+    },
+    CacheCleared {
+        removed_files: u32,
     },
     Complete {
         roots: Vec<(String, PathBuf)>,

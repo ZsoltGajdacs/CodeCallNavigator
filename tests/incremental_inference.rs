@@ -251,6 +251,28 @@ fn assert_cache_warmth(fixture: &Fixture, cold: &Value, initial: &[u8]) {
         "Positive and negative decisions should be reused"
     );
     assert_eq!(counter(&warm, "inference.cache_misses"), 0);
+    let cleared = Command::new(engine())
+        .args(["clear-cache", "--project"])
+        .arg(fixture.root())
+        .output()
+        .unwrap();
+    assert!(
+        cleared.status.success(),
+        "{}",
+        String::from_utf8_lossy(&cleared.stderr)
+    );
+    assert!(!fixture.cache().exists());
+    assert_eq!(
+        fixture.graph(),
+        initial,
+        "Clearing preserves the published graph"
+    );
+    let rebuilt = fixture.analyze(false);
+    assert_eq!(counter(&rebuilt, "inference.cache_hits"), 0);
+    assert!(counter(&rebuilt, "inference.cache_misses") >= 3);
+    assert_eq!(fixture.graph(), initial);
+    assert_eq!(rebuilt["digest"], cold["digest"]);
+    assert_only_graph_json(fixture.root());
 }
 
 fn assert_configuration_invalidation(fixture: &Fixture, initial: &[u8]) {

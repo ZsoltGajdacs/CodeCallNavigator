@@ -4,6 +4,7 @@ use std::path::PathBuf;
 pub enum Command {
     Help,
     Discover(PathBuf),
+    ClearCache(PathBuf),
     Analyze(Analysis),
     Compare {
         project: PathBuf,
@@ -34,6 +35,15 @@ pub fn parse(values: impl Iterator<Item = String>) -> Result<Command> {
             Ok(Command::Discover(project.into()))
         }
         "analyze" => parse_analyze(values),
+        "clear-cache" => {
+            ensure!(
+                values.next().as_deref() == Some("--project"),
+                "clear-cache requires --project PROJECT"
+            );
+            let project = take_value(&mut values, "--project")?;
+            ensure!(values.next().is_none(), "Unexpected clear-cache argument");
+            Ok(Command::ClearCache(project.into()))
+        }
         "compare" => parse_compare(values),
         "serve-once" => {
             ensure!(values.next().is_none(), "serve-once takes no arguments");
@@ -118,6 +128,17 @@ mod tests {
     use super::*;
     fn command(values: &[&str]) -> Result<Command> {
         parse(values.iter().map(|value| value.to_string()))
+    }
+    #[test]
+    fn clear_cache_requires_one_explicit_project() {
+        assert!(command(&["clear-cache"]).is_err());
+        assert!(command(&["clear-cache", "/repo"]).is_err());
+        assert!(command(&["clear-cache", "--project"]).is_err());
+        assert!(command(&["clear-cache", "--project", "/repo", "--all"]).is_err());
+        assert!(matches!(
+            command(&["clear-cache", "--project", "/repo"]).unwrap(),
+            Command::ClearCache(project) if project == std::path::Path::new("/repo")
+        ));
     }
     #[test]
     fn destinations_are_fixed_and_options_are_unambiguous() {

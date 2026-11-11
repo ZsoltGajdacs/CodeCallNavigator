@@ -10,6 +10,7 @@ engine executable rather than calling analyzer functions.
 ```sh
 codegraph-engine discover /checkout
 codegraph-engine analyze --project /checkout backend/pom.xml frontend/tsconfig.json
+codegraph-engine clear-cache --project /checkout
 codegraph-engine compare --project /checkout --base HEAD~1 --head WORKTREE
 ```
 
@@ -69,6 +70,13 @@ The desktop uses the versioned `serve-once` newline-delimited JSON protocol.
 Runtime observations and metrics travel separately from the artifact. The client
 verifies the protocol version and artifact digest before caching the result.
 Cancellation or a disconnected client stops analysis and its owned subprocesses.
+Protocol version 1 also accepts
+`{"command":"clear_cache","version":1,"project":"/checkout"}`.
+The engine responds with its usual `hello`, followed by
+`{"event":"cache_cleared","removed_files":1}` on success, or `failed` on an
+operational error. `removed_files` counts the cache database and any sidecars
+actually deleted; an already empty cache succeeds with zero. Older engines that
+lack this additive command reject it as an invalid request.
 `analyze-native` is an internal acceptance oracle retained for comparison with
 the pre-extraction SQLite implementation; it writes no persistent graph file and
 is not the supported project export interface.
@@ -239,6 +247,16 @@ happen before the cache replaces its current rows in one transaction under the
 same project lock. Cache persistence failure cannot turn a published graph into a
 failed analysis. Failed or cancelled analysis preserves the successful graph and
 previous cache. The cache stores no graph history.
+
+Use `codegraph-engine clear-cache --project /checkout` or the desktop's
+**Clear cache** button beside analysis to discard the inference database and its
+exact `-wal`, `-shm` and `-journal` sidecars. Clearing holds the same project
+analysis lock and fails while another analysis owns it. Nonregular or hard-linked
+cache paths and a symlinked `.codegraph` directory are rejected before deletion.
+Corrupt regular cache files can be removed so the next analysis recomputes all
+inference decisions. Clearing preserves `graph.json`, the displayed graph,
+navigation, authored configuration and build outputs; start analysis separately
+after it completes.
 
 Set `CODEGRAPH_DISABLE_INFERENCE_CACHE=1` to run the full reference path without
 reading or writing the cache. Canonical graph bytes are identical in both modes.

@@ -14,7 +14,7 @@ pub fn run() -> Result<i32> {
     match arguments::parse(std::env::args().skip(1))? {
         Command::Help => {
             println!(
-                "codegraph-engine discover PROJECT\ncodegraph-engine analyze --project PROJECT [--root NAME=PATH] TARGET...\ncodegraph-engine compare --project PROJECT --base REF --head REF|WORKTREE"
+                "codegraph-engine discover PROJECT\ncodegraph-engine analyze --project PROJECT [--root NAME=PATH] TARGET...\ncodegraph-engine clear-cache --project PROJECT\ncodegraph-engine compare --project PROJECT --base REF --head REF|WORKTREE"
             );
             Ok(0)
         }
@@ -27,6 +27,11 @@ pub fn run() -> Result<i32> {
                     &serde_json::json!({"targets":targets,"default_selection":selected})
                 )?
             );
+            Ok(0)
+        }
+        Command::ClearCache(project) => {
+            let removed = codegraph_core::boundary::clear_inference_cache(&project)?;
+            println!("Cleared inference cache ({removed} files removed)");
             Ok(0)
         }
         Command::Analyze(arguments) => {
