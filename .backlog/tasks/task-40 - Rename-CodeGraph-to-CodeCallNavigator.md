@@ -1,11 +1,11 @@
 ---
 id: TASK-40
 title: Rename CodeGraph to CodeCallNavigator
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-11-11T09:27:00Z'
-updated_date: '2026-11-11T09:36:00Z'
+updated_date: '2026-11-11T09:40:00Z'
 labels: []
 dependencies: []
 ordinal: 51000
@@ -21,7 +21,7 @@ Adopt approved new identity with clean storage cutover; preserve historical reco
 <!-- AC:BEGIN -->
 - [x] #1 Current owned identifiers and packaging use new name
 - [x] #2 Fresh storage works without modifying old data
-- [ ] #3 Validation and Code Health results recorded
+- [x] #3 Validation and Code Health results recorded
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -42,4 +42,12 @@ Packaged DMG checksum VALID. Review verified all changed existing files are exac
 Additional quality review: ignored local benchmark also scores 10 (278 reviewed files total). Root integration java_duplicates: two real Maven/Gradle cases pass; private recurring case requires unavailable CODECALLNAVIGATOR_RECURRING_BILLING. Java flow, HTTP and lambda correlation tests pass.
 
 All 35 root integration targets completed: 210 tests passed, two failed. Private recurring duplicate case lacks fixture. TypeScript source-alias byte equivalence fails only analysis.inputs and limitation count; nodes/edges match, rename causality unproven. Recorded as unresolved validation; no unrelated semantic fix. Verification report: docs/verification/rename-2026-11-11.md. No commit or push. Task remains In Progress pending required validation exceptions/failure resolution.
+
+User requested closure after reviewing the reported validation limitations, accepting them for this rename: unavailable private billing fixtures, release/data/Metal prerequisites for performance tests, and unresolved TypeScript source-alias metadata equivalence. Cancellation passed isolated with process access. Rename implementation already committed by user as 2f2f193; tracked working tree was clean before closure.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Renamed current owned app, crates, commands, adapters, storage, provenance and packaging to CodeCallNavigator. Historical records and old data preserved. Compile, desktop tests, strict Clippy, 104 TypeScript tests, 210 root integration tests, CodeScene source reviews and app/engine/DMG packaging verified. Remaining validation limitations explicitly accepted by user on closure. Implementation commit: 2f2f193. No push.
+<!-- SECTION:FINAL_SUMMARY:END -->
