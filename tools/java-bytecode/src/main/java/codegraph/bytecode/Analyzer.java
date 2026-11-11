@@ -70,6 +70,10 @@ public final class Analyzer {
         configuration.setMainConfig(JavaCG2ConfigKeyEnum.CKE_JDK_RUNTIME_MAJOR_VERSION, options.runtimeMajor());
         configuration.setMainConfig(JavaCG2ConfigKeyEnum.CKE_CONTINUE_WHEN_ERROR, "false");
         configuration.setMainConfig(JavaCG2ConfigKeyEnum.CKE_PARSE_METHOD_CALL_TYPE_VALUE, "true");
+        // Branch-heavy generated equality methods can exhaust symbolic frame snapshots.
+        // Keep their declarations and bytecode calls, but infer types/values elsewhere only.
+        configuration.setElConfigText(JavaCG2ElConfigEnum.ECE_PARSE_IGNORE_METHOD_CALL_TYPE_VALUE_CALLER,
+                "string.endsWithAny(er_full_method, ':equals(java.lang.Object)', ':hashCode()')");
         configuration.setMainConfig(JavaCG2ConfigKeyEnum.CKE_EL_IGNORE_DATA_MAX_LINE_NUM, "0");
         // The engine otherwise excludes project equals/hashCode overrides by default.
         configuration.setElConfigText(JavaCG2ElConfigEnum.ECE_PARSE_IGNORE_METHOD,

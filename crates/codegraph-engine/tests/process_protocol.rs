@@ -2,7 +2,7 @@
 use serde_json::{Value, json};
 use std::{
     fs,
-    io::{BufRead, BufReader, Write},
+    io::{BufRead, BufReader, Read, Write},
     os::unix::fs::PermissionsExt,
     path::Path,
     process::{Child, Command, Stdio},
@@ -125,6 +125,48 @@ fn slow_build(root: &Path) {
     fs::set_permissions(wrapper, fs::Permissions::from_mode(0o755)).unwrap();
 }
 
+struct EngineOutputReaders {
+    stdout: thread::JoinHandle<Vec<u8>>,
+    stderr: thread::JoinHandle<Vec<u8>>,
+}
+
+impl EngineOutputReaders {
+    fn drain(child: &mut Child) -> Self {
+        // Contextual failures can exceed pipe capacity; drain both pipes while waiting.
+        Self {
+            stdout: read_pipe(child.stdout.take().unwrap()),
+            stderr: read_pipe(child.stderr.take().unwrap()),
+        }
+    }
+
+    fn assert_cancelled(self) {
+        let output = self.stdout.join().unwrap();
+        let errors = self.stderr.join().unwrap();
+        let events: Vec<Value> = String::from_utf8(output)
+            .unwrap()
+            .lines()
+            .map(|line| serde_json::from_str(line).unwrap())
+            .collect();
+        let failure = events.last().unwrap();
+        assert_eq!(failure["event"], "failed");
+        let reason = failure["message"].as_str().unwrap();
+        assert!(
+            reason.contains("cancelled"),
+            "{failure}; stderr: {}",
+            String::from_utf8_lossy(&errors)
+        );
+        assert!(!reason.contains("timed out"), "{failure}");
+    }
+}
+
+fn read_pipe(mut pipe: impl Read + Send + 'static) -> thread::JoinHandle<Vec<u8>> {
+    thread::spawn(move || {
+        let mut bytes = Vec::new();
+        pipe.read_to_end(&mut bytes).unwrap();
+        bytes
+    })
+}
+
 #[test]
 fn analysis_eof_and_sigterm_reap_build_descendants_and_preserve_artifact() {
     for signal in [false, true] {
@@ -143,6 +185,7 @@ fn analysis_eof_and_sigterm_reap_build_descendants_and_preserve_artifact() {
             .spawn()
             .unwrap();
         hello(&mut child);
+        let output = EngineOutputReaders::drain(&mut child);
         send(
             &mut child,
             &json!({"command":"analyze", "version":1, "project":project.path(), "roots":[],
@@ -168,6 +211,7 @@ fn analysis_eof_and_sigterm_reap_build_descendants_and_preserve_artifact() {
             drop(child.stdin.take());
         }
         assert_eq!(wait(&mut child), 2);
+        output.assert_cancelled();
         assert_eq!(
             unsafe { libc::kill(descendant, 0) },
             -1,

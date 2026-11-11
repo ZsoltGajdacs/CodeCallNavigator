@@ -11,6 +11,13 @@ The engine's default equals/hashCode omission is disabled using its existing
 `ECE_PARSE_IGNORE_METHOD` configuration so completeness validation includes project
 overrides. CodeGraph subsequently excludes Object-method signatures, constructors,
 initializers, inherited placeholders and members without source declarations.
+The existing `ECE_PARSE_IGNORE_METHOD_CALL_TYPE_VALUE_CALLER` switch disables
+type/value inference only for exact `equals(java.lang.Object)` and `hashCode()`
+signatures, including authored overrides. Their declarations and bytecode call
+targets remain in analyzer output. This avoids symbolic frame snapshot exhaustion
+in branch-heavy generated equality methods. Every other method, including
+`equals(String)` and `hashCode(int)` overloads, retains full inference. Snapshot
+limits and incomplete output still fail analysis; there is no automatic fallback.
 Authored lambda implementations survive synthetic-bytecode filtering, including
 builds without debug line tables. Generated source files remain eligible for the
 existing generated-source visibility toggle.

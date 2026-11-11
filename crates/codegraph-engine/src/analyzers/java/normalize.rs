@@ -455,6 +455,7 @@ impl<'a> BytecodeCollector<'a> {
         }
         self.graph.diagnostics.push(format!("Java: {} inherited/reference symbols without declared bodies excluded; {} external relationships excluded. These references are engine-reported, not resolved by name.", self.placeholder_count, self.excluded_edges));
         self.graph.diagnostics.push("Java DI, reflection, framework callback ordering and dynamic runtime targets are supported only where reported by java-callgraph2. Bytecode source columns are unavailable.".into());
+        self.graph.diagnostics.push("Java equals(java.lang.Object) and hashCode() retain bytecode declarations and call targets in analyzer output but skip type/value inference. All other methods retain full inference; existing graph inclusion rules still apply.".into());
         self.graph.validate()?;
         Ok(self.graph)
     }

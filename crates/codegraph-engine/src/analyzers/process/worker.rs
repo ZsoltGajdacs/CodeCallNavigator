@@ -1,20 +1,24 @@
 //! Owned, cancellable two-phase adapter process. Protocol payloads stay adapter-specific.
-use super::{check_cancel, log_tail, stop_process_group};
+use super::{
+    diagnostics::{PROCESS_TIMEOUT, ProcessLogs, log_tail},
+    stop_process_group,
+};
 use anyhow::{Context, Result, bail, ensure};
 use std::{
     fs,
     io::Write,
     os::unix::process::CommandExt,
-    path::{Path, PathBuf},
+    path::Path,
     process::{Child, Command, Stdio},
-    sync::atomic::{AtomicBool, Ordering},
+    sync::atomic::AtomicBool,
     thread,
     time::{Duration, Instant},
 };
 
 pub(in crate::analyzers) struct Worker {
     child: Child,
-    stderr: PathBuf,
+    logs: ProcessLogs,
+    timeout: Duration,
     finished: bool,
 }
 
@@ -25,14 +29,12 @@ impl Worker {
         name: &str,
         cancel: &AtomicBool,
     ) -> Result<Self> {
-        check_cancel(cancel)?;
-        let stderr = job.join(format!("{name}.stderr"));
+        let logs = ProcessLogs::new(job, name);
+        logs.check_wait(cancel, Instant::now(), PROCESS_TIMEOUT)?;
         let child = command
             .stdin(Stdio::piped())
-            .stdout(Stdio::from(fs::File::create(
-                job.join(format!("{name}.stdout")),
-            )?))
-            .stderr(Stdio::from(fs::File::create(&stderr)?))
+            .stdout(Stdio::from(fs::File::create(&logs.stdout)?))
+            .stderr(Stdio::from(fs::File::create(&logs.stderr)?))
             .process_group(0)
             .spawn()
             .context("Cannot start analysis worker")?;
@@ -40,7 +42,8 @@ impl Worker {
         crate::metrics::count("subprocesses", 1);
         Ok(Self {
             child,
-            stderr,
+            logs,
+            timeout: PROCESS_TIMEOUT,
             finished: false,
         })
     }
@@ -59,7 +62,7 @@ impl Worker {
             if let Some(status) = self.child.try_wait()? {
                 bail!(
                     "Analysis worker exited before output ({status}): {}",
-                    log_tail(&self.stderr)
+                    log_tail(&self.logs.stderr)
                 );
             }
             thread::sleep(Duration::from_millis(20));
@@ -87,7 +90,7 @@ impl Worker {
                 ensure!(
                     status.success(),
                     "Analysis worker failed ({status}): {}",
-                    log_tail(&self.stderr)
+                    log_tail(&self.logs.stderr)
                 );
                 return Ok(());
             }
@@ -96,12 +99,7 @@ impl Worker {
     }
 
     fn check_wait(&mut self, cancel: &AtomicBool, started: Instant) -> Result<()> {
-        ensure!(
-            !cancel.load(Ordering::Relaxed) && started.elapsed() <= Duration::from_secs(1800),
-            "Analysis worker cancelled or exceeded 30 minutes; logs: {}",
-            self.stderr.display()
-        );
-        Ok(())
+        self.logs.check_wait(cancel, started, self.timeout)
     }
 }
 
@@ -142,11 +140,62 @@ mod tests {
         )
         .unwrap();
         let pid = worker.child.id();
+        let error = worker
+            .wait_for_output(&directory.path().join("absent"), &AtomicBool::new(true))
+            .unwrap_err()
+            .to_string();
         assert!(
-            worker
-                .wait_for_output(&directory.path().join("absent"), &AtomicBool::new(true))
-                .is_err()
+            error.contains("cancelled-worker cancelled after"),
+            "{error}"
         );
+        assert!(!error.contains("timed out"), "{error}");
+        assert!(error.contains("cancelled-worker.stdout"), "{error}");
+        assert!(error.contains("cancelled-worker.stderr"), "{error}");
+        drop(worker);
+        assert_eq!(unsafe { libc::kill(pid as i32, 0) }, -1);
+    }
+
+    #[test]
+    fn timeout_wait_reports_context_and_worker_is_reaped_on_drop() {
+        let directory = tempfile::tempdir().unwrap();
+        let mut worker = Worker::start(
+            Command::new("/bin/sh").args(["-c", "echo worker-diagnostic >&2; sleep 30"]),
+            directory.path(),
+            "deadline-worker",
+            &AtomicBool::new(false),
+        )
+        .unwrap();
+        worker.timeout = Duration::from_millis(200);
+        let pid = worker.child.id();
+        let error = worker
+            .wait_for_output(&directory.path().join("absent"), &AtomicBool::new(false))
+            .unwrap_err()
+            .to_string();
+        assert!(error.contains("deadline-worker timed out after"), "{error}");
+        assert!(error.contains("deadline-worker.stdout"), "{error}");
+        assert!(error.contains("deadline-worker.stderr"), "{error}");
+        assert!(error.contains("worker-diagnostic"), "{error}");
+        drop(worker);
+        assert_eq!(unsafe { libc::kill(pid as i32, 0) }, -1);
+    }
+
+    #[test]
+    fn timeout_finish_stops_worker_that_does_not_exit_after_eof() {
+        let directory = tempfile::tempdir().unwrap();
+        let mut worker = Worker::start(
+            Command::new("/bin/sh").args(["-c", "cat >/dev/null; sleep 30"]),
+            directory.path(),
+            "finish-worker",
+            &AtomicBool::new(false),
+        )
+        .unwrap();
+        worker.timeout = Duration::from_millis(20);
+        let pid = worker.child.id();
+        let error = worker
+            .finish(&AtomicBool::new(false))
+            .unwrap_err()
+            .to_string();
+        assert!(error.contains("finish-worker timed out after"), "{error}");
         drop(worker);
         assert_eq!(unsafe { libc::kill(pid as i32, 0) }, -1);
     }

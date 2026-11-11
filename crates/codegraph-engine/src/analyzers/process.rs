@@ -1,5 +1,7 @@
+mod diagnostics;
 pub(super) mod worker;
-use anyhow::{Context, Result, bail, ensure};
+use anyhow::{Context, Result, ensure};
+use diagnostics::{PROCESS_TIMEOUT, ProcessLogs, log_tail};
 use std::os::unix::process::CommandExt;
 use std::{
     fs,
@@ -21,34 +23,44 @@ pub(super) fn run_process(
     name: &str,
     cancel: &AtomicBool,
 ) -> Result<PathBuf> {
-    check_cancel(cancel)?;
+    run_process_with_timeout(
+        command,
+        ProcessLogs::new(job, name),
+        cancel,
+        PROCESS_TIMEOUT,
+    )
+}
+
+fn run_process_with_timeout(
+    command: &mut Command,
+    logs: ProcessLogs,
+    cancel: &AtomicBool,
+    timeout: Duration,
+) -> Result<PathBuf> {
+    logs.check_wait(cancel, Instant::now(), timeout)?;
     let _timing = crate::metrics::stage("subprocess");
     crate::metrics::count("subprocesses", 1);
-    let stdout = job.join(format!("{name}.stdout"));
-    let stderr = job.join(format!("{name}.stderr"));
     command
         .stdin(Stdio::null())
-        .stdout(Stdio::from(fs::File::create(&stdout)?))
-        .stderr(Stdio::from(fs::File::create(&stderr)?))
+        .stdout(Stdio::from(fs::File::create(&logs.stdout)?))
+        .stderr(Stdio::from(fs::File::create(&logs.stderr)?))
         .process_group(0);
     let mut child = command
         .spawn()
         .with_context(|| format!("Cannot start {}", command.get_program().to_string_lossy()))?;
     let started = Instant::now();
     loop {
-        if cancel.load(Ordering::Relaxed) || started.elapsed() > Duration::from_secs(1800) {
+        if let Err(error) = logs.check_wait(cancel, started, timeout) {
             stop_process_group(&mut child);
-            bail!(
-                "Analysis cancelled or exceeded 30 minutes; logs: {}",
-                job.display()
-            );
+            return Err(error);
         }
         match child.try_wait() {
             Ok(Some(status)) => {
                 ensure!(
                     status.success(),
-                    "{name} failed ({status}). {}",
-                    log_tail(&stderr)
+                    "{} failed ({status}). {}",
+                    logs.name,
+                    log_tail(&logs.stderr)
                 );
                 break;
             }
@@ -59,7 +71,7 @@ pub(super) fn run_process(
             }
         }
     }
-    Ok(stdout)
+    Ok(logs.stdout)
 }
 
 fn stop_process_group(child: &mut std::process::Child) {
@@ -78,17 +90,6 @@ fn stop_process_group(child: &mut std::process::Child) {
         libc::kill(group, libc::SIGKILL);
     }
     let _ = child.wait();
-}
-
-fn log_tail(path: &Path) -> String {
-    let text = fs::read_to_string(path).unwrap_or_default();
-    text.chars()
-        .rev()
-        .take(4000)
-        .collect::<String>()
-        .chars()
-        .rev()
-        .collect()
 }
 
 #[cfg(test)]
@@ -143,8 +144,63 @@ mod tests {
             "cancelled",
             &AtomicBool::new(true),
         );
-        assert!(result.is_err());
+        let error = result.unwrap_err().to_string();
+        assert!(error.contains("cancelled cancelled after"), "{error}");
+        assert!(error.contains("cancelled.stdout"), "{error}");
+        assert!(error.contains("cancelled.stderr"), "{error}");
         assert!(!marker.exists());
+    }
+
+    #[test]
+    fn timeout_reports_bounded_stderr_and_stops_descendants() {
+        let directory = tempfile::tempdir().unwrap();
+        let late_write = directory.path().join("should-not-be-created");
+        let error = run_process_with_timeout(
+            Command::new("/bin/sh")
+                .args([
+                    "-c",
+                    "echo diagnostic-from-child >&2; (sleep 1; touch \"$1\") & wait",
+                    "codegraph-timeout-test",
+                ])
+                .arg(&late_write),
+            ProcessLogs::new(directory.path(), "deadline-child"),
+            &AtomicBool::new(false),
+            Duration::from_millis(200),
+        )
+        .unwrap_err()
+        .to_string();
+        assert!(error.contains("deadline-child timed out after"), "{error}");
+        assert!(error.contains("limit 0.20s"), "{error}");
+        assert!(error.contains("deadline-child.stdout"), "{error}");
+        assert!(error.contains("deadline-child.stderr"), "{error}");
+        assert!(error.contains("diagnostic-from-child"), "{error}");
+        assert!(!error.contains("cancelled"), "{error}");
+        thread::sleep(Duration::from_millis(1200));
+        assert!(
+            !late_write.exists(),
+            "A timed-out descendant continued executing"
+        );
+    }
+
+    #[test]
+    fn zero_deadline_never_starts_process_and_cancellation_takes_precedence() {
+        let directory = tempfile::tempdir().unwrap();
+        let marker = directory.path().join("started");
+        for (cancelled, expected) in [(false, "timed out"), (true, "cancelled")] {
+            let error = run_process_with_timeout(
+                Command::new("/usr/bin/touch").arg(&marker),
+                ProcessLogs::new(directory.path(), "zero-deadline"),
+                &AtomicBool::new(cancelled),
+                Duration::ZERO,
+            )
+            .unwrap_err()
+            .to_string();
+            assert!(
+                error.contains(&format!("zero-deadline {expected} after")),
+                "{error}"
+            );
+            assert!(!marker.exists());
+        }
     }
 
     #[test]
@@ -178,7 +234,11 @@ mod tests {
             &cancel,
         );
         cancellation.join().unwrap();
-        assert!(result.is_err());
+        let error = result.unwrap_err().to_string();
+        assert!(error.contains("cancel-group cancelled after"), "{error}");
+        assert!(!error.contains("exceeded"), "{error}");
+        assert!(error.contains("cancel-group.stdout"), "{error}");
+        assert!(error.contains("cancel-group.stderr"), "{error}");
         thread::sleep(Duration::from_millis(1200));
         assert!(
             !late_write.exists(),

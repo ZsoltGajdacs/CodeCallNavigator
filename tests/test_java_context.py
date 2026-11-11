@@ -16,9 +16,9 @@ ROOT = Path(__file__).resolve().parents[1]
 LIB = ROOT / "tools/java-bytecode/build/install/codegraph-bytecode/lib"
 
 
-def run(*arguments):
+def run(*arguments, timeout=None):
     return subprocess.run([str(argument) for argument in arguments], check=True,
-                          text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                          text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=timeout)
 
 
 def tsv(path):
@@ -299,6 +299,75 @@ class JavaContextTests(unittest.TestCase):
         self.assertIn("(VIR)sample.Impl:inherited()", calls)
         self.assertIn("(_CCS)sample.Base:inherited()", calls)
         self.assertIn("(_ITF)sample.Impl:act()", calls)
+
+    def analyze_classes(self, classes):
+        output = self.root / "inference output"
+        run(self.java, "-Xmx1g", "-cp", LIB / "*", "codegraph.bytecode.Analyzer",
+            output, "25", "--project-inputs", "1", classes, timeout=30)
+        properties = status(output)
+        self.assertEqual(properties["analysisComplete"], "true")
+        self.assertEqual(properties["frameSnapshotLimitMethods"], "0")
+        return Path(properties["outputDirectory"])
+
+    def test_only_object_equality_signatures_skip_inference_and_keep_bytecode_calls(self):
+        classes = self.compile("equality policy", {"sample/Equality.java": """
+            package sample;
+            interface Action { int act(); }
+            class Concrete implements Action { public int act() { return 7; } }
+            public class Equality {
+                static int marker() { return 1; }
+                public boolean equals(Object other) {
+                    Action action = new Concrete(); return action.act() == marker();
+                }
+                public int hashCode() {
+                    Action action = new Concrete(); return action.act() + marker();
+                }
+                public boolean equals(String other) {
+                    Action action = new Concrete(); return action.act() == 7;
+                }
+                public int hashCode(int seed) {
+                    Action action = new Concrete(); return action.act() + seed;
+                }
+                public int ordinary() {
+                    Action action = new Concrete(); return action.act();
+                }
+                public boolean notEquals(Object other) {
+                    Action action = new Concrete(); return action.act() == 7;
+                }
+            }
+        """})
+        raw = self.analyze_classes(classes)
+        declarations = (raw / "method_info.txt").read_text()
+        calls = [line.split("\t") for line in (raw / "method_call.txt").read_text().splitlines()]
+        for signature in ["equals(java.lang.Object)", "hashCode()"]:
+            caller = "sample.Equality:" + signature
+            self.assertIn(caller, declarations)
+            targets = [row[3] for row in calls if row[2] == caller]
+            self.assertIn("(STA)sample.Equality:marker()", targets)
+            self.assertIn("(INT)sample.Action:act()", targets)
+            self.assertNotIn("(_ACT_I)sample.Concrete:act()", targets)
+        for signature in ["equals(java.lang.String)", "hashCode(int)", "ordinary()", "notEquals(java.lang.Object)"]:
+            targets = [row[3] for row in calls if row[2] == "sample.Equality:" + signature]
+            self.assertIn("(_ACT_I)sample.Concrete:act()", targets, signature)
+
+    def test_large_lombok_equality_methods_finish_without_snapshot_limits(self):
+        lombok = ROOT / "vendor/lombok-1.18.48.jar"
+        if not lombok.is_file():
+            self.skipTest("Pinned Lombok jar is required")
+        source = self.root / "LargeValue.java"
+        fields = "\n".join(f"private Object field{index};" for index in range(40))
+        source.write_text("package sample; @lombok.Data public class LargeValue {" + fields + "}")
+        classes = self.root / "large classes"
+        run(self.javac, "-g", "-cp", lombok, "-processorpath", lombok,
+            "-processor", "lombok.launch.AnnotationProcessorHider$AnnotationProcessor",
+            "-d", classes, source)
+        raw = self.analyze_classes(classes)
+        declarations = (raw / "method_info.txt").read_text()
+        self.assertIn("sample.LargeValue:equals(java.lang.Object)", declarations)
+        self.assertIn("sample.LargeValue:hashCode()", declarations)
+        calls = (raw / "method_call.txt").read_text()
+        self.assertIn("sample.LargeValue:equals(java.lang.Object)\t", calls)
+        self.assertIn("sample.LargeValue:hashCode()\t", calls)
 
     def test_filtered_marker_context_accepts_zero_methods_but_legacy_cli_rejects_it(self):
         marker = self.compile("marker project", {
