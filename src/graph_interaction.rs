@@ -2,7 +2,7 @@
 use crate::{
     app::State,
     navigation::Navigation,
-    projection::{FocusTarget, GroupKind},
+    projection::{FocusTarget, GroupKind, Grouping},
 };
 use std::time::Duration;
 
@@ -144,14 +144,12 @@ impl State {
                         }
                     }
                 }
-                // Layer membership wraps group keys and may split one class across layers.
-                if self.nav.grouping == crate::projection::Grouping::Layer {
-                    self.nav.set_grouping(crate::projection::Grouping::Project);
-                }
+                // Start collapsed so a class result selects its class card from any level.
+                self.nav.set_grouping(Grouping::Project);
                 let key = crate::projection::class_key(&identity);
                 self.cancel_graph_press();
                 self.inspect_visible(key.clone(), None);
-                self.apply_focus(FocusTarget::ClassMethods(key));
+                self.apply_focus(FocusTarget::Group(key));
             }
         }
     }
@@ -171,9 +169,8 @@ impl State {
             item.body_unavailable,
         );
         self.checkpoint();
-        // Search reveals must escape an architectural tab that hides the target.
-        if self.nav.grouping == crate::projection::Grouping::Layer {
-            self.nav.set_grouping(crate::projection::Grouping::Project);
+        if self.nav.grouping != Grouping::Method {
+            self.nav.set_grouping(Grouping::Method);
         }
         self.nav.filter.include_tests |= test;
         self.nav.filter.include_generated |= generated;

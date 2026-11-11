@@ -3,7 +3,7 @@ use super::{click, wait_for};
 use crate::{
     app::State,
     flow_scenes, jobs,
-    projection::{FocusTarget, Grouping},
+    projection::{FocusTarget, GroupKind, Grouping, ViewNode},
     scenes, search, view,
 };
 use codegraph::{
@@ -69,6 +69,59 @@ fn shift_tap(runtime: &mut Runtime<State>, side: Modifier) {
     }
 }
 
+fn selected_node(runtime: &mut Runtime<State>) -> ViewNode {
+    wait_for(runtime, |state| {
+        !state.needs_layout && !state.graph_interaction.center_after_layout
+    });
+    let selected = runtime
+        .state
+        .visual_selection
+        .as_ref()
+        .expect("selected graph node");
+    let node = runtime
+        .state
+        .graph_view
+        .nodes
+        .iter()
+        .find(|node| &node.key == selected)
+        .expect("selected node is visible");
+    let center = runtime.state.nav.camera.screen([
+        node.position[0] + node.size[0] / 2.0,
+        node.position[1] + node.size[1] / 2.0,
+    ]);
+    assert!(
+        (center[0] - runtime.state.viewport[0] / 2.0).abs() < 0.1,
+        "selected node centered horizontally: {center:?}"
+    );
+    assert!(
+        (center[1] - runtime.state.viewport[1] / 2.0).abs() < 0.1,
+        "selected node centered vertically: {center:?}"
+    );
+    node.clone()
+}
+
+fn selected_class(runtime: &mut Runtime<State>) -> ViewNode {
+    let node = selected_node(runtime);
+    assert_eq!(
+        (node.group_kind, node.member),
+        (Some(GroupKind::Class), None),
+        "class search selects the class card"
+    );
+    assert!(
+        matches!(&runtime.state.nav.focus_target, Some(FocusTarget::Group(key)) if key == &node.key)
+    );
+    assert!(
+        runtime
+            .state
+            .graph_view
+            .nodes
+            .iter()
+            .all(|node| { node.group_kind == Some(GroupKind::Class) && node.member.is_none() }),
+        "class search keeps connections at class level rather than drilling into methods"
+    );
+    node
+}
+
 #[test]
 fn double_shift_opens_and_pointer_or_focus_interruption_cancels_it() {
     let mut runtime = runtime(false);
@@ -109,10 +162,16 @@ fn modal_focuses_real_input_and_restores_query_category_and_keyboard_selection()
     assert_eq!(runtime.state.search.selected, 0);
     click(&mut runtime, "close-search");
     click(&mut runtime, "open-search");
-    assert_eq!(runtime.state.search.category, SearchCategory::Methods);
-    assert_eq!(runtime.state.search.input.text, "order");
-    assert_eq!(runtime.state.search.input.anchor, 0);
-    assert_eq!(runtime.state.search.input.focus, 5);
+    assert_eq!(
+        (
+            runtime.state.search.category,
+            runtime.state.search.input.text.as_str(),
+            runtime.state.search.input.anchor,
+            runtime.state.search.input.focus
+        ),
+        (SearchCategory::Methods, "order", 0, 5),
+        "reopening retains the category and selects the query",
+    );
     press(&mut runtime, Key::Enter);
     assert!(!runtime.state.search.open);
     assert!(matches!(
@@ -134,13 +193,15 @@ fn tabs_return_classes_and_methods_and_class_activation_reveals_members_once() {
     );
     let back = runtime.state.back.len();
     press(&mut runtime, Key::Enter);
-    assert!(!runtime.state.search.open);
-    assert!(runtime.state.nav.filter.include_tests);
-    assert!(runtime.state.nav.filter.include_generated);
-    assert!(matches!(
-        runtime.state.nav.focus_target,
-        Some(FocusTarget::ClassMethods(_))
-    ));
+    assert_eq!(
+        (
+            runtime.state.search.open,
+            runtime.state.nav.filter.include_tests,
+            runtime.state.nav.filter.include_generated
+        ),
+        (false, true, true)
+    );
+    selected_class(&mut runtime);
     assert_eq!(runtime.state.back.len(), back + 1);
 }
 
@@ -154,7 +215,7 @@ fn class_activation_from_layer_grouping_uses_existing_class_keys() {
     press(&mut runtime, Key::Enter);
     assert_eq!(runtime.state.nav.grouping, Grouping::Project);
     assert!(
-        matches!(runtime.state.nav.focus_target, Some(FocusTarget::ClassMethods(ref key)) if key.starts_with("[\"class\","))
+        matches!(runtime.state.nav.focus_target, Some(FocusTarget::Group(ref key)) if key.starts_with("[\"class\","))
     );
 }
 
@@ -282,13 +343,21 @@ fn method_activation_leaves_layer_tab_and_preserves_navigation_history() {
     query(&mut runtime, "OrderTest");
     let back = runtime.state.back.len();
     press(&mut runtime, Key::Enter);
-    assert_eq!(runtime.state.nav.grouping, Grouping::Project);
     assert_eq!(
-        runtime.state.nav.focus.as_deref(),
-        Some("fixture/project/OrderTest")
+        (
+            runtime.state.nav.grouping,
+            runtime.state.nav.focus.as_deref(),
+            runtime.state.nav.filter.include_tests,
+            runtime.state.back.len()
+        ),
+        (
+            Grouping::Method,
+            Some("fixture/project/OrderTest"),
+            true,
+            back + 1
+        ),
+        "method activation changes level, reveals the method, and creates one history entry",
     );
-    assert!(runtime.state.nav.filter.include_tests);
-    assert_eq!(runtime.state.back.len(), back + 1);
     runtime.update(|state, _| state.history(false));
     assert_eq!(runtime.state.nav.grouping, Grouping::Layer);
     assert_eq!(
@@ -331,4 +400,33 @@ fn choosing_category_keeps_typing_in_the_search_editor() {
     wait_for(&mut runtime, |state| !state.search.hits().is_empty());
     assert_eq!(runtime.state.search.hits().len(), 1);
     assert_eq!(runtime.state.search.hits()[0].name, "OrderTest");
+}
+
+#[test]
+fn class_then_method_search_selects_and_centers_the_requested_node_level() {
+    let mut runtime = runtime(false);
+    runtime.update(|state, _| state.nav.grouping = Grouping::Method);
+    click(&mut runtime, "open-search");
+    click(&mut runtime, "search-classes");
+    query(&mut runtime, "Orders");
+    let initial_back = runtime.state.back.len();
+    press(&mut runtime, Key::Enter);
+    selected_class(&mut runtime);
+    assert_eq!(runtime.state.back.len(), initial_back + 1);
+    click(&mut runtime, "open-search");
+    click(&mut runtime, "search-methods");
+    query(&mut runtime, "OrderTest");
+    press(&mut runtime, Key::Enter);
+    assert_eq!(runtime.state.nav.grouping, Grouping::Method);
+    assert_eq!(runtime.state.selected(), Some(5));
+    let method = selected_node(&mut runtime);
+    assert_eq!(
+        (
+            method.member,
+            method.group_kind,
+            runtime.state.nav.selected.as_deref()
+        ),
+        (Some(5), None, Some(method.key.as_str()))
+    );
+    assert_eq!(runtime.state.back.len(), initial_back + 2);
 }

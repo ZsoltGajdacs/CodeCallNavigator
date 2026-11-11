@@ -142,8 +142,9 @@ TypeScript file-backed groups are marked File. Classes without indexed methods
 are not available.
 
 Use Up/Down to select, Enter to focus the result in the graph, and Escape to close.
-Class results open their method call tree; results selected from a flowchart return
-to the graph. Previous/Next reaches further pages. Reopening retains the query and
+Class results select a class-level node; method results select a method-level
+node. The selected node is centered. Results selected from a flowchart return to
+the graph. Previous/Next reaches further pages. Reopening retains the query and
 category for the current session. Source bodies and file paths are not searched.
 
 ## Reproduce the build

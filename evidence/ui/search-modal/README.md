@@ -55,3 +55,27 @@ patch checkpoints.
 The plain debug full-suite command still cannot run release-only benchmarks in
 its debug process. Passing release reruns are recorded separately; no benchmark
 or missing-fixture check is represented as passing without execution.
+
+## Result activation follow-up (TASK-38)
+
+Class hits now focus the selected class card, with class-level connections, rather
+than drilling into separate method nodes. Existing class-card member previews are
+preserved. Method hits explicitly switch to Method grouping and select the found
+method. Both reuse the layout-completion centering operation.
+
+`class-result.png` and `method-result.png` were captured from the rebuilt packaged
+app and visually inspected. Reproduce with the corresponding JSON script and
+`--realtime --scene fixture --theme dark --size 1420x900 --scale 1 --at 2.5`.
+
+Twelve modal runtime regressions pass, including camera coordinates within 0.1
+points of the graph viewport center, selected target identity, switching from
+method to class and back, and one history entry per activation. The normal desktop
+suite passes 179 tests. Desktop check, strict workspace Clippy, packaging, and
+CodeScene reviews/safeguard pass; both changed Rust files score 10.0. Independent
+review found no remaining issues.
+
+The required debug full-workspace command again stops at the three existing
+release-only benchmark guards (183 other desktop tests pass). All three benchmark
+cases pass in the separate release run against the isolated saved-workspace copy.
+Initial normal-suite prerequisite errors were resolved by rebuilding the standalone
+engine after the build directory had been cleaned.

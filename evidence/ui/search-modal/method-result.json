@@ -1,0 +1,1 @@
+{"events":[{"t":0.2,"type":"tap","key":"open-search"},{"t":0.3,"type":"tap","key":"search-methods"},{"t":0.4,"type":"type","text":"LoadOrder"},{"t":1.5,"type":"key","name":"Enter"},{"t":2.0,"type":"move","x":1000,"y":650}]}
