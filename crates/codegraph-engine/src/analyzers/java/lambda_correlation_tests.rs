@@ -211,11 +211,14 @@ fn incomplete_conflicting_and_cross_owner_evidence_is_rejected() {
     assert!(missing_owner.validate(&flows, true).is_err());
     let mut cross_file = flows.clone();
     cross_file[1].function.file = "/other/Flow.java".into();
-    assert!(
-        pending("verified", &[(IMPLEMENTATION, vec![0, 1])], &cross_file)
-            .validate(&cross_file, true)
-            .is_err()
-    );
+    let error = pending("verified", &[(IMPLEMENTATION, vec![0, 1])], &cross_file)
+        .validate(&cross_file, true)
+        .err()
+        .expect("Cross-file owner must remain invalid")
+        .to_string();
+    for detail in [OWNER, "/repo/src/Flow.java", "/other/Flow.java"] {
+        assert!(error.contains(detail), "Missing {detail} in {error}");
+    }
 }
 
 #[test]

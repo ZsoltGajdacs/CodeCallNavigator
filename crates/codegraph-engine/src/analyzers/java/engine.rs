@@ -74,7 +74,7 @@ impl SourceInventories {
             let Some(source) = &input.source_set else {
                 continue;
             };
-            let key = inventory_key(source)?;
+            let key = inventory_key(source, job.runtime)?;
             if !self.parsed.contains_key(&key) {
                 let path = generate_inventory(source, &key, output, job)?;
                 let inventory = super::source_inventory::SourceInventory::read_current(&path)?;
@@ -89,8 +89,13 @@ impl SourceInventories {
     }
 }
 
-fn inventory_key(source: &super::build::JavaSourceSet) -> Result<String> {
-    let input = (super::source_inventory::VERSION, source);
+fn inventory_key(
+    source: &super::build::JavaSourceSet,
+    runtime: &super::super::AnalyzerRuntime,
+) -> Result<String> {
+    let adapter = runtime.bytecode_lib()?.join("codegraph-bytecode.jar");
+    let digest = blake3::hash(&fs::read(adapter)?).to_hex().to_string();
+    let input = (super::source_inventory::VERSION, source, digest);
     Ok(blake3::hash(&serde_json::to_vec(&input)?)
         .to_hex()
         .to_string())
@@ -144,7 +149,7 @@ pub(super) fn source_inventories(
         let Some(source) = &input.source_set else {
             continue;
         };
-        let key = inventory_key(source)?;
+        let key = inventory_key(source, job.runtime)?;
         let inventory = generate_inventory(source, &key, output, job)?;
         fs::copy(inventory, output.join(format!("source-{}.tsv", index + 1)))?;
     }
@@ -190,6 +195,30 @@ mod tests {
 
     fn assert_empty(directory: &Path) {
         assert_eq!(fs::read_dir(directory).unwrap().count(), 0);
+    }
+
+    #[test]
+    fn rebuilt_adapter_invalidates_source_inventory_cache_without_schema_change() {
+        let directory = tempfile::tempdir().unwrap();
+        let library = directory.path().join("analyzers/java-bytecode/lib");
+        fs::create_dir_all(&library).unwrap();
+        let jar = library.join("codegraph-bytecode.jar");
+        let runtime = super::super::super::AnalyzerRuntime {
+            bundle_root: directory.path().into(),
+            java_home: None,
+        };
+        let source = serde_json::from_value(serde_json::json!({
+            "project": "fixture", "sourceSet": "main", "compileClasspath": [],
+            "projectDir": "/repo", "isTest": false, "sourceRoots": ["/repo/src"],
+            "generatedRoots": [], "classDirs": ["/repo/classes"]
+        }))
+        .unwrap();
+        fs::write(&jar, "previous adapter").unwrap();
+        let previous = inventory_key(&source, &runtime).unwrap();
+        assert_eq!(previous, inventory_key(&source, &runtime).unwrap());
+        fs::write(&jar, "rebuilt adapter").unwrap();
+        assert_ne!(previous, inventory_key(&source, &runtime).unwrap());
+        assert_eq!(super::super::source_inventory::VERSION, 8);
     }
 
     #[test]

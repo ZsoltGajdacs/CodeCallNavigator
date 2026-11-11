@@ -34,10 +34,9 @@ final class SourceLambda {
     }
 
     private static TypeElement declaringType(TreePath path, Trees trees) throws IOException {
-        for (var enclosing = path.getParentPath(); enclosing != null; enclosing = enclosing.getParentPath()) {
-            if (trees.getElement(enclosing) instanceof TypeElement owner) return owner;
-        }
-        throw new IOException("Cannot identify lambda's declaring type");
+        var owner = LambdaOwner.enclosing(path, trees);
+        if (owner == null) throw new IOException("Cannot identify lambda's declaring type");
+        return owner;
     }
 
     private static String context(TreePath path, Trees trees) {
@@ -46,7 +45,7 @@ final class SourceLambda {
                 return methodContext(method);
             }
             if (isTypeMember(enclosing, trees)) return initializerContext(enclosing);
-            if (trees.getElement(enclosing) instanceof TypeElement) break;
+            if (LambdaOwner.declaredAt(enclosing, trees) != null) break;
         }
         return "Instance initializer";
     }
@@ -57,7 +56,7 @@ final class SourceLambda {
 
     private static boolean isTypeMember(TreePath path, Trees trees) {
         var parent = path.getParentPath();
-        return parent != null && trees.getElement(parent) instanceof TypeElement
+        return LambdaOwner.declaredAt(parent, trees) != null
                 && (path.getLeaf() instanceof VariableTree || path.getLeaf() instanceof BlockTree);
     }
 

@@ -49,8 +49,8 @@ final class LambdaSourceIdentity {
     String method(ExecutableElement method) throws IOException { return SourceSignatures.method(method, task, compiled).key(); }
     private boolean stableTypes(TreePath path) {
         for (var enclosing = path.getParentPath(); enclosing != null; enclosing = enclosing.getParentPath()) {
-            var element = trees.getElement(enclosing);
-            if (element instanceof TypeElement type && unstable(type.getNestingKind())) return false;
+            var type = LambdaOwner.declaredAt(enclosing, trees);
+            if (type != null && unstable(type.getNestingKind())) return false;
         }
         return true;
     }

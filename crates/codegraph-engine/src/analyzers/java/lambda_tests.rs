@@ -169,3 +169,43 @@ public class Flow {
             .any(|node| node.container == "fixture.Flow$Inner" && node.label == "inside")
     );
 }
+
+#[test]
+#[ignore = "requires the pinned bytecode distribution and installed JDK 25"]
+fn unresolved_stream_method_references_keep_lambdas_in_their_declaring_files() {
+    let directory = tempfile::tempdir().unwrap();
+    let runtime = AnalyzerRuntime::discover().unwrap();
+    let source = "package fixture; public class Flow { enum Item { VALUE; String getValue() { return name(); } } Object values() { return java.util.stream.Stream.of(Item.VALUE).filter(item -> item.getValue().equals(\"VALUE\")).map(Item::getValue).toList(); } }";
+    let second = directory.path().join("src/fixture/Other.java");
+    fs::create_dir_all(second.parent().unwrap()).unwrap();
+    fs::write(&second, source.replace("class Flow", "class Other")).unwrap();
+    let input = tests::compile_source_fixture(&runtime, directory.path(), source, "-g");
+    for path in [second, directory.path().join("src/fixture/Flow.java")] {
+        let text = fs::read_to_string(&path).unwrap();
+        fs::write(
+            path,
+            text.replace("String getValue() { return name(); }", ""),
+        )
+        .unwrap();
+    }
+    let output = tests::run_callback_engine(&runtime, directory.path(), &input);
+    let build = BuildTarget {
+        path: directory.path().into(),
+        language: "java".into(),
+        kind: "gradle".into(),
+        label: "unresolved stream references".into(),
+    };
+    let graph = normalize_bytecode(&build, &output, &[input], None).unwrap();
+    graph.validate().unwrap();
+    for owner in ["Flow", "Other"] {
+        assert!(graph.nodes.iter().any(|node| {
+            node.signature.contains(&format!("fixture.{owner}:lambda$"))
+                && node.file.ends_with(&format!("/{owner}.java"))
+                && node.label.starts_with("values · lambda")
+        }));
+        assert!(graph.diagnostics.iter().any(|message| {
+            message.contains(&format!("fixture.{owner}"))
+                && message.contains("Source attribution prevents compiler replay")
+        }));
+    }
+}

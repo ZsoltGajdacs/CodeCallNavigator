@@ -119,7 +119,10 @@ fn source_index(flows: &[SourceFlow]) -> Result<Sources<'_>> {
             owner_files.insert(source.lambda_owner.as_str(), source.function.file.as_str());
         ensure!(
             old_file.is_none_or(|file| file == source.function.file),
-            "Java lambda owner crosses source files"
+            "Java lambda owner {} crosses source files: {} and {}",
+            source.lambda_owner,
+            old_file.unwrap_or_default(),
+            source.function.file
         );
         let prefix = format!("@lambda:{}:", source.lambda_owner);
         ensure!(
