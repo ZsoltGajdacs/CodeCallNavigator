@@ -57,7 +57,7 @@ function outputRoots(projects) {
 }
 function metadata(context, inputs) {
   const {ts,projects,owners,programs} = context;
-  const versions = {typescript:ts.version,node:process.versions.node,adapter:'5',react_rules:'1',next_rules:'1',boundary_rules:'1'};
+  const versions = {typescript:ts.version,node:process.versions.node,adapter:'6',react_rules:'1',next_rules:'1',boundary_rules:'1'};
   for (const {config} of projects.values()) {
     projectInputs(config,inputs);
     for(const file of configurationFiles(config)) inputs.add(file);

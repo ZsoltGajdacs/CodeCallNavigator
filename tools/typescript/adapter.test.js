@@ -161,7 +161,7 @@ test('type errors reject analysis and config preparation reports engine inputs',
   const metadata=run(root,'tsconfig.json','prepare');
   assert.ok(metadata.inputs.some(p=>p.endsWith('typescript.js')));
   assert.match(metadata.versions.typescript,/^6\.0\./);
-  assert.equal(metadata.versions.adapter,'5');
+  assert.equal(metadata.versions.adapter,'6');
 });
 
 test('shadowed hook names and cached callbacks never invent execution', t => {

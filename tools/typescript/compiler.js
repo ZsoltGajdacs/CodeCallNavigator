@@ -20,7 +20,13 @@ function toolchain(config, observations) {
   return { ts, entry: canonical(entry), localRequire };
 }
 function trackingSystem(ts, inputs, observations) {
-  const track = file => { if (path.isAbsolute(file)) inputs.add(canonical(file)); };
+  const track = file => {
+    if (!path.isAbsolute(file)) return;
+    // Preserve the original compiler probes below. Observe this mapping too:
+    // a symlink may change destination while both fileExists results stay false.
+    const normalized=observations.observe(JSON.stringify(['input-path',file]),()=>canonical(file));
+    inputs.add(normalized);
+  };
   const system={...ts.sys};
   for (const name of ['readFile','fileExists','directoryExists','readDirectory','getDirectories','realpath']) {
     if (!ts.sys[name]) continue;

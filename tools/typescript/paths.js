@@ -2,8 +2,20 @@
 const fs = require('node:fs');
 const path = require('node:path');
 function canonical(file) {
-  const absolute = path.resolve(file);
-  return fs.existsSync(absolute) ? fs.realpathSync(absolute) : absolute;
+  let ancestor=path.resolve(file);
+  const suffix=[];
+  // Missing compiler probes still belong to the physical directory reached
+  // through a symlink. Resolve its nearest existing ancestor, not the leaf.
+  while (true) {
+    try { return path.join(fs.realpathSync(ancestor),...suffix.reverse()); }
+    catch(error) {
+      if (!['ENOENT','ENOTDIR'].includes(error.code)) throw error;
+      const parent=path.dirname(ancestor);
+      if (parent===ancestor) throw error;
+      suffix.push(path.basename(ancestor));
+      ancestor=parent;
+    }
+  }
 }
 function isProjectSource(file) {
   if (!/\.(?:tsx?|mts|cts)$/.test(file)) return false;
