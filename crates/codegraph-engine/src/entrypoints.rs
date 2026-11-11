@@ -5,6 +5,7 @@ mod cancellation;
 mod inference;
 mod linked_roots;
 mod machine;
+mod verification;
 use anyhow::Result;
 use arguments::Command;
 use codegraph_core::{artifact, discovery};
@@ -14,7 +15,7 @@ pub fn run() -> Result<i32> {
     match arguments::parse(std::env::args().skip(1))? {
         Command::Help => {
             println!(
-                "codegraph-engine discover PROJECT\ncodegraph-engine analyze --project PROJECT [--root NAME=PATH] TARGET...\ncodegraph-engine clear-cache --project PROJECT\ncodegraph-engine compare --project PROJECT --base REF --head REF|WORKTREE"
+                "codegraph-engine discover PROJECT\ncodegraph-engine analyze --project PROJECT [--root NAME=PATH] TARGET...\ncodegraph-engine clear-cache --project PROJECT\ncodegraph-engine verify --project PROJECT [--root NAME=PATH]\ncodegraph-engine compare --project PROJECT --base REF --head REF|WORKTREE"
             );
             Ok(0)
         }
@@ -34,6 +35,7 @@ pub fn run() -> Result<i32> {
             println!("Cleared inference cache ({removed} files removed)");
             Ok(0)
         }
+        Command::Verify(arguments) => verification::run(arguments),
         Command::Analyze(arguments) => {
             let project = arguments.project.canonicalize()?;
             let targets = analysis::select_targets(&project, arguments.targets)?;

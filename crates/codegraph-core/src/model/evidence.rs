@@ -5,7 +5,6 @@ use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, HashSet};
 
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Deserialize, Serialize)]
-#[serde(deny_unknown_fields)]
 pub struct SourceSite {
     pub file: String,
     pub line: u32,
@@ -16,7 +15,6 @@ pub struct SourceSite {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Deserialize, Serialize)]
-#[serde(deny_unknown_fields)]
 pub struct RelationshipEvidence {
     pub rule: String,
     pub version: u32,
@@ -36,7 +34,7 @@ pub struct RelationshipEvidence {
 }
 
 impl RelationshipEvidence {
-    pub(super) fn validate(&self, identities: &HashSet<&str>) -> Result<()> {
+    pub(crate) fn validate(&self, identities: &HashSet<&str>) -> Result<()> {
         ensure!(
             !self.rule.trim().is_empty(),
             "Relationship evidence needs a rule"

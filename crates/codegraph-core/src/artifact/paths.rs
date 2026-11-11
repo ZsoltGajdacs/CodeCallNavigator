@@ -67,7 +67,7 @@ impl Paths {
         anyhow::bail!("Graph path is outside declared roots: {text}")
     }
 
-    fn local(&self, text: &str) -> Result<String> {
+    pub(super) fn local(&self, text: &str) -> Result<String> {
         if text.is_empty() {
             return Ok(String::new());
         }

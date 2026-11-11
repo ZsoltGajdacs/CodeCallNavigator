@@ -1,217 +1,224 @@
+//! Path and identity conversion visits only fields owned by the portable contract.
 use super::{
     identity,
-    paths::{Paths, ProjectOwner, SourceDisplay},
+    paths::{Paths, ProjectOwner},
+    portable::PortableGraph,
 };
-use anyhow::{Context, Result};
+use crate::{
+    flow,
+    model::{RelationshipEvidence, SourceSite},
+};
+use anyhow::Result;
 use serde_json::Value;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 pub(super) fn transform(
-    value: &mut Value,
+    graph: &mut PortableGraph,
     paths: &Paths,
     identities: Option<&HashMap<String, String>>,
     hydrate: bool,
 ) -> Result<()> {
-    Transform {
+    let transform = Transform {
         paths,
         identities,
         hydrate,
-        folder_builds: value
-            .get("folder_project_builds")
-            .and_then(Value::as_array)
-            .into_iter()
-            .flatten()
-            .filter_map(Value::as_str)
-            .map(str::to_owned)
-            .collect(),
+        folder_builds: graph.folder_project_builds.iter().cloned().collect(),
+    };
+    for node in &mut graph.nodes {
+        transform.node(node)?;
     }
-    .visit(value)
+    transform.edges(&mut graph.edges)?;
+    if let Some(entries) = &mut graph.entry_points {
+        transform.entries(entries)?;
+    }
+    if let Some(boundaries) = &mut graph.boundaries {
+        transform.boundaries(boundaries)?;
+    }
+    if let Some(facts) = &mut graph.architecture {
+        transform.architecture(facts)?;
+    }
+    if let Some(inventory) = &mut graph.flow_inventory {
+        transform.inventory(inventory)?;
+    }
+    for root in graph
+        .roots
+        .iter_mut()
+        .chain(&mut graph.identity_roots)
+        .chain(&mut graph.folder_project_builds)
+    {
+        transform.path(root)?;
+    }
+    transform.diagnostics(&mut graph.diagnostics);
+    Ok(())
 }
-
 struct Transform<'a> {
     paths: &'a Paths,
     identities: Option<&'a HashMap<String, String>>,
     hydrate: bool,
-    folder_builds: std::collections::HashSet<String>,
+    folder_builds: HashSet<String>,
 }
-
-struct ObjectPaths {
-    build: String,
-    directory: bool,
-    typescript: bool,
-    display: Option<SourceDisplay>,
+struct Owner<'a> {
+    build: &'a mut String,
+    project: &'a mut String,
+    file: &'a mut String,
+    language: &'a str,
 }
-impl ObjectPaths {
-    fn project_field(&self, key: &str) -> bool {
-        match key {
-            "project" => self.directory || self.typescript,
-            _ => false,
-        }
-    }
-}
-
 impl Transform<'_> {
-    fn visit(&self, value: &mut Value) -> Result<()> {
-        match value {
-            Value::Object(fields) => self.object(fields)?,
-            Value::Array(values) => {
-                for value in values {
-                    self.visit(value)?;
-                }
+    fn edges(&self, edges: &mut [super::portable::PortableEdge]) -> Result<()> {
+        for edge in edges {
+            for evidence in &mut edge.evidence {
+                self.evidence(evidence)?;
             }
-            _ => {}
         }
         Ok(())
     }
-
-    fn object(&self, fields: &mut serde_json::Map<String, Value>) -> Result<()> {
-        let context = self.object_context(fields)?;
-        for (key, value) in fields {
-            self.object_field(&context, key, value)?;
+    fn architecture(&self, facts: &mut crate::architecture::ArchitectureFacts) -> Result<()> {
+        for file in &mut facts.files {
+            self.owner(Owner {
+                build: &mut file.build,
+                project: &mut file.project,
+                file: &mut file.file,
+                language: &file.language,
+            })?;
         }
         Ok(())
     }
-    fn object_context(&self, fields: &serde_json::Map<String, Value>) -> Result<ObjectPaths> {
-        let build = fields
-            .get("build")
-            .and_then(Value::as_str)
-            .unwrap_or_default()
-            .to_owned();
-        let directory = self.folder_builds.contains(&build);
-        let typescript = fields.get("language").and_then(Value::as_str) == Some("typescript");
-        let display = if typescript {
-            self.paths.source_display(
-                fields
-                    .get("file")
-                    .and_then(Value::as_str)
-                    .unwrap_or_default(),
-                &build,
-                self.hydrate,
-            )?
-        } else {
-            None
-        };
-        Ok(ObjectPaths {
-            build,
-            directory,
-            typescript,
-            display,
-        })
-    }
-    fn object_field(&self, context: &ObjectPaths, key: &str, value: &mut Value) -> Result<()> {
-        if let Some(display) = &context.display {
-            display.rewrite(key, value);
-        }
-        if context.project_field(key) {
-            self.paths.project(
-                value,
-                ProjectOwner {
-                    build: &context.build,
-                    directory: context.directory,
-                },
-                self.hydrate,
-            )
-        } else {
-            self.field(key, value)
-        }
-    }
-
-    fn field(&self, key: &str, value: &mut Value) -> Result<()> {
-        match key {
-            "qualifiers" => Ok(()),
-            "id" | "symbol" => self.symbol(value),
-            "file" | "build" => self.paths.rewrite(value, self.hydrate),
-            "roots" | "folder_project_builds" | "identity_roots" => self.roots(value),
-            "candidates" | "application_starts" | "framework_entries" | "supporting_symbols" => {
-                self.entries(value)
-            }
-            "diagnostics" if !self.hydrate => self.diagnostics(value),
-            _ => self.visit(value),
-        }
-    }
-
-    fn symbol(&self, value: &mut Value) -> Result<()> {
-        if value.is_null() {
-            return Ok(());
-        }
-        if let Some(identities) = self.identities {
-            identity::rewrite(value, identities)?;
+    fn inventory(&self, inventory: &mut flow::FlowInventory) -> Result<()> {
+        for function in &mut inventory.functions {
+            self.function(function)?;
         }
         Ok(())
     }
-
-    fn roots(&self, value: &mut Value) -> Result<()> {
-        for root in value.as_array_mut().context("Roots must be an array")? {
-            self.paths.rewrite(root, self.hydrate)?;
+    fn node(&self, node: &mut crate::model::Node) -> Result<()> {
+        if node.language == "typescript" {
+            self.display(node)?;
+        }
+        self.owner(Owner {
+            build: &mut node.build,
+            project: &mut node.project,
+            file: &mut node.file,
+            language: &node.language,
+        })?;
+        self.symbol(&mut node.id)
+    }
+    fn display(&self, node: &mut crate::model::Node) -> Result<()> {
+        if let Some(source) = self
+            .paths
+            .source_display(&node.file, &node.build, self.hydrate)?
+        {
+            update(&mut node.container, |value| {
+                source.rewrite("container", value);
+                Ok(())
+            })?;
+            update(&mut node.namespace, |value| {
+                source.rewrite("namespace", value);
+                Ok(())
+            })?;
         }
         Ok(())
     }
-
-    fn entries(&self, value: &mut Value) -> Result<()> {
-        for entry in value.as_array_mut().context("Entries must be an array")? {
+    fn owner(&self, owner: Owner<'_>) -> Result<()> {
+        let directory = self.folder_builds.contains(owner.build);
+        if directory || owner.language == "typescript" {
+            update(owner.project, |value| {
+                self.paths.project(
+                    value,
+                    ProjectOwner {
+                        build: owner.build,
+                        directory,
+                    },
+                    self.hydrate,
+                )
+            })?;
+        }
+        self.path(owner.build)?;
+        self.path(owner.file)
+    }
+    fn entries(&self, entries: &mut crate::model::EntryPoints) -> Result<()> {
+        for entry in entries
+            .candidates
+            .iter_mut()
+            .chain(&mut entries.framework_entries)
+            .chain(&mut entries.application_starts)
+        {
             self.symbol(entry)?;
         }
         Ok(())
     }
-
-    fn diagnostics(&self, value: &mut Value) -> Result<()> {
-        for diagnostic in value
-            .as_array_mut()
-            .context("Diagnostics must be an array")?
-        {
-            let text = diagnostic.as_str().context("Diagnostic must be a string")?;
-            *diagnostic = self.paths.embedded(text).into();
+    fn boundaries(&self, boundaries: &mut crate::boundary::BoundaryInventory) -> Result<()> {
+        for route in &mut boundaries.routes {
+            if let Some(symbol) = &mut route.symbol {
+                self.symbol(symbol)?;
+            }
+            self.path(&mut route.build)?;
+            self.site(&mut route.site)?;
+        }
+        for usage in &mut boundaries.uses {
+            self.symbol(&mut usage.symbol)?;
+            self.path(&mut usage.build)?;
+            self.site(&mut usage.site)?;
         }
         Ok(())
     }
-}
-
-pub(super) fn sort_sets(value: &mut Value, field: &str) {
-    match value {
-        Value::Object(fields) => {
-            for (key, value) in fields {
-                sort_sets(value, key);
+    fn function(&self, function: &mut flow::FunctionFlowIR) -> Result<()> {
+        self.owner(Owner {
+            build: &mut function.build,
+            project: &mut function.project,
+            file: &mut function.file,
+            language: &function.language,
+        })?;
+        self.symbol(&mut function.symbol)?;
+        let mut result = Ok(());
+        flow::visit_calls_mut(function, &mut |call| {
+            if result.is_ok() {
+                result = self.call(call);
+            }
+        });
+        self.diagnostics(&mut function.diagnostics);
+        result
+    }
+    fn call(&self, call: &mut flow::CallSite) -> Result<()> {
+        for target in &mut call.targets {
+            self.symbol(&mut target.symbol)?;
+        }
+        Ok(())
+    }
+    fn path(&self, text: &mut String) -> Result<()> {
+        update(text, |value| self.paths.rewrite(value, self.hydrate))
+    }
+    fn symbol(&self, text: &mut String) -> Result<()> {
+        if let Some(ids) = self.identities {
+            update(text, |value| identity::rewrite(value, ids))?;
+        }
+        Ok(())
+    }
+    fn site(&self, site: &mut SourceSite) -> Result<()> {
+        self.path(&mut site.file)
+    }
+    fn evidence(&self, evidence: &mut RelationshipEvidence) -> Result<()> {
+        self.site(&mut evidence.invocation)?;
+        if let Some(site) = &mut evidence.registration {
+            self.site(site)?;
+        }
+        for symbol in &mut evidence.supporting_symbols {
+            self.symbol(symbol)?;
+        }
+        Ok(())
+    }
+    fn diagnostics(&self, diagnostics: &mut [String]) {
+        if !self.hydrate {
+            for diagnostic in diagnostics {
+                *diagnostic = self.paths.embedded(diagnostic);
             }
         }
-        Value::Array(values) => {
-            for value in values.iter_mut() {
-                sort_sets(value, "");
-            }
-            if unordered(field) {
-                values.sort_by_cached_key(Value::to_string);
-            }
-        }
-        _ => {}
     }
 }
-
-fn unordered(field: &str) -> bool {
-    matches!(
-        field,
-        "nodes"
-            | "evidence"
-            | "supporting_symbols"
-            | "edges"
-            | "folder_project_builds"
-            | "identity_roots"
-            | "roots"
-            | "diagnostics"
-            | "functions"
-            | "routes"
-            | "uses"
-            | "methods"
-            | "restrictions"
-            | "files"
-            | "candidates"
-            | "application_starts"
-            | "framework_entries"
-            | "targets"
-            | "namespaces"
-            | "names"
-            | "kinds"
-            | "annotations"
-            | "method_annotations"
-            | "base_types"
-            | "annotated_interfaces"
-    )
+fn update(text: &mut String, operation: impl FnOnce(&mut Value) -> Result<()>) -> Result<()> {
+    let mut value = Value::String(text.clone());
+    operation(&mut value)?;
+    *text = value
+        .as_str()
+        .expect("string transformations preserve string values")
+        .into();
+    Ok(())
 }

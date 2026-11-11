@@ -547,3 +547,41 @@ fn typescript_file_display_paths_follow_named_logical_roots() {
     let hydrated = before.hydrate(&second_roots).unwrap();
     assert_eq!(hydrated.nodes[0].container, "../externalTwo/Program.ts");
 }
+
+#[test]
+fn compact_output_and_opaque_extensions_preserve_contract() {
+    let mut artifact = canonical(&fixture("/tmp/a"), &roots("/tmp/a")).unwrap();
+    let opaque =
+        serde_json::json!({"file":"/not/a/known/path", "symbol":"unknown", "targets":["z","a"]});
+    artifact.graph["extension"] = opaque.clone();
+    artifact.graph["nodes"][0]["extension"] = opaque.clone();
+    artifact
+        .extensions
+        .insert("extension".into(), opaque.clone());
+    let bytes = artifact.bytes().unwrap();
+    assert_eq!(bytes.iter().filter(|&&b| b == b'\n').count(), 1);
+    assert_eq!(bytes.last(), Some(&b'\n'));
+    let restored = Artifact::from_bytes(&bytes).unwrap();
+    assert_eq!(restored.graph["extension"], opaque);
+    assert_eq!(restored.graph["nodes"][0]["extension"], opaque);
+    assert_eq!(restored.extensions["extension"], opaque);
+    restored.hydrate(&roots("/tmp/relocated")).unwrap();
+    let pretty = serde_json::to_vec_pretty(&artifact).unwrap();
+    assert!(
+        compare(&restored, &Artifact::from_bytes(&pretty).unwrap())
+            .unwrap()
+            .equal
+    );
+}
+
+#[test]
+fn reserved_extension_names_cannot_override_validated_artifact_fields() {
+    for name in ["schema", "graph"] {
+        let mut artifact = canonical(&fixture("/tmp/a"), &roots("/tmp/a")).unwrap();
+        artifact
+            .extensions
+            .insert(name.into(), serde_json::json!("invalid"));
+        assert!(artifact.bytes().is_err());
+        assert!(artifact.encode().is_err());
+    }
+}

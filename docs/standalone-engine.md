@@ -5,6 +5,9 @@ operations. `codegraph-engine` owns the coordinator and compiler-backed language
 adapters. The desktop owns presentation and workspace caching and invokes the
 engine executable rather than calling analyzer functions.
 
+See the [external consumer contract](graph-contract.md) and its
+[JSON Schema](graph.schema.json) for compatibility and input verification.
+
 ## Project artifact and Git history
 
 ```sh

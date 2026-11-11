@@ -108,6 +108,10 @@ pub fn analyze_with_linked_roots(
     targets.dedup_by(|a, b| a.identity() == b.identity());
     let (boundaries, boundary_inputs) =
         codegraph_core::boundary::Configuration::load(&project, &targets)?;
+    let target_paths: Vec<_> = targets
+        .iter()
+        .map(|target| target.path.to_string_lossy().into_owned())
+        .collect();
     let mut graph = native(targets, progress)?;
     graph.fingerprints.extend(boundary_inputs);
     let cache = super::inference::resolve(&project, &mut graph, &boundaries)?;
@@ -116,13 +120,21 @@ pub fn analyze_with_linked_roots(
     } else {
         roots
     };
-    let artifact = artifact::canonical_with_identities(&graph, &roots, &graph.export_identities)?;
-    let digest = blake3::hash(&artifact.bytes()?).to_hex().to_string();
+    let mut artifact =
+        artifact::canonical_with_identities(&graph, &roots, &graph.export_identities)?;
+    artifact.graph["analysis"] = serde_json::to_value(artifact::provenance::build(
+        &graph.fingerprints,
+        &target_paths,
+        &graph.engine_versions,
+        &roots,
+    )?)?;
+    let bytes = artifact.encode()?;
+    let digest = blake3::hash(bytes.as_ref()).to_hex().to_string();
     ensure!(
         !codegraph_core::fingerprint::is_stale(&graph.fingerprints)?,
         "Project inputs changed before graph publication"
     );
-    lock.publish(&artifact, &CANCELLED)?;
+    lock.publish_encoded(&bytes, &CANCELLED)?;
     super::inference::finish(cache, progress);
     metrics.finish();
     Ok(Event::Complete {

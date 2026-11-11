@@ -4,7 +4,6 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 
 #[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(deny_unknown_fields)]
 pub struct BoundaryInventory {
     pub version: u32,
     #[serde(default)]
@@ -14,7 +13,6 @@ pub struct BoundaryInventory {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(deny_unknown_fields)]
 pub struct RouteFact {
     pub symbol: Option<String>,
     pub build: String,
@@ -34,7 +32,6 @@ pub struct RouteFact {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(deny_unknown_fields)]
 pub struct BoundaryUse {
     pub symbol: String,
     pub build: String,

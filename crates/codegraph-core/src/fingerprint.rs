@@ -200,6 +200,51 @@ fn relevant_file(path: &Path) -> bool {
     )
 }
 
+/// Content-only observation shared with portable artifact verification.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum InputKind {
+    File,
+    Directory,
+    Missing,
+}
+
+#[derive(Debug, PartialEq, Eq)]
+pub struct ContentObservation {
+    pub kind: InputKind,
+    pub hash: String,
+}
+
+pub fn observe_content(path: &Path, excluded_children: &[String]) -> Result<ContentObservation> {
+    let metadata = match fs::metadata(path) {
+        Ok(value) => value,
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
+            return Ok(ContentObservation {
+                kind: InputKind::Missing,
+                hash: String::new(),
+            });
+        }
+        Err(error) => return Err(error).context("Cannot read analysis input"),
+    };
+    let kind = if metadata.is_dir() {
+        InputKind::Directory
+    } else {
+        InputKind::File
+    };
+    Ok(ContentObservation {
+        kind,
+        hash: content_hash(path, excluded_children, metadata.is_dir())?,
+    })
+}
+
+fn content_hash(path: &Path, excluded_children: &[String], directory: bool) -> Result<String> {
+    if directory {
+        directory_hash(path, excluded_children)
+    } else {
+        file_hash(path)
+    }
+}
+
 fn fingerprint(
     path: &Path,
     excluded_children: &[String],
@@ -226,11 +271,7 @@ fn fingerprint(
             .as_nanos()
             .min(u64::MAX as u128) as u64
     };
-    let hash = if metadata.is_dir() {
-        directory_hash(path, excluded_children)?
-    } else {
-        file_hash(path)?
-    };
+    let hash = content_hash(path, excluded_children, metadata.is_dir())?;
     Ok(FileFingerprint {
         path: path.to_string_lossy().into_owned(),
         size: if metadata.is_dir() { 0 } else { metadata.len() },

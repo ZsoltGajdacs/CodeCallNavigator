@@ -1,10 +1,16 @@
 //! Portable graph artifacts. Runtime observations belong to the process protocol.
+mod canonicalization;
 mod compare;
 mod identity;
 mod paths;
+mod portable;
+pub mod provenance;
 mod publish;
 mod transform;
-use transform::{sort_sets, transform};
+mod validation;
+pub mod verification;
+use canonicalization::sort_graph;
+use transform::transform;
 #[cfg(test)]
 mod tests;
 
@@ -24,10 +30,20 @@ pub fn validate_roots(roots: &Roots) -> Result<()> {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
-#[serde(deny_unknown_fields)]
 pub struct Artifact {
     pub schema: String,
     pub graph: Value,
+    #[serde(flatten)]
+    pub extensions: std::collections::BTreeMap<String, Value>,
+}
+
+/// Canonical bytes validated and produced only by the artifact serializer.
+/// This buffer is shared by digest computation and atomic publication.
+pub struct EncodedArtifact(Vec<u8>);
+impl AsRef<[u8]> for EncodedArtifact {
+    fn as_ref(&self) -> &[u8] {
+        &self.0
+    }
 }
 
 /// Canonicalize named declarations; anonymous adapter keys can be supplied below.
@@ -44,30 +60,14 @@ pub fn canonical_with_identities(
     graph.validate()?;
     let paths = paths::Paths::new(roots)?;
     let identities = identity::identities(graph, &paths, semantic_keys)?;
-    let mut value = serde_json::to_value(graph)?;
-    let object = value.as_object_mut().context("Graph is not an object")?;
-    object.remove("fingerprints");
-    object.remove("engine_versions");
-    object.remove("export_identities");
-    for (index, edge) in object["edges"]
-        .as_array_mut()
-        .unwrap()
-        .iter_mut()
-        .enumerate()
-    {
-        let native = &graph.edges[index];
-        edge["from"] = identities[&graph.nodes[native.from as usize].id]
-            .clone()
-            .into();
-        edge["to"] = identities[&graph.nodes[native.to as usize].id]
-            .clone()
-            .into();
-    }
-    transform(&mut value, &paths, Some(&identities), false)?;
-    sort_sets(&mut value, "");
+    let mut portable = portable::PortableGraph::from_runtime(graph, &identities)?;
+    transform(&mut portable, &paths, Some(&identities), false)?;
+    let mut value = serde_json::to_value(portable)?;
+    sort_graph(&mut value)?;
     let artifact = Artifact {
         schema: SCHEMA.into(),
         graph: value,
+        extensions: Default::default(),
     };
     artifact.validate()?;
     Ok(artifact)
@@ -81,101 +81,43 @@ impl Artifact {
         Ok(artifact)
     }
 
+    pub fn encode(&self) -> Result<EncodedArtifact> {
+        Ok(EncodedArtifact(self.bytes()?))
+    }
+
     pub fn bytes(&self) -> Result<Vec<u8>> {
         self.validate()?;
         let mut value = serde_json::to_value(self)?;
-        sort_sets(&mut value, "");
-        let mut bytes = serde_json::to_vec_pretty(&value)?;
+        sort_graph(&mut value["graph"])?;
+        let mut bytes = serde_json::to_vec(&value)?;
         bytes.push(b'\n');
         Ok(bytes)
     }
 
     pub fn validate(&self) -> Result<()> {
+        self.validated_portable()?;
+        Ok(())
+    }
+
+    pub fn hydrate(&self, roots: &Roots) -> Result<crate::model::GraphData> {
+        let (mut portable, ids) = self.validated_portable()?;
+        transform(&mut portable, &paths::Paths::new(roots)?, None, true)?;
+        portable.into_runtime(&ids)
+    }
+
+    fn validated_portable(&self) -> Result<(portable::PortableGraph, HashMap<String, u32>)> {
         ensure!(
             self.schema == SCHEMA,
             "Unsupported graph artifact schema: {}",
             self.schema
         );
-        self.portable_graph()?;
-        Ok(())
+        ensure!(
+            !self.extensions.contains_key("schema") && !self.extensions.contains_key("graph"),
+            "Reserved artifact extension property"
+        );
+        provenance::validate_analysis(&self.graph)?;
+        let mut graph: portable::PortableGraph = serde_json::from_value(self.graph.clone())?;
+        let ids = validation::validate(&mut graph)?;
+        Ok((graph, ids))
     }
-
-    pub fn hydrate(&self, roots: &Roots) -> Result<crate::model::GraphData> {
-        self.validate()?;
-        let paths = paths::Paths::new(roots)?;
-        let mut graph = self.portable_graph()?;
-        let mut value = serde_json::to_value(&graph)?;
-        transform(&mut value, &paths, None, true)?;
-        graph = serde_json::from_value(value)?;
-        graph.validate()?;
-        Ok(graph)
-    }
-
-    fn portable_graph(&self) -> Result<crate::model::GraphData> {
-        let mut value = self.graph.clone();
-        let nodes = value["nodes"]
-            .as_array()
-            .context("Artifact nodes must be an array")?;
-        let mut ids = HashMap::new();
-        for (index, node) in nodes.iter().enumerate() {
-            let id = node["id"]
-                .as_str()
-                .context("Artifact node has no string identity")?;
-            ensure!(
-                ids.insert(id.to_owned(), index as u32).is_none(),
-                "Duplicate artifact identity: {id}"
-            );
-        }
-        for edge in value["edges"]
-            .as_array_mut()
-            .context("Artifact edges must be an array")?
-        {
-            for endpoint in ["from", "to"] {
-                let id = edge[endpoint]
-                    .as_str()
-                    .context("Artifact edge endpoint must be an identity")?;
-                edge[endpoint] = (*ids
-                    .get(id)
-                    .with_context(|| format!("Missing artifact endpoint: {id}"))?)
-                .into();
-            }
-        }
-        value["fingerprints"] = Value::Array(Vec::new());
-        value["engine_versions"] = String::new().into();
-        let graph: crate::model::GraphData = serde_json::from_value(value)?;
-        graph.validate()?;
-        validate_symbols(&self.graph, &ids)?;
-        Ok(graph)
-    }
-}
-
-fn validate_symbols(value: &Value, ids: &HashMap<String, u32>) -> Result<()> {
-    match value {
-        Value::Object(fields) => {
-            for (key, value) in fields {
-                if key == "qualifiers" {
-                    continue;
-                }
-                paths::validate_field(key, value)?;
-                if key == "symbol" && !value.is_null() {
-                    let symbol = value
-                        .as_str()
-                        .context("Flow target must have a string identity")?;
-                    ensure!(
-                        ids.contains_key(symbol),
-                        "Flow references missing symbol: {symbol}"
-                    );
-                } else {
-                    validate_symbols(value, ids)?;
-                }
-            }
-        }
-        Value::Array(values) => {
-            for value in values {
-                validate_symbols(value, ids)?;
-            }
-        }
-        _ => {}
-    }
-    Ok(())
 }

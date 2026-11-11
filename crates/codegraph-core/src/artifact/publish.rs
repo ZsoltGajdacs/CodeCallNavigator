@@ -1,4 +1,4 @@
-use super::{Artifact, GRAPH_PATH};
+use super::{Artifact, EncodedArtifact, GRAPH_PATH};
 use anyhow::{Context, Result, ensure};
 use std::{
     fs::{self, File, OpenOptions},
@@ -34,12 +34,17 @@ impl AnalysisLock {
         })
     }
 
+    /// Publish the exact canonical buffer used for the protocol digest.
+    pub fn publish_encoded(&self, bytes: &EncodedArtifact, cancel: &AtomicBool) -> Result<()> {
+        replace(&self.project, bytes.as_ref(), cancel)
+    }
+
     pub fn project(&self) -> &Path {
         &self.project
     }
 
     pub fn publish(&self, artifact: &Artifact, cancel: &AtomicBool) -> Result<()> {
-        replace(&self.project, artifact, cancel)
+        replace(&self.project, &artifact.bytes()?, cancel)
     }
 }
 
@@ -55,8 +60,7 @@ pub fn publish(project: &Path, artifact: &Artifact, cancel: &AtomicBool) -> Resu
     AnalysisLock::acquire(project)?.publish(artifact, cancel)
 }
 
-fn replace(project: &Path, artifact: &Artifact, cancel: &AtomicBool) -> Result<()> {
-    let bytes = artifact.bytes()?;
+fn replace(project: &Path, bytes: &[u8], cancel: &AtomicBool) -> Result<()> {
     ensure!(
         !cancel.load(Ordering::Relaxed),
         "Analysis cancelled before graph publication"
@@ -66,7 +70,7 @@ fn replace(project: &Path, artifact: &Artifact, cancel: &AtomicBool) -> Result<(
     let mut temporary = tempfile::Builder::new()
         .prefix(".graph-publish-")
         .tempfile_in(&directory)?;
-    temporary.write_all(&bytes)?;
+    temporary.write_all(bytes)?;
     temporary.as_file().sync_all()?;
     ensure!(
         !cancel.load(Ordering::Relaxed),

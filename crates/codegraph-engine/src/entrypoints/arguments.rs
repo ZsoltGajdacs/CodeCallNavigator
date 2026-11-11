@@ -6,6 +6,7 @@ pub enum Command {
     Discover(PathBuf),
     ClearCache(PathBuf),
     Analyze(Analysis),
+    Verify(Analysis),
     Compare {
         project: PathBuf,
         base: String,
@@ -35,6 +36,16 @@ pub fn parse(values: impl Iterator<Item = String>) -> Result<Command> {
             Ok(Command::Discover(project.into()))
         }
         "analyze" => parse_analyze(values),
+        "verify" => {
+            let Command::Analyze(arguments) = parse_analyze(values)? else {
+                unreachable!()
+            };
+            ensure!(
+                arguments.targets.is_empty(),
+                "verify accepts no analysis targets"
+            );
+            Ok(Command::Verify(arguments))
+        }
         "clear-cache" => {
             ensure!(
                 values.next().as_deref() == Some("--project"),
