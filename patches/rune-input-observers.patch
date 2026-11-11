@@ -1,5 +1,5 @@
 diff --git a/crates/rune/src/app.rs b/crates/rune/src/app.rs
-index 68159b07..8e816dbb 100644
+index b4b059ee..1972ce60 100644
 --- a/crates/rune/src/app.rs
 +++ b/crates/rune/src/app.rs
 @@ -68,6 +68,8 @@ pub struct App<S: 'static> {
@@ -9,18 +9,18 @@ index 68159b07..8e816dbb 100644
 +    pub(crate) on_key_activity: Option<fn(&mut S, &crate::KeyEvent, &mut Tx)>,
 +    pub(crate) on_pointer_activity: Option<fn(&mut S, &mut Tx)>,
      pub(crate) on_mods: Option<fn(&mut S, crate::Mods, &mut Tx)>,
+     pub(crate) on_visibility: Option<fn(&mut S, bool, &mut Tx)>,
      pub(crate) on_ime: Option<fn(&mut S, &crate::Ime, &mut Tx) -> bool>,
-     pub(crate) on_reopen: Option<fn(&mut S, bool, &mut Tx) -> bool>,
-@@ -124,6 +126,8 @@ impl<S: 'static> App<S> {
-             turn_scope: None,
+@@ -126,6 +128,8 @@ impl<S: 'static> App<S> {
              on_focus: None,
              on_mods: None,
+             on_visibility: None,
 +            on_pointer_activity: None,
 +            on_key_activity: None,
              on_ime: None,
              on_reopen: None,
              on_open_url: None,
-@@ -265,6 +269,21 @@ impl<S: 'static> App<S> {
+@@ -267,6 +271,21 @@ impl<S: 'static> App<S> {
          self
      }
  
@@ -42,33 +42,11 @@ index 68159b07..8e816dbb 100644
      /// Hears the modifier keys held down (Shift, Control, Alt or Option, the logo key) each time
      /// they change, wherever focus is and whether or not anything takes the key, as a web page's
      /// window-level `keydown`/`keyup` for `Alt` hear it; and none held once the window loses
-diff --git a/crates/rune/src/desktop/window.rs b/crates/rune/src/desktop/window.rs
-index 5024a4a7..d80d372b 100644
---- a/crates/rune/src/desktop/window.rs
-+++ b/crates/rune/src/desktop/window.rs
-@@ -117,6 +117,8 @@ impl<S: 'static> Window<S> {
-         if !selected { inherited.scene = None; inherited.playground = None; inherited.variant = None; }
-         let own = app.resolve_args(inherited);
-         let comp = app.compositor.take();
-+        let on_key_activity = app.on_key_activity;
-+        let on_pointer_activity = app.on_pointer_activity;
-         let (open, keep_running, on_close, on_focus, on_reopen) = (app.open, app.keep_running, app.on_close, app.on_focus, app.on_reopen);
-         let on_mods = app.on_mods;
-         let on_ime = app.on_ime;
-@@ -133,6 +135,8 @@ impl<S: 'static> Window<S> {
-         let mut rt = crate::tooling::runtime_for(&spec, state, size, Env::new(dark, scale), Arc::new(|| {}));
-         crate::playground::attach(&mut rt, playground, &spec, own.playground.clone(), own.variant.clone(), false);
-         rt.on_focus = on_focus;
-+        rt.on_pointer_activity = on_pointer_activity;
-+        rt.on_key_activity = on_key_activity;
-         rt.on_mods = on_mods;
-         rt.app_ime.hook = on_ime;
-         rt.set_modifier_keys(modifier_keys);
 diff --git a/crates/rune/src/platform/web.rs b/crates/rune/src/platform/web.rs
-index 559452df..b9dd9577 100644
+index 70333b13..c619bd97 100644
 --- a/crates/rune/src/platform/web.rs
 +++ b/crates/rune/src/platform/web.rs
-@@ -391,6 +391,8 @@ impl<S: 'static> ApplicationHandler<Wake> for Browser<S> {
+@@ -407,6 +407,8 @@ impl<S: 'static> ApplicationHandler<Wake> for Browser<S> {
              let mut app = self.app.take().expect("one canvas initialization");
              for bytes in fonts { app.spec.fonts = crate::app::with_font(app.spec.fonts, bytes); }
              let compositor = app.compositor.take();
@@ -77,7 +55,7 @@ index 559452df..b9dd9577 100644
              let (on_focus, modifier_keys, srgb_blend) = (app.on_focus, app.modifier_keys, app.srgb_blend);
              let on_mods = app.on_mods;
              let (font_smoothing, fit_height) = (app.font_smoothing, app.fit_content_height);
-@@ -437,6 +439,8 @@ impl<S: 'static> ApplicationHandler<Wake> for Browser<S> {
+@@ -454,6 +456,8 @@ impl<S: 'static> ApplicationHandler<Wake> for Browser<S> {
                  }
              }
              rt.on_focus = on_focus;
@@ -87,7 +65,7 @@ index 559452df..b9dd9577 100644
              rt.set_modifier_keys(modifier_keys);
              rt.set_tab_visits_controls(tab_visits_controls);
 diff --git a/crates/rune/src/playground/testing.rs b/crates/rune/src/playground/testing.rs
-index d001b777..4dc55ada 100644
+index 456e2273..539808e3 100644
 --- a/crates/rune/src/playground/testing.rs
 +++ b/crates/rune/src/playground/testing.rs
 @@ -13,6 +13,8 @@ impl<S: 'static> App<S> {
@@ -109,10 +87,10 @@ index d001b777..4dc55ada 100644
          rt.set_modifier_keys(modifier_keys);
          rt.set_tab_visits_controls(tab_visits_controls);
 diff --git a/crates/rune/src/quit.rs b/crates/rune/src/quit.rs
-index 624fea31..e9403a52 100644
+index b52d675c..cabb9681 100644
 --- a/crates/rune/src/quit.rs
 +++ b/crates/rune/src/quit.rs
-@@ -61,6 +61,7 @@ pub(crate) enum Event {
+@@ -62,6 +62,7 @@ pub(crate) enum Event {
      /// The loop closed the windows for the session's end (`Effect::CloseAndExit`).
      WindowsClosed,
      /// The system took the quit back (another app refused a logoff): the app runs on.
@@ -217,10 +195,10 @@ index d9c8fd0e..9bb9351e 100644
 +
  }
 diff --git a/crates/rune/src/runtime.rs b/crates/rune/src/runtime.rs
-index a7c19e8f..66d7a0e9 100644
+index d89d00ff..96102446 100644
 --- a/crates/rune/src/runtime.rs
 +++ b/crates/rune/src/runtime.rs
-@@ -435,6 +435,10 @@ pub struct Runtime<S: 'static> {
+@@ -452,6 +452,10 @@ pub struct Runtime<S: 'static> {
      pub wall_start: Option<crate::time::Instant>,
      /// Called for keys unhandled by the focused control; return true to consume it.
      pub on_key: Option<fn(&mut S, &KeyEvent, &mut Tx) -> bool>,
@@ -231,7 +209,7 @@ index a7c19e8f..66d7a0e9 100644
      pub(crate) nodes: Vec<Node>,
      /// The last commit's node buffer, emptied, for the next flatten to fill: an app of a few
      /// thousand elements otherwise maps and faults in megabytes every commit.
-@@ -855,6 +859,8 @@ impl<S: 'static> Runtime<S> {
+@@ -865,6 +869,8 @@ impl<S: 'static> Runtime<S> {
              watch: Default::default(),
              wall_start: None,
              on_key: None,
@@ -241,10 +219,10 @@ index a7c19e8f..66d7a0e9 100644
              spare_nodes: Vec::new(),
              apply_scratch: Default::default(),
 diff --git a/crates/rune/src/runtime/frame.rs b/crates/rune/src/runtime/frame.rs
-index dfda8663..69c8be69 100644
+index ae2549ca..b3d6ec42 100644
 --- a/crates/rune/src/runtime/frame.rs
 +++ b/crates/rune/src/runtime/frame.rs
-@@ -46,6 +46,7 @@ impl<S: 'static> Runtime<S> {
+@@ -50,6 +50,7 @@ impl<S: 'static> Runtime<S> {
      }
  
      /// Whether the window has the keyboard focus, as its last focus event said.
@@ -253,10 +231,10 @@ index dfda8663..69c8be69 100644
  
      /// Queue a native focus transition. Repeated notifications do not repeat the callback.
 diff --git a/crates/rune/src/runtime/input/gesture.rs b/crates/rune/src/runtime/input/gesture.rs
-index 327dea22..afb43b27 100644
+index cd34a00c..b747bcf3 100644
 --- a/crates/rune/src/runtime/input/gesture.rs
 +++ b/crates/rune/src/runtime/input/gesture.rs
-@@ -21,6 +21,7 @@ impl<S: 'static> Runtime<S> {
+@@ -23,6 +23,7 @@ impl<S: 'static> Runtime<S> {
      /// phase. The innermost [`El::on_wheel`] handler there hears it first, up to the nearest
      /// scroll view; what none takes scrolls as [`Self::wheel_xy`] does.
      pub fn wheel_event(&mut self, ev: WheelEvent) {
@@ -264,7 +242,7 @@ index 327dea22..afb43b27 100644
          if ev.phase == GesturePhase::Began { self.wheel_began(); }
          let moved = ev.dx != 0.0 || ev.dy != 0.0;
          if moved {
-@@ -175,6 +176,7 @@ impl<S: 'static> Runtime<S> {
+@@ -182,6 +183,7 @@ impl<S: 'static> Runtime<S> {
              PointerButton::Secondary => return self.secondary_down(x, y),
              _ => {}
          }
@@ -272,7 +250,7 @@ index 327dea22..afb43b27 100644
          if self.press.is_held() { return; }
          self.pointer = Some((x, y));
          self.dismiss_help();
-@@ -200,11 +202,13 @@ impl<S: 'static> Runtime<S> {
+@@ -207,11 +209,13 @@ impl<S: 'static> Runtime<S> {
      /// A mouse button came up at (x, y): the release of [`Self::button_down`].
      pub fn button_up(&mut self, x: f32, y: f32, button: PointerButton) {
          match button {
@@ -327,7 +305,7 @@ index a44f7e85..efd9cb30 100644
          let app_first = self.focus.path().is_none();
          if app_first && let Some(f) = self.on_key && Tx::took(self.app_key(f, ev, one), one) { return true; }
 diff --git a/crates/rune/src/runtime/input/pointer.rs b/crates/rune/src/runtime/input/pointer.rs
-index a2559390..a04040b2 100644
+index 41cd2e51..ed77e7db 100644
 --- a/crates/rune/src/runtime/input/pointer.rs
 +++ b/crates/rune/src/runtime/input/pointer.rs
 @@ -5,7 +5,16 @@ use super::*;
@@ -348,7 +326,7 @@ index a2559390..a04040b2 100644
  
      /// `drag_move` false keeps a held drag from getting a `Phase::Move`: a release at the
      /// point the drag last saw has nothing new to report, and its instant transaction would
-@@ -175,6 +184,7 @@ impl<S: 'static> Runtime<S> {
+@@ -178,6 +187,7 @@ impl<S: 'static> Runtime<S> {
      }
  
      pub fn pointer_down(&mut self, x: f32, y: f32) {
@@ -356,7 +334,7 @@ index a2559390..a04040b2 100644
          if self.press.held().is_some_and(|h| h.button != crate::PointerButton::Primary) {
              self.pointer = Some((x, y));
              return;
-@@ -285,6 +295,7 @@ impl<S: 'static> Runtime<S> {
+@@ -300,6 +310,7 @@ impl<S: 'static> Runtime<S> {
      }
  
      pub fn pointer_up(&mut self, x: f32, y: f32) {
@@ -364,7 +342,7 @@ index a2559390..a04040b2 100644
          if self.press.held().is_some_and(|h| h.button != crate::PointerButton::Primary) {
              self.pointer = Some((x, y));
              return;
-@@ -413,6 +424,7 @@ impl<S: 'static> Runtime<S> {
+@@ -462,6 +473,7 @@ impl<S: 'static> Runtime<S> {
      /// Wheel or trackpad delta in points (positive `dy` moves content down, like a browser's
      /// negative deltaY). Applied 1:1: the platform supplies its own momentum phases.
      pub fn wheel(&mut self, x: f32, y: f32, dy: f32) {
@@ -372,7 +350,7 @@ index a2559390..a04040b2 100644
          self.release_hover_hold();
          self.drop_scroll_holds();
          self.dismiss_help();
-@@ -431,6 +443,7 @@ impl<S: 'static> Runtime<S> {
+@@ -480,6 +492,7 @@ impl<S: 'static> Runtime<S> {
      /// Releases a scroll with `velocity` (points per second, positive moves content down);
      /// the runtime decays it (for platforms without OS momentum and headless scripts).
      pub fn fling(&mut self, x: f32, y: f32, velocity: f32) {
@@ -380,8 +358,21 @@ index a2559390..a04040b2 100644
          self.release_hover_hold();
          self.drop_scroll_holds();
          self.dismiss_help();
+diff --git a/crates/rune/src/runtime/input/press_repeat.rs b/crates/rune/src/runtime/input/press_repeat.rs
+index 218c22b0..2230f836 100644
+--- a/crates/rune/src/runtime/input/press_repeat.rs
++++ b/crates/rune/src/runtime/input/press_repeat.rs
+@@ -50,7 +50,7 @@ pub(super) enum Effect {
+     WakeAt(f64),
+ }
+ 
+-pub(super) fn step(seq: &mut Seq, state: &mut Repeat, event: Event) -> Effects<Effect> {
++fn step(seq: &mut Seq, state: &mut Repeat, event: Event) -> Effects<Effect> {
+     match event {
+         Event::Arm { path, due } => {
+             let attempt = seq.next();
 diff --git a/crates/rune/src/runtime/input/secondary.rs b/crates/rune/src/runtime/input/secondary.rs
-index edbf2c4c..7b616dad 100644
+index d887aba4..045579b4 100644
 --- a/crates/rune/src/runtime/input/secondary.rs
 +++ b/crates/rune/src/runtime/input/secondary.rs
 @@ -25,6 +25,7 @@ impl<S: 'static> Runtime<S> {
@@ -398,8 +389,25 @@ index edbf2c4c..7b616dad 100644
      pub fn secondary_up(&mut self, x: f32, y: f32) {
 +        self.pointer_activity();
          self.pointer = Some((x, y));
-         let down_link = self.take_secondary_link();
          self.secondary_region_up(x, y);
+         let (path, down_link, left) = match std::mem::take(&mut self.secondary) {
+diff --git a/crates/rune/src/runtime/motion/flights.rs b/crates/rune/src/runtime/motion/flights.rs
+index 2590acc0..38481e7c 100644
+--- a/crates/rune/src/runtime/motion/flights.rs
++++ b/crates/rune/src/runtime/motion/flights.rs
+@@ -100,10 +100,10 @@ impl Launches {
+ 
+     /// What this commit mounts, in the order they were asked for. Each launch waits for its
+     /// answer (`take_off` or `miss`) before it is over.
+-    pub(super) fn commit(&mut self) -> Vec<LaunchEffect> { self.step(LaunchEvent::Commit).into_iter().collect() }
++    fn commit(&mut self) -> Vec<LaunchEffect> { self.step(LaunchEvent::Commit).into_iter().collect() }
+ 
+     /// The destination `attempt` waited for mounted, and `flight` starts at its node.
+-    pub(super) fn take_off(&mut self, attempt: Attempt, flight: Launched) {
++    fn take_off(&mut self, attempt: Attempt, flight: Launched) {
+         self.step(LaunchEvent::TakeOff { attempt, flight });
+     }
+ 
 diff --git a/crates/rune/src/shader.wgsl b/crates/rune/src/shader.wgsl
 index 19dedab0..58285152 100644
 --- a/crates/rune/src/shader.wgsl
@@ -438,7 +446,7 @@ index 19dedab0..58285152 100644
      // Icon loops rotate the quad, not its atlas allocation. Local p still samples the glyph.
      if (kind > 1.5 && kind < 2.5 && i.params.x != 0.0) {
 diff --git a/crates/rune/src/tooling/headless.rs b/crates/rune/src/tooling/headless.rs
-index d6283f80..d277a44f 100644
+index dc748f2b..90c82da0 100644
 --- a/crates/rune/src/tooling/headless.rs
 +++ b/crates/rune/src/tooling/headless.rs
 @@ -71,6 +71,8 @@ pub(crate) fn headless_configured<S: 'static>(mut app: crate::app::App<S>, args:
@@ -459,23 +467,67 @@ index d6283f80..d277a44f 100644
      rt.on_mods = on_mods;
      rt.app_ime.hook = on_ime;
      rt.transparent = transparent;
+diff --git a/crates/rune/src/tooling/perf_warn/commits.rs b/crates/rune/src/tooling/perf_warn/commits.rs
+index b7838913..d87dcab9 100644
+--- a/crates/rune/src/tooling/perf_warn/commits.rs
++++ b/crates/rune/src/tooling/perf_warn/commits.rs
+@@ -74,7 +74,7 @@ impl CommitMeter {
+ 
+     /// Handler `name` on the element at `path`, set at `at`, asked for a commit.
+     #[inline(always)]
+-    #[cfg_attr(not(debug_assertions), allow(unused_variables))]
++    #[cfg(debug_assertions)]
+     pub(crate) fn handler(&mut self, name: &'static str, path: Option<&str>, at: Option<&'static std::panic::Location<'static>>) {
+         #[cfg(debug_assertions)]
+         {
+@@ -111,7 +111,7 @@ impl CommitMeter {
+     /// `committed`: the frame committed; `instant`: the viewport an instant scroll this frame
+     /// asked to move, if any.
+     #[inline(always)]
+-    #[cfg_attr(not(debug_assertions), allow(unused_variables))]
++    #[cfg(debug_assertions)]
+     pub(crate) fn frame_ends(&mut self, scrolling: bool, committed: bool, instant: Option<&str>) {
+         #[cfg(debug_assertions)]
+         {
+diff --git a/crates/rune/src/tooling/virtual_desktop/window.rs b/crates/rune/src/tooling/virtual_desktop/window.rs
+index 48bf7b81..948eac48 100644
+--- a/crates/rune/src/tooling/virtual_desktop/window.rs
++++ b/crates/rune/src/tooling/virtual_desktop/window.rs
+@@ -113,6 +113,8 @@ impl<S: 'static> Window<S> {
+         if !selected { inherited.scene = None; inherited.playground = None; inherited.variant = None; }
+         let own = app.resolve_args(inherited);
+         let comp = app.compositor.take();
++        let on_key_activity = app.on_key_activity;
++        let on_pointer_activity = app.on_pointer_activity;
+         let (open, keep_running, on_close, on_focus, on_reopen) = (app.open, app.keep_running, app.on_close, app.on_focus, app.on_reopen);
+         let (on_mods, on_visibility) = (app.on_mods, app.on_visibility);
+         let on_ime = app.on_ime;
+@@ -129,6 +131,8 @@ impl<S: 'static> Window<S> {
+         let mut rt = crate::tooling::runtime_for(&spec, state, size, Env::new(dark, scale), Arc::new(|| {}));
+         crate::playground::attach(&mut rt, playground, &spec, own.playground.clone(), own.variant.clone(), false);
+         rt.on_focus = on_focus;
++        rt.on_pointer_activity = on_pointer_activity;
++        rt.on_key_activity = on_key_activity;
+         rt.on_mods = on_mods;
+         rt.on_visibility = on_visibility;
+         rt.app_ime.hook = on_ime;
 diff --git a/crates/rune/src/window.rs b/crates/rune/src/window.rs
-index 09b8d9f9..7352f1c4 100644
+index d6245438..9c06f9b8 100644
 --- a/crates/rune/src/window.rs
 +++ b/crates/rune/src/window.rs
-@@ -484,6 +484,8 @@ impl<S: 'static> Host<S> {
+@@ -499,6 +499,8 @@ impl<S: 'static> Host<S> {
          let present_log = args.trace.as_ref().map(|_| Arc::default());
          let mut app = app;
          let comp = app.compositor.take();
 +        let on_key_activity = app.on_key_activity;
 +        let on_pointer_activity = app.on_pointer_activity;
-         let (on_focus, on_ime) = (app.on_focus, app.on_ime);
+         let (on_focus, on_ime, on_visibility) = (app.on_focus, app.on_ime, app.on_visibility);
          let titlebar = app.titlebar.filter(|_| !options.borderless);
          let chrome = app.chrome;
-@@ -513,6 +515,8 @@ impl<S: 'static> Host<S> {
-             args.size = None;
+@@ -529,6 +531,8 @@ impl<S: 'static> Host<S> {
          }
          rt.on_focus = on_focus;
+         rt.on_visibility = on_visibility;
 +        rt.on_pointer_activity = on_pointer_activity;
 +        rt.on_key_activity = on_key_activity;
          rt.app_ime.hook = on_ime;

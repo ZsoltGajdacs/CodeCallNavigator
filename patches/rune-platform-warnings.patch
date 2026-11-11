@@ -1,8 +1,8 @@
 diff --git a/crates/rune/src/quit.rs b/crates/rune/src/quit.rs
-index 624fea31..e9403a52 100644
+index b52d675c..cabb9681 100644
 --- a/crates/rune/src/quit.rs
 +++ b/crates/rune/src/quit.rs
-@@ -61,6 +61,7 @@ pub(crate) enum Event {
+@@ -62,6 +62,7 @@ pub(crate) enum Event {
      /// The loop closed the windows for the session's end (`Effect::CloseAndExit`).
      WindowsClosed,
      /// The system took the quit back (another app refused a logoff): the app runs on.
@@ -11,10 +11,10 @@ index 624fea31..e9403a52 100644
      /// The event loop ended.
      Exited,
 diff --git a/crates/rune/src/runtime/frame.rs b/crates/rune/src/runtime/frame.rs
-index dfda8663..69c8be69 100644
+index ae2549ca..b3d6ec42 100644
 --- a/crates/rune/src/runtime/frame.rs
 +++ b/crates/rune/src/runtime/frame.rs
-@@ -46,6 +46,7 @@ impl<S: 'static> Runtime<S> {
+@@ -50,6 +50,7 @@ impl<S: 'static> Runtime<S> {
      }
  
      /// Whether the window has the keyboard focus, as its last focus event said.

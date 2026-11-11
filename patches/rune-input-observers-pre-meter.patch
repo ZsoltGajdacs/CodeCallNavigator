@@ -1,0 +1,498 @@
+diff --git a/crates/rune/src/app.rs b/crates/rune/src/app.rs
+index b4b059ee..1972ce60 100644
+--- a/crates/rune/src/app.rs
++++ b/crates/rune/src/app.rs
+@@ -68,6 +68,8 @@ pub struct App<S: 'static> {
+     pub(crate) on_quit: Option<fn(&mut S, &mut Tx)>,
+     pub(crate) turn_scope: Option<TurnScope<S>>,
+     pub(crate) on_focus: Option<fn(&mut S, bool, &mut Tx)>,
++    pub(crate) on_key_activity: Option<fn(&mut S, &crate::KeyEvent, &mut Tx)>,
++    pub(crate) on_pointer_activity: Option<fn(&mut S, &mut Tx)>,
+     pub(crate) on_mods: Option<fn(&mut S, crate::Mods, &mut Tx)>,
+     pub(crate) on_visibility: Option<fn(&mut S, bool, &mut Tx)>,
+     pub(crate) on_ime: Option<fn(&mut S, &crate::Ime, &mut Tx) -> bool>,
+@@ -126,6 +128,8 @@ impl<S: 'static> App<S> {
+             on_focus: None,
+             on_mods: None,
+             on_visibility: None,
++            on_pointer_activity: None,
++            on_key_activity: None,
+             on_ime: None,
+             on_reopen: None,
+             on_open_url: None,
+@@ -267,6 +271,21 @@ impl<S: 'static> App<S> {
+         self
+     }
+ 
++    /// Observes every logical key before focused fields or application handlers can take
++    /// it. Unlike `AppSpec::on_key`, this callback cannot consume the key.
++    pub fn on_key_activity(mut self, f: fn(&mut S, &crate::KeyEvent, &mut Tx)) -> Self {
++        self.on_key_activity = Some(f);
++        self
++    }
++
++    /// Observes pointer movement, button activity and scrolling before normal dispatch,
++    /// including over inert backgrounds and modal backdrops. It cannot consume the event.
++    /// Use `Tx::live_only` when only transient state invisible to the view changed.
++    pub fn on_pointer_activity(mut self, f: fn(&mut S, &mut Tx)) -> Self {
++        self.on_pointer_activity = Some(f);
++        self
++    }
++
+     /// Hears the modifier keys held down (Shift, Control, Alt or Option, the logo key) each time
+     /// they change, wherever focus is and whether or not anything takes the key, as a web page's
+     /// window-level `keydown`/`keyup` for `Alt` hear it; and none held once the window loses
+diff --git a/crates/rune/src/platform/web.rs b/crates/rune/src/platform/web.rs
+index 70333b13..c619bd97 100644
+--- a/crates/rune/src/platform/web.rs
++++ b/crates/rune/src/platform/web.rs
+@@ -407,6 +407,8 @@ impl<S: 'static> ApplicationHandler<Wake> for Browser<S> {
+             let mut app = self.app.take().expect("one canvas initialization");
+             for bytes in fonts { app.spec.fonts = crate::app::with_font(app.spec.fonts, bytes); }
+             let compositor = app.compositor.take();
++            let on_key_activity = app.on_key_activity;
++            let on_pointer_activity = app.on_pointer_activity;
+             let (on_focus, modifier_keys, srgb_blend) = (app.on_focus, app.modifier_keys, app.srgb_blend);
+             let on_mods = app.on_mods;
+             let (font_smoothing, fit_height) = (app.font_smoothing, app.fit_content_height);
+@@ -454,6 +456,8 @@ impl<S: 'static> ApplicationHandler<Wake> for Browser<S> {
+                 }
+             }
+             rt.on_focus = on_focus;
++            rt.on_pointer_activity = on_pointer_activity;
++            rt.on_key_activity = on_key_activity;
+             rt.on_mods = on_mods;
+             rt.set_modifier_keys(modifier_keys);
+             rt.set_tab_visits_controls(tab_visits_controls);
+diff --git a/crates/rune/src/playground/testing.rs b/crates/rune/src/playground/testing.rs
+index 456e2273..539808e3 100644
+--- a/crates/rune/src/playground/testing.rs
++++ b/crates/rune/src/playground/testing.rs
+@@ -13,6 +13,8 @@ impl<S: 'static> App<S> {
+     pub fn headless_runtime(mut self, size: (f32, f32), env: Env) -> Runtime<S> {
+         let playground = self.playground.take();
+         let (chrome, titlebar, borderless) = (self.chrome, self.titlebar, self.window_options.borderless);
++        let on_key_activity = self.on_key_activity;
++        let on_pointer_activity = self.on_pointer_activity;
+         let (on_focus, on_ime, modifier_keys, tab_visits_controls, srgb_blend) = (self.on_focus, self.on_ime, self.modifier_keys, self.tab_visits_controls, self.srgb_blend);
+         let (spec, state, _) = self.into_parts(None);
+         let mut rt = crate::tooling::runtime_for(&spec, state, size, env, std::sync::Arc::new(|| {}));
+@@ -21,6 +23,8 @@ impl<S: 'static> App<S> {
+         }
+         rt.headless_chrome(chrome, titlebar, borderless);
+         rt.on_focus = on_focus;
++        rt.on_pointer_activity = on_pointer_activity;
++        rt.on_key_activity = on_key_activity;
+         rt.app_ime.hook = on_ime;
+         rt.set_modifier_keys(modifier_keys);
+         rt.set_tab_visits_controls(tab_visits_controls);
+diff --git a/crates/rune/src/quit.rs b/crates/rune/src/quit.rs
+index b52d675c..cabb9681 100644
+--- a/crates/rune/src/quit.rs
++++ b/crates/rune/src/quit.rs
+@@ -62,6 +62,7 @@ pub(crate) enum Event {
+     /// The loop closed the windows for the session's end (`Effect::CloseAndExit`).
+     WindowsClosed,
+     /// The system took the quit back (another app refused a logoff): the app runs on.
++    #[cfg_attr(not(target_os = "windows"), allow(dead_code))]
+     Cancel,
+     /// The event loop ended.
+     Exited,
+diff --git a/crates/rune/src/render/metallib.rs b/crates/rune/src/render/metallib.rs
+index d9c8fd0e..9bb9351e 100644
+--- a/crates/rune/src/render/metallib.rs
++++ b/crates/rune/src/render/metallib.rs
+@@ -900,4 +900,91 @@ pub(super) const UBER_WGSL_BLAKE3: &str = \"{wgsl_hash}\";", uber_abi_hash());
+             }
+         }
+     }
++
++    #[cfg(target_os = "macos")]
++    #[test]
++    fn oriented_segment_quads_preserve_caps_clips_and_layer_pixels() {
++        use super::super::Gpu;
++        let gpu = Gpu::headless();
++        let current = uber_wgsl();
++        let branch = "    if (kind > 4.5 && kind < 5.5) {\n        p = segment_quad(i, corner);\n    }\n";
++        assert_eq!(current.matches(branch).count(), 1);
++        let reference = current.replacen(branch, "", 1);
++        assert!(try_uber_metallib(&gpu.device, &current, uber_metallib(&gpu.device), UBER_WGSL_BLAKE3, |_| ()).is_none(),
++            "the pinned AABB metallib must not replace the patched WGSL");
++        for scale in [1.0, 2.0] {
++            compare_segment_quads(&gpu, &current, &reference, scale);
++        }
++    }
++
++    #[cfg(target_os = "macos")]
++    fn segment_renderer(device: &wgpu::Device, source: &str) -> super::super::Renderer {
++        use super::super::{Blend, Renderer, OFFSCREEN_FORMAT};
++        let mut renderer = Renderer::new_classic(device, OFFSCREEN_FORMAT);
++        renderer.shader = super::super::dxbc::Shaders::one(wgsl_shader(device, source));
++        renderer.pipeline = Renderer::pipeline(device, &renderer.layout, &renderer.shader, OFFSCREEN_FORMAT, "vs", Blend::SourceOver);
++        renderer.extra.clear();
++        renderer
++    }
++
++    #[cfg(target_os = "macos")]
++    fn compare_segment_quads(gpu: &super::super::Gpu, current: &str, reference: &str, scale: f32) {
++        use super::super::{LayerSpec, Instance, Offscreen};
++        let mut oriented = segment_renderer(&gpu.device, current);
++        let mut aabb = segment_renderer(&gpu.device, reference);
++        let target = Offscreen::new(&gpu.device, (128.0 * scale) as u32, (96.0 * scale) as u32);
++        for instance in segment_samples(scale) {
++            let bounds = [8.0 * scale, 4.0 * scale, 112.0 * scale, 88.0 * scale];
++            let layer = Instance::begin_layer(bounds, instance.clip, LayerSpec { opacity: 0.65, ..Default::default() });
++            for instances in [vec![instance], vec![layer, instance, Instance::end_layer()]] {
++                let expected = segment_pixels(gpu, &mut aabb, &target, &instances);
++                let actual = segment_pixels(gpu, &mut oriented, &target, &instances);
++                let worst = actual.iter().zip(&expected).map(|(a, b)| a.abs_diff(*b)).max().unwrap();
++                assert!(worst <= 1, "segment pixels changed by {worst} at scale {scale}: {:?}", instance.radii);
++            }
++        }
++    }
++
++    #[cfg(target_os = "macos")]
++    fn segment_pixels(gpu: &super::super::Gpu, renderer: &mut super::super::Renderer, target: &super::super::Offscreen, instances: &[super::super::Instance]) -> Vec<u8> {
++        let mut text = crate::text::TextSystem::default();
++        let size = (target.width, target.height);
++        renderer.prepare(&gpu.device, &gpu.queue, &mut text.atlas, instances, size);
++        let mut encoder = gpu.device.create_command_encoder(&Default::default());
++        renderer.draw(&mut encoder, &target.view, [0.0; 4]);
++        target.copy(&mut encoder);
++        renderer.submit(&gpu.queue, encoder);
++        target.read(&gpu.device)
++    }
++
++    #[cfg(target_os = "macos")]
++    fn segment_samples(scale: f32) -> Vec<super::super::Instance> {
++        let ends = [
++            [10.0, 14.0, 114.0, 82.0], [114.0, 82.0, 10.0, 14.0],
++            [10.0, 82.0, 114.0, 14.0], [114.0, 14.0, 10.0, 82.0],
++            [64.0, 10.0, 64.0, 86.0], [8.0, 48.0, 120.0, 48.0],
++            [64.0, 48.0, 64.0, 48.0], [64.0, 48.0, 64.00001, 48.0],
++            [-100.0, -60.0, 220.0, 154.0], [8.0, 8.0, 120.0, 88.0],
++        ];
++        ends.into_iter().flat_map(|points| [false, true].into_iter().flat_map(move |round| {
++            [0.15, 1.2, 4.0].map(|width| segment_sample(points, round, width, scale))
++        })).collect()
++    }
++
++    #[cfg(target_os = "macos")]
++    fn segment_sample(points: [f32; 4], round: bool, width: f32, scale: f32) -> super::super::Instance {
++        use super::super::{Instance, KIND_SEGMENT, pack_fade};
++        use bytemuck::Zeroable;
++        let [ax, ay, bx, by] = points.map(|value| value * scale);
++        let half = width * scale * 0.5;
++        let pad = half.max(0.5) + 1.0;
++        let clip = [12.0 * scale, 8.0 * scale, 116.0 * scale, 88.0 * scale];
++        Instance {
++            rect: [ax.min(bx) - pad, ay.min(by) - pad, (ax - bx).abs() + pad * 2.0, (ay - by).abs() + pad * 2.0],
++            radii: [ax, ay, bx, by], fill: [0.32, 0.08, 0.16, 0.4],
++            params: [half, KIND_SEGMENT, u8::from(round) as f32, 1.0], clip,
++            fade: pack_fade([3.0 * scale; 4], clip, clip), ..Instance::zeroed()
++        }
++    }
++
+ }
+diff --git a/crates/rune/src/runtime.rs b/crates/rune/src/runtime.rs
+index d89d00ff..96102446 100644
+--- a/crates/rune/src/runtime.rs
++++ b/crates/rune/src/runtime.rs
+@@ -452,6 +452,10 @@ pub struct Runtime<S: 'static> {
+     pub wall_start: Option<crate::time::Instant>,
+     /// Called for keys unhandled by the focused control; return true to consume it.
+     pub on_key: Option<fn(&mut S, &KeyEvent, &mut Tx) -> bool>,
++    /// Non-consuming logical-key observer installed by `App::on_key_activity`.
++    pub on_key_activity: Option<fn(&mut S, &KeyEvent, &mut Tx)>,
++    /// Pointer observer installed by `App::on_pointer_activity`.
++    pub on_pointer_activity: Option<fn(&mut S, &mut Tx)>,
+     pub(crate) nodes: Vec<Node>,
+     /// The last commit's node buffer, emptied, for the next flatten to fill: an app of a few
+     /// thousand elements otherwise maps and faults in megabytes every commit.
+@@ -865,6 +869,8 @@ impl<S: 'static> Runtime<S> {
+             watch: Default::default(),
+             wall_start: None,
+             on_key: None,
++            on_pointer_activity: None,
++            on_key_activity: None,
+             nodes: Vec::new(),
+             spare_nodes: Vec::new(),
+             apply_scratch: Default::default(),
+diff --git a/crates/rune/src/runtime/frame.rs b/crates/rune/src/runtime/frame.rs
+index ae2549ca..b3d6ec42 100644
+--- a/crates/rune/src/runtime/frame.rs
++++ b/crates/rune/src/runtime/frame.rs
+@@ -50,6 +50,7 @@ impl<S: 'static> Runtime<S> {
+     }
+ 
+     /// Whether the window has the keyboard focus, as its last focus event said.
++    #[cfg(target_os = "windows")]
+     pub(crate) fn has_window_focus(&self) -> bool { self.window_focused == Some(true) }
+ 
+     /// Queue a native focus transition. Repeated notifications do not repeat the callback.
+diff --git a/crates/rune/src/runtime/input/gesture.rs b/crates/rune/src/runtime/input/gesture.rs
+index cd34a00c..b747bcf3 100644
+--- a/crates/rune/src/runtime/input/gesture.rs
++++ b/crates/rune/src/runtime/input/gesture.rs
+@@ -23,6 +23,7 @@ impl<S: 'static> Runtime<S> {
+     /// phase. The innermost [`El::on_wheel`] handler there hears it first, up to the nearest
+     /// scroll view; what none takes scrolls as [`Self::wheel_xy`] does.
+     pub fn wheel_event(&mut self, ev: WheelEvent) {
++        self.pointer_activity();
+         if ev.phase == GesturePhase::Began { self.wheel_began(); }
+         let moved = ev.dx != 0.0 || ev.dy != 0.0;
+         if moved {
+@@ -182,6 +183,7 @@ impl<S: 'static> Runtime<S> {
+             PointerButton::Secondary => return self.secondary_down(x, y),
+             _ => {}
+         }
++        self.pointer_activity();
+         if self.press.is_held() { return; }
+         self.pointer = Some((x, y));
+         self.dismiss_help();
+@@ -207,11 +209,13 @@ impl<S: 'static> Runtime<S> {
+     /// A mouse button came up at (x, y): the release of [`Self::button_down`].
+     pub fn button_up(&mut self, x: f32, y: f32, button: PointerButton) {
+         match button {
+-            PointerButton::Primary => self.pointer_up(x, y),
+-            PointerButton::Secondary => self.secondary_up(x, y),
+-            _ if self.press.held().is_some_and(|h| h.button == button) => self.release_capture(x, y),
++            PointerButton::Primary => return self.pointer_up(x, y),
++            PointerButton::Secondary => return self.secondary_up(x, y),
+             _ => {}
+         }
++        self.pointer_activity();
++        if self.press.held().is_some_and(|h| h.button == button) { self.release_capture(x, y); }
++
+     }
+ 
+     /// A key came up, for the [`El::on_key_up`] handlers: true when one is there to hear it,
+diff --git a/crates/rune/src/runtime/input/keys.rs b/crates/rune/src/runtime/input/keys.rs
+index 14e6a414..4e2b3eca 100644
+--- a/crates/rune/src/runtime/input/keys.rs
++++ b/crates/rune/src/runtime/input/keys.rs
+@@ -2,6 +2,12 @@
+ use super::*;
+ 
+ impl<S: 'static> Runtime<S> {
++    pub(super) fn key_activity(&mut self, ev: &KeyEvent) {
++        if let Some(f) = self.on_key_activity {
++            self.update_if(|s, tx| { f(s, ev, tx); !tx.live_only });
++        }
++    }
++
+     /// Offer a logical key that already passed `held_gate` to the app, the focused
+     /// input's handler, focus traversal and the focused editor, in that order.
+     pub(super) fn route_key(&mut self, ev: &KeyEvent, repeat: bool, one: &mut Tx) -> bool {
+@@ -9,6 +15,7 @@ impl<S: 'static> Runtime<S> {
+         one.by_keys = true;
+         one.focused = self.focused_key();
+         if matches!(ev.key, crate::Key::Modifier { .. }) { return !repeat && self.route_modifier(ev, one); }
++        self.key_activity(ev);
+         one.key_repeat = repeat;
+         let shown = self.focus.keyboard() || self.focus.hovered();
+         if focus::navigates(ev) { self.focus.step(focus_machine::FocusEvent::Navigated); }
+diff --git a/crates/rune/src/runtime/input/modifier_keys.rs b/crates/rune/src/runtime/input/modifier_keys.rs
+index a44f7e85..efd9cb30 100644
+--- a/crates/rune/src/runtime/input/modifier_keys.rs
++++ b/crates/rune/src/runtime/input/modifier_keys.rs
+@@ -176,6 +176,7 @@ impl<S: 'static> Runtime<S> {
+     /// order, and to nothing built in: no editing, selection, focus traversal or focus ring.
+     pub(super) fn route_modifier(&mut self, ev: &KeyEvent, one: &mut Tx) -> bool {
+         if !self.modifier_keys.enabled { return false; }
++        self.key_activity(ev);
+         one.key_repeat = false;
+         let app_first = self.focus.path().is_none();
+         if app_first && let Some(f) = self.on_key && Tx::took(self.app_key(f, ev, one), one) { return true; }
+diff --git a/crates/rune/src/runtime/input/pointer.rs b/crates/rune/src/runtime/input/pointer.rs
+index 41cd2e51..ed77e7db 100644
+--- a/crates/rune/src/runtime/input/pointer.rs
++++ b/crates/rune/src/runtime/input/pointer.rs
+@@ -5,7 +5,16 @@ use super::*;
+ pub(super) const CLICK_SLOP: f32 = 4.0;
+ 
+ impl<S: 'static> Runtime<S> {
+-    pub fn pointer_move(&mut self, x: f32, y: f32) { self.move_pointer(x, y, true); }
++    pub fn pointer_move(&mut self, x: f32, y: f32) {
++        self.pointer_activity();
++        self.move_pointer(x, y, true);
++    }
++
++    pub(super) fn pointer_activity(&mut self) {
++        if let Some(f) = self.on_pointer_activity {
++            self.update_if(|s, tx| { f(s, tx); !tx.live_only });
++        }
++    }
+ 
+     /// `drag_move` false keeps a held drag from getting a `Phase::Move`: a release at the
+     /// point the drag last saw has nothing new to report, and its instant transaction would
+@@ -178,6 +187,7 @@ impl<S: 'static> Runtime<S> {
+     }
+ 
+     pub fn pointer_down(&mut self, x: f32, y: f32) {
++        self.pointer_activity();
+         if self.press.held().is_some_and(|h| h.button != crate::PointerButton::Primary) {
+             self.pointer = Some((x, y));
+             return;
+@@ -300,6 +310,7 @@ impl<S: 'static> Runtime<S> {
+     }
+ 
+     pub fn pointer_up(&mut self, x: f32, y: f32) {
++        self.pointer_activity();
+         if self.press.held().is_some_and(|h| h.button != crate::PointerButton::Primary) {
+             self.pointer = Some((x, y));
+             return;
+@@ -462,6 +473,7 @@ impl<S: 'static> Runtime<S> {
+     /// Wheel or trackpad delta in points (positive `dy` moves content down, like a browser's
+     /// negative deltaY). Applied 1:1: the platform supplies its own momentum phases.
+     pub fn wheel(&mut self, x: f32, y: f32, dy: f32) {
++        self.pointer_activity();
+         self.release_hover_hold();
+         self.drop_scroll_holds();
+         self.dismiss_help();
+@@ -480,6 +492,7 @@ impl<S: 'static> Runtime<S> {
+     /// Releases a scroll with `velocity` (points per second, positive moves content down);
+     /// the runtime decays it (for platforms without OS momentum and headless scripts).
+     pub fn fling(&mut self, x: f32, y: f32, velocity: f32) {
++        self.pointer_activity();
+         self.release_hover_hold();
+         self.drop_scroll_holds();
+         self.dismiss_help();
+diff --git a/crates/rune/src/runtime/input/secondary.rs b/crates/rune/src/runtime/input/secondary.rs
+index d887aba4..045579b4 100644
+--- a/crates/rune/src/runtime/input/secondary.rs
++++ b/crates/rune/src/runtime/input/secondary.rs
+@@ -25,6 +25,7 @@ impl<S: 'static> Runtime<S> {
+ 
+     /// Capture a secondary gesture without activating primary actions or text selection.
+     pub fn secondary_down(&mut self, x: f32, y: f32) {
++        self.pointer_activity();
+         self.pointer = Some((x, y));
+         self.release_hover_hold();
+         self.focus.step(focus_machine::FocusEvent::Pointed);
+@@ -47,6 +48,7 @@ impl<S: 'static> Runtime<S> {
+     }
+ 
+     pub fn secondary_up(&mut self, x: f32, y: f32) {
++        self.pointer_activity();
+         self.pointer = Some((x, y));
+         self.secondary_region_up(x, y);
+         let (path, down_link, left) = match std::mem::take(&mut self.secondary) {
+diff --git a/crates/rune/src/shader.wgsl b/crates/rune/src/shader.wgsl
+index 19dedab0..58285152 100644
+--- a/crates/rune/src/shader.wgsl
++++ b/crates/rune/src/shader.wgsl
+@@ -52,6 +52,20 @@ fn vs(i: In) -> Out {
+     return base_vs(i);
+ }
+ 
++// Rasterize only the thin strip around a segment, rather than its axis-aligned bounds.
++// Keep the original rect for layer bounds and the original endpoints for fragment coverage.
++fn segment_quad(i: In, corner: vec2<f32>) -> vec2<f32> {
++    let delta = i.radii.zw - i.radii.xy;
++    let len = length(delta);
++    let tangent = select(vec2<f32>(1.0, 0.0), delta / max(len, 1e-4), len >= 1e-4);
++    let normal = vec2<f32>(-tangent.y, tangent.x);
++    // push_shape pads by max(half width, 0.5) + 1; base_vs adds another device pixel.
++    // This also covers round caps, subpixel strokes, and the antialias fringe.
++    let pad = max(i.params.x, 0.5) + 2.0;
++    return i.radii.xy + tangent * mix(-pad, len + pad, corner.x)
++        + normal * mix(-pad, pad, corner.y);
++}
++
+ fn base_vs(i: In) -> Out {
+     let corner = vec2<f32>(f32(i.vi & 1u), f32(i.vi >> 1u));
+     let kind = i.params.y;
+@@ -75,7 +89,10 @@ fn base_vs(i: In) -> Out {
+         lo = max(lo, i.rect.xy + i.uv.xy);
+         hi = max(min(hi, i.rect.xy + vec2<f32>(-i.uv.z, i.uv.w)), lo);
+     }
+-    let p = select(lo, hi, corner > vec2<f32>(0.5));
++    var p = select(lo, hi, corner > vec2<f32>(0.5));
++    if (kind > 4.5 && kind < 5.5) {
++        p = segment_quad(i, corner);
++    }
+     var screen = p;
+     // Icon loops rotate the quad, not its atlas allocation. Local p still samples the glyph.
+     if (kind > 1.5 && kind < 2.5 && i.params.x != 0.0) {
+diff --git a/crates/rune/src/tooling/headless.rs b/crates/rune/src/tooling/headless.rs
+index dc748f2b..90c82da0 100644
+--- a/crates/rune/src/tooling/headless.rs
++++ b/crates/rune/src/tooling/headless.rs
+@@ -71,6 +71,8 @@ pub(crate) fn headless_configured<S: 'static>(mut app: crate::app::App<S>, args:
+     crate::tooling::interaction::gate::headless();
+     let mut comp = app.compositor.take();
+     let (srgb_blend, font_smoothing) = (app.srgb_blend, app.font_smoothing);
++    let on_key_activity = app.on_key_activity;
++    let on_pointer_activity = app.on_pointer_activity;
+     let (on_focus, on_ime, on_mods) = (app.on_focus, app.on_ime, app.on_mods);
+     let (on_reopen, on_open_url) = (app.on_reopen, app.on_open_url);
+     // A `--realtime` run stands in for a window, so it starts the app's live work as one does.
+@@ -110,6 +112,8 @@ pub(crate) fn headless_configured<S: 'static>(mut app: crate::app::App<S>, args:
+     crate::playground::attach(&mut rt, playground, &spec, args.playground.clone(), args.variant.clone(), false);
+     let chrome = rt.headless_chrome(chrome, titlebar, app_options.borderless);
+     rt.on_focus = on_focus;
++    rt.on_pointer_activity = on_pointer_activity;
++    rt.on_key_activity = on_key_activity;
+     rt.on_mods = on_mods;
+     rt.app_ime.hook = on_ime;
+     rt.transparent = transparent;
+diff --git a/crates/rune/src/tooling/virtual_desktop/window.rs b/crates/rune/src/tooling/virtual_desktop/window.rs
+index 48bf7b81..948eac48 100644
+--- a/crates/rune/src/tooling/virtual_desktop/window.rs
++++ b/crates/rune/src/tooling/virtual_desktop/window.rs
+@@ -113,6 +113,8 @@ impl<S: 'static> Window<S> {
+         if !selected { inherited.scene = None; inherited.playground = None; inherited.variant = None; }
+         let own = app.resolve_args(inherited);
+         let comp = app.compositor.take();
++        let on_key_activity = app.on_key_activity;
++        let on_pointer_activity = app.on_pointer_activity;
+         let (open, keep_running, on_close, on_focus, on_reopen) = (app.open, app.keep_running, app.on_close, app.on_focus, app.on_reopen);
+         let (on_mods, on_visibility) = (app.on_mods, app.on_visibility);
+         let on_ime = app.on_ime;
+@@ -129,6 +131,8 @@ impl<S: 'static> Window<S> {
+         let mut rt = crate::tooling::runtime_for(&spec, state, size, Env::new(dark, scale), Arc::new(|| {}));
+         crate::playground::attach(&mut rt, playground, &spec, own.playground.clone(), own.variant.clone(), false);
+         rt.on_focus = on_focus;
++        rt.on_pointer_activity = on_pointer_activity;
++        rt.on_key_activity = on_key_activity;
+         rt.on_mods = on_mods;
+         rt.on_visibility = on_visibility;
+         rt.app_ime.hook = on_ime;
+diff --git a/crates/rune/src/window.rs b/crates/rune/src/window.rs
+index d6245438..9c06f9b8 100644
+--- a/crates/rune/src/window.rs
++++ b/crates/rune/src/window.rs
+@@ -499,6 +499,8 @@ impl<S: 'static> Host<S> {
+         let present_log = args.trace.as_ref().map(|_| Arc::default());
+         let mut app = app;
+         let comp = app.compositor.take();
++        let on_key_activity = app.on_key_activity;
++        let on_pointer_activity = app.on_pointer_activity;
+         let (on_focus, on_ime, on_visibility) = (app.on_focus, app.on_ime, app.on_visibility);
+         let titlebar = app.titlebar.filter(|_| !options.borderless);
+         let chrome = app.chrome;
+@@ -529,6 +531,8 @@ impl<S: 'static> Host<S> {
+         }
+         rt.on_focus = on_focus;
+         rt.on_visibility = on_visibility;
++        rt.on_pointer_activity = on_pointer_activity;
++        rt.on_key_activity = on_key_activity;
+         rt.app_ime.hook = on_ime;
+         rt.set_modifier_keys(modifier_keys);
+         rt.set_srgb_blend(srgb_blend); rt.set_font_smoothing(font_smoothing);
+diff --git a/crates/rune/src/window/redraw.rs b/crates/rune/src/window/redraw.rs
+index e819dfe2..4ae799c8 100644
+--- a/crates/rune/src/window/redraw.rs
++++ b/crates/rune/src/window/redraw.rs
+@@ -36,8 +36,10 @@ pub(super) enum RedrawEvent {
+     /// Something asks for a frame: an input, a wake, a timer, the frame that just drew.
+     Ask(Instant),
+     /// A paint starts.
++    #[cfg_attr(target_os = "macos", allow(dead_code))]
+     Paint,
+     /// The paint ends.
++    #[cfg_attr(target_os = "macos", allow(dead_code))]
+     Painted,
+     /// The loop's turn ends. `paints`: the window is on screen, and Windows puts its paint off
+     /// behind the others'.

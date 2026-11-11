@@ -26,13 +26,15 @@
   },
   "rune": {
     "repository": "https://github.com/anomalyco/rune.git",
-    "revision": "7ed827a2b969ec737323c3e80d2bfc1b8032b609",
+    "revision": "bba30a61cfcec6683e3fdedf156a92dae89d8b04",
     "patch": "patches/rune-input-observers.patch",
-    "patch_sha256": "3251d3e33f81d737ec82726968ac63115b403a608be7c8d29361929d768bc4ac",
+    "patch_sha256": "0c3f44b4d4101e14e61c9a5ecaf90bb062d89aa8ae6ab930859125a88421e0a4",
     "previous_patch": "patches/rune-oriented-segments.patch",
-    "previous_patch_sha256": "31b5e5087dd7f2915d60c109aa3dfa195c3e2aef3769d60cdacafc49bc86e183",
+    "previous_patch_sha256": "eb91a3e3debc0a3bd30ead871f41ad94ef1dca672813e513d80ff969da142dd9",
     "older_patch": "patches/rune-platform-warnings.patch",
-    "older_patch_sha256": "ae0d3cc48c2c49e47f44e9a7e036bf41a0d901ab767488eee87d95a92a56074d"
+    "older_patch_sha256": "418ed0965bac55c77a7742220cd7f8e2ee0a3a4a833523b12b67f24efb57439f",
+    "pre_meter_patch": "patches/rune-input-observers-pre-meter.patch",
+    "pre_meter_patch_sha256": "d20b477f9ac442158a4f26204c6b64972a256cbf14ad4a57d5555e9d6f4a540d"
   },
   "lombok": {
     "version": "1.18.48",

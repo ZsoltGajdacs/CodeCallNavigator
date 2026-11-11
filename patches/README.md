@@ -108,8 +108,8 @@ Apply this combined patch once, in place of any exact recognized checkpoint.
 # Rune platform warnings patch
 
 `rune-platform-warnings.patch` applies to Rune revision
-`7ed827a2b969ec737323c3e80d2bfc1b8032b609` (SHA-256
-`ae0d3cc48c2c49e47f44e9a7e036bf41a0d901ab767488eee87d95a92a56074d`).
+`bba30a61cfcec6683e3fdedf156a92dae89d8b04` (SHA-256
+`418ed0965bac55c77a7742220cd7f8e2ee0a3a4a833523b12b67f24efb57439f`).
 It scopes platform-specific dead-code allowances and the Windows-only focus method
 to avoid warnings on macOS while preserving the shared state machines. Bootstrap
 applies it after checkout; no other Rune patches precede it. Bootstrap refuses
@@ -118,7 +118,7 @@ unrelated Rune source changes rather than overwriting them.
 # Rune oriented segment quads
 
 `rune-oriented-segments.patch` replaces the warnings-only patch on Rune revision
-`7ed827a2b969ec737323c3e80d2bfc1b8032b609`. Its SHA-256 is pinned in
+`bba30a61cfcec6683e3fdedf156a92dae89d8b04`. Its SHA-256 is pinned in
 `analyzers.lock.json`. It contains the existing platform-warning fixes followed
 by tightly oriented vertex quads for line segments and a GPU pixel regression.
 Apply the combined patch once to the pristine pinned revision. Do not stack the
@@ -161,7 +161,7 @@ unrelated-file rejection tests:
 # Rune input activity observers
 
 `rune-input-observers.patch` replaces the oriented-segments combined patch on Rune
-revision `7ed827a2b969ec737323c3e80d2bfc1b8032b609`; its SHA-256 is pinned in
+revision `bba30a61cfcec6683e3fdedf156a92dae89d8b04`; its SHA-256 is pinned in
 `analyzers.lock.json`. It preserves the platform-warning and oriented-segment
 changes and adds non-consuming pointer and logical-key observers. CodeCallNavigator uses
 these to cancel a pending standalone Double Shift sequence even when a focused
@@ -170,10 +170,40 @@ Observers run before regular dispatch and cannot consume events. `Tx::live_only(
 avoids invalidating presentation for changes to transient shortcut state.
 
 Apply this combined patch once to the pristine pinned revision. Do not stack it
-with either earlier Rune patch. Bootstrap recognizes both checksum-verified prior
+with either earlier Rune patch. Bootstrap recognizes the checksum-verified prior
 combined and warnings-only diffs, reverses the matching checkpoint and installs
 this replacement. Unknown edits remain rejected and preserved. Native window,
 multiwindow, web and headless app setup all retain the callbacks.
 
 Public-API regression checks: `cargo test --locked -p codecallnavigator --test rune_input_observers`.
 Patch verification and migration: `python3 -m unittest discover -s tools -p 'test_dependency*.py'`.
+
+# Rune latest-source refresh and commit meters
+
+All Rune patches above are rebased onto `bba30a61cfcec6683e3fdedf156a92dae89d8b04`
+(upstream `dev`, fetched 2026-11-11). The virtual desktop window moved from
+`desktop/window.rs` to `tooling/virtual_desktop/window.rs`; observer wiring now
+follows that owner. New upstream visibility hooks remain intact.
+
+The current combined `rune-input-observers.patch` also compiles
+`CommitMeter::handler` and `CommitMeter::frame_ends` only in debug builds, matching
+their debug-only callers. Release builds no longer compile unused no-op methods;
+`poll` keeps its unconditional call path. The pre-meter observer checkpoint is
+`rune-input-observers-pre-meter.patch`. Platform-only and oriented-segment
+checkpoints were refreshed against the same new base, and every checksum is
+pinned in `analyzers.lock.json`.
+
+Apply exactly one combined patch to the pinned pristine revision. Bootstrap can
+upgrade the exact rebased pre-meter, oriented-segment or platform-only checkpoint.
+Old-base checkouts must first verify and reverse their old recorded patch before
+moving revisions; bootstrap deliberately refuses to switch dirty revisions.
+CallAtlas (`916c2419c0cdb91b5b86b84df4842dadb17bb6b4`, `main`) and java-callgraph2
+(`77f566d0878958bab929b4cdeafcc2c762ff555e`, `main`) were fetched on the same date
+and already matched their upstream default-branch tips. Downloaded investigation
+binaries are separately pinned and are outside this source refresh.
+
+The combined patch also narrows `Launches::commit`, `Launches::take_off`, and
+`press_repeat::step` to private helpers: all their callers belong to their own
+module or its test child. Their private state types therefore stay private and
+the latest upstream's three `private_interfaces` warnings disappear without
+expanding the runtime API.
