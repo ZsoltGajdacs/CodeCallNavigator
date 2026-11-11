@@ -1,5 +1,8 @@
 //! Graph-only display text, independent of stable identities and analyzer formats.
-use codegraph::model::{Node, Visibility};
+use codegraph::{
+    model::{Node, Visibility},
+    search::class_name,
+};
 
 pub(super) struct Label {
     pub text: String,
@@ -44,34 +47,21 @@ pub(super) fn method(node: &Node) -> Label {
 }
 
 pub(super) fn class(node: &Node) -> Label {
-    // TypeScript containers represent source files, not class declarations.
-    if node.language.eq_ignore_ascii_case("typescript") {
-        return format(&node.container, &node.container, None);
-    }
     format(
-        simple_class_name(&node.container),
+        class_name(node),
         &node.container,
-        node.container_visibility,
+        if node.language.eq_ignore_ascii_case("typescript") {
+            None
+        } else {
+            node.container_visibility
+        },
     )
-}
-
-fn simple_class_name(container: &str) -> &str {
-    let mut depth = 0_u32;
-    let mut start = 0;
-    for (index, character) in container.char_indices() {
-        match character {
-            '<' => depth += 1,
-            '>' => depth = depth.saturating_sub(1),
-            '.' | '+' | '$' if depth == 0 => start = index + 1,
-            _ => {}
-        }
-    }
-    &container[start..]
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use codegraph::search::simple_class_name;
 
     #[test]
     fn visibility_signs_have_precise_descriptions() {

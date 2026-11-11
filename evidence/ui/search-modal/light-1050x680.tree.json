@@ -1,0 +1,5116 @@
+{
+  "accessibility": {
+    "bounds": [
+      0.0,
+      0.0,
+      1050.0,
+      680.0
+    ],
+    "children": [
+      {
+        "bounds": [
+          0.0,
+          0.0,
+          1050.0,
+          680.0
+        ],
+        "children": [
+          {
+            "bounds": [
+              0.0,
+              0.0,
+              1050.0,
+              680.0
+            ],
+            "children": [
+              {
+                "bounds": [
+                  145.0,
+                  64.0,
+                  760.0,
+                  540.0
+                ],
+                "children": [
+                  {
+                    "bounds": [
+                      161.0,
+                      82.0,
+                      616.0,
+                      20.0
+                    ],
+                    "name": "Search",
+                    "role": "label"
+                  },
+                  {
+                    "bounds": [
+                      789.0,
+                      86.0,
+                      64.0,
+                      12.0
+                    ],
+                    "name": "Double Shift",
+                    "role": "label"
+                  },
+                  {
+                    "actions": [
+                      "click",
+                      "focus"
+                    ],
+                    "bounds": [
+                      865.0,
+                      80.0,
+                      24.0,
+                      24.0
+                    ],
+                    "key": "close-search",
+                    "name": "Close search",
+                    "role": "button"
+                  },
+                  {
+                    "actions": [
+                      "click",
+                      "focus"
+                    ],
+                    "bounds": [
+                      161.0,
+                      114.0,
+                      42.0,
+                      24.0
+                    ],
+                    "key": "search-all",
+                    "name": "All",
+                    "role": "button"
+                  },
+                  {
+                    "actions": [
+                      "click",
+                      "focus"
+                    ],
+                    "bounds": [
+                      211.0,
+                      114.0,
+                      78.0,
+                      24.0
+                    ],
+                    "key": "search-classes",
+                    "name": "Classes",
+                    "role": "button"
+                  },
+                  {
+                    "actions": [
+                      "click",
+                      "focus"
+                    ],
+                    "bounds": [
+                      297.0,
+                      114.0,
+                      84.0,
+                      24.0
+                    ],
+                    "key": "search-methods",
+                    "name": "Methods",
+                    "role": "button"
+                  },
+                  {
+                    "bounds": [
+                      161.0,
+                      148.0,
+                      728.0,
+                      30.0
+                    ],
+                    "children": [
+                      {
+                        "bounds": [
+                          161.0,
+                          148.0,
+                          720.0,
+                          30.0
+                        ],
+                        "children": [
+                          {
+                            "actions": [
+                              "click",
+                              "focus",
+                              "set-value",
+                              "replace-selected-text",
+                              "set-text-selection"
+                            ],
+                            "bounds": [
+                              191.0,
+                              154.0,
+                              690.0,
+                              18.0
+                            ],
+                            "key": "input",
+                            "name": "Search classes and methods",
+                            "placeholder": "Search classes and methods…",
+                            "role": "text-input",
+                            "selection": [
+                              1,
+                              5,
+                              1,
+                              5
+                            ],
+                            "states": [
+                              "focused"
+                            ],
+                            "value": "order"
+                          }
+                        ],
+                        "key": "value",
+                        "role": "group"
+                      }
+                    ],
+                    "key": "search",
+                    "role": "group"
+                  },
+                  {
+                    "actions": [
+                      "scroll-up",
+                      "scroll-down",
+                      "set-scroll-offset"
+                    ],
+                    "bounds": [
+                      161.0,
+                      188.0,
+                      728.0,
+                      366.0
+                    ],
+                    "children": [
+                      {
+                        "actions": [
+                          "scroll-into-view"
+                        ],
+                        "bounds": [
+                          161.0,
+                          188.0,
+                          728.0,
+                          409.0
+                        ],
+                        "children": [
+                          {
+                            "actions": [
+                              "click",
+                              "scroll-into-view"
+                            ],
+                            "bounds": [
+                              161.0,
+                              188.0,
+                              728.0,
+                              55.0
+                            ],
+                            "children": [
+                              {
+                                "actions": [
+                                  "scroll-into-view"
+                                ],
+                                "bounds": [
+                                  171.0,
+                                  198.0,
+                                  708.0,
+                                  20.0
+                                ],
+                                "name": "Method · GeneratedMapper",
+                                "role": "label"
+                              },
+                              {
+                                "actions": [
+                                  "scroll-into-view"
+                                ],
+                                "bounds": [
+                                  171.0,
+                                  221.0,
+                                  708.0,
+                                  12.0
+                                ],
+                                "name": "Orders::GeneratedMapper() · Fixture application · fixture",
+                                "role": "label"
+                              }
+                            ],
+                            "description": "Orders::GeneratedMapper() · Fixture application · fixture",
+                            "key": "search-result-0",
+                            "name": "Method · GeneratedMapper",
+                            "role": "list-box-option"
+                          },
+                          {
+                            "actions": [
+                              "click",
+                              "scroll-into-view"
+                            ],
+                            "bounds": [
+                              161.0,
+                              247.0,
+                              728.0,
+                              55.0
+                            ],
+                            "children": [
+                              {
+                                "actions": [
+                                  "scroll-into-view"
+                                ],
+                                "bounds": [
+                                  171.0,
+                                  257.0,
+                                  708.0,
+                                  20.0
+                                ],
+                                "name": "Method · LoadOrder",
+                                "role": "label"
+                              },
+                              {
+                                "actions": [
+                                  "scroll-into-view"
+                                ],
+                                "bounds": [
+                                  171.0,
+                                  280.0,
+                                  708.0,
+                                  12.0
+                                ],
+                                "name": "Orders::LoadOrder() · Fixture application · fixture",
+                                "role": "label"
+                              }
+                            ],
+                            "description": "Orders::LoadOrder() · Fixture application · fixture",
+                            "key": "search-result-1",
+                            "name": "Method · LoadOrder",
+                            "role": "list-box-option"
+                          },
+                          {
+                            "actions": [
+                              "click",
+                              "scroll-into-view"
+                            ],
+                            "bounds": [
+                              161.0,
+                              306.0,
+                              728.0,
+                              55.0
+                            ],
+                            "children": [
+                              {
+                                "actions": [
+                                  "scroll-into-view"
+                                ],
+                                "bounds": [
+                                  171.0,
+                                  316.0,
+                                  708.0,
+                                  20.0
+                                ],
+                                "name": "Class · Orders",
+                                "role": "label"
+                              },
+                              {
+                                "actions": [
+                                  "scroll-into-view"
+                                ],
+                                "bounds": [
+                                  171.0,
+                                  339.0,
+                                  708.0,
+                                  12.0
+                                ],
+                                "name": "Orders · Fixture application · fixture",
+                                "role": "label"
+                              }
+                            ],
+                            "description": "Orders · Fixture application · fixture",
+                            "key": "search-result-2",
+                            "name": "Class · Orders",
+                            "role": "list-box-option"
+                          },
+                          {
+                            "actions": [
+                              "click",
+                              "scroll-into-view"
+                            ],
+                            "bounds": [
+                              161.0,
+                              365.0,
+                              728.0,
+                              55.0
+                            ],
+                            "children": [
+                              {
+                                "actions": [
+                                  "scroll-into-view"
+                                ],
+                                "bounds": [
+                                  171.0,
+                                  375.0,
+                                  708.0,
+                                  20.0
+                                ],
+                                "name": "Method · OrderTest",
+                                "role": "label"
+                              },
+                              {
+                                "actions": [
+                                  "scroll-into-view"
+                                ],
+                                "bounds": [
+                                  171.0,
+                                  398.0,
+                                  708.0,
+                                  12.0
+                                ],
+                                "name": "Orders::OrderTest() · Fixture application · fixture",
+                                "role": "label"
+                              }
+                            ],
+                            "description": "Orders::OrderTest() · Fixture application · fixture",
+                            "key": "search-result-3",
+                            "name": "Method · OrderTest",
+                            "role": "list-box-option"
+                          },
+                          {
+                            "actions": [
+                              "click",
+                              "scroll-into-view"
+                            ],
+                            "bounds": [
+                              161.0,
+                              424.0,
+                              728.0,
+                              55.0
+                            ],
+                            "children": [
+                              {
+                                "actions": [
+                                  "scroll-into-view"
+                                ],
+                                "bounds": [
+                                  171.0,
+                                  434.0,
+                                  708.0,
+                                  20.0
+                                ],
+                                "name": "Method · SaveOrder",
+                                "role": "label"
+                              },
+                              {
+                                "actions": [
+                                  "scroll-into-view"
+                                ],
+                                "bounds": [
+                                  171.0,
+                                  457.0,
+                                  708.0,
+                                  12.0
+                                ],
+                                "name": "Orders::SaveOrder() · Fixture application · fixture",
+                                "role": "label"
+                              }
+                            ],
+                            "description": "Orders::SaveOrder() · Fixture application · fixture",
+                            "key": "search-result-4",
+                            "name": "Method · SaveOrder",
+                            "role": "list-box-option"
+                          },
+                          {
+                            "actions": [
+                              "click",
+                              "scroll-into-view"
+                            ],
+                            "bounds": [
+                              161.0,
+                              483.0,
+                              728.0,
+                              55.0
+                            ],
+                            "children": [
+                              {
+                                "actions": [
+                                  "scroll-into-view"
+                                ],
+                                "bounds": [
+                                  171.0,
+                                  493.0,
+                                  708.0,
+                                  20.0
+                                ],
+                                "name": "Method · Start",
+                                "role": "label"
+                              },
+                              {
+                                "actions": [
+                                  "scroll-into-view"
+                                ],
+                                "bounds": [
+                                  171.0,
+                                  516.0,
+                                  708.0,
+                                  12.0
+                                ],
+                                "name": "Orders::Start() · Fixture application · fixture",
+                                "role": "label"
+                              }
+                            ],
+                            "description": "Orders::Start() · Fixture application · fixture",
+                            "key": "search-result-5",
+                            "name": "Method · Start",
+                            "role": "list-box-option"
+                          },
+                          {
+                            "actions": [
+                              "click",
+                              "scroll-into-view"
+                            ],
+                            "bounds": [
+                              161.0,
+                              542.0,
+                              728.0,
+                              55.0
+                            ],
+                            "children": [
+                              {
+                                "actions": [
+                                  "scroll-into-view"
+                                ],
+                                "bounds": [
+                                  171.0,
+                                  552.0,
+                                  708.0,
+                                  20.0
+                                ],
+                                "name": "Method · ValidateOrder",
+                                "role": "label"
+                              },
+                              {
+                                "actions": [
+                                  "scroll-into-view"
+                                ],
+                                "bounds": [
+                                  171.0,
+                                  575.0,
+                                  708.0,
+                                  12.0
+                                ],
+                                "name": "Orders::ValidateOrder() · Fixture application · fixture",
+                                "role": "label"
+                              }
+                            ],
+                            "description": "Orders::ValidateOrder() · Fixture application · fixture",
+                            "key": "search-result-6",
+                            "name": "Method · ValidateOrder",
+                            "role": "list-box-option"
+                          }
+                        ],
+                        "key": "search-results",
+                        "role": "list-box"
+                      }
+                    ],
+                    "key": "search-results-scroll",
+                    "role": "scroll-view",
+                    "scroll": [
+                      0.0,
+                      0.0,
+                      43.0
+                    ],
+                    "states": [
+                      "clips"
+                    ]
+                  },
+                  {
+                    "bounds": [
+                      161.0,
+                      564.0,
+                      83.0,
+                      24.0
+                    ],
+                    "key": "search-prev",
+                    "name": "Previous",
+                    "role": "button",
+                    "states": [
+                      "disabled"
+                    ]
+                  },
+                  {
+                    "bounds": [
+                      252.0,
+                      570.0,
+                      5.0,
+                      12.0
+                    ],
+                    "name": "1",
+                    "role": "label"
+                  },
+                  {
+                    "bounds": [
+                      265.0,
+                      564.0,
+                      56.0,
+                      24.0
+                    ],
+                    "key": "search-next",
+                    "name": "Next",
+                    "role": "button",
+                    "states": [
+                      "disabled"
+                    ]
+                  },
+                  {
+                    "bounds": [
+                      329.0,
+                      570.0,
+                      181.0,
+                      12.0
+                    ],
+                    "name": "↑ ↓ select · Enter open · Esc close",
+                    "role": "label"
+                  }
+                ],
+                "key": "search-dialog",
+                "name": "Search classes and methods",
+                "role": "dialog",
+                "states": [
+                  "modal"
+                ]
+              }
+            ],
+            "key": "search-layer",
+            "role": "group"
+          }
+        ],
+        "key": "kit-root",
+        "role": "group"
+      }
+    ],
+    "name": "CodeGraph",
+    "role": "window"
+  },
+  "anim_t": 1.9999999999999978,
+  "animating": false,
+  "dark_system": false,
+  "elements": [
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "key": "kit-root",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root",
+      "rect": [
+        0.0,
+        0.0,
+        1050.0,
+        680.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#f6f7f9ff",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "key": "application",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application",
+      "rect": [
+        0.0,
+        0.0,
+        1050.0,
+        680.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0",
+      "rect": [
+        0.0,
+        0.0,
+        1050.0,
+        641.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#f6f7f9ff",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "key": "activity-rail",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/activity-rail",
+      "rect": [
+        0.0,
+        0.0,
+        48.0,
+        641.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "expanded": true,
+      "fill": "#20263214",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "help": "Repository",
+      "inert": true,
+      "key": "drawer-repository",
+      "label": "Repository",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/activity-rail/drawer-repository",
+      "rect": [
+        12.0,
+        56.0,
+        24.0,
+        24.0
+      ],
+      "role": "button",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#202632ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "key": "icon",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/activity-rail/drawer-repository/icon",
+      "rect": [
+        16.0,
+        60.0,
+        16.0,
+        16.0
+      ],
+      "role": "icon",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#f6f7f9ff",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "key": "shell",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/shell",
+      "rect": [
+        48.0,
+        0.0,
+        1002.0,
+        641.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "key": "split",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/shell/split",
+      "rect": [
+        48.0,
+        0.0,
+        1002.0,
+        641.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "key": "sidebar-pane",
+      "label": "Sidebar",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/shell/split/sidebar-pane",
+      "rect": [
+        48.0,
+        0.0,
+        267.0,
+        641.0
+      ],
+      "role": "region",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "key": "pane-content",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/shell/split/sidebar-pane/pane-content",
+      "rect": [
+        48.0,
+        0.0,
+        267.0,
+        641.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "key": "sidebar-titlebar",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/shell/split/sidebar-pane/pane-content/sidebar-titlebar",
+      "rect": [
+        48.0,
+        0.0,
+        267.0,
+        48.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "key": "sidebar-titlebar-clear",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/shell/split/sidebar-pane/pane-content/sidebar-titlebar/sidebar-titlebar-clear",
+      "rect": [
+        48.0,
+        24.0,
+        27.0,
+        0.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "key": "pane-body",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/shell/split/sidebar-pane/pane-content/pane-body",
+      "rect": [
+        48.0,
+        48.0,
+        267.0,
+        593.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#f6f7f9ff",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "key": "drawer",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/shell/split/sidebar-pane/pane-content/pane-body/drawer",
+      "rect": [
+        48.0,
+        48.0,
+        267.0,
+        593.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#202632ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/shell/split/sidebar-pane/pane-content/pane-body/drawer/#0",
+      "rect": [
+        48.0,
+        48.0,
+        267.0,
+        40.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "Repository"
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "key": "drawer-scroll",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/shell/split/sidebar-pane/pane-content/pane-body/drawer/drawer-scroll",
+      "rect": [
+        48.0,
+        88.0,
+        267.0,
+        553.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/shell/split/sidebar-pane/pane-content/pane-body/drawer/drawer-scroll/#0",
+      "rect": [
+        60.0,
+        100.0,
+        243.0,
+        529.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#e8f1ffff",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "key": "choose-folder",
+      "label": "Choose folder…",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/shell/split/sidebar-pane/pane-content/pane-body/drawer/drawer-scroll/#0/choose-folder",
+      "rect": [
+        60.0,
+        100.0,
+        243.0,
+        24.0
+      ],
+      "role": "button",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#202632ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "key": "label",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/shell/split/sidebar-pane/pane-content/pane-body/drawer/drawer-scroll/#0/choose-folder/label",
+      "rect": [
+        127.5,
+        102.0,
+        108.0,
+        20.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "Choose folder…"
+    },
+    {
+      "blur": 0.0,
+      "fill": "#f6f7f9ff",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "key": "root-path",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/shell/split/sidebar-pane/pane-content/pane-body/drawer/drawer-scroll/#0/root-path",
+      "rect": [
+        60.0,
+        136.0,
+        243.0,
+        30.0
+      ],
+      "role": "textbox",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "key": "value",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/shell/split/sidebar-pane/pane-content/pane-body/drawer/drawer-scroll/#0/root-path/value",
+      "rect": [
+        60.0,
+        136.0,
+        235.0,
+        30.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/shell/split/sidebar-pane/pane-content/pane-body/drawer/drawer-scroll/#0/root-path/value/#0",
+      "rect": [
+        60.0,
+        151.0,
+        2.0,
+        0.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#202632ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "key": "input",
+      "label": "Project folder",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/shell/split/sidebar-pane/pane-content/pane-body/drawer/drawer-scroll/#0/root-path/value/input",
+      "rect": [
+        68.0,
+        142.0,
+        227.0,
+        18.0
+      ],
+      "role": "textbox",
+      "scale": 1.0,
+      "text": "Test fixture · no project scanned"
+    },
+    {
+      "blur": 0.0,
+      "fill": "#e8f1ffff",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "key": "find-builds",
+      "label": "Find builds",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/shell/split/sidebar-pane/pane-content/pane-body/drawer/drawer-scroll/#0/find-builds",
+      "rect": [
+        60.0,
+        178.0,
+        243.0,
+        24.0
+      ],
+      "role": "button",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#202632ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "key": "label",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/shell/split/sidebar-pane/pane-content/pane-body/drawer/drawer-scroll/#0/find-builds/label",
+      "rect": [
+        144.5,
+        180.0,
+        74.0,
+        20.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "Find builds"
+    },
+    {
+      "blur": 0.0,
+      "color": "#202632ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/shell/split/sidebar-pane/pane-content/pane-body/drawer/drawer-scroll/#0/#3",
+      "rect": [
+        60.0,
+        214.0,
+        243.0,
+        20.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "Builds"
+    },
+    {
+      "blur": 0.0,
+      "color": "#6b7281ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/shell/split/sidebar-pane/pane-content/pane-body/drawer/drawer-scroll/#0/#4",
+      "rect": [
+        60.0,
+        246.0,
+        243.0,
+        36.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "Solutions, C# projects, Java builds and TypeScript configurations appear here."
+    },
+    {
+      "blur": 0.0,
+      "color": "#6b7281ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/shell/split/sidebar-pane/pane-content/pane-body/drawer/drawer-scroll/#0/#5",
+      "rect": [
+        60.0,
+        294.0,
+        243.0,
+        36.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "Select one or more builds, then generate or refresh the graph."
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "key": "pane-open-main",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/shell/split/sidebar-pane/pane-open-main",
+      "rect": [
+        48.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "key": "pane-open",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/shell/split/sidebar-pane/pane-open",
+      "rect": [
+        48.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "key": "sidebar-grip",
+      "label": "Resize sidebar",
+      "loopPhase": null,
+      "opacity": 0.019999999552965164,
+      "path": "kit-root/application/#0/shell/split/sidebar-pane/sidebar-grip",
+      "rect": [
+        309.0,
+        0.0,
+        6.0,
+        641.0
+      ],
+      "role": "separator",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "key": "main-column",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/shell/split/main-column",
+      "rect": [
+        315.0,
+        0.0,
+        735.0,
+        641.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "key": "toolbar",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/shell/split/main-column/toolbar",
+      "rect": [
+        315.0,
+        0.0,
+        735.0,
+        48.0
+      ],
+      "role": "toolbar",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "key": "leading",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/shell/split/main-column/toolbar/leading",
+      "rect": [
+        327.0,
+        14.0,
+        250.0,
+        20.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#202632ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/shell/split/main-column/toolbar/leading/#0",
+      "rect": [
+        327.0,
+        14.0,
+        78.0,
+        20.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "CodeGraph"
+    },
+    {
+      "blur": 0.0,
+      "color": "#6b7281ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "help": "Test fixture · no project scanned",
+      "inert": true,
+      "key": "workspace-identity",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/shell/split/main-column/toolbar/leading/workspace-identity",
+      "rect": [
+        409.0,
+        18.0,
+        168.0,
+        12.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "Test fixture · no project scanned"
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "key": "spacer",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/shell/split/main-column/toolbar/spacer",
+      "rect": [
+        585.0,
+        24.0,
+        203.0,
+        0.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "key": "trailing",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/shell/split/main-column/toolbar/trailing",
+      "rect": [
+        796.0,
+        12.0,
+        242.0,
+        24.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "help": "Search classes and methods · Double Shift",
+      "inert": true,
+      "key": "open-search",
+      "label": "Search",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/shell/split/main-column/toolbar/trailing/open-search",
+      "rect": [
+        796.0,
+        12.0,
+        24.0,
+        24.0
+      ],
+      "role": "button",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#6b7281ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "key": "icon",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/shell/split/main-column/toolbar/trailing/open-search/icon",
+      "rect": [
+        800.0,
+        16.0,
+        16.0,
+        16.0
+      ],
+      "role": "icon",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#e8f1ffff",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "help": "Clear this project's analysis cache before starting a full analysis",
+      "inert": true,
+      "key": "clear-cache",
+      "label": "Clear cache",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/shell/split/main-column/toolbar/trailing/clear-cache",
+      "rect": [
+        824.0,
+        12.0,
+        105.0,
+        24.0
+      ],
+      "role": "button",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#202632ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "key": "label",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/shell/split/main-column/toolbar/trailing/clear-cache/label",
+      "rect": [
+        836.0,
+        14.0,
+        81.0,
+        20.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "Clear cache"
+    },
+    {
+      "blur": 0.0,
+      "fill": "#e8f1ffff",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "key": "analyze",
+      "label": "Refresh",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/shell/split/main-column/toolbar/trailing/analyze",
+      "rect": [
+        933.0,
+        12.0,
+        77.0,
+        24.0
+      ],
+      "role": "button",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#202632ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "key": "label",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/shell/split/main-column/toolbar/trailing/analyze/label",
+      "rect": [
+        945.0,
+        14.0,
+        53.0,
+        20.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "Refresh"
+    },
+    {
+      "blur": 0.0,
+      "expanded": true,
+      "fill": "#20263214",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "help": "Show or hide inspector",
+      "inert": true,
+      "key": "toggle-inspector",
+      "label": "Inspector",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/shell/split/main-column/toolbar/trailing/toggle-inspector",
+      "rect": [
+        1014.0,
+        12.0,
+        24.0,
+        24.0
+      ],
+      "role": "button",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#202632ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "key": "icon",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/shell/split/main-column/toolbar/trailing/toggle-inspector/icon",
+      "rect": [
+        1018.0,
+        16.0,
+        16.0,
+        16.0
+      ],
+      "role": "icon",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "key": "main-row",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/shell/split/main-column/main-row",
+      "rect": [
+        315.0,
+        48.0,
+        735.0,
+        593.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#f6f7f9ff",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "key": "main-pane",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/shell/split/main-column/main-row/main-pane",
+      "rect": [
+        315.0,
+        48.0,
+        448.0,
+        593.0
+      ],
+      "role": "main",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/shell/split/main-column/main-row/main-pane/#0",
+      "rect": [
+        315.0,
+        48.0,
+        448.0,
+        593.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "key": "graph-toolbar",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/shell/split/main-column/main-row/main-pane/#0/graph-toolbar",
+      "rect": [
+        315.0,
+        48.0,
+        448.0,
+        74.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/shell/split/main-column/main-row/main-pane/#0/graph-toolbar/#0",
+      "rect": [
+        323.0,
+        56.0,
+        432.0,
+        24.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "help": "Back",
+      "inert": true,
+      "key": "back",
+      "label": "Back",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/shell/split/main-column/main-row/main-pane/#0/graph-toolbar/#0/back",
+      "rect": [
+        323.0,
+        56.0,
+        24.0,
+        24.0
+      ],
+      "role": "button",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#6b7281ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "key": "icon",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/shell/split/main-column/main-row/main-pane/#0/graph-toolbar/#0/back/icon",
+      "rect": [
+        327.0,
+        60.0,
+        16.0,
+        16.0
+      ],
+      "role": "icon",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "help": "Forward",
+      "inert": true,
+      "key": "forward",
+      "label": "Forward",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/shell/split/main-column/main-row/main-pane/#0/graph-toolbar/#0/forward",
+      "rect": [
+        351.0,
+        56.0,
+        24.0,
+        24.0
+      ],
+      "role": "button",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#6b7281ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "key": "icon",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/shell/split/main-column/main-row/main-pane/#0/graph-toolbar/#0/forward/icon",
+      "rect": [
+        355.0,
+        60.0,
+        16.0,
+        16.0
+      ],
+      "role": "icon",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "key": "overview",
+      "label": "Overview",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/shell/split/main-column/main-row/main-pane/#0/graph-toolbar/#0/overview",
+      "rect": [
+        379.0,
+        56.0,
+        89.0,
+        24.0
+      ],
+      "role": "button",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#202632ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "key": "label",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/shell/split/main-column/main-row/main-pane/#0/graph-toolbar/#0/overview/label",
+      "rect": [
+        391.0,
+        58.0,
+        65.0,
+        20.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "Overview"
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "key": "collapse-all",
+      "label": "Collapse",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/shell/split/main-column/main-row/main-pane/#0/graph-toolbar/#0/collapse-all",
+      "rect": [
+        472.0,
+        56.0,
+        83.0,
+        24.0
+      ],
+      "role": "button",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#202632ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "key": "label",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/shell/split/main-column/main-row/main-pane/#0/graph-toolbar/#0/collapse-all/label",
+      "rect": [
+        484.0,
+        58.0,
+        59.0,
+        20.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "Collapse"
+    },
+    {
+      "blur": 0.0,
+      "fill": "#e8f1ffff",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "key": "grouping",
+      "label": "Group graph by",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/shell/split/main-column/main-row/main-pane/#0/graph-toolbar/grouping",
+      "rect": [
+        323.0,
+        86.0,
+        432.0,
+        28.0
+      ],
+      "role": "radiogroup",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#f6f7f9ff",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "key": "indicator",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/shell/split/main-column/main-row/main-pane/#0/graph-toolbar/grouping/indicator",
+      "rect": [
+        323.0,
+        86.0,
+        86.41,
+        28.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "itemSelected": true,
+      "key": "segment0",
+      "label": "Project",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/shell/split/main-column/main-row/main-pane/#0/graph-toolbar/grouping/segment0",
+      "rect": [
+        323.0,
+        86.0,
+        86.41,
+        28.0
+      ],
+      "role": "radio",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#202632ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "key": "label",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/shell/split/main-column/main-row/main-pane/#0/graph-toolbar/grouping/segment0/label",
+      "rect": [
+        342.7,
+        93.5,
+        47.0,
+        13.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "Project"
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "key": "segment1",
+      "label": "Namespace",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/shell/split/main-column/main-row/main-pane/#0/graph-toolbar/grouping/segment1",
+      "rect": [
+        409.41,
+        86.0,
+        86.41,
+        28.0
+      ],
+      "role": "radio",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#6b7281ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "key": "label",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/shell/split/main-column/main-row/main-pane/#0/graph-toolbar/grouping/segment1/label",
+      "rect": [
+        421.41,
+        93.5,
+        62.41,
+        13.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "Namespace"
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "key": "segment2",
+      "label": "Folder",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/shell/split/main-column/main-row/main-pane/#0/graph-toolbar/grouping/segment2",
+      "rect": [
+        495.8,
+        86.0,
+        86.41,
+        28.0
+      ],
+      "role": "radio",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#6b7281ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "key": "label",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/shell/split/main-column/main-row/main-pane/#0/graph-toolbar/grouping/segment2/label",
+      "rect": [
+        518.0,
+        93.5,
+        42.0,
+        13.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "Folder"
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "key": "segment3",
+      "label": "Method",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/shell/split/main-column/main-row/main-pane/#0/graph-toolbar/grouping/segment3",
+      "rect": [
+        582.2,
+        86.0,
+        86.41,
+        28.0
+      ],
+      "role": "radio",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#6b7281ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "key": "label",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/shell/split/main-column/main-row/main-pane/#0/graph-toolbar/grouping/segment3/label",
+      "rect": [
+        599.91,
+        93.5,
+        51.0,
+        13.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "Method"
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "key": "segment4",
+      "label": "Layer",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/shell/split/main-column/main-row/main-pane/#0/graph-toolbar/grouping/segment4",
+      "rect": [
+        668.59,
+        86.0,
+        86.41,
+        28.0
+      ],
+      "role": "radio",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#6b7281ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "key": "label",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/shell/split/main-column/main-row/main-pane/#0/graph-toolbar/grouping/segment4/label",
+      "rect": [
+        693.3,
+        93.5,
+        37.0,
+        13.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "Layer"
+    },
+    {
+      "blur": 0.0,
+      "color": "#6b7281ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "key": "active-analysis",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/shell/split/main-column/main-row/main-pane/#0/active-analysis",
+      "rect": [
+        315.0,
+        122.0,
+        448.0,
+        24.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "Callers above · Callees below · depth 4"
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "key": "graph-canvas-wrapper",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/shell/split/main-column/main-row/main-pane/#0/graph-canvas-wrapper",
+      "rect": [
+        315.0,
+        146.0,
+        448.0,
+        387.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#ffffffff",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "key": "graph-canvas",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/shell/split/main-column/main-row/main-pane/#0/graph-canvas-wrapper/graph-canvas",
+      "rect": [
+        315.0,
+        146.0,
+        448.0,
+        387.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "key": "graph-world",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/shell/split/main-column/main-row/main-pane/#0/graph-canvas-wrapper/graph-canvas/graph-world",
+      "rect": [
+        315.0,
+        146.0,
+        448.0,
+        387.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/shell/split/main-column/main-row/main-pane/#0/graph-canvas-wrapper/graph-canvas/graph-world/#0",
+      "rect": [
+        315.0,
+        146.0,
+        448.0,
+        387.0
+      ],
+      "role": "image",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#2164d829",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "key": "graph-card-fixture/project/Start",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/shell/split/main-column/main-row/main-pane/#0/graph-canvas-wrapper/graph-canvas/graph-world/graph-card-fixture/project/Start",
+      "rect": [
+        511.52,
+        198.84,
+        228.5,
+        58.86
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "help": "Orders::Start()",
+      "inert": true,
+      "key": "graph-node-0",
+      "label": "Start · Orders::Start() · Application start · Orders",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/shell/split/main-column/main-row/main-pane/#0/graph-canvas-wrapper/graph-canvas/graph-world/graph-card-fixture/project/Start/graph-node-0",
+      "rect": [
+        521.14,
+        208.47,
+        209.27,
+        39.63
+      ],
+      "role": "button",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#202632ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/shell/split/main-column/main-row/main-pane/#0/graph-canvas-wrapper/graph-canvas/graph-world/graph-card-fixture/project/Start/graph-node-0/#0",
+      "rect": [
+        521.14,
+        208.47,
+        209.27,
+        16.83
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "Start"
+    },
+    {
+      "blur": 0.0,
+      "color": "#6b7281ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/shell/split/main-column/main-row/main-pane/#0/graph-canvas-wrapper/graph-canvas/graph-world/graph-card-fixture/project/Start/graph-node-0/#1",
+      "rect": [
+        521.14,
+        228.19,
+        209.27,
+        13.22
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "Application start · Orders"
+    },
+    {
+      "blur": 0.0,
+      "fill": "#e8f1ffff",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "key": "graph-card-fixture/project/LoadOrder",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/shell/split/main-column/main-row/main-pane/#0/graph-canvas-wrapper/graph-canvas/graph-world/graph-card-fixture/project/LoadOrder",
+      "rect": [
+        511.52,
+        334.64,
+        228.5,
+        58.86
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "help": "Orders::LoadOrder()",
+      "inert": true,
+      "key": "graph-node-1",
+      "label": "LoadOrder · Orders::LoadOrder() · Orders",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/shell/split/main-column/main-row/main-pane/#0/graph-canvas-wrapper/graph-canvas/graph-world/graph-card-fixture/project/LoadOrder/graph-node-1",
+      "rect": [
+        521.14,
+        344.25,
+        209.27,
+        39.63
+      ],
+      "role": "button",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#202632ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/shell/split/main-column/main-row/main-pane/#0/graph-canvas-wrapper/graph-canvas/graph-world/graph-card-fixture/project/LoadOrder/graph-node-1/#0",
+      "rect": [
+        521.14,
+        344.25,
+        209.27,
+        16.83
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "LoadOrder"
+    },
+    {
+      "blur": 0.0,
+      "color": "#6b7281ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/shell/split/main-column/main-row/main-pane/#0/graph-canvas-wrapper/graph-canvas/graph-world/graph-card-fixture/project/LoadOrder/graph-node-1/#1",
+      "rect": [
+        521.14,
+        363.97,
+        209.27,
+        13.22
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "Orders"
+    },
+    {
+      "blur": 0.0,
+      "fill": "#e8f1ffff",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "key": "graph-card-fixture/project/ValidateOrder",
+      "loopPhase": null,
+      "opacity": 0.3499999940395355,
+      "path": "kit-root/application/#0/shell/split/main-column/main-row/main-pane/#0/graph-canvas-wrapper/graph-canvas/graph-world/graph-card-fixture/project/ValidateOrder",
+      "rect": [
+        511.52,
+        470.42,
+        228.5,
+        58.86
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "help": "Orders::ValidateOrder()",
+      "inert": true,
+      "key": "graph-node-2",
+      "label": "ValidateOrder · Orders::ValidateOrder() · Orders",
+      "loopPhase": null,
+      "opacity": 0.3499999940395355,
+      "path": "kit-root/application/#0/shell/split/main-column/main-row/main-pane/#0/graph-canvas-wrapper/graph-canvas/graph-world/graph-card-fixture/project/ValidateOrder/graph-node-2",
+      "rect": [
+        521.14,
+        480.05,
+        209.27,
+        39.63
+      ],
+      "role": "button",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#202632ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "loopPhase": null,
+      "opacity": 0.3499999940395355,
+      "path": "kit-root/application/#0/shell/split/main-column/main-row/main-pane/#0/graph-canvas-wrapper/graph-canvas/graph-world/graph-card-fixture/project/ValidateOrder/graph-node-2/#0",
+      "rect": [
+        521.14,
+        480.05,
+        209.27,
+        16.83
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "ValidateOrder"
+    },
+    {
+      "blur": 0.0,
+      "color": "#6b7281ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "loopPhase": null,
+      "opacity": 0.3499999940395355,
+      "path": "kit-root/application/#0/shell/split/main-column/main-row/main-pane/#0/graph-canvas-wrapper/graph-canvas/graph-world/graph-card-fixture/project/ValidateOrder/graph-node-2/#1",
+      "rect": [
+        521.14,
+        499.75,
+        209.27,
+        13.22
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "Orders"
+    },
+    {
+      "blur": 0.0,
+      "fill": "#f6f7f9ff",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "key": "graph-filters",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/shell/split/main-column/main-row/main-pane/#0/graph-canvas-wrapper/graph-filters",
+      "rect": [
+        323.0,
+        154.0,
+        431.0,
+        72.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "help": "Test code",
+      "inert": true,
+      "key": "filter-tests",
+      "label": "Test code",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/shell/split/main-column/main-row/main-pane/#0/graph-canvas-wrapper/graph-filters/filter-tests",
+      "rect": [
+        331.0,
+        162.0,
+        61.0,
+        24.0
+      ],
+      "role": "checkbox",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "key": "control",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/shell/split/main-column/main-row/main-pane/#0/graph-canvas-wrapper/graph-filters/filter-tests/control",
+      "rect": [
+        331.0,
+        166.0,
+        16.0,
+        16.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#6b7281ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "key": "mark",
+      "loopPhase": null,
+      "opacity": 0.0,
+      "path": "kit-root/application/#0/shell/split/main-column/main-row/main-pane/#0/graph-canvas-wrapper/graph-filters/filter-tests/control/mark",
+      "rect": [
+        334.0,
+        169.0,
+        10.0,
+        10.0
+      ],
+      "role": "icon",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "key": "content",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/shell/split/main-column/main-row/main-pane/#0/graph-canvas-wrapper/graph-filters/filter-tests/content",
+      "rect": [
+        359.0,
+        162.0,
+        33.0,
+        24.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#202632ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "key": "label",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/shell/split/main-column/main-row/main-pane/#0/graph-canvas-wrapper/graph-filters/filter-tests/content/label",
+      "rect": [
+        359.0,
+        162.0,
+        33.0,
+        24.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "Tests"
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "help": "Generated code",
+      "inert": true,
+      "key": "filter-generated",
+      "label": "Generated code",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/shell/split/main-column/main-row/main-pane/#0/graph-canvas-wrapper/graph-filters/filter-generated",
+      "rect": [
+        400.0,
+        162.0,
+        53.0,
+        24.0
+      ],
+      "role": "checkbox",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "key": "control",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/shell/split/main-column/main-row/main-pane/#0/graph-canvas-wrapper/graph-filters/filter-generated/control",
+      "rect": [
+        400.0,
+        166.0,
+        16.0,
+        16.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#6b7281ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "key": "mark",
+      "loopPhase": null,
+      "opacity": 0.0,
+      "path": "kit-root/application/#0/shell/split/main-column/main-row/main-pane/#0/graph-canvas-wrapper/graph-filters/filter-generated/control/mark",
+      "rect": [
+        403.0,
+        169.0,
+        10.0,
+        10.0
+      ],
+      "role": "icon",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "key": "content",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/shell/split/main-column/main-row/main-pane/#0/graph-canvas-wrapper/graph-filters/filter-generated/content",
+      "rect": [
+        428.0,
+        162.0,
+        25.0,
+        24.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#202632ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "key": "label",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/shell/split/main-column/main-row/main-pane/#0/graph-canvas-wrapper/graph-filters/filter-generated/content/label",
+      "rect": [
+        428.0,
+        162.0,
+        25.0,
+        24.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "Gen"
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "help": "Unavailable bodies",
+      "inert": true,
+      "key": "filter-unavailable",
+      "label": "Unavailable bodies",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/shell/split/main-column/main-row/main-pane/#0/graph-canvas-wrapper/graph-filters/filter-unavailable",
+      "rect": [
+        461.0,
+        162.0,
+        81.0,
+        24.0
+      ],
+      "role": "checkbox",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "key": "control",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/shell/split/main-column/main-row/main-pane/#0/graph-canvas-wrapper/graph-filters/filter-unavailable/control",
+      "rect": [
+        461.0,
+        166.0,
+        16.0,
+        16.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#6b7281ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "key": "mark",
+      "loopPhase": null,
+      "opacity": 0.0,
+      "path": "kit-root/application/#0/shell/split/main-column/main-row/main-pane/#0/graph-canvas-wrapper/graph-filters/filter-unavailable/control/mark",
+      "rect": [
+        464.0,
+        169.0,
+        10.0,
+        10.0
+      ],
+      "role": "icon",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "key": "content",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/shell/split/main-column/main-row/main-pane/#0/graph-canvas-wrapper/graph-filters/filter-unavailable/content",
+      "rect": [
+        489.0,
+        162.0,
+        53.0,
+        24.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#202632ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "key": "label",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/shell/split/main-column/main-row/main-pane/#0/graph-canvas-wrapper/graph-filters/filter-unavailable/content/label",
+      "rect": [
+        489.0,
+        162.0,
+        53.0,
+        24.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "No body"
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "help": "Calls to declared virtual or interface methods. An override may execute at runtime.",
+      "inert": true,
+      "key": "filter-virtual-calls",
+      "label": "Virtual / interface calls",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/shell/split/main-column/main-row/main-pane/#0/graph-canvas-wrapper/graph-filters/filter-virtual-calls",
+      "rect": [
+        550.0,
+        162.0,
+        100.0,
+        24.0
+      ],
+      "role": "checkbox",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#e8f1ffff",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "key": "control",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/shell/split/main-column/main-row/main-pane/#0/graph-canvas-wrapper/graph-filters/filter-virtual-calls/control",
+      "rect": [
+        550.0,
+        166.0,
+        16.0,
+        16.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#6b7281ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "key": "mark",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/shell/split/main-column/main-row/main-pane/#0/graph-canvas-wrapper/graph-filters/filter-virtual-calls/control/mark",
+      "rect": [
+        553.0,
+        169.0,
+        10.0,
+        10.0
+      ],
+      "role": "icon",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "key": "content",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/shell/split/main-column/main-row/main-pane/#0/graph-canvas-wrapper/graph-filters/filter-virtual-calls/content",
+      "rect": [
+        578.0,
+        162.0,
+        72.0,
+        24.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#202632ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "key": "label",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/shell/split/main-column/main-row/main-pane/#0/graph-canvas-wrapper/graph-filters/filter-virtual-calls/content/label",
+      "rect": [
+        578.0,
+        162.0,
+        72.0,
+        24.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "Virtual calls"
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "help": "Possible / uncertain targets",
+      "inert": true,
+      "key": "filter-uncertain",
+      "label": "Possible / uncertain targets",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/shell/split/main-column/main-row/main-pane/#0/graph-canvas-wrapper/graph-filters/filter-uncertain",
+      "rect": [
+        658.0,
+        162.0,
+        88.0,
+        24.0
+      ],
+      "role": "checkbox",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#e8f1ffff",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "key": "control",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/shell/split/main-column/main-row/main-pane/#0/graph-canvas-wrapper/graph-filters/filter-uncertain/control",
+      "rect": [
+        658.0,
+        166.0,
+        16.0,
+        16.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#6b7281ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "key": "mark",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/shell/split/main-column/main-row/main-pane/#0/graph-canvas-wrapper/graph-filters/filter-uncertain/control/mark",
+      "rect": [
+        661.0,
+        169.0,
+        10.0,
+        10.0
+      ],
+      "role": "icon",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "key": "content",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/shell/split/main-column/main-row/main-pane/#0/graph-canvas-wrapper/graph-filters/filter-uncertain/content",
+      "rect": [
+        686.0,
+        162.0,
+        60.0,
+        24.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#202632ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "key": "label",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/shell/split/main-column/main-row/main-pane/#0/graph-canvas-wrapper/graph-filters/filter-uncertain/content/label",
+      "rect": [
+        686.0,
+        162.0,
+        60.0,
+        24.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "Uncertain"
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "help": "Callbacks / references",
+      "inert": true,
+      "key": "filter-references",
+      "label": "Callbacks / references",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/shell/split/main-column/main-row/main-pane/#0/graph-canvas-wrapper/graph-filters/filter-references",
+      "rect": [
+        331.0,
+        194.0,
+        56.0,
+        24.0
+      ],
+      "role": "checkbox",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#e8f1ffff",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "key": "control",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/shell/split/main-column/main-row/main-pane/#0/graph-canvas-wrapper/graph-filters/filter-references/control",
+      "rect": [
+        331.0,
+        198.0,
+        16.0,
+        16.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#6b7281ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "key": "mark",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/shell/split/main-column/main-row/main-pane/#0/graph-canvas-wrapper/graph-filters/filter-references/control/mark",
+      "rect": [
+        334.0,
+        201.0,
+        10.0,
+        10.0
+      ],
+      "role": "icon",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "key": "content",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/shell/split/main-column/main-row/main-pane/#0/graph-canvas-wrapper/graph-filters/filter-references/content",
+      "rect": [
+        359.0,
+        194.0,
+        28.0,
+        24.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#202632ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "key": "label",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/shell/split/main-column/main-row/main-pane/#0/graph-canvas-wrapper/graph-filters/filter-references/content/label",
+      "rect": [
+        359.0,
+        194.0,
+        28.0,
+        24.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "Refs"
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "key": "relationship-legend",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/shell/split/main-column/main-row/main-pane/#0/relationship-legend",
+      "rect": [
+        315.0,
+        533.0,
+        448.0,
+        38.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#6b7281ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/shell/split/main-column/main-row/main-pane/#0/relationship-legend/#0",
+      "rect": [
+        327.0,
+        539.0,
+        424.0,
+        12.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "Solid · direct     Amber dashes · virtual/interface or uncertain"
+    },
+    {
+      "blur": 0.0,
+      "color": "#6b7281ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/shell/split/main-column/main-row/main-pane/#0/relationship-legend/#1",
+      "rect": [
+        327.0,
+        553.0,
+        424.0,
+        12.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "Purple dashes · callback     Amber outline · cycle"
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "key": "graph-footer",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/shell/split/main-column/main-row/main-pane/#0/graph-footer",
+      "rect": [
+        315.0,
+        571.0,
+        448.0,
+        70.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/shell/split/main-column/main-row/main-pane/#0/graph-footer/#0",
+      "rect": [
+        323.0,
+        579.0,
+        432.0,
+        24.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#6b7281ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "key": "direction",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/shell/split/main-column/main-row/main-pane/#0/graph-footer/#0/direction",
+      "rect": [
+        323.0,
+        585.0,
+        153.0,
+        12.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "Callers above · Callees below"
+    },
+    {
+      "blur": 0.0,
+      "color": "#6b7281ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/shell/split/main-column/main-row/main-pane/#0/graph-footer/#0/#1",
+      "rect": [
+        484.0,
+        585.0,
+        32.0,
+        12.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "Depth"
+    },
+    {
+      "blur": 0.0,
+      "expanded": false,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "key": "depth-trigger",
+      "label": "Neighborhood depth",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/shell/split/main-column/main-row/main-pane/#0/graph-footer/#0/depth-trigger",
+      "rect": [
+        524.0,
+        579.0,
+        42.0,
+        24.0
+      ],
+      "role": "combobox",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#202632ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "key": "value",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/shell/split/main-column/main-row/main-pane/#0/graph-footer/#0/depth-trigger/value",
+      "rect": [
+        532.0,
+        583.0,
+        10.0,
+        16.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "4"
+    },
+    {
+      "blur": 0.0,
+      "color": "#6b7281ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "key": "chevron",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/shell/split/main-column/main-row/main-pane/#0/graph-footer/#0/depth-trigger/chevron",
+      "rect": [
+        546.0,
+        583.0,
+        16.0,
+        16.0
+      ],
+      "role": "icon",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/shell/split/main-column/main-row/main-pane/#0/graph-footer/#1",
+      "rect": [
+        323.0,
+        609.0,
+        432.0,
+        24.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#e8f1ffff",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "help": "Zoom out",
+      "inert": true,
+      "key": "zoom-out",
+      "label": "Zoom out",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/shell/split/main-column/main-row/main-pane/#0/graph-footer/#1/zoom-out",
+      "rect": [
+        323.0,
+        609.0,
+        24.0,
+        24.0
+      ],
+      "role": "button",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#202632ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "key": "icon",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/shell/split/main-column/main-row/main-pane/#0/graph-footer/#1/zoom-out/icon",
+      "rect": [
+        327.0,
+        613.0,
+        16.0,
+        16.0
+      ],
+      "role": "icon",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#e8f1ffff",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "key": "fit",
+      "label": "Fit",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/shell/split/main-column/main-row/main-pane/#0/graph-footer/#1/fit",
+      "rect": [
+        351.0,
+        609.0,
+        41.0,
+        24.0
+      ],
+      "role": "button",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#202632ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "key": "label",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/shell/split/main-column/main-row/main-pane/#0/graph-footer/#1/fit/label",
+      "rect": [
+        363.0,
+        611.0,
+        17.0,
+        20.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "Fit"
+    },
+    {
+      "blur": 0.0,
+      "fill": "#e8f1ffff",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "help": "Zoom in",
+      "inert": true,
+      "key": "zoom-in",
+      "label": "Zoom in",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/shell/split/main-column/main-row/main-pane/#0/graph-footer/#1/zoom-in",
+      "rect": [
+        396.0,
+        609.0,
+        24.0,
+        24.0
+      ],
+      "role": "button",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#202632ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "key": "icon",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/shell/split/main-column/main-row/main-pane/#0/graph-footer/#1/zoom-in/icon",
+      "rect": [
+        400.0,
+        613.0,
+        16.0,
+        16.0
+      ],
+      "role": "icon",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#6b7281ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/shell/split/main-column/main-row/main-pane/#0/graph-footer/#1/#3",
+      "rect": [
+        424.0,
+        615.0,
+        25.0,
+        12.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "96%"
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "key": "inspector-pane",
+      "label": "Inspector",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/shell/split/main-column/main-row/inspector-pane",
+      "rect": [
+        763.0,
+        48.0,
+        287.0,
+        593.0
+      ],
+      "role": "region",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "key": "pane-content",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/shell/split/main-column/main-row/inspector-pane/pane-content",
+      "rect": [
+        763.0,
+        48.0,
+        287.0,
+        593.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "key": "pane-body",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body",
+      "rect": [
+        763.0,
+        48.0,
+        287.0,
+        593.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#f6f7f9ff",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/#0",
+      "rect": [
+        763.0,
+        48.0,
+        287.0,
+        593.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "key": "inspector-scroll",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/#0/inspector-scroll",
+      "rect": [
+        763.0,
+        48.0,
+        287.0,
+        593.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/#0/inspector-scroll/#0",
+      "rect": [
+        763.0,
+        48.0,
+        287.0,
+        310.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/#0/inspector-scroll/#0/#0",
+      "rect": [
+        779.0,
+        64.0,
+        255.0,
+        278.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#6b7281ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/#0/inspector-scroll/#0/#0/#0",
+      "rect": [
+        779.0,
+        64.0,
+        255.0,
+        20.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "Inspector"
+    },
+    {
+      "blur": 0.0,
+      "color": "#6b7281ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/#0/inspector-scroll/#0/#0/#1",
+      "rect": [
+        779.0,
+        96.0,
+        255.0,
+        72.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "Click an element to center its caller/callee tree. Double-click groups to reach classes, then click a method row or double-click the class header to explore methods."
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "key": "analysis-section",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/#0/inspector-scroll/#0/#0/analysis-section",
+      "rect": [
+        779.0,
+        180.0,
+        255.0,
+        162.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "expanded": true,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "key": "trigger",
+      "label": "Analysis details",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/#0/inspector-scroll/#0/#0/analysis-section/trigger",
+      "rect": [
+        779.0,
+        180.0,
+        255.0,
+        32.0
+      ],
+      "role": "button",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/#0/inspector-scroll/#0/#0/analysis-section/trigger/#0",
+      "rect": [
+        779.0,
+        184.0,
+        130.0,
+        24.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#202632ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "key": "title",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/#0/inspector-scroll/#0/#0/analysis-section/trigger/#0/title",
+      "rect": [
+        779.0,
+        186.25,
+        98.0,
+        19.5
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "Analysis details"
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "key": "arrow",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/#0/inspector-scroll/#0/#0/analysis-section/trigger/#0/arrow",
+      "rect": [
+        885.0,
+        184.0,
+        24.0,
+        24.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#88909fff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/#0/inspector-scroll/#0/#0/analysis-section/trigger/#0/arrow/#0",
+      "rect": [
+        890.0,
+        189.0,
+        14.0,
+        14.0
+      ],
+      "role": "icon",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "key": "content",
+      "label": "Analysis details",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/#0/inspector-scroll/#0/#0/analysis-section/content",
+      "rect": [
+        779.0,
+        212.0,
+        255.0,
+        130.0
+      ],
+      "role": "region",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/#0/inspector-scroll/#0/#0/analysis-section/content/#0",
+      "rect": [
+        779.0,
+        212.0,
+        255.0,
+        130.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#6b7281ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/#0/inspector-scroll/#0/#0/analysis-section/content/#0/#0",
+      "rect": [
+        779.0,
+        212.0,
+        255.0,
+        12.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "Active analysis inputs"
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/#0/inspector-scroll/#0/#0/analysis-section/content/#0/#1",
+      "rect": [
+        779.0,
+        232.0,
+        255.0,
+        66.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#6b7281ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/#0/inspector-scroll/#0/#0/analysis-section/content/#0/#1/#0",
+      "rect": [
+        779.0,
+        232.0,
+        255.0,
+        12.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "Analyzer provenance"
+    },
+    {
+      "blur": 0.0,
+      "color": "#6b7281ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/#0/inspector-scroll/#0/#0/analysis-section/content/#0/#1/#1",
+      "rect": [
+        779.0,
+        250.0,
+        255.0,
+        18.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "Deterministic fixture · no analyzer executed"
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "key": "toggle-provenance",
+      "label": "Show full provenance",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/#0/inspector-scroll/#0/#0/analysis-section/content/#0/#1/toggle-provenance",
+      "rect": [
+        779.0,
+        274.0,
+        255.0,
+        24.0
+      ],
+      "role": "button",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#202632ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "key": "label",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/#0/inspector-scroll/#0/#0/analysis-section/content/#0/#1/toggle-provenance/label",
+      "rect": [
+        833.0,
+        276.0,
+        147.0,
+        20.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "Show full provenance"
+    },
+    {
+      "blur": 0.0,
+      "color": "#6b7281ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/shell/split/main-column/main-row/inspector-pane/pane-content/pane-body/#0/inspector-scroll/#0/#0/analysis-section/content/#0/#2",
+      "rect": [
+        779.0,
+        306.0,
+        255.0,
+        36.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "This is the explicit headless test fixture. No real project has been analyzed."
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "key": "pane-open",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/shell/split/main-column/main-row/inspector-pane/pane-open",
+      "rect": [
+        763.0,
+        48.0,
+        0.0,
+        0.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "key": "pane-open-main",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/#0/shell/split/main-column/main-row/inspector-pane/pane-open-main",
+      "rect": [
+        763.0,
+        48.0,
+        0.0,
+        0.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "key": "inspector-grip",
+      "label": "Resize inspector",
+      "loopPhase": null,
+      "opacity": 0.019999999552965164,
+      "path": "kit-root/application/#0/shell/split/main-column/main-row/inspector-pane/inspector-grip",
+      "rect": [
+        763.0,
+        48.0,
+        6.0,
+        593.0
+      ],
+      "role": "separator",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#f6f7f9ff",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "key": "status-bar",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/status-bar",
+      "rect": [
+        0.0,
+        641.0,
+        1050.0,
+        39.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#6b7281ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "key": "status-message",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/status-bar/status-message",
+      "rect": [
+        12.0,
+        647.0,
+        1026.0,
+        12.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "Deterministic test fixture · 6 symbols · 6 relationships"
+    },
+    {
+      "blur": 0.0,
+      "color": "#6b7281ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/application/status-bar/#1",
+      "rect": [
+        12.0,
+        662.0,
+        1026.0,
+        12.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "Symbols: 4 shown / 0 omitted / 2 filtered · Links: 4 shown / 0 inside groups / 0 omitted / 2 filtered"
+    },
+    {
+      "blur": 0.0,
+      "fill": "#0000004d",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "key": "search-scrim",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/search-scrim",
+      "rect": [
+        0.0,
+        0.0,
+        1050.0,
+        680.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": true,
+      "key": "search-layer",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/search-layer",
+      "rect": [
+        0.0,
+        0.0,
+        1050.0,
+        680.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#e8f1ffff",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "search-dialog",
+      "label": "Search classes and methods",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/search-layer/search-dialog",
+      "rect": [
+        145.0,
+        64.0,
+        760.0,
+        540.0
+      ],
+      "role": "dialog",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/search-layer/search-dialog/#0",
+      "rect": [
+        161.0,
+        80.0,
+        728.0,
+        24.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#202632ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/search-layer/search-dialog/#0/#0",
+      "rect": [
+        161.0,
+        82.0,
+        616.0,
+        20.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "Search"
+    },
+    {
+      "blur": 0.0,
+      "color": "#6b7281ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/search-layer/search-dialog/#0/#1",
+      "rect": [
+        789.0,
+        86.0,
+        64.0,
+        12.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "Double Shift"
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": true,
+      "focused": false,
+      "inert": false,
+      "key": "close-search",
+      "label": "Close search",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/search-layer/search-dialog/#0/close-search",
+      "rect": [
+        865.0,
+        80.0,
+        24.0,
+        24.0
+      ],
+      "role": "button",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#202632ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "icon",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/search-layer/search-dialog/#0/close-search/icon",
+      "rect": [
+        869.0,
+        84.0,
+        16.0,
+        16.0
+      ],
+      "role": "icon",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/search-layer/search-dialog/#1",
+      "rect": [
+        161.0,
+        114.0,
+        728.0,
+        24.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": true,
+      "focused": false,
+      "inert": false,
+      "key": "search-all",
+      "label": "All",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/search-layer/search-dialog/#1/search-all",
+      "rect": [
+        161.0,
+        114.0,
+        42.0,
+        24.0
+      ],
+      "role": "button",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#202632ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "label",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/search-layer/search-dialog/#1/search-all/label",
+      "rect": [
+        173.0,
+        116.0,
+        18.0,
+        20.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "All"
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": true,
+      "focused": false,
+      "inert": false,
+      "key": "search-classes",
+      "label": "Classes",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/search-layer/search-dialog/#1/search-classes",
+      "rect": [
+        211.0,
+        114.0,
+        78.0,
+        24.0
+      ],
+      "role": "button",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#202632ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "label",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/search-layer/search-dialog/#1/search-classes/label",
+      "rect": [
+        223.0,
+        116.0,
+        54.0,
+        20.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "Classes"
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": true,
+      "focused": false,
+      "inert": false,
+      "key": "search-methods",
+      "label": "Methods",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/search-layer/search-dialog/#1/search-methods",
+      "rect": [
+        297.0,
+        114.0,
+        84.0,
+        24.0
+      ],
+      "role": "button",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#202632ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "label",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/search-layer/search-dialog/#1/search-methods/label",
+      "rect": [
+        309.0,
+        116.0,
+        60.0,
+        20.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "Methods"
+    },
+    {
+      "blur": 0.0,
+      "fill": "#f6f7f9ff",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "search",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/search-layer/search-dialog/search",
+      "rect": [
+        161.0,
+        148.0,
+        728.0,
+        30.0
+      ],
+      "role": "textbox",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "value",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/search-layer/search-dialog/search/value",
+      "rect": [
+        161.0,
+        148.0,
+        720.0,
+        30.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "leading",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/search-layer/search-dialog/search/value/leading",
+      "rect": [
+        161.0,
+        155.0,
+        24.0,
+        16.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#6b7281ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/search-layer/search-dialog/search/value/leading/#0",
+      "rect": [
+        169.0,
+        155.0,
+        16.0,
+        16.0
+      ],
+      "role": "icon",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#202632ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": true,
+      "focused": true,
+      "inert": false,
+      "key": "input",
+      "label": "Search classes and methods",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/search-layer/search-dialog/search/value/input",
+      "rect": [
+        191.0,
+        154.0,
+        690.0,
+        18.0
+      ],
+      "role": "textbox",
+      "scale": 1.0,
+      "text": "order"
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "search-results-scroll",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/search-layer/search-dialog/search-results-scroll",
+      "rect": [
+        161.0,
+        188.0,
+        728.0,
+        366.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "search-results",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/search-layer/search-dialog/search-results-scroll/search-results",
+      "rect": [
+        161.0,
+        188.0,
+        728.0,
+        409.0
+      ],
+      "role": "listbox",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#f6f7f9ff",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "search-result-0",
+      "label": "Method · GeneratedMapper",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/search-layer/search-dialog/search-results-scroll/search-results/search-result-0",
+      "rect": [
+        161.0,
+        188.0,
+        728.0,
+        55.0
+      ],
+      "role": "option",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#202632ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/search-layer/search-dialog/search-results-scroll/search-results/search-result-0/#0",
+      "rect": [
+        171.0,
+        198.0,
+        708.0,
+        20.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "Method · GeneratedMapper"
+    },
+    {
+      "blur": 0.0,
+      "color": "#6b7281ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/search-layer/search-dialog/search-results-scroll/search-results/search-result-0/#1",
+      "rect": [
+        171.0,
+        221.0,
+        708.0,
+        12.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "Orders::GeneratedMapper() · Fixture application · fixture"
+    },
+    {
+      "blur": 0.0,
+      "fill": "#e8f1ffff",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "search-result-1",
+      "label": "Method · LoadOrder",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/search-layer/search-dialog/search-results-scroll/search-results/search-result-1",
+      "rect": [
+        161.0,
+        247.0,
+        728.0,
+        55.0
+      ],
+      "role": "option",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#202632ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/search-layer/search-dialog/search-results-scroll/search-results/search-result-1/#0",
+      "rect": [
+        171.0,
+        257.0,
+        708.0,
+        20.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "Method · LoadOrder"
+    },
+    {
+      "blur": 0.0,
+      "color": "#6b7281ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/search-layer/search-dialog/search-results-scroll/search-results/search-result-1/#1",
+      "rect": [
+        171.0,
+        280.0,
+        708.0,
+        12.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "Orders::LoadOrder() · Fixture application · fixture"
+    },
+    {
+      "blur": 0.0,
+      "fill": "#e8f1ffff",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "search-result-2",
+      "label": "Class · Orders",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/search-layer/search-dialog/search-results-scroll/search-results/search-result-2",
+      "rect": [
+        161.0,
+        306.0,
+        728.0,
+        55.0
+      ],
+      "role": "option",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#202632ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/search-layer/search-dialog/search-results-scroll/search-results/search-result-2/#0",
+      "rect": [
+        171.0,
+        316.0,
+        708.0,
+        20.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "Class · Orders"
+    },
+    {
+      "blur": 0.0,
+      "color": "#6b7281ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/search-layer/search-dialog/search-results-scroll/search-results/search-result-2/#1",
+      "rect": [
+        171.0,
+        339.0,
+        708.0,
+        12.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "Orders · Fixture application · fixture"
+    },
+    {
+      "blur": 0.0,
+      "fill": "#e8f1ffff",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "search-result-3",
+      "label": "Method · OrderTest",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/search-layer/search-dialog/search-results-scroll/search-results/search-result-3",
+      "rect": [
+        161.0,
+        365.0,
+        728.0,
+        55.0
+      ],
+      "role": "option",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#202632ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/search-layer/search-dialog/search-results-scroll/search-results/search-result-3/#0",
+      "rect": [
+        171.0,
+        375.0,
+        708.0,
+        20.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "Method · OrderTest"
+    },
+    {
+      "blur": 0.0,
+      "color": "#6b7281ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/search-layer/search-dialog/search-results-scroll/search-results/search-result-3/#1",
+      "rect": [
+        171.0,
+        398.0,
+        708.0,
+        12.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "Orders::OrderTest() · Fixture application · fixture"
+    },
+    {
+      "blur": 0.0,
+      "fill": "#e8f1ffff",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "search-result-4",
+      "label": "Method · SaveOrder",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/search-layer/search-dialog/search-results-scroll/search-results/search-result-4",
+      "rect": [
+        161.0,
+        424.0,
+        728.0,
+        55.0
+      ],
+      "role": "option",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#202632ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/search-layer/search-dialog/search-results-scroll/search-results/search-result-4/#0",
+      "rect": [
+        171.0,
+        434.0,
+        708.0,
+        20.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "Method · SaveOrder"
+    },
+    {
+      "blur": 0.0,
+      "color": "#6b7281ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/search-layer/search-dialog/search-results-scroll/search-results/search-result-4/#1",
+      "rect": [
+        171.0,
+        457.0,
+        708.0,
+        12.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "Orders::SaveOrder() · Fixture application · fixture"
+    },
+    {
+      "blur": 0.0,
+      "fill": "#e8f1ffff",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "search-result-5",
+      "label": "Method · Start",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/search-layer/search-dialog/search-results-scroll/search-results/search-result-5",
+      "rect": [
+        161.0,
+        483.0,
+        728.0,
+        55.0
+      ],
+      "role": "option",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#202632ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/search-layer/search-dialog/search-results-scroll/search-results/search-result-5/#0",
+      "rect": [
+        171.0,
+        493.0,
+        708.0,
+        20.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "Method · Start"
+    },
+    {
+      "blur": 0.0,
+      "color": "#6b7281ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/search-layer/search-dialog/search-results-scroll/search-results/search-result-5/#1",
+      "rect": [
+        171.0,
+        516.0,
+        708.0,
+        12.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "Orders::Start() · Fixture application · fixture"
+    },
+    {
+      "blur": 0.0,
+      "fill": "#e8f1ffff",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "search-result-6",
+      "label": "Method · ValidateOrder",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/search-layer/search-dialog/search-results-scroll/search-results/search-result-6",
+      "rect": [
+        161.0,
+        542.0,
+        728.0,
+        55.0
+      ],
+      "role": "option",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#202632ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/search-layer/search-dialog/search-results-scroll/search-results/search-result-6/#0",
+      "rect": [
+        171.0,
+        552.0,
+        708.0,
+        20.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "Method · ValidateOrder"
+    },
+    {
+      "blur": 0.0,
+      "color": "#6b7281ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/search-layer/search-dialog/search-results-scroll/search-results/search-result-6/#1",
+      "rect": [
+        171.0,
+        575.0,
+        708.0,
+        12.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "Orders::ValidateOrder() · Fixture application · fixture"
+    },
+    {
+      "blur": 0.0,
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/search-layer/search-dialog/#4",
+      "rect": [
+        161.0,
+        564.0,
+        728.0,
+        24.0
+      ],
+      "role": "group",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "fill": "#e8f1ffff",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "search-prev",
+      "label": "Previous",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/search-layer/search-dialog/#4/search-prev",
+      "rect": [
+        161.0,
+        564.0,
+        83.0,
+        24.0
+      ],
+      "role": "button",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#202632ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "label",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/search-layer/search-dialog/#4/search-prev/label",
+      "rect": [
+        173.0,
+        566.0,
+        59.0,
+        20.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "Previous"
+    },
+    {
+      "blur": 0.0,
+      "color": "#6b7281ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/search-layer/search-dialog/#4/#1",
+      "rect": [
+        252.0,
+        570.0,
+        5.0,
+        12.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "1"
+    },
+    {
+      "blur": 0.0,
+      "fill": "#e8f1ffff",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "search-next",
+      "label": "Next",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/search-layer/search-dialog/#4/search-next",
+      "rect": [
+        265.0,
+        564.0,
+        56.0,
+        24.0
+      ],
+      "role": "button",
+      "scale": 1.0
+    },
+    {
+      "blur": 0.0,
+      "color": "#202632ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "key": "label",
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/search-layer/search-dialog/#4/search-next/label",
+      "rect": [
+        277.0,
+        566.0,
+        32.0,
+        20.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "Next"
+    },
+    {
+      "blur": 0.0,
+      "color": "#6b7281ff",
+      "fill": "#00000000",
+      "focusVisible": false,
+      "focusable": false,
+      "focused": false,
+      "inert": false,
+      "loopPhase": null,
+      "opacity": 1.0,
+      "path": "kit-root/search-layer/search-dialog/#4/#3",
+      "rect": [
+        329.0,
+        570.0,
+        181.0,
+        12.0
+      ],
+      "role": "text",
+      "scale": 1.0,
+      "text": "↑ ↓ select · Enter open · Esc close"
+    }
+  ],
+  "reduced_motion": false,
+  "scale": 1.0,
+  "t": 2.0,
+  "time_scale": 1.0,
+  "title": "CodeGraph",
+  "viewport": [
+    1050.0,
+    680.0
+  ],
+  "warnings": []
+}

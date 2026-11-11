@@ -3,7 +3,7 @@ use super::{click, runtime};
 use crate::{
     app::State,
     jobs,
-    presentation::{Drawer, Overlay, Section},
+    presentation::{Overlay, Section},
     scenes, view,
 };
 use rune::{Env, Key, KeyEvent, Mods, Runtime};
@@ -248,15 +248,12 @@ fn minimum_window_keeps_graph_controls_visible_without_toolbar_scrolling() {
 }
 
 #[test]
-fn activity_rail_switches_and_collapses_drawers_without_navigating_the_graph() {
+fn repository_activity_rail_collapses_without_navigating_the_graph() {
     let mut runtime = runtime();
     let nav = serde_json::to_value(&runtime.state.nav).unwrap();
     let revision = runtime.state.revision;
-    click(&mut runtime, "drawer-search");
-    settle(&mut runtime);
-    assert_eq!(runtime.state.ui.drawer, Drawer::Search);
-    assert!(runtime.find("search/value/input").is_some());
-    click(&mut runtime, "drawer-search");
+    assert!(runtime.find("drawer-search").is_none());
+    click(&mut runtime, "drawer-repository");
     settle(&mut runtime);
     assert!(!runtime.state.ui.sidebar.is_open());
     assert!(runtime.find("filter-tests").is_some());
@@ -280,13 +277,14 @@ fn command_f_reopens_search_and_focuses_the_actual_editor() {
         },
     });
     settle(&mut runtime);
-    assert_eq!(runtime.state.ui.drawer, Drawer::Search);
-    assert!(runtime.state.ui.sidebar.is_open());
+    assert!(runtime.state.search.open);
+    assert!(!runtime.state.ui.sidebar.is_open());
     let input = runtime
         .elements()
         .into_iter()
         .find(|e| {
-            e.key.as_deref() == Some("input") && e.label.as_deref() == Some("Search all symbols")
+            e.key.as_deref() == Some("input")
+                && e.label.as_deref() == Some("Search classes and methods")
         })
         .unwrap();
     assert!(
@@ -556,9 +554,11 @@ fn a_search_result_reveals_a_method_hidden_by_graph_filters() {
     let mut runtime = runtime();
     runtime.update(|s, _| {
         s.open_search();
-        s.hits = vec![5];
+        s.search.input = rune::TextEdit::new("OrderTest");
+        s.set_search_category(codegraph::search::SearchCategory::Methods);
+        s.request_search();
     });
-    settle(&mut runtime);
+    super::wait_for(&mut runtime, |state| !state.search.hits().is_empty());
     assert!(!runtime.state.nav.filter.include_tests);
     let result = runtime
         .elements()
@@ -567,7 +567,7 @@ fn a_search_result_reveals_a_method_hidden_by_graph_filters() {
             e.role == "option"
                 && e.label
                     .as_deref()
-                    .is_some_and(|label| label.contains("hidden, click to reveal"))
+                    .is_some_and(|label| label.starts_with("Method · "))
         })
         .unwrap();
     let (x, y) = (
@@ -640,10 +640,12 @@ fn drawer_fields_and_long_inspector_signatures_stay_inside_their_panes() {
     let mut runtime = narrow_runtime(false);
     let drawer = element(&runtime, "drawer").rect;
     assert_inside(element(&runtime, "root-path").rect, drawer, 12.0);
-    click(&mut runtime, "drawer-search");
+    click(&mut runtime, "open-search");
     settle(&mut runtime);
-    let drawer = element(&runtime, "drawer").rect;
-    assert_inside(element(&runtime, "search").rect, drawer, 12.0);
+    let modal = element(&runtime, "search-dialog").rect;
+    assert_inside(element(&runtime, "search").rect, modal, 16.0);
+    click(&mut runtime, "close-search");
+    settle(&mut runtime);
     let signature = format!(
         "execute({}) -> reactor.core.publisher.Mono<Void>",
         "com.example.application.really.long.package.ExtractionContext".repeat(4)
@@ -673,13 +675,13 @@ fn drawer_fields_and_long_inspector_signatures_stay_inside_their_panes() {
 #[test]
 fn system_appearance_switch_rethemes_the_live_workspace_without_losing_search() {
     let mut runtime = narrow_runtime(false);
-    click(&mut runtime, "drawer-search");
+    click(&mut runtime, "open-search");
     settle(&mut runtime);
     let dark_canvas = element(&runtime, "graph-canvas").fill;
     runtime.set_system_dark(false);
     settle(&mut runtime);
     assert_ne!(element(&runtime, "graph-canvas").fill, dark_canvas);
-    assert_eq!(runtime.state.ui.drawer, Drawer::Search);
+    assert!(runtime.state.search.open);
     assert_visible(&runtime, "search");
     assert_visible(&runtime, "toggle-inspector");
     assert_visible(&runtime, "overview");
@@ -708,9 +710,9 @@ fn reduced_motion_pane_collapse_snaps_width_and_keeps_controls_reachable() {
     );
     assert_visible(&runtime, "overview");
     assert_visible(&runtime, "toggle-inspector");
-    click(&mut runtime, "drawer-search");
+    click(&mut runtime, "open-search");
     settle(&mut runtime);
-    assert!(runtime.state.ui.sidebar.is_open());
+    assert!(!runtime.state.ui.sidebar.is_open());
     assert_visible(&runtime, "search");
     assert_eq!(runtime.state.nav.camera.pan, camera.pan);
     assert_eq!(runtime.state.nav.camera.zoom, camera.zoom);

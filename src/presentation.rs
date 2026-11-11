@@ -6,7 +6,6 @@ use serde::{Deserialize, Serialize};
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum Drawer {
-    Search,
     #[default]
     #[serde(other)]
     Repository,
@@ -155,22 +154,8 @@ impl State {
         changed
     }
 
-    pub fn toggle_drawer(&mut self, drawer: Drawer) {
-        if self.ui.drawer == drawer {
-            self.ui.sidebar.toggle();
-        } else {
-            self.ui.drawer = drawer;
-            self.ui.sidebar.set_open(true);
-        }
-        self.query.focused = self.ui.sidebar.is_open() && drawer == Drawer::Search;
-        self.ui.overlay = None;
-        self.dirty_session = true;
-    }
-
-    pub fn open_search(&mut self) {
-        self.ui.drawer = Drawer::Search;
-        self.ui.sidebar.set_open(true);
-        self.query.focused = true;
+    pub fn toggle_drawer(&mut self, _: Drawer) {
+        self.ui.sidebar.toggle();
         self.ui.overlay = None;
         self.dirty_session = true;
     }
@@ -347,7 +332,7 @@ mod tests {
     #[test]
     fn preferences_round_trip_without_transient_overlay_or_disclosures() {
         let mut state = State::new();
-        state.toggle_drawer(Drawer::Search);
+        state.toggle_drawer(Drawer::Repository);
         state.ui.sidebar.set_width(344.0);
         state.toggle_inspector();
         state.toggle_depth();
@@ -362,11 +347,14 @@ mod tests {
     }
 
     #[test]
-    fn legacy_filter_drawer_restores_repository() {
-        let prefs: Preferences = serde_json::from_str(r#"{"drawer":"filters"}"#).unwrap();
-        let mut ui = Presentation::default();
-        ui.restore(prefs);
-        assert_eq!(ui.drawer, Drawer::Repository);
+    fn legacy_search_and_filter_drawers_restore_repository() {
+        for value in ["filters", "search"] {
+            let prefs: Preferences =
+                serde_json::from_value(serde_json::json!({ "drawer": value })).unwrap();
+            let mut ui = Presentation::default();
+            ui.restore(prefs);
+            assert_eq!(ui.drawer, Drawer::Repository);
+        }
     }
 
     #[test]
@@ -394,15 +382,15 @@ mod tests {
         state.nav.camera.pan = [123.0, -45.0];
         state.nav.camera.zoom = 0.72;
         let before = graph_state(&state);
-        state.toggle_drawer(Drawer::Search);
-        state.toggle_drawer(Drawer::Search);
+        state.toggle_drawer(Drawer::Repository);
+        state.toggle_drawer(Drawer::Repository);
         state.open_search();
         state.toggle_inspector();
         sidebar(&mut state).set_width(322.0);
         inspector(&mut state).set_width(278.0);
         assert_eq!(graph_state(&state), before);
         assert!(state.ui.sidebar.is_open());
-        assert!(state.query.focused);
+        assert!(state.search.input.focused);
         assert!(state.dirty_session);
     }
 }

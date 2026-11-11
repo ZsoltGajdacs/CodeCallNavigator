@@ -45,19 +45,21 @@ class RunePatchMigration(unittest.TestCase):
         self.git("-c", "commit.gpgsign=false", "-c", "user.name=Patch test", "-c", "user.email=patch-test@example.invalid", "commit", "--quiet", "-m", "Pinned test sources")
 
     def copy_patches(self):
-        for key in ["patch", "previous_patch"]:
+        for key in ["patch", *sorted(key for key in self.spec if key.endswith("_patch"))]:
             destination = self.root / self.spec[key]
             destination.parent.mkdir(exist_ok=True)
             shutil.copy2(ROOT / self.spec[key], destination)
 
-    def test_clean_checkout_and_prior_warning_patch_reach_the_exact_pinned_diff(self):
+    def test_clean_checkout_and_prior_patch_reach_the_exact_pinned_diff(self):
         expected = (self.root / self.spec["patch"]).read_bytes()
         bootstrap.apply_patch(self.spec, "rune")
         self.assertEqual(self.git("diff", "--binary", "HEAD"), expected)
-        self.git("apply", "--reverse", str(self.root / self.spec["patch"]))
-        self.git("apply", str(self.root / self.spec["previous_patch"]))
-        bootstrap.apply_patch(self.spec, "rune")
-        self.assertEqual(self.git("diff", "--binary", "HEAD"), expected)
+        for key in sorted(key for key in self.spec if key.endswith("_patch")):
+            with self.subTest(checkpoint=key):
+                self.git("apply", "--reverse", str(self.root / self.spec["patch"]))
+                self.git("apply", str(self.root / self.spec[key]))
+                bootstrap.apply_patch(self.spec, "rune")
+                self.assertEqual(self.git("diff", "--binary", "HEAD"), expected)
         bootstrap.apply_patch(self.spec, "rune")
         self.assertEqual(self.git("diff", "--binary", "HEAD"), expected)
 

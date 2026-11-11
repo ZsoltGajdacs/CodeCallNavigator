@@ -39,7 +39,7 @@ pub fn view(state: &State, cx: &mut Cx<State>) -> El {
         .child(notice(state, session, &k))
         .child(body)
         .child(details::view(state, session, &k));
-    rune_kit::root(content, Vec::new())
+    crate::view::with_overlays(state, &k, content, Vec::new())
 }
 fn header(state: &State, name: &str, k: &Kit) -> El {
     row()
@@ -49,6 +49,7 @@ fn header(state: &State, name: &str, k: &Kit) -> El {
         .gap(10.0)
         .center_y()
         .flex_wrap()
+        .child(crate::view::search_button(k))
         .child(
             Button::new("Back to call graph")
                 .variant(ButtonVariant::Outline)

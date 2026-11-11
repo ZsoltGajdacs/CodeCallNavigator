@@ -26,6 +26,9 @@ mod ordering;
 mod selection;
 
 pub use geometry::layout;
+pub(crate) fn class_key(identity: &codegraph::search::ClassIdentity) -> String {
+    groups::class_key(identity)
+}
 const NODE_LIMIT: usize = 1_500;
 const EDGE_LIMIT: usize = 6_000;
 

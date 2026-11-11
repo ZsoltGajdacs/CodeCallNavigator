@@ -37,6 +37,7 @@ pub struct Jobs {
     pub cache_clear: Latest<crate::cache_jobs::Output>,
     pub layout: Latest<(u64, u64, Fallible<projection::GraphView>)>,
     pub search: Latest<crate::search::SearchOutput>,
+    pub search_index: Latest<crate::search::IndexOutput>,
     pub neighbors: Latest<NeighborOutput>,
     pub stale: Latest<(u64, Fallible<bool>)>,
     pub persistence: Latest<Fallible<()>>,
@@ -58,6 +59,7 @@ impl Default for Jobs {
             cache_clear: Latest::default(),
             layout: Latest::default().debounce(Duration::from_millis(50)),
             search: Latest::default().debounce(Duration::from_millis(100)),
+            search_index: Latest::default(),
             neighbors: Latest::default(),
             stale: Latest::default(),
             persistence: Latest::default().debounce(Duration::from_millis(300)),
@@ -80,6 +82,7 @@ pub fn setup(state: &mut State, waker: Waker) {
     state.jobs.cache_clear.set_waker(waker.clone());
     state.jobs.layout.set_waker(waker.clone());
     state.jobs.search.set_waker(waker.clone());
+    state.jobs.search_index.set_waker(waker.clone());
     state.jobs.neighbors.set_waker(waker.clone());
     state.jobs.stale.set_waker(waker.clone());
     state.jobs.persistence.set_waker(waker.clone());
@@ -291,7 +294,6 @@ pub fn poll(state: &mut State, time: f64, tx: &mut Tx) -> bool {
         | poll_analysis(state)
         | crate::cache_jobs::poll(state)
         | poll_graph(state)
-        | poll_search_input(state)
         | poll_persistence(state)
         | poll_staleness(state, time, tx)
         | crate::architecture_workspace::poll(state, time, tx)
@@ -317,14 +319,6 @@ fn poll_progress(state: &mut State) -> bool {
         changed = true;
     }
     changed
-}
-
-fn poll_search_input(state: &mut State) -> bool {
-    if state.query.text == state.last_query {
-        return false;
-    }
-    state.request_search();
-    true
 }
 
 fn poll_persistence(state: &mut State) -> bool {
@@ -450,11 +444,7 @@ fn install_graph(state: &mut State, loaded: LoadedGraph) {
     state.next_stale_check = 0.0;
     state.architecture = None;
     state.architecture_workspace.invalidate();
-    state.hits.clear();
-    state.search_page = 0;
-    state.search_more = false;
     state.selected_edge = None;
-    state.last_query.clear();
     state.replace_graph_view(projection::GraphView::default());
     state.visible_revision = None;
     state.visual_selection = None;

@@ -12,3 +12,4 @@ pub mod method_policy;
 pub mod metrics;
 pub mod model;
 pub mod store;
+pub mod search;

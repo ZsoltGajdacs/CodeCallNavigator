@@ -133,6 +133,19 @@ cache is already clear. It preserves `.codegraph/graph.json` and project files.
 Unsafe cache paths, deletion errors and a project lock held by analysis cause a
 reported failure; retry after resolving the error.
 
+## Search classes and methods
+
+Press Shift twice within 400 ms, use Cmd/Ctrl+F, or click Search in the toolbar.
+The modal searches names anywhere in the complete loaded graph, including symbols
+hidden by visibility filters. All, Classes and Methods narrow the results;
+TypeScript file-backed groups are marked File. Classes without indexed methods
+are not available.
+
+Use Up/Down to select, Enter to focus the result in the graph, and Escape to close.
+Class results open their method call tree; results selected from a flowchart return
+to the graph. Previous/Next reaches further pages. Reopening retains the query and
+category for the current session. Source bodies and file paths are not searched.
+
 ## Reproduce the build
 
 Prerequisites: Apple Silicon macOS, Rust/Cargo, Xcode command-line tools, Python

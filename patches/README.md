@@ -157,3 +157,23 @@ unrecorded changes make the diff differ and are rejected; no stash is used.
 Added-file installation, repeat verification, previous-patch migration and
 unrelated-file rejection tests:
 `python3 -m unittest discover -s tools -p 'test_dependency*.py'`.
+
+# Rune input activity observers
+
+`rune-input-observers.patch` replaces the oriented-segments combined patch on Rune
+revision `7ed827a2b969ec737323c3e80d2bfc1b8032b609`; its SHA-256 is pinned in
+`analyzers.lock.json`. It preserves the platform-warning and oriented-segment
+changes and adds non-consuming pointer and logical-key observers. CodeGraph uses
+these to cancel a pending standalone Double Shift sequence even when a focused
+editor consumes typing or a pointer action hits blank space or a modal backdrop.
+Observers run before regular dispatch and cannot consume events. `Tx::live_only()`
+avoids invalidating presentation for changes to transient shortcut state.
+
+Apply this combined patch once to the pristine pinned revision. Do not stack it
+with either earlier Rune patch. Bootstrap recognizes both checksum-verified prior
+combined and warnings-only diffs, reverses the matching checkpoint and installs
+this replacement. Unknown edits remain rejected and preserved. Native window,
+multiwindow, web and headless app setup all retain the callbacks.
+
+Public-API regression checks: `cargo test --locked -p codegraph --test rune_input_observers`.
+Patch verification and migration: `python3 -m unittest discover -s tools -p 'test_dependency*.py'`.

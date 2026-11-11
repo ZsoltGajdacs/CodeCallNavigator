@@ -26,6 +26,7 @@ mod relationship;
 mod runtime;
 mod scenes;
 mod search;
+mod search_shortcut;
 mod source;
 mod source_popup;
 mod source_view;
@@ -68,6 +69,10 @@ fn main() {
         ..rune::AppSpec::new("CodeGraph", (1420.0, 900.0), app::State::new, view::view)
     };
     let app = rune::App::new(spec)
+        .modifier_keys()
+        .on_pointer_activity(search::pointer_activity)
+        .on_key_activity(search::key_activity)
+        .on_focus(search::focus_changed)
         .standard_menus()
         .keep_running()
         .on_close(jobs::close);

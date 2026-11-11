@@ -9,6 +9,7 @@ mod function_flows;
 mod graph_fit;
 mod graph_studio;
 mod lambda_names;
+mod search_modal;
 mod source_popup;
 mod traversal;
 
@@ -128,7 +129,12 @@ fn native_command_shortcuts_focus_search_and_open_the_folder_sheet() {
         mods: modifiers,
     });
     runtime.frame(1.0 / 60.0);
-    assert!(runtime.state.query.focused);
+    assert!(runtime.state.search.input.focused);
+    runtime.key(rune::KeyEvent {
+        key: rune::Key::Escape,
+        mods: Default::default(),
+    });
+    runtime.frame(1.0 / 60.0);
     runtime.key(rune::KeyEvent {
         key: rune::Key::Command('o'),
         mods: modifiers,
@@ -242,17 +248,24 @@ fn search_and_neighbor_pages_can_reach_every_indexed_match() {
     state.graph = Some(Arc::new(GraphIndex::new(data).unwrap()));
     state.store = Some(store);
     state.generation = Some(generation);
-    state.query = rune::TextEdit::new("Method");
+    state.search.input = rune::TextEdit::new("Method");
     state.request_search();
     let mut runtime = Runtime::new(state, view::view, (1420.0, 900.0), Env::new(true, 1.0));
     runtime.poll = Some(jobs::poll);
-    wait_for(&mut runtime, |state| !state.hits.is_empty());
-    let mut found = runtime.state.hits.clone();
-    while runtime.state.search_more {
+    wait_for(&mut runtime, |state| !state.search.hits().is_empty());
+    let mut found = runtime.state.search.hits().to_vec();
+    while runtime.state.search.more() {
         runtime.state.step_search(true);
-        wait_for(&mut runtime, |state| !state.hits.is_empty());
-        found.extend_from_slice(&runtime.state.hits);
+        wait_for(&mut runtime, |state| !state.search.hits().is_empty());
+        found.extend_from_slice(runtime.state.search.hits());
     }
+    let mut found: Vec<_> = found
+        .into_iter()
+        .map(|hit| match hit.target {
+            codegraph::search::SearchTarget::Method { identity, .. } => identity,
+            _ => panic!("expected method"),
+        })
+        .collect();
     found.sort_unstable();
     found.dedup();
     assert_eq!(found.len(), 95);

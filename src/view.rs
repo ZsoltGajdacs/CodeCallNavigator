@@ -2,6 +2,7 @@
 mod drawer;
 mod graph_canvas;
 mod graph_controls;
+mod search_modal;
 
 use crate::{
     app::State,
@@ -54,6 +55,7 @@ fn graph_workspace(state: &State, cx: &mut Cx<State>) -> El {
             Toolbar::new()
                 .leading(text("CodeGraph").font(k.ty.ui_medium).color(k.c.text_base))
                 .leading(workspace_identity(state, &k))
+                .trailing(search_modal::button(&k))
                 .trailing(clear_cache_action(state, &k))
                 .trailing(analysis_action(state, &k))
                 .trailing(
@@ -91,10 +93,15 @@ fn graph_workspace(state: &State, cx: &mut Cx<State>) -> El {
     with_overlays(state, &k, body, layer)
 }
 
-fn with_overlays(state: &State, k: &Kit, body: El, mut layer: Vec<El>) -> El {
+pub(crate) fn search_button(k: &Kit) -> El {
+    search_modal::button(k)
+}
+
+pub(crate) fn with_overlays(state: &State, k: &Kit, body: El, mut layer: Vec<El>) -> El {
     if let Some(popup) = crate::source_popup::view(state, k) {
         layer.push(popup);
     }
+    search_modal::layer(state, k, &mut layer);
     rune_kit::root(body, layer)
 }
 
@@ -110,35 +117,24 @@ fn graph_with_filters(state: &State, cx: &mut Cx<State>, k: &Kit) -> El {
 
 fn activity_rail(state: &State, k: &Kit) -> El {
     let width = theme::RAIL_WIDTH;
-    let mut rail = col()
+    col()
         .key("activity-rail")
         .w(width)
         .h_full()
         .pt(56.0)
         .gap(theme::SPACE)
         .items_center()
-        .fill(k.c.bg_deep);
-    for (section, glyph, label, key) in [
-        (
-            Drawer::Repository,
-            &icons::FOLDER,
-            "Repository",
-            "drawer-repository",
-        ),
-        (Drawer::Search, k.glyph.search, "Search", "drawer-search"),
-    ] {
-        rail = rail.child(
-            IconButton::new(glyph)
-                .label(label)
-                .help(label)
+        .fill(k.c.bg_deep)
+        .child(
+            IconButton::new(&icons::FOLDER)
+                .label("Repository")
+                .help("Repository")
                 .variant(IconButtonVariant::GhostMuted)
-                .expanded(state.ui.sidebar.is_open() && state.ui.drawer == section)
-                .on_press(move |s: &mut State| s.toggle_drawer(section))
+                .expanded(state.ui.sidebar.is_open())
+                .on_press(|s: &mut State| s.toggle_drawer(Drawer::Repository))
                 .build(k)
-                .key(key),
-        );
-    }
-    rail
+                .key("drawer-repository"),
+        )
 }
 
 fn workspace_identity(state: &State, k: &Kit) -> El {
@@ -288,13 +284,19 @@ fn status_bar(state: &State, k: &Kit) -> El {
 }
 
 pub fn key(state: &mut State, event: &KeyEvent, tx: &mut Tx) -> bool {
+    if crate::search::key(state, event, tx) {
+        return true;
+    }
+    if state.search.open {
+        return false;
+    }
     if state.flow_workspace.current.is_some() {
         return crate::flow_view::key(state, event);
     }
-    if event.is_command('f') {
-        state.open_search();
-        return true;
-    }
+    graph_key(state, event, tx)
+}
+
+fn graph_key(state: &mut State, event: &KeyEvent, tx: &mut Tx) -> bool {
     if event.is_command('o') {
         state.choose_folder(tx);
         return true;

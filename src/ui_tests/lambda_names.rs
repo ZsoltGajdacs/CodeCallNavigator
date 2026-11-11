@@ -55,13 +55,16 @@ fn friendly_lambda_name_is_drawn_and_searchable_by_either_name() {
     for query in ["cost_type_validation", "lambda$static$11"] {
         runtime.update(|state, _| {
             state.open_search();
-            state.query = rune::TextEdit::new(query);
+            state.search.input = rune::TextEdit::new(query);
             state.request_search();
         });
-        settle(&mut runtime);
-        assert_eq!(runtime.state.hits, vec![2]);
+        super::wait_for(&mut runtime, |state| !state.search.hits().is_empty());
+        assert!(matches!(
+            &runtime.state.search.hits()[0].target,
+            codegraph::search::SearchTarget::Method { member: 2, .. }
+        ));
         assert!(
-            has_option(&runtime, NAME),
+            has_option(&runtime, &format!("Method · {NAME}")),
             "Missing friendly search result for {query}"
         );
         assert!(!has_option(&runtime, SIGNATURE));

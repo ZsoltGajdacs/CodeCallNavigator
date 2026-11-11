@@ -1,6 +1,6 @@
 //! Stable grouping identities, independent of aggregation and geometry.
 use super::{GroupKind, Grouping, Request};
-use codegraph::model::Node;
+use codegraph::{model::Node, search::ClassIdentity};
 use std::path::{Path, PathBuf};
 
 pub(super) struct Group {
@@ -23,6 +23,15 @@ impl Group {
 
 fn key(parts: &[&str]) -> String {
     serde_json::to_string(parts).expect("string arrays serialize")
+}
+
+pub(crate) fn class_key(identity: &ClassIdentity) -> String {
+    key(&[
+        "class",
+        &identity.build,
+        &identity.project,
+        &identity.container,
+    ])
 }
 
 pub(super) fn relative_file(node: &Node) -> PathBuf {
@@ -53,11 +62,12 @@ pub(super) fn groups(node: &Node, request: &Request) -> Vec<Group> {
         GroupKind::Project,
     )];
     intermediate_groups(node, request.grouping, &mut result);
-    result.push(Group::new(
-        &["class", scope[0], scope[1], &node.container],
-        node.container.clone(),
-        GroupKind::Class,
-    ));
+    result.push(Group {
+        key: super::class_key(&ClassIdentity::from_node(node)),
+        label: node.container.clone(),
+        kind: GroupKind::Class,
+        folder_depth: 0,
+    });
     if request.grouping == Grouping::Layer {
         let layer = super::layers::assignment(node, request).unwrap_or("Other");
         for group in &mut result {
@@ -156,4 +166,22 @@ fn root_folder(node: &Node) -> Group {
         "(project root)".into(),
         GroupKind::Folder,
     )
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn typed_class_identity_preserves_saved_group_keys() {
+        let identity = ClassIdentity {
+            build: "build/\"a\"".into(),
+            project: "project".into(),
+            container: "app.Outer$Inner".into(),
+        };
+        assert_eq!(
+            class_key(&identity),
+            serde_json::to_string(&["class", "build/\"a\"", "project", "app.Outer$Inner"]).unwrap()
+        );
+    }
 }

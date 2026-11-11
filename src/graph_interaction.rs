@@ -123,6 +123,39 @@ impl State {
         self.apply_visible_action(identity, Some(member), action);
     }
 
+    pub(crate) fn reveal_search_target(&mut self, target: codegraph::search::SearchTarget) {
+        use codegraph::search::SearchTarget;
+        match target {
+            SearchTarget::Method { identity, .. } => {
+                if let Some(member) = self.graph.as_ref().and_then(|g| g.node_index(&identity)) {
+                    self.reveal(member);
+                }
+            }
+            SearchTarget::Class {
+                identity, members, ..
+            } => {
+                self.checkpoint();
+                if let Some(graph) = &self.graph {
+                    for &member in members.iter() {
+                        if let Some(node) = graph.data.nodes.get(member as usize) {
+                            self.nav.filter.include_tests |= node.is_test;
+                            self.nav.filter.include_generated |= node.is_generated;
+                            self.nav.filter.include_unavailable |= node.body_unavailable;
+                        }
+                    }
+                }
+                // Layer membership wraps group keys and may split one class across layers.
+                if self.nav.grouping == crate::projection::Grouping::Layer {
+                    self.nav.set_grouping(crate::projection::Grouping::Project);
+                }
+                let key = crate::projection::class_key(&identity);
+                self.cancel_graph_press();
+                self.inspect_visible(key.clone(), None);
+                self.apply_focus(FocusTarget::ClassMethods(key));
+            }
+        }
+    }
+
     pub fn reveal(&mut self, member: u32) {
         let Some(item) = self
             .graph
@@ -138,6 +171,10 @@ impl State {
             item.body_unavailable,
         );
         self.checkpoint();
+        // Search reveals must escape an architectural tab that hides the target.
+        if self.nav.grouping == crate::projection::Grouping::Layer {
+            self.nav.set_grouping(crate::projection::Grouping::Project);
+        }
         self.nav.filter.include_tests |= test;
         self.nav.filter.include_generated |= generated;
         self.nav.filter.include_unavailable |= unavailable;
