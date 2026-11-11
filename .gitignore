@@ -2,6 +2,8 @@
 **/target/
 /dist/
 **/bin/
+!/src/bin/
+!/src/bin/*.rs
 !/crates/codecallnavigator-engine/src/bin/
 !/crates/codecallnavigator-engine/src/bin/*.rs
 **/obj/

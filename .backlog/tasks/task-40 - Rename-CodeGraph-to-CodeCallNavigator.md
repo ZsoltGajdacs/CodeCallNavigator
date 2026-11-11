@@ -5,7 +5,7 @@ status: Done
 assignee:
   - '@codex'
 created_date: '2026-11-11T09:27:00Z'
-updated_date: '2026-11-11T09:40:00Z'
+updated_date: '2026-11-11T09:48:00Z'
 labels: []
 dependencies: []
 ordinal: 51000
@@ -44,6 +44,8 @@ Additional quality review: ignored local benchmark also scores 10 (278 reviewed 
 All 35 root integration targets completed: 210 tests passed, two failed. Private recurring duplicate case lacks fixture. TypeScript source-alias byte equivalence fails only analysis.inputs and limitation count; nodes/edges match, rename causality unproven. Recorded as unresolved validation; no unrelated semantic fix. Verification report: docs/verification/rename-2026-11-11.md. No commit or push. Task remains In Progress pending required validation exceptions/failure resolution.
 
 User requested closure after reviewing the reported validation limitations, accepting them for this rename: unavailable private billing fixtures, release/data/Metal prerequisites for performance tests, and unresolved TypeScript source-alias metadata equivalence. Cancellation passed isolated with process access. Rename implementation already committed by user as 2f2f193; tracked working tree was clean before closure.
+
+Post-closure correction: user flagged untracked source. Audit found src/bin/benchmark.rs hidden by broad bin ignore rule; added source exception and included renamed benchmark. Prior CodeScene review score 10; staged safeguard passes with one eligible source file. Other ignored code is generated/dependency output.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
