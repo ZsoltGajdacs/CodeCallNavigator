@@ -11,13 +11,17 @@ cross-service connections and AI features are outside this MVP.
 Run `./dev.sh` to bootstrap dependencies, build and launch directly from the
 repository without installing the app. App arguments are forwarded, for example
 `./dev.sh --scene fixture`. The `method-callees` and `method-callers` scenes show a
-branching fixture using the production Graphviz layout. Both scripts work when
-called from another directory.
+branching fixture using the production Graphviz layout.
+
+Run `./optimized-dev.sh` for the same direct launch using release builds of the
+desktop app and engine, without packaging or installing the app. For example,
+`./optimized-dev.sh --scene fixture` launches the fixture with release optimization.
+All three scripts work when called from another directory.
 
 Run `./prod.sh` to build the release app and create `dist/CodeGraph.dmg`. Open the
 image and drag CodeGraph to Applications. The `.app` and ZIP are also kept in `dist`.
 The scripts use Python 3.13 by default; set `PYTHON=python3.12` to use another
-installed Python 3.12+ interpreter. Both scripts clean Cargo's build directory
+installed Python 3.12+ interpreter. All three scripts clean Cargo's build directory
 before building, removing previous Rust build artifacts and dependencies. This
 forces a full Rust rebuild on each run.
 
