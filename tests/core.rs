@@ -1,4 +1,4 @@
-use codegraph::{
+use codecallnavigator::{
     graph::{Direction, Filter, GraphIndex, Neighborhood},
     model::{Edge, GraphData, Node},
     store::{SqliteStore, SymbolSearch},
@@ -111,7 +111,7 @@ fn sqlite_roundtrip_search_session_and_failed_refresh_preserve_active_graph() {
 
 #[test]
 fn visibility_survives_publication_and_legacy_json_defaults_to_unknown() {
-    use codegraph::model::Visibility;
+    use codecallnavigator::model::Visibility;
     let directory = tempfile::tempdir().unwrap();
     let store = SqliteStore::open(directory.path()).unwrap();
     let mut data = sample();
@@ -263,7 +263,7 @@ fn search_pins_generation_while_a_new_analysis_is_published() {
 
 #[test]
 fn sqlite_preserves_architecture_facts_and_source_for_offline_reclassification() {
-    use codegraph::architecture::{ArchitectureFacts, FileFacts};
+    use codecallnavigator::architecture::{ArchitectureFacts, FileFacts};
     let temp = tempfile::tempdir().unwrap();
     let store = SqliteStore::open(temp.path()).unwrap();
     let mut data = sample();

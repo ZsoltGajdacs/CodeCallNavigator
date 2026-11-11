@@ -12,7 +12,7 @@ import hashlib
 class NativeAcceptance(unittest.TestCase):
     def test_binary_hash_identifies_exact_bytes_on_python39(self):
         with tempfile.TemporaryDirectory() as temporary:
-            binary = Path(temporary) / "codegraph"
+            binary = Path(temporary) / "codecallnavigator"
             binary.write_bytes(b"native-release-binary")
             self.assertEqual(pan_profile.binary_hash(binary), hashlib.sha256(binary.read_bytes()).hexdigest())
 
@@ -24,7 +24,7 @@ class NativeAcceptance(unittest.TestCase):
         rows = [{"type": "header", "clock": clock, "scale": 2, "width": 1900, "height": 1100}]
         names = ["sample", "drag", "drag_seconds", "camera.x", "camera.y", "camera.zoom",
                  "backing_scale", "viewport.width", "viewport.height", "target.width", "target.height"]
-        descriptions = [{"id": i + 1, "name": "codegraph." + name, "kind": "level"} for i, name in enumerate(names)]
+        descriptions = [{"id": i + 1, "name": "codecallnavigator." + name, "kind": "level"} for i, name in enumerate(names)]
         for drag in range(3):
             for step in range(fps * 10 + 1):
                 row = {"t": (drag * 11 + step / fps) * 1000,

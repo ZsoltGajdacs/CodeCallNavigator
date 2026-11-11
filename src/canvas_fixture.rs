@@ -89,14 +89,14 @@ fn restore(state: &mut State) -> anyhow::Result<()> {
     if let Some(selection) = saved.architecture_selection {
         // Normal loading may migrate a review configuration. Profiling must only read it.
         let root = std::path::Path::new(&state.root.text);
-        if selection == codegraph::architecture::Selection::Repository {
+        if selection == codecallnavigator::architecture::Selection::Repository {
             anyhow::ensure!(
-                root.join(".codegraph/layers.yml").is_file(),
-                "Profiling requires an existing .codegraph/layers.yml; importing repository configuration is not a profiling action"
+                root.join(".codecallnavigator/layers.yml").is_file(),
+                "Profiling requires an existing .codecallnavigator/layers.yml; importing repository configuration is not a profiling action"
             );
         }
-        let config = codegraph::architecture::load(root, selection)?;
-        state.architecture = Some(Arc::new(codegraph::architecture::classify(
+        let config = codecallnavigator::architecture::load(root, selection)?;
+        state.architecture = Some(Arc::new(codecallnavigator::architecture::classify(
             &state.graph.as_ref().unwrap().data,
             &config.config,
             config.origin,

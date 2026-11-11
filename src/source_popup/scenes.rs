@@ -3,7 +3,7 @@ use crate::{
     app::State,
     projection::{self, Grouping},
 };
-use codegraph::graph::GraphIndex;
+use codecallnavigator::graph::GraphIndex;
 use std::sync::Arc;
 
 pub fn source(state: &mut State) {
@@ -11,7 +11,7 @@ pub fn source(state: &mut State) {
     let mut data = (*state.graph.as_ref().unwrap().data).clone();
     let path = concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/tools/java-bytecode/src/main/java/codegraph/bytecode/SourceInventory.java"
+        "/tools/java-bytecode/src/main/java/codecallnavigator/bytecode/SourceInventory.java"
     );
     for node in &mut data.nodes {
         node.file = path.into();

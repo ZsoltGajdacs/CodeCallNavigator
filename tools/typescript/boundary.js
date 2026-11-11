@@ -11,11 +11,11 @@ function callFact(bindings,checker,node,writes) {
   const name=api.nextApi(bindings,checker,node.expression);
   if(['redirect','permanentRedirect'].includes(name)||api.routerMethod(bindings,checker,node.expression,writes)) {
     if(node.arguments.length<1||node.arguments.some(ts.isSpreadElement)) return undefined;
-    return {kind:'navigation',path:pathLiteral(ts,node.arguments[0]),method:null,rule:'codegraph.next:navigation',flow:true};
+    return {kind:'navigation',path:pathLiteral(ts,node.arguments[0]),method:null,rule:'codecallnavigator.next:navigation',flow:true};
   }
   if(!api.builtinFetch(bindings,checker,node.expression,writes)) return undefined;
   const method=fetchMethod(ts,node);
-  return method?{kind:'http',path:pathLiteral(ts,node.arguments[0]),method,rule:'codegraph.typescript:http',flow:true}:undefined;
+  return method?{kind:'http',path:pathLiteral(ts,node.arguments[0]),method,rule:'codecallnavigator.typescript:http',flow:true}:undefined;
 }
 function hrefExpression(ts,initializer) {
   return initializer&&ts.isJsxExpression(initializer)?initializer.expression:initializer;
@@ -29,7 +29,7 @@ function jsxFact(bindings,checker,node) {
   if(href.length!==1) return undefined;
   const initializer=href[0].initializer;
   const expression=hrefExpression(ts,initializer);
-  return {kind:'navigation',path:pathLiteral(ts,expression),method:null,rule:'codegraph.next:link',flow:false};
+  return {kind:'navigation',path:pathLiteral(ts,expression),method:null,rule:'codecallnavigator.next:link',flow:false};
 }
 function nodeOwner(bindings,node,current) {
   if(bindings.ts.isClassLike(node)) return undefined;

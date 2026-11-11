@@ -10,8 +10,8 @@ class ReactRules {
   add(from,targets,kind,site) {
     const semantics=this.semantics(kind);
     for(const to of targets) {
-      const evidence=relationshipEvidence(this.graph,{rule:`codegraph.react:${kind}`,semantics,site,registration:site,from,to});
-      this.graph.edge(from,to,kind,{certainty:'possible',provenance:`codegraph.react.v1:${kind}`,evidence:[evidence]});
+      const evidence=relationshipEvidence(this.graph,{rule:`codecallnavigator.react:${kind}`,semantics,site,registration:site,from,to});
+      this.graph.edge(from,to,kind,{certainty:'possible',provenance:`codecallnavigator.react.v1:${kind}`,evidence:[evidence]});
     }
   }
   semantics(kind) {

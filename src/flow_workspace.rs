@@ -1,6 +1,6 @@
 //! Generation-bound flow sessions, background construction and independent navigation.
 use crate::{app::State, camera::Camera, source};
-use codegraph::{
+use codecallnavigator::{
     flow::{self, FlowChart, FunctionFlowIR},
     graph::GraphIndex,
 };

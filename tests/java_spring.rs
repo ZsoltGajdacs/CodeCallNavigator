@@ -1,14 +1,14 @@
 //! Actual Spring libraries, compiler-owned types and shared graph/flow inference.
 #[path = "support/java.rs"]
 mod support;
-use codegraph::{flow, model::GraphData};
+use codecallnavigator::{flow, model::GraphData};
 use std::collections::BTreeSet;
 
-fn inferred(graph: &GraphData) -> Vec<&codegraph::model::Edge> {
+fn inferred(graph: &GraphData) -> Vec<&codecallnavigator::model::Edge> {
     graph
         .edges
         .iter()
-        .filter(|edge| edge.provenance == "codegraph.spring.event.v1")
+        .filter(|edge| edge.provenance == "codecallnavigator.spring.event.v1")
         .collect()
 }
 
@@ -16,7 +16,7 @@ fn inferred(graph: &GraphData) -> Vec<&codegraph::model::Edge> {
 #[ignore = "requires pinned Java analyzer, Maven, JDK25 and cached Spring6.2.5"]
 fn spring_dispatch_is_compiler_bound_possible_and_matches_flow_sites() {
     let directory = support::fixture("spring-events");
-    if let Some(command) = std::env::var_os("CODEGRAPH_TEST_MAVEN") {
+    if let Some(command) = std::env::var_os("CODECALLNAVIGATOR_TEST_MAVEN") {
         support::install_wrapper(directory.path(), &std::path::PathBuf::from(command));
     }
     let graph = support::run(vec![support::target(directory.path(), "maven")]).unwrap();
@@ -66,10 +66,10 @@ fn spring_dispatch_is_compiler_bound_possible_and_matches_flow_sites() {
 
 fn assert_site(
     graph: &GraphData,
-    edge: &codegraph::model::Edge,
-    evidence: &codegraph::model::RelationshipEvidence,
+    edge: &codecallnavigator::model::Edge,
+    evidence: &codecallnavigator::model::RelationshipEvidence,
 ) {
-    assert_eq!(evidence.rule, "codegraph.spring:event");
+    assert_eq!(evidence.rule, "codecallnavigator.spring:event");
     let span = evidence.invocation.span.unwrap();
     let text = std::fs::read(&evidence.invocation.file).unwrap();
     assert!(
@@ -108,7 +108,7 @@ fn assert_site(
     });
     assert!(matched, "Missing matching source flow target");
 }
-fn assert_qualifiers(name: &str, evidence: &codegraph::model::RelationshipEvidence) {
+fn assert_qualifiers(name: &str, evidence: &codecallnavigator::model::RelationshipEvidence) {
     let qualifiers = &evidence.qualifiers;
     assert_eq!(
         qualifiers["spring.async"],
@@ -167,7 +167,7 @@ fn assert_pairs(actual: &BTreeSet<(String, String, String)>) {
 #[ignore = "requires pinned Java analyzer, Maven, JDK25 and cached Spring6.2.5"]
 fn raw_generic_payloads_and_raw_enclosing_owners_are_deferred() {
     let directory = support::fixture("spring-events");
-    if let Some(command) = std::env::var_os("CODEGRAPH_TEST_MAVEN") {
+    if let Some(command) = std::env::var_os("CODECALLNAVIGATOR_TEST_MAVEN") {
         support::install_wrapper(directory.path(), &std::path::PathBuf::from(command));
     }
     let source = directory
@@ -222,7 +222,7 @@ public final class RawEvents {
 #[ignore = "requires pinned Java analyzer, Maven, JDK25 and cached Spring6.2.5"]
 fn spring_listener_catalog_survives_without_any_publisher_invocations() {
     let directory = support::fixture("spring-events");
-    if let Some(command) = std::env::var_os("CODEGRAPH_TEST_MAVEN") {
+    if let Some(command) = std::env::var_os("CODECALLNAVIGATOR_TEST_MAVEN") {
         support::install_wrapper(directory.path(), &std::path::PathBuf::from(command));
     }
     let publisher = directory

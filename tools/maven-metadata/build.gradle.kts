@@ -16,7 +16,7 @@ java {
 tasks.compileJava { options.release = 17 }
 
 tasks.jar {
-    archiveFileName = "codegraph-maven-metadata.jar"
+    archiveFileName = "codecallnavigator-maven-metadata.jar"
 }
 
 dependencyLocking { lockAllConfigurations() }

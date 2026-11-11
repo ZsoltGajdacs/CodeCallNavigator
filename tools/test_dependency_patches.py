@@ -14,7 +14,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 class RunePatchMigration(unittest.TestCase):
     def setUp(self):
-        self.temporary = tempfile.TemporaryDirectory(prefix="codegraph-rune-patch-")
+        self.temporary = tempfile.TemporaryDirectory(prefix="codecallnavigator-rune-patch-")
         self.root = Path(self.temporary.name)
         self.repository = self.root / "vendor/rune"
         self.repository.mkdir(parents=True)

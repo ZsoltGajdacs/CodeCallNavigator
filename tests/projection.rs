@@ -2,7 +2,7 @@
 #[allow(dead_code)]
 mod projection;
 
-use codegraph::{
+use codecallnavigator::{
     graph::{Filter, GraphIndex},
     model::{Edge, GraphData, Node},
 };
@@ -301,7 +301,7 @@ fn branching() -> GraphIndex {
     let data = GraphData {
         nodes,
         edges,
-        entry_points: Some(codegraph::model::EntryPoints {
+        entry_points: Some(codecallnavigator::model::EntryPoints {
             framework_entries: Vec::new(),
             candidates: vec!["Root".into(), "OtherRoot".into()],
             application_starts: vec!["Root".into()],
@@ -500,7 +500,7 @@ fn paginated_graph(from: u32, to: u32) -> GraphIndex {
 fn framework_entry_is_a_method_root_without_verified_start_highlighting() {
     let mut data = (*branching().data).clone();
     let id = data.nodes[1].id.clone();
-    data.entry_points = Some(codegraph::model::EntryPoints {
+    data.entry_points = Some(codecallnavigator::model::EntryPoints {
         candidates: vec![],
         application_starts: vec![],
         framework_entries: vec![id.clone()],

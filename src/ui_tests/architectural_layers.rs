@@ -1,5 +1,5 @@
 use super::{click, runtime};
-use codegraph::architecture::{Assignment, LayerAssignments, LayerDefinition, Selection, file_key};
+use codecallnavigator::architecture::{Assignment, LayerAssignments, LayerDefinition, Selection, file_key};
 use std::sync::Arc;
 
 #[test]

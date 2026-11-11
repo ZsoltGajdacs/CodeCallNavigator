@@ -10,7 +10,7 @@ function failDiagnostics(ts, diagnostics) {
 }
 function toolchain(config, observations) {
   if (Number(process.versions.node.split('.')[0]) < 24) throw new Error('TypeScript analysis requires Node 24+');
-  const localRequire = createRequire(path.join(path.dirname(config), '__codegraph__.js'));
+  const localRequire = createRequire(path.join(path.dirname(config), '__codecallnavigator__.js'));
   let entry;
   try { entry = localRequire.resolve('typescript'); }
   catch { throw new Error(`Install project TypeScript 6.0.x dependencies before analyzing ${config}`); }

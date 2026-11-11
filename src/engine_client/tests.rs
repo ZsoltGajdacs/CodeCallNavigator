@@ -157,7 +157,7 @@ fn real_engine_roundtrip_publishes_and_preserves_graph_on_failure() {
         "import {linkedLeaf} from '../../linked.js'; export function leaf() { return linkedLeaf(); } export function start() { return leaf(); }",
     )
     .unwrap();
-    let modules = std::env::var_os("CODEGRAPH_TS_NODE_MODULES")
+    let modules = std::env::var_os("CODECALLNAVIGATOR_TS_NODE_MODULES")
         .map(std::path::PathBuf::from)
         .unwrap_or_else(|| {
             Path::new(env!("CARGO_MANIFEST_DIR")).join("../PacificFateMapEditor/node_modules")
@@ -166,7 +166,7 @@ fn real_engine_roundtrip_publishes_and_preserves_graph_on_failure() {
     let runtime = Runtime::discover().unwrap();
     let targets = discover(&runtime, &project).unwrap();
     assert_eq!(targets.len(), 1);
-    let metrics = codegraph::metrics::Metrics::default();
+    let metrics = codecallnavigator::metrics::Metrics::default();
     let _scope = metrics.enter();
     let graph = analyze(
         &runtime,
@@ -229,7 +229,7 @@ fn real_engine_cancellation_reaps_build_and_preserves_previous_artifact() {
     )
     .unwrap();
     fs::set_permissions(project.join("gradlew"), fs::Permissions::from_mode(0o755)).unwrap();
-    fs::create_dir(project.join(".codegraph")).unwrap();
+    fs::create_dir(project.join(".codecallnavigator")).unwrap();
     fs::write(project.join(GRAPH_PATH), b"previous graph").unwrap();
     let cancel = Arc::new(AtomicBool::new(false));
     let trigger = cancel.clone();

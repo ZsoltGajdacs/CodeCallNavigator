@@ -2,8 +2,8 @@
 **/target/
 /dist/
 **/bin/
-!/crates/codegraph-engine/src/bin/
-!/crates/codegraph-engine/src/bin/*.rs
+!/crates/codecallnavigator-engine/src/bin/
+!/crates/codecallnavigator-engine/src/bin/*.rs
 **/obj/
 **/.gradle/
 **/build/
@@ -14,10 +14,15 @@
 /evidence/analyzers/workspaces/
 /evidence/performance/cache*/
 /.serena/
+**/.codecallnavigator/graph.lock
+**/.codecallnavigator/.graph-publish-*
+**/.codecallnavigator/inference.sqlite3
+**/.codecallnavigator/inference.sqlite3-wal
+**/.codecallnavigator/inference.sqlite3-shm
+**/.codecallnavigator/inference.sqlite3-journal
+**/node_modules
+
+# Preserve ignored caches from installations before the rename.
 **/.codegraph/graph.lock
 **/.codegraph/.graph-publish-*
-**/.codegraph/inference.sqlite3
-**/.codegraph/inference.sqlite3-wal
-**/.codegraph/inference.sqlite3-shm
-**/.codegraph/inference.sqlite3-journal
-**/node_modules
+**/.codegraph/inference.sqlite3*

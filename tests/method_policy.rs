@@ -1,4 +1,4 @@
-use codegraph::{
+use codecallnavigator::{
     graph::Filter,
     method_policy::prune,
     model::{Edge, EntryPoints, GraphData, Node},

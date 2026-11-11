@@ -38,24 +38,24 @@ impl Driver {
     pub(super) fn sample(&self, runtime: &mut Runtime<State>) {
         let camera = &runtime.state.nav.camera;
         let (x, y, zoom) = (camera.pan[0], camera.pan[1], camera.zoom);
-        runtime.trace_channel("codegraph.camera.x", "position", x);
-        runtime.trace_channel("codegraph.camera.y", "position", y);
-        runtime.trace_channel("codegraph.camera.zoom", "level", zoom);
-        runtime.trace_channel("codegraph.backing_scale", "level", runtime.env.scale);
-        runtime.trace_channel("codegraph.viewport.width", "level", runtime.viewport.0);
-        runtime.trace_channel("codegraph.viewport.height", "level", runtime.viewport.1);
+        runtime.trace_channel("codecallnavigator.camera.x", "position", x);
+        runtime.trace_channel("codecallnavigator.camera.y", "position", y);
+        runtime.trace_channel("codecallnavigator.camera.zoom", "level", zoom);
+        runtime.trace_channel("codecallnavigator.backing_scale", "level", runtime.env.scale);
+        runtime.trace_channel("codecallnavigator.viewport.width", "level", runtime.viewport.0);
+        runtime.trace_channel("codecallnavigator.viewport.height", "level", runtime.viewport.1);
         let (drag, elapsed) = self
             .sampled_drag
             .map_or((-1.0, -1.0), |(i, t)| (i as f32, t as f32));
-        runtime.trace_channel("codegraph.drag", "phase", drag);
-        runtime.trace_channel("codegraph.drag_seconds", "level", elapsed);
+        runtime.trace_channel("codecallnavigator.drag", "phase", drag);
+        runtime.trace_channel("codecallnavigator.drag_seconds", "level", elapsed);
         runtime.trace_channel(
-            "codegraph.nodes",
+            "codecallnavigator.nodes",
             "level",
             runtime.state.graph_view.nodes.len() as f32,
         );
         runtime.trace_channel(
-            "codegraph.edges",
+            "codecallnavigator.edges",
             "level",
             runtime.state.graph_view.edges.len() as f32,
         );

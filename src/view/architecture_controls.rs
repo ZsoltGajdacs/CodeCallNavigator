@@ -1,6 +1,6 @@
 //! Layer setup and tab controls; file IO stays in the workspace lifecycle.
 use crate::app::State;
-use codegraph::architecture::Selection;
+use codecallnavigator::architecture::Selection;
 use rune::{El, col, row, text};
 use rune_kit::{Kit, SegmentedControl};
 
@@ -62,7 +62,7 @@ pub(super) fn view(state: &State, k: &Kit) -> El {
             );
         }
     } else {
-        controls = controls.child(text("Choose a preset or edit .codegraph/layers.yml. Review configuration is imported automatically when the native file is missing.")
+        controls = controls.child(text("Choose a preset or edit .codecallnavigator/layers.yml. Review configuration is imported automatically when the native file is missing.")
             .font(k.ty.small).color(k.c.text_muted).w_full().wrap());
     }
     controls

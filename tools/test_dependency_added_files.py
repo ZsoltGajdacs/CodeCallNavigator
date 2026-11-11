@@ -10,7 +10,7 @@ import bootstrap
 
 class AddedSourcePatch(unittest.TestCase):
     def setUp(self):
-        self.temporary = tempfile.TemporaryDirectory(prefix='codegraph-added-patch-')
+        self.temporary = tempfile.TemporaryDirectory(prefix='codecallnavigator-added-patch-')
         self.root = Path(self.temporary.name)
         self.repository = self.root / 'vendor/example'
         self.repository.mkdir(parents=True)

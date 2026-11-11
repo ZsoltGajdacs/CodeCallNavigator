@@ -1,4 +1,4 @@
-use codegraph::{
+use codecallnavigator::{
     architecture::{self, ArchitectureFacts, FileFacts, Selection},
     model::GraphData,
 };
@@ -89,7 +89,7 @@ fn import_resolves_presets_and_preserves_native_edits() {
             .iter()
             .any(|l| l.tab.as_deref() == Some("Database"))
     );
-    let native = temp.path().join(".codegraph/layers.yml");
+    let native = temp.path().join(".codecallnavigator/layers.yml");
     fs::write(&native, "version: 1\nlanguages: {}\n").unwrap();
     fs::write(review.join("layers.yml"), "invalid: true").unwrap();
     assert!(
@@ -116,7 +116,7 @@ fn invalid_imports_and_cycles_never_create_native_configuration() {
     ] {
         fs::write(review.join("layers.yml"), text).unwrap();
         assert!(architecture::load(temp.path(), Selection::Repository).is_err());
-        assert!(!temp.path().join(".codegraph/layers.yml").exists());
+        assert!(!temp.path().join(".codecallnavigator/layers.yml").exists());
     }
 }
 #[test]
@@ -189,8 +189,8 @@ fn build_relative_rules_keep_dotted_java_directory_names() {
 fn repository_rules_resolve_symlink_roots_to_analyzer_source_paths() {
     let temp = tempfile::tempdir().unwrap();
     let checkout = temp.path().join("checkout");
-    fs::create_dir_all(checkout.join(".codegraph")).unwrap();
-    fs::write(checkout.join(".codegraph/layers.yml"), "version: 1\nlanguages:\n  csharp:\n    layers:\n      - name: Controller\n        matchers: [{path: 'src/**'}]\n").unwrap();
+    fs::create_dir_all(checkout.join(".codecallnavigator")).unwrap();
+    fs::write(checkout.join(".codecallnavigator/layers.yml"), "version: 1\nlanguages:\n  csharp:\n    layers:\n      - name: Controller\n        matchers: [{path: 'src/**'}]\n").unwrap();
     let alias = temp.path().join("workspace");
     std::os::unix::fs::symlink(&checkout, &alias).unwrap();
     let loaded = architecture::load(&alias, Selection::Repository).unwrap();

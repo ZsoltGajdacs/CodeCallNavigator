@@ -15,12 +15,12 @@ struct Fixture {
 impl Fixture {
     fn new() -> Self {
         let directory = tempfile::Builder::new()
-            .prefix("CodeGraph incremental ")
+            .prefix("CodeCallNavigator incremental ")
             .tempdir()
             .unwrap();
         let fixture = Self { directory };
         let repository = Path::new(env!("CARGO_MANIFEST_DIR"));
-        let modules = std::env::var_os("CODEGRAPH_TS_NODE_MODULES")
+        let modules = std::env::var_os("CODECALLNAVIGATOR_TS_NODE_MODULES")
             .map(PathBuf::from)
             .unwrap_or_else(|| repository.join("../PacificFateMapEditor/node_modules"));
         symlink(
@@ -40,7 +40,7 @@ impl Fixture {
             "export default function About(){return null}",
         );
         fixture.write(
-            ".codegraph/layers.yml",
+            ".codecallnavigator/layers.yml",
             "# Existing project configuration must survive\n",
         );
         fixture
@@ -54,18 +54,18 @@ impl Fixture {
         fs::write(path, text).unwrap();
     }
     fn graph(&self) -> Vec<u8> {
-        fs::read(self.root().join(".codegraph/graph.json")).unwrap()
+        fs::read(self.root().join(".codecallnavigator/graph.json")).unwrap()
     }
     fn cache(&self) -> PathBuf {
-        self.root().join(".codegraph/inference.sqlite3")
+        self.root().join(".codecallnavigator/inference.sqlite3")
     }
     fn analyze(&self, disabled: bool) -> Value {
         let output = run(self.root(), disabled, false);
         assert_eq!(output["event"], "complete", "{output}");
-        let fingerprints: Vec<codegraph_core::model::FileFingerprint> =
+        let fingerprints: Vec<codecallnavigator_core::model::FileFingerprint> =
             serde_json::from_value(output["fingerprints"].clone()).unwrap();
         assert!(
-            !codegraph_core::fingerprint::is_stale(&fingerprints).unwrap(),
+            !codecallnavigator_core::fingerprint::is_stale(&fingerprints).unwrap(),
             "Cache/publication must not invalidate the completed input snapshot"
         );
         output
@@ -85,10 +85,10 @@ impl Fixture {
 }
 
 fn engine() -> PathBuf {
-    std::env::var_os("CODEGRAPH_TEST_ENGINE")
+    std::env::var_os("CODECALLNAVIGATOR_TEST_ENGINE")
         .map(PathBuf::from)
         .unwrap_or_else(|| {
-            Path::new(env!("CARGO_MANIFEST_DIR")).join("target/debug/codegraph-engine")
+            Path::new(env!("CARGO_MANIFEST_DIR")).join("target/debug/codecallnavigator-engine")
         })
 }
 fn run(root: &Path, disabled: bool, cancel: bool) -> Value {
@@ -99,13 +99,13 @@ fn run(root: &Path, disabled: bool, cancel: bool) -> Value {
         .stdout(Stdio::piped())
         .stderr(Stdio::piped());
     if disabled {
-        command.env("CODEGRAPH_DISABLE_INFERENCE_CACHE", "1");
+        command.env("CODECALLNAVIGATOR_DISABLE_INFERENCE_CACHE", "1");
     } else {
-        command.env_remove("CODEGRAPH_DISABLE_INFERENCE_CACHE");
+        command.env_remove("CODECALLNAVIGATOR_DISABLE_INFERENCE_CACHE");
     }
     let mut child = command
         .spawn()
-        .expect("Build codegraph-engine before running this ignored acceptance test");
+        .expect("Build codecallnavigator-engine before running this ignored acceptance test");
     let mut input = child.stdin.take().unwrap();
     let mut output = BufReader::new(child.stdout.take().unwrap());
     let mut errors = child.stderr.take().unwrap();
@@ -180,9 +180,9 @@ fn cached_inference_matches_full_analysis_after_compiler_facts_change() {
         "The engine must create the derived inference cache"
     );
     let initial = fixture.graph();
-    assert!(targets(&initial, "missing", "codegraph.boundary.v1").is_empty());
+    assert!(targets(&initial, "missing", "codecallnavigator.boundary.v1").is_empty());
     assert_eq!(
-        targets(&initial, "notify", "codegraph.observer.v1").len(),
+        targets(&initial, "notify", "codecallnavigator.observer.v1").len(),
         2
     );
     assert_cache_warmth(&fixture, &cold, &initial);
@@ -193,7 +193,7 @@ fn cached_inference_matches_full_analysis_after_compiler_facts_change() {
     );
     let added = fixture.compare_full();
     assert_eq!(
-        targets(&added, "missing", "codegraph.boundary.v1").len(),
+        targets(&added, "missing", "codecallnavigator.boundary.v1").len(),
         1,
         "A cached negative match must be invalidated when a route is added"
     );
@@ -203,7 +203,7 @@ fn cached_inference_matches_full_analysis_after_compiler_facts_change() {
     );
     let changed = fixture.compare_full();
     assert!(
-        targets(&changed, "request", "codegraph.boundary.v1").is_empty(),
+        targets(&changed, "request", "codecallnavigator.boundary.v1").is_empty(),
         "Old inferred GET target cannot survive a handler verb change"
     );
     fixture.write(
@@ -212,19 +212,19 @@ fn cached_inference_matches_full_analysis_after_compiler_facts_change() {
     );
     let rewired = fixture.compare_full();
     assert_eq!(
-        targets(&rewired, "request", "codegraph.boundary.v1").len(),
+        targets(&rewired, "request", "codecallnavigator.boundary.v1").len(),
         1
     );
     fs::remove_file(fixture.root().join("src/app/missing/route.ts")).unwrap();
     let removed = fixture.compare_full();
-    assert!(targets(&removed, "missing", "codegraph.boundary.v1").is_empty());
+    assert!(targets(&removed, "missing", "codecallnavigator.boundary.v1").is_empty());
     fixture.write(
         "src/observers.ts",
         &OBSERVERS.replace("subscribe(logUpdate);", ""),
     );
     let unregistered = fixture.compare_full();
     assert_eq!(
-        targets(&unregistered, "notify", "codegraph.observer.v1").len(),
+        targets(&unregistered, "notify", "codecallnavigator.observer.v1").len(),
         1,
         "Fresh compiler facts must remove vanished observer wiring"
     );
@@ -279,7 +279,7 @@ fn assert_configuration_invalidation(fixture: &Fixture, initial: &[u8]) {
     fixture.write("next.config.js", "module.exports={basePath:'/deployment'};");
     let blocked = fixture.compare_full();
     assert!(
-        targets(&blocked, "go", "codegraph.boundary.v1").is_empty(),
+        targets(&blocked, "go", "codecallnavigator.boundary.v1").is_empty(),
         "New routing configuration must invalidate a previously cached navigation match"
     );
     fs::remove_file(fixture.root().join("next.config.js")).unwrap();
@@ -324,7 +324,7 @@ fn publication_failure_does_not_commit_new_inference_decisions() {
     let previous_graph = fixture.graph();
     let previous_cache = fs::read(fixture.cache()).unwrap();
     fixture.write("src/client.ts", &CLIENT.replace("'/api'", "'/missing'"));
-    let directory = fixture.root().join(".codegraph");
+    let directory = fixture.root().join(".codecallnavigator");
     let permissions = fs::metadata(&directory).unwrap().permissions();
     fs::set_permissions(&directory, fs::Permissions::from_mode(0o555)).unwrap();
     let failed = run(fixture.root(), false, false);
@@ -350,14 +350,14 @@ fn publication_failure_does_not_commit_new_inference_decisions() {
 }
 
 fn assert_only_graph_json(root: &Path) {
-    let names = fs::read_dir(root.join(".codegraph"))
+    let names = fs::read_dir(root.join(".codecallnavigator"))
         .unwrap()
         .map(|entry| entry.unwrap().file_name().to_string_lossy().into_owned())
         .filter(|name| name.ends_with(".json"))
         .collect::<Vec<_>>();
     assert_eq!(names, ["graph.json"]);
     assert_eq!(
-        fs::read_to_string(root.join(".codegraph/layers.yml")).unwrap(),
+        fs::read_to_string(root.join(".codecallnavigator/layers.yml")).unwrap(),
         "# Existing project configuration must survive\n"
     );
 }

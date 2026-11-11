@@ -1,6 +1,6 @@
 //! Optional headless classification uses the same configuration and facts as Graph Studio.
 use anyhow::{Context, Result, ensure};
-use codegraph::{
+use codecallnavigator::{
     architecture::{self, Selection},
     model::GraphData,
 };

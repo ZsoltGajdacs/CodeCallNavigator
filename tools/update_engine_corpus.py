@@ -15,7 +15,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 def typescript_dependencies():
     fixture = ROOT / 'fixtures/typescript-corpus'
-    modules = Path(os.environ.get('CODEGRAPH_TS_NODE_MODULES',
+    modules = Path(os.environ.get('CODECALLNAVIGATOR_TS_NODE_MODULES',
                    ROOT.parent / 'PacificFateMapEditor/node_modules')).resolve()
     expected = json.loads((fixture / 'package.json').read_text())['dependencies']
     for name, version in expected.items():

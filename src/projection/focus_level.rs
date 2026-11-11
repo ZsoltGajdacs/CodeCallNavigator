@@ -3,7 +3,7 @@ use super::{
     FocusTarget, GroupKind, Grouping, Request,
     groups::{self, Group},
 };
-use codegraph::{graph::GraphIndex, model::Node};
+use codecallnavigator::{graph::GraphIndex, model::Node};
 
 #[derive(Clone, Copy)]
 pub(super) enum PresentationLevel {

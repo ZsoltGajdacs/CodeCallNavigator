@@ -1,5 +1,5 @@
 //! Real public MediatR contracts and Roslyn compilations, with isolated applications.
-use codegraph_engine::{
+use codecallnavigator_engine::{
     analyzers::{AnalyzerRuntime, analyze},
     discovery::target_from_file,
     model::{Edge, GraphData},
@@ -10,7 +10,7 @@ fn inferred_targets(graph: &GraphData) -> BTreeSet<(String, String)> {
     graph
         .edges
         .iter()
-        .filter(|edge| edge.provenance == "codegraph.mediatr.v1")
+        .filter(|edge| edge.provenance == "codecallnavigator.mediatr.v1")
         .map(|edge| {
             let from = &graph.nodes[edge.from as usize];
             let to = &graph.nodes[edge.to as usize];
@@ -30,7 +30,7 @@ fn assert_evidence(graph: &GraphData, edge: &Edge) {
     for evidence in &edge.evidence {
         assert!(matches!(
             evidence.rule.as_str(),
-            "codegraph.mediatr:send" | "codegraph.mediatr:publish"
+            "codecallnavigator.mediatr:send" | "codecallnavigator.mediatr:publish"
         ));
         assert_eq!(evidence.version, 1);
         assert_eq!(evidence.semantics, "possible-invocation");
@@ -109,7 +109,7 @@ fn real_framework_dispatch_uses_request_symbols_and_application_scope() {
         6
     );
     for edge in &graph.edges {
-        if edge.provenance == "codegraph.mediatr.v1" {
+        if edge.provenance == "codecallnavigator.mediatr.v1" {
             assert_evidence(&graph, edge);
         }
     }

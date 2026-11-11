@@ -78,7 +78,7 @@ impl Meter {
             .features()
             .contains(wgpu::Features::TIMESTAMP_QUERY);
         frame.rt.trace_channel(
-            "codegraph.gpu_supported",
+            "codecallnavigator.gpu_supported",
             "level",
             u8::from(supported) as f32,
         );
@@ -95,7 +95,7 @@ impl Meter {
                 SUBMITTED => slot.map(),
                 FAILED => frame
                     .rt
-                    .trace_channel("codegraph.gpu_map_failed", "level", 1.0),
+                    .trace_channel("codecallnavigator.gpu_map_failed", "level", 1.0),
                 _ => {}
             }
         }
@@ -115,16 +115,16 @@ impl Meter {
                 Some(milliseconds) => {
                     frame
                         .rt
-                        .trace_channel("codegraph.gpu_sample", "level", slot.sample as f32);
+                        .trace_channel("codecallnavigator.gpu_sample", "level", slot.sample as f32);
                     frame
                         .rt
-                        .trace_channel("codegraph.gpu_ms", "level", milliseconds);
+                        .trace_channel("codecallnavigator.gpu_ms", "level", milliseconds);
                 }
                 None => self.invalid_samples += 1,
             }
         }
         frame.rt.trace_channel(
-            "codegraph.gpu_invalid_samples",
+            "codecallnavigator.gpu_invalid_samples",
             "level",
             self.invalid_samples as f32,
         );

@@ -7,7 +7,7 @@ use std::collections::BTreeSet;
 #[ignore = "requires pinned Java analyzer, Maven, JDK25 and cached Spring Web6.2.5"]
 fn spring_http_routes_keep_compiler_qualified_handlers_and_constraint_blockers() {
     let directory = support::fixture("spring-events");
-    if let Some(command) = std::env::var_os("CODEGRAPH_TEST_MAVEN") {
+    if let Some(command) = std::env::var_os("CODECALLNAVIGATOR_TEST_MAVEN") {
         support::install_wrapper(directory.path(), &std::path::PathBuf::from(command));
     }
     let graph = support::run(vec![support::target(directory.path(), "maven")]).unwrap();
@@ -54,7 +54,7 @@ fn spring_http_routes_keep_compiler_qualified_handlers_and_constraint_blockers()
     );
     for route in &facts.routes {
         assert_eq!(route.framework, "spring");
-        assert_eq!(route.application, "codegraph.fixture:spring-events");
+        assert_eq!(route.application, "codecallnavigator.fixture:spring-events");
         let symbol = route.symbol.as_ref().unwrap();
         assert!(graph.nodes.iter().any(|node| &node.id == symbol));
         assert!(
@@ -75,7 +75,7 @@ fn spring_http_routes_keep_compiler_qualified_handlers_and_constraint_blockers()
 #[ignore = "requires pinned Java analyzer, Maven, JDK25 and cached Spring Web6.2.5"]
 fn spring_http_unknown_composed_inherited_and_pattern_routes_remain_blockers() {
     let directory = support::fixture("spring-events");
-    if let Some(command) = std::env::var_os("CODEGRAPH_TEST_MAVEN") {
+    if let Some(command) = std::env::var_os("CODECALLNAVIGATOR_TEST_MAVEN") {
         support::install_wrapper(directory.path(), &std::path::PathBuf::from(command));
     }
     std::fs::write(

@@ -24,14 +24,14 @@ struct Reports {
 
 /// Neither a compositor nor clocks/log files are installed for ordinary launches.
 pub fn attach(app: App<State>) -> anyhow::Result<App<State>> {
-    let Some(directory) = std::env::var_os("CODEGRAPH_PAN_PROFILE") else {
+    let Some(directory) = std::env::var_os("CODECALLNAVIGATOR_PAN_PROFILE") else {
         return Ok(app);
     };
     anyhow::ensure!(
         !rune::tooling::is_headless()
             && std::env::args().any(|arg| arg == "--native")
             && std::env::args().any(|arg| arg == "--trace"),
-        "CODEGRAPH_PAN_PROFILE requires --native --trace; headless frames cannot verify FPS"
+        "CODECALLNAVIGATOR_PAN_PROFILE requires --native --trace; headless frames cannot verify FPS"
     );
     let directory = PathBuf::from(directory);
     std::fs::create_dir_all(&directory)?;
@@ -96,16 +96,16 @@ impl Compositor<State> for Probe {
         self.driver.sample(frame.rt);
         frame
             .rt
-            .trace_channel("codegraph.sample", "level", index as f32);
+            .trace_channel("codecallnavigator.sample", "level", index as f32);
         frame
             .rt
-            .trace_channel("codegraph.update_ms", "level", frame.update_ms as f32);
+            .trace_channel("codecallnavigator.update_ms", "level", frame.update_ms as f32);
         frame
             .rt
-            .trace_channel("codegraph.target.width", "level", frame.size.0 as f32);
+            .trace_channel("codecallnavigator.target.width", "level", frame.size.0 as f32);
         frame
             .rt
-            .trace_channel("codegraph.target.height", "level", frame.size.1 as f32);
+            .trace_channel("codecallnavigator.target.height", "level", frame.size.1 as f32);
         self.gpu.draw(frame, index);
         // Input queued here reaches the next Runtime::frame through the same handlers as a mouse.
         self.driver.next(frame.rt);

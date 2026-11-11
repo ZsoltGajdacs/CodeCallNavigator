@@ -17,7 +17,7 @@ with the saved workspace; the active tab participates in navigation history.
 
 ## Native configuration
 
-Commit `.codegraph/layers.yml` at the selected repository root. Configuration edits
+Commit `.codecallnavigator/layers.yml` at the selected repository root. Configuration edits
 are detected in the background and applied to the cached compiler facts without
 compiling the repository again. Invalid edits keep the last valid classification
 and display an error. Choose Repository configuration after adding a native file
@@ -98,7 +98,7 @@ graph; standalone configuration/resource files do not become new graph nodes.
 
 ## Import from Interactive Review
 
-If `.codegraph/layers.yml` is missing and the selected repository contains
+If `.codecallnavigator/layers.yml` is missing and the selected repository contains
 `.interactive-review/layers.yml`, Repository configuration automatically converts
 and saves it once. An existing native file always wins, including an invalid one;
 fix it explicitly instead of expecting a fallback. Import does not overwrite a
@@ -139,5 +139,5 @@ when analyzing a repository elsewhere. `--layers` accepts `none`, `spring`, `rea
 or `repository`.
 
 ```sh
-cargo run --bin codegraph -- analyze --layers spring --layer-root /path/to/repo /path/to/repo/pom.xml
+cargo run --bin codecallnavigator -- analyze --layers spring --layer-root /path/to/repo /path/to/repo/pom.xml
 ```

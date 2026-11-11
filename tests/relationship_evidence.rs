@@ -1,4 +1,4 @@
-use codegraph::{
+use codecallnavigator::{
     artifact::{canonical, compare},
     flow::SourceSpan,
     method_policy,

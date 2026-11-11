@@ -1,7 +1,7 @@
 //! Real build-tool coverage for duplicate definitions and caller compile contexts.
 #[path = "support/java.rs"]
 mod support;
-use codegraph::{
+use codecallnavigator::{
     fingerprint,
     model::{GraphData, Node},
     store::SqliteStore,
@@ -139,7 +139,7 @@ fn duplicate_fixture(gradle: bool) -> tempfile::TempDir {
             fixture.path(),
             &Path::new(env!("CARGO_MANIFEST_DIR")).join("fixtures/gradle/gradlew"),
         );
-    } else if let Some(command) = std::env::var_os("CODEGRAPH_TEST_MAVEN") {
+    } else if let Some(command) = std::env::var_os("CODECALLNAVIGATOR_TEST_MAVEN") {
         install_wrapper(fixture.path(), &PathBuf::from(command));
     }
     fixture
@@ -198,7 +198,7 @@ fn duplicates_acceptance(gradle: bool) {
 }
 
 fn external_archive(root: &Path) -> PathBuf {
-    let java = codegraph_engine::analyzers::AnalyzerRuntime::discover()
+    let java = codecallnavigator_engine::analyzers::AnalyzerRuntime::discover()
         .unwrap()
         .java_home
         .unwrap();
@@ -295,10 +295,10 @@ fn gradle_duplicate_classes_preserve_compile_contexts_and_classpath_precedence()
 }
 
 #[test]
-#[ignore = "requires CODEGRAPH_RECURRING_BILLING, private Maven dependencies and JDK 25"]
+#[ignore = "requires CODECALLNAVIGATOR_RECURRING_BILLING, private Maven dependencies and JDK 25"]
 fn recurring_billing_retains_duplicate_generated_declarations() {
     let root = PathBuf::from(
-        std::env::var_os("CODEGRAPH_RECURRING_BILLING").expect("Set CODEGRAPH_RECURRING_BILLING"),
+        std::env::var_os("CODECALLNAVIGATOR_RECURRING_BILLING").expect("Set CODECALLNAVIGATOR_RECURRING_BILLING"),
     );
     let graph = run(vec![target(&root, "maven")]).unwrap();
     graph.validate().unwrap();
@@ -318,7 +318,7 @@ fn recurring_billing_retains_duplicate_generated_declarations() {
     for module in ["recurring-billing-impl", "recurring-billing-test-utils"] {
         assert_recurring_generated(&graph, module);
     }
-    if let Some(path) = std::env::var_os("CODEGRAPH_GRAPH_EVIDENCE") {
+    if let Some(path) = std::env::var_os("CODECALLNAVIGATOR_GRAPH_EVIDENCE") {
         fs::write(path, serde_json::to_vec(&graph).unwrap()).unwrap();
     }
     eprintln!(

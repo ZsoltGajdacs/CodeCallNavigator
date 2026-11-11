@@ -1,12 +1,12 @@
 //! Real javac/bytecode binding acceptance for detached function source flow.
 #[path = "support/java.rs"]
 mod support;
-use codegraph::{flow, model::GraphData, store::SqliteStore};
+use codecallnavigator::{flow, model::GraphData, store::SqliteStore};
 use std::{collections::HashSet, fs, sync::atomic::AtomicBool};
 
 fn fixture(source: &str, reactor: bool) -> tempfile::TempDir {
     let directory = support::fixture("maven");
-    if let Some(command) = std::env::var_os("CODEGRAPH_TEST_MAVEN") {
+    if let Some(command) = std::env::var_os("CODECALLNAVIGATOR_TEST_MAVEN") {
         support::install_wrapper(directory.path(), &std::path::PathBuf::from(command));
     }
     fs::write(
@@ -174,7 +174,7 @@ fn assert_reactor_execution(
             })
             .map(|entry| std::path::PathBuf::from(&entry.path)),
     );
-    let runtime = codegraph_engine::analyzers::AnalyzerRuntime::discover().unwrap();
+    let runtime = codecallnavigator_engine::analyzers::AnalyzerRuntime::discover().unwrap();
     let output = std::process::Command::new(runtime.java_home.unwrap().join("bin/java"))
         .arg("-cp")
         .arg(std::env::join_paths(classpath).unwrap())
@@ -303,7 +303,7 @@ fn actual_java_completion_and_resource_traces_exist_in_the_source_chart() {
         false,
     );
     let graph = run(&directory);
-    let runtime = codegraph_engine::analyzers::AnalyzerRuntime::discover().unwrap();
+    let runtime = codecallnavigator_engine::analyzers::AnalyzerRuntime::discover().unwrap();
     let java = runtime.java_home.unwrap().join("bin/java");
     for mode in 0..8 {
         let output = std::process::Command::new(&java)

@@ -30,7 +30,7 @@ fn clearing_blocks_analysis_even_when_called_directly() {
     let mut runtime = cache_runtime(project.path());
     let state = &mut runtime.state;
     state.store = Some(Arc::new(
-        codegraph::store::SqliteStore::open(project.path()).unwrap(),
+        codecallnavigator::store::SqliteStore::open(project.path()).unwrap(),
     ));
     state.targets.push(crate::app::TargetChoice {
         selected: true,
@@ -59,7 +59,7 @@ fn clearing_blocks_analysis_even_when_called_directly() {
 #[ignore = "requires built standalone engine"]
 fn clear_cache_button_uses_real_engine_preserves_graph_and_allows_retry() {
     let project = tempfile::tempdir().unwrap();
-    let cache_dir = project.path().join(".codegraph");
+    let cache_dir = project.path().join(".codecallnavigator");
     std::fs::create_dir(&cache_dir).unwrap();
     let cache = cache_dir.join("inference.sqlite3");
     std::fs::write(&cache, b"disposable cache").unwrap();
@@ -81,7 +81,7 @@ fn clear_cache_button_uses_real_engine_preserves_graph_and_allows_retry() {
     );
     assert!(runtime.state.can_clear_cache());
 
-    let lock = codegraph::artifact::AnalysisLock::acquire(project.path()).unwrap();
+    let lock = codecallnavigator::artifact::AnalysisLock::acquire(project.path()).unwrap();
     click(&mut runtime, "clear-cache");
     wait_for(&mut runtime, |state| !state.clearing_cache);
     assert!(runtime.state.warning.contains("Another analysis"));

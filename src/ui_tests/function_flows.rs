@@ -82,7 +82,7 @@ fn http_boundary_target_is_explicitly_labelled_in_flow_details() {
         state.close_flow();
         let mut graph = flow_scenes::data();
         for function in &mut graph.flow_inventory.as_mut().unwrap().functions {
-            codegraph::flow::visit_calls_mut(function, &mut |call| {
+            codecallnavigator::flow::visit_calls_mut(function, &mut |call| {
                 for target in &mut call.targets {
                     target.kind = "http".into();
                     target.certainty = "possible".into();
@@ -90,7 +90,7 @@ fn http_boundary_target_is_explicitly_labelled_in_flow_details() {
             });
         }
         state.graph = Some(std::sync::Arc::new(
-            codegraph::graph::GraphIndex::new(std::sync::Arc::new(graph)).unwrap(),
+            codecallnavigator::graph::GraphIndex::new(std::sync::Arc::new(graph)).unwrap(),
         ));
         state.flow_workspace.invalidate();
         state.open_flow("flow/load".into());
@@ -132,7 +132,7 @@ fn old_graph_opens_an_actionable_refresh_message() {
         let mut graph = flow_scenes::data();
         graph.flow_inventory = None;
         state.graph = Some(std::sync::Arc::new(
-            codegraph::graph::GraphIndex::new(std::sync::Arc::new(graph)).unwrap(),
+            codecallnavigator::graph::GraphIndex::new(std::sync::Arc::new(graph)).unwrap(),
         ));
         state.flow_workspace.invalidate();
         state.open_flow("flow/load".into());
@@ -281,7 +281,7 @@ fn previous_function_restores_the_actual_source_scroll_offset() {
     shift_spans(&mut inventory, prefix.len());
     data.flow_inventory = Some(serde_json::from_value(inventory).unwrap());
     state.graph = Some(std::sync::Arc::new(
-        codegraph::graph::GraphIndex::new(std::sync::Arc::new(data)).unwrap(),
+        codecallnavigator::graph::GraphIndex::new(std::sync::Arc::new(data)).unwrap(),
     ));
     state.open_flow("flow/load".into());
     let mut runtime = Runtime::new(state, view::view, (1420.0, 900.0), Env::new(true, 1.0));

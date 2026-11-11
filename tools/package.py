@@ -164,7 +164,7 @@ def rust_notices(destination):
         ["cargo", "metadata", "--format-version", "1", "--locked", "--offline"], cwd=ROOT))
     inventory = []
     for package in metadata["packages"]:
-        if package["name"] == "codegraph":
+        if package["name"] == "codecallnavigator":
             continue
         directory = Path(package["manifest_path"]).parent
         target = destination / f"{package['name']}-{package['version']}"
@@ -201,22 +201,22 @@ def notice_file(source):
 
 
 def copy_analyzers(resources):
-    verify_java_adapter(ROOT / "tools/java-bytecode/build/install/codegraph-bytecode")
+    verify_java_adapter(ROOT / "tools/java-bytecode/build/install/codecallnavigator-bytecode")
     analyzers = resources / "analyzers"
     analyzers.mkdir()
     copy_tree(ROOT / "vendor/callatlas/src/CallAtlas.Cli/bin/Release/net10.0", analyzers / "callatlas")
-    copy_tree(ROOT / "tools/java-bytecode/build/install/codegraph-bytecode", analyzers / "java-bytecode")
+    copy_tree(ROOT / "tools/java-bytecode/build/install/codecallnavigator-bytecode", analyzers / "java-bytecode")
     copy_tree(ROOT / "tools/typescript", analyzers / "typescript")
     shutil.copy2(ROOT / "tools/gradle-metadata.gradle", analyzers)
-    shutil.copy2(ROOT / "tools/maven-metadata/build/libs/codegraph-maven-metadata.jar",
+    shutil.copy2(ROOT / "tools/maven-metadata/build/libs/codecallnavigator-maven-metadata.jar",
                  analyzers / "maven-metadata.jar")
     shutil.copy2(ROOT / "analyzers.lock.json", resources)
     return analyzers
 
 
 def verify_java_adapter(distribution):
-    jar = distribution / "lib/codegraph-bytecode.jar"
-    package = "codegraph/bytecode/"
+    jar = distribution / "lib/codecallnavigator-bytecode.jar"
+    package = "codecallnavigator/bytecode/"
     required = {package + name + ".class" for name in
                 ("SourceInventory", "LambdaCorrelation", "LambdaCompilation",
                  "LambdaLowering", "LambdaSourceSite", "CompiledClassModel")}
@@ -235,7 +235,7 @@ def make_engine(destination):
     resources = destination / "Resources"
     binary.mkdir(parents=True)
     resources.mkdir()
-    shutil.copy2(ROOT / "target/release/codegraph-engine", binary)
+    shutil.copy2(ROOT / "target/release/codecallnavigator-engine", binary)
     copy_analyzers(resources)
     dependency_notices(resources)
 
@@ -245,14 +245,14 @@ def make_app(app):
     resources = contents / "Resources"
     (contents / "MacOS").mkdir(parents=True)
     resources.mkdir()
-    shutil.copy2(ROOT / "target/release/codegraph", contents / "MacOS/CodeGraph")
-    shutil.copy2(ROOT / "target/release/codegraph-engine", contents / "MacOS/codegraph-engine")
+    shutil.copy2(ROOT / "target/release/codecallnavigator", contents / "MacOS/CodeCallNavigator")
+    shutil.copy2(ROOT / "target/release/codecallnavigator-engine", contents / "MacOS/codecallnavigator-engine")
     analyzers = copy_analyzers(resources)
     graphviz_prefix = bundle_graphviz(analyzers / "graphviz")
     dependency_notices(resources, graphviz_prefix)
     with (contents / "Info.plist").open("wb") as stream:
-        plistlib.dump({"CFBundleIdentifier": "dev.codegraph.app", "CFBundleName": "CodeGraph",
-            "CFBundleExecutable": "CodeGraph", "CFBundlePackageType": "APPL",
+        plistlib.dump({"CFBundleIdentifier": "dev.codecallnavigator.app", "CFBundleName": "CodeCallNavigator",
+            "CFBundleExecutable": "CodeCallNavigator", "CFBundlePackageType": "APPL",
             "CFBundleShortVersionString": "0.1.0", "CFBundleVersion": "1",
             "NSHighResolutionCapable": True, "LSMinimumSystemVersion": "27.0"}, stream)
     run("/usr/bin/codesign", "--force", "--deep", "--sign", "-", app)
@@ -266,27 +266,27 @@ def main():
     if platform.system() != "Darwin" or platform.machine() != "arm64":
         raise SystemExit("This package targets local Apple Silicon macOS")
     verify_dependency_sources()
-    run("cargo", "build", "--release", "--locked", "-p", "codegraph-engine", "--bin", "codegraph-engine", cwd=ROOT)
+    run("cargo", "build", "--release", "--locked", "-p", "codecallnavigator-engine", "--bin", "codecallnavigator-engine", cwd=ROOT)
     output = ROOT / "dist"
     output.mkdir(exist_ok=True)
-    with tempfile.TemporaryDirectory(prefix="codegraph-engine-package-", dir=output) as temporary:
-        engine = Path(temporary) / "CodeGraphEngine"
+    with tempfile.TemporaryDirectory(prefix="codecallnavigator-engine-package-", dir=output) as temporary:
+        engine = Path(temporary) / "CodeCallNavigatorEngine"
         make_engine(engine)
-        destination = output / "CodeGraphEngine"
+        destination = output / "CodeCallNavigatorEngine"
         if destination.exists():
             shutil.rmtree(destination)
         engine.rename(destination)
     if args.engine_only:
         return
-    run("cargo", "build", "--release", "--locked", "--bin", "codegraph", cwd=ROOT)
-    with tempfile.TemporaryDirectory(prefix="codegraph-package-", dir=output) as temporary:
-        app = Path(temporary) / "CodeGraph.app"
+    run("cargo", "build", "--release", "--locked", "--bin", "codecallnavigator", cwd=ROOT)
+    with tempfile.TemporaryDirectory(prefix="codecallnavigator-package-", dir=output) as temporary:
+        app = Path(temporary) / "CodeCallNavigator.app"
         make_app(app)
-        destination = output / "CodeGraph.app"
+        destination = output / "CodeCallNavigator.app"
         if destination.exists():
-            destination.rename(output / time.strftime("CodeGraph.previous-%Y%m%d-%H%M%S.app"))
+            destination.rename(output / time.strftime("CodeCallNavigator.previous-%Y%m%d-%H%M%S.app"))
         app.rename(destination)
-    run("/usr/bin/ditto", "-c", "-k", "--sequesterRsrc", "--keepParent", destination, output / "CodeGraph.zip")
+    run("/usr/bin/ditto", "-c", "-k", "--sequesterRsrc", "--keepParent", destination, output / "CodeCallNavigator.zip")
     print(destination)
 
 

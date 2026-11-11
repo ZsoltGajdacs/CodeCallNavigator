@@ -8,7 +8,7 @@ const cp=require('node:child_process');
 
 function analyze(root,literal) {
   fs.mkdirSync(root,{recursive:true});
-  fs.symlinkSync(process.env.CODEGRAPH_TS_NODE_MODULES||path.resolve(__dirname,'../../../PacificFateMapEditor/node_modules'),path.join(root,'node_modules'),'dir');
+  fs.symlinkSync(process.env.CODECALLNAVIGATOR_TS_NODE_MODULES||path.resolve(__dirname,'../../../PacificFateMapEditor/node_modules'),path.join(root,'node_modules'),'dir');
   fs.writeFileSync(path.join(root,'tsconfig.json'),JSON.stringify({compilerOptions:{target:'ES2023',module:'esnext',moduleResolution:'bundler',types:[]},include:['*.ts']}));
   fs.writeFileSync(path.join(root,'app.ts'),`export function f(value: ${JSON.stringify(literal)}) {return value}
     export function make(){return import('./other')}`);
@@ -23,7 +23,7 @@ function callable(graph,name) {
   return {signature:node.signature,semantic:graph.export_identities[node.id]};
 }
 test('contextual compiler signatures keep import types relative and source literal types unchanged',t=>{
-  const root=fs.mkdtempSync(path.join(os.tmpdir(),'codegraph-signature-'));
+  const root=fs.mkdtempSync(path.join(os.tmpdir(),'codecallnavigator-signature-'));
   t.after(()=>fs.rmSync(root,{recursive:true,force:true}));
   const literal=path.join(fs.realpathSync(root),'first','literal');
   const first=analyze(path.join(root,'first'),literal);

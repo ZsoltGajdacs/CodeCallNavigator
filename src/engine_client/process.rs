@@ -1,7 +1,7 @@
 //! Own the engine process, its pipes and cancellation for one request.
 use crate::runtime::Runtime;
 use anyhow::{Context, Result, bail, ensure};
-use codegraph::protocol::{Event, Request, VERSION};
+use codecallnavigator::protocol::{Event, Request, VERSION};
 use std::{
     io::{BufRead, BufReader, Write},
     os::unix::process::CommandExt,
@@ -28,7 +28,7 @@ impl Session {
         let log = tempfile::NamedTempFile::new()?;
         let mut child = Command::new(&runtime.engine)
             .arg("serve-once")
-            .env("CODEGRAPH_RESOURCES", &runtime.resources)
+            .env("CODECALLNAVIGATOR_RESOURCES", &runtime.resources)
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .stderr(Stdio::from(log.reopen()?))

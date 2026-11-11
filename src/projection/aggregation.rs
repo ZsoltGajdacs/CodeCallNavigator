@@ -8,7 +8,7 @@ use super::{
     groups::{Group, groups, relative_file},
     labels, layers, ordering,
 };
-use codegraph::{graph::GraphIndex, model::Node};
+use codecallnavigator::{graph::GraphIndex, model::Node};
 use std::collections::{BTreeMap, HashMap, HashSet};
 
 fn group_node(node: &Node, request: &Request, group: Group) -> ViewNode {
@@ -342,7 +342,7 @@ fn select_page(
 #[cfg(test)]
 mod file_tests {
     use super::*;
-    use codegraph::{graph::Filter, model::GraphData};
+    use codecallnavigator::{graph::Filter, model::GraphData};
     use std::sync::Arc;
 
     #[test]

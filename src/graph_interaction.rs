@@ -123,8 +123,8 @@ impl State {
         self.apply_visible_action(identity, Some(member), action);
     }
 
-    pub(crate) fn reveal_search_target(&mut self, target: codegraph::search::SearchTarget) {
-        use codegraph::search::SearchTarget;
+    pub(crate) fn reveal_search_target(&mut self, target: codecallnavigator::search::SearchTarget) {
+        use codecallnavigator::search::SearchTarget;
         match target {
             SearchTarget::Method { identity, .. } => {
                 if let Some(member) = self.graph.as_ref().and_then(|g| g.node_index(&identity)) {

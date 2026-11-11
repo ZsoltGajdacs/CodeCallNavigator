@@ -1,6 +1,6 @@
 //! Layer visibility and presentation order, without changing the analyzed graph.
 use super::{GraphView, Grouping, LayerBand, NodeOrder, Request, Scope, Selection, ViewNode};
-use codegraph::{architecture::file_key, graph::GraphIndex, model::Node};
+use codecallnavigator::{architecture::file_key, graph::GraphIndex, model::Node};
 use std::collections::{HashMap, HashSet};
 
 pub(super) fn active(request: &Request) -> bool {

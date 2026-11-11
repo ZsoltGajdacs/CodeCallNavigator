@@ -33,7 +33,7 @@ impl Fixture {
         )
         .unwrap();
         fs::write(external.join("shared.ts"), "type Listener=()=>number;const callbacks=new Set<Listener>();export function subscribe(cb:Listener){callbacks.add(cb)}export function notify(){for(const cb of callbacks)cb()}export function redraw(){return 1}subscribe(redraw);").unwrap();
-        let modules = std::env::var_os("CODEGRAPH_TS_NODE_MODULES")
+        let modules = std::env::var_os("CODECALLNAVIGATOR_TS_NODE_MODULES")
             .map(PathBuf::from)
             .unwrap_or_else(|| {
                 Path::new(env!("CARGO_MANIFEST_DIR")).join("../PacificFateMapEditor/node_modules")
@@ -77,10 +77,10 @@ impl Fixture {
             serde_json::to_vec(&config).unwrap(),
         )
         .unwrap();
-        let engine = std::env::var_os("CODEGRAPH_TEST_ENGINE")
+        let engine = std::env::var_os("CODECALLNAVIGATOR_TEST_ENGINE")
             .map(PathBuf::from)
             .unwrap_or_else(|| {
-                Path::new(env!("CARGO_MANIFEST_DIR")).join("target/debug/codegraph-engine")
+                Path::new(env!("CARGO_MANIFEST_DIR")).join("target/debug/codecallnavigator-engine")
             });
         let result = Command::new(engine)
             .args(["analyze", "--project"])
@@ -95,7 +95,7 @@ impl Fixture {
             "{}",
             String::from_utf8_lossy(&result.stderr)
         );
-        fs::read(self.project.join(".codegraph/graph.json")).unwrap()
+        fs::read(self.project.join(".codecallnavigator/graph.json")).unwrap()
     }
 }
 
@@ -135,7 +135,7 @@ fn compiler_source_aliases_match_canonical_spelling_with_named_roots() {
             .as_array()
             .unwrap()
             .iter()
-            .filter(|edge| edge["provenance"] == "codegraph.boundary.v1")
+            .filter(|edge| edge["provenance"] == "codecallnavigator.boundary.v1")
             .count(),
         2
     );
@@ -144,6 +144,6 @@ fn compiler_source_aliases_match_canonical_spelling_with_named_roots() {
             .as_array()
             .unwrap()
             .iter()
-            .any(|edge| edge["provenance"] == "codegraph.observer.v1")
+            .any(|edge| edge["provenance"] == "codecallnavigator.observer.v1")
     );
 }

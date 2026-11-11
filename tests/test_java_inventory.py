@@ -19,7 +19,7 @@ class JavaInventoryTests(unittest.TestCase):
         require_analyzer()
 
     def setUp(self):
-        temporary = tempfile.TemporaryDirectory(prefix="CodeGraph inventory ")
+        temporary = tempfile.TemporaryDirectory(prefix="CodeCallNavigator inventory ")
         self.addCleanup(temporary.cleanup)
         self.root = Path(temporary.name)
 
@@ -33,7 +33,7 @@ class JavaInventoryTests(unittest.TestCase):
 
     def inventory(self, source, classes, classpath):
         return subprocess.run([str(self.java), *EXPORTS, "-cp", str(LIB / "*"),
-            "codegraph.bytecode.SourceInventory", str(self.root / "inventory.tsv"),
+            "codecallnavigator.bytecode.SourceInventory", str(self.root / "inventory.tsv"),
             os.pathsep.join(map(str, classpath)), str(classes), str(source.parents[1])],
             capture_output=True, text=True)
 
@@ -110,9 +110,9 @@ public class Flow {
         self.assertTrue(body[1]["finally"])
 
     def resolve(self, classpath, qualified_name):
-        source = self.root / "probe/codegraph/bytecode/Resolve.java"
+        source = self.root / "probe/codecallnavigator/bytecode/Resolve.java"
         source.parent.mkdir(parents=True, exist_ok=True)
-        source.write_text("""package codegraph.bytecode;
+        source.write_text("""package codecallnavigator.bytecode;
 import javax.tools.ToolProvider;
 public class Resolve {
     public static void main(String[] args) throws Exception {
@@ -125,7 +125,7 @@ public class Resolve {
         classes = self.root / "probe/classes"
         run(self.javac, "-cp", LIB / "*", "-d", classes, source)
         return subprocess.run([str(self.java), "-cp", os.pathsep.join([str(classes), str(LIB / "*")]),
-            "codegraph.bytecode.Resolve", os.pathsep.join(map(str, classpath)), qualified_name],
+            "codecallnavigator.bytecode.Resolve", os.pathsep.join(map(str, classpath)), qualified_name],
             capture_output=True, text=True)
 
     def test_compiled_lookup_respects_first_classpath_definition(self):

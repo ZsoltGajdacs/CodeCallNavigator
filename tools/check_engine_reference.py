@@ -22,7 +22,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 def copy_fixture(source, target):
     shutil.copytree(source, target, ignore=shutil.ignore_patterns(
-        'target', 'build', 'bin', 'obj', '.gradle', 'node_modules', '.codegraph'))
+        'target', 'build', 'bin', 'obj', '.gradle', 'node_modules', '.codecallnavigator'))
 
 
 def prepare(workload, directory):
@@ -32,7 +32,7 @@ def prepare(workload, directory):
             '#!/bin/sh\nexec ' + shlex.quote(str(ROOT / wrapper)) + ' "$@"\n')
         (directory / 'gradlew').chmod(0o755)
     if workload.get('dependencies'):
-        modules = Path(os.environ.get('CODEGRAPH_TS_NODE_MODULES',
+        modules = Path(os.environ.get('CODECALLNAVIGATOR_TS_NODE_MODULES',
                        ROOT.parent / 'PacificFateMapEditor/node_modules')).resolve()
         (directory / 'node_modules').symlink_to(modules, target_is_directory=True)
     return [str((directory / target).resolve()) for target in workload['targets']]
@@ -61,7 +61,7 @@ def from_native(graph):
 
 def reference(executable, targets, cache):
     subprocess.run([str(executable), 'analyze', *targets], check=True,
-                   env={**os.environ, 'CODEGRAPH_DATA_DIR': str(cache)},
+                   env={**os.environ, 'CODECALLNAVIGATOR_DATA_DIR': str(cache)},
                    stdout=subprocess.DEVNULL)
     snapshot = graph_snapshot(cache)
     snapshot.pop('method_policy')
@@ -124,7 +124,7 @@ def main():
                 if not args.workload or item['name'] in args.workload]
     required = {name for item in selected
                 for name in item.get('components', [item['name']])}
-    with tempfile.TemporaryDirectory(prefix='codegraph-reference-') as temporary:
+    with tempfile.TemporaryDirectory(prefix='codecallnavigator-reference-') as temporary:
         root = Path(temporary)
         targets = {item['name']: prepare(item, root / item['name'])
                    for item in corpus['workloads'] if item['name'] in required}

@@ -5,7 +5,7 @@ use crate::{
     flow_workspace::{Ready, Session},
     theme,
 };
-use codegraph::flow::FlowStep;
+use codecallnavigator::flow::FlowStep;
 use rune::{Cx, El, GrowthSpec, Phase, Shape, canvas, col, el, row, text};
 use rune_kit::{Button, ButtonVariant, Kit};
 

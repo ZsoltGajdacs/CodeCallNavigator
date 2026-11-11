@@ -3,7 +3,7 @@ use crate::{
     app::{RESULT_PAGE_SIZE, State},
     search_shortcut::DoubleShift,
 };
-use codegraph::{
+use codecallnavigator::{
     graph::GraphIndex,
     search::{NameSearchIndex, NameSearchQuery, SearchCategory, SearchHit, SearchPage},
 };

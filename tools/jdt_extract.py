@@ -149,7 +149,7 @@ class JdtClient:
         elif method in EMPTY_CLIENT_RESPONSES:
             result = None
         elif method == "workspace/applyEdit":
-            result = {"applied": False, "failureReason": "CodeGraph does not edit project source"}
+            result = {"applied": False, "failureReason": "CodeCallNavigator does not edit project source"}
         else:
             self.send({"id": message["id"], "error": {"code": -32601,
                        "message": f"Unsupported client request: {method}"}})
@@ -238,7 +238,7 @@ class JdtClient:
             "initializationOptions": {"settings": self.settings,
                                       "extendedClientCapabilities": {
                                           "progressReportProvider": True}},
-            "clientInfo": {"name": "CodeGraph analyzer acceptance", "version": "0.1.0"},
+            "clientInfo": {"name": "CodeCallNavigator analyzer acceptance", "version": "0.1.0"},
         }, timeout=180)
         if not result or not result.get("capabilities", {}).get("callHierarchyProvider"):
             raise RpcError("JDT did not advertise call hierarchy support")

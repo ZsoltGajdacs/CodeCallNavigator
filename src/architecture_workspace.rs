@@ -1,6 +1,6 @@
 //! Background configuration reload and classification, independent of rendering.
 use crate::app::State;
-use codegraph::architecture::{self, LayerAssignments, Selection};
+use codecallnavigator::architecture::{self, LayerAssignments, Selection};
 use rune::{Latest, Tx};
 use std::{path::PathBuf, sync::Arc, time::Duration};
 
@@ -111,7 +111,7 @@ fn request(state: &mut State, time: f64) {
 }
 
 fn automatic_selection(root: &std::path::Path) -> Selection {
-    if root.join(".codegraph/layers.yml").is_file()
+    if root.join(".codecallnavigator/layers.yml").is_file()
         || root.join(".interactive-review/layers.yml").is_file()
     {
         Selection::Repository
@@ -123,7 +123,7 @@ fn automatic_selection(root: &std::path::Path) -> Selection {
 fn load(
     root: &std::path::Path,
     selection: Selection,
-    graph: &codegraph::model::GraphData,
+    graph: &codecallnavigator::model::GraphData,
     previous: &str,
 ) -> anyhow::Result<(String, Option<LayerAssignments>)> {
     if selection == Selection::None {
@@ -197,7 +197,7 @@ fn retain_tab(state: &mut State) {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use codegraph::{
+    use codecallnavigator::{
         architecture::{ArchitectureFacts, FACTS_VERSION, FileFacts, file_key},
         model::GraphData,
     };
@@ -205,8 +205,8 @@ mod tests {
     #[test]
     fn configuration_reload_reclassifies_cached_source_without_reading_source_files() {
         let directory = tempfile::tempdir().unwrap();
-        std::fs::create_dir(directory.path().join(".codegraph")).unwrap();
-        let path = directory.path().join(".codegraph/layers.yml");
+        std::fs::create_dir(directory.path().join(".codecallnavigator")).unwrap();
+        let path = directory.path().join(".codecallnavigator/layers.yml");
         let config = |name: &str| {
             format!(
                 "version: 1\nlanguages:\n  csharp:\n    layers:\n      - name: {name}\n        matchers:\n          - content: CachedController\n"

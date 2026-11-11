@@ -11,7 +11,7 @@ from check_graph_contract import ROOT, consume, validator
 class GraphContract(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.artifact = json.loads((ROOT / 'fixtures/.codegraph/graph.json').read_bytes())
+        cls.artifact = json.loads((ROOT / 'fixtures/.codecallnavigator/graph.json').read_bytes())
         cls.validator = validator()
 
     def mutated(self):
@@ -52,7 +52,7 @@ class GraphContract(unittest.TestCase):
                 with self.assertRaises(ValidationError):
                     self.validator.validate(artifact)
         artifact = self.mutated()
-        artifact['schema'] = 'codegraph.graph.v999'
+        artifact['schema'] = 'codecallnavigator.graph.v999'
         with self.assertRaises(ValidationError):
             self.validator.validate(artifact)
 

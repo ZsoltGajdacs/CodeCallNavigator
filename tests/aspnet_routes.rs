@@ -1,6 +1,6 @@
 //! Real Microsoft.AspNetCore.App controller declarations through the pinned Roslyn adapter.
-use codegraph_core::boundary::RouteFact;
-use codegraph_engine::{
+use codecallnavigator_core::boundary::RouteFact;
+use codecallnavigator_engine::{
     analyzers::{analyze, AnalyzerRuntime},
     discovery::target_from_file,
     model::GraphData,
@@ -64,7 +64,7 @@ fn real_attribute_routes_keep_scopes_and_unsupported_competitors() {
         graph
             .edges
             .iter()
-            .filter(|edge| edge.provenance == "codegraph.mediatr.v1")
+            .filter(|edge| edge.provenance == "codecallnavigator.mediatr.v1")
             .count(),
         9
     );

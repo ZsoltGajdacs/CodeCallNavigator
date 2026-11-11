@@ -4,7 +4,7 @@ use crate::{
     app::{Navigation, State},
     projection::{self, FlowDirection, Grouping},
 };
-use codegraph::{
+use codecallnavigator::{
     graph::GraphIndex,
     model::{Edge, EntryPoints, GraphData, Node},
 };

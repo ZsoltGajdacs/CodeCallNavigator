@@ -6,7 +6,7 @@ const os = require('node:os');
 const path = require('node:path');
 const {Observations} = require('./observations.js');
 function fixture(t) {
-  const root=fs.mkdtempSync(path.join(os.tmpdir(),'codegraph-observations-'));
+  const root=fs.mkdtempSync(path.join(os.tmpdir(),'codecallnavigator-observations-'));
   t.after(()=>fs.rmSync(root,{recursive:true,force:true}));
   return root;
 }

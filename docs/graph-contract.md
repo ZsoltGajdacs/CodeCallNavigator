@@ -1,15 +1,15 @@
 # Portable graph JSON contract
 
-CodeGraph publishes one canonical artifact at `.codegraph/graph.json`. External
-consumers, including CodeQualityChecker, may read it without linking CodeGraph's
+CodeCallNavigator publishes one canonical artifact at `.codecallnavigator/graph.json`. External
+consumers, including CodeQualityChecker, may read it without linking CodeCallNavigator's
 Rust crates or invoking an analyzer. The wire shape is specified in
 [graph.schema.json](graph.schema.json), using JSON Schema Draft 2020-12. The
 [engine guide](standalone-engine.md) describes production and comparison commands.
 
 ## Compatibility policy
 
-The envelope is `{ "schema": "codegraph.graph.v1", "graph": { ... } }`.
-`codegraph.graph.v1` is a major compatibility boundary, independent of the desktop
+The envelope is `{ "schema": "codecallnavigator.graph.v1", "graph": { ... } }`.
+`codecallnavigator.graph.v1` is a major compatibility boundary, independent of the desktop
 release version and the engine process protocol version. Consumers must reject
 unsupported versions explicitly. Within v1, existing field meanings, wire types,
 and identity construction stay fixed. Adding optional properties is compatible;
@@ -30,10 +30,10 @@ Legacy formatted v1 artifacts remain readable without regeneration. New
 production output is automatically compact UTF-8 JSON, with one trailing newline.
 Loading and verification do not rewrite a file; the next successful analysis
 replaces it. Digests identify exact file bytes, so whitespace changes a digest
-but does not change the graph. Use `codegraph-engine compare --project PATH
+but does not change the graph. Use `codecallnavigator-engine compare --project PATH
 --base REF --head REF|WORKTREE` for semantic comparison rather than raw line diffs.
 
-The schema validates shape and known discriminators. CodeGraph's semantic
+The schema validates shape and known discriminators. CodeCallNavigator's semantic
 validator additionally checks unique identities, reference integrity, portable
 path safety, positive relationship counts, evidence constraints, and supported
 inventory versions. JSON Schema alone cannot establish cross-reference integrity.
@@ -128,7 +128,7 @@ inputs outside recorded discovery scope are not implicitly covered.
 Run the read-only command:
 
 ```sh
-codegraph-engine verify --project /checkout --root shared=/other/checkout
+codecallnavigator-engine verify --project /checkout --root shared=/other/checkout
 ```
 
 The command reads the saved artifact and checks its recorded inputs without
@@ -159,11 +159,11 @@ diagnostics without hydrating Rust models. It accepts retained compiler fixtures
 and fresh output:
 
 ```sh
-python3.13 -m venv /tmp/codegraph-schema-check
-/tmp/codegraph-schema-check/bin/pip install 'jsonschema>=4.18,<5'
-/tmp/codegraph-schema-check/bin/python -m unittest discover -s tools -p test_graph_contract.py
-/tmp/codegraph-schema-check/bin/python tools/check_graph_contract.py fixtures/.codegraph/graph.json /checkout/.codegraph/graph.json
+python3.13 -m venv /tmp/codecallnavigator-schema-check
+/tmp/codecallnavigator-schema-check/bin/pip install 'jsonschema>=4.18,<5'
+/tmp/codecallnavigator-schema-check/bin/python -m unittest discover -s tools -p test_graph_contract.py
+/tmp/codecallnavigator-schema-check/bin/python tools/check_graph_contract.py fixtures/.codecallnavigator/graph.json /checkout/.codecallnavigator/graph.json
 ```
 
-`jsonschema` is a test-only dependency. These checks complement CodeGraph's
+`jsonschema` is a test-only dependency. These checks complement CodeCallNavigator's
 semantic, compiler-fixture, relocation, cancellation, and publication tests.

@@ -45,11 +45,11 @@ reconstructed. Counts for unresolved bindings remain in graph diagnostics.
 Run the real-compiler fixture suite with:
 
 ```sh
-CODEGRAPH_TEST_TYPESCRIPT_ROOT=/path/to/node_modules/typescript node --test tools/typescript/*.test.js
+CODECALLNAVIGATOR_TEST_TYPESCRIPT_ROOT=/path/to/node_modules/typescript node --test tools/typescript/*.test.js
 ```
 
 The fixture suite uses the installed TypeScript, React types and Next.js package;
-`CODEGRAPH_TS_NODE_MODULES` can alternatively select the modules directory;
+`CODECALLNAVIGATOR_TS_NODE_MODULES` can alternatively select the modules directory;
 when neither variable is present it uses the sibling PacificFateMapEditor installation.
 Tests create temporary projects and link those dependencies without modifying them.
 
@@ -110,7 +110,7 @@ because the abstract value does not distinguish null from undefined. Omitted
 defaults and proven non-nullish arguments remain supported. Existing compiler-bound
 calls retain their old behavior.
 Graph and flow use the same invocation descriptors, with possible certainty,
-`codegraph.callable.v1` provenance and source-backed rule evidence. Callable flow
+`codecallnavigator.callable.v1` provenance and source-backed rule evidence. Callable flow
 does not replace observer targets or convert argument references into invocations.
 
 `boundary.js` exports versioned route/use facts for the shared boundary resolver.

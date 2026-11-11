@@ -1,1 +1,1 @@
-rootProject.name = "codegraph-maven-metadata"
+rootProject.name = "codecallnavigator-maven-metadata"

@@ -1,12 +1,12 @@
-use codegraph::model::{relationship_is_reference, relationship_is_uncertain};
+use codecallnavigator::model::{relationship_is_reference, relationship_is_uncertain};
 
 #[test]
 fn virtual_calls_are_visible_when_other_uncertain_targets_are_hidden() {
-    let filter = codegraph::graph::Filter {
+    let filter = codecallnavigator::graph::Filter {
         include_uncertain: false,
         ..Default::default()
     };
-    let edge = codegraph::model::Edge {
+    let edge = codecallnavigator::model::Edge {
         evidence: Vec::new(),
         from: 0,
         to: 1,
@@ -20,7 +20,7 @@ fn virtual_calls_are_visible_when_other_uncertain_targets_are_hidden() {
 
 #[test]
 fn virtual_and_other_uncertain_calls_have_independent_filters() {
-    use codegraph::{graph::Filter, model::Edge};
+    use codecallnavigator::{graph::Filter, model::Edge};
     for virtual_calls in [false, true] {
         for uncertain in [false, true] {
             let filter = Filter {
@@ -67,7 +67,7 @@ fn virtual_and_other_uncertain_calls_have_independent_filters() {
 
 #[test]
 fn old_saved_filters_enable_virtual_calls_and_explicit_false_round_trips() {
-    use codegraph::graph::Filter;
+    use codecallnavigator::graph::Filter;
     let old = serde_json::json!({
         "include_tests": false,
         "include_generated": false,

@@ -1,6 +1,6 @@
 //! Search presentation only; lifecycle and matching have separate owners.
 use crate::{app::State, search::Results};
-use codegraph::search::SearchCategory;
+use codecallnavigator::search::SearchCategory;
 use rune::{El, col, el, row, text};
 use rune_kit::{Button, ButtonVariant, IconButton, IconButtonVariant, Kit, TextInput};
 
@@ -160,7 +160,7 @@ fn status(state: &State) -> Option<&str> {
     }
 }
 
-fn result_row(hit: &codegraph::search::SearchHit, index: usize, selected: bool, k: &Kit) -> El {
+fn result_row(hit: &codecallnavigator::search::SearchHit, index: usize, selected: bool, k: &Kit) -> El {
     let label = format!("{} · {}", hit.kind_label(), hit.name);
 
     col()

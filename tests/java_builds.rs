@@ -1,7 +1,7 @@
 //! Real build-tool acceptance checks.
 #[path = "support/java.rs"]
 mod support;
-use codegraph_engine::{
+use codecallnavigator_engine::{
     analyzers::{AnalyzerRuntime, analyze},
     fingerprint,
     model::{GraphData, Node},
@@ -113,7 +113,7 @@ fn gradle_refactoring_preserves_module_graph_and_classification() {
 
 fn maven_fixture() -> tempfile::TempDir {
     let fixture = fixture("maven");
-    if let Some(command) = std::env::var_os("CODEGRAPH_TEST_MAVEN") {
+    if let Some(command) = std::env::var_os("CODECALLNAVIGATOR_TEST_MAVEN") {
         install_wrapper(fixture.path(), &PathBuf::from(command));
     }
     fixture

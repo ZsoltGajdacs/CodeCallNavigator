@@ -94,7 +94,7 @@ fn long_build_paths_scroll_horizontally() {
 
 #[test]
 fn selected_relationship_shows_rule_source_construct_and_supporting_symbol() {
-    use codegraph::{
+    use codecallnavigator::{
         flow::SourceSpan,
         graph::GraphIndex,
         model::{RelationshipEvidence, SourceSite},
@@ -107,7 +107,7 @@ fn selected_relationship_shows_rule_source_construct_and_supporting_symbol() {
     let supporting = data.nodes[edge.to as usize].id.clone();
     let signature = data.nodes[edge.to as usize].signature.clone();
     edge.evidence = vec![RelationshipEvidence {
-        rule: "codegraph.react.v1:react-event".into(),
+        rule: "codecallnavigator.react.v1:react-event".into(),
         version: 1,
         semantics: "reference".into(),
         invocation: SourceSite {
@@ -137,7 +137,7 @@ fn selected_relationship_shows_rule_source_construct_and_supporting_symbol() {
     settle(&mut runtime);
     let elements = runtime.elements();
     for label in [
-        "Rule: codegraph.react.v1:react-event · v1".to_string(),
+        "Rule: codecallnavigator.react.v1:react-event · v1".to_string(),
         "Semantics: reference".into(),
         "Evidence site: /fixture/Page.tsx:12:8 · bytes 40..50".into(),
         "Registration: /fixture/Page.tsx:12".into(),
@@ -555,7 +555,7 @@ fn a_search_result_reveals_a_method_hidden_by_graph_filters() {
     runtime.update(|s, _| {
         s.open_search();
         s.search.input = rune::TextEdit::new("OrderTest");
-        s.set_search_category(codegraph::search::SearchCategory::Methods);
+        s.set_search_category(codecallnavigator::search::SearchCategory::Methods);
         s.request_search();
     });
     super::wait_for(&mut runtime, |state| !state.search.hits().is_empty());
@@ -654,7 +654,7 @@ fn drawer_fields_and_long_inspector_signatures_stay_inside_their_panes() {
         let mut data = state.graph.as_ref().unwrap().data.as_ref().clone();
         data.nodes[0].signature = signature.clone();
         state.graph = Some(std::sync::Arc::new(
-            codegraph::graph::GraphIndex::new(std::sync::Arc::new(data)).unwrap(),
+            codecallnavigator::graph::GraphIndex::new(std::sync::Arc::new(data)).unwrap(),
         ));
         state.select_method(0, crate::graph_interaction::SelectionAction::Inspect);
     });
@@ -692,7 +692,7 @@ fn system_appearance_switch_rethemes_the_live_workspace_without_losing_search() 
         runtime
             .elements()
             .iter()
-            .any(|e| e.text.as_deref() == Some("CodeGraph") && e.visible[2] > 10.0)
+            .any(|e| e.text.as_deref() == Some("CodeCallNavigator") && e.visible[2] > 10.0)
     );
 }
 

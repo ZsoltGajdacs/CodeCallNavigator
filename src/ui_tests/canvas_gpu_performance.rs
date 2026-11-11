@@ -2,11 +2,11 @@
 use crate::{app, canvas_fixture, jobs, view};
 
 #[test]
-#[ignore = "release GPU throughput benchmark; requires Metal access and an explicit copied CODEGRAPH_DATA_DIR"]
+#[ignore = "release GPU throughput benchmark; requires Metal access and an explicit copied CODECALLNAVIGATOR_DATA_DIR"]
 fn canvas_gpu_frame_completion() -> anyhow::Result<()> {
     assert!(!std::hint::black_box(cfg!(debug_assertions)), "Run with --release");
     assert!(
-        std::env::var_os("CODEGRAPH_DATA_DIR").is_some(),
+        std::env::var_os("CODECALLNAVIGATOR_DATA_DIR").is_some(),
         "Use a copied profiling workspace"
     );
     use rune::render::Gpu;

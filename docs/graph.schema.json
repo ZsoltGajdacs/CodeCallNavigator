@@ -1,11 +1,11 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "CodeGraph portable graph v1",
-  "description": "Wire shape only. CodeGraph semantic validation additionally checks identity uniqueness, references, spans and portable paths.",
+  "title": "CodeCallNavigator portable graph v1",
+  "description": "Wire shape only. CodeCallNavigator semantic validation additionally checks identity uniqueness, references, spans and portable paths.",
   "type": "object",
   "properties": {
     "schema": {
-      "const": "codegraph.graph.v1"
+      "const": "codecallnavigator.graph.v1"
     },
     "graph": {
       "$ref": "#/$defs/graph"

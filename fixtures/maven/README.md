@@ -13,6 +13,6 @@ cargo test --test java_builds -- --ignored --nocapture
 ```
 
 To exercise a pinned Maven distribution without replacing the installed Maven,
-set `CODEGRAPH_TEST_MAVEN` to its absolute `bin/mvn` path. The tests install a
+set `CODECALLNAVIGATOR_TEST_MAVEN` to its absolute `bin/mvn` path. The tests install a
 fixture-local wrapper that delegates to that executable. Fixture copies use paths
 containing spaces, and tests never compile these tracked directories in place.

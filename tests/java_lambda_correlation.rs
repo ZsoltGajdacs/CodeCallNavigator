@@ -1,12 +1,12 @@
 //! Real compiler correlation, including shared implementation export identities.
 #[path = "support/java.rs"]
 mod support;
-use codegraph::{artifact, model::GraphData};
+use codecallnavigator::{artifact, model::GraphData};
 use std::{collections::BTreeMap, fs};
 
 fn fixture(no_debug: bool) -> tempfile::TempDir {
     let directory = support::fixture("maven");
-    if let Some(command) = std::env::var_os("CODEGRAPH_TEST_MAVEN") {
+    if let Some(command) = std::env::var_os("CODECALLNAVIGATOR_TEST_MAVEN") {
         support::install_wrapper(directory.path(), &std::path::PathBuf::from(command));
     }
     if no_debug {
@@ -261,7 +261,7 @@ fn no_debug_distinct_bodies_bind_exact_flow_spans_and_targets() {
         assert_eq!(&text[function.span.start..function.span.end], body);
         let mut copy = function.clone();
         let mut targets = Vec::new();
-        codegraph::flow::visit_calls_mut(&mut copy, &mut |call| {
+        codecallnavigator::flow::visit_calls_mut(&mut copy, &mut |call| {
             targets.extend(call.targets.iter().map(|target| target.symbol.clone()))
         });
         assert_eq!(targets.len(), 1);

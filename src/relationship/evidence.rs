@@ -1,5 +1,5 @@
 //! Explain the source facts establishing an inferred relationship.
-use codegraph::{
+use codecallnavigator::{
     graph::GraphIndex,
     model::{Edge, RelationshipEvidence, SourceSite},
 };

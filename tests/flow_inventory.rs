@@ -1,4 +1,4 @@
-use codegraph::flow::{self, FlowInventory, FunctionFlowIR, Statement, StatementKind};
+use codecallnavigator::flow::{self, FlowInventory, FunctionFlowIR, Statement, StatementKind};
 use serde_json::json;
 use std::collections::HashSet;
 fn inventory(symbol: &str) -> FlowInventory {

@@ -17,7 +17,7 @@ fn lombok_acceptance(kind: &str) {
     .unwrap();
     if kind == "gradle" {
         install_wrapper(root.path(), &repository.join("fixtures/gradle/gradlew"));
-    } else if let Some(command) = std::env::var_os("CODEGRAPH_TEST_MAVEN") {
+    } else if let Some(command) = std::env::var_os("CODECALLNAVIGATOR_TEST_MAVEN") {
         install_wrapper(root.path(), &PathBuf::from(command));
     }
     let graph = run(vec![target(root.path(), kind)]).unwrap();

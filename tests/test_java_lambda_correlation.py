@@ -19,7 +19,7 @@ class JavaLambdaCorrelationTests(unittest.TestCase):
         require_analyzer()
 
     def setUp(self):
-        temporary = tempfile.TemporaryDirectory(prefix="CodeGraph lambda proof ")
+        temporary = tempfile.TemporaryDirectory(prefix="CodeCallNavigator lambda proof ")
         self.addCleanup(temporary.cleanup)
         self.root = Path(temporary.name)
         self.source = self.root / "src/fixture/Flow.java"
@@ -36,7 +36,7 @@ class JavaLambdaCorrelationTests(unittest.TestCase):
     def inventory(self):
         path = self.root / "inventory.tsv"
         run(self.home / "bin/java", *EXPORTS, "-cp", LIB / "*",
-            "codegraph.bytecode.SourceInventory", path, self.classes,
+            "codecallnavigator.bytecode.SourceInventory", path, self.classes,
             self.classes, self.source.parents[1])
         return [(next(iter(row.values())), json.loads(row["start_line"]))
                 for row in tsv(path)

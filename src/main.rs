@@ -1,4 +1,4 @@
-pub use codegraph::{discovery, fingerprint};
+pub use codecallnavigator::{discovery, fingerprint};
 mod app;
 mod architecture_workspace;
 mod cache_jobs;
@@ -66,7 +66,7 @@ fn main() {
         setup: Some(jobs::setup),
         poll: Some(jobs::poll),
         on_key: Some(view::key),
-        ..rune::AppSpec::new("CodeGraph", (1420.0, 900.0), app::State::new, view::view)
+        ..rune::AppSpec::new("CodeCallNavigator", (1420.0, 900.0), app::State::new, view::view)
     };
     let app = rune::App::new(spec)
         .modifier_keys()

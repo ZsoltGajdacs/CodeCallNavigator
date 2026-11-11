@@ -6,7 +6,7 @@ const os=require('node:os');
 const path=require('node:path');
 const {spawn}=require('node:child_process');
 const {setTimeout:delay}=require('node:timers/promises');
-const engineModules=process.env.CODEGRAPH_TS_NODE_MODULES || (process.env.CODEGRAPH_TEST_TYPESCRIPT_ROOT && path.dirname(process.env.CODEGRAPH_TEST_TYPESCRIPT_ROOT)) || path.resolve(__dirname,'../../../PacificFateMapEditor/node_modules');
+const engineModules=process.env.CODECALLNAVIGATOR_TS_NODE_MODULES || (process.env.CODECALLNAVIGATOR_TEST_TYPESCRIPT_ROOT && path.dirname(process.env.CODECALLNAVIGATOR_TEST_TYPESCRIPT_ROOT)) || path.resolve(__dirname,'../../../PacificFateMapEditor/node_modules');
 async function waitFor(predicate,process) {
   const deadline=Date.now()+30000;
   while (!predicate()) {
@@ -16,7 +16,7 @@ async function waitFor(predicate,process) {
   }
 }
 async function fixture(t,source='export function leaf(){return 1;}') {
-  const temporary=fs.mkdtempSync(path.join(os.tmpdir(),'codegraph-worker-'));
+  const temporary=fs.mkdtempSync(path.join(os.tmpdir(),'codecallnavigator-worker-'));
   const root=path.join(temporary,'project'); fs.mkdirSync(root);
   fs.mkdirSync(path.join(root,'src'));
   fs.symlinkSync(engineModules,path.join(root,'node_modules'),'dir');

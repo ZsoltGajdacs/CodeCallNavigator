@@ -1,5 +1,5 @@
 //! Exercise the analyzer resource layout without using repository-local adapter paths.
-use codegraph_engine::{
+use codecallnavigator_engine::{
     analyzers::{AnalyzerRuntime, analyze},
     discovery::BuildTarget,
 };
@@ -31,11 +31,11 @@ fn copy_tree(source: &Path, destination: &Path) {
 }
 
 fn packaged_runtime(root: &Path) -> AnalyzerRuntime {
-    let resources = root.join("CodeGraph.app/Contents/Resources");
+    let resources = root.join("CodeCallNavigator.app/Contents/Resources");
     let analyzers = resources.join("analyzers");
     fs::create_dir_all(&analyzers).unwrap();
     fs::copy(
-        repository().join("tools/maven-metadata/build/libs/codegraph-maven-metadata.jar"),
+        repository().join("tools/maven-metadata/build/libs/codecallnavigator-maven-metadata.jar"),
         analyzers.join("maven-metadata.jar"),
     )
     .unwrap();
@@ -45,7 +45,7 @@ fn packaged_runtime(root: &Path) -> AnalyzerRuntime {
     )
     .unwrap();
     copy_tree(
-        &repository().join("tools/java-bytecode/build/install/codegraph-bytecode/lib"),
+        &repository().join("tools/java-bytecode/build/install/codecallnavigator-bytecode/lib"),
         &analyzers.join("java-bytecode/lib"),
     );
     let mut runtime = AnalyzerRuntime::discover().unwrap();
@@ -66,7 +66,7 @@ fn target(root: PathBuf, kind: &str) -> BuildTarget {
 #[ignore = "requires bootstrapped analyzer artifacts, Maven, Gradle wrapper and JDK 25"]
 fn packaged_resources_analyze_maven_and_gradle_without_development_paths() {
     let temporary = tempfile::Builder::new()
-        .prefix("CodeGraph packaged resources ")
+        .prefix("CodeCallNavigator packaged resources ")
         .tempdir()
         .unwrap();
     let runtime = packaged_runtime(temporary.path());

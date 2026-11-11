@@ -1,5 +1,5 @@
 //! Real TypeScript execution traces must be paths through the compiler-exported flow.
-use codegraph_engine::{
+use codecallnavigator_engine::{
     analyzers::{AnalyzerRuntime, analyze},
     discovery::target_from_file,
     flow::{FlowChart, build},
@@ -35,14 +35,14 @@ console.log(JSON.stringify(traces));
 
 fn fixture() -> tempfile::TempDir {
     let temporary = tempfile::tempdir().unwrap();
-    let engine = std::env::var_os("CODEGRAPH_TEST_TYPESCRIPT_ROOT")
+    let engine = std::env::var_os("CODECALLNAVIGATOR_TEST_TYPESCRIPT_ROOT")
         .map(PathBuf::from)
         .unwrap_or_else(|| {
             Path::new(env!("CARGO_MANIFEST_DIR"))
                 .join("../PacificFateMapEditor/node_modules/typescript")
         })
         .canonicalize()
-        .expect("Set CODEGRAPH_TEST_TYPESCRIPT_ROOT to installed TypeScript 6.0.x");
+        .expect("Set CODECALLNAVIGATOR_TEST_TYPESCRIPT_ROOT to installed TypeScript 6.0.x");
     fs::create_dir(temporary.path().join("node_modules")).unwrap();
     symlink(engine, temporary.path().join("node_modules/typescript")).unwrap();
     fs::write(temporary.path().join("tsconfig.json"),r#"{"compilerOptions":{"strict":true,"target":"ES2023","module":"esnext","moduleResolution":"bundler","types":[],"noEmit":true},"files":["main.ts"]}"#).unwrap();

@@ -66,11 +66,11 @@ class CallableFlow {
   targets(checker,node) {
     const result=this.result(checker,node);
     if(result.unsafe) return [];
-    return [...result.targets].map(([index,origins])=>({index,certainty:'possible',provenance:'codegraph.callable.v1',
+    return [...result.targets].map(([index,origins])=>({index,certainty:'possible',provenance:'codecallnavigator.callable.v1',
       evidence:[...origins.values()].map(origin=>this.evidence(node,index,origin))}));
   }
   evidence(node,index,origin) {
-    const evidence=relationshipEvidence(this.bindings.graph,{rule:`codegraph.callable:${origin.kind}`,semantics:'possible-invocation',site:node,
+    const evidence=relationshipEvidence(this.bindings.graph,{rule:`codecallnavigator.callable:${origin.kind}`,semantics:'possible-invocation',site:node,
       registration:origin.site,from:this.owner(node),to:index});
     const id=this.bindings.graph.nodes[origin.support]?.id;
     if(this.supports(id,origin.support,evidence)) evidence.supporting_symbols.push(id);

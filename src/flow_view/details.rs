@@ -69,7 +69,7 @@ fn target_name(state: &State, symbol: &str) -> String {
         .unwrap_or_else(|| symbol.to_owned())
 }
 
-fn call_details(state: &State, call: &codegraph::flow::CallSite, call_index: usize, k: &Kit) -> El {
+fn call_details(state: &State, call: &codecallnavigator::flow::CallSite, call_index: usize, k: &Kit) -> El {
     let mut content = col().w_full().gap(4.0);
     content = content.child(
         text(&call.label)

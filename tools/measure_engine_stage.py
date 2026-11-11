@@ -38,7 +38,7 @@ def run(executable, project, targets):
     finally:
         stopped.set()
         sampler.join()
-    graph = json.loads((project / '.codegraph/graph.json').read_text())['graph']
+    graph = json.loads((project / '.codecallnavigator/graph.json').read_text())['graph']
     return {'seconds': time.perf_counter() - started,
             'sampled_peak_tree_rss_bytes': max(observations) if observations else None,
             'sampling_errors': errors,

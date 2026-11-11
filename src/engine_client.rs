@@ -5,7 +5,7 @@ mod tests;
 
 use crate::runtime::Runtime;
 use anyhow::{Context, Result, bail, ensure};
-use codegraph::{
+use codecallnavigator::{
     artifact::{Artifact, GRAPH_PATH},
     discovery::BuildTarget,
     model::GraphData,
@@ -82,7 +82,7 @@ pub fn analyze(
     graph.fingerprints = fingerprints;
     graph.engine_versions = engine_versions;
     graph.validate()?;
-    codegraph::metrics::absorb(&metrics)?;
+    codecallnavigator::metrics::absorb(&metrics)?;
     Ok(graph)
 }
 

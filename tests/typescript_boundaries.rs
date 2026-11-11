@@ -1,6 +1,6 @@
 //! Installed Next/TypeScript bindings and the shared graph/flow boundary overlay.
-use codegraph::boundary::{self, Configuration};
-use codegraph_engine::{
+use codecallnavigator::boundary::{self, Configuration};
+use codecallnavigator_engine::{
     analyzers::{AnalyzerRuntime, analyze},
     discovery::target_from_file,
 };
@@ -26,7 +26,7 @@ fn flow_targets(value: &serde_json::Value) -> Vec<serde_json::Value> {
         targets.extend(
             values
                 .iter()
-                .filter(|value| value["provenance"] == "codegraph.boundary.v1")
+                .filter(|value| value["provenance"] == "codecallnavigator.boundary.v1")
                 .cloned(),
         );
     }
@@ -57,7 +57,7 @@ fn next_navigation_and_fetch_agree_with_flow_without_synchronous_call_edges() {
         temp.path().join("tsconfig.json"),
     )
     .unwrap();
-    let modules = std::env::var_os("CODEGRAPH_TS_NODE_MODULES")
+    let modules = std::env::var_os("CODECALLNAVIGATOR_TS_NODE_MODULES")
         .map(std::path::PathBuf::from)
         .unwrap_or_else(|| root.join("../PacificFateMapEditor/node_modules"));
     symlink(
@@ -78,7 +78,7 @@ fn next_navigation_and_fetch_agree_with_flow_without_synchronous_call_edges() {
     let added = graph
         .edges
         .iter()
-        .filter(|edge| edge.provenance == "codegraph.boundary.v1")
+        .filter(|edge| edge.provenance == "codecallnavigator.boundary.v1")
         .collect::<Vec<_>>();
     assert_eq!(added.len(), 4);
     assert_eq!(

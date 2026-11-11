@@ -1,6 +1,6 @@
 //! Readable Java symbols through the production canvas, search and inspector.
 use crate::{app::State, jobs, projection::Grouping, scenes, view};
-use codegraph::graph::GraphIndex;
+use codecallnavigator::graph::GraphIndex;
 use rune::{Env, Runtime};
 use std::sync::Arc;
 
@@ -61,7 +61,7 @@ fn friendly_lambda_name_is_drawn_and_searchable_by_either_name() {
         super::wait_for(&mut runtime, |state| !state.search.hits().is_empty());
         assert!(matches!(
             &runtime.state.search.hits()[0].target,
-            codegraph::search::SearchTarget::Method { member: 2, .. }
+            codecallnavigator::search::SearchTarget::Method { member: 2, .. }
         ));
         assert!(
             has_option(&runtime, &format!("Method · {NAME}")),

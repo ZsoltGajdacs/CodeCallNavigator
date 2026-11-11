@@ -163,7 +163,7 @@ fn restored_navigation_keeps_exact_ids_and_discards_missing_symbols() {
 #[test]
 fn corrupt_session_is_recoverable_while_the_cached_graph_still_opens() {
     let directory = tempfile::tempdir().unwrap();
-    let store = codegraph::store::SqliteStore::open(directory.path()).unwrap();
+    let store = codecallnavigator::store::SqliteStore::open(directory.path()).unwrap();
     let runtime = runtime();
     store
         .publish(
@@ -211,7 +211,7 @@ fn a_late_discovery_result_cannot_populate_builds_for_a_different_root() {
 
 #[test]
 fn search_and_neighbor_pages_can_reach_every_indexed_match() {
-    use codegraph::{
+    use codecallnavigator::{
         graph::GraphIndex,
         model::{Edge, GraphData, Node},
         store::SqliteStore,
@@ -262,7 +262,7 @@ fn search_and_neighbor_pages_can_reach_every_indexed_match() {
     let mut found: Vec<_> = found
         .into_iter()
         .map(|hit| match hit.target {
-            codegraph::search::SearchTarget::Method { identity, .. } => identity,
+            codecallnavigator::search::SearchTarget::Method { identity, .. } => identity,
             _ => panic!("expected method"),
         })
         .collect();

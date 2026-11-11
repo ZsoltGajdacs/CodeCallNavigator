@@ -2,7 +2,7 @@
 const {declarationKey}=require('./paths.js');
 const syntax=require('./observer-syntax.js');
 const {compilerGlobal,globalMemberUse,outerExpression}=require('./intrinsic-globals.js');
-const SET_PROOF='codegraph.observer:builtin-set-escape';
+const SET_PROOF='codecallnavigator.observer:builtin-set-escape';
 function iterator(ts,declaration) {
   if(!declaration.name||!ts.isComputedPropertyName(declaration.name)) return false;
   const expression=declaration.name.expression;

@@ -1,5 +1,5 @@
 //! Cache acceptance uses real SQLite and the same canonical graph contract as the CLI.
-use codegraph::{
+use codecallnavigator::{
     artifact,
     boundary::{self, BoundaryInventory, BoundaryUse, Configuration, DecisionCache, RouteFact},
     model::{GraphData, Node, SourceSite},
@@ -76,7 +76,7 @@ fn cache_reads_real_sqlite_and_reuses_decisions_without_changing_canonical_graph
     let mut first = DecisionCache::open(project.path());
     boundary::resolve_cached(&mut cached, &config, &mut first).unwrap();
     assert!(
-        !project.path().join(".codegraph/inference.sqlite3").exists(),
+        !project.path().join(".codecallnavigator/inference.sqlite3").exists(),
         "No publication before explicit post-graph commit"
     );
     first.commit();
@@ -93,8 +93,8 @@ fn cache_reads_real_sqlite_and_reuses_decisions_without_changing_canonical_graph
 #[test]
 fn unrelated_sqlite_database_at_reserved_path_is_preserved() {
     let project = tempfile::tempdir().unwrap();
-    std::fs::create_dir(project.path().join(".codegraph")).unwrap();
-    let path = project.path().join(".codegraph/inference.sqlite3");
+    std::fs::create_dir(project.path().join(".codecallnavigator")).unwrap();
+    let path = project.path().join(".codecallnavigator/inference.sqlite3");
     let db = rusqlite::Connection::open(&path).unwrap();
     db.execute_batch("CREATE TABLE boundary_decisions(key TEXT,value TEXT);INSERT INTO boundary_decisions VALUES ('user','important');").unwrap();
     drop(db);
@@ -126,7 +126,7 @@ fn checked(native: &GraphData, cache: &mut DecisionCache) -> GraphData {
     cached
 }
 fn db(project: &std::path::Path) -> rusqlite::Connection {
-    rusqlite::Connection::open(project.join(".codegraph/inference.sqlite3")).unwrap()
+    rusqlite::Connection::open(project.join(".codecallnavigator/inference.sqlite3")).unwrap()
 }
 #[test]
 fn unrelated_route_changes_reuse_unchanged_requests_and_blockers_invalidate_matching_ones() {
@@ -288,8 +288,8 @@ fn malformed_winner_and_unresolved_records_fall_back_and_checksums_bind_the_key(
 #[test]
 fn corrupt_whole_file_and_failed_writes_are_nonfatal_and_preserved() {
     let project = tempfile::tempdir().unwrap();
-    std::fs::create_dir(project.path().join(".codegraph")).unwrap();
-    let path = project.path().join(".codegraph/inference.sqlite3");
+    std::fs::create_dir(project.path().join(".codecallnavigator")).unwrap();
+    let path = project.path().join(".codecallnavigator/inference.sqlite3");
     std::fs::write(&path, b"unverifiable cache bytes").unwrap();
     let mut cache = DecisionCache::open(project.path());
     checked(&graph(), &mut cache);
@@ -309,7 +309,7 @@ fn committing_retains_only_current_decisions_and_skipping_commit_keeps_previous_
     let project = tempfile::tempdir().unwrap();
     let native = graph();
     warm(project.path(), &native);
-    let path = project.path().join(".codegraph/inference.sqlite3");
+    let path = project.path().join(".codecallnavigator/inference.sqlite3");
     let before = blake3::hash(&std::fs::read(&path).unwrap());
     let mut shortened = native;
     shortened.boundaries.as_mut().unwrap().uses.truncate(1);
@@ -334,12 +334,12 @@ fn symbolic_and_hard_links_for_database_and_sidecars_are_preserved() {
     use std::os::unix::fs::symlink;
     for suffix in ["", "-wal", "-shm", "-journal"] {
         let project = tempfile::tempdir().unwrap();
-        std::fs::create_dir(project.path().join(".codegraph")).unwrap();
+        std::fs::create_dir(project.path().join(".codecallnavigator")).unwrap();
         let external = project.path().join("user-data");
         std::fs::write(&external, b"important").unwrap();
         let link = project
             .path()
-            .join(format!(".codegraph/inference.sqlite3{suffix}"));
+            .join(format!(".codecallnavigator/inference.sqlite3{suffix}"));
         symlink(&external, &link).unwrap();
         let mut cache = DecisionCache::open(project.path());
         checked(&graph(), &mut cache);
@@ -349,12 +349,12 @@ fn symbolic_and_hard_links_for_database_and_sidecars_are_preserved() {
         assert!(!cache.warnings().is_empty());
     }
     let project = tempfile::tempdir().unwrap();
-    std::fs::create_dir(project.path().join(".codegraph")).unwrap();
+    std::fs::create_dir(project.path().join(".codecallnavigator")).unwrap();
     let external = project.path().join("user-data");
     std::fs::write(&external, b"important").unwrap();
     std::fs::hard_link(
         &external,
-        project.path().join(".codegraph/inference.sqlite3"),
+        project.path().join(".codecallnavigator/inference.sqlite3"),
     )
     .unwrap();
     let mut cache = DecisionCache::open(project.path());
@@ -378,7 +378,7 @@ fn immutable_readonly_cache_handles_project_paths_with_uri_characters() {
 }
 
 fn flow_graph() -> GraphData {
-    use codegraph::flow::{
+    use codecallnavigator::flow::{
         CallSite, FlowInventory, FunctionFlowIR, SourceSpan, Statement, StatementKind,
     };
     let mut graph = graph();
@@ -423,7 +423,7 @@ fn reused_routing_decision_still_checks_fresh_flow_and_reconstructs_native_diagn
     let mut result = checked(&native, &mut cache);
     assert_eq!(result.edges.len(), 1);
     assert_eq!(cache.stats().hits, 1);
-    codegraph::flow::visit_calls_mut(
+    codecallnavigator::flow::visit_calls_mut(
         &mut result.flow_inventory.as_mut().unwrap().functions[0],
         &mut |call| {
             assert_eq!(call.targets[0].kind, "http");
@@ -439,8 +439,8 @@ fn reused_routing_decision_still_checks_fresh_flow_and_reconstructs_native_diagn
 #[test]
 fn unrelated_wal_database_is_not_opened_for_mutation_before_ownership_is_known() {
     let project = tempfile::tempdir().unwrap();
-    std::fs::create_dir(project.path().join(".codegraph")).unwrap();
-    let path = project.path().join(".codegraph/inference.sqlite3");
+    std::fs::create_dir(project.path().join(".codecallnavigator")).unwrap();
+    let path = project.path().join(".codecallnavigator/inference.sqlite3");
     let database = rusqlite::Connection::open(&path).unwrap();
     database.execute_batch("PRAGMA journal_mode=WAL; CREATE TABLE user_content(value TEXT); INSERT INTO user_content VALUES ('important');").unwrap();
     let paths = [

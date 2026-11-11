@@ -1,6 +1,6 @@
 # Compiler-bound Spring event fixture
 
-Analyze `pom.xml` with JDK 25 and the pinned CodeGraph Java adapter. The project
+Analyze `pom.xml` with JDK 25 and the pinned CodeCallNavigator Java adapter. The project
 compiles Java 17 source against actual Spring context/transaction 6.2.5 libraries;
 the versions and Maven plugins are pinned in the POM. All dependencies are already
 available in the local Maven cache. No private application build is involved.

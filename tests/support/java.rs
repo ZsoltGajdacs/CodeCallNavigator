@@ -1,4 +1,4 @@
-use codegraph_engine::{
+use codecallnavigator_engine::{
     analyzers::{AnalyzerRuntime, analyze},
     discovery::BuildTarget,
     model::GraphData,
@@ -6,7 +6,7 @@ use codegraph_engine::{
 use std::{fs, path::Path, sync::atomic::AtomicBool};
 pub fn fixture(name: &str) -> tempfile::TempDir {
     let temp = tempfile::Builder::new()
-        .prefix("codegraph Java fixture ")
+        .prefix("codecallnavigator Java fixture ")
         .tempdir()
         .unwrap();
     copy_tree(

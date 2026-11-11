@@ -5,9 +5,9 @@ const fs=require('node:fs');
 const os=require('node:os');
 const path=require('node:path');
 const cp=require('node:child_process');
-const modules=process.env.CODEGRAPH_TS_NODE_MODULES || (process.env.CODEGRAPH_TEST_TYPESCRIPT_ROOT&&path.dirname(process.env.CODEGRAPH_TEST_TYPESCRIPT_ROOT)) || path.resolve(__dirname,'../../../PacificFateMapEditor/node_modules');
+const modules=process.env.CODECALLNAVIGATOR_TS_NODE_MODULES || (process.env.CODECALLNAVIGATOR_TEST_TYPESCRIPT_ROOT&&path.dirname(process.env.CODECALLNAVIGATOR_TEST_TYPESCRIPT_ROOT)) || path.resolve(__dirname,'../../../PacificFateMapEditor/node_modules');
 function analyze(t,source) {
-  const root=fs.mkdtempSync(path.join(os.tmpdir(),'codegraph-observer-'));
+  const root=fs.mkdtempSync(path.join(os.tmpdir(),'codecallnavigator-observer-'));
   t.after(()=>fs.rmSync(root,{recursive:true,force:true}));
   fs.symlinkSync(modules,path.join(root,'node_modules'),'dir');
   fs.writeFileSync(path.join(root,'tsconfig.json'),JSON.stringify({compilerOptions:{target:'ES2023',module:'esnext',moduleResolution:'bundler',strict:true,skipLibCheck:true,types:[],noEmit:true},files:['main.ts']}));
@@ -16,7 +16,7 @@ function analyze(t,source) {
   cp.execFileSync(process.execPath,[path.join(__dirname,'analyze.js'),'analyze',path.join(root,'tsconfig.json'),output],{stdio:'pipe'});
   return JSON.parse(fs.readFileSync(output,'utf8'));
 }
-function inferred(graph) {return graph.edges.filter(edge=>edge.provenance==='codegraph.observer.v1');}
+function inferred(graph) {return graph.edges.filter(edge=>edge.provenance==='codecallnavigator.observer.v1');}
 function calls(value,result=[]) {
   if(!value||typeof value!=='object') return result;
   if(Array.isArray(value.targets)) result.push(value);
@@ -34,7 +34,7 @@ test('real compiler connects observer invocation with registration evidence and 
   const edge=inferred(graph).find(edge=>graph.nodes[edge.from].label==='notify'&&graph.nodes[edge.to].label==='redraw');
   assert.ok(edge,'notify must reach the registered callback');
   assert.equal(edge.certainty,'possible');
-  assert.equal(edge.evidence[0].rule,'codegraph.observer:collection');
+  assert.equal(edge.evidence[0].rule,'codecallnavigator.observer:collection');
   assert.equal(edge.evidence[0].semantics,'possible-invocation');
   assert.equal(edge.evidence[0].invocation.line,4);
   assert.equal(edge.evidence[0].registration.line,6);

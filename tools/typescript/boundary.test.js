@@ -6,9 +6,9 @@ const os=require('node:os');
 const path=require('node:path');
 const cp=require('node:child_process');
 function analyze(t,files) {
-  const root=fs.mkdtempSync(path.join(os.tmpdir(),'codegraph-boundary-'));
+  const root=fs.mkdtempSync(path.join(os.tmpdir(),'codecallnavigator-boundary-'));
   t.after(()=>fs.rmSync(root,{recursive:true,force:true}));
-  fs.symlinkSync(process.env.CODEGRAPH_TS_NODE_MODULES||path.resolve(__dirname,'../../../PacificFateMapEditor/node_modules'),path.join(root,'node_modules'),'dir');
+  fs.symlinkSync(process.env.CODECALLNAVIGATOR_TS_NODE_MODULES||path.resolve(__dirname,'../../../PacificFateMapEditor/node_modules'),path.join(root,'node_modules'),'dir');
   fs.writeFileSync(path.join(root,'tsconfig.json'),JSON.stringify({compilerOptions:{target:'ES2023',module:'esnext',moduleResolution:'bundler',jsx:'react-jsx',strict:true,skipLibCheck:true},include:['**/*.ts','**/*.tsx']}));
   for(const [file,text] of Object.entries(files)) {
     fs.mkdirSync(path.dirname(path.join(root,file)),{recursive:true});

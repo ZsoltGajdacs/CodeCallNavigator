@@ -568,13 +568,13 @@ dependencies = [
 ]
 
 [[package]]
-name = "codegraph"
+name = "codecallnavigator"
 version = "0.1.0"
 dependencies = [
  "anyhow",
  "blake3",
- "codegraph-core",
- "codegraph-engine",
+ "codecallnavigator-core",
+ "codecallnavigator-engine",
  "globset",
  "libc",
  "objc2-app-kit 0.2.2",
@@ -592,7 +592,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "codegraph-core"
+name = "codecallnavigator-core"
 version = "0.1.0"
 dependencies = [
  "anyhow",
@@ -608,12 +608,12 @@ dependencies = [
 ]
 
 [[package]]
-name = "codegraph-engine"
+name = "codecallnavigator-engine"
 version = "0.1.0"
 dependencies = [
  "anyhow",
  "blake3",
- "codegraph-core",
+ "codecallnavigator-core",
  "libc",
  "serde",
  "serde_json",

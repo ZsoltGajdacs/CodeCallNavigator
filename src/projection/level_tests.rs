@@ -251,7 +251,7 @@ fn project_focus_collapses_connected_projects_even_when_they_are_expanded() {
 }
 
 fn layer_request(graph: &GraphIndex) -> Request {
-    use codegraph::architecture::{Assignment, LayerAssignments, LayerDefinition, file_key};
+    use codecallnavigator::architecture::{Assignment, LayerAssignments, LayerDefinition, file_key};
     let mut req = request(FocusTarget::Group(key(&["layer", "Services"])));
     req.grouping = Grouping::Layer;
     req.layer_tab = Some("main".into());

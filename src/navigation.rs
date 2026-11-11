@@ -3,7 +3,7 @@ use crate::{
     camera::Camera,
     projection::{FlowDirection, FocusTarget, Grouping, Scope},
 };
-use codegraph::graph::{Filter, GraphIndex};
+use codecallnavigator::graph::{Filter, GraphIndex};
 use serde::{Deserialize, Serialize};
 use std::{collections::HashSet, path::PathBuf};
 
@@ -114,5 +114,5 @@ pub struct SavedSession {
     pub selected_targets: Option<Vec<crate::discovery::BuildIdentity>>,
     pub navigation: Navigation,
     pub presentation: crate::presentation::Preferences,
-    pub architecture_selection: Option<codegraph::architecture::Selection>,
+    pub architecture_selection: Option<codecallnavigator::architecture::Selection>,
 }

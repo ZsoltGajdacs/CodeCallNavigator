@@ -20,7 +20,7 @@ java {
 }
 
 application {
-    mainClass = "codegraph.bytecode.Analyzer"
+    mainClass = "codecallnavigator.bytecode.Analyzer"
     applicationDefaultJvmArgs = listOf(
         "-Xmx8g",
         "--add-exports=jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED",

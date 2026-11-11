@@ -53,7 +53,7 @@ fn graph_workspace(state: &State, cx: &mut Cx<State>) -> El {
         .reduced_motion(cx.is_reduced_motion())
         .toolbar(
             Toolbar::new()
-                .leading(text("CodeGraph").font(k.ty.ui_medium).color(k.c.text_base))
+                .leading(text("CodeCallNavigator").font(k.ty.ui_medium).color(k.c.text_base))
                 .leading(workspace_identity(state, &k))
                 .trailing(search_modal::button(&k))
                 .trailing(clear_cache_action(state, &k))

@@ -1,5 +1,5 @@
 //! Nested inventory versions are part of the public artifact compatibility boundary.
-use codegraph::{
+use codecallnavigator::{
     artifact::{self, Artifact},
     model::GraphData,
 };
@@ -8,7 +8,7 @@ use codegraph::{
 fn encoded_java_context_paths_relocate_even_with_quoted_directory_names() {
     let export = |root: &str| {
         let graph = GraphData {
-            nodes: vec![codegraph::model::Node {
+            nodes: vec![codecallnavigator::model::Node {
                 id: format!("{}|fixture.App:run()|void", serde_json::json!([root, format!("{root}/src"), "main"])),
                 project: "fixture".into(),
                 build: root.into(),

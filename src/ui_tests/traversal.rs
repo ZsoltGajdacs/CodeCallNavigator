@@ -7,7 +7,7 @@ use crate::{
     projection::{FocusTarget, GroupKind, ViewNode},
     view,
 };
-use codegraph::{
+use codecallnavigator::{
     graph::GraphIndex,
     model::{Edge, GraphData, Node},
 };
@@ -422,7 +422,7 @@ fn clicking_a_class_method_row_enters_method_tree_without_expanding_header() {
 }
 
 fn visibility_runtime() -> Runtime<State> {
-    use codegraph::{model::Visibility, store::SqliteStore};
+    use codecallnavigator::{model::Visibility, store::SqliteStore};
     use std::sync::atomic::AtomicBool;
     let mut runtime = runtime();
     let mut data = (*runtime.state.graph.as_ref().unwrap().data).clone();
@@ -623,7 +623,7 @@ fn selecting_a_class_uses_box_hops_and_omits_unrelated_classes() {
 #[test]
 fn restored_layer_focus_survives_missing_assignments_then_validates_membership() {
     use crate::projection::Grouping;
-    use codegraph::architecture::LayerAssignments;
+    use codecallnavigator::architecture::LayerAssignments;
     let mut runtime = runtime();
     runtime.state.nav.grouping = Grouping::Layer;
     runtime.state.nav.focus_method("m2".into());

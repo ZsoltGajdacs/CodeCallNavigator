@@ -13,7 +13,7 @@ import zipfile
 
 
 ROOT = Path(__file__).resolve().parents[1]
-LIB = ROOT / "tools/java-bytecode/build/install/codegraph-bytecode/lib"
+LIB = ROOT / "tools/java-bytecode/build/install/codecallnavigator-bytecode/lib"
 
 
 def run(*arguments, timeout=None):
@@ -45,11 +45,11 @@ def installed_jdk():
 
 
 def require_analyzer():
-    jar = LIB / "codegraph-bytecode.jar"
+    jar = LIB / "codecallnavigator-bytecode.jar"
     if not jar.is_file():
         raise unittest.SkipTest("Build the pinned Java analyzer before running context tests")
     with zipfile.ZipFile(jar) as archive:
-        if "codegraph/bytecode/ContextStager.class" not in archive.namelist():
+        if "codecallnavigator/bytecode/ContextStager.class" not in archive.namelist():
             raise unittest.SkipTest("Rebuild the analyzer to include ContextStager")
 
 
@@ -64,7 +64,7 @@ class JavaContextTests(unittest.TestCase):
         require_analyzer()
 
     def setUp(self):
-        temporary = tempfile.TemporaryDirectory(prefix="CodeGraph Java context ")
+        temporary = tempfile.TemporaryDirectory(prefix="CodeCallNavigator Java context ")
         self.addCleanup(temporary.cleanup)
         self.root = Path(temporary.name)
 
@@ -90,7 +90,7 @@ class JavaContextTests(unittest.TestCase):
 
     def stage(self, name, *entries):
         output = self.root / name
-        run(self.java, "-cp", LIB / "*", "codegraph.bytecode.ContextStager", output, *entries)
+        run(self.java, "-cp", LIB / "*", "codecallnavigator.bytecode.ContextStager", output, *entries)
         return output
 
     def archive(self, name, entries, multi_release=False):
@@ -142,7 +142,7 @@ class JavaContextTests(unittest.TestCase):
         archive = self.archive("external winner.jar", {entry: (external / entry).read_bytes()})
         output = self.root / "filtered project winners"
 
-        run(self.java, "-cp", LIB / "*", "codegraph.bytecode.ContextStager", output,
+        run(self.java, "-cp", LIB / "*", "codecallnavigator.bytecode.ContextStager", output,
             "--project-inputs", "2", archive, project)
 
         inputs = tsv(output / "inputs.tsv")
@@ -193,7 +193,7 @@ class JavaContextTests(unittest.TestCase):
         outputs = []
         for name, entries in [("initial", [first, second]), ("reversed", [second, first])]:
             output = self.root / name
-            run(self.java, "-cp", LIB / "*", "codegraph.bytecode.ContextStager", output,
+            run(self.java, "-cp", LIB / "*", "codecallnavigator.bytecode.ContextStager", output,
                 "--project-inputs", "1,2", "--artifact-cache", cache, *entries)
             outputs.append(output)
             selected = Path(tsv(output / "inputs.tsv")[0]["staged_path"])
@@ -217,7 +217,7 @@ class JavaContextTests(unittest.TestCase):
         entry = "sample/Choice.class"
         for iteration in range(3):
             output = self.root / f"prefetch-{iteration}"
-            run(self.java, "-cp", LIB / "*", "codegraph.bytecode.ContextStager", output,
+            run(self.java, "-cp", LIB / "*", "codecallnavigator.bytecode.ContextStager", output,
                 first, first, second)
             selected = Path(tsv(output / "inputs.tsv")[0]["staged_path"])
             self.assertEqual((selected / entry).read_bytes(), (first / entry).read_bytes())
@@ -239,10 +239,10 @@ class JavaContextTests(unittest.TestCase):
         project = self.choice("other project", 2)
         cache = self.root / "shared cache"
         external_output = self.root / "external context"
-        run(self.java, "-cp", LIB / "*", "codegraph.bytecode.ContextStager", external_output,
+        run(self.java, "-cp", LIB / "*", "codecallnavigator.bytecode.ContextStager", external_output,
             "--project-inputs", "1", "--artifact-cache", cache, project, archive)
         project_output = self.root / "project context"
-        run(self.java, "-cp", LIB / "*", "codegraph.bytecode.ContextStager", project_output,
+        run(self.java, "-cp", LIB / "*", "codecallnavigator.bytecode.ContextStager", project_output,
             "--project-inputs", "1", "--artifact-cache", cache, archive)
         selected = Path(tsv(project_output / "inputs.tsv")[0]["staged_path"])
         self.assertEqual((selected / "sample/Choice.class").read_bytes(), (classes / "sample/Choice.class").read_bytes())
@@ -259,12 +259,12 @@ class JavaContextTests(unittest.TestCase):
         (classes / "Invalid.class").write_bytes(b"not bytecode")
         cache = self.root / "job inventory"
         with self.assertRaises(subprocess.CalledProcessError):
-            run(self.java, "-cp", LIB / "*", "codegraph.bytecode.ContextStager", self.root / "failed",
+            run(self.java, "-cp", LIB / "*", "codecallnavigator.bytecode.ContextStager", self.root / "failed",
                 "--project-inputs", "1", "--artifact-cache", cache, classes)
         self.assertEqual(list(cache.iterdir()), [])
         shutil.rmtree(classes)
         valid = self.choice("valid retry", 3)
-        run(self.java, "-cp", LIB / "*", "codegraph.bytecode.ContextStager", self.root / "retry",
+        run(self.java, "-cp", LIB / "*", "codecallnavigator.bytecode.ContextStager", self.root / "retry",
             "--project-inputs", "1", "--artifact-cache", cache, valid)
         self.assertEqual(len(list(cache.iterdir())), 1)
 
@@ -282,7 +282,7 @@ class JavaContextTests(unittest.TestCase):
         inputs = [row["staged_path"] for row in tsv(staged / "inputs.tsv")]
         output = self.root / "engine output"
 
-        run(self.java, "-Xmx1g", "-cp", LIB / "*", "codegraph.bytecode.Analyzer",
+        run(self.java, "-Xmx1g", "-cp", LIB / "*", "codecallnavigator.bytecode.Analyzer",
             output, "25", "--project-inputs", "1", *inputs)
 
         properties = status(output)
@@ -302,7 +302,7 @@ class JavaContextTests(unittest.TestCase):
 
     def analyze_classes(self, classes):
         output = self.root / "inference output"
-        run(self.java, "-Xmx1g", "-cp", LIB / "*", "codegraph.bytecode.Analyzer",
+        run(self.java, "-Xmx1g", "-cp", LIB / "*", "codecallnavigator.bytecode.Analyzer",
             output, "25", "--project-inputs", "1", classes, timeout=30)
         properties = status(output)
         self.assertEqual(properties["analysisComplete"], "true")
@@ -380,7 +380,7 @@ class JavaContextTests(unittest.TestCase):
         inputs = [row["staged_path"] for row in tsv(staged / "inputs.tsv")]
         output = self.root / "filtered marker output"
 
-        run(self.java, "-Xmx1g", "-cp", LIB / "*", "codegraph.bytecode.Analyzer",
+        run(self.java, "-Xmx1g", "-cp", LIB / "*", "codecallnavigator.bytecode.Analyzer",
             output, "25", "--project-inputs", "1", *inputs)
 
         properties = status(output)
@@ -394,7 +394,7 @@ class JavaContextTests(unittest.TestCase):
 
         legacy_output = self.root / "legacy marker output"
         with self.assertRaises(subprocess.CalledProcessError) as error:
-            run(self.java, "-Xmx1g", "-cp", LIB / "*", "codegraph.bytecode.Analyzer",
+            run(self.java, "-Xmx1g", "-cp", LIB / "*", "codecallnavigator.bytecode.Analyzer",
                 legacy_output, "25", marker)
         self.assertEqual(error.exception.returncode, 1)
         self.assertEqual(status(legacy_output)["analysisComplete"], "false")

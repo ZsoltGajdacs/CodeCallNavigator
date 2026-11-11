@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Validate/consume portable artifacts independently of CodeGraph Rust models.
+"""Validate/consume portable artifacts independently of CodeCallNavigator Rust models.
 
 Requires the test-only dependency jsonschema>=4.18. Accepts retained fixtures or
-fresh production output, e.g. check_graph_contract.py /checkout/.codegraph/graph.json.
+fresh production output, e.g. check_graph_contract.py /checkout/.codecallnavigator/graph.json.
 """
 import argparse
 from collections import Counter

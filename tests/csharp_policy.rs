@@ -1,5 +1,5 @@
 //! Acceptance against the pinned Roslyn analyzer, not fabricated compiler metadata.
-use codegraph_engine::{
+use codecallnavigator_engine::{
     analyzers::{AnalyzerRuntime, analyze},
     discovery::BuildTarget,
     model::Visibility,
@@ -63,7 +63,7 @@ fn source_callables_exclude_object_boilerplate_without_losing_overloads() {
     );
 }
 
-fn assert_no_boilerplate(nodes: &[codegraph::model::Node]) {
+fn assert_no_boilerplate(nodes: &[codecallnavigator::model::Node]) {
     for node in nodes {
         assert!(
             !matches!(
@@ -83,7 +83,7 @@ fn assert_no_boilerplate(nodes: &[codegraph::model::Node]) {
     }
 }
 
-fn assert_visibility(nodes: &[codegraph::model::Node]) {
+fn assert_visibility(nodes: &[codecallnavigator::model::Node]) {
     for (suffix, expected) in [
         ("Worker::Private()", Visibility::Private),
         ("Worker::DefaultPrivate()", Visibility::Private),

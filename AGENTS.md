@@ -28,8 +28,8 @@ Do not edit Backlog task, draft, document, decision, or milestone markdown files
 The workspace practices below apply throughout the project. For work in either
 member crate, also read its scoped guide:
 
-- [codegraph-core](crates/codegraph-core/agent.md)
-- [codegraph-engine](crates/codegraph-engine/agent.md)
+- [codecallnavigator-core](crates/codecallnavigator-core/AGENTS.md)
+- [codecallnavigator-engine](crates/codecallnavigator-engine/AGENTS.md)
 
 The crate guides supplement the practices and mandatory policies in this file.
 
@@ -65,8 +65,8 @@ replace compiler, analyzer-acceptance, or packaging verification.
 | Area | Responsibility |
 | --- | --- |
 | Root package, `src/` | Native desktop, presentation, interaction, background jobs and engine process client |
-| [`codegraph-core`](crates/codegraph-core/agent.md) | Shared contracts, graph/flow operations, canonical artifacts, discovery and storage support |
-| [`codegraph-engine`](crates/codegraph-engine/agent.md) | Standalone CLI, analysis lifecycle, build preparation and compiler-backed language adapters |
+| [`codecallnavigator-core`](crates/codecallnavigator-core/AGENTS.md) | Shared contracts, graph/flow operations, canonical artifacts, discovery and storage support |
+| [`codecallnavigator-engine`](crates/codecallnavigator-engine/AGENTS.md) | Standalone CLI, analysis lifecycle, build preparation and compiler-backed language adapters |
 | `tools/` | Analyzer resources, bootstrap, acceptance helpers and packaging |
 | `fixtures/`, `tests/`, `evidence/` | Reproducible inputs, integration checks and measured verification records |
 | `vendor/`, `patches/` | Upstream checkouts and the recorded patches applied to them |
@@ -121,8 +121,8 @@ For documentation-only edits, verify paths, commands and the diff.
 Run from the workspace root:
 
 ```sh
-cargo check --locked -p codegraph --all-targets
-cargo test --locked -p codegraph --all-targets
+cargo check --locked -p codecallnavigator --all-targets
+cargo test --locked -p codecallnavigator --all-targets
 cargo clippy --workspace --all-targets --no-deps -- -D warnings
 cargo test --workspace --all-targets -- --include-ignored
 ```

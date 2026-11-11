@@ -56,7 +56,7 @@ def checkout_patch(command):
     # git apply leaves newly added source files untracked. Include them in the
     # exact-patch comparison without modifying the real index or staging work.
     # Unrelated files make the complete diff differ and are rejected by callers.
-    with tempfile.TemporaryDirectory(prefix="codegraph-patch-index-") as temporary:
+    with tempfile.TemporaryDirectory(prefix="codecallnavigator-patch-index-") as temporary:
         original_index = subprocess.check_output([*command, "rev-parse", "--path-format=absolute", "--git-path", "index"],
                                                  env=environment, text=True).strip()
         temporary_index = Path(temporary) / "index"
@@ -126,7 +126,7 @@ def fetch_lombok(spec):
     destination = ROOT / "vendor" / f"lombok-{spec['version']}.jar"
     if destination.is_file() and hashlib.sha256(destination.read_bytes()).hexdigest() == spec["sha256"]:
         return
-    with tempfile.TemporaryDirectory(prefix="codegraph-lombok-") as temporary:
+    with tempfile.TemporaryDirectory(prefix="codecallnavigator-lombok-") as temporary:
         download = Path(temporary) / "lombok.jar"
         download_verified(spec, download)
         destination.write_bytes(download.read_bytes())
@@ -134,12 +134,12 @@ def fetch_lombok(spec):
 
 def fetch_jdt(spec):
     destination = ROOT / "vendor" / "jdtls"
-    marker = destination / ".codegraph-sha256"
+    marker = destination / ".codecallnavigator-sha256"
     if verified_jdt_cache(destination, spec["sha256"]):
         return
     if destination.exists() and any(destination.iterdir()):
         raise RuntimeError(f"Unverified existing JDT directory: {destination}; use a fresh vendor directory")
-    with tempfile.TemporaryDirectory(prefix="codegraph-download-") as temporary:
+    with tempfile.TemporaryDirectory(prefix="codecallnavigator-download-") as temporary:
         archive = Path(temporary) / "jdt.tar.gz"
         download_verified(spec, archive)
         destination.mkdir(parents=True, exist_ok=True)
@@ -149,7 +149,7 @@ def fetch_jdt(spec):
 
 
 def verified_jdt_cache(destination, checksum):
-    marker = destination / ".codegraph-sha256"
+    marker = destination / ".codecallnavigator-sha256"
     if not marker.is_file():
         return False
     return marker.read_text().strip() == checksum and jdt_present(destination)

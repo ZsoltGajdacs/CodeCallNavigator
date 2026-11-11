@@ -3,7 +3,7 @@ import json
 
 DRAG_SECONDS = 10.0
 INTERVAL_BUDGET_MS = 1000.0 / 30.0
-PREFIX = "codegraph."
+PREFIX = "codecallnavigator."
 
 
 def percentile(values, fraction):

@@ -1,10 +1,10 @@
 # Maven build metadata extension
 
 This first-party core extension observes evaluated Maven projects and emits the
-module/source/output ownership consumed by CodeGraph's existing bytecode engine.
+module/source/output ownership consumed by CodeCallNavigator's existing bytecode engine.
 It performs no call resolution and does not change the Maven build lifecycle.
 
-The JAR contains only CodeGraph classes and its Sisu component index. Maven
+The JAR contains only CodeCallNavigator classes and its Sisu component index. Maven
 3.9.9 and javax.inject 1 are pinned compile-only APIs supplied by the user's
 Maven runtime; no Maven implementation or additional third-party runtime library
 is bundled. Transitive build dependencies are pinned in `gradle.lockfile`.
@@ -15,9 +15,9 @@ Build with the repository's Gradle wrapper and JDK 25:
 fixtures/gradle/gradlew --project-dir tools/maven-metadata jar
 ```
 
-Load `build/libs/codegraph-maven-metadata.jar` using Maven's
+Load `build/libs/codecallnavigator-maven-metadata.jar` using Maven's
 `-Dmaven.ext.class.path` extension mechanism. Set the absolute output paths
-`-Dcodegraph.metadata.initial=...` and `-Dcodegraph.metadata.final=...`.
+`-Dcodecallnavigator.metadata.initial=...` and `-Dcodecallnavigator.metadata.final=...`.
 Initial metadata is exported after projects are evaluated; final metadata is
 exported after a successful build, including source roots added by generators.
 Missing final metadata must be treated as incomplete analysis.

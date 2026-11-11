@@ -14,7 +14,7 @@ function projectInputs(config, inputs) {
   }
 }
 function resolveManifest(config,name) {
-  const resolver=createRequire(path.join(path.dirname(config),'__codegraph__.js'));
+  const resolver=createRequire(path.join(path.dirname(config),'__codecallnavigator__.js'));
   try { return canonical(resolver.resolve(`${name}/package.json`)); }
   catch(error) {
     if (['MODULE_NOT_FOUND','ERR_PACKAGE_PATH_NOT_EXPORTED'].includes(error.code)) return null;

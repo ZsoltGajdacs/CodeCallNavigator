@@ -5,9 +5,9 @@ const fs=require('node:fs');
 const os=require('node:os');
 const path=require('node:path');
 const cp=require('node:child_process');
-const modules=process.env.CODEGRAPH_TS_NODE_MODULES||(process.env.CODEGRAPH_TEST_TYPESCRIPT_ROOT&&path.dirname(process.env.CODEGRAPH_TEST_TYPESCRIPT_ROOT))||path.resolve(__dirname,'../../../PacificFateMapEditor/node_modules');
+const modules=process.env.CODECALLNAVIGATOR_TS_NODE_MODULES||(process.env.CODECALLNAVIGATOR_TEST_TYPESCRIPT_ROOT&&path.dirname(process.env.CODECALLNAVIGATOR_TEST_TYPESCRIPT_ROOT))||path.resolve(__dirname,'../../../PacificFateMapEditor/node_modules');
 function analyze(t,source) {
-  const root=fs.mkdtempSync(path.join(os.tmpdir(),'codegraph-callable-'));
+  const root=fs.mkdtempSync(path.join(os.tmpdir(),'codecallnavigator-callable-'));
   t.after(()=>fs.rmSync(root,{recursive:true,force:true}));
   fs.symlinkSync(modules,path.join(root,'node_modules'),'dir');
   fs.writeFileSync(path.join(root,'tsconfig.json'),JSON.stringify({compilerOptions:{target:'ES2023',module:'esnext',moduleResolution:'bundler',strict:true,skipLibCheck:true,types:[]},include:['**/*.ts']}));
@@ -21,7 +21,7 @@ function analyze(t,source) {
   return JSON.parse(fs.readFileSync(output,'utf8'));
 }
 function inferred(graph,caller) {
-  return graph.edges.filter(edge=>edge.provenance==='codegraph.callable.v1'&&(!caller||graph.nodes[edge.from].label===caller));
+  return graph.edges.filter(edge=>edge.provenance==='codecallnavigator.callable.v1'&&(!caller||graph.nodes[edge.from].label===caller));
 }
 function targets(graph,caller) {return [...new Set(inferred(graph,caller).map(edge=>graph.nodes[edge.to].label))].sort();}
 function flowCalls(value) {
@@ -54,7 +54,7 @@ test('logical short circuit excludes unreachable fallback functions and preserve
   assert.deepEqual(targets(graph,'falsy'),['c']);
   for(const node of graph.nodes.filter(node=>['run','truthy','falsy'].includes(node.label))) {
     const fn=graph.flow_inventory.functions.find(fn=>fn.symbol===node.id);
-    const flow=flowCalls(fn).flatMap(call=>call.targets).filter(target=>target.provenance==='codegraph.callable.v1');
+    const flow=flowCalls(fn).flatMap(call=>call.targets).filter(target=>target.provenance==='codecallnavigator.callable.v1');
     assert.deepEqual([...new Set(flow.map(target=>graph.nodes.find(node=>node.id===target.symbol).label))].sort(),targets(graph,node.label));
     assert.ok(flow.every(target=>target.certainty==='possible'));
   }

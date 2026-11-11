@@ -1,7 +1,7 @@
 #[path = "../src/projection.rs"]
 #[allow(dead_code)]
 mod projection;
-use codegraph::{
+use codecallnavigator::{
     graph::{Filter, GraphIndex},
     model::{Edge, GraphData, Node},
 };
@@ -23,8 +23,8 @@ fn request() -> Request {
     }
 }
 
-fn architecture_graph() -> (GraphIndex, Arc<codegraph::architecture::LayerAssignments>) {
-    use codegraph::architecture::{Assignment, LayerAssignments, LayerDefinition, file_key};
+fn architecture_graph() -> (GraphIndex, Arc<codecallnavigator::architecture::LayerAssignments>) {
+    use codecallnavigator::architecture::{Assignment, LayerAssignments, LayerDefinition, file_key};
     let names = ["Controller", "Service", "Entity"];
     let mut data = GraphData {
         nodes: names
@@ -255,7 +255,7 @@ fn parallel_architecture_flows_align_their_starts_and_keep_independent_band_orde
 
 #[test]
 fn layer_source_paths_use_dotted_java_build_directories_as_roots() {
-    use codegraph::architecture::{Assignment, LayerAssignments, LayerDefinition, file_key};
+    use codecallnavigator::architecture::{Assignment, LayerAssignments, LayerDefinition, file_key};
     let node = Node {
         id: "method".into(),
         build: "/root/billing.service".into(),

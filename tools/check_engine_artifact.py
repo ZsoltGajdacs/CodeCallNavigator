@@ -13,7 +13,7 @@ from corpus_boundaries import configure
 def analyze(executable, project, targets):
     subprocess.run([str(executable), 'analyze', '--project', str(project), *targets],
                    check=True, stdout=subprocess.DEVNULL)
-    return (project / '.codegraph/graph.json').read_bytes()
+    return (project / '.codecallnavigator/graph.json').read_bytes()
 
 
 def targets_for(workload, workloads, project):
@@ -53,7 +53,7 @@ def main():
     parser.add_argument('--workload', action='append', choices=list(workloads))
     args = parser.parse_args()
     results = []
-    with tempfile.TemporaryDirectory(prefix='codegraph-artifact-') as temporary:
+    with tempfile.TemporaryDirectory(prefix='codecallnavigator-artifact-') as temporary:
         for name in args.workload or workloads:
             directory = Path(temporary) / name
             directory.mkdir()

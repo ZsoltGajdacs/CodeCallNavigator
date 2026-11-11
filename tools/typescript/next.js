@@ -6,7 +6,7 @@ const {createRequire}=require('node:module');
 const COMPONENT_FILES=new Set(['page','layout','template','loading','error','global-error','not-found','default','forbidden','unauthorized']);
 const ROUTE_METHODS=new Set(['GET','POST','PUT','PATCH','DELETE','HEAD','OPTIONS']);
 function hasNext(owner) {
-  try { return createRequire(path.join(path.dirname(owner),'__codegraph__.js')).resolve('next/package.json'); }
+  try { return createRequire(path.join(path.dirname(owner),'__codecallnavigator__.js')).resolve('next/package.json'); }
   catch { return undefined; }
 }
 function directive(ts,node,text) {

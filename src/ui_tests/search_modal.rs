@@ -6,7 +6,7 @@ use crate::{
     projection::{FocusTarget, GroupKind, Grouping, ViewNode},
     scenes, search, view,
 };
-use codegraph::{
+use codecallnavigator::{
     graph::GraphIndex,
     search::{SearchCategory, SearchTarget},
 };

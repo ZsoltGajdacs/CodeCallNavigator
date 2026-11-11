@@ -1,11 +1,11 @@
 use crate::{app::SavedSession, runtime::Runtime as AnalyzerRuntime};
-use codegraph::{graph::GraphIndex, store::SqliteStore};
+use codecallnavigator::{graph::GraphIndex, store::SqliteStore};
 use std::{path::PathBuf, sync::Arc};
 
 pub struct LoadedGraph {
     pub graph: Arc<GraphIndex>,
     pub generation: String,
-    pub metrics: Option<codegraph::metrics::Metrics>,
+    pub metrics: Option<codecallnavigator::metrics::Metrics>,
 }
 pub struct Boot {
     pub store: Arc<SqliteStore>,
@@ -16,11 +16,11 @@ pub struct Boot {
 }
 
 pub fn data_directory() -> PathBuf {
-    std::env::var_os("CODEGRAPH_DATA_DIR")
+    std::env::var_os("CODECALLNAVIGATOR_DATA_DIR")
         .map(PathBuf::from)
         .unwrap_or_else(|| {
             PathBuf::from(std::env::var_os("HOME").unwrap_or_default())
-                .join("Library/Application Support/CodeGraph")
+                .join("Library/Application Support/CodeCallNavigator")
         })
 }
 

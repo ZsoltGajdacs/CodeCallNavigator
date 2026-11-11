@@ -3,7 +3,7 @@ use crate::{
     app::{RESULT_PAGE_SIZE, State, TargetChoice},
     discovery, engine_client, fingerprint, projection,
 };
-use codegraph::graph::{Direction, GraphIndex};
+use codecallnavigator::graph::{Direction, GraphIndex};
 use rune::{Latest, Tx, Waker};
 use std::{
     path::PathBuf,
@@ -169,7 +169,7 @@ impl State {
         .into();
         let project = PathBuf::from(self.root.text.trim());
         self.jobs.analysis.request(targets, move |targets| {
-            let metrics = codegraph::metrics::Metrics::default();
+            let metrics = codecallnavigator::metrics::Metrics::default();
             let _scope = metrics.enter();
             let report = |message| {
                 let _ = progress.send(message);
@@ -185,11 +185,11 @@ impl State {
                     &report,
                 )?);
                 let graph = {
-                    let _timer = codegraph::metrics::stage("indexing");
+                    let _timer = codecallnavigator::metrics::stage("indexing");
                     Arc::new(GraphIndex::new(data.clone())?)
                 };
                 let generation = {
-                    let _timer = codegraph::metrics::stage("publication");
+                    let _timer = codecallnavigator::metrics::stage("publication");
                     store.publish(&data, &cancel)?
                 };
                 Ok::<_, anyhow::Error>(LoadedGraph {
@@ -224,8 +224,8 @@ impl State {
             .then(|| self.analysis_metrics.clone())
             .flatten();
         self.jobs.layout.request(request, move |request| {
-            let _scope = metrics.as_ref().map(codegraph::metrics::Metrics::enter);
-            let _timer = codegraph::metrics::stage(if first_layout {
+            let _scope = metrics.as_ref().map(codecallnavigator::metrics::Metrics::enter);
+            let _timer = codecallnavigator::metrics::stage(if first_layout {
                 "initial_layout"
             } else {
                 "layout"

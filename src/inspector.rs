@@ -90,9 +90,9 @@ fn selection(state: &State, k: &Kit) -> El {
     content
 }
 
-fn architecture_details(state: &State, node: &codegraph::model::Node, k: &Kit) -> Option<El> {
+fn architecture_details(state: &State, node: &codecallnavigator::model::Node, k: &Kit) -> Option<El> {
     let architecture = state.architecture.as_ref()?;
-    let key = codegraph::architecture::file_key(&node.build, &node.project, &node.file);
+    let key = codecallnavigator::architecture::file_key(&node.build, &node.project, &node.file);
     let assignment = architecture.files.get(&key)?;
     Some(
         col()
@@ -104,7 +104,7 @@ fn architecture_details(state: &State, node: &codegraph::model::Node, k: &Kit) -
     )
 }
 
-fn method_summary(node: &codegraph::model::Node, k: &Kit) -> El {
+fn method_summary(node: &codecallnavigator::model::Node, k: &Kit) -> El {
     col()
         .w_full()
         .gap(theme::SPACE)

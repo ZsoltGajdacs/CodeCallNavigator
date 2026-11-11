@@ -9,7 +9,7 @@ to 6.13.0 to support Java 25 class files. Both raw and engine-reported actual
 targets are retained in the engine output.
 The engine's default equals/hashCode omission is disabled using its existing
 `ECE_PARSE_IGNORE_METHOD` configuration so completeness validation includes project
-overrides. CodeGraph subsequently excludes Object-method signatures, constructors,
+overrides. CodeCallNavigator subsequently excludes Object-method signatures, constructors,
 initializers, inherited placeholders and members without source declarations.
 The existing `ECE_PARSE_IGNORE_METHOD_CALL_TYPE_VALUE_CALLER` switch disables
 type/value inference only for exact `equals(java.lang.Object)` and `hashCode()`
@@ -31,7 +31,7 @@ gradle --project-dir tools/java-bytecode installDist --write-locks
 Run after the target project's own build succeeds:
 
 ```sh
-tools/java-bytecode/build/install/codegraph-bytecode/bin/codegraph-bytecode \
+tools/java-bytecode/build/install/codecallnavigator-bytecode/bin/codecallnavigator-bytecode \
   /absolute/path/to/analysis-output 25 /absolute/path/to/project/build/classes/java/main
 ```
 

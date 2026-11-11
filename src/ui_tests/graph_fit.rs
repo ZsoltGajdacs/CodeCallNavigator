@@ -1,7 +1,7 @@
 //! Explicit Fit accounts for the persistent filter overlay at the minimum window size.
 use super::click;
 use crate::{app::State, jobs, projection, view};
-use codegraph::{
+use codecallnavigator::{
     graph::GraphIndex,
     model::{Edge, GraphData, Node},
 };

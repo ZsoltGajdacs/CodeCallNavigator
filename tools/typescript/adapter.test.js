@@ -4,9 +4,9 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const cp = require('node:child_process');
-const engineModules = process.env.CODEGRAPH_TS_NODE_MODULES || (process.env.CODEGRAPH_TEST_TYPESCRIPT_ROOT && path.dirname(process.env.CODEGRAPH_TEST_TYPESCRIPT_ROOT)) || path.resolve(__dirname, '../../../PacificFateMapEditor/node_modules');
+const engineModules = process.env.CODECALLNAVIGATOR_TS_NODE_MODULES || (process.env.CODECALLNAVIGATOR_TEST_TYPESCRIPT_ROOT && path.dirname(process.env.CODECALLNAVIGATOR_TEST_TYPESCRIPT_ROOT)) || path.resolve(__dirname, '../../../PacificFateMapEditor/node_modules');
 function fixture(t, files) {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'codegraph-ts-'));
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'codecallnavigator-ts-'));
   t.after(() => fs.rmSync(root, { recursive: true, force: true }));
   fs.symlinkSync(engineModules, path.join(root, 'node_modules'), 'dir');
   for (const [name, text] of Object.entries(files)) {

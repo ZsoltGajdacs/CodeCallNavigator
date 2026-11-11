@@ -1,4 +1,4 @@
-use codegraph::{
+use codecallnavigator::{
     model::{EntryPoints, GraphData, Node},
     store::SqliteStore,
 };
@@ -64,7 +64,7 @@ fn metadata_rejects_unknown_or_duplicate_entry_identities() {
 #[test]
 #[ignore = "requires pinned CallAtlas and installed .NET SDK"]
 fn real_csharp_entries_keep_uncalled_methods_and_verify_executable_starts() {
-    use codegraph_engine::{
+    use codecallnavigator_engine::{
         analyzers::{AnalyzerRuntime, analyze},
         discovery::BuildTarget,
     };
@@ -112,7 +112,7 @@ fn real_csharp_entries_keep_uncalled_methods_and_verify_executable_starts() {
 
 #[test]
 fn framework_entries_and_edge_provenance_survive_cache_without_becoming_starts() {
-    use codegraph::model::Edge;
+    use codecallnavigator::model::Edge;
     let root = tempfile::tempdir().unwrap();
     let store = SqliteStore::open(root.path()).unwrap();
     let mut data = graph();

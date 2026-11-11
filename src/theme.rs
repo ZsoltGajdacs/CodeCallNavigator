@@ -1,4 +1,4 @@
-//! CodeGraph's shared component and graph tokens.
+//! CodeCallNavigator's shared component and graph tokens.
 use rune::{Color, TextStyle, tok::Family};
 use rune_kit::{Kit, PaletteSeed};
 
@@ -37,5 +37,5 @@ pub fn uncertain(k: &Kit) -> Color {
 }
 
 pub fn hex(value: &str) -> Color {
-    rune::color::hex(value).expect("CodeGraph color token")
+    rune::color::hex(value).expect("CodeCallNavigator color token")
 }

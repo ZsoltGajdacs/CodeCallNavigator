@@ -75,11 +75,11 @@ fn fixture() -> State {
 }
 
 #[test]
-#[ignore = "requires an explicit copied CODEGRAPH_DATA_DIR; release CPU benchmark only"]
+#[ignore = "requires an explicit copied CODECALLNAVIGATOR_DATA_DIR; release CPU benchmark only"]
 fn saved_canvas_frame_preparation() {
     assert!(!std::hint::black_box(cfg!(debug_assertions)), "Run this benchmark with --release");
     assert!(
-        std::env::var_os("CODEGRAPH_DATA_DIR").is_some(),
+        std::env::var_os("CODECALLNAVIGATOR_DATA_DIR").is_some(),
         "Use a copied profiling workspace"
     );
     for scale in [1.0, 2.0] {

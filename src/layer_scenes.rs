@@ -4,7 +4,7 @@ use crate::{
     app::{Navigation, State},
     projection::{self, Grouping},
 };
-use codegraph::architecture::{Assignment, LayerAssignments, LayerDefinition, Selection, file_key};
+use codecallnavigator::architecture::{Assignment, LayerAssignments, LayerDefinition, Selection, file_key};
 use std::sync::Arc;
 
 pub fn install(state: &mut State) {

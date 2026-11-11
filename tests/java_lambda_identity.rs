@@ -1,7 +1,7 @@
 //! Real javac synthetic identities stay native; portable IDs use proven source attribution.
 #[path = "support/java.rs"]
 mod support;
-use codegraph::{artifact, model::GraphData};
+use codecallnavigator::{artifact, model::GraphData};
 use std::fs;
 
 fn run(directory: &tempfile::TempDir, source: &str) -> GraphData {
@@ -55,7 +55,7 @@ fn portable(graph: &GraphData, directory: &tempfile::TempDir, label: &str) -> St
 #[ignore = "requires pinned Java adapter, Maven and JDK25"]
 fn unrelated_lambda_insertion_keeps_proven_source_identity_and_native_binding_unchanged() {
     let directory = support::fixture("maven");
-    if let Some(command) = std::env::var_os("CODEGRAPH_TEST_MAVEN") {
+    if let Some(command) = std::env::var_os("CODECALLNAVIGATOR_TEST_MAVEN") {
         support::install_wrapper(directory.path(), &std::path::PathBuf::from(command));
     }
     let before = run(&directory, &source(""));
@@ -105,7 +105,7 @@ fn unrelated_lambda_insertion_keeps_proven_source_identity_and_native_binding_un
 #[ignore = "requires pinned Java adapter, Maven and JDK25"]
 fn same_line_siblings_get_identities_while_local_type_owners_keep_native_fallbacks() {
     let directory = support::fixture("maven");
-    if let Some(command) = std::env::var_os("CODEGRAPH_TEST_MAVEN") {
+    if let Some(command) = std::env::var_os("CODECALLNAVIGATOR_TEST_MAVEN") {
         support::install_wrapper(directory.path(), &std::path::PathBuf::from(command));
     }
     let graph = run(
@@ -169,7 +169,7 @@ public final class Standalone {
 #[ignore = "requires pinned Java adapter, Maven and JDK25"]
 fn identical_source_siblings_have_distinct_deterministic_occurrences() {
     let directory = support::fixture("maven");
-    if let Some(command) = std::env::var_os("CODEGRAPH_TEST_MAVEN") {
+    if let Some(command) = std::env::var_os("CODECALLNAVIGATOR_TEST_MAVEN") {
         support::install_wrapper(directory.path(), &std::path::PathBuf::from(command));
     }
     let graph = run(

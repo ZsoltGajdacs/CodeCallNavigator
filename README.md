@@ -1,4 +1,4 @@
-# CodeGraph
+# CodeCallNavigator
 
 A native Apple Silicon macOS call-graph explorer built with Rune. Select a repository
 folder, select discovered .NET solutions/projects, Gradle builds, Maven projects or TypeScript configurations, and refresh.
@@ -18,14 +18,14 @@ desktop app and engine, without packaging or installing the app. For example,
 `./optimized-dev.sh --scene fixture` launches the fixture with release optimization.
 All three scripts work when called from another directory.
 
-Run `./prod.sh` to build the release app and create `dist/CodeGraph.dmg`. Open the
-image and drag CodeGraph to Applications. The `.app` and ZIP are also kept in `dist`.
+Run `./prod.sh` to build the release app and create `dist/CodeCallNavigator.dmg`. Open the
+image and drag CodeCallNavigator to Applications. The `.app` and ZIP are also kept in `dist`.
 The scripts use Python 3.13 by default; set `PYTHON=python3.12` to use another
 installed Python 3.12+ interpreter. All three scripts clean Cargo's build directory
 before building, removing previous Rust build artifacts and dependencies. This
 forces a full Rust rebuild on each run.
 
-You can also open `dist/CodeGraph.app` directly. This local build is ad hoc
+You can also open `dist/CodeCallNavigator.app` directly. This local build is ad hoc
 signed, not notarized. The packaged minimum macOS version is 27.0; broader OS
 certification and Intel support are deferred.
 
@@ -33,11 +33,11 @@ Installed toolchains remain prerequisites: Node 24+ and project-installed TypeSc
 reference packs needed by your .NET projects, and JDK 25 to run the Java analyzer.
 Gradle projects need a working wrapper and their configured Java toolchains.
 Maven projects need Maven 3.9+ or Maven 4, preferably through their Maven Wrapper.
-CodeGraph honors existing project/user settings, profiles and toolchains. Maven
+CodeCallNavigator honors existing project/user settings, profiles and toolchains. Maven
 analysis compiles through `test-compile` with standard test execution skipped;
 normal plugins bound to earlier phases still run. Kotlin, Scala, Android and
 specialized packaging requiring later phases are outside this Java integration.
-CodeGraph reports missing toolchains; it does not install SDKs. Analysis can
+CodeCallNavigator reports missing toolchains; it does not install SDKs. Analysis can
 restore dependencies and compile all configured source sets, including tests,
 but does not run applications or test-execution tasks.
 
@@ -111,10 +111,10 @@ A canvas is capped at 1,500 nodes and 6,000 edges; full search, refocusing and
 paged neighborhoods keep the remaining indexed methods reachable.
 
 Graphs, diagnostics, source fingerprints and navigation are stored in SQLite under
-`~/Library/Application Support/CodeGraph`. Refresh builds a separate immutable
+`~/Library/Application Support/CodeCallNavigator`. Refresh builds a separate immutable
 generation and publishes only on success. Failure/cancellation preserves the last
 successful graph. Source/build changes mark it stale; refresh is manual.
-`CODEGRAPH_DATA_DIR` selects an isolated cache for development or acceptance checks.
+`CODECALLNAVIGATOR_DATA_DIR` selects an isolated cache for development or acceptance checks.
 
 **Clear cache**, beside Generate graph / Refresh, removes the selected project's
 reusable inference cache. Wait for “Cache cleared · start analysis to rebuild.”,
@@ -125,11 +125,11 @@ analysis cannot run together for the same project.
 The same operation is available without opening the desktop:
 
 ```sh
-codegraph-engine clear-cache --project /path/to/project
+codecallnavigator-engine clear-cache --project /path/to/project
 ```
 
-It removes only `.codegraph/inference.sqlite3` and its SQLite sidecars; an absent
-cache is already clear. It preserves `.codegraph/graph.json` and project files.
+It removes only `.codecallnavigator/inference.sqlite3` and its SQLite sidecars; an absent
+cache is already clear. It preserves `.codecallnavigator/graph.json` and project files.
 Unsafe cache paths, deletion errors and a project lock held by analysis cause a
 reported failure; retry after resolving the error.
 
@@ -154,10 +154,14 @@ Prerequisites: Apple Silicon macOS, Rust/Cargo, Xcode command-line tools, Python
 
 ```sh
 python3.13 tools/bootstrap.py
-cargo build --locked --bin codegraph
-cargo run --locked --bin codegraph
+cargo build --locked --bin codecallnavigator
+cargo run --locked --bin codecallnavigator
 python3.13 tools/package.py
 ```
+
+A pre-rename JDT cache with only `.codegraph-sha256` is not accepted by the renamed
+bootstrap. Use a fresh `vendor/jdtls` cache when bootstrapping an older checkout;
+the verified download writes `.codecallnavigator-sha256`.
 
 `analyzers.lock.json`, Cargo.lock and the Java adapter dependency locks pin the source and
 dependency versions. Bootstrap verifies the checked-in CallAtlas patch and refuses
@@ -179,15 +183,15 @@ All content snapshots and per-context classpath rules remain enforced.
 The same production analyzer pipeline is available without opening a window:
 
 ```sh
-cargo build --locked -p codegraph-engine --bin codegraph-engine
-cargo run -p codegraph-engine --bin codegraph-engine -- analyze --project /path/to/project tsconfig.json
-cargo run --bin codegraph -- analyze fixtures/dotnet/Fixture.sln fixtures/gradle fixtures/maven/standalone/pom.xml
-cargo run --bin codegraph -- analyze /path/to/project/tsconfig.json
+cargo build --locked -p codecallnavigator-engine --bin codecallnavigator-engine
+cargo run -p codecallnavigator-engine --bin codecallnavigator-engine -- analyze --project /path/to/project tsconfig.json
+cargo run --bin codecallnavigator -- analyze fixtures/dotnet/Fixture.sln fixtures/gradle fixtures/maven/standalone/pom.xml
+cargo run --bin codecallnavigator -- analyze /path/to/project/tsconfig.json
 ```
 
-The standalone engine updates the single `.codegraph/graph.json` beside project
+The standalone engine updates the single `.codecallnavigator/graph.json` beside project
 configuration. Commit that file to retain graph history in Git. Compare revisions
-with `codegraph-engine compare --project /path/to/project --base HEAD~1 --head HEAD`
+with `codecallnavigator-engine compare --project /path/to/project --base HEAD~1 --head HEAD`
 or compare a committed graph with `--head WORKTREE`. See
 [the engine contract](docs/standalone-engine.md) for packaging, identities and
 language extension boundaries.
@@ -195,7 +199,7 @@ language extension boundaries.
 Collect stage timings and work counters with an optional JSON report:
 
 ```sh
-cargo run --release --bin codegraph -- analyze --timings /tmp/codegraph-timings.json /path/to/build
+cargo run --release --bin codecallnavigator -- analyze --timings /tmp/codecallnavigator-timings.json /path/to/build
 ```
 
 The native app uses the same measurements through its initial layout. Stage times
@@ -262,7 +266,7 @@ to rebuild cached graphs with these labels.
 TypeScript uses the selected project's installed TypeScript 6.0.x compiler with
 Node 24+. The bundled bridge uses public compiler APIs, configured source ownership
 and source redirects for project references; no JavaScript is emitted. Install
-project dependencies beforehand. CodeGraph does not run npm scripts, compiler
+project dependencies beforehand. CodeCallNavigator does not run npm scripts, compiler
 plugins, Next.js configuration or dependency installation. Missing dependencies,
 configuration/resolution/type errors and unsupported compiler versions reject the
 refresh and retain the last successful graph.
@@ -304,10 +308,10 @@ cargo run --release --bin benchmark -- evidence/performance/cache-local
 
 The ignored compiler/build regressions require bootstrapped artifacts, installed
 JDK 25 and working Maven/Gradle toolchains. To test a pinned Maven distribution,
-set `CODEGRAPH_TEST_MAVEN=/absolute/path/to/bin/mvn` when running
+set `CODECALLNAVIGATOR_TEST_MAVEN=/absolute/path/to/bin/mvn` when running
 `cargo test --test java_builds maven_ -- --ignored --test-threads=1`.
 TypeScript compiler fixtures run with `node --test tools/typescript/*.test.js`;
-set `CODEGRAPH_TEST_TYPESCRIPT_ROOT` to an installed TypeScript package if needed.
+set `CODECALLNAVIGATOR_TEST_TYPESCRIPT_ROOT` to an installed TypeScript package if needed.
 The Rust TypeScript integration regressions are ignored by default alongside other
 real-toolchain tests; run `cargo test --test typescript_pipeline -- --ignored --test-threads=1`.
 See [TypeScript acceptance](evidence/analyzers/typescript.md) and [Maven acceptance](evidence/analyzers/maven.md) for the compatibility matrix. Headless Rune GPU screenshots and interaction checks are under

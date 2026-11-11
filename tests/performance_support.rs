@@ -1,5 +1,5 @@
 //! Observable equivalence checks for job-local traversal and generation-local summaries.
-use codegraph::{
+use codecallnavigator::{
     fingerprint,
     graph::{Filter, GraphIndex},
     model::{Edge, GraphData, Node},

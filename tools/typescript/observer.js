@@ -35,7 +35,7 @@ class Targets {
     this.from=syntax.owner(bindings,site);this.byTarget=new Map();
   }
   evidence(registration,index) {
-    const evidence=relationshipEvidence(this.bindings.graph,{rule:'codegraph.observer:collection',semantics:'possible-invocation',site:this.site,
+    const evidence=relationshipEvidence(this.bindings.graph,{rule:'codecallnavigator.observer:collection',semantics:'possible-invocation',site:this.site,
       registration:registration.site,from:this.from,to:index,channel:this.channel.label});
     const id=this.bindings.graph.nodes[registration.from]?.id;
     if(this.supports(id,registration.from,evidence)) evidence.supporting_symbols.push(id);
@@ -44,7 +44,7 @@ class Targets {
   supports(id,index,evidence) {return id&&!evidence.supporting_symbols.includes(id)&&!this.bindings.graph.excluded.has(index);}
   add(registration,index) {
     const evidence=this.evidence(registration,index);
-    const result=this.byTarget.get(index)||{index,certainty:'possible',provenance:'codegraph.observer.v1',evidence:[]};
+    const result=this.byTarget.get(index)||{index,certainty:'possible',provenance:'codecallnavigator.observer.v1',evidence:[]};
     if(!result.evidence.some(previous=>JSON.stringify(previous)===JSON.stringify(evidence))) result.evidence.push(evidence);
     this.byTarget.set(index,result);
   }

@@ -9,7 +9,7 @@ import unittest
 
 
 BOOTSTRAP_PATH = Path(__file__).resolve().parents[1] / "tools" / "bootstrap.py"
-SPEC = importlib.util.spec_from_file_location("codegraph_bootstrap", BOOTSTRAP_PATH)
+SPEC = importlib.util.spec_from_file_location("codecallnavigator_bootstrap", BOOTSTRAP_PATH)
 bootstrap = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(bootstrap)
 
@@ -22,7 +22,7 @@ def git(repository, *arguments):
 
 class RepositoryBootstrapTests(unittest.TestCase):
     def setUp(self):
-        self.temporary = tempfile.TemporaryDirectory(prefix="codegraph-bootstrap-test-")
+        self.temporary = tempfile.TemporaryDirectory(prefix="codecallnavigator-bootstrap-test-")
         self.addCleanup(self.temporary.cleanup)
         root = Path(self.temporary.name)
         self.original_root = bootstrap.ROOT
@@ -40,8 +40,8 @@ class RepositoryBootstrapTests(unittest.TestCase):
     def commit(self, content, message):
         (self.upstream / "dependency.txt").write_text(content)
         git(self.upstream, "add", "dependency.txt")
-        git(self.upstream, "-c", "user.name=CodeGraph test", "-c",
-            "user.email=codegraph-test@example.invalid", "commit", "-m", message)
+        git(self.upstream, "-c", "user.name=CodeCallNavigator test", "-c",
+            "user.email=codecallnavigator-test@example.invalid", "commit", "-m", message)
         return git(self.upstream, "rev-parse", "HEAD")
 
     def test_fresh_clone_checks_out_pin_when_upstream_has_advanced(self):
@@ -69,7 +69,7 @@ class RepositoryBootstrapTests(unittest.TestCase):
 
 class PatchBootstrapTests(unittest.TestCase):
     def setUp(self):
-        self.temporary = tempfile.TemporaryDirectory(prefix="codegraph-patch-test-")
+        self.temporary = tempfile.TemporaryDirectory(prefix="codecallnavigator-patch-test-")
         self.addCleanup(self.temporary.cleanup)
         self.original_root = bootstrap.ROOT
         bootstrap.ROOT = Path(self.temporary.name)
@@ -81,8 +81,8 @@ class PatchBootstrapTests(unittest.TestCase):
         self.source.write_text("upstream\n")
         (self.repository / "other.txt").write_text("unchanged\n")
         git(self.repository, "add", ".")
-        git(self.repository, "-c", "user.name=CodeGraph test", "-c",
-            "user.email=codegraph-test@example.invalid", "commit", "-m", "Pinned")
+        git(self.repository, "-c", "user.name=CodeCallNavigator test", "-c",
+            "user.email=codecallnavigator-test@example.invalid", "commit", "-m", "Pinned")
         self.spec = {}
         self.save_patch("legacy_", "assembly identities\n")
         self.save_patch("", "assembly identities\nentry metadata\n")

@@ -5,7 +5,7 @@ use crate::{
     projection::{FlowDirection, GraphView, Grouping, Request},
     runtime::Runtime as AnalyzerRuntime,
 };
-use codegraph::{graph::GraphIndex, store::SqliteStore};
+use codecallnavigator::{graph::GraphIndex, store::SqliteStore};
 use rune::TextEdit;
 use std::{
     cell::RefCell,
@@ -29,10 +29,10 @@ pub struct State {
     pub saved_builds: Vec<PathBuf>,
     pub saved_targets: Option<Vec<crate::discovery::BuildIdentity>>,
     pub graph: Option<Arc<GraphIndex>>,
-    pub architecture: Option<Arc<codegraph::architecture::LayerAssignments>>,
-    pub architecture_selection: Option<codegraph::architecture::Selection>,
+    pub architecture: Option<Arc<codecallnavigator::architecture::LayerAssignments>>,
+    pub architecture_selection: Option<codecallnavigator::architecture::Selection>,
     pub architecture_workspace: crate::architecture_workspace::Workspace,
-    pub analysis_metrics: Option<codegraph::metrics::Metrics>,
+    pub analysis_metrics: Option<codecallnavigator::metrics::Metrics>,
     pub store: Option<Arc<SqliteStore>>,
     pub runtime: Option<Arc<AnalyzerRuntime>>,
     pub nav: Navigation,

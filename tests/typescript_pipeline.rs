@@ -1,6 +1,6 @@
 //! Compiler-backed acceptance. No dependency installation or project build is performed.
-//! Set CODEGRAPH_TEST_TYPESCRIPT_ROOT to an installed TypeScript 6.0.x package.
-use codegraph_engine::{
+//! Set CODECALLNAVIGATOR_TEST_TYPESCRIPT_ROOT to an installed TypeScript 6.0.x package.
+use codecallnavigator_engine::{
     analyzers::{AnalyzerRuntime, analyze},
     discovery::{BuildTarget, target_from_file},
     fingerprint,
@@ -17,17 +17,17 @@ use std::{
 
 fn fixture() -> tempfile::TempDir {
     let temporary = tempfile::Builder::new()
-        .prefix("CodeGraph TypeScript acceptance ")
+        .prefix("CodeCallNavigator TypeScript acceptance ")
         .tempdir()
         .unwrap();
-    let engine = std::env::var_os("CODEGRAPH_TEST_TYPESCRIPT_ROOT")
+    let engine = std::env::var_os("CODECALLNAVIGATOR_TEST_TYPESCRIPT_ROOT")
         .map(PathBuf::from)
         .unwrap_or_else(|| {
             Path::new(env!("CARGO_MANIFEST_DIR"))
                 .join("../PacificFateMapEditor/node_modules/typescript")
         })
         .canonicalize()
-        .expect("Set CODEGRAPH_TEST_TYPESCRIPT_ROOT to installed TypeScript 6.0.x");
+        .expect("Set CODECALLNAVIGATOR_TEST_TYPESCRIPT_ROOT to installed TypeScript 6.0.x");
     fs::create_dir(temporary.path().join("node_modules")).unwrap();
     symlink(engine, temporary.path().join("node_modules/typescript")).unwrap();
     write(
@@ -187,10 +187,10 @@ fn type_errors_and_cancellation_preserve_the_previous_generation() {
     let build = target(fixture.path(), "tsconfig.json");
     let cache = tempfile::tempdir().unwrap();
     let cli = || {
-        std::process::Command::new(env!("CARGO_BIN_EXE_codegraph"))
+        std::process::Command::new(env!("CARGO_BIN_EXE_codecallnavigator"))
             .arg("analyze")
             .arg(&build.path)
-            .env("CODEGRAPH_DATA_DIR", cache.path())
+            .env("CODECALLNAVIGATOR_DATA_DIR", cache.path())
             .output()
             .unwrap()
     };
@@ -342,7 +342,7 @@ fn packaged_resource_layout_runs_without_development_adapter_fallback() {
         "export function main() { return 1; }\n",
     );
     let bundle = tempfile::tempdir().unwrap();
-    let resources = bundle.path().join("CodeGraph.app/Contents/Resources");
+    let resources = bundle.path().join("CodeCallNavigator.app/Contents/Resources");
     let destination = resources.join("analyzers/typescript");
     fs::create_dir_all(&destination).unwrap();
     let source = Path::new(env!("CARGO_MANIFEST_DIR")).join("tools/typescript");

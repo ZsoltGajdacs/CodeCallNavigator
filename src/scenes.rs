@@ -3,7 +3,7 @@ use crate::{
     app::State,
     projection::{self, GraphView},
 };
-use codegraph::{
+use codecallnavigator::{
     graph::GraphIndex,
     model::{Edge, EntryPoints, GraphData, Node},
 };
@@ -160,7 +160,7 @@ fn cached_scene(state: &mut State, focus: bool) {
         let boot = crate::jobs::load_boot(crate::jobs::data_directory())?;
         let loaded = boot
             .graph
-            .ok_or_else(|| anyhow::anyhow!("No published graph in CODEGRAPH_DATA_DIR"))?;
+            .ok_or_else(|| anyhow::anyhow!("No published graph in CODECALLNAVIGATOR_DATA_DIR"))?;
         state.graph = Some(loaded.graph);
         state.generation = Some(loaded.generation);
         state.runtime = Some(boot.runtime);

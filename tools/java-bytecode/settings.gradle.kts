@@ -1,1 +1,1 @@
-rootProject.name = "codegraph-bytecode"
+rootProject.name = "codecallnavigator-bytecode"

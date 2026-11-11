@@ -71,7 +71,7 @@ def main():
     marker = Path(directory) / "stdin-child.pid"
     identifier, master = pty.fork()
     if identifier == 0:
-        environment = dict(os.environ, CODEGRAPH_TEST_PROCESS_TTY=directory)
+        environment = dict(os.environ, CODECALLNAVIGATOR_TEST_PROCESS_TTY=directory)
         os.execve(binary, [binary, "--exact", test_name, "--nocapture", "--test-threads=1"], environment)
     try:
         return supervise(identifier, master, marker)

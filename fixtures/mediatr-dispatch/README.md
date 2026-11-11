@@ -40,7 +40,7 @@ retains its branch and `await` facts; returning `Task` does not prove runtime
 scheduling. The abstract inherited handler
 base is not an additional concrete candidate. No C# flow inventory is fabricated.
 
-The single `.codegraph/graph.json` is recorded before inference and then updated
+The single `.codecallnavigator/graph.json` is recorded before inference and then updated
 with reviewed changes. Git retains the baseline history.
 
 ## Attributed ASP.NET controllers

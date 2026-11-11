@@ -1,7 +1,7 @@
 # Standalone graph engine
 
-`codegraph-core` owns shared graph/flow/architecture contracts and pure graph
-operations. `codegraph-engine` owns the coordinator and compiler-backed language
+`codecallnavigator-core` owns shared graph/flow/architecture contracts and pure graph
+operations. `codecallnavigator-engine` owns the coordinator and compiler-backed language
 adapters. The desktop owns presentation and workspace caching and invokes the
 engine executable rather than calling analyzer functions.
 
@@ -11,14 +11,14 @@ See the [external consumer contract](graph-contract.md) and its
 ## Project artifact and Git history
 
 ```sh
-codegraph-engine discover /checkout
-codegraph-engine analyze --project /checkout backend/pom.xml frontend/tsconfig.json
-codegraph-engine clear-cache --project /checkout
-codegraph-engine compare --project /checkout --base HEAD~1 --head WORKTREE
+codecallnavigator-engine discover /checkout
+codecallnavigator-engine analyze --project /checkout backend/pom.xml frontend/tsconfig.json
+codecallnavigator-engine clear-cache --project /checkout
+codecallnavigator-engine compare --project /checkout --base HEAD~1 --head WORKTREE
 ```
 
 With no explicit targets, analysis selects the same default builds as discovery.
-The only persistent graph JSON is `/checkout/.codegraph/graph.json`. Each
+The only persistent graph JSON is `/checkout/.codecallnavigator/graph.json`. Each
 successful refresh atomically replaces it while holding the project analysis
 lock. Failed or cancelled work preserves the previous graph. Neither command
 stages files or creates Git commits. Commit the graph alongside the changes it
@@ -52,20 +52,20 @@ remain intact internally. All flow and entry references use the same exported
 mapping. Collisions and unmapped owned paths reject publication.
 
 Generated graph, lock and temporary publication files are not analysis inputs.
-`.codegraph/layers.yml` remains configuration; changing it is still detected.
+`.codecallnavigator/layers.yml` remains configuration; changing it is still detected.
 The desktop SQLite store is a derived cache for navigation and recovery, not the
 canonical graph history.
 
 ## Executables and process protocol
 
-Build just the engine with `cargo build --locked -p codegraph-engine --bin
-codegraph-engine`; it does not compile Rune or WGPU and does not need Graphviz.
+Build just the engine with `cargo build --locked -p codecallnavigator-engine --bin
+codecallnavigator-engine`; it does not compile Rune or WGPU and does not need Graphviz.
 `python3.13 tools/package.py --engine-only` creates a relocatable
-`dist/CodeGraphEngine` with matching analyzer resources. Normal app packaging
+`dist/CodeCallNavigatorEngine` with matching analyzer resources. Normal app packaging
 includes that engine beside the desktop executable. The analysis toolchains and
 project dependencies documented in the main README are still required.
 
-Development can select `CODEGRAPH_ENGINE` explicitly. `CODEGRAPH_RESOURCES`
+Development can select `CODECALLNAVIGATOR_ENGINE` explicitly. `CODECALLNAVIGATOR_RESOURCES`
 selects an analyzer resource root when validating a frozen distribution.
 Executable and adapters must come from the same revision.
 
@@ -120,7 +120,7 @@ symbol and path references use supporting identities and source sites instead.
 
 TypeScript observer inference connects a real callback invocation in a `for...of`
 loop with compiler-bound registrations into the same callback `Set`. Edges carry
-`possible` certainty, `codegraph.observer.v1` provenance and source evidence for the
+`possible` certainty, `codecallnavigator.observer.v1` provenance and source evidence for the
 invocation and registrations. Multiple registrations of the same callback retain
 all evidence without multiplying the invocation count. Registration alone does
 not establish invocation, and flowchart targets use the same resolver as graph edges.
@@ -150,7 +150,7 @@ unrelated classes or namespaces do not join.
 
 TypeScript callable inference follows immutable `??`/`||` aliases, direct
 callable parameters and simple returned functions. It adds `possible` invocation
-edges with `codegraph.callable.v1` provenance only at actual calls; argument and
+edges with `codecallnavigator.callable.v1` provenance only at actual calls; argument and
 return references do not become invocations. Graphs and flowcharts share targets
 and diagnostics. Return environments are specific to each call.
 
@@ -164,7 +164,7 @@ See `tools/typescript/README.md` for the supported subset and
 Java analysis connects compiler-resolved `ApplicationEventPublisher.publishEvent`
 sites to supported `EventListener`, `TransactionalEventListener` and
 `ApplicationListener` methods in the same compiled source context. Relationships
-use kind `spring-event`, possible certainty and `codegraph.spring.event.v1`
+use kind `spring-event`, possible certainty and `codecallnavigator.spring.event.v1`
 provenance. Flow targets share their exact source call spans. Evidence preserves
 conditions, transaction phase/fallback settings and async annotations; these do
 not prove bean registration or runtime execution.
@@ -185,7 +185,7 @@ Closed handler interfaces and their real `Handle` implementations must be visibl
 in the caller's compilation scope. Requests require one matching handler;
 notifications may have several. Existing native relationships remain intact.
 
-Added calls have possible certainty and `codegraph.mediatr.v1` provenance.
+Added calls have possible certainty and `codecallnavigator.mediatr.v1` provenance.
 Evidence records the operation, concrete types, source site and Task completion
 contract. `mediatr.direct_await` means directly awaited with only parentheses;
 `mediatr.conditional_context` reports surrounding conditional syntax, not a proven
@@ -211,10 +211,10 @@ Compiler-qualified custom ASP.NET metadata providers and MVC conventions that
 can rewrite routes also block affected application owners, including awaitable
 handler results and parameter/property hooks. Analysis never executes those hooks.
 
-Cross-language HTTP requires the owning project's `.codegraph/boundaries.yml`.
+Cross-language HTTP requires the owning project's `.codecallnavigator/boundaries.yml`.
 Build selection alone does not establish a shared origin. Configuration examples,
 application ownership and the deliberately bounded matching rules are documented
-in [the boundary contract](../crates/codegraph-core/src/boundary/README.md).
+in [the boundary contract](../crates/codecallnavigator-core/src/boundary/README.md).
 Facts and explicit flow target kinds survive canonical export and the derived
 desktop cache. Next Link JSX adds a graph boundary without inventing a flow call.
 
@@ -229,7 +229,7 @@ analyzer does not execute project configuration.
 Each run still extracts and validates fresh compiler facts. Observer, callable,
 Spring and MediatR inference currently recompute from those facts. The boundary
 pass reuses dependency-keyed routing decisions in the disposable project-local
-`.codegraph/inference.sqlite3`; it never loads prior graph edges as evidence.
+`.codecallnavigator/inference.sqlite3`; it never loads prior graph edges as evidence.
 The SQLite file and its exact journal/WAL/SHM names are excluded from discovery,
 source fingerprints and refresh triggers. Continue committing only the single
 graph file and authored configuration, not this derived cache.
@@ -251,17 +251,17 @@ same project lock. Cache persistence failure cannot turn a published graph into 
 failed analysis. Failed or cancelled analysis preserves the successful graph and
 previous cache. The cache stores no graph history.
 
-Use `codegraph-engine clear-cache --project /checkout` or the desktop's
+Use `codecallnavigator-engine clear-cache --project /checkout` or the desktop's
 **Clear cache** button beside analysis to discard the inference database and its
 exact `-wal`, `-shm` and `-journal` sidecars. Clearing holds the same project
 analysis lock and fails while another analysis owns it. Nonregular or hard-linked
-cache paths and a symlinked `.codegraph` directory are rejected before deletion.
+cache paths and a symlinked `.codecallnavigator` directory are rejected before deletion.
 Corrupt regular cache files can be removed so the next analysis recomputes all
 inference decisions. Clearing preserves `graph.json`, the displayed graph,
 navigation, authored configuration and build outputs; start analysis separately
 after it completes.
 
-Set `CODEGRAPH_DISABLE_INFERENCE_CACHE=1` to run the full reference path without
+Set `CODECALLNAVIGATOR_DISABLE_INFERENCE_CACHE=1` to run the full reference path without
 reading or writing the cache. Canonical graph bytes are identical in both modes.
 Cache hit/miss/rejection counters and warnings use progress/performance reporting,
 not canonical graph content.

@@ -1,6 +1,6 @@
 //! Bounded presentation of analyzed relationships, separate from graph layout.
-use codegraph::architecture::LayerAssignments;
-use codegraph::graph::{Direction, Filter, GraphIndex};
+use codecallnavigator::architecture::LayerAssignments;
+use codecallnavigator::graph::{Direction, Filter, GraphIndex};
 use serde::{Deserialize, Serialize};
 use std::{collections::HashSet, sync::Arc};
 
@@ -26,7 +26,7 @@ mod ordering;
 mod selection;
 
 pub use geometry::layout;
-pub(crate) fn class_key(identity: &codegraph::search::ClassIdentity) -> String {
+pub(crate) fn class_key(identity: &codecallnavigator::search::ClassIdentity) -> String {
     groups::class_key(identity)
 }
 const NODE_LIMIT: usize = 1_500;

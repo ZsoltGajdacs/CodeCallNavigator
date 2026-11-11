@@ -1,6 +1,6 @@
 //! Stable grouping identities, independent of aggregation and geometry.
 use super::{GroupKind, Grouping, Request};
-use codegraph::{model::Node, search::ClassIdentity};
+use codecallnavigator::{model::Node, search::ClassIdentity};
 use std::path::{Path, PathBuf};
 
 pub(super) struct Group {

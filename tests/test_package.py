@@ -11,7 +11,7 @@ import zipfile
 from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "tools"))
-SPEC = importlib.util.spec_from_file_location("codegraph_package", Path(__file__).resolve().parents[1] / "tools/package.py")
+SPEC = importlib.util.spec_from_file_location("codecallnavigator_package", Path(__file__).resolve().parents[1] / "tools/package.py")
 PACKAGE = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(PACKAGE)
 
@@ -22,7 +22,7 @@ def git(repository, *arguments):
 
 class SourceProvenanceTests(unittest.TestCase):
     def setUp(self):
-        self.temporary = tempfile.TemporaryDirectory(prefix="codegraph-package-test-")
+        self.temporary = tempfile.TemporaryDirectory(prefix="codecallnavigator-package-test-")
         self.addCleanup(self.temporary.cleanup)
         self.root = Path(self.temporary.name)
         self.specifications = {}
@@ -112,8 +112,8 @@ class SourceProvenanceTests(unittest.TestCase):
 
 class JavaAdapterCapabilityTests(unittest.TestCase):
     def test_installed_adapter_has_matching_correlation_capability(self):
-        distribution = PACKAGE.ROOT / "tools/java-bytecode/build/install/codegraph-bytecode"
-        if not (distribution / "lib/codegraph-bytecode.jar").is_file():
+        distribution = PACKAGE.ROOT / "tools/java-bytecode/build/install/codecallnavigator-bytecode"
+        if not (distribution / "lib/codecallnavigator-bytecode.jar").is_file():
             self.skipTest("Build the Java adapter before testing packaged resources")
         PACKAGE.verify_java_adapter(distribution)
 
@@ -121,23 +121,23 @@ class JavaAdapterCapabilityTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             distribution = Path(temporary)
             (distribution / "lib").mkdir()
-            jar = distribution / "lib/codegraph-bytecode.jar"
+            jar = distribution / "lib/codecallnavigator-bytecode.jar"
             with zipfile.ZipFile(jar, "w") as archive:
-                archive.writestr("codegraph/bytecode/SourceInventory.class", b"kind_v8")
+                archive.writestr("codecallnavigator/bytecode/SourceInventory.class", b"kind_v8")
             with self.assertRaisesRegex(RuntimeError, "lacks kind_v8"):
                 PACKAGE.verify_java_adapter(distribution)
 
     def test_complete_adapter_with_legacy_inventory_marker_is_rejected(self):
-        installed = PACKAGE.ROOT / "tools/java-bytecode/build/install/codegraph-bytecode/lib/codegraph-bytecode.jar"
+        installed = PACKAGE.ROOT / "tools/java-bytecode/build/install/codecallnavigator-bytecode/lib/codecallnavigator-bytecode.jar"
         if not installed.is_file():
             self.skipTest("Build the Java adapter before testing packaged resources")
         with tempfile.TemporaryDirectory() as temporary:
             distribution = Path(temporary)
             (distribution / "lib").mkdir()
-            with zipfile.ZipFile(installed) as original, zipfile.ZipFile(distribution / "lib/codegraph-bytecode.jar", "w") as legacy:
+            with zipfile.ZipFile(installed) as original, zipfile.ZipFile(distribution / "lib/codecallnavigator-bytecode.jar", "w") as legacy:
                 for name in original.namelist():
                     contents = original.read(name)
-                    if name == "codegraph/bytecode/SourceInventory.class":
+                    if name == "codecallnavigator/bytecode/SourceInventory.class":
                         self.assertIn(b"kind_v8", contents)
                         contents = contents.replace(b"kind_v8", b"kind_v7")
                     legacy.writestr(name, contents)

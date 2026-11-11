@@ -1,6 +1,6 @@
 //! Explicit two-function snapshot fixture through the production builder and Graphviz.
 use crate::app::State;
-use codegraph::{
+use codecallnavigator::{
     architecture::{ArchitectureFacts, FileFacts},
     flow::*,
     graph::GraphIndex,

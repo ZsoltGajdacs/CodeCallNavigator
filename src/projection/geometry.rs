@@ -1,7 +1,7 @@
 //! Graphviz process execution and geometry decoding. Ordering is supplied by projection.
 use super::GraphView;
 use anyhow::{Context, Result, bail};
-use codegraph::graphviz::{coordinates, spline_points};
+use codecallnavigator::graphviz::{coordinates, spline_points};
 use serde_json::Value;
 use std::{collections::BTreeMap, path::Path};
 
@@ -79,7 +79,7 @@ pub fn layout(mut view: GraphView, dot: &Path) -> Result<GraphView> {
         view.size = [400.0, 300.0];
         return Ok(view);
     }
-    let output: Value = serde_json::from_slice(&codegraph::graphviz::run(dot, &dot_input(&view))?)?;
+    let output: Value = serde_json::from_slice(&codecallnavigator::graphviz::run(dot, &dot_input(&view))?)?;
     let bounds = coordinates(output["bb"].as_str().context("Graphviz omitted bounds")?)?;
     if bounds.len() != 4 {
         bail!("Invalid Graphviz bounds")

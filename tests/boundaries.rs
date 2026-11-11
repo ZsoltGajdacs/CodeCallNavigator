@@ -1,14 +1,14 @@
-use codegraph::model::GraphData;
+use codecallnavigator::model::GraphData;
 
 #[test]
 fn unknown_boundary_flow_kind_is_rejected_and_legacy_targets_default_to_calls() {
     let value = serde_json::json!({"symbol":"source","certainty":"possible","provenance":"test"});
-    let target: codegraph::flow::CallTarget = serde_json::from_value(value.clone()).unwrap();
+    let target: codecallnavigator::flow::CallTarget = serde_json::from_value(value.clone()).unwrap();
     assert_eq!(target.kind, "call");
     assert_eq!(serde_json::to_value(target).unwrap(), value);
     let mut invalid = value;
     invalid["kind"] = "unknown".into();
-    assert!(serde_json::from_value::<codegraph::flow::CallTarget>(invalid).is_err());
+    assert!(serde_json::from_value::<codecallnavigator::flow::CallTarget>(invalid).is_err());
 }
 
 #[test]
@@ -22,7 +22,7 @@ fn boundary_inventory_is_preserved_in_native_graphs() {
     );
 }
 
-use codegraph::{
+use codecallnavigator::{
     boundary::{self, BoundaryInventory, BoundaryUse, Configuration, HttpScope, RouteFact, Server},
     model::{Node, SourceSite},
 };
@@ -180,7 +180,7 @@ fn facts_roundtrip_with_optional_blockers_and_portable_paths_and_ids() {
     blocker.symbol = None;
     graph.boundaries.as_mut().unwrap().routes.push(blocker);
     let roots = vec![("repo".into(), "/repo".into())];
-    let artifact = codegraph::artifact::canonical(&graph, &roots).unwrap();
+    let artifact = codecallnavigator::artifact::canonical(&graph, &roots).unwrap();
     let local = artifact
         .hydrate(&[("repo".into(), "/relocated".into())])
         .unwrap();
@@ -191,13 +191,13 @@ fn facts_roundtrip_with_optional_blockers_and_portable_paths_and_ids() {
     );
     assert_eq!(
         artifact.bytes().unwrap(),
-        codegraph::artifact::canonical(&local, &[("repo".into(), "/relocated".into())])
+        codecallnavigator::artifact::canonical(&local, &[("repo".into(), "/relocated".into())])
             .unwrap()
             .bytes()
             .unwrap()
     );
     let directory = tempfile::tempdir().unwrap();
-    let store = codegraph::store::SqliteStore::open(directory.path()).unwrap();
+    let store = codecallnavigator::store::SqliteStore::open(directory.path()).unwrap();
     store
         .publish(&graph, &std::sync::atomic::AtomicBool::new(false))
         .unwrap();
@@ -205,7 +205,7 @@ fn facts_roundtrip_with_optional_blockers_and_portable_paths_and_ids() {
     assert_eq!(graph.boundaries, restored.boundaries);
     assert_eq!(
         artifact.bytes().unwrap(),
-        codegraph::artifact::canonical(&restored, &roots)
+        codecallnavigator::artifact::canonical(&restored, &roots)
             .unwrap()
             .bytes()
             .unwrap()
@@ -218,20 +218,20 @@ fn configuration_normalizes_maven_selectors_and_tracks_absence_and_edits() {
     let targets = Vec::new();
     let (_, missing) = Configuration::load(project, &targets).unwrap();
     assert!(missing[0].missing);
-    std::fs::create_dir(project.join(".codegraph")).unwrap();
+    std::fs::create_dir(project.join(".codecallnavigator")).unwrap();
     std::fs::create_dir(project.join("api")).unwrap();
     std::fs::write(project.join("api/pom.xml"), "<project/>").unwrap();
     std::fs::write(project.join("tsconfig.json"), "{}").unwrap();
     std::fs::write(
-        project.join(".codegraph/boundaries.yml"),
+        project.join(".codecallnavigator/boundaries.yml"),
         "version: 1\nhttp:\n  - client: tsconfig.json\n    servers: [api/pom.xml]\n",
     )
     .unwrap();
-    assert!(codegraph::fingerprint::is_stale(&missing).unwrap());
+    assert!(codecallnavigator::fingerprint::is_stale(&missing).unwrap());
     assert!(Configuration::load(project, &targets).is_err());
     let targets = vec![
-        codegraph::discovery::target_from_file(&project.join("tsconfig.json")).unwrap(),
-        codegraph::discovery::target_from_file(&project.join("api/pom.xml")).unwrap(),
+        codecallnavigator::discovery::target_from_file(&project.join("tsconfig.json")).unwrap(),
+        codecallnavigator::discovery::target_from_file(&project.join("api/pom.xml")).unwrap(),
     ];
     let (config, observed) = Configuration::load(project, &targets).unwrap();
     assert_eq!(
@@ -243,8 +243,8 @@ fn configuration_normalizes_maven_selectors_and_tracks_absence_and_edits() {
             .to_string_lossy()
             .as_ref()
     );
-    std::fs::write(project.join(".codegraph/boundaries.yml"), "version: 2\n").unwrap();
-    assert!(codegraph::fingerprint::is_stale(&observed).unwrap());
+    std::fs::write(project.join(".codecallnavigator/boundaries.yml"), "version: 2\n").unwrap();
+    assert!(codecallnavigator::fingerprint::is_stale(&observed).unwrap());
 }
 #[test]
 fn recompilation_uses_facts_instead_of_previous_inferred_relationships() {
@@ -256,7 +256,7 @@ fn recompilation_uses_facts_instead_of_previous_inferred_relationships() {
 }
 #[test]
 fn legacy_flow_target_kind_stays_implicit_and_explicit_boundaries_survive() {
-    let target: codegraph::flow::CallTarget = serde_json::from_value(
+    let target: codecallnavigator::flow::CallTarget = serde_json::from_value(
         serde_json::json!({"symbol":"source","certainty":"direct","provenance":"compiler"}),
     )
     .unwrap();
@@ -277,10 +277,10 @@ fn unknown_request_method_is_unresolved_and_flow_requires_an_actual_matching_cal
     let usage = &mut graph.boundaries.as_mut().unwrap().uses[0];
     usage.method = Some("GET".into());
     usage.flow = true;
-    usage.site.span = Some(codegraph::flow::SourceSpan { start: 1, end: 5 });
+    usage.site.span = Some(codecallnavigator::flow::SourceSpan { start: 1, end: 5 });
     boundary::resolve(&mut graph, &Configuration::default()).unwrap();
     assert!(graph.edges.is_empty());
-    use codegraph::flow::{
+    use codecallnavigator::flow::{
         CallSite, CallTarget, FlowInventory, FunctionFlowIR, SourceSpan, Statement, StatementKind,
     };
     graph.flow_inventory = Some(FlowInventory {
@@ -311,7 +311,7 @@ fn unknown_request_method_is_unresolved_and_flow_requires_an_actual_matching_cal
     boundary::resolve(&mut graph, &Configuration::default()).unwrap();
     assert_eq!(graph.edges.len(), 1);
     let function = &mut graph.flow_inventory.as_mut().unwrap().functions[0];
-    codegraph::flow::visit_calls_mut(function, &mut |call| {
+    codecallnavigator::flow::visit_calls_mut(function, &mut |call| {
         assert_eq!(call.targets.len(), 2);
         assert_eq!(call.targets[1].kind, "http");
         assert!(
@@ -323,7 +323,7 @@ fn unknown_request_method_is_unresolved_and_flow_requires_an_actual_matching_cal
     });
     graph.boundaries.as_mut().unwrap().routes.clear();
     boundary::resolve(&mut graph, &Configuration::default()).unwrap();
-    codegraph::flow::visit_calls_mut(
+    codecallnavigator::flow::visit_calls_mut(
         &mut graph.flow_inventory.as_mut().unwrap().functions[0],
         &mut |call| {
             assert_eq!(call.targets.len(), 1);

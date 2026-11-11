@@ -1,1 +1,1 @@
-rootProject.name = "codegraph-accuracy-fixture"
+rootProject.name = "codecallnavigator-accuracy-fixture"

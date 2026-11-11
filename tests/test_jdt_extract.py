@@ -54,7 +54,7 @@ class SymbolMappingTests(unittest.TestCase):
         outer = reported_symbol("Example", kind=5, line=0)
         outer["children"] = [reported_symbol("run(int)", line=3),
                              reported_symbol("run(String)", line=5)]
-        root = Path("/private/tmp/CodeGraph symbols")
+        root = Path("/private/tmp/CodeCallNavigator symbols")
         uri = (root / "Example.java").as_uri()
         declarations = list(jdt.collect_symbols([outer], uri, root))
         self.assertEqual(len(declarations), 3)
@@ -68,9 +68,9 @@ class SymbolMappingTests(unittest.TestCase):
             list(jdt.collect_symbols([{"name": "x", "kind": 6}], "file:///x.java", Path("/")))
 
     def test_uri_ownership_uses_path_boundaries(self):
-        root = Path("/private/tmp/CodeGraph symbols")
+        root = Path("/private/tmp/CodeCallNavigator symbols")
         self.assertIsNone(jdt.project_path("jdt://contents/library.class", root))
-        self.assertIsNone(jdt.project_path((root.parent / "CodeGraph symbols-other/X.java").as_uri(), root))
+        self.assertIsNone(jdt.project_path((root.parent / "CodeCallNavigator symbols-other/X.java").as_uri(), root))
         self.assertEqual(jdt.project_path((root / "X.java").as_uri(), root), "X.java")
 
 

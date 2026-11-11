@@ -1,6 +1,6 @@
 //! Resolve overview, method-root neighborhoods and directed paths.
 use super::{FlowDirection, Grouping, Request, Scope, Selection};
-use codegraph::graph::{Filter, GraphIndex, MultiNeighborhood};
+use codecallnavigator::graph::{Filter, GraphIndex, MultiNeighborhood};
 use std::collections::HashSet;
 
 pub(super) fn resolve(graph: &GraphIndex, request: &Request) -> Selection {

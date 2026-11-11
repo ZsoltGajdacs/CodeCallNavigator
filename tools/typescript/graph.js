@@ -40,7 +40,7 @@ class Graph {
   result() {
     const called=new Set(this.edges.filter(e=>e.kind!=='reference').map(e=>e.to));
     const candidates=this.nodes.filter((n,i)=>!called.has(i)&&!n.body_unavailable).map(n=>n.id).sort();
-    return {schema:'codegraph.typescript.v2',excluded_methods:[...this.excluded].map(i=>this.nodes[i].id),fingerprints:[],engine_versions:'',nodes:this.nodes,edges:this.edges,
+    return {schema:'codecallnavigator.typescript.v2',excluded_methods:[...this.excluded].map(i=>this.nodes[i].id),fingerprints:[],engine_versions:'',nodes:this.nodes,edges:this.edges,
       diagnostics:[...this.unresolved].sort().map(([kind,count])=>`${count} ${kind}`),roots:this.context.metadata.configs,
       entry_points:{candidates,application_starts:[],framework_entries:[...this.framework].map(i=>this.nodes[i].id).sort()},versions:this.context.metadata.versions};
   }

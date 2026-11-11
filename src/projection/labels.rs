@@ -1,5 +1,5 @@
 //! Graph-only display text, independent of stable identities and analyzer formats.
-use codegraph::{
+use codecallnavigator::{
     model::{Node, Visibility},
     search::class_name,
 };
@@ -61,7 +61,7 @@ pub(super) fn class(node: &Node) -> Label {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use codegraph::search::simple_class_name;
+    use codecallnavigator::search::simple_class_name;
 
     #[test]
     fn visibility_signs_have_precise_descriptions() {

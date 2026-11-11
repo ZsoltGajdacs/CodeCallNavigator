@@ -50,8 +50,8 @@ pub fn render(state: &State, k: &Kit, emphasis: &GraphEmphasis) -> Shape {
 }
 
 fn style(edge: &ViewEdge, k: &Kit, opacity: f32) -> Style {
-    let reference = codegraph::model::relationship_is_reference(&edge.kind);
-    let direct = !codegraph::model::relationship_is_uncertain(&edge.certainty);
+    let reference = codecallnavigator::model::relationship_is_reference(&edge.kind);
+    let direct = !codecallnavigator::model::relationship_is_uncertain(&edge.certainty);
     let color = if reference {
         theme::callback(k)
     } else if direct {

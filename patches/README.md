@@ -20,7 +20,7 @@ compiler-owned framework metadata:
 - Register top-level entry points per compiler assembly rather than once per solution.
 - Keep existing call binding unchanged. Export `declarationFactsVersion: "1"` and
   per-method source-declaration, implicitness, callable-kind and Object-signature
-  facts from Roslyn. CodeGraph owns inclusion policy and prunes after validation.
+  facts from Roslyn. CodeCallNavigator owns inclusion policy and prunes after validation.
 - Preserve those facts when reading and writing CallAtlas snapshots.
 - Export architecture file facts directly from the same Roslyn semantic models, including type/method attributes, namespaces, declaration kinds, base types and annotated interfaces. These facts do not change call binding or graph inclusion.
 - Export `entryPoints.candidates` using the existing `CodeMapQuery.EntryPoints` query, including uncalled declarations.
@@ -28,7 +28,7 @@ compiler-owned framework metadata:
 - Export versioned MediatR facts separately from native edges: compiler-bound
   ISender/IPublisher calls, actual concrete request/notification types, scoped
   closed handler implementations, source sites and handler entry catalogs.
-  Reading and writing snapshots preserves the capability and facts. CodeGraph's
+  Reading and writing snapshots preserves the capability and facts. CodeCallNavigator's
   language adapter creates possible relationships from them. Task return values
   describe completion contracts and do not prove asynchronous scheduling.
 
@@ -163,7 +163,7 @@ unrelated-file rejection tests:
 `rune-input-observers.patch` replaces the oriented-segments combined patch on Rune
 revision `7ed827a2b969ec737323c3e80d2bfc1b8032b609`; its SHA-256 is pinned in
 `analyzers.lock.json`. It preserves the platform-warning and oriented-segment
-changes and adds non-consuming pointer and logical-key observers. CodeGraph uses
+changes and adds non-consuming pointer and logical-key observers. CodeCallNavigator uses
 these to cancel a pending standalone Double Shift sequence even when a focused
 editor consumes typing or a pointer action hits blank space or a modal backdrop.
 Observers run before regular dispatch and cannot consume events. `Tx::live_only()`
@@ -175,5 +175,5 @@ combined and warnings-only diffs, reverses the matching checkpoint and installs
 this replacement. Unknown edits remain rejected and preserved. Native window,
 multiwindow, web and headless app setup all retain the callbacks.
 
-Public-API regression checks: `cargo test --locked -p codegraph --test rune_input_observers`.
+Public-API regression checks: `cargo test --locked -p codecallnavigator --test rune_input_observers`.
 Patch verification and migration: `python3 -m unittest discover -s tools -p 'test_dependency*.py'`.

@@ -44,11 +44,11 @@ def run_profile(args):
     metadata = {"binary": str(binary), "sha256": binary_hash(binary), "scene": args.scene,
                 "requested_size": args.size, "expected_native_scale": args.expected_scale}
     (output / "run.json").write_text(json.dumps(metadata, indent=2) + "\n")
-    with tempfile.TemporaryDirectory(prefix="codegraph-native-pan-") as temporary:
+    with tempfile.TemporaryDirectory(prefix="codecallnavigator-native-pan-") as temporary:
         store = Path(temporary) / "store"
         snapshot_store(args.data_dir.resolve(), store)
         command = [str(binary), "--native", "--scene", args.scene, "--trace", str(output / "native.jsonl"), "--size", args.size]
-        environment = os.environ | {"CODEGRAPH_DATA_DIR": str(store), "CODEGRAPH_PAN_PROFILE": str(output)}
+        environment = os.environ | {"CODECALLNAVIGATOR_DATA_DIR": str(store), "CODECALLNAVIGATOR_PAN_PROFILE": str(output)}
         metadata["command"] = command
         with (output / "process.log").open("w") as log:
             try:
@@ -71,7 +71,7 @@ def main():
     run = commands.add_parser("run", help="Run the packaged release app on the current native display")
     run.add_argument("--binary", type=Path, required=True)
     run.add_argument("--output", type=Path, required=True, help="A new result directory")
-    run.add_argument("--data-dir", type=Path, default=Path.home() / "Library/Application Support/CodeGraph")
+    run.add_argument("--data-dir", type=Path, default=Path.home() / "Library/Application Support/CodeCallNavigator")
     run.add_argument("--scene", choices=["saved-canvas", "dense-canvas"], default="saved-canvas")
     run.add_argument("--size", default="1900x1100")
     report = commands.add_parser("report", help="Recompute acceptance from existing native measurements")

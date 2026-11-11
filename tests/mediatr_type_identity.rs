@@ -1,5 +1,5 @@
 //! Actual Roslyn symbols distinguish constructed owners and array element assemblies.
-use codegraph_engine::{
+use codecallnavigator_engine::{
     analyzers::{AnalyzerRuntime, analyze},
     discovery::target_from_file,
 };
@@ -54,7 +54,7 @@ fn fixture(root: &Path) {
 #[ignore = "requires pinned CallAtlas, .NET10 and cached public MediatR12.4.1"]
 fn closed_compiler_types_and_direct_await_have_distinct_evidence() {
     let root = tempfile::Builder::new()
-        .prefix("CodeGraph MediatR types ")
+        .prefix("CodeCallNavigator MediatR types ")
         .tempdir()
         .unwrap();
     fixture(root.path());
@@ -68,7 +68,7 @@ fn closed_compiler_types_and_direct_await_have_distinct_evidence() {
     let inferred: Vec<_> = graph
         .edges
         .iter()
-        .filter(|edge| edge.provenance == "codegraph.mediatr.v1")
+        .filter(|edge| edge.provenance == "codecallnavigator.mediatr.v1")
         .collect();
     let callers: BTreeSet<_> = inferred
         .iter()

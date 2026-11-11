@@ -15,7 +15,7 @@ impl Runtime {
         let directory = executable.parent().context("Executable has no directory")?;
         let engine = engine_path(directory)?;
         let bundled = directory.parent().unwrap_or(directory).join("Resources");
-        let resources = std::env::var_os("CODEGRAPH_RESOURCES")
+        let resources = std::env::var_os("CODECALLNAVIGATOR_RESOURCES")
             .map(PathBuf::from)
             .unwrap_or_else(|| {
                 if bundled.join("analyzers").is_dir() {
@@ -52,24 +52,24 @@ impl Runtime {
 }
 
 fn engine_path(directory: &Path) -> Result<PathBuf> {
-    if let Some(path) = std::env::var_os("CODEGRAPH_ENGINE") {
+    if let Some(path) = std::env::var_os("CODECALLNAVIGATOR_ENGINE") {
         let path = PathBuf::from(path);
         ensure!(
             path.is_file(),
-            "CODEGRAPH_ENGINE is not a file: {}",
+            "CODECALLNAVIGATOR_ENGINE is not a file: {}",
             path.display()
         );
         return path.canonicalize().context("Cannot open configured engine");
     }
-    let sibling = directory.join("codegraph-engine");
+    let sibling = directory.join("codecallnavigator-engine");
     let development = directory
         .parent()
         .unwrap_or(directory)
-        .join("codegraph-engine");
+        .join("codecallnavigator-engine");
     [sibling, development]
         .into_iter()
         .find(|path| path.is_file())
         .context(
-            "Cannot find codegraph-engine beside CodeGraph; build or install the matching engine",
+            "Cannot find codecallnavigator-engine beside CodeCallNavigator; build or install the matching engine",
         )
 }

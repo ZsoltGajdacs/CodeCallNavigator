@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Measure release analyses using isolated caches, including full graph equivalence.
 
-Example: python3 tools/measure_analysis.py --executable target/release/codegraph
+Example: python3 tools/measure_analysis.py --executable target/release/codecallnavigator
   --workload storyengine=/path/backend --output /tmp/performance --runs 5
   --timings --baseline /tmp/baseline
 
@@ -47,7 +47,7 @@ def process_tree_bytes(pid):
 def sample_resources(stopped, context, samples):
     temporary = Path(tempfile.gettempdir())
     while not stopped.wait(0.25):
-        roots = set(temporary.glob("codegraph-*-*-*")) - context["before"]
+        roots = set(temporary.glob("codecallnavigator-*-*-*")) - context["before"]
         samples.append((disk_bytes(roots), process_tree_bytes(context["pid"])))
 
 
@@ -60,11 +60,11 @@ def run_analysis(arguments, name, target, number):
     if arguments.timings:
         command.extend(["--timings", str(directory / "timings.json")])
     stopped, samples = threading.Event(), []
-    before = set(Path(tempfile.gettempdir()).glob("codegraph-*-*-*"))
+    before = set(Path(tempfile.gettempdir()).glob("codecallnavigator-*-*-*"))
     started = time.monotonic()
     try:
         with (directory / "log.txt").open("w") as log:
-            process = subprocess.Popen(command, env={**os.environ, "CODEGRAPH_DATA_DIR": str(cache)},
+            process = subprocess.Popen(command, env={**os.environ, "CODECALLNAVIGATOR_DATA_DIR": str(cache)},
                                        stdout=log, stderr=subprocess.STDOUT)
             sampler = threading.Thread(target=sample_resources,
                                        args=(stopped, {"before": before, "pid": process.pid}, samples))

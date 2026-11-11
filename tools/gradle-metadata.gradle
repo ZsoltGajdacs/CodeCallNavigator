@@ -23,22 +23,22 @@ def taskSourceInputs = { first ->
 gradle.projectsEvaluated {
     def root = gradle.rootProject
     def javaProjects = root.allprojects.findAll { it.extensions.findByName('sourceSets') != null }
-    root.tasks.register('codegraphCompileSources') {
+    root.tasks.register('codecallnavigatorCompileSources') {
         def compileTasks = javaProjects.collectMany { project ->
             project.sourceSets.collect { sources -> project.tasks.named(sources.compileJavaTaskName) }
         }
         dependsOn(compileTasks)
     }
-    def compileSources = root.tasks.named('codegraphCompileSources')
-    root.tasks.register('codegraphCompileAndExport') {
+    def compileSources = root.tasks.named('codecallnavigatorCompileSources')
+    root.tasks.register('codecallnavigatorCompileAndExport') {
         dependsOn(compileSources)
-        finalizedBy('codegraphExportMetadata')
+        finalizedBy('codecallnavigatorExportMetadata')
     }
-    root.tasks.register('codegraphExportMetadata') {
+    root.tasks.register('codecallnavigatorExportMetadata') {
         mustRunAfter(compileSources)
         doLast {
-            def destination = root.findProperty('codegraphMetadataFile')
-            if (!destination) { throw new GradleException('codegraphMetadataFile is required') }
+            def destination = root.findProperty('codecallnavigatorMetadataFile')
+            if (!destination) { throw new GradleException('codecallnavigatorMetadataFile is required') }
             def entries = javaProjects.collectMany { project ->
                 def testClassDirs = project.tasks.withType(Test).collectMany {
                     it.testClassesDirs.files.collect { directory -> directory.canonicalPath }

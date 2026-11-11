@@ -1,7 +1,7 @@
 //! Headless entrypoint using the same instrumented pipeline as the native app.
 mod layers;
 use anyhow::{Context, Result, ensure};
-use codegraph::{discovery, metrics, store::SqliteStore};
+use codecallnavigator::{discovery, metrics, store::SqliteStore};
 use std::{path::PathBuf, sync::atomic::AtomicBool};
 
 struct Arguments {
@@ -53,7 +53,7 @@ fn arguments(values: impl Iterator<Item = String>) -> Result<Arguments> {
     }
     ensure!(
         !result.paths.is_empty(),
-        "Usage: codegraph analyze [--project ROOT] [--timings REPORT.json] [--layers PRESET --layer-root ROOT] SOLUTION_OR_PROJECT_OR_POM_OR_TSCONFIG_OR_BUILD_ROOT..."
+        "Usage: codecallnavigator analyze [--project ROOT] [--timings REPORT.json] [--layers PRESET --layer-root ROOT] SOLUTION_OR_PROJECT_OR_POM_OR_TSCONFIG_OR_BUILD_ROOT..."
     );
     result.layers.validate()?;
     if let Some(path) = &result.timings {
@@ -245,7 +245,7 @@ mod tests {
     fn timing_reports_cannot_overwrite_graph_files_through_direct_or_symlink_paths() {
         use std::os::unix::fs::symlink;
         let root = tempfile::tempdir().unwrap();
-        let directory = root.path().join(".codegraph");
+        let directory = root.path().join(".codecallnavigator");
         std::fs::create_dir(&directory).unwrap();
         let graph = directory.join("graph.json");
         std::fs::write(&graph, b"previous graph").unwrap();

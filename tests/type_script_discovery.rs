@@ -1,5 +1,5 @@
 //! Discovery behavior shared by the repository drawer and headless CLI.
-use codegraph::discovery::{default_selection, discover, target_from_file};
+use codecallnavigator::discovery::{default_selection, discover, target_from_file};
 use std::fs;
 
 #[test]
@@ -53,7 +53,7 @@ fn typescript_output_conventions_do_not_hide_java_source_packages() {
         )
         .unwrap();
     }
-    let paths = codegraph::fingerprint::source_paths(&[temporary.path().to_path_buf()]).unwrap();
+    let paths = codecallnavigator::fingerprint::source_paths(&[temporary.path().to_path_buf()]).unwrap();
     assert!(
         paths
             .iter()

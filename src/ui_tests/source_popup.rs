@@ -7,7 +7,7 @@ use crate::{
     source_popup::Contents,
     view,
 };
-use codegraph::graph::GraphIndex;
+use codecallnavigator::graph::GraphIndex;
 use rune::{Key, KeyEvent, MagnifyEvent, Mods, Runtime};
 use std::{fs, sync::Arc, time::Duration};
 

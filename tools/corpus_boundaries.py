@@ -19,7 +19,7 @@ def configure(workload, workloads, project, component_roots):
             servers.append({'target': selected, 'application': server['application']}
                            if 'application' in server else selected)
         scopes.append({'client': target(scope['client']), 'servers': servers})
-    directory = project / '.codegraph'
+    directory = project / '.codecallnavigator'
     directory.mkdir(exist_ok=True)
     # JSON is also valid YAML; no optional YAML dependency is needed by the harness.
     (directory / 'boundaries.yml').write_text(json.dumps({'version': 1, 'http': scopes}, indent=2) + '\n')

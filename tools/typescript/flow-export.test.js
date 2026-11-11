@@ -5,9 +5,9 @@ const fs=require('node:fs');
 const os=require('node:os');
 const path=require('node:path');
 const cp=require('node:child_process');
-const modules=process.env.CODEGRAPH_TS_NODE_MODULES || (process.env.CODEGRAPH_TEST_TYPESCRIPT_ROOT && path.dirname(process.env.CODEGRAPH_TEST_TYPESCRIPT_ROOT)) || path.resolve(__dirname,'../../../PacificFateMapEditor/node_modules');
+const modules=process.env.CODECALLNAVIGATOR_TS_NODE_MODULES || (process.env.CODECALLNAVIGATOR_TEST_TYPESCRIPT_ROOT && path.dirname(process.env.CODECALLNAVIGATOR_TEST_TYPESCRIPT_ROOT)) || path.resolve(__dirname,'../../../PacificFateMapEditor/node_modules');
 function analyze(t,source) {
-  const root=fs.mkdtempSync(path.join(os.tmpdir(),'codegraph-flow-ts-'));
+  const root=fs.mkdtempSync(path.join(os.tmpdir(),'codecallnavigator-flow-ts-'));
   t.after(()=>fs.rmSync(root,{recursive:true,force:true}));
   fs.symlinkSync(modules,path.join(root,'node_modules'),'dir');
   fs.writeFileSync(path.join(root,'tsconfig.json'),JSON.stringify({compilerOptions:{target:'ES2023',module:'esnext',moduleResolution:'bundler',strict:true,types:[],noEmit:true},files:['main.ts']}));

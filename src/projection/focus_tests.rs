@@ -1,5 +1,5 @@
 use super::*;
-use codegraph::model::{Edge, GraphData, Node};
+use codecallnavigator::model::{Edge, GraphData, Node};
 
 fn graph() -> GraphIndex {
     GraphIndex::new(Arc::new(GraphData {
@@ -299,7 +299,7 @@ fn real_graphviz_uses_signed_order_and_class_card_dimensions() {
 
 #[test]
 fn layer_class_method_focus_resolves_qualified_keys_and_excludes_other_tabs() {
-    use codegraph::architecture::{Assignment, LayerAssignments, LayerDefinition, file_key};
+    use codecallnavigator::architecture::{Assignment, LayerAssignments, LayerDefinition, file_key};
     let mut data = graph().data.as_ref().clone();
     for node in &mut data.nodes {
         node.file = format!("/{}.java", node.id);
