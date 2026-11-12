@@ -122,6 +122,7 @@ class QualitySessionTests(unittest.TestCase):
 
     def test_invalid_result_shapes_fail_as_structured_errors(self):
         for config in [
+            {'review': {'score': None}},
             {'review': {'score': 'unknown'}},
             {'review': {'score': True}},
             {'review': {'score': -1}},
@@ -177,6 +178,42 @@ class QualitySessionTests(unittest.TestCase):
         report = self.check(files=['changed.py', 'gone.py', 'README.md'])
         self.assertEqual(report['status'], 'passed', report)
         self.assertEqual(report['skipped_files'], ['README.md', 'gone.py'])
+
+    def test_null_rust_declaration_review_records_applicability_and_truthful_coverage(self):
+        source = self.root / 'flow.rs'
+        source.write_text('//! Flow contract.\n/* Nested /* Rust */ comment */\nmod builder;\npub(crate) mod model;\npub use builder::{build, Item};\npub const MAX_STEPS: usize = 1_500;\n')
+        subprocess.run(['git', 'add', 'flow.rs'], cwd=self.root, check=True)
+        report = self.check({'review': {'score': None}, 'safeguard': {'metadata': {
+            'checked-file-count': 0, 'code-health-eligible-file-count': 0,
+            'total-modified-file-count': 1, 'status': 'no-applicable-files',
+        }}}, files=['flow.rs'])
+        self.assertEqual(report['status'], 'passed', report)
+        self.assertIsNone(report['reviews'][0]['score'])
+        self.assertEqual(report['reviews'][0]['applicability'], 'declarations_only')
+        self.assertEqual(report['safeguard']['metadata']['checked-file-count'], 0)
+
+    def test_null_score_cannot_skip_executable_or_unrecognized_rust(self):
+        for content in [
+            'pub fn execute() {}\n',
+            '#[cfg(test)] mod tests;\n',
+            'include!("generated.rs");\n',
+            'pub const SIZE: usize = compute();\n',
+            'mod implementation { fn execute() {} }\n',
+            'unknown declarations;\n',
+            '/* unfinished comment\nmod builder;\n',
+        ]:
+            with self.subTest(content=content):
+                (self.root / 'unknown.rs').write_text(content)
+                report = self.check({'review': {'score': None}}, files=['unknown.rs'])
+                self.assertEqual(report['status'], 'failed', report)
+                self.assertIn('numeric score', report['errors'][0])
+
+    def test_null_declaration_review_still_requires_well_formed_empty_findings(self):
+        (self.root / 'flow.rs').write_text('pub mod builder;\n')
+        for findings in [None, {}, [{'category': 'Complex Method'}]]:
+            with self.subTest(findings=findings):
+                report = self.check({'review': {'score': None, 'review': findings}}, files=['flow.rs'])
+                self.assertEqual(report['status'], 'failed', report)
 
     def test_protocol_corruption_and_premature_exit_fail_without_diagnostics_leak(self):
         for config in [{'malformed': True}, {'exit': True}]:

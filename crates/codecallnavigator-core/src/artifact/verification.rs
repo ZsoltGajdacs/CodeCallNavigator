@@ -53,23 +53,37 @@ pub fn verify(project: &Path, roots: &Roots) -> Result<Report> {
 }
 
 pub fn verify_bytes(bytes: &[u8], roots: &Roots) -> Result<Report> {
-    let paths = Paths::new(roots)?;
-    let mut report = Report {
-        version: 1,
-        contract_valid: true,
-        input_status: InputStatus::Match,
-        digest: blake3::hash(bytes).to_hex().to_string(),
-        reasons: Vec::new(),
-    };
-    let artifact = match Artifact::from_bytes(bytes) {
-        Ok(artifact) => artifact,
+    // Validate mappings even when the supplied artifact is malformed.
+    Paths::new(roots)?;
+    let digest = blake3::hash(bytes).to_hex().to_string();
+    match Artifact::from_bytes(bytes) {
+        Ok(artifact) => verify_artifact(&artifact, &digest, roots),
         Err(_) => {
+            let mut report = report(&digest);
             report.contract_valid = false;
             report.input_status = InputStatus::Unverifiable;
             report.reason("invalid_contract", None);
-            return Ok(report);
+            Ok(report)
         }
-    };
+    }
+}
+
+fn report(digest: &str) -> Report {
+    Report {
+        version: 1,
+        contract_valid: true,
+        input_status: InputStatus::Match,
+        digest: digest.into(),
+        reasons: Vec::new(),
+    }
+}
+
+/// Recheck observed inputs for an already validated immutable artifact.
+/// `digest` must identify the exact bytes used to load that artifact. Query
+/// sessions reuse parsing while checking current input contents on every request.
+pub fn verify_artifact(artifact: &Artifact, digest: &str, roots: &Roots) -> Result<Report> {
+    let paths = Paths::new(roots)?;
+    let mut report = report(digest);
     let Some(analysis) = provenance::read(&artifact.graph)? else {
         report.input_status = InputStatus::Unverifiable;
         report.reason("missing_analysis", None);

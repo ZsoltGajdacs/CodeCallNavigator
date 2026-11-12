@@ -6,6 +6,7 @@ import argparse
 import json
 import math
 from pathlib import Path
+import re
 import subprocess
 
 if __package__:
@@ -96,9 +97,72 @@ def require(condition, message):
         raise QualityError(message)
 
 
-def validate_review(document):
-    validate_score(document['score'])
+def validate_review(document, path):
     require(isinstance(document['review'], list), 'CodeScene review omitted its findings list')
+    if unscored_declarations(document, path):
+        return 'declarations_only'
+    validate_score(document['score'])
+    return 'reviewed'
+
+
+def unscored_declarations(document, path):
+    if document['score'] is not None:
+        return False
+    if document['review']:
+        return False
+    return rust_declarations_only(path)
+
+
+def rust_declarations_only(path):
+    """Prove a small declaration-only Rust grammar; unknown syntax stays eligible."""
+    if path.suffix != '.rs':
+        return False
+    source = without_rust_comments(path.read_text())
+    if source is None:
+        return False
+    identifier = r'[A-Za-z_][A-Za-z_0-9]*'
+    visibility = r'(?:pub(?:\s*\(\s*(?:crate|self|super)\s*\))?\s+)?'
+    module = rf'{visibility}mod\s+{identifier}\s*;'
+    imports = rf'(?:{identifier}\s*::\s*)*(?:{identifier}|\*|\{{\s*{identifier}(?:\s*,\s*{identifier})*\s*,?\s*\}})'
+    use = rf'{visibility}use\s+{imports}\s*;'
+    numeric_type = r'(?:usize|isize|u8|u16|u32|u64|u128|i8|i16|i32|i64|i128|f32|f64)'
+    number = r'[0-9][0-9_]*(?:\.[0-9][0-9_]*)?'
+    constant = rf'{visibility}const\s+{identifier}\s*:\s*{numeric_type}\s*=\s*{number}\s*;'
+    return re.fullmatch(rf'(?:\s*(?:{module}|{use}|{constant}))*\s*', source) is not None
+
+
+def without_rust_comments(source):
+    """Strip line and nested block comments without interpreting other Rust syntax."""
+    pieces, position = [], 0
+    while position < len(source):
+        match = re.search(r'//|/\*', source[position:])
+        if match is None:
+            pieces.append(source[position:])
+            return ''.join(pieces)
+        start = position + match.start()
+        pieces.append(source[position:start])
+        position = rust_comment_end(source, start)
+        if position is None:
+            return None
+        pieces.append(' ')
+    return ''.join(pieces)
+
+
+def rust_comment_end(source, position):
+    if source.startswith('//', position):
+        newline = source.find('\n', position)
+        return len(source) if newline < 0 else newline
+    return block_comment_end(source, position)
+
+
+def block_comment_end(source, position):
+    depth = 1
+    start = position + 2
+    for match in re.finditer(r'/\*|\*/', source[start:]):
+        depth += 1 if match.group() == '/*' else -1
+        if depth == 0:
+            return start + match.end()
+    return None
 
 
 def validate_score(score):
@@ -151,9 +215,11 @@ def run_checks(root, requested, command='cs-mcp', timeout=120):
     try:
         root = Path(root).resolve(strict=True)
         files, report['skipped_files'] = source_files(root, requested)
-        expected_tracked = tracked_count(root, files)
         with McpClient(command, root, timeout) as client:
             review_files(client, root, files, report['reviews'])
+            applicable_files = [review['path'] for review in report['reviews']
+                                if review['applicability'] != 'declarations_only']
+            expected_tracked = tracked_count(root, applicable_files)
             report['safeguard'] = read_safeguard(client, root)
             validate_safeguard(report['safeguard'], expected_tracked)
         if any(review['review'] for review in report['reviews']):
@@ -175,8 +241,8 @@ def review_file(client, root, file):
         document = tool_document(client.tool('code_health_review', {
             'file_path': str(root / file),
         }), {'score', 'review'})
-        validate_review(document)
-        return document
+        applicability = validate_review(document, root / file)
+        return {**document, 'applicability': applicability}
     except (QualityError, OSError) as error:
         raise QualityError(f'CodeScene review for {file}: {error}') from error
 

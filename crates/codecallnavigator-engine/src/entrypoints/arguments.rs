@@ -2,6 +2,9 @@ use anyhow::{Context, Result, bail, ensure};
 use std::path::PathBuf;
 
 pub enum Command {
+    Capabilities,
+    Query,
+    QuerySession,
     Help,
     Discover(PathBuf),
     ClearCache(PathBuf),
@@ -26,6 +29,18 @@ pub fn parse(values: impl Iterator<Item = String>) -> Result<Command> {
     let mut values = values.peekable();
     let command = values.next().unwrap_or_else(|| "--help".into());
     match command.as_str() {
+        "query-session" => {
+            ensure!(values.next().is_none(), "query-session takes no arguments");
+            Ok(Command::QuerySession)
+        }
+        "capabilities" | "query" => {
+            ensure!(values.next().is_none(), "Unexpected query command argument");
+            Ok(if command == "capabilities" {
+                Command::Capabilities
+            } else {
+                Command::Query
+            })
+        }
         "--help" | "-h" => {
             ensure!(values.next().is_none(), "Unexpected help argument");
             Ok(Command::Help)
