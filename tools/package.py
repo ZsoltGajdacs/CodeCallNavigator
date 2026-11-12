@@ -196,7 +196,7 @@ def rust_notices(destination):
         ["cargo", "metadata", "--format-version", "1", "--locked", "--offline"], cwd=ROOT))
     inventory = []
     for package in metadata["packages"]:
-        if package["name"] in ("codecallnavigator", "codecallnavigator-core", "codecallnavigator-engine"):
+        if package["name"] in ("codecallnavigator", "codecallnavigator-core", "codecallnavigator-engine", "codecallnavigator-mcp"):
             continue
         directory = Path(package["manifest_path"]).parent
         target = destination / f"{package['name']}-{package['version']}"

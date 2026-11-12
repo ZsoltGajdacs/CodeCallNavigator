@@ -60,7 +60,9 @@ if sys.argv[1] == 'capabilities':
 for line in sys.stdin:
  json.loads(line)
  if not marker.exists():
-  marker.write_text(str(os.getpid()))
+  pending=marker.with_suffix('.pending')
+  pending.write_text(str(os.getpid()))
+  pending.replace(marker)
   time.sleep(10)
   token='late'
  else:
@@ -160,7 +162,9 @@ if sys.argv[1] == 'capabilities':
  print(json.dumps({'query_version':1,'flow_languages':['java','typescript'],'operations':['snapshot','render_selection','inspect','architecture','live_source','explorer','flow','search','status']}))
  sys.exit(0)
 if not marker.exists():
- marker.write_text(str(os.getpid()))
+ pending=marker.with_suffix('.pending')
+ pending.write_text(str(os.getpid()))
+ pending.replace(marker)
  time.sleep(10)
 else:
  for line in sys.stdin:

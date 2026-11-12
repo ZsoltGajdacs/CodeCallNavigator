@@ -17,7 +17,11 @@ import json, os, subprocess, sys, time
 from pathlib import Path
 root = Path.cwd()
 config = json.loads((root / 'server.json').read_text())
-(root / 'server.pid').write_text(str(os.getpid()))
+def publish_pid(name, pid):
+    pending = root / (name + '.pending')
+    pending.write_text(str(pid))
+    pending.replace(root / name)
+publish_pid('server.pid', os.getpid())
 initialized = False
 for line in sys.stdin:
     request = json.loads(line)
@@ -27,7 +31,7 @@ for line in sys.stdin:
         continue
     if config.get('hang'):
         child = subprocess.Popen([sys.executable, '-c', 'import time; time.sleep(30)'])
-        (root / 'child.pid').write_text(str(child.pid))
+        publish_pid('child.pid', child.pid)
         time.sleep(30)
     if config.get('exit'):
         sys.stderr.write('private server diagnostics must not leak')
@@ -232,7 +236,9 @@ class QualitySessionTests(unittest.TestCase):
 
     def test_timeout_stops_server_and_children(self):
         started = time.monotonic()
-        report = self.check({'hang': True}, timeout=0.3)
+        # Include interpreter startup under full-build load; the three-second
+        # assertion still proves that the 30-second fixture and child are stopped.
+        report = self.check({'hang': True}, timeout=1.0)
         self.assertEqual(report['status'], 'failed')
         self.assertIn('timed out', report['errors'][0])
         self.assertLess(time.monotonic() - started, 3)

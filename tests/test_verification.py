@@ -329,6 +329,10 @@ class VerificationPlans(unittest.TestCase):
         self.assertLess(names.index("build-release-engine"), names.index("release-acceptance-and-benchmarks"))
         self.assertLess(names.index("profile-snapshot"), names.index("release-acceptance-and-benchmarks"))
         self.assertLess(names.index("release-acceptance-and-benchmarks"), names.index("package"))
+        self.assertLess(names.index("cargo-check"), names.index("mcp-dependency-boundary"))
+        self.assertLess(names.index("packaged-engine"), names.index("mcp-independent-install"))
+        mcp = steps[names.index("mcp-independent-install")]
+        self.assertEqual(mcp.command[-1], str(ROOT / "dist/CodeCallNavigatorEngine/bin/codecallnavigator-engine"))
         acceptance = steps[names.index("release-acceptance-and-benchmarks")]
         for flag in ["--release", "--include-ignored", "--test-threads=1"]:
             self.assertIn(flag, acceptance.command)
