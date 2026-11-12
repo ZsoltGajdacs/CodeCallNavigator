@@ -125,12 +125,14 @@ do not run app builds, Rust test suites, analyzer/UI acceptance or benchmarks.
 Changes to executable code, dependencies, bootstrap or packaging logic that can
 affect runtime behavior still require the applicable checks.
 
-Use the verification entry points from the workspace root:
+Choose a verification mode from the workspace root:
 
-```sh
-./verify-light.sh   # Minimal changes with minimal production-code effect
-./verify-full.sh    # Substantial runtime, analyzer, dependency, bootstrap or packaging changes
-```
+- Use `./verify-light.sh` for small, low-risk changes with minimal production-code
+  impact, including documentation-only edits.
+- Use `./verify-full.sh` for substantial behavior changes, broad or cross-crate
+  refactors, and analyzer, dependency, bootstrap or packaging changes.
+
+Default to full when the impact is uncertain.
 
 Light verification checks changed-file formatting/syntax, workspace compilation,
 Clippy, ordinary Rust tests, both Python suites and CodeScene. For changes limited
