@@ -333,6 +333,23 @@ class VerificationPlans(unittest.TestCase):
         self.assertLess(names.index("packaged-engine"), names.index("mcp-independent-install"))
         mcp = steps[names.index("mcp-independent-install")]
         self.assertEqual(mcp.command[-1], str(ROOT / "dist/CodeCallNavigatorEngine/bin/codecallnavigator-engine"))
+        self.assertLess(names.index('packaged-engine'), names.index('agent-cli-journeys'))
+        journey = steps[names.index('agent-cli-journeys')]
+        self.assertEqual(journey.environment['PATH'].split(os.pathsep)[0],
+                         str(ROOT / 'dist/CodeCallNavigatorEngine/bin'))
+        self.assertNotIn('--engine', journey.command)
+        packaged = steps[names.index('agent-integrations-package')]
+        self.assertEqual(packaged.command[-1], str(output / 'agent-integrations'))
+        self.assertEqual(packaged.command[packaged.command.index('--host') + 1], 'all')
+        native = steps[names.index('agent-mcp-journeys')]
+        self.assertLess(names.index('mcp-independent-install'), names.index('agent-mcp-journeys'))
+        self.assertEqual(native.environment['PATH'].split(os.pathsep)[:2], [
+            str(ROOT / 'dist/CodeCallNavigatorEngine/bin'),
+            str(ROOT / 'dist/CodeCallNavigatorMcp/bin'),
+        ])
+        self.assertNotIn('--engine', native.command)
+        self.assertNotIn('--mcp', native.command)
+        self.assertEqual(native.command[-1], str(output / 'agent-mcp-journeys.json'))
         acceptance = steps[names.index("release-acceptance-and-benchmarks")]
         for flag in ["--release", "--include-ignored", "--test-threads=1"]:
             self.assertIn(flag, acceptance.command)

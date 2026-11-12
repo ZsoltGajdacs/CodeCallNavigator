@@ -1,4 +1,5 @@
 """Change selection and deterministic verification stage construction."""
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -67,5 +68,30 @@ def full_steps(root, args, output):
         Step("package", [python, "tools/package.py"], timeout),
         Step("package-signature", ["codesign", "--verify", "--deep", "--strict", "dist/CodeCallNavigator.app"]),
         Step("packaged-engine", [str(root / "dist/CodeCallNavigatorEngine/bin/codecallnavigator-engine"), "--help"]),
+        *agent_integration_steps(root, args, output),
         Step("mcp-independent-install", [python, "tools/package_mcp.py", "--engine", str(root / "dist/CodeCallNavigatorEngine/bin/codecallnavigator-engine")], timeout),
+        agent_mcp_journey_step(root, args, output),
     ]
+
+
+def agent_integration_steps(root, args, output):
+    python = sys.executable
+    package = [python, 'tools/package_agent_integrations.py', '--host', 'all']
+    modules = os.environ.get('CODECALLNAVIGATOR_TS_NODE_MODULES', 'MISSING_NODE_MODULES')
+    path = str(root / 'dist/CodeCallNavigatorEngine/bin') + os.pathsep + os.environ.get('PATH', '')
+    return [
+        Step('agent-integrations-check', [*package, '--check']),
+        Step('agent-integrations-package', [*package, '--output', str(output / 'agent-integrations')]),
+        Step('agent-cli-journeys', [python, 'tools/agent_journeys.py', '--node-modules', modules,
+                                  '--output', str(output / 'agent-journeys.json')], args.timeout,
+             {'PATH': path}),
+    ]
+
+
+def agent_mcp_journey_step(root, args, output):
+    modules = os.environ.get('CODECALLNAVIGATOR_TS_NODE_MODULES', 'MISSING_NODE_MODULES')
+    bins = [root / 'dist/CodeCallNavigatorEngine/bin', root / 'dist/CodeCallNavigatorMcp/bin']
+    path = os.pathsep.join([*[str(directory) for directory in bins], os.environ.get('PATH', '')])
+    command = [sys.executable, 'tools/agent_mcp_journeys.py', '--node-modules', modules,
+               '--output', str(output / 'agent-mcp-journeys.json')]
+    return Step('agent-mcp-journeys', command, args.timeout, {'PATH': path})

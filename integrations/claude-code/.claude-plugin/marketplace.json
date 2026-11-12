@@ -1,0 +1,5 @@
+{
+  "name": "codecallnavigator-local",
+  "owner": {"name": "CodeCallNavigator"},
+  "plugins": [{"name": "codecallnavigator", "source": "./"}]
+}
