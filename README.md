@@ -53,6 +53,8 @@ data while keeping that graph and navigation.
 
 ## Documentation
 
+- [Install the `ccnavigator` terminal command](docs/cli-installation.md)
+
 - [Detailed reference](docs/reference.md): controls, search, cache, build steps,
   analyzer behavior and toolchain-specific validation.
 - [Standalone engine and CLI](docs/standalone-engine.md)
