@@ -1,0 +1,127 @@
+name: macOS release
+
+on:
+  push:
+    tags:
+      - '**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: macos-release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build macOS and corresponding source
+    if: github.event_name == 'workflow_dispatch' || (github.event.created && !github.event.deleted)
+    # This arm64 image currently provides macOS 27, matching the app minimum.
+    runs-on: xcode-27
+    timeout-minutes: 90
+    env:
+      CARGO_BUILD_JOBS: '2'
+      HOMEBREW_NO_AUTO_UPDATE: '1'
+      HOMEBREW_NO_INSTALL_CLEANUP: '1'
+    steps:
+      - name: Check out exact event commit with full history
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Require a tag on main history or a manual main build
+        run: |
+          git fetch --no-tags origin +refs/heads/main:refs/remotes/origin/main
+          python3 tools/ci/release.py validate
+
+      - name: Install Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.13'
+
+      - name: Install .NET SDK
+        uses: actions/setup-dotnet@26b0ec14cb23fa6904739307f278c14f94c95bf1 # v5
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Install JDK
+        uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
+        with:
+          distribution: temurin
+          java-version: '25'
+
+      - name: Select Rust and validate runner prerequisites
+        run: |
+          rustup toolchain install 1.99.1 --profile minimal
+          rustup default 1.99.1
+          test "$(uname -m)" = arm64
+          node --version
+          node -e 'if (Number(process.versions.node.split(".")[0]) < 24) throw new Error("Node 24+ is required")'
+          python --version
+          rustc --version
+
+      - name: Install pinned native binaries and matching source archives
+        run: python tools/ci/prepare_macos.py
+
+      - name: Bootstrap analyzers and cache all locked Cargo sources
+        run: |
+          python tools/bootstrap.py
+          cargo fetch --locked
+
+      - name: Run focused release regressions
+        run: |
+          python -m unittest discover -s tests -p 'test_ci_*.py' -v
+          python -m unittest discover -s tests -p test_package.py -v
+          python -m unittest discover -s tests -p test_release_sources.py -v
+
+      - name: Build complete release and verify artifacts
+        run: |
+          python tools/package.py --release
+          python tools/ci/release.py verify-assets
+          codesign --verify --deep --strict dist/CodeCallNavigator.app
+          dist/CodeCallNavigatorEngine/bin/codecallnavigator-engine --help
+
+      - name: Preserve verified release artifacts
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: macos-release
+          path: |
+            dist/CodeCallNavigator.zip
+            dist/CodeCallNavigatorEngine.zip
+            dist/CodeCallNavigator-source.tar.gz
+            dist/SHA256SUMS
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 7
+
+  publish:
+    name: Publish tagged GitHub release
+    needs: build
+    if: github.event_name == 'push' && github.event.created && !github.event.deleted
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - name: Check out the validated tag
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Download verified macOS and source artifacts
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
+        with:
+          name: macos-release
+          path: dist
+
+      - name: Publish only after all assets are uploaded to a draft
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git fetch --no-tags origin +refs/heads/main:refs/remotes/origin/main
+          python3 tools/ci/release.py publish

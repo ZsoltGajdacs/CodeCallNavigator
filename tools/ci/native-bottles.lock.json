@@ -1,0 +1,12 @@
+{
+  "libtool": {
+    "version": "2.6.2",
+    "filename": "libtool--2.6.2.arm64_tahoe.bottle.tar.gz",
+    "sha256": "719ae9c4597d0198ee77da6bb09dfcb6f68ae0302330f1a1e61503648e59fdd2"
+  },
+  "graphviz": {
+    "version": "16.1.0",
+    "filename": "graphviz--16.1.0.arm64_golden_gate.bottle.tar.gz",
+    "sha256": "95e16aa7a3a16775ed16a50a8d4a5347b8c6edd5604e6006206bfa2b23da2365"
+  }
+}

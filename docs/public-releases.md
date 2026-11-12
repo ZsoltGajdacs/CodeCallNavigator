@@ -15,6 +15,55 @@ Select the same release for both; the source asset is
 `CodeCallNavigator-source.tar.gz`. A local development build may have no published
 release; its source identity records the local commit and changes.
 
+## Automatic GitHub releases
+
+The [macOS release workflow](../.github/workflows/release.yml) runs when a new tag
+is pushed. Git tags do not belong to branches, so the workflow checks that the
+tag's commit is in `main` history before installing tools or building anything.
+Tags on unmerged branches fail that check; moving or deleting a tag does not
+publish another release. Both lightweight and annotated tags are supported.
+
+For example, after updating `main` locally:
+
+```sh
+git switch main
+git pull --ff-only
+git tag -a v0.1.0 -m 'Release v0.1.0'
+git push origin v0.1.0
+```
+
+Use a new tag name for each release. The tag must include the workflow itself.
+The workflow uses GitHub's `xcode-27` Apple Silicon/macOS 27 runner (currently a
+public-preview image), Python 3.13, .NET 10, JDK 25, Rust 1.99.1 and Node 24+.
+Immutable, checksum-pinned official Homebrew bottles provide the reviewed
+Graphviz/libtool versions; their matching sources are also verified and bundled.
+The native installer refuses to run on developer or self-hosted machines.
+
+Successful tag builds publish these assets together:
+
+- `CodeCallNavigator.zip`: the ad hoc signed macOS application.
+- `CodeCallNavigatorEngine.zip`: the standalone engine and analyzer resources.
+- `CodeCallNavigator-source.tar.gz`: the complete matching source described below.
+- `SHA256SUMS`: checksums of all three archives.
+
+Build jobs have read-only repository permission. A separate publishing job gets
+write permission only after a successful build. It uploads all assets to a draft
+before making the release public, so failed uploads leave an unpublished draft.
+Reruns may resume a draft created for the same commit; unrelated drafts and
+already published release assets are not overwritten. Concurrency is serialized
+per tag. Nothing in this workflow adds notarization or Linux support.
+
+To verify the hosted build without creating a tag or publishing a release, open
+GitHub Actions, choose **macOS release**, and use **Run workflow** on `main`, or:
+
+```sh
+gh workflow run release.yml --ref main
+```
+
+Manual runs execute the same build and artifact checks, retaining the four files
+as the `macos-release` workflow artifact for seven days. The publish job is
+skipped. The first remote run and its result are recorded with the tracked task.
+
 ## Prepare a release
 
 Normal `python3.13 tools/package.py` creates a **local build**, not a complete
