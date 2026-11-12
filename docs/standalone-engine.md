@@ -1,5 +1,11 @@
 # Standalone graph engine
 
+The public terminal command is `ccnavigator`, available on `PATH`. It exposes
+the same command and JSON contracts as `codecallnavigator-engine`; the latter
+remains the internal executable used by desktop and MCP clients. The standalone
+engine package includes both binaries beside the same analyzer resources.
+No executable path or MCP configuration is needed by the agent skills.
+
 `codecallnavigator-core` owns shared graph/flow/architecture contracts and pure graph
 operations. `codecallnavigator-engine` owns the coordinator and compiler-backed language
 adapters. The desktop owns presentation and workspace caching and invokes the
@@ -13,10 +19,10 @@ source/flow data and generation-bound snapshots without running analysis.
 ## Project artifact and Git history
 
 ```sh
-codecallnavigator-engine discover /checkout
-codecallnavigator-engine analyze --project /checkout backend/pom.xml frontend/tsconfig.json
-codecallnavigator-engine clear-cache --project /checkout
-codecallnavigator-engine compare --project /checkout --base HEAD~1 --head WORKTREE
+ccnavigator discover /checkout
+ccnavigator analyze --project /checkout backend/pom.xml frontend/tsconfig.json
+ccnavigator clear-cache --project /checkout
+ccnavigator compare --project /checkout --base HEAD~1 --head WORKTREE
 ```
 
 With no explicit targets, analysis selects the same default builds as discovery.

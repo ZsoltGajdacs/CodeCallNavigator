@@ -12,6 +12,16 @@ use anyhow::Result;
 use arguments::Command;
 use codecallnavigator_core::{artifact, discovery};
 
+pub fn main() {
+    match run() {
+        Ok(status) => std::process::exit(status),
+        Err(error) => {
+            eprintln!("{error:#}");
+            std::process::exit(2);
+        }
+    }
+}
+
 pub fn run() -> Result<i32> {
     let command = arguments::parse(std::env::args().skip(1))?;
     // Read-only queries own no build subprocesses. Keep default signal handling
@@ -27,9 +37,7 @@ pub fn run() -> Result<i32> {
         Command::Query => query::run(),
         Command::QuerySession => query_session::run(),
         Command::Help => {
-            println!(
-                "codecallnavigator-engine capabilities\ncodecallnavigator-engine query < request.json\ncodecallnavigator-engine query-session < requests.ndjson\ncodecallnavigator-engine discover PROJECT\ncodecallnavigator-engine analyze --project PROJECT [--root NAME=PATH] TARGET...\ncodecallnavigator-engine clear-cache --project PROJECT\ncodecallnavigator-engine verify --project PROJECT [--root NAME=PATH]\ncodecallnavigator-engine compare --project PROJECT --base REF --head REF|WORKTREE"
-            );
+            print_help();
             Ok(0)
         }
         Command::Discover(project) => {
@@ -82,4 +90,19 @@ pub fn run() -> Result<i32> {
             Ok(0)
         }
     }
+}
+
+fn print_help() {
+    let program = if std::env::args().next().is_some_and(|path| {
+        std::path::Path::new(&path)
+            .file_stem()
+            .is_some_and(|name| name == "ccnavigator")
+    }) {
+        "ccnavigator"
+    } else {
+        "codecallnavigator-engine"
+    };
+    println!(
+        "{program} capabilities\n{program} query < request.json\n{program} query-session < requests.ndjson\n{program} discover PROJECT\n{program} analyze --project PROJECT [--root NAME=PATH] TARGET...\n{program} clear-cache --project PROJECT\n{program} verify --project PROJECT [--root NAME=PATH]\n{program} compare --project PROJECT --base REF --head REF|WORKTREE"
+    );
 }
