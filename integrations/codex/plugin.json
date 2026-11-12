@@ -1,0 +1,9 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "codecallnavigator",
+  "version": "0.1.0",
+  "description": "Focused CodeCallNavigator graph context through configured native MCP tools.",
+  "extensions": {
+    "com.openai": {"requires_local_executor": true}
+  }
+}

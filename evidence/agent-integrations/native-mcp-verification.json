@@ -1,0 +1,213 @@
+{
+  "date": "2026-11-12",
+  "mode": "full",
+  "status": "passed",
+  "stages": [
+    {
+      "name": "prerequisites",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.891
+    },
+    {
+      "name": "whitespace",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.021
+    },
+    {
+      "name": "syntax-format-016",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.041
+    },
+    {
+      "name": "syntax-format-017",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.041
+    },
+    {
+      "name": "syntax-format-018",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.041
+    },
+    {
+      "name": "syntax-format-019",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.078
+    },
+    {
+      "name": "syntax-format-020",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.038
+    },
+    {
+      "name": "syntax-format-021",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.04
+    },
+    {
+      "name": "syntax-format-022",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.04
+    },
+    {
+      "name": "syntax-format-023",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.041
+    },
+    {
+      "name": "bootstrap",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 3.967
+    },
+    {
+      "name": "build-debug-engine",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 7.525
+    },
+    {
+      "name": "cargo-check",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 21.226
+    },
+    {
+      "name": "mcp-dependency-boundary",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.351
+    },
+    {
+      "name": "clippy",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 4.347
+    },
+    {
+      "name": "rust-tests",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 129.793
+    },
+    {
+      "name": "python-tests",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 33.772
+    },
+    {
+      "name": "python-tool-tests",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 4.331
+    },
+    {
+      "name": "typescript-tests",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 25.969
+    },
+    {
+      "name": "build-release-engine",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 21.661
+    },
+    {
+      "name": "profile-snapshot",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.148
+    },
+    {
+      "name": "release-acceptance-and-benchmarks",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 1372.12
+    },
+    {
+      "name": "storage-benchmark",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 40.093
+    },
+    {
+      "name": "package",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 21.05
+    },
+    {
+      "name": "package-signature",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.133
+    },
+    {
+      "name": "packaged-engine",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.296
+    },
+    {
+      "name": "agent-integrations-check",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.079
+    },
+    {
+      "name": "agent-integrations-package",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.078
+    },
+    {
+      "name": "agent-cli-journeys",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 1.853
+    },
+    {
+      "name": "mcp-independent-install",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 16.113
+    },
+    {
+      "name": "agent-mcp-journeys",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 1.661
+    },
+    {
+      "name": "codescene",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 14.432
+    },
+    {
+      "name": "cleanup",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 4.673
+    }
+  ],
+  "tests": {
+    "ordinary_rust_passed": 552,
+    "release_rust_including_ignored_passed": 642,
+    "project_python_passed": 175,
+    "tool_python_passed": 26,
+    "typescript_passed": 112
+  },
+  "report_directory": "target/verification/agent-integrations-mcp-full"
+}

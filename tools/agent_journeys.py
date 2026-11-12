@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Exercise companion workflow protocol facts against the real compiler-backed public CLI."""
+"""Exercise standalone ccnavigator compatibility, independently of the native-MCP plugin route."""
 import argparse
 import json
 import os

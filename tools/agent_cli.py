@@ -1,4 +1,4 @@
-"""Bounded public CLI process client for companion integration acceptance."""
+"""Bounded standalone CLI compatibility client; plugins use native MCP tools."""
 import io
 import json
 import subprocess

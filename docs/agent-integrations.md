@@ -1,35 +1,37 @@
 # Agent companion integration research
 
-Research date: 2026-11-12. TASK-51 was promoted from DRAFT-2. The research
-comparison below is retained as historical evidence; the subsequent user decision
-for TASK-52 through TASK-54 supersedes its MCP setup recommendation.
+Research date: 2026-11-12. TASK-51 was promoted from DRAFT-2. The comparison
+below is historical research. The latest user decision supersedes the interim
+terminal-only plugin route: plugins now use native MCP tools, while the public
+`ccnavigator` terminal command remains independently available on PATH.
 
 ## Current delivery decision
 
-Deliver one shared graph-context skill packaged independently for Claude Code
-and Codex. Both invoke the public `ccnavigator` command directly in the terminal
-through PATH. Users do not need an MCP server, MCP registration, or a configured
-binary path. The CLI owns query semantics and analyzed artifacts; the skills
-supply the investigation workflow. The independently installed MCP remains a
-separate supported client, not a dependency or fallback for these packages.
+Deliver a shared graph-context skill packaged independently for Claude Code and
+Codex. It calls the separately installed, project-bound `codecallnavigator-mcp`
+server through each host's native MCP tools. Configure the server with
+`--engine ccnavigator`: both programs are command names on PATH, with no binary
+paths required. The project root remains an explicit server configuration value.
 
-The [canonical workflow](../integrations/shared/graph-context.md) defines the
-actual query envelopes and behavior. [Acceptance journeys](../integrations/shared/journeys.md)
-separate real CLI/compiler assertions from host conversation acceptance. The
-public JSON contract remains [CLI query version 1](cli-queries.md).
+The [canonical workflow](../integrations/shared/graph-context.md) defines typed
+tool calls and behavior; [acceptance journeys](../integrations/shared/journeys.md)
+separate native-MCP compiler assertions from real host conversations. The
+[CLI-backed MCP contract](mcp.md) owns transport and the unchanged CLI query
+version 1. The standalone CLI remains directly usable, but is not a silent graph
+fallback for the plugins.
 
-Start with explicit invocation and allow narrowly described implicit skill
-selection after opt-in installation. No hooks, graph reader, algorithms,
-persistent graph cache or background refresh are included. Ordinary queries are
-read-only; `ccnavigator analyze` requires an explicit user refresh request or
-approval. Possible relationships are source-derived evidence, not observed
-runtime execution. Continuous refresh remains DRAFT-3.
+Start with explicit invocation; allow narrow description-based implicit
+selection after opt-in installation. Plugins contain workflow instructions only:
+no hooks, bundled server binaries or MCP implementation, graph reader,
+algorithms, persistent graph cache or background analysis. Ordinary queries
+remain read-only. Only an explicit user refresh request/approval permits
+`refresh_graph`. Continuous refresh stays with DRAFT-3.
 
 ## Dated capability comparison
 
 This matrix records **historical documented support and TASK-51 probes**, not
 the current package setup requirements. MCP and hook capabilities were assessed
-as alternatives; the delivered skills use terminal CLI access. Documentation is
+as alternatives; the delivered skills now use native MCP over the installed CLI. Documentation is
 mutable; recheck relevant host packaging support when building packages.
 
 | Capability | Claude Code | Codex | Local evidence / limit |
@@ -58,17 +60,44 @@ Official sources, opened on the research date:
 
 ## Current workflow and installation
 
-Install the matching engine distribution so `ccnavigator` is on the terminal
-PATH. Run `ccnavigator capabilities` to confirm query contract version 1 and
-generation binding. Preserve analyzer resources alongside the installed engine.
-The skill receives an explicit project root in every query, independent of its
-own plugin installation directory; no server selection or MCP configuration is
-needed. For linked roots, use only explicitly configured root mappings.
+Install matching engine and MCP adapter distributions with `ccnavigator` and
+`codecallnavigator-mcp` on PATH and analyzer resources intact. Plugin installation
+and project-bound MCP registration are separate user steps; the package must
+not guess the project from its install directory or auto-register a server.
 
-Both host packages contain the same canonical workflow body with only host
-metadata differing. Packaging copies the shared body into each installed skill;
-a drift check rejects divergence. Installed skills must not depend on symlinks
-or references outside their plugin root. Proposed layout:
+For Claude Code, run this **from the intended project**:
+
+```sh
+claude mcp add --scope local codecallnavigator -- codecallnavigator-mcp --engine ccnavigator --project "$PWD"
+```
+
+For Codex, use the intended trusted project's `.codex/config.toml`:
+
+```toml
+[mcp_servers.codecallnavigator]
+command = "codecallnavigator-mcp"
+args = ["--engine", "ccnavigator", "--project", "/absolute/path/project"]
+tool_timeout_sec = 1800
+```
+
+A fixed-project user-scope Codex registration can alternatively use
+`codex mcp add codecallnavigator -- codecallnavigator-mcp --engine ccnavigator
+--project "$PWD"` from that project. Keep distinct server names for different
+projects. Linked roots are explicit adapter `--root NAME=PATH` arguments; never
+infer them. Executable values remain PATH names; the explicit project/linked
+root paths are data addresses, not executable-path configuration.
+
+Establish the selected server-to-project mapping from trusted host configuration
+or an explicit user binding before querying. `graph_status` does not expose the
+configured project identity. Workspace path, tool names and generation digest
+cannot prove the mapping; ask if unclear. Keep normal host trust/tool approvals
+and do not blanket-approve refresh at installation.
+
+Both packages contain the exact canonical body with host-specific metadata.
+Packaging detects drift, produces self-contained archives, rejects unexpected
+source files/symlinks and includes no server wiring or binaries. Host guides:
+[Claude Code](../integrations/claude-code/README.md) and
+[Codex CLI](../integrations/codex/README.md). Layout:
 
 ```text
 integrations/shared/graph-context.md
@@ -79,53 +108,43 @@ integrations/codex/plugin.json
 integrations/codex/skills/graph-context/SKILL.md
 ```
 
-Install the selected skill package through the host's normal plugin path and
-invoke it explicitly first. Keep normal host terminal approvals and trust.
-Explicit `ccnavigator analyze --project PROJECT TARGET...` is the only analysis
-path; neither invocation nor installation grants blanket refresh approval.
-Disabling terminal access or removing `ccnavigator` from PATH produces an
-honest unavailable-CLI fallback to normal source exploration, not an MCP
-fallback, auto-install, or hidden analysis.
+Every investigation starts with native `graph_status`; later analyzed tools bind
+its generation. Preserve ambiguity, relationship certainty/provenance,
+freshness and truncation. Defaults remain 20 search hits, depth 1 selections at
+100 nodes/300 edges and 8 KiB rendered context. Repeated unchanged verified-match
+context gets a status-only check and reference to the prior summary. Stale and
+unverifiable graphs are never presented as verified current evidence.
 
-Uninstall through the host's plugin manager and restart/reload as required. The
-skill and its instructions must disappear from a new conversation. Do not
-remove the independently installed CLI, project source or published graph
-artifacts. There is no separate MCP registration to clean up for this delivery.
-Host-specific installation and removal commands belong in each package guide.
-
-Every investigation starts with status and binds subsequent queries to its
-generation. The shared workflow defines ambiguity, caller/callee direction,
-function flow, before/after edit handling, the 20-hit/100-node/300-edge defaults,
-8 KiB rendered context budget and conversation-only repeat suppression. Preserve
-freshness as `match`, `stale` or `unverifiable`; no fresh/current claim is allowed
-for unverifiable inputs. Unsupported flow and errors remain explicit.
+`discover_builds` is read-only; `refresh_graph` requires an explicit user
+refresh request or approval. No shell analysis or direct terminal graph fallback.
+Missing/disabled MCP or CLI
+errors are explained before source-only fallback, which excludes
+`.codecallnavigator/`. Removing a plugin does not remove its separately
+configured server: remove the selected project table or personal registration
+at its actual scope, then verify skill/tools disappear in a new session.
+Preserve independent binaries, source and saved graph artifacts.
 
 ## Evidence, remaining validation and follow-ups
 
-[Evidence and reproduction](../evidence/agent-integrations/README.md) includes
-historical MCP stdio transcripts, timings and isolated host configuration checks.
-Current CLI baseline acceptance is reproducible with tools/agent_journeys.py.
-Backend assertions do not prove end-to-end model behavior. The
-[TASK-52 delivery evidence](../evidence/agent-integrations/delivery-task52.md)
-records actual Claude and Codex shared-skill conversations, including ambiguity,
-unsupported flow and status-only repeat suppression. Full host-package install,
-implicit selection and removal remain acceptance gates on TASK-53/54. Desktop UI
-and hook behavior are not claimed by these CLI conversations.
+[Research evidence](../evidence/agent-integrations/README.md) includes historical
+native MCP/compiler probes. The new `tools/agent_mcp_journeys.py` supplies
+reproducible current SDK-stdio/compiler acceptance. `tools/agent_journeys.py`
+remains standalone CLI compatibility coverage, not the current plugin route.
+Neither backend test proves model selection or context behavior.
 
-No query-contract extension is required. Existing CLI envelopes carry the
-metadata required for the skill; the public command name is `ccnavigator`. Initial measured graph queries
-were milliseconds on a tiny warm compiler fixture; this does not establish
-large-project latency, token usage, model accuracy or hook overhead.
+[Current delivery evidence](../evidence/agent-integrations/delivery-mcp.md) links
+the native MCP compiler transcript, measured host conversations and package
+validation. The [earlier TASK-52 evidence](../evidence/agent-integrations/delivery-task52.md)
+records the interim direct-CLI route and remains historical; it does not
+validate current MCP package behavior. Desktop UI and optional hook behavior
+remain separately unverified.
 
-Follow-ups are TASK-52 (shared workflow and reproducible journey acceptance),
-TASK-53 (Claude packaging), TASK-54 (Codex packaging), TASK-55 (optional Claude
-reminder-hook experiment), and TASK-56 (optional Codex desktop reminder-hook
-experiment). Packaging depends
-on the shared workflow. Hook experiments depend on their respective package and
-must demonstrate usefulness and bounded overhead before recommending release.
+No graph query contract or MCP implementation extension is needed. Existing tool
+envelopes carry the necessary metadata. Tiny-fixture measurements do not prove
+large-project latency, token cost, model accuracy or hook overhead.
 
-Open constraints are validation gates, not hidden implementation choices:
-minimum host versions, non-macOS support, model selection quality, large graph
-latency, and whether reminders improve behavior enough to justify hooks. Default
-release is local macOS, no hooks. Unsupported surfaces get explicit fallback;
-expanding platform claims requires evidence.
+TASK-52 owns shared workflow and reproducible acceptance; TASK-53 and TASK-54
+own Claude/Codex packages. TASK-55/56 are optional hook experiments and remain
+outside this delivery. Minimum versions, other operating systems and desktop
+surface support require their own evidence; default package claims target local
+macOS CLI hosts with no hooks.

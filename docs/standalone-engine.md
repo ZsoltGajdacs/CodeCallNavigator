@@ -4,7 +4,8 @@ The public terminal command is `ccnavigator`, available on `PATH`. It exposes
 the same command and JSON contracts as `codecallnavigator-engine`; the latter
 remains the internal executable used by desktop and MCP clients. The standalone
 engine package includes both binaries beside the same analyzer resources.
-No executable path or MCP configuration is needed by the agent skills.
+The agent skills use the independent [MCP adapter](mcp.md), configured for an
+explicit project and invoking `ccnavigator` from PATH without a binary path.
 
 `codecallnavigator-core` owns shared graph/flow/architecture contracts and pure graph
 operations. `codecallnavigator-engine` owns the coordinator and compiler-backed language

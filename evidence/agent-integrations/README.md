@@ -1,6 +1,17 @@
 # Agent integration research evidence
 
-2026-11-12, macOS arm64. Scope: TASK-51 research; no shipped plugin or runtime code changes.
+2026-11-12, macOS arm64. The TASK-51 research below is historical. Current
+TASK-52/53/54 delivery uses native MCP tools in skill-only host packages.
+
+- [Current native MCP transcript](native-mcp-protocol.json): 19 real compiler-backed
+  tool operations, complete envelopes and measured response sizes/timings.
+  Dependency paths are normalized to `<typescript-node-modules>`; no dependency
+  project source was analyzed.
+- [Delivery evidence](delivery-mcp.md): current package and host acceptance.
+
+## Historical TASK-51 research
+
+Scope: research; no shipped plugin or runtime code changes in that spike.
 
 - [Protocol transcript](protocol.md): 16 MCP tool operations plus unavailable-engine startup failure, real Node 24.15.0 / TypeScript 6.0.3 compiler fixture. Complete responses, timing and serialized response byte counts retained. Temporary project addresses normalized; no source from the dependency project analyzed.
 - [Host probes](hosts.md): codex-cli 0.166.0 and Claude Code 2.1.306 isolated configuration operations and Claude minimal plugin validation, all exit zero. No model sessions started, production plugins installed, or global hooks changed.

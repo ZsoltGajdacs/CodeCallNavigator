@@ -2,7 +2,7 @@
 
 `codecallnavigator-mcp` is an independently installable Rust executable using the
 [official Rust MCP SDK](https://docs.rs/rmcp/3.6.0/rmcp/) and stdio transport.
-Install the matching `codecallnavigator-engine` CLI separately, then install the
+Install the matching engine distribution with `ccnavigator` on PATH, then install the
 adapter with `cargo install --locked --path crates/codecallnavigator-mcp`.
 The package has no dependency on the core, engine or desktop libraries, including
 in tests. Its only runtime graph interface is the configured CLI process.
@@ -22,9 +22,14 @@ Start an MCP client with this command and argument array:
 ```json
 {
   "command": "codecallnavigator-mcp",
-  "args": ["--engine", "/absolute/path/codecallnavigator-engine", "--project", "/absolute/path/project", "--root", "linked=/absolute/path/linked"]
+  "args": ["--engine", "ccnavigator", "--project", "/absolute/path/project", "--root", "linked=/absolute/path/linked"]
 }
 ```
+
+The runtime example resolves both executables from PATH. Keep `ccnavigator`
+installed with its analyzer resources; only project/root addresses need explicit
+paths. The absolute engine path in the build verification command is a test input,
+not required runtime configuration.
 
 `--engine` and `--project` are required and unique. Repeat `--root NAME=PATH` for
 linked roots; names must be unique and `repo` is reserved for the project. These
