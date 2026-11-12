@@ -1,11 +1,10 @@
-use super::{Artifact, GRAPH_PATH};
-use anyhow::{Context, Result, ensure};
+use super::Artifact;
+use anyhow::{Context, Result};
 use serde::Serialize;
 use serde_json::{Value, json};
 use std::{
     collections::{BTreeMap, BTreeSet},
     path::Path,
-    process::Command,
 };
 
 #[derive(Clone, Debug, Serialize)]
@@ -98,39 +97,7 @@ fn groups(values: &Value, key: &impl Fn(&Value) -> String) -> Result<BTreeMap<St
 }
 
 pub fn compare_git(project: &Path, base: &str, head: &str) -> Result<Comparison> {
-    let before = revision(project, base)?;
-    let after = revision(project, head)?;
-    compare(&before, &after)
-}
-
-fn revision(project: &Path, revision: &str) -> Result<Artifact> {
-    if revision == "WORKTREE" {
-        return super::load(project);
-    }
-    ensure!(
-        !revision.is_empty() && !revision.starts_with('-') && !revision.contains(':'),
-        "Invalid Git revision"
-    );
-    let prefix = Command::new("git")
-        .arg("-C")
-        .arg(project)
-        .args(["rev-parse", "--show-prefix"])
-        .output()?;
-    ensure!(
-        prefix.status.success(),
-        "Project is not inside a Git repository"
-    );
-    let prefix = String::from_utf8(prefix.stdout)?;
-    let object = format!("{revision}:{}{GRAPH_PATH}", prefix.trim_end());
-    let output = Command::new("git")
-        .arg("-C")
-        .arg(project)
-        .args(["show", &object])
-        .output()?;
-    ensure!(
-        output.status.success(),
-        "Cannot read graph from Git revision {revision}: {}",
-        String::from_utf8_lossy(&output.stderr).trim()
-    );
-    Artifact::from_bytes(&output.stdout)
+    let before = super::revision::load(project, base)?;
+    let after = super::revision::load(project, head)?;
+    compare(&before.artifact, &after.artifact)
 }

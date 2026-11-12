@@ -1,9 +1,13 @@
 //! Validate required operation payload shapes while preserving extension metadata.
+mod comparison;
 use anyhow::{Result, ensure};
+pub(super) use comparison::metadata as comparison_metadata;
+use comparison::validate as comparison;
 use serde_json::Value;
 pub fn validate(operation: &str, result: &Value) -> Result<()> {
     ensure!(result.is_object(), "CLI operation result must be an object");
     match operation {
+        "compare" => comparison(result),
         "status" => integers(result, &["nodes", "edges"]),
         "search" => {
             integers(result, &["offset", "limit"])?;
@@ -86,6 +90,19 @@ fn array<'a>(value: &'a Value, field: &str) -> Result<&'a Vec<Value>> {
         .as_array()
         .ok_or_else(|| anyhow::anyhow!("CLI result omitted array {field}"))
 }
+/// Validate echoed comparison binding without interpreting graph contents.
+pub fn binding(request: &Value, result: &Value) -> Result<()> {
+    if request["kind"] == "compare"
+        && let Some(expected) = request["expected_comparison"].as_str()
+    {
+        ensure!(
+            result["comparison_id"] == expected,
+            "CLI returned a different comparison binding"
+        );
+    }
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -101,5 +118,13 @@ mod tests {
             .is_err()
         );
         assert!(validate("status", &json!({"nodes":0,"edges":0,"future_metadata":{}})).is_ok());
+    }
+
+    #[test]
+    fn comparison_binding_cannot_be_changed_by_a_successful_cli_response() {
+        let expected = "a".repeat(64);
+        let request = json!({"kind":"compare","expected_comparison":expected});
+        assert!(binding(&request, &json!({"comparison_id":"b".repeat(64)})).is_err());
+        assert!(binding(&request, &json!({"comparison_id":expected})).is_ok());
     }
 }

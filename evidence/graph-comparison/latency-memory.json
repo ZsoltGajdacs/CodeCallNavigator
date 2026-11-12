@@ -1,0 +1,40 @@
+{
+  "version": 1,
+  "profile": "release",
+  "command": "ccnavigator query; base=HEAD head=WORKTREE limit=100",
+  "inputs": {
+    "baseline_bytes": 113628316,
+    "target_bytes": 113682167,
+    "nodes": 10827,
+    "edges": 17331,
+    "baseline_sha256": "5beea9accee026e93514ac0a9da06997e4bc5d4d99d6d1291758156008325483",
+    "target_sha256": "840cea87a1e7587a73171ec4cdae84d05f3fa420a5f861c426cbb4061ea3f5c3",
+    "changes": "Controlled label and diagnostic edits to a copied compiler-produced graph; no source project changes."
+  },
+  "samples": [
+    {
+      "elapsed_seconds": 4.3696,
+      "maximum_resident_bytes": 3998498816,
+      "response_bytes": 7492,
+      "records": 2,
+      "comparison_id": "3141aa6f95d961d7bf6916121eb232f2e47244ca702f21466914c878fd66d410"
+    },
+    {
+      "elapsed_seconds": 4.3998,
+      "maximum_resident_bytes": 4007788544,
+      "response_bytes": 7492,
+      "records": 2,
+      "comparison_id": "3141aa6f95d961d7bf6916121eb232f2e47244ca702f21466914c878fd66d410"
+    },
+    {
+      "elapsed_seconds": 4.5304,
+      "maximum_resident_bytes": 4017881088,
+      "response_bytes": 7492,
+      "records": 2,
+      "comparison_id": "3141aa6f95d961d7bf6916121eb232f2e47244ca702f21466914c878fd66d410"
+    }
+  ],
+  "median_seconds": 4.3998,
+  "maximum_resident_bytes": 4017881088,
+  "limitations": "Three sequential local runs; OS/filesystem caches uncontrolled. Corpus is compiler-produced; edits are controlled, not a measured historical software change. Every page re-reads and compares snapshots; no persistent comparison cache."
+}

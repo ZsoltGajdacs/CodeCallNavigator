@@ -106,6 +106,11 @@ fn tool<T: JsonSchema>(name: &'static str, description: &'static str, read_only:
 }
 fn definitions() -> Vec<Tool> {
     vec![
+        tool::<CompareArgs>(
+            "compare_graphs",
+            "Compare a committed base graph against saved WORKTREE (default) or a committed head. Returns full paged differences; carry expected_comparison across pages. Never refreshes or checks out revisions.",
+            true,
+        ),
         tool::<GraphArgs>(
             "graph_status",
             "Saved graph generation, freshness, counts and diagnostics; never analyzes.",

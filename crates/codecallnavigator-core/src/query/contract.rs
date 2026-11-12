@@ -19,6 +19,17 @@ pub struct Request {
 #[serde(tag = "kind", rename_all = "snake_case", deny_unknown_fields)]
 pub enum Query {
     Status,
+    Compare {
+        base: String,
+        #[serde(default = "comparison_head")]
+        head: String,
+        #[serde(default)]
+        offset: usize,
+        #[serde(default = "comparison_limit")]
+        limit: usize,
+        #[serde(default)]
+        expected_comparison: Option<String>,
+    },
     /// Explicit full render snapshot; index-based edges are local to this generation only.
     Snapshot,
     Search {
@@ -189,6 +200,12 @@ pub struct Response {
 
 fn search_limit() -> usize {
     50
+}
+fn comparison_head() -> String {
+    "WORKTREE".into()
+}
+fn comparison_limit() -> usize {
+    100
 }
 fn directory_limit() -> usize {
     1000

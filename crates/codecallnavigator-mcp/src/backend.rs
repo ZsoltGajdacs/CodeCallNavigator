@@ -77,8 +77,9 @@ impl Backend {
         let is_error = wire::response(&value, query.generation.as_deref())?;
         if !is_error {
             process::require_success(&output)?;
-            require_graph_metadata(&value, &operation, query.generation.is_some())?;
+            wire::metadata::validate(&value, &operation, query.generation.is_some())?;
             wire::results::validate(&operation, &value["result"])?;
+            wire::results::binding(&query.query, &value["result"])?;
         }
         Ok(Reply { value, is_error })
     }
@@ -131,21 +132,6 @@ impl Backend {
             None => error,
         })
     }
-}
-
-fn require_graph_metadata(value: &Value, operation: &str, bound: bool) -> Result<()> {
-    if let ("explorer", false, true) = (operation, bound, value["generation"].is_null()) {
-        return Ok(());
-    }
-    ensure!(
-        value["freshness"].is_object(),
-        "CLI omitted analyzed graph freshness"
-    );
-    ensure!(
-        value["generation"].as_str().is_some(),
-        "CLI omitted analyzed graph generation"
-    );
-    Ok(())
 }
 
 fn choose_targets(discovered: &wire::Discovery, args: RefreshArgs) -> Result<Vec<wire::Target>> {
@@ -246,20 +232,6 @@ mod tests {
             success: true,
             cleanup_diagnostic: None,
         }
-    }
-    #[test]
-    fn successful_bound_queries_require_nonnull_freshness() {
-        let value = json!({"generation":"a".repeat(64),"freshness":null});
-        assert!(require_graph_metadata(&value, "status", false).is_err());
-        assert!(require_graph_metadata(&value, "explorer", true).is_err());
-        assert!(
-            require_graph_metadata(
-                &json!({"generation":null,"freshness":null}),
-                "explorer",
-                false
-            )
-            .is_ok()
-        );
     }
     #[test]
     fn analysis_requires_compatible_hello_terminal_and_successful_exit() {

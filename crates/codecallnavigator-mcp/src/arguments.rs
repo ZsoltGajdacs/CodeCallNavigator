@@ -12,6 +12,26 @@ pub struct GraphArgs {
 }
 #[derive(Deserialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
+pub struct CompareArgs {
+    pub base: String,
+    #[serde(default = "comparison_head")]
+    pub head: String,
+    #[serde(default)]
+    pub offset: u32,
+    #[serde(default = "comparison_limit")]
+    #[schemars(range(min = 1, max = 500))]
+    pub limit: u32,
+    pub expected_comparison: Option<String>,
+    pub expected_generation: Option<String>,
+}
+fn comparison_head() -> String {
+    "WORKTREE".into()
+}
+fn comparison_limit() -> u32 {
+    100
+}
+#[derive(Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
 pub struct SearchArgs {
     pub text: String,
     #[serde(default)]
@@ -187,6 +207,7 @@ impl Query {
 
 pub fn parse(name: &str, value: Value) -> Result<Query> {
     match name {
+        "compare_graphs" => comparison(serde_json::from_value(value)?),
         "graph_status" => {
             let args: GraphArgs = serde_json::from_value(value)?;
             Query::new(json!({"kind":"status"}), args.expected_generation)
@@ -218,6 +239,23 @@ pub fn parse(name: &str, value: Value) -> Result<Query> {
         "neighbors" => neighbors(serde_json::from_value(value)?),
         _ => bail!("Unknown graph tool: {name}"),
     }
+}
+fn comparison(args: CompareArgs) -> Result<Query> {
+    text(&args.base)?;
+    text(&args.head)?;
+    ensure!(
+        (1..=500).contains(&args.limit),
+        "Comparison limit must be 1..500"
+    );
+    ensure!(
+        args.offset == 0 || args.expected_comparison.is_some(),
+        "Paged comparisons require expected_comparison"
+    );
+    validate_generation(args.expected_comparison.as_deref())?;
+    Query::new(
+        json!({"kind":"compare","base":args.base,"head":args.head,"offset":args.offset,"limit":args.limit,"expected_comparison":args.expected_comparison}),
+        args.expected_generation,
+    )
 }
 fn search(args: SearchArgs) -> Result<Query> {
     ensure!(args.text.len() <= 16384, "Search text exceeds 16 KiB");
