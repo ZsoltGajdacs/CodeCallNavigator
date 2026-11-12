@@ -11,10 +11,14 @@ import platform
 import plistlib
 import shutil
 import subprocess
+import sys
 import tempfile
 import time
 import zipfile
+import xml.etree.ElementTree as ElementTree
 from bootstrap import checkout_patch
+from release_sources import (prepare_source_release, require_clean_source,
+                             source_identity, write_build_manifest, write_release_checksums)
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -113,6 +117,7 @@ def bundle_graphviz(destination):
     if f"version {expected} " not in version:
         raise RuntimeError(f"Expected validated Graphviz{expected}, got: {version.strip()}")
     copied = collect_graphviz(Path(executable), destination)
+    native_source_inventory(copied, destination.parents[1])
     relocate_graphviz(copied)
     environment = {**os.environ, "GVBINDIR": str(destination / "lib" / "graphviz"), "PATH": "/usr/bin:/bin"}
     dot = destination / "bin" / "dot"
@@ -123,9 +128,34 @@ def bundle_graphviz(destination):
     return Path(executable).resolve().parent.parent
 
 
+def native_source_inventory(copied, resources):
+    inventory = {}
+    for original in copied:
+        name, source = installed_native_source(original)
+        inventory[name] = source
+    (resources / "NATIVE_SOURCES.json").write_text(json.dumps(inventory, indent=2) + "\n")
+
+
+def installed_native_source(original):
+    prefix = next((parent for parent in original.parents
+                   if (parent / "INSTALL_RECEIPT.json").is_file()), None)
+    if prefix is None:
+        raise RuntimeError(f"Missing native dependency build receipt: {original}")
+    name = prefix.parent.name
+    if name not in ("graphviz", "libtool"):
+        raise RuntimeError(f"Unreviewed native dependency {name}; add its license and source coverage")
+    receipt = json.loads((prefix / "INSTALL_RECEIPT.json").read_text())
+    formula = prefix / ".brew" / f"{name}.rb"
+    return name, {"version": receipt["source"]["versions"]["stable"],
+                  "formula": formula.read_text(), "receipt": receipt}
+
+
 def dependency_notices(resources, graphviz_prefix=None):
     notices = resources / "Licenses"
     notices.mkdir()
+    shutil.copy2(ROOT / "LICENSE", notices / "CodeCallNavigator-AGPL-3.0.txt")
+    source_guide = (ROOT / "docs/public-releases.md").read_text()
+    (notices / "SOURCE.md").write_text(source_guide.replace("(../THIRD_PARTY_NOTICES.md)", "(THIRD_PARTY_NOTICES.md)"))
     shutil.copy2(ROOT / "THIRD_PARTY_NOTICES.md", notices)
     for name in ("callatlas", "rune", "java-callgraph2"):
         shutil.copy2(ROOT / "vendor" / name / "LICENSE", notices / f"{name}-LICENSE")
@@ -141,8 +171,10 @@ def dependency_notices(resources, graphviz_prefix=None):
         copy_jar_notices(jar, notices)
     # Preserve NuGet license metadata for the copied managed assemblies.
     deps = json.loads((resources / "analyzers/callatlas/callatlas.deps.json").read_text())
-    package_root = Path.home() / ".nuget" / "packages"
-    for package in deps["libraries"]:
+    package_root = Path(os.environ.get("NUGET_PACKAGES", Path.home() / ".nuget/packages"))
+    for package, specification in deps["libraries"].items():
+        if specification["type"] == "project":
+            continue
         name, version = package.rsplit("/", 1)
         directory = package_root / name.lower() / version.lower()
         copy_nuget_notices(directory, notices / "nuget" / name)
@@ -164,7 +196,7 @@ def rust_notices(destination):
         ["cargo", "metadata", "--format-version", "1", "--locked", "--offline"], cwd=ROOT))
     inventory = []
     for package in metadata["packages"]:
-        if package["name"] == "codecallnavigator":
+        if package["name"] in ("codecallnavigator", "codecallnavigator-core", "codecallnavigator-engine"):
             continue
         directory = Path(package["manifest_path"]).parent
         target = destination / f"{package['name']}-{package['version']}"
@@ -186,7 +218,8 @@ def copy_crate_notices(candidates, destination):
 
 def copy_nuget_notices(directory, target):
     if not directory.is_dir():
-        return
+        raise RuntimeError(f"Missing NuGet license metadata: {directory}; restore packages before packaging")
+    write_nuget_license(directory, target)
     for source in directory.rglob("*"):
         if notice_file(source):
             destination = target / source.relative_to(directory)
@@ -194,9 +227,27 @@ def copy_nuget_notices(directory, target):
             shutil.copy2(source, destination)
 
 
+def write_nuget_license(directory, target):
+    nuspecs = list(directory.glob("*.nuspec"))
+    if len(nuspecs) != 1:
+        raise RuntimeError(f"Expected one NuGet manifest in {directory}")
+    metadata = ElementTree.parse(nuspecs[0]).getroot().find("{*}metadata")
+    license = metadata.find("{*}license")
+    if license is None:
+        raise RuntimeError(f"Missing NuGet license in {nuspecs[0]}")
+    if (license.attrib.get("type"), license.text) != ("expression", "MIT"):
+        raise RuntimeError(f"Unreviewed NuGet license in {nuspecs[0]}; add its redistribution notices")
+    copyright = metadata.findtext("{*}copyright", default="")
+    authors = metadata.findtext("{*}authors", default="")
+    permission = (ROOT / "tools/licenses/MIT.txt").read_text()
+    target.mkdir(parents=True, exist_ok=True)
+    (target / "LICENSE.txt").write_text(f"Package: {directory.parent.name} {directory.name}\nAuthors: {authors}\n{copyright}\n\n{permission}")
+
+
 def notice_file(source):
     name = source.name.lower()
-    relevant = name.startswith(("license", "notice", "copyright")) or name.endswith(".nuspec")
+    normalized = name.replace("-", "").replace("_", "")
+    relevant = normalized.startswith(("license", "notice", "copyright", "thirdpartynotice")) or name.endswith(".nuspec")
     return source.is_file() and relevant
 
 
@@ -238,6 +289,7 @@ def make_engine(destination):
     shutil.copy2(ROOT / "target/release/codecallnavigator-engine", binary)
     copy_analyzers(resources)
     dependency_notices(resources)
+    write_build_manifest(ROOT, resources)
 
 
 def make_app(app):
@@ -255,6 +307,7 @@ def make_app(app):
             "CFBundleExecutable": "CodeCallNavigator", "CFBundlePackageType": "APPL",
             "CFBundleShortVersionString": "0.1.0", "CFBundleVersion": "1",
             "NSHighResolutionCapable": True, "LSMinimumSystemVersion": "27.0"}, stream)
+    (resources / "SOURCE_IDENTITY.json").write_text(json.dumps(source_identity(ROOT), indent=2) + "\n")
     run("/usr/bin/codesign", "--force", "--deep", "--sign", "-", app)
     run("/usr/bin/codesign", "--verify", "--deep", "--strict", app)
 
@@ -262,13 +315,33 @@ def make_app(app):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--engine-only', action='store_true', help='Package engine without desktop or Graphviz')
+    parser.add_argument('--release', action='store_true', help='Also preserve matching source; requires committed inputs and cached source archives')
     args = parser.parse_args()
     if platform.system() != "Darwin" or platform.machine() != "arm64":
         raise SystemExit("This package targets local Apple Silicon macOS")
+    if args.release:
+        require_clean_source(ROOT)
+        release_source = source_identity(ROOT)
+        # Existing adapter outputs may predate a committed source edit. A release
+        # must rebuild every helper, rather than trusting a capability marker.
+        run(sys.executable, ROOT / "tools/bootstrap.py", cwd=ROOT)
     verify_dependency_sources()
-    run("cargo", "build", "--release", "--locked", "-p", "codecallnavigator-engine", "--bin", "codecallnavigator-engine", cwd=ROOT)
     output = ROOT / "dist"
     output.mkdir(exist_ok=True)
+    engine = build_engine(output)
+    if args.engine_only:
+        if args.release:
+            finish_release(output, [engine / "Resources"], [], release_source)
+        return
+    app = build_app(output)
+    if args.release:
+        finish_release(output, [app / "Contents/Resources", engine / "Resources"],
+                       [output / "CodeCallNavigator.zip"], release_source)
+    print(app)
+
+
+def build_engine(output):
+    run("cargo", "build", "--release", "--locked", "-p", "codecallnavigator-engine", "--bin", "codecallnavigator-engine", cwd=ROOT)
     with tempfile.TemporaryDirectory(prefix="codecallnavigator-engine-package-", dir=output) as temporary:
         engine = Path(temporary) / "CodeCallNavigatorEngine"
         make_engine(engine)
@@ -276,8 +349,10 @@ def main():
         if destination.exists():
             shutil.rmtree(destination)
         engine.rename(destination)
-    if args.engine_only:
-        return
+    return destination
+
+
+def build_app(output):
     run("cargo", "build", "--release", "--locked", "--bin", "codecallnavigator", cwd=ROOT)
     with tempfile.TemporaryDirectory(prefix="codecallnavigator-package-", dir=output) as temporary:
         app = Path(temporary) / "CodeCallNavigator.app"
@@ -286,8 +361,28 @@ def main():
         if destination.exists():
             destination.rename(output / time.strftime("CodeCallNavigator.previous-%Y%m%d-%H%M%S.app"))
         app.rename(destination)
+    write_build_manifest(ROOT, destination / "Contents/Resources")
     run("/usr/bin/ditto", "-c", "-k", "--sequesterRsrc", "--keepParent", destination, output / "CodeCallNavigator.zip")
-    print(destination)
+    return destination
+
+
+def finish_release(output, resources, artifacts, expected_source):
+    if source_identity(ROOT) != expected_source:
+        raise RuntimeError("Project source changed during the build; rebuild before releasing")
+    verify_dependency_sources()
+    source = prepare_source_release(ROOT, resources, output)
+    engine = archive_engine(output)
+    write_release_checksums(output, [*artifacts, engine, source])
+
+
+def archive_engine(output):
+    destination = output / "CodeCallNavigatorEngine.zip"
+    # Cargo registry license files may carry epoch timestamps, outside ZIP's
+    # representable date range. Clamp dates while retaining bytes and modes.
+    with zipfile.ZipFile(destination, "w", compression=zipfile.ZIP_DEFLATED, strict_timestamps=False) as archive:
+        for path in sorted((output / "CodeCallNavigatorEngine").rglob("*")):
+            archive.write(path, path.relative_to(output))
+    return destination
 
 
 if __name__ == "__main__":

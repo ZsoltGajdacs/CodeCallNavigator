@@ -2,13 +2,14 @@
 import importlib.util
 import hashlib
 import json
+import os
 from pathlib import Path
 import subprocess
 import sys
 import tempfile
 import unittest
 import zipfile
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "tools"))
 SPEC = importlib.util.spec_from_file_location("codecallnavigator_package", Path(__file__).resolve().parents[1] / "tools/package.py")
@@ -148,6 +149,85 @@ class JavaAdapterCapabilityTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             with self.assertRaisesRegex(RuntimeError, "rebuild matching analyzer resources"):
                 PACKAGE.verify_java_adapter(Path(temporary))
+
+
+class ReleaseOrchestrationTests(unittest.TestCase):
+    def test_engine_archive_preserves_epoch_dated_dependency_notices(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            output = Path(temporary)
+            notice = output / "CodeCallNavigatorEngine/Resources/Licenses/LICENSE"
+            notice.parent.mkdir(parents=True)
+            notice.write_bytes(b"Original permission notice")
+            os.utime(notice, (0, 0))
+            destination = PACKAGE.archive_engine(output)
+            with zipfile.ZipFile(destination) as archive:
+                self.assertEqual(archive.read(str(notice.relative_to(output))), b"Original permission notice")
+
+    def test_release_rebuilds_helpers_before_packaging_and_source_capture(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            operations = Mock()
+            operations.build_engine.return_value = root / "dist/Engine"
+            operations.build_app.return_value = root / "dist/App"
+            with patch.object(PACKAGE, "ROOT", root), \
+                 patch.object(PACKAGE.sys, "argv", ["package.py", "--release"]), \
+                 patch.object(PACKAGE.platform, "system", return_value="Darwin"), \
+                 patch.object(PACKAGE.platform, "machine", return_value="arm64"), \
+                 patch.object(PACKAGE, "require_clean_source", operations.clean), \
+                 patch.object(PACKAGE, "source_identity", return_value={"commit": "reviewed"}), \
+                 patch.object(PACKAGE, "run", operations.run), \
+                 patch.object(PACKAGE, "verify_dependency_sources", operations.verify), \
+                 patch.object(PACKAGE, "build_engine", operations.build_engine), \
+                 patch.object(PACKAGE, "build_app", operations.build_app), \
+                 patch.object(PACKAGE, "finish_release", operations.finish_release), \
+                 patch("builtins.print"):
+                PACKAGE.main()
+            self.assertEqual([call[0] for call in operations.mock_calls],
+                             ["clean", "run", "verify", "build_engine", "build_app", "finish_release"])
+            operations.run.assert_called_once_with(PACKAGE.sys.executable, root / "tools/bootstrap.py", cwd=root)
+
+
+class NuGetNoticeTests(unittest.TestCase):
+    def setUp(self):
+        self.temporary = tempfile.TemporaryDirectory(prefix="codecallnavigator-nuget-notice-test-")
+        self.addCleanup(self.temporary.cleanup)
+        self.root = Path(self.temporary.name)
+        self.package = self.root / "cache/example/1.2.3"
+        self.package.mkdir(parents=True)
+        self.target = self.root / "notices/example"
+        self.write_metadata("MIT")
+
+    def write_metadata(self, license):
+        (self.package / "example.nuspec").write_text(
+            '<package xmlns="http://schemas.microsoft.com/packaging/2013/05/nuspec.xsd">'
+            '<metadata><id>Example</id><version>1.2.3</version><authors>Original Authors</authors>'
+            '<copyright>Copyright (c) Original Authors</copyright>'
+            f'<license type="expression">{license}</license></metadata></package>')
+
+    def test_copy_preserves_third_party_notices_and_complete_mit_permission(self):
+        names = ["ThirdPartyNotices.rtf", "THIRD-PARTY-NOTICES.TXT"]
+        for name in names:
+            (self.package / name).write_text("Original dependency notices: " + name)
+        PACKAGE.copy_nuget_notices(self.package, self.target)
+        for name in names:
+            self.assertEqual((self.target / name).read_text(), (self.package / name).read_text())
+        license = (self.target / "LICENSE.txt").read_text()
+        self.assertIn("Copyright (c) Original Authors", license)
+        self.assertIn("Permission is hereby granted, free of charge", license)
+        self.assertIn('THE SOFTWARE IS PROVIDED "AS IS"', license)
+        self.assertEqual((self.target / "example.nuspec").read_bytes(),
+                         (self.package / "example.nuspec").read_bytes())
+
+    def test_missing_nuget_cache_fails_instead_of_omitting_notices(self):
+        with self.assertRaisesRegex(RuntimeError, "Missing NuGet license metadata"):
+            PACKAGE.copy_nuget_notices(self.root / "missing", self.target)
+        self.assertFalse(self.target.exists())
+
+    def test_unreviewed_license_fails_instead_of_substituting_mit(self):
+        self.write_metadata("Apache-2.0")
+        with self.assertRaisesRegex(RuntimeError, "Unreviewed NuGet license"):
+            PACKAGE.copy_nuget_notices(self.package, self.target)
+        self.assertFalse(self.target.exists())
 
 
 if __name__ == "__main__":

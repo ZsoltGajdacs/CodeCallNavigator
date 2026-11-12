@@ -1,0 +1,82 @@
+name: Bug report
+description: Report reproducible unexpected behavior in CodeCallNavigator.
+title: "[Bug]: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Search existing issues before reporting a bug. This personal project has no guaranteed support, response or fix.
+        Reports are public: remove credentials, private source, personal information and identifying paths from all text and attachments.
+        Do not upload a private repository. [Report vulnerabilities privately](https://github.com/ZsoltGajdacs/CodeCallNavigator/security/advisories/new).
+  - type: input
+    id: version
+    attributes:
+      label: App version or commit
+      description: Give the release version or full Git commit for a source build.
+      placeholder: "0.1.0 or commit hash"
+    validations:
+      required: true
+  - type: dropdown
+    id: installation
+    attributes:
+      label: Installation method
+      options:
+        - Downloaded macOS build
+        - Built from source
+        - Other (describe in environment)
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Operating system and hardware
+      description: Include macOS version and Apple Silicon model, or describe another environment. Linux is not currently supported.
+      placeholder: "macOS version, hardware model, relevant environment details"
+    validations:
+      required: true
+  - type: dropdown
+    id: analyzer
+    attributes:
+      label: Affected area or analyzer
+      options:
+        - Desktop or graph interaction
+        - C# / .NET
+        - Java / Gradle
+        - Java / Maven
+        - TypeScript / React / Next.js
+        - Packaging or startup
+        - Other / unsure
+    validations:
+      required: true
+  - type: textarea
+    id: toolchains
+    attributes:
+      label: Relevant toolchain and project versions
+      description: Include .NET SDK, JDK, Gradle/Maven, Node/TypeScript or framework versions when relevant. Write "not applicable" for a UI-only bug.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to reproduce
+      description: Describe the smallest sequence that reproduces the problem, including relevant project setup.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      description: Include the error message, if any.
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Optional logs, screenshots or minimal reproduction
+      description: Share only sanitized material that you have permission to publish. A small public example is preferable to a whole repository.

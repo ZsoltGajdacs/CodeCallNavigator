@@ -6,6 +6,29 @@ The complete analyzed graph stays indexed; the canvas shows bounded aggregates o
 method neighborhoods. Diffs, source editing, runtime tracing,
 cross-service connections and AI features are outside this MVP.
 
+## License and participation
+
+Copyright (c) 2026 Zsolt Gajdacs. Project-owned code is licensed under the
+[GNU Affero General Public License version 3 only](LICENSE) (`AGPL-3.0-only`).
+You may use, modify and redistribute it under those terms. Distributed covered
+versions must provide corresponding source, and modified versions used to serve
+users over a network must offer those users their corresponding source as
+required by the license. Analyzing a repository with CodeCallNavigator does not
+change that repository's license or require its source to be published.
+Third-party software retains its own licenses; see
+[third-party notices](THIRD_PARTY_NOTICES.md) and the notices included with builds.
+
+This is a personal project maintained by Zsolt Gajdacs. Contributions are limited
+to [bug reports and feature requests](https://github.com/ZsoltGajdacs/CodeCallNavigator/issues/new/choose).
+Outside code and documentation submissions are not accepted, and GitHub
+Discussions is not used. There is no guaranteed support, response, fix or feature
+implementation. See the [contribution policy](CONTRIBUTING.md),
+[conduct policy](CODE_OF_CONDUCT.md) and [private security reporting](SECURITY.md).
+
+Downloadable builds target Apple Silicon macOS first. Linux is a possible future
+target and is not currently supported. See the [public release workflow](docs/public-releases.md)
+for matching source and redistribution requirements.
+
 ## Run the local app
 
 Run `./dev.sh` to bootstrap dependencies, build and launch directly from the

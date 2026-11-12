@@ -1,0 +1,20 @@
+{
+  "graphviz": {
+    "version": "16.1.0",
+    "filename": "graphviz-16.1.0.tar.xz",
+    "url": "https://gitlab.com/api/v4/projects/4207231/packages/generic/graphviz-releases/16.1.0/graphviz-16.1.0.tar.xz",
+    "sha256": "0f661718f3e5268dc3bad0fb53ab646605d26db70f4080799aff1dc2f61783c3"
+  },
+  "libtool": {
+    "version": "2.6.2",
+    "filename": "libtool-2.6.2.tar.xz",
+    "url": "https://ftp.gnu.org/gnu/libtool/libtool-2.6.2.tar.xz",
+    "sha256": "2ef1067c16c97db930fd740cc9bc3d3ba9a583804ae5ac42cc3e8719e49e191e"
+  },
+  "aviator": {
+    "version": "5.4.3",
+    "filename": "aviator-5.4.3.tar.gz",
+    "url": "https://codeload.github.com/killme2008/aviatorscript/tar.gz/refs/tags/aviator-5.4.3",
+    "sha256": "9b5f1afba66ff73a44c4e90d9f04d58b040f9d1f898f97155040a59058032dd1"
+  }
+}

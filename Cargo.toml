@@ -7,6 +7,9 @@ resolver = "3"
 name = "codecallnavigator"
 version = "0.1.0"
 edition = "2024"
+license = "AGPL-3.0-only"
+authors = ["Zsolt Gajdacs"]
+repository = "https://github.com/ZsoltGajdacs/CodeCallNavigator"
 default-run = "codecallnavigator"
 
 [dependencies]
