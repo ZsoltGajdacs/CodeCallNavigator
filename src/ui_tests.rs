@@ -541,7 +541,7 @@ fn graph_single_click_centers_after_click_interval_and_wheel_zooms() {
         .rect;
     runtime.wheel_xy(rect[0] + 5.0, rect[1] + 5.0, 0.0, -100.0);
     runtime.frame(1.0 / 60.0);
-    assert!(runtime.state.nav.camera.zoom > zoom);
+    assert!(runtime.state.nav.camera.zoom < zoom);
 }
 
 #[test]

@@ -156,7 +156,7 @@ fn chart(state: &State, session: &Session, k: &Kit) -> El {
             if let Some(session) = &mut s.flow_workspace.current {
                 session
                     .camera
-                    .zoom_at([event.x, event.y], (-event.dy / 240.0).exp());
+                    .zoom_at([event.x, event.y], (event.dy / 240.0).exp());
             }
             true
         })
