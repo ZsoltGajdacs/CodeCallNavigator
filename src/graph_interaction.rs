@@ -19,6 +19,36 @@ pub struct Interaction {
     pub filter_height: f32,
 }
 
+pub struct FileFocusOutput {
+    epoch: u64,
+    revision: u64,
+    path: String,
+    found: bool,
+    result: Result<bool, String>,
+}
+
+pub(crate) fn poll_file_focus(state: &mut State) -> bool {
+    let Some(output) = state.jobs.file_focus.take() else {
+        return false;
+    };
+    if output.epoch != state.epoch || output.revision != state.revision {
+        return false;
+    }
+    match output.result {
+        Ok(true) => state.finish_file_reveal(output.path),
+        Ok(false) => {
+            state.status = if output.found {
+                "Current filters hide the classes in this file"
+            } else {
+                "No analyzed classes for this file"
+            }
+            .into()
+        }
+        Err(error) => state.warning = error,
+    }
+    true
+}
+
 struct PendingPress {
     key: String,
     member: Option<u32>,
@@ -117,13 +147,18 @@ impl State {
 
     /// File navigation retains filters and preflights before changing history or camera.
     pub(crate) fn reveal_file_classes(&mut self, path: String) -> bool {
-        let path = self.explorer.graph_path(&crate::source_path::identity(&path));
+        let path = self
+            .explorer
+            .graph_path(&crate::source_path::identity(&path));
         let (Some(graph), Some(mut request)) = (&self.graph, self.request()) else {
             self.status = "No analyzed classes for this file".into();
             return false;
         };
         request.scope = crate::projection::Scope::Overview;
-        if !crate::projection::file_classes_visible(graph, &request, &path) {
+        if !self.uses_fixture_queries() {
+            return self.request_file_reveal(graph.clone(), request, path);
+        }
+        if !crate::projection::fixture_file_classes_visible(graph, &request, &path) {
             self.status = if graph
                 .data
                 .nodes
@@ -137,11 +172,54 @@ impl State {
             .into();
             return false;
         }
+        self.finish_file_reveal(path);
+        true
+    }
+
+    fn request_file_reveal(
+        &mut self,
+        graph: std::sync::Arc<codecallnavigator::graph::GraphIndex>,
+        request: crate::projection::Request,
+        path: String,
+    ) -> bool {
+        let queries = match self.graph_queries() {
+            Ok(queries) => queries,
+            Err(error) => {
+                self.warning = error;
+                return false;
+            }
+        };
+        self.jobs
+            .file_focus_cancel
+            .store(true, std::sync::atomic::Ordering::Release);
+        self.jobs.file_focus_cancel =
+            std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false));
+        let cancel = self.jobs.file_focus_cancel.clone();
+        let epoch = self.epoch;
+        let revision = self.revision;
+        self.jobs
+            .file_focus
+            .request(path, move |path| FileFocusOutput {
+                epoch,
+                revision,
+                found: graph
+                    .data
+                    .nodes
+                    .iter()
+                    .any(|node| crate::source_path::identity(&node.file) == path),
+                result: queries
+                    .file_visible(&path, &request, &cancel)
+                    .map_err(|error| format!("{error:#}")),
+                path,
+            });
+        true
+    }
+
+    fn finish_file_reveal(&mut self, path: String) {
         self.checkpoint();
         self.visual_selection = None;
         self.nav.selected = None;
         self.apply_focus(FocusTarget::FileClasses(path));
-        true
     }
 
     pub fn select_method(&mut self, member: u32, action: SelectionAction) {

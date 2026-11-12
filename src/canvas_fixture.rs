@@ -79,7 +79,7 @@ pub fn saved(state: &mut State) {
 
 fn restore(state: &mut State) -> anyhow::Result<()> {
     use std::sync::Arc;
-    let boot = crate::workspace::load_boot(crate::workspace::data_directory())?;
+    let boot = crate::fixture_queries::cached_boot(crate::workspace::data_directory())?;
     let saved = boot
         .session
         .ok_or_else(|| anyhow::anyhow!("No saved navigation"))?;
@@ -101,7 +101,7 @@ fn restore(state: &mut State) -> anyhow::Result<()> {
                 "Profiling requires an existing .codecallnavigator/layers.yml; importing repository configuration is not a profiling action"
             );
         }
-        let config = codecallnavigator::architecture::load(root, selection)?;
+        let config = codecallnavigator::architecture::load_readonly(root, selection)?;
         state.architecture = Some(Arc::new(codecallnavigator::architecture::classify(
             &state.graph.as_ref().unwrap().data,
             &config.config,
@@ -110,7 +110,7 @@ fn restore(state: &mut State) -> anyhow::Result<()> {
     }
     let request = state.request().unwrap();
     let view = crate::projection::layout(
-        crate::projection::project(state.graph.as_ref().unwrap(), &request),
+        crate::fixture_queries::project(state.graph.as_ref().unwrap(), &request),
         &boot.runtime.dot,
     )?;
     state.replace_graph_view(view);

@@ -1,5 +1,7 @@
 //! Query lifecycle: load exactly one artifact generation, then dispatch shared semantics.
 mod filesystem;
+mod freshness;
+mod layers;
 use codecallnavigator_core::{
     artifact::{self, Artifact, verification},
     graph::GraphIndex,
@@ -17,6 +19,7 @@ pub(super) struct Loaded {
     pub generation: String,
     pub freshness: serde_json::Value,
     pub roots: Vec<(String, std::path::PathBuf)>,
+    layers: std::sync::Mutex<Option<layers::Resolved>>,
 }
 
 pub(super) fn load(request: &Request) -> query::Result<Loaded> {
@@ -82,18 +85,24 @@ pub(super) fn load_bytes(
         Artifact::from_bytes(bytes).map_err(|e| Error::new("invalid_graph", format!("{e:#}")))?;
     let freshness = verification::verify_artifact(&artifact, &generation, &roots)
         .map_err(|e| Error::new("verification_failed", format!("{e:#}")))?;
-    let data = artifact
+    let mut data = artifact
         .hydrate(&roots)
         .map_err(|e| Error::new("invalid_graph", format!("{e:#}")))?;
+    // Runtime graph snapshots retain the portable analyzer provenance recorded
+    // with this artifact; legacy artifacts explicitly have no version report.
+    data.engine_versions = artifact.graph["analysis"]["engine_versions"]
+        .as_str()
+        .unwrap_or_default()
+        .to_owned();
     let graph = GraphIndex::new(Arc::new(data))
         .map_err(|e| Error::new("invalid_graph", format!("{e:#}")))?;
     Ok(Loaded {
         artifact,
         graph,
         generation,
-        freshness: serde_json::to_value(freshness)
-            .map_err(|e| Error::new("serialization_failed", e.to_string()))?,
+        freshness: freshness::summary(freshness)?,
         roots,
+        layers: Default::default(),
     })
 }
 
@@ -109,8 +118,7 @@ impl Loaded {
     pub(super) fn refresh_freshness(&mut self) -> query::Result<()> {
         let report = verification::verify_artifact(&self.artifact, &self.generation, &self.roots)
             .map_err(|e| Error::new("verification_failed", format!("{e:#}")))?;
-        self.freshness = serde_json::to_value(report)
-            .map_err(|e| Error::new("serialization_failed", e.to_string()))?;
+        self.freshness = freshness::summary(report)?;
         Ok(())
     }
 }
@@ -122,12 +130,14 @@ pub(super) fn validate(request: &Request) -> query::Result<()> {
             "Unsupported query contract version",
         ));
     }
-    if matches!(request.query, query::Query::RenderSelection { .. })
-        && request.expected_generation.is_none()
+    if matches!(
+        request.query,
+        query::Query::RenderSelection { .. } | query::Query::Inspect { .. }
+    ) && request.expected_generation.is_none()
     {
         return Err(Error::new(
             "invalid_request",
-            "Render selection requires expected_generation from its render snapshot",
+            "Render and inspector queries require expected_generation from their render snapshot",
         ));
     }
     Ok(())
@@ -154,6 +164,29 @@ pub(super) fn respond(loaded: &Loaded, request: &Request) -> Response {
             return Err(Error::new("cancelled", "Query cancelled"));
         }
         match &request.query {
+            query::Query::LiveSource { path } => filesystem::source_file(&loaded.roots, path),
+            query::Query::Architecture {
+                selection,
+                previous_signature,
+                configuration_root,
+            } => layers::architecture(
+                loaded,
+                *selection,
+                previous_signature.as_deref(),
+                configuration_root.as_deref(),
+            ),
+            query::Query::RenderSelection {
+                selection,
+                filter,
+                layer: Some(layer),
+            } => layers::render(
+                loaded,
+                layers::RenderRequest {
+                    selection,
+                    filter,
+                    layer,
+                },
+            ),
             query::Query::Source {
                 symbol,
                 origin: query::SourceOrigin::Live,
@@ -175,17 +208,23 @@ pub(super) fn live_response(request: &Request) -> Option<Response> {
     if request.expected_generation.is_some() {
         return None;
     }
-    let query::Query::Explorer {
-        path,
-        offset,
-        limit,
-    } = &request.query
-    else {
+    if !matches!(
+        request.query,
+        query::Query::Explorer { .. } | query::Query::LiveSource { .. }
+    ) {
         return None;
-    };
+    }
     let result = check_generation(request, "").and_then(|()| {
         let roots = roots(request)?;
-        filesystem::directory(&roots, path, *offset, *limit)
+        match &request.query {
+            query::Query::Explorer {
+                path,
+                offset,
+                limit,
+            } => filesystem::directory(&roots, path, *offset, *limit),
+            query::Query::LiveSource { path } => filesystem::source_file(&roots, path),
+            _ => unreachable!("only independent live operations reach this branch"),
+        }
     });
     Some(envelope(None, result))
 }

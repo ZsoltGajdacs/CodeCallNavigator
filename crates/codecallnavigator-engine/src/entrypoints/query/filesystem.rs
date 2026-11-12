@@ -31,7 +31,14 @@ pub(super) fn source(loaded: &Loaded, symbol: &str) -> Result<Value> {
         .node_index(symbol)
         .ok_or_else(|| Error::new("symbol_missing", "No symbol in this graph generation"))?;
     let node = &loaded.graph.data.nodes[index as usize];
-    let path = confined(&loaded.roots, Path::new(&node.file))?;
+    let mut result = source_file(&loaded.roots, Path::new(&node.file))?;
+    result["symbol"] = json!(symbol);
+    result["line"] = json!(node.line);
+    Ok(result)
+}
+
+pub(super) fn source_file(roots: &[(String, PathBuf)], path: &Path) -> Result<Value> {
+    let path = confined(roots, path)?;
     let mut options = OpenOptions::new();
     options.read(true);
     #[cfg(unix)]
@@ -53,10 +60,10 @@ pub(super) fn source(loaded: &Loaded, symbol: &str) -> Result<Value> {
         ));
     }
     let mut bytes = Vec::new();
-    file.take(16 * 1024 * 1024 + 1)
+    file.take(codecallnavigator_core::query::MAX_SOURCE_BYTES + 1)
         .read_to_end(&mut bytes)
         .map_err(|e| Error::new("source_unavailable", e.to_string()))?;
-    if bytes.len() > 16 * 1024 * 1024 {
+    if bytes.len() as u64 > codecallnavigator_core::query::MAX_SOURCE_BYTES {
         return Err(Error::new(
             "source_too_large",
             "Source exceeds 16 MiB preview limit",
@@ -65,7 +72,7 @@ pub(super) fn source(loaded: &Loaded, symbol: &str) -> Result<Value> {
     let content = String::from_utf8(bytes)
         .map_err(|_| Error::new("source_encoding", "Source is not UTF-8"))?
         .replace("\r\n", "\n");
-    Ok(json!({"origin":"live","file":path,"symbol":symbol,"line":node.line,"content":content}))
+    Ok(json!({"origin":"live","file":path,"content":content}))
 }
 
 pub(super) fn directory(

@@ -33,7 +33,7 @@ fn install(state: &mut State, method: bool, grouping: Grouping) {
         let runtime = Arc::new(AnalyzerRuntime::discover()?);
         let graph = Arc::new(GraphIndex::new(Arc::new(data()))?);
         state.graph = Some(graph.clone());
-        let project_view = projection::project(&graph, &state.request().unwrap());
+        let project_view = crate::fixture_queries::project(&graph, &state.request().unwrap());
         let project = project_view.nodes.first().expect("fixture project");
         state.nav.expanded.insert(project.key.clone());
         // Only the center's branch is expanded; connected callers and callees
@@ -63,7 +63,7 @@ fn install(state: &mut State, method: bool, grouping: Grouping) {
         });
         state.nav.selected = method.then(|| "traversal/1".into());
         let view = projection::layout(
-            projection::project(&graph, &state.request().unwrap()),
+            crate::fixture_queries::project(&graph, &state.request().unwrap()),
             &runtime.dot,
         )?;
         state.auto_fit = false;

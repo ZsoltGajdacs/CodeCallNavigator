@@ -38,6 +38,17 @@ pub enum Query {
         #[serde(default)]
         origin: SourceOrigin,
     },
+    LiveSource {
+        path: PathBuf,
+    },
+    Architecture {
+        #[serde(default)]
+        selection: Option<crate::architecture::Selection>,
+        #[serde(default)]
+        previous_signature: Option<String>,
+        #[serde(default)]
+        configuration_root: Option<PathBuf>,
+    },
     Explorer {
         /// Absolute live directory path, restricted to configured roots by the engine.
         path: PathBuf,
@@ -59,6 +70,14 @@ pub enum Query {
         selection: SelectionKind,
         #[serde(default, deserialize_with = "filter")]
         filter: Filter,
+        #[serde(default)]
+        layer: Option<RenderLayer>,
+    },
+    /// Complete root-incident relationships for a generation-bound inspector.
+    Inspect {
+        symbol: String,
+        #[serde(default, deserialize_with = "filter")]
+        filter: Filter,
     },
     Neighbors {
         symbol: String,
@@ -70,6 +89,19 @@ pub enum Query {
     Flow {
         symbol: String,
     },
+}
+
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct RenderLayer {
+    #[serde(default)]
+    pub selection: Option<crate::architecture::Selection>,
+    #[serde(default)]
+    pub tab: Option<String>,
+    #[serde(default)]
+    pub expected_signature: Option<String>,
+    #[serde(default)]
+    pub configuration_root: Option<PathBuf>,
 }
 
 #[derive(Clone, Copy, Debug, Default, Serialize, Deserialize)]

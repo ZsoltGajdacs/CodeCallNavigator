@@ -1,5 +1,5 @@
 //! Lazy desktop filesystem workspace, independent of graph navigation and rendering.
-mod loader;
+pub(crate) mod loader;
 mod selection;
 use selection::SelectionToken;
 #[cfg(test)]
@@ -395,14 +395,51 @@ fn start_next(state: &mut State) {
     let generation = state.explorer.generation;
     let cancelled = state.explorer.cancelled.clone();
     let root_request = path == state.explorer.root;
-    state.explorer.job.request(path, move |path| Output {
-        generation,
-        canonical_root: root_request
-            .then(|| std::fs::canonicalize(&path).ok())
-            .flatten()
-            .map(|root| crate::source_path::identity(&root.to_string_lossy())),
-        result: loader::read(&path, &cancelled),
-        path,
+    let backend = if state.uses_fixture_queries() {
+        Ok(crate::graph_queries::directory::DirectoryQueries::Fixture)
+    } else {
+        let root = std::path::PathBuf::from(&state.explorer.root);
+        match state.runtime.as_ref() {
+            Some(runtime) => {
+                if state
+                    .browser_context
+                    .as_ref()
+                    .is_none_or(|context| context.descriptor.project != root)
+                {
+                    state.browser_context = Some(crate::engine_client::QueryContext::for_project(
+                        runtime, root,
+                    ));
+                }
+                Ok(crate::graph_queries::directory::DirectoryQueries::Cli(
+                    state
+                        .browser_context
+                        .clone()
+                        .expect("configured browser context"),
+                ))
+            }
+            None => Err("The CLI runtime is unavailable".to_owned()),
+        }
+    };
+    state.explorer.job.request(path, move |path| {
+        let result = backend.and_then(|backend| {
+            backend
+                .read(&path, &cancelled)
+                .map_err(|error| format!("{error:#}"))
+        });
+        match result {
+            Ok((canonical, entries)) => Output {
+                generation,
+                canonical_root: root_request.then_some(canonical),
+                result: Ok(entries),
+                path,
+            },
+            Err(error) => Output {
+                generation,
+                canonical_root: None,
+                result: Err(error),
+                path,
+            },
+        }
     });
 }
 

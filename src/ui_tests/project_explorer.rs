@@ -41,7 +41,7 @@ impl Fixture {
         for index in 0..extra_files {
             fs::write(root.join(format!("file-{index:04}.txt")), "x").unwrap();
         }
-        let mut state = State::new();
+        let mut state = State::fixture();
         state.scene = true;
         state.status = "Temporary explorer fixture · no analyzer executed".into();
         state.root = rune::TextEdit::new(root.to_string_lossy());

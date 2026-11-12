@@ -15,6 +15,7 @@ import sys
 import tempfile
 
 from pan_profile_report import read_rows, summarize
+from profile_cache import validate_presentation_cache
 
 
 def snapshot_store(source, destination):
@@ -23,9 +24,10 @@ def snapshot_store(source, destination):
     with closing(sqlite3.connect((source / "catalog.sqlite3").as_uri() + "?mode=ro", uri=True)) as original:
         with closing(sqlite3.connect(destination / "catalog.sqlite3")) as copy:
             original.backup(copy)
-            row = copy.execute("SELECT value FROM catalog WHERE key='active'").fetchone()
-    if row:
-        generation = row[0]
+            rows = dict(copy.execute("SELECT key, value FROM catalog"))
+    validate_presentation_cache(rows)
+    generation = rows.get('active')
+    if generation:
         if Path(generation).name != generation:
             raise ValueError("Catalog contains an invalid generation filename")
         shutil.copy2(source / generation, destination / generation)

@@ -1,11 +1,23 @@
 //! Layer assignments are a disposable projection over immutable compiler facts.
 use super::{
-    Assignment, Configuration, FileFacts, LayerAssignments, LayerDefinition, facts::FACTS_VERSION,
-    file_key, rules::CompiledMatcher,
+    Configuration, FileFacts, LayerDefinition, facts::FACTS_VERSION, file_key,
+    rules::CompiledMatcher,
 };
 use crate::model::GraphData;
 use anyhow::{Result, ensure};
 use std::collections::HashMap;
+
+#[derive(Clone, Debug, Default, serde::Serialize, serde::Deserialize)]
+pub struct Assignment {
+    pub layer: String,
+    pub rule: String,
+}
+#[derive(Clone, Debug, Default, serde::Serialize, serde::Deserialize)]
+pub struct LayerAssignments {
+    pub files: HashMap<String, Assignment>,
+    pub layers: Vec<LayerDefinition>,
+    pub origin: String,
+}
 
 struct CompiledLanguage {
     tests: Vec<CompiledMatcher>,

@@ -26,11 +26,32 @@ mod ordering;
 mod selection;
 
 pub use geometry::layout;
+pub(crate) fn layer_scope(request: &Request) -> bool {
+    request.grouping == Grouping::Layer && !matches!(request.scope, Scope::Path(..))
+}
+pub(crate) fn query_kind(
+    graph: &GraphIndex,
+    request: &Request,
+) -> codecallnavigator::query::SelectionKind {
+    selection::kind(graph, request)
+}
+pub(crate) fn prepare_selection(
+    graph: &GraphIndex,
+    request: &Request,
+    selected: codecallnavigator::query::Selection,
+    summary: Summary,
+) -> Selection {
+    selection::prepared(graph, request, selected, summary)
+}
+pub(crate) fn fixture_selection(graph: &GraphIndex, request: &Request) -> Selection {
+    selection::fixture(graph, request)
+}
 pub(crate) fn class_key(identity: &codecallnavigator::search::ClassIdentity) -> String {
     groups::class_key(identity)
 }
 const NODE_LIMIT: usize = 1_500;
 const EDGE_LIMIT: usize = 6_000;
+const LAYER_NOTICE: &str = "Choose a layer preset or repository configuration. Refresh an older graph to collect architectural facts.";
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Grouping {
@@ -93,7 +114,11 @@ pub enum FocusTarget {
 }
 
 /// Preflight uses the same node and layer visibility as focused projection.
-pub(crate) fn file_classes_visible(graph: &GraphIndex, request: &Request, path: &str) -> bool {
+pub(crate) fn fixture_file_classes_visible(
+    graph: &GraphIndex,
+    request: &Request,
+    path: &str,
+) -> bool {
     graph.data.nodes.iter().any(|node| {
         crate::source_path::identity(&node.file) == path
             && request.filter.accepts_node(node)
@@ -190,7 +215,15 @@ pub struct LayerBand {
     pub size: [f32; 2],
 }
 
-struct Selection {
+#[derive(Clone, Default)]
+pub struct Summary {
+    pub cyclic: HashSet<u32>,
+    pub hidden_nodes: usize,
+    pub hidden_edges: usize,
+}
+
+#[derive(Clone)]
+pub struct Selection {
     nodes: Vec<u32>,
     edges: Vec<u32>,
     roots: Vec<u32>,
@@ -198,20 +231,48 @@ struct Selection {
     message: String,
     omitted_nodes: usize,
     omitted_edges: usize,
+    pub summary: Summary,
+    pub classifications:
+        std::collections::HashMap<u32, codecallnavigator::model::RelationshipClassification>,
 }
 
-pub fn project(graph: &GraphIndex, request: &Request) -> GraphView {
+pub fn project_prepared(graph: &GraphIndex, request: &Request, selection: Selection) -> GraphView {
     if let Some(target) = focus_target(graph, request) {
-        return aggregation::focused(graph, request, &target);
+        if request.grouping == Grouping::Layer && request.architecture.is_none() {
+            return GraphView {
+                message: LAYER_NOTICE.into(),
+                hidden_nodes: selection.summary.hidden_nodes,
+                hidden_edges: selection.summary.hidden_edges,
+                ..Default::default()
+            };
+        }
+        return aggregation::focused(graph, request, &target, selection);
     }
-    let mut selection = selection::resolve(graph, request);
-    layers::select(graph, request, &mut selection);
     aggregation::project_page(graph, request, selection)
+}
+
+#[cfg(test)]
+pub fn project(graph: &GraphIndex, request: &Request) -> GraphView {
+    project_prepared(graph, request, selection::fixture(graph, request))
 }
 
 #[cfg(test)]
 #[path = "projection/focus_tests.rs"]
 mod focus_tests;
+
+pub(crate) fn needs_overview_fallback(
+    graph: &GraphIndex,
+    request: &Request,
+    selection: &Selection,
+) -> bool {
+    let Some(target) = focus_target(graph, request) else {
+        return false;
+    };
+    let mut overview = request.clone();
+    overview.scope = Scope::Overview;
+    overview.focus_target = None;
+    focus_level::FocusProjection::resolve(graph, &overview, &selection.nodes, &target).is_none()
+}
 
 pub fn focus_target(graph: &GraphIndex, request: &Request) -> Option<FocusTarget> {
     if matches!(request.scope, Scope::Path(..)) {

@@ -62,6 +62,9 @@ impl State {
     }
 
     pub fn close_source(&mut self) {
+        self.source_popup
+            .cancelled
+            .store(true, std::sync::atomic::Ordering::Release);
         self.source_popup.active = None;
         self.source_popup.hover = None;
         self.source_popup.inside = false;
@@ -81,6 +84,11 @@ impl State {
     }
 
     pub fn open_source_file(&mut self, path: String, line: u32) {
+        self.source_popup
+            .cancelled
+            .store(true, std::sync::atomic::Ordering::Release);
+        self.source_popup.cancelled = Arc::new(std::sync::atomic::AtomicBool::new(false));
+        let cancel = self.source_popup.cancelled.clone();
         self.source_popup.serial += 1;
         let serial = self.source_popup.serial;
         if let Some(preview) = &mut self.source_popup.active {
@@ -88,9 +96,14 @@ impl State {
             preview.requested_line = line;
             preview.location_warning = None;
             preview.contents = Contents::Loading;
+            let queries = self.graph_queries();
             self.jobs.source.request(path, move |path| SourceOutput {
                 serial,
-                result: source::load(&path),
+                result: queries.and_then(|queries| {
+                    queries
+                        .source(&path, &cancel)
+                        .map_err(|error| format!("{error:#}"))
+                }),
             });
         }
     }

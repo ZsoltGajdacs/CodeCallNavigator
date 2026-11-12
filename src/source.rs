@@ -4,7 +4,7 @@ mod syntax;
 use rune_kit::syntax::Highlight;
 use std::{fs::OpenOptions, io::Read, ops::Range, path::Path};
 
-pub const MAX_SOURCE_BYTES: u64 = 16 * 1024 * 1024;
+pub use codecallnavigator::query::MAX_SOURCE_BYTES;
 
 #[derive(Debug)]
 pub struct SourceLine {
@@ -19,7 +19,7 @@ pub struct SourceFile {
     pub max_columns: usize,
 }
 
-pub fn load(path: &str) -> Result<SourceFile, String> {
+pub fn load_fixture(path: &str) -> Result<SourceFile, String> {
     if path.is_empty() {
         return Err("No source file was recorded for this method.".into());
     }
@@ -140,7 +140,7 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let path = dir.path().join("Demo.java");
         fs::write(&path, "class Café {\r\n\tString x = \"猫\";\r\n}\r\n").unwrap();
-        let source = load(path.to_str().unwrap()).unwrap();
+        let source = load_fixture(path.to_str().unwrap()).unwrap();
         assert_eq!(source.lines.len(), 4);
         assert_eq!(
             &source.text[source.lines[1].range.clone()],
@@ -155,24 +155,32 @@ mod tests {
     #[test]
     fn source_errors_are_explicit_and_bounded() {
         let dir = tempfile::tempdir().unwrap();
-        assert!(load("").unwrap_err().contains("No source"));
+        assert!(load_fixture("").unwrap_err().contains("No source"));
         assert!(
-            load(dir.path().join("missing.java").to_str().unwrap())
+            load_fixture(dir.path().join("missing.java").to_str().unwrap())
                 .unwrap_err()
                 .contains("Cannot open")
         );
         assert!(
-            load(dir.path().to_str().unwrap())
+            load_fixture(dir.path().to_str().unwrap())
                 .unwrap_err()
                 .contains("regular file")
         );
         let path = dir.path().join("invalid.cs");
         fs::write(&path, [255]).unwrap();
-        assert!(load(path.to_str().unwrap()).unwrap_err().contains("UTF-8"));
+        assert!(
+            load_fixture(path.to_str().unwrap())
+                .unwrap_err()
+                .contains("UTF-8")
+        );
         let mut file = File::create(&path).unwrap();
         file.seek(SeekFrom::Start(MAX_SOURCE_BYTES)).unwrap();
         file.write_all(&[0]).unwrap();
-        assert!(load(path.to_str().unwrap()).unwrap_err().contains("16 MiB"));
+        assert!(
+            load_fixture(path.to_str().unwrap())
+                .unwrap_err()
+                .contains("16 MiB")
+        );
     }
 
     #[test]

@@ -9,7 +9,7 @@ const SIGNATURE: &str =
     "fixture.ValidationFunctions:lambda$static$11(java.lang.String) -> java.lang.String";
 
 fn runtime() -> Runtime<State> {
-    let mut state = State::new();
+    let mut state = State::fixture();
     scenes::install(&mut state);
     let mut graph = (*state.graph.as_ref().unwrap().data).clone();
     let lambda = &mut graph.nodes[2];

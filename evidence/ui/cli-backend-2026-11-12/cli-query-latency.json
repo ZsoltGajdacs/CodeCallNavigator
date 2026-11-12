@@ -1,0 +1,218 @@
+{
+  "one_shot": {
+    "status": {
+      "samples": [
+        {
+          "milliseconds": 1795.55,
+          "response_bytes": 14565,
+          "generation": "99fce3cfdb1b68fd72ffa55a38ab2294cf99331812ff4ab4c0fabed865ff12a3"
+        },
+        {
+          "milliseconds": 1813.84,
+          "response_bytes": 14565,
+          "generation": "99fce3cfdb1b68fd72ffa55a38ab2294cf99331812ff4ab4c0fabed865ff12a3"
+        },
+        {
+          "milliseconds": 1795.35,
+          "response_bytes": 14565,
+          "generation": "99fce3cfdb1b68fd72ffa55a38ab2294cf99331812ff4ab4c0fabed865ff12a3"
+        }
+      ],
+      "median_ms": 1795.55,
+      "max_ms": 1813.84
+    },
+    "search": {
+      "samples": [
+        {
+          "milliseconds": 1875.88,
+          "response_bytes": 44330,
+          "generation": "99fce3cfdb1b68fd72ffa55a38ab2294cf99331812ff4ab4c0fabed865ff12a3"
+        },
+        {
+          "milliseconds": 1817.76,
+          "response_bytes": 44330,
+          "generation": "99fce3cfdb1b68fd72ffa55a38ab2294cf99331812ff4ab4c0fabed865ff12a3"
+        },
+        {
+          "milliseconds": 1783.57,
+          "response_bytes": 44330,
+          "generation": "99fce3cfdb1b68fd72ffa55a38ab2294cf99331812ff4ab4c0fabed865ff12a3"
+        }
+      ],
+      "median_ms": 1817.76,
+      "max_ms": 1875.88
+    },
+    "selection": {
+      "samples": [
+        {
+          "milliseconds": 1980.59,
+          "response_bytes": 2772990,
+          "generation": "99fce3cfdb1b68fd72ffa55a38ab2294cf99331812ff4ab4c0fabed865ff12a3"
+        },
+        {
+          "milliseconds": 1814.22,
+          "response_bytes": 2772990,
+          "generation": "99fce3cfdb1b68fd72ffa55a38ab2294cf99331812ff4ab4c0fabed865ff12a3"
+        },
+        {
+          "milliseconds": 1798.59,
+          "response_bytes": 2772990,
+          "generation": "99fce3cfdb1b68fd72ffa55a38ab2294cf99331812ff4ab4c0fabed865ff12a3"
+        }
+      ],
+      "median_ms": 1814.22,
+      "max_ms": 1980.59
+    },
+    "snapshot": {
+      "samples": [
+        {
+          "milliseconds": 4755.37,
+          "response_bytes": 101650881,
+          "generation": "99fce3cfdb1b68fd72ffa55a38ab2294cf99331812ff4ab4c0fabed865ff12a3"
+        },
+        {
+          "milliseconds": 3317.23,
+          "response_bytes": 101650881,
+          "generation": "99fce3cfdb1b68fd72ffa55a38ab2294cf99331812ff4ab4c0fabed865ff12a3"
+        },
+        {
+          "milliseconds": 3360.11,
+          "response_bytes": 101650881,
+          "generation": "99fce3cfdb1b68fd72ffa55a38ab2294cf99331812ff4ab4c0fabed865ff12a3"
+        }
+      ],
+      "median_ms": 3360.11,
+      "max_ms": 4755.37
+    },
+    "render_selection": {
+      "samples": [
+        {
+          "milliseconds": 1939.05,
+          "response_bytes": 11571916,
+          "generation": "99fce3cfdb1b68fd72ffa55a38ab2294cf99331812ff4ab4c0fabed865ff12a3"
+        },
+        {
+          "milliseconds": 1971.26,
+          "response_bytes": 11571916,
+          "generation": "99fce3cfdb1b68fd72ffa55a38ab2294cf99331812ff4ab4c0fabed865ff12a3"
+        },
+        {
+          "milliseconds": 1965.28,
+          "response_bytes": 11571916,
+          "generation": "99fce3cfdb1b68fd72ffa55a38ab2294cf99331812ff4ab4c0fabed865ff12a3"
+        }
+      ],
+      "median_ms": 1965.28,
+      "max_ms": 1971.26
+    }
+  },
+  "session": {
+    "status": {
+      "samples": [
+        {
+          "milliseconds": 1635.97,
+          "response_bytes": 14565,
+          "generation": "99fce3cfdb1b68fd72ffa55a38ab2294cf99331812ff4ab4c0fabed865ff12a3"
+        },
+        {
+          "milliseconds": 240.82,
+          "response_bytes": 14565,
+          "generation": "99fce3cfdb1b68fd72ffa55a38ab2294cf99331812ff4ab4c0fabed865ff12a3"
+        },
+        {
+          "milliseconds": 252.78,
+          "response_bytes": 14565,
+          "generation": "99fce3cfdb1b68fd72ffa55a38ab2294cf99331812ff4ab4c0fabed865ff12a3"
+        }
+      ],
+      "median_ms": 252.78,
+      "max_ms": 1635.97
+    },
+    "search": {
+      "samples": [
+        {
+          "milliseconds": 272.87,
+          "response_bytes": 44330,
+          "generation": "99fce3cfdb1b68fd72ffa55a38ab2294cf99331812ff4ab4c0fabed865ff12a3"
+        },
+        {
+          "milliseconds": 239.31,
+          "response_bytes": 44330,
+          "generation": "99fce3cfdb1b68fd72ffa55a38ab2294cf99331812ff4ab4c0fabed865ff12a3"
+        },
+        {
+          "milliseconds": 236.52,
+          "response_bytes": 44330,
+          "generation": "99fce3cfdb1b68fd72ffa55a38ab2294cf99331812ff4ab4c0fabed865ff12a3"
+        }
+      ],
+      "median_ms": 239.31,
+      "max_ms": 272.87
+    },
+    "selection": {
+      "samples": [
+        {
+          "milliseconds": 243.8,
+          "response_bytes": 2772990,
+          "generation": "99fce3cfdb1b68fd72ffa55a38ab2294cf99331812ff4ab4c0fabed865ff12a3"
+        },
+        {
+          "milliseconds": 241.68,
+          "response_bytes": 2772990,
+          "generation": "99fce3cfdb1b68fd72ffa55a38ab2294cf99331812ff4ab4c0fabed865ff12a3"
+        },
+        {
+          "milliseconds": 243.19,
+          "response_bytes": 2772990,
+          "generation": "99fce3cfdb1b68fd72ffa55a38ab2294cf99331812ff4ab4c0fabed865ff12a3"
+        }
+      ],
+      "median_ms": 243.19,
+      "max_ms": 243.8
+    },
+    "snapshot": {
+      "samples": [
+        {
+          "milliseconds": 1815.69,
+          "response_bytes": 101650881,
+          "generation": "99fce3cfdb1b68fd72ffa55a38ab2294cf99331812ff4ab4c0fabed865ff12a3"
+        },
+        {
+          "milliseconds": 1763.07,
+          "response_bytes": 101650881,
+          "generation": "99fce3cfdb1b68fd72ffa55a38ab2294cf99331812ff4ab4c0fabed865ff12a3"
+        },
+        {
+          "milliseconds": 1816.66,
+          "response_bytes": 101650881,
+          "generation": "99fce3cfdb1b68fd72ffa55a38ab2294cf99331812ff4ab4c0fabed865ff12a3"
+        }
+      ],
+      "median_ms": 1815.69,
+      "max_ms": 1816.66
+    },
+    "render_selection": {
+      "samples": [
+        {
+          "milliseconds": 296.67,
+          "response_bytes": 11571916,
+          "generation": "99fce3cfdb1b68fd72ffa55a38ab2294cf99331812ff4ab4c0fabed865ff12a3"
+        },
+        {
+          "milliseconds": 290.06,
+          "response_bytes": 11571916,
+          "generation": "99fce3cfdb1b68fd72ffa55a38ab2294cf99331812ff4ab4c0fabed865ff12a3"
+        },
+        {
+          "milliseconds": 302.53,
+          "response_bytes": 11571916,
+          "generation": "99fce3cfdb1b68fd72ffa55a38ab2294cf99331812ff4ab4c0fabed865ff12a3"
+        }
+      ],
+      "median_ms": 296.67,
+      "max_ms": 302.53
+    }
+  },
+  "artifact_bytes": 113628316,
+  "method": "Wall time includes CLI execution, pipe transfer and client JSON decoding; first session status includes initial loading. Filesystem caches are uncontrolled."
+}

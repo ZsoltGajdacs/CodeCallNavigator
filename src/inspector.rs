@@ -44,7 +44,7 @@ fn selection(state: &State, k: &Kit) -> El {
         );
     };
     let mut content = method_summary(node, k);
-    if ["java", "typescript"].contains(&node.language.as_str()) {
+    if state.flow_supported(&node.language) {
         content = content.child(flow_action(k));
     }
     let mut content = content
@@ -90,7 +90,11 @@ fn selection(state: &State, k: &Kit) -> El {
     content
 }
 
-fn architecture_details(state: &State, node: &codecallnavigator::model::Node, k: &Kit) -> Option<El> {
+fn architecture_details(
+    state: &State,
+    node: &codecallnavigator::model::Node,
+    k: &Kit,
+) -> Option<El> {
     let architecture = state.architecture.as_ref()?;
     let key = codecallnavigator::architecture::file_key(&node.build, &node.project, &node.file);
     let assignment = architecture.files.get(&key)?;
@@ -205,6 +209,11 @@ fn provenance(state: &State, k: &Kit) -> El {
 }
 
 pub(crate) fn engine_summary(raw: &str) -> Vec<String> {
+    if raw.trim().is_empty() {
+        return vec![
+            "Analyzer provenance is unavailable in this saved graph; refresh to collect it.".into(),
+        ];
+    }
     let Ok(value) = serde_json::from_str::<serde_json::Value>(raw) else {
         return vec![raw.to_string()];
     };
@@ -354,4 +363,15 @@ fn flow_action(k: &Kit) -> El {
         .on_press(State::open_selected_flow)
         .build(k)
         .key("open-flowchart")
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn legacy_empty_analyzer_provenance_requests_refresh_explicitly() {
+        assert_eq!(
+            super::engine_summary(""),
+            vec!["Analyzer provenance is unavailable in this saved graph; refresh to collect it."]
+        );
+    }
 }

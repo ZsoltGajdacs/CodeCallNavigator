@@ -60,6 +60,9 @@ the existing observed-input verifier (`match`, `stale`, `unverifiable`), not a c
 about unsaved buffers or the complete build environment. Its check is an
 observation during the request, not a guarantee that source cannot change later.
 Stale graphs remain queryable with explicit freshness metadata.
+Query freshness includes at most 50 reasons and an 8 KiB encoded reason-array
+budget, with `reasons_total` and `omitted_reasons`. The standalone `verify` command
+retains its complete report.
 
 Errors include `invalid_request`, `unsupported_version`, `project_unavailable`,
 `graph_missing`, `graph_unavailable`, `invalid_graph`, `generation_mismatch`,
@@ -75,10 +78,13 @@ Errors include `invalid_request`, `unsupported_version`, `project_unavailable`,
 | `search` | `text`, optional `category`, `offset`, `limit` | Ranked class/method candidates, stable IDs and `more`. |
 | `symbol` | `symbol` | Declaration metadata and source location. |
 | `source` | `symbol`, optional `origin` | Exact analyzed source by default, or live preview text. |
+| `live_source` | `path` | Live preview by file path, including files without a graph symbol. |
 | `explorer` | `path`, optional `offset`, `limit` | One live directory page, directories first, symlinks as leaves. |
+| `architecture` | Optional `selection`, `previous_signature`, `configuration_root` | Rule selection/signature, change flag and changed layer assignments. |
 | `selection` | `selection`, optional `filter`, `limits` | Nodes, stable-ID relationships, roots and omission counts. |
 | `render_selection` | `selection`, optional `filter`; requires `expected_generation` | Complete semantic membership for desktop grouping/pagination; traversal safety caps remain. |
 | `neighbors` | `symbol`, optional `filter`, `limits` | Both incoming and outgoing depth-one selection. |
+| `inspect` | `symbol`, optional `filter` | Complete incoming/outgoing IDs and root-incident relationships; requires generation binding. |
 | `flow` | `symbol` | Source IR, semantic chart without layout geometry, analyzed source and diagnostics. |
 
 Search categories are `all`, `classes`, `methods`. Search defaults to 50 results
@@ -98,6 +104,24 @@ filesystem observations are explicitly distinguished by `origin`.
 Unbound explorer queries also work before the first analysis; their generation
 and freshness are null. Supplying `expected_generation` requires a matching saved
 graph, as for graph queries.
+The same rule applies to unbound `live_source` queries.
+
+Architecture selection accepts `None`, `Spring`, `React`, or `Repository`.
+Omitting selection automatically detects repository rule files. The default
+configuration root is the analyzed project; `configuration_root` preserves the
+terminal client's explicit layer-root override. Classification uses immutable
+analyzed facts and current configuration, cached inside the CLI by generation,
+configuration root and rule signature. An unchanged `previous_signature` yields
+`changed: false` and null assignments. Invalid rules return an error, preserving
+the last valid consumer view.
+
+Review-app configuration is converted in memory; architecture queries never
+create or persist native configuration files.
+
+`render_selection` accepts an optional `layer` object with `selection`, `tab`,
+`configuration_root` and `expected_signature`. This applies layer membership in the CLI and returns
+`architecture_signature`. A mismatched rule signature returns
+`architecture_changed`; consumers reload assignments before combining results.
 
 Selection kinds:
 
@@ -117,6 +141,15 @@ an empty successful selection. Overview/file/class results use stable-ID order.
 Results report `omitted_nodes`, `omitted_edges` and `truncated`. Never interpret a
 bounded result as a complete workspace. The explicit `snapshot` operation is the
 full-data exception for consumers that need complete presentation data.
+
+Render results additionally carry `snapshot_nodes` and `snapshot_edges`, exact
+offsets into the generation-bound snapshot, and `summary` with full-graph
+`cyclic_symbols`, `hidden_nodes` and `hidden_edges`. These offsets are local to
+that exact generation and must never be persisted as semantic identities.
+Inspector results also carry `snapshot_edges`, preserving parallel relationships
+without guessing identity from endpoints. Unlike bounded `neighbors`, `inspect`
+includes only root-incident relationships, not induced edges between neighbors,
+and leaves pagination to the consumer.
 For semantic presentation membership, `render_selection` returns complete
 filtered overview/file/class results so desktop group counts and pagination are
 not limited by the agent response budget. It shares the same selector as bounded
@@ -131,12 +164,21 @@ Filters use the shared graph filter contract: code inclusion (`include_tests`,
 require `version: 2` and both relationship selection arrays; legacy saved-filter
 upgrade/reset behavior is not applied to public requests.
 
+Status, selection and inspector responses summarize global diagnostics with at
+most 50 messages and 8,192 returned characters. `diagnostics_total`,
+`omitted_diagnostics` and `shortened_diagnostics` make the limits explicit.
+Per-message prefixes end in an ellipsis when shortened. Full snapshots retain
+every original diagnostic.
+
 Public semantic graph results use symbol strings for edge endpoints and retain
 kind, certainty, provenance, evidence, count and classification. Snapshot edges
 use numeric offsets only within that snapshot generation; never persist or send
 those offsets as symbol identities. Flow chart step/link indices are local to
 the returned function chart, while call targets use stable graph symbol IDs.
 Flow describes possible source execution, not observed runtime behavior.
+Flow source ranges must match the exact cached UTF-8 source and its 16 MiB limit.
+Chart serialization excludes geometry; clients may deserialize and lay out the
+returned semantic chart without rebuilding its control flow.
 
 ## Example shell use
 

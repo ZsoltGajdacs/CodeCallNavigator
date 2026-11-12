@@ -454,9 +454,9 @@ fn file_focus_filters_and_navigation_serialization_are_preserved() {
     let graph = GraphIndex::new(Arc::new(data)).unwrap();
     let mut req = request(FocusTarget::FileClasses("/repo/test.cs".into()));
     req.filter.include_tests = false;
-    assert!(!file_classes_visible(&graph, &req, "/repo/test.cs"));
+    assert!(!fixture_file_classes_visible(&graph, &req, "/repo/test.cs"));
     req.filter.include_tests = true;
-    assert!(file_classes_visible(&graph, &req, "/repo/test.cs"));
+    assert!(fixture_file_classes_visible(&graph, &req, "/repo/test.cs"));
     let target = req.focus_target.unwrap();
     let json = serde_json::to_string(&target).unwrap();
     assert_eq!(serde_json::from_str::<FocusTarget>(&json).unwrap(), target);
@@ -491,9 +491,9 @@ fn file_focus_respects_layer_tabs_before_navigation() {
         origin: String::new(),
     }));
     req.layer_tab = Some("other".into());
-    assert!(!file_classes_visible(&graph, &req, &node.file));
+    assert!(!fixture_file_classes_visible(&graph, &req, &node.file));
     req.layer_tab = Some("main".into());
-    assert!(file_classes_visible(&graph, &req, &node.file));
+    assert!(fixture_file_classes_visible(&graph, &req, &node.file));
     let view = project(&graph, &req);
     assert!(view.focus_valid);
     assert_eq!(view.focus_keys.len(), 1);

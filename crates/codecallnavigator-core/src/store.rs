@@ -96,6 +96,11 @@ impl SqliteStore {
         Ok(self.root.join(name))
     }
 
+    /// Check retained-generation availability without opening its graph database.
+    pub fn generation_exists(&self, name: &str) -> Result<bool> {
+        Ok(self.generation_path(name)?.is_file())
+    }
+
     /// Cancellation is honored until the catalog publication transaction commits.
     pub fn publish(&self, graph: &GraphData, cancelled: &AtomicBool) -> Result<String> {
         let _writer = self

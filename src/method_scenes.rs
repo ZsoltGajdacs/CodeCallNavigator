@@ -34,7 +34,7 @@ fn install(state: &mut State, direction: FlowDirection) {
         let graph = Arc::new(GraphIndex::new(Arc::new(data()))?);
         state.graph = Some(graph.clone());
         state.replace_graph_view(projection::layout(
-            projection::project(&graph, &state.request().unwrap()),
+            crate::fixture_queries::project(&graph, &state.request().unwrap()),
             &runtime.dot,
         )?);
         state.runtime = Some(runtime);

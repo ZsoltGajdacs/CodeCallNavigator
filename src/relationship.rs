@@ -24,7 +24,9 @@ pub fn list(state: &State, k: &Kit) -> El {
             } else {
                 edge.from
             };
-            let classification = graph.classification(id);
+            let Some(classification) = state.relationship_classifications.get(&id).copied() else {
+                continue;
+            };
             let label = format!(
                 "{} · {} ×{} · {}",
                 labels::kind(classification.kind),
@@ -58,7 +60,9 @@ pub fn selected(state: &State, k: &Kit) -> El {
     else {
         return panel;
     };
-    let classification = graph.classification(id);
+    let Some(classification) = state.relationship_classifications.get(&id).copied() else {
+        return panel;
+    };
     let from = &graph.data.nodes[edge.from as usize];
     let to = &graph.data.nodes[edge.to as usize];
     panel = panel.child(
