@@ -22,7 +22,32 @@ fn runtime() -> Runtime<State> {
     runtime
 }
 
+fn reveal_graph_control(runtime: &mut Runtime<State>, key: &str) {
+    // Pan graph targets clear of the floating filters before exercising their gestures.
+    if !key.starts_with("graph-") {
+        return;
+    }
+    let filters = runtime
+        .elements()
+        .into_iter()
+        .find(|element| element.key.as_deref() == Some("graph-filters"));
+    let (Some((_, y)), Some(filters)) = (runtime.find(key), filters) else {
+        return;
+    };
+    let bottom = filters.rect[1] + filters.rect[3];
+    if y >= bottom {
+        return;
+    }
+    runtime.state.cancel_graph_camera();
+    runtime.state.nav.camera.pan[1] += bottom - y + 40.0;
+    runtime.invalidate();
+    for _ in 0..40 {
+        runtime.frame(1.0 / 60.0);
+    }
+}
+
 fn click(runtime: &mut Runtime<State>, key: &str) {
+    reveal_graph_control(runtime, key);
     let (x, y) = runtime
         .find(key)
         .unwrap_or_else(|| panic!("Missing control {key}"));
@@ -464,6 +489,7 @@ fn restore_discovered_builds(
 #[test]
 fn graph_click_centers_and_double_click_focuses_without_extra_history() {
     let mut runtime = runtime();
+    reveal_graph_control(&mut runtime, "graph-node-0");
     let (x, y) = runtime.find("graph-node-0").unwrap();
     let key = runtime.state.graph_view.nodes[0].key.clone();
     let before = runtime.state.back.len();

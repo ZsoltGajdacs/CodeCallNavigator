@@ -118,8 +118,8 @@ fn graph_with_filters(state: &State, cx: &mut Cx<State>, k: &Kit) -> El {
         .grow(1.0)
         .min_w(0.0)
         .min_h(0.0)
-        .child(graph_controls::filters(state, k))
         .child(graph_canvas::graph_canvas(state, cx, k))
+        .child(graph_controls::filters(state, k).absolute(0.0, 0.0))
 }
 
 fn activity_rail(state: &State, k: &Kit) -> El {

@@ -19,8 +19,7 @@ pub fn filters(state: &State, k: &Kit) -> El {
         .flex_wrap()
         .gap(8.0)
         .center_y()
-        .radius(k.radius.sm)
-        .fill(k.c.bg_base);
+        .radius(k.radius.sm);
     let descriptors = code_filters()
         .into_iter()
         .chain(relationship_filters())

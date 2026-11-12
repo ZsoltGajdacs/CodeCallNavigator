@@ -101,6 +101,8 @@ fn assert_class_opacity(runtime: &Runtime<State>, label: &str, opacity: f32) {
 fn dimmed_class_remains_clickable_and_method_drilldown_applies_emphasis() {
     let mut runtime = runtime();
     classes(&mut runtime);
+    runtime.pointer_move(0.0, 0.0);
+    runtime.state.close_source();
     runtime.state.set_depth(2);
     frames(&mut runtime, 40);
     runtime.state.fit_visible_graph();
