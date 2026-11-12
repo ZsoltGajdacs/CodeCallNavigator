@@ -7,6 +7,8 @@ engine executable rather than calling analyzer functions.
 
 See the [external consumer contract](graph-contract.md) and its
 [JSON Schema](graph.schema.json) for compatibility and input verification.
+The [public CLI query interface](cli-queries.md) provides bounded graph queries,
+source/flow data and generation-bound snapshots without running analysis.
 
 ## Project artifact and Git history
 
