@@ -5,7 +5,7 @@ status: Done
 assignee:
   - '@codex'
 created_date: '2026-11-12T18:50:00Z'
-updated_date: '2026-11-12T21:01:00Z'
+updated_date: '2026-11-12T21:07:00Z'
 labels: []
 dependencies:
   - TASK-52
@@ -50,10 +50,12 @@ Portable manifest/catalog installed successfully into isolated CODEX_HOME; insta
 User reversed plugin transport to MCP for optimized native-agent use. Direct-CLI plugin prototypes and their model traces are retained as historical iteration only. Updating canonical skill, project-bound MCP setup, host-native tool acceptance and full verification. ccnavigator remains the independently installed PATH engine command; no executable path configuration is needed. Superseded CLI package full run was intentionally interrupted and is not reported as passed.
 
 Final native-MCP package installed in isolated Codex configuration with cached skill hash matching canonical wrapper. Actual explicit/implicit invocation, unknown-binding clarification, actual truncation, real-match status-only repeat, unavailable flow, stale/missing/disabled fallback and explicit refresh passed. Disable/enable and target/catalog/server removal verified with new-session absence; source/graph hashes and eleven unrelated managed plugins preserved. Full verification all33 passed. Codex ambiguity prose omitted generation once while native arguments stayed generation-bound; disclosed as model-output limitation. Desktop UI acceptance remains explicitly unvalidated with no desktop support claim.
+
+User acceptance on 2026-11-12: successful Codex CLI integration is accepted as sufficient evidence for Codex desktop use. No separate desktop UI acceptance is required to close this task. The task remains Done; this records the user acceptance basis and does not assert that a desktop UI test was performed.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
 
 <!-- SECTION:FINAL_SUMMARY:BEGIN -->
-Delivered the Codex local-executor skill-only plugin, local marketplace and deterministic archive with explicit native MCP project configuration using command names on PATH. Real codex-cli 0.166.0 acceptance and isolated lifecycle passed; no MCP implementation, hooks or automatic analysis shipped. Desktop/IDE/cloud/web and other platforms remain unvalidated. Full verification and CodeScene gates passed; evidence in evidence/agent-integrations/codex-native-mcp.md and delivery-mcp.md.
+Delivered the Codex local-executor skill-only plugin, local marketplace and deterministic archive with explicit native MCP project configuration using command names on PATH. Real codex-cli 0.166.0 acceptance and isolated lifecycle passed. The user accepts these CLI results as sufficient for desktop use and closes the task without a separate desktop UI test. Full verification and CodeScene gates passed; no MCP implementation, hooks or automatic analysis shipped. Evidence: evidence/agent-integrations/codex-native-mcp.md and delivery-mcp.md.
 <!-- SECTION:FINAL_SUMMARY:END -->
