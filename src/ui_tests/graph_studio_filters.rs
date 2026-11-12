@@ -143,9 +143,6 @@ fn assert_filter_bar(runtime: &Runtime<State>) {
         .iter()
         .find(|e| e.key.as_deref() == Some("graph-filters"))
         .unwrap();
-    for heading in ["Code", "Relationship type", "Target resolution"] {
-        assert!(elements.iter().any(|e| e.text.as_deref() == Some(heading)));
-    }
     let mut previous: Option<[f32; 4]> = None;
     for (key, label) in [
         ("filter-tests", "Test code"),
@@ -227,17 +224,8 @@ fn grouped_filters_fit_and_expose_full_names_in_both_themes() {
 }
 
 #[test]
-fn filter_groups_explain_independent_dimensions() {
+fn filter_tooltips_explain_relationship_semantics() {
     let runtime = runtime();
-    for heading in ["Code", "Relationship type", "Target resolution"] {
-        assert!(
-            runtime
-                .elements()
-                .iter()
-                .any(|element| element.text.as_deref() == Some(heading)),
-            "Missing group {heading}"
-        );
-    }
     assert!(runtime.elements().iter().any(|element| {
         element.label.as_deref() == Some("Function references")
             && element
@@ -276,4 +264,27 @@ fn saved_sessions_migrate_legacy_filters_and_preserve_new_empty_selections() {
     let reloaded: crate::navigation::SavedSession =
         serde_json::from_str(&serde_json::to_string(&loaded).unwrap()).unwrap();
     assert_eq!(loaded.navigation.filter, reloaded.navigation.filter);
+}
+
+#[test]
+fn filters_share_one_line_when_wide_and_wrap_when_narrow() {
+    for (width, single_line) in [(2200.0, true), (1050.0, false)] {
+        let mut state = State::new();
+        scenes::install(&mut state);
+        state.ui.sidebar.set_open(false);
+        state.ui.inspector.set_open(false);
+        let mut runtime = Runtime::new(state, view::view, (width, 900.0), Env::new(true, 1.0));
+        settle(&mut runtime);
+        assert_filter_bar(&runtime);
+        let elements = runtime.elements();
+        let first = elements
+            .iter()
+            .find(|e| e.key.as_deref() == Some("filter-tests"))
+            .unwrap();
+        let last = elements
+            .iter()
+            .find(|e| e.key.as_deref() == Some("filter-other-resolution"))
+            .unwrap();
+        assert_eq!((first.rect[1] - last.rect[1]).abs() < 0.5, single_line);
+    }
 }

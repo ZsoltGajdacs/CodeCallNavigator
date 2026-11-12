@@ -1,7 +1,7 @@
 //! Filter presentation is separate from graph semantics and navigation actions.
 use crate::{app::State, presentation::FilterKind, relationship::labels};
 use codecallnavigator::model::{RelationshipKind, TargetResolution};
-use rune::{El, col, row, text};
+use rune::{El, row};
 use rune_kit::{Checkbox, Kit};
 
 struct FilterDescriptor {
@@ -12,25 +12,19 @@ struct FilterDescriptor {
 }
 
 pub fn filters(state: &State, k: &Kit) -> El {
-    col()
+    let mut controls = row()
         .key("graph-filters")
         .padding(8.0)
         .w_full()
-        .gap(6.0)
+        .flex_wrap()
+        .gap(8.0)
+        .center_y()
         .radius(k.radius.sm)
-        .fill(k.c.bg_base)
-        .child(group("Code", code_filters(), state, k))
-        .child(group("Relationship type", relationship_filters(), state, k))
-        .child(group("Target resolution", resolution_filters(), state, k))
-}
-
-fn group<const N: usize>(
-    heading: &'static str,
-    descriptors: [FilterDescriptor; N],
-    state: &State,
-    k: &Kit,
-) -> El {
-    let mut controls = row().w_full().flex_wrap().gap(8.0).center_y();
+        .fill(k.c.bg_base);
+    let descriptors = code_filters()
+        .into_iter()
+        .chain(relationship_filters())
+        .chain(resolution_filters());
     for descriptor in descriptors {
         controls = controls.child(
             Checkbox::new(descriptor.action.enabled(&state.nav.filter))
@@ -42,11 +36,7 @@ fn group<const N: usize>(
                 .key(descriptor.key),
         );
     }
-    col()
-        .w_full()
-        .gap(3.0)
-        .child(text(heading).font(k.ty.small).color(k.c.text_muted))
-        .child(controls)
+    controls
 }
 
 fn code_filters() -> [FilterDescriptor; 3] {
