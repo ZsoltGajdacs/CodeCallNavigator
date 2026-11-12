@@ -1,0 +1,15 @@
+   Compiling codecallnavigator v0.1.0 (/Users/zsolt.gajdacs/Zs/Programming/CodeGraph)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 9.90s
+     Running unittests src/main.rs (target/debug/deps/codecallnavigator-51b05f6ab598ad27)
+
+running 7 tests
+test ui_tests::project_explorer::single_click_is_isolated_and_large_tree_is_virtualized ... ok
+test ui_tests::project_explorer::closed_sidebar_sync_and_root_changes_do_not_publish_old_entries ... ok
+test ui_tests::project_explorer::graph_selection_reveals_all_files_and_reselecting_restores_highlights ... ok
+test ui_tests::project_explorer::unanalyzed_and_filtered_files_preserve_graph_navigation ... ok
+test ui_tests::project_explorer::selected_symlink_root_maps_canonical_sources_without_following_child_links ... ok
+test ui_tests::project_explorer::double_click_frames_classes_from_both_builds_and_history_restores_navigation ... ok
+test ui_tests::project_explorer::explorer_layouts_and_optional_native_captures ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 202 filtered out; finished in 2.85s
+

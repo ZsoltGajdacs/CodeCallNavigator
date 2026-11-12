@@ -299,7 +299,9 @@ fn real_graphviz_uses_signed_order_and_class_card_dimensions() {
 
 #[test]
 fn layer_class_method_focus_resolves_qualified_keys_and_excludes_other_tabs() {
-    use codecallnavigator::architecture::{Assignment, LayerAssignments, LayerDefinition, file_key};
+    use codecallnavigator::architecture::{
+        Assignment, LayerAssignments, LayerDefinition, file_key,
+    };
     let mut data = graph().data.as_ref().clone();
     for node in &mut data.nodes {
         node.file = format!("/{}.java", node.id);
@@ -406,4 +408,98 @@ fn class_methods_fill_the_page_before_external_context_at_the_canvas_limit() {
         assert_eq!(visited.len(), count + 1);
         assert!(visited.contains("caller"));
     }
+}
+
+#[test]
+fn file_focus_uses_existing_classes_from_each_build_at_every_grouping() {
+    let mut data = graph().data.as_ref().clone();
+    for (index, node) in data.nodes.iter_mut().enumerate() {
+        node.file = if index < 4 {
+            "/repo/shared.cs"
+        } else {
+            "/repo/other.cs"
+        }
+        .into();
+        if index >= 2 {
+            node.build = "/second-build".into();
+        }
+    }
+    let graph = GraphIndex::new(Arc::new(data)).unwrap();
+    for grouping in [
+        Grouping::Project,
+        Grouping::Namespace,
+        Grouping::Folder,
+        Grouping::Method,
+    ] {
+        let mut req = request(FocusTarget::FileClasses("/repo/shared.cs".into()));
+        req.grouping = grouping;
+        let view = project(&graph, &req);
+        assert!(view.focus_valid);
+        assert_eq!(view.focus_keys.len(), 2);
+        assert!(
+            view.nodes
+                .iter()
+                .all(|node| node.group_kind == Some(GroupKind::Class))
+        );
+    }
+}
+
+#[test]
+fn file_focus_filters_and_navigation_serialization_are_preserved() {
+    let mut data = graph().data.as_ref().clone();
+    for node in &mut data.nodes {
+        node.file = "/repo/test.cs".into();
+        node.is_test = true;
+    }
+    let graph = GraphIndex::new(Arc::new(data)).unwrap();
+    let mut req = request(FocusTarget::FileClasses("/repo/test.cs".into()));
+    req.filter.include_tests = false;
+    assert!(!file_classes_visible(&graph, &req, "/repo/test.cs"));
+    req.filter.include_tests = true;
+    assert!(file_classes_visible(&graph, &req, "/repo/test.cs"));
+    let target = req.focus_target.unwrap();
+    let json = serde_json::to_string(&target).unwrap();
+    assert_eq!(serde_json::from_str::<FocusTarget>(&json).unwrap(), target);
+}
+
+#[test]
+fn file_focus_respects_layer_tabs_before_navigation() {
+    use codecallnavigator::architecture::{
+        Assignment, LayerAssignments, LayerDefinition, file_key,
+    };
+    let mut data = graph().data.as_ref().clone();
+    data.nodes[0].file = "/repo/layer.cs".into();
+    let graph = GraphIndex::new(Arc::new(data)).unwrap();
+    let node = &graph.data.nodes[0];
+    let mut req = request(FocusTarget::FileClasses(node.file.clone()));
+    req.grouping = Grouping::Layer;
+    req.architecture = Some(Arc::new(LayerAssignments {
+        files: [(
+            file_key(&node.build, &node.project, &node.file),
+            Assignment {
+                layer: "Main".into(),
+                rule: String::new(),
+            },
+        )]
+        .into_iter()
+        .collect(),
+        layers: vec![LayerDefinition {
+            name: "Main".into(),
+            tab: Some("main".into()),
+            ..Default::default()
+        }],
+        origin: String::new(),
+    }));
+    req.layer_tab = Some("other".into());
+    assert!(!file_classes_visible(&graph, &req, &node.file));
+    req.layer_tab = Some("main".into());
+    assert!(file_classes_visible(&graph, &req, &node.file));
+    let view = project(&graph, &req);
+    assert!(view.focus_valid);
+    assert_eq!(view.focus_keys.len(), 1);
+    assert!(
+        view.nodes
+            .iter()
+            .all(|node| node.group_kind == Some(GroupKind::Class))
+    );
 }

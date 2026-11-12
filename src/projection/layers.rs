@@ -19,30 +19,40 @@ pub(super) fn assignment<'a>(node: &Node, request: &'a Request) -> Option<&'a st
         .map(|assignment| assignment.layer.as_str())
 }
 
+pub(super) fn includes(node: &Node, request: &Request) -> bool {
+    if !active(request) {
+        return true;
+    }
+    let Some(architecture) = &request.architecture else {
+        return false;
+    };
+    let layer = assignment(node, request).unwrap_or("Other");
+    architecture
+        .layers
+        .iter()
+        .find(|item| item.name == layer)
+        .and_then(|item| item.tab.as_deref())
+        == request.layer_tab.as_deref()
+}
+
 pub(super) fn select(graph: &GraphIndex, request: &Request, selection: &mut Selection) {
     if !active(request) {
         return;
     }
-    let Some(architecture) = &request.architecture else {
+    let Some(_) = &request.architecture else {
         selection.nodes.clear();
         selection.edges.clear();
         selection.message = "Choose a layer preset or repository configuration. Refresh an older graph to collect architectural facts.".into();
         return;
     };
-    let tabs: HashMap<_, _> = architecture
-        .layers
-        .iter()
-        .map(|layer| (layer.name.as_str(), layer.tab.as_deref()))
-        .collect();
     let visible: HashSet<_> = selection.nodes.iter().copied().collect();
     selection
         .edges
         .retain(|&index| contains_edge(graph, &visible, index));
     let before = selection.nodes.len();
-    selection.nodes.retain(|&index| {
-        let layer = assignment(&graph.data.nodes[index as usize], request).unwrap_or("Other");
-        tabs.get(layer).copied().flatten() == request.layer_tab.as_deref()
-    });
+    selection
+        .nodes
+        .retain(|&index| includes(&graph.data.nodes[index as usize], request));
     let included: HashSet<_> = selection.nodes.iter().copied().collect();
     let edges_before = selection.edges.len();
     selection

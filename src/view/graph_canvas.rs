@@ -8,6 +8,7 @@ use std::time::Duration;
 
 pub fn graph_canvas(state: &State, _: &mut Cx<State>, k: &Kit) -> El {
     el().key("graph-canvas")
+        .focusable(true)
         .grow(1.0)
         .min_w(0.0)
         .h_full()

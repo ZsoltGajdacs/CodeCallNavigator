@@ -22,6 +22,7 @@ pub struct TargetChoice {
 }
 
 pub struct State {
+    pub explorer: crate::explorer::Workspace,
     pub flow_workspace: crate::flow_workspace::Workspace,
     pub root: TextEdit,
     pub search: crate::search::Workspace,
@@ -76,6 +77,7 @@ pub struct State {
 impl State {
     pub fn new() -> Self {
         Self {
+            explorer: crate::explorer::Workspace::default(),
             flow_workspace: crate::flow_workspace::Workspace::default(),
             root: TextEdit::new(""),
             search: crate::search::Workspace::default(),
