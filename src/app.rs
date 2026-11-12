@@ -27,6 +27,7 @@ pub struct State {
     pub root: TextEdit,
     pub search: crate::search::Workspace,
     pub targets: Vec<TargetChoice>,
+    pub build_discovery: crate::build_discovery::Workspace,
     pub saved_builds: Vec<PathBuf>,
     pub saved_targets: Option<Vec<crate::discovery::BuildIdentity>>,
     pub graph: Option<Arc<GraphIndex>>,
@@ -82,6 +83,7 @@ impl State {
             root: TextEdit::new(""),
             search: crate::search::Workspace::default(),
             targets: Vec::new(),
+            build_discovery: Default::default(),
             saved_builds: Vec::new(),
             saved_targets: None,
             graph: None,
@@ -259,8 +261,8 @@ impl State {
     pub fn root_edited(&mut self) {
         self.reset_architecture();
         self.root_was_edited = true;
-        self.jobs.discovery.cancel();
-        self.targets.clear();
+        self.reset_build_discovery();
+        self.close_overlay();
         self.saved_builds.clear();
         self.saved_targets = None;
         self.dirty_session = true;

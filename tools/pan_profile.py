@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+from contextlib import closing
 import hashlib
 import json
 import os
@@ -19,8 +20,8 @@ from pan_profile_report import read_rows, summarize
 def snapshot_store(source, destination):
     """A transactionally consistent catalog snapshot, followed by its immutable generation."""
     destination.mkdir()
-    with sqlite3.connect((source / "catalog.sqlite3").as_uri() + "?mode=ro", uri=True) as original:
-        with sqlite3.connect(destination / "catalog.sqlite3") as copy:
+    with closing(sqlite3.connect((source / "catalog.sqlite3").as_uri() + "?mode=ro", uri=True)) as original:
+        with closing(sqlite3.connect(destination / "catalog.sqlite3")) as copy:
             original.backup(copy)
             row = copy.execute("SELECT value FROM catalog WHERE key='active'").fetchone()
     if row:

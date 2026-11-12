@@ -1,8 +1,8 @@
 //! Repository discovery and project explorer drawer.
-use super::explorer;
+use super::{build_picker, explorer};
 use crate::{app::State, theme};
 use rune::{El, col, text};
-use rune_kit::{Button, Checkbox, Kit, ScrollBar, ScrollBarStyle, TextInput};
+use rune_kit::{Button, Kit, TextInput};
 
 pub fn view(state: &State, k: &Kit) -> El {
     col()
@@ -29,8 +29,6 @@ pub fn view(state: &State, k: &Kit) -> El {
                     repository(state, k)
                         .w(state.ui.sidebar.width() - 2.0 * theme::SPACE)
                         .gap(theme::SPACE)
-                        .grow(1.0)
-                        .max_h(370.0)
                         .min_h(0.0),
                 )
                 .child(explorer::view(state, k).w(state.ui.sidebar.width() - 2.0 * theme::SPACE)),
@@ -38,7 +36,7 @@ pub fn view(state: &State, k: &Kit) -> El {
 }
 
 fn repository(state: &State, k: &Kit) -> El {
-    let mut content = col()
+    col()
         .child(
             Button::new("Choose folder…")
                 .on_press_tx(|s: &mut State, tx| s.choose_folder(tx))
@@ -57,49 +55,8 @@ fn repository(state: &State, k: &Kit) -> El {
                 .build(k)
                 .key("root-path"),
         )
-        .child(
-            Button::new("Find builds")
-                .on_press(State::discover_root)
-                .build(k)
-                .key("find-builds")
-                .w_full(),
-        )
-        .child(text("Builds").font(k.ty.ui_medium).color(k.c.text_base));
-    if state.targets.is_empty() {
-        content = content.child(note(
-            if state.jobs.discovery.is_pending() {
-                "Looking for build files…"
-            } else {
-                "Solutions, C# projects, Java builds and TypeScript configurations appear here."
-            },
-            k,
-        ));
-    }
-    let mut builds = col().w_full().gap(theme::SPACE);
-    for (index, choice) in state.targets.iter().enumerate() {
-        builds = builds.child(
-            Checkbox::new(choice.selected)
-                .label(&choice.target.label)
-                .on_toggle(move |s: &mut State| s.toggle_build(index))
-                .build(k)
-                .key(format!("build-{index}"))
-                .w_full(),
-        );
-    }
-    if !state.targets.is_empty() {
-        content = content.child(
-            col()
-                .key("builds-scroll")
-                .w_full()
-                .grow(1.0)
-                .min_h(0.0)
-                .scroll_xy()
-                .child(builds)
-                .scroll_bar_styled(ScrollBarStyle::from_kit(k).horizontal())
-                .pb(8.0),
-        );
-    }
-    content.child(note(analysis_help(state), k))
+        .child(build_picker::button(state, k))
+        .child(note(analysis_help(state), k))
 }
 
 fn analysis_help(state: &State) -> &'static str {

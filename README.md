@@ -65,14 +65,22 @@ data while keeping that graph and navigation.
 ## Validation
 
 ```sh
-cargo clippy --workspace --all-targets --no-deps -- -D warnings
-cargo test --workspace --all-targets -- --include-ignored
-python3.13 -m unittest discover -s tests -v
+./verify-light.sh   # Small changes with minimal production-code effect
+./verify-full.sh    # Complete runtime/analyzer/benchmark/package verification
 ```
 
-Compiler/build acceptance tests require bootstrapped analyzers and their actual
-toolchains. See the [reference](docs/reference.md#validation) for additional
-checks and configuration.
+Light runs static checks and cleanup for documentation-only changes; otherwise it also
+checks, lints and tests the workspace. Full preflights compiler toolchains and
+explicit dependency/profiling inputs, runs ignored acceptance tests in release
+mode on an isolated profiling snapshot, and verifies local packaging. Both stop
+on failures/timeouts and preserve stage logs and results under `target/verification`.
+
+See [verification setup and commands](docs/reference.md#validation), including
+required full-mode inputs. Use `--dry-run` to inspect either script without running
+checks. Both clean unused artifacts afterward: light keeps compiled dependency
+caches; full reclaims debug/release build profiles. Use `--keep-artifacts` to retain
+build state for investigation. Neither script formats vendored sources or rewrites
+project files.
 
 ## License and feedback
 

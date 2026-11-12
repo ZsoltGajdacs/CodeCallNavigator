@@ -18,6 +18,7 @@ pub enum Drawer {
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Overlay {
     Depth,
+    Builds,
 }
 
 #[derive(Clone, Copy)]
@@ -206,7 +207,7 @@ impl State {
     pub fn toggle_depth(&mut self) {
         self.ui.overlay = match self.ui.overlay {
             Some(Overlay::Depth) => None,
-            None => Some(Overlay::Depth),
+            _ => Some(Overlay::Depth),
         };
     }
 

@@ -110,7 +110,12 @@ fn invalid_roots_fail_before_acquiring_project_lock() {
         "roots":[["duplicate",project.path()],["duplicate",project.path()]], "targets":[]}),
     );
     assert_eq!(wait(&mut child), 2);
-    assert!(!project.path().join(".codecallnavigator/graph.lock").exists());
+    assert!(
+        !project
+            .path()
+            .join(".codecallnavigator/graph.lock")
+            .exists()
+    );
 }
 
 fn slow_build(root: &Path) {
@@ -121,7 +126,7 @@ fn slow_build(root: &Path) {
     fs::write(root.join("resources/tools/gradle-metadata.gradle"), "").unwrap();
     fs::write(root.join("build.gradle"), "").unwrap();
     let wrapper = root.join("gradlew");
-    fs::write(&wrapper, "#!/bin/sh\nsleep 30 &\nchild=$!\nprintf '%s' \"$child\" > child.pid\ntrap 'kill \"$child\" 2>/dev/null; wait \"$child\" 2>/dev/null; exit 143' TERM INT\nwait \"$child\"\n").unwrap();
+    fs::write(&wrapper, "#!/bin/sh\nsleep 30 &\nchild=$!\nprintf '%s' \"$child\" > child.pid.tmp\nmv child.pid.tmp child.pid\ntrap 'kill \"$child\" 2>/dev/null; wait \"$child\" 2>/dev/null; exit 143' TERM INT\nwait \"$child\"\n").unwrap();
     fs::set_permissions(wrapper, fs::Permissions::from_mode(0o755)).unwrap();
 }
 
@@ -178,7 +183,10 @@ fn analysis_eof_and_sigterm_reap_build_descendants_and_preserve_artifact() {
         let mut child = Command::new(env!("CARGO_BIN_EXE_codecallnavigator-engine"))
             .arg("serve-once")
             .env("JAVA_HOME", project.path().join("jdk"))
-            .env("CODECALLNAVIGATOR_RESOURCES", project.path().join("resources"))
+            .env(
+                "CODECALLNAVIGATOR_RESOURCES",
+                project.path().join("resources"),
+            )
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())

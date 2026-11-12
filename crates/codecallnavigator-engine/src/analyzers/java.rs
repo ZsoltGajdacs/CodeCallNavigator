@@ -493,12 +493,8 @@ mod compiled_acceptance {
     use std::sync::atomic::AtomicBool;
 
     #[test]
-    #[ignore = "requires successful real-build metadata via CODECALLNAVIGATOR_COMPILED_METADATA"]
+    #[ignore = "requires private Recurring Billing checkout, Maven dependencies and JDK 25"]
     fn recurring_billing_successful_build_outputs_preserve_both_generated_copies() {
-        let manifest = std::env::var_os("CODECALLNAVIGATOR_COMPILED_METADATA")
-            .expect("Set CODECALLNAVIGATOR_COMPILED_METADATA");
-        let metadata: build::JavaBuildMetadata =
-            serde_json::from_slice(&fs::read(manifest).unwrap()).unwrap();
         let build = BuildTarget {
             path: PathBuf::from(std::env::var_os("CODECALLNAVIGATOR_RECURRING_BILLING").unwrap())
                 .canonicalize()
@@ -520,6 +516,10 @@ mod compiled_acceptance {
             shared_path: root.path(),
             cancel: &cancel,
             progress: &progress,
+        };
+        let metadata = match std::env::var_os("CODECALLNAVIGATOR_COMPILED_METADATA") {
+            Some(manifest) => serde_json::from_slice(&fs::read(manifest).unwrap()).unwrap(),
+            None => build::compile(&build, &context).unwrap(),
         };
         let graph = analyze_compiled(&build, &context, &metadata).unwrap();
         assert!(graph.nodes.iter().all(|node| !node.file.is_empty() && Path::new(&node.file).starts_with(&build.path)), "Every declaration must belong to an actual selected-project source file");

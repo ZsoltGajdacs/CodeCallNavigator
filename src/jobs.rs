@@ -1,7 +1,7 @@
 pub(crate) use crate::workspace::{Boot, LoadedGraph, data_directory, load_boot};
 use crate::{
-    app::{RESULT_PAGE_SIZE, State, TargetChoice},
-    discovery, engine_client, fingerprint, projection,
+    app::{RESULT_PAGE_SIZE, State},
+    engine_client, fingerprint, projection,
 };
 use codecallnavigator::graph::{Direction, GraphIndex};
 use rune::{Latest, Tx, Waker};
@@ -16,10 +16,6 @@ use std::{
 };
 
 type Fallible<T> = Result<T, String>;
-pub struct DiscoveryOutput {
-    pub root: String,
-    pub result: Fallible<Vec<discovery::BuildTarget>>,
-}
 pub struct NeighborOutput {
     pub epoch: u64,
     pub revision: u64,
@@ -32,7 +28,7 @@ pub struct NeighborOutput {
 pub struct Jobs {
     pub boot: Latest<Fallible<Boot>>,
     pub source: Latest<crate::source_popup::SourceOutput>,
-    pub discovery: Latest<DiscoveryOutput>,
+    pub discovery: Latest<crate::build_discovery::Output>,
     pub analysis: Latest<Fallible<LoadedGraph>>,
     pub cache_clear: Latest<crate::cache_jobs::Output>,
     pub layout: Latest<(u64, u64, Fallible<projection::GraphView>)>,
@@ -105,34 +101,11 @@ impl State {
         tx.open_folder(options, |state: &mut State, answer, _| match answer {
             Ok(Some(path)) => {
                 state.root = rune::TextEdit::new(path.to_string_lossy());
-                state.saved_builds.clear();
-                state.saved_targets = None;
-                state.reset_architecture();
+                state.root_edited();
                 state.discover_root();
             }
             Ok(None) => {}
             Err(error) => state.warning = format!("Could not open the folder chooser: {error}"),
-        });
-    }
-
-    pub fn discover_root(&mut self) {
-        let root = PathBuf::from(self.root.text.trim());
-        self.targets.clear();
-        self.status = "Finding solutions, Java builds and TypeScript projects…".into();
-        let runtime = self.runtime.clone();
-        self.jobs.discovery.request(root, move |path| {
-            let root = path.to_string_lossy().into_owned();
-            DiscoveryOutput {
-                root,
-                result: (|| {
-                    let runtime = match runtime {
-                        Some(runtime) => runtime,
-                        None => Arc::new(crate::runtime::Runtime::discover()?),
-                    };
-                    engine_client::discover(&runtime, &path)
-                })()
-                .map_err(|error: anyhow::Error| error.to_string()),
-            }
         });
     }
 
@@ -224,7 +197,9 @@ impl State {
             .then(|| self.analysis_metrics.clone())
             .flatten();
         self.jobs.layout.request(request, move |request| {
-            let _scope = metrics.as_ref().map(codecallnavigator::metrics::Metrics::enter);
+            let _scope = metrics
+                .as_ref()
+                .map(codecallnavigator::metrics::Metrics::enter);
             let _timer = codecallnavigator::metrics::stage(if first_layout {
                 "initial_layout"
             } else {
@@ -290,7 +265,7 @@ pub fn poll(state: &mut State, time: f64, tx: &mut Tx) -> bool {
         | crate::graph_interaction::poll(state, time, tx)
         | poll_progress(state)
         | poll_boot(state)
-        | poll_discovery(state)
+        | crate::build_discovery::poll(state)
         | poll_analysis(state)
         | crate::cache_jobs::poll(state)
         | poll_graph(state)
@@ -377,39 +352,6 @@ fn poll_boot(state: &mut State) -> bool {
         Err(error) => {
             state.warning = error;
             state.status = "Could not open the saved workspace".into();
-        }
-    }
-    true
-}
-
-fn poll_discovery(state: &mut State) -> bool {
-    let Some(output) = state.jobs.discovery.take() else {
-        return false;
-    };
-    if output.root != state.root.text.trim() {
-        return false;
-    }
-    match output.result {
-        Ok(targets) => {
-            let defaults = discovery::default_selection(&targets);
-            state.targets = targets
-                .into_iter()
-                .map(|target| {
-                    let selected = if let Some(saved) = &state.saved_targets {
-                        saved.contains(&target.identity())
-                    } else if state.saved_builds.is_empty() {
-                        defaults.contains(&target.identity())
-                    } else {
-                        target.kind != "maven" && state.saved_builds.contains(&target.path)
-                    };
-                    TargetChoice { target, selected }
-                })
-                .collect();
-            state.status = format!("{} build targets found", state.targets.len());
-        }
-        Err(error) => {
-            state.warning = error;
-            state.status = "Could not inspect this folder".into();
         }
     }
     true
