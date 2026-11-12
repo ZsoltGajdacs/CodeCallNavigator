@@ -4,7 +4,7 @@ title: Package Codex graph-context skill
 status: To Do
 assignee: []
 created_date: '2026-11-12T18:50:00Z'
-updated_date: '2026-11-12T18:51:00Z'
+updated_date: '2026-11-12T19:27:00Z'
 labels: []
 dependencies:
   - TASK-52
@@ -19,20 +19,20 @@ ordinal: 63000
 ## Description
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
-Depends on the shared workflow task. Build integrations/codex with portable root plugin.json and skills/graph-context/SKILL.md; package canonical shared instructions without external symlinks and check drift. Ship no hooks or binaries initially; use separately configured project-bound stdio MCP. Document trusted project config plus user-scope alternative. Validate local marketplace installation, explicit skill mention and description-based selection separately on CLI and desktop where available; unsupported surfaces remain unverified. Exercise real compiler graph journeys, disabled MCP, repeated context, install/removal and normal trust. Record exact versions. Full packaging verification and CodeScene apply to executable changes.
+Package the canonical graph-context workflow for Codex so agents invoke ccnavigator directly through terminal PATH. The user explicitly replaced the earlier MCP route: no MCP registration or executable path configuration is required. Deliver a portable root plugin.json, self-contained graph-context skill copied from canonical instructions with drift detection, and local marketplace/install/removal instructions. Ship no hooks, binaries, graph reader, algorithms or background refresh. Validate real isolated CLI installation, explicit/implicit invocation, repeated context and fallbacks. Validate desktop separately where isolation is available; otherwise state the unsupported/unverified surface precisely. Run full packaging verification and CodeScene for source changes.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
 - [ ] #1 Codex CLI/desktop support claims each have isolated installation, invocation and removal evidence or an explicit unsupported-surface limitation.
-- [ ] #2 No hooks, automatic refresh, graph readers or production configuration mutations are included, and packaged shared instructions cannot drift silently.
+- [ ] #2 The self-contained package invokes ccnavigator from PATH without MCP setup or binary paths, has no hooks or automatic analysis, and cannot silently drift from the canonical workflow.
 <!-- AC:END -->
 
 ## Implementation Plan
 
 <!-- SECTION:PLAN:BEGIN -->
-1. Consume TASK-52 canonical workflow in a portable Codex package with drift validation.
-2. Add trusted-project and user-scope stdio configuration/removal instructions; no hooks/binaries.
-3. Verify isolated local marketplace installation and real skill journeys separately in CLI and desktop.
-4. Verify repeated-context/fallback/uninstall behavior and run full packaging checks plus CodeScene for source changes.
+1. Consume the shared package builder and canonical workflow in a portable Codex manifest/skill with a local catalog.
+2. Document normal local installation, explicit/implicit invocation and removal with ccnavigator on PATH and no MCP configuration.
+3. Verify isolated CLI installation/conversations/fallbacks/removal; record the precise desktop isolation limitation unless separately proven.
+4. Review, run focused package tests and combined full packaging verification, record evidence and finalize only proven criteria.
 <!-- SECTION:PLAN:END -->

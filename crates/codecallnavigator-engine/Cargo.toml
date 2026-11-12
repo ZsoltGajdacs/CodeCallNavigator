@@ -6,6 +6,10 @@ license = "AGPL-3.0-only"
 authors = ["Zsolt Gajdacs"]
 repository = "https://github.com/ZsoltGajdacs/CodeCallNavigator"
 
+[[bin]]
+name = "ccnavigator"
+path = "src/ccnavigator.rs"
+
 [dependencies]
 codecallnavigator-core = { path = "../codecallnavigator-core" }
 anyhow = "1"

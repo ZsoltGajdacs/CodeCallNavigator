@@ -287,6 +287,7 @@ def make_engine(destination):
     binary.mkdir(parents=True)
     resources.mkdir()
     shutil.copy2(ROOT / "target/release/codecallnavigator-engine", binary)
+    shutil.copy2(ROOT / "target/release/ccnavigator", binary)
     copy_analyzers(resources)
     dependency_notices(resources)
     write_build_manifest(ROOT, resources)
@@ -341,7 +342,7 @@ def main():
 
 
 def build_engine(output):
-    run("cargo", "build", "--release", "--locked", "-p", "codecallnavigator-engine", "--bin", "codecallnavigator-engine", cwd=ROOT)
+    run("cargo", "build", "--release", "--locked", "-p", "codecallnavigator-engine", "--bins", cwd=ROOT)
     with tempfile.TemporaryDirectory(prefix="codecallnavigator-engine-package-", dir=output) as temporary:
         engine = Path(temporary) / "CodeCallNavigatorEngine"
         make_engine(engine)
@@ -349,6 +350,7 @@ def build_engine(output):
         if destination.exists():
             shutil.rmtree(destination)
         engine.rename(destination)
+    run(destination / "bin/ccnavigator", "capabilities")
     return destination
 
 
