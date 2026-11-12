@@ -2,6 +2,7 @@ use crate::{app::State, jobs, scenes, view};
 use rune::{Env, Runtime};
 
 mod architectural_layers;
+mod build_picker;
 mod cache_clear;
 mod canvas_gpu_performance;
 mod canvas_performance;
@@ -218,7 +219,7 @@ fn a_late_discovery_result_cannot_populate_builds_for_a_different_root() {
     runtime.state.root_edited();
     runtime.state.jobs.discovery.request((), |_| {
         std::thread::sleep(std::time::Duration::from_millis(10));
-        jobs::DiscoveryOutput {
+        crate::build_discovery::Output {
             root: "/project/A".into(),
             result: Ok(vec![crate::discovery::BuildTarget {
                 path: "/project/A/App.csproj".into(),
@@ -473,13 +474,18 @@ fn restore_discovered_builds(
     runtime: &mut Runtime<State>,
     session: &crate::navigation::SavedSession,
 ) {
+    runtime.state.root_edited();
     runtime.state.root = rune::TextEdit::new(&session.root);
     runtime.state.saved_builds = session.selected_builds.clone();
     runtime.state.saved_targets = session.selected_targets.clone();
     runtime.state.discover_root();
     for _ in 0..100 {
         runtime.frame(1.0 / 60.0);
-        if runtime.state.targets.len() == 2 {
+        if matches!(
+            runtime.state.build_discovery.phase,
+            crate::build_discovery::Phase::Ready
+        ) {
+            assert_eq!(runtime.state.targets.len(), 2);
             return;
         }
         std::thread::sleep(std::time::Duration::from_millis(1));

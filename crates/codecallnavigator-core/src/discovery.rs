@@ -1,3 +1,7 @@
+#[cfg(test)]
+mod name_tests;
+mod names;
+
 use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
 use std::{
@@ -83,7 +87,7 @@ pub fn discover(root: &Path) -> Result<Vec<BuildTarget>> {
     discover_directory(&root, &mut targets, &mut gradle_roots)?;
     for path in independent_gradle_roots(&gradle_roots) {
         targets.push(BuildTarget {
-            label: display_name(&path),
+            label: names::label(&path, names::Kind::Gradle),
             path,
             language: "java".into(),
             kind: "gradle".into(),
@@ -146,7 +150,7 @@ pub fn target_from_file(path: &Path) -> Result<BuildTarget> {
             .context("POM has no parent directory")?
             .to_path_buf();
         return Ok(BuildTarget {
-            label: format!("{} (Maven)", display_name(&root)),
+            label: names::label(&root, names::Kind::Maven),
             path: root,
             language: "java".into(),
             kind: "maven".into(),
@@ -158,7 +162,7 @@ pub fn target_from_file(path: &Path) -> Result<BuildTarget> {
         _ => anyhow::bail!("Unsupported build file: {}", path.display()),
     };
     Ok(BuildTarget {
-        label: name.into(),
+        label: names::csharp_label(&path),
         path,
         language: "csharp".into(),
         kind: kind.into(),
@@ -227,7 +231,7 @@ fn discover_file(
             path: path.into(),
             language: "csharp".into(),
             kind: kind.into(),
-            label: name.into(),
+            label: names::csharp_label(path),
         });
     }
     if name == "pom.xml" {
@@ -236,7 +240,7 @@ fn discover_file(
             path: root.into(),
             language: "java".into(),
             kind: "maven".into(),
-            label: format!("{} (Maven)", root.display()),
+            label: names::label(root, names::Kind::Maven),
         });
     }
     if matches!(
@@ -261,22 +265,11 @@ fn is_typescript_config(name: &str) -> bool {
 
 fn typescript_target(path: PathBuf) -> BuildTarget {
     BuildTarget {
-        label: format!(
-            "{} ({})",
-            display_name(path.parent().unwrap_or(Path::new("."))),
-            path.file_name().unwrap_or_default().to_string_lossy()
-        ),
+        label: names::label(&path, names::Kind::TypeScript),
         path,
         language: "typescript".into(),
         kind: "typescript".into(),
     }
-}
-
-fn display_name(path: &Path) -> String {
-    path.file_name()
-        .unwrap_or_default()
-        .to_string_lossy()
-        .into_owned()
 }
 
 #[cfg(test)]

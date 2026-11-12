@@ -28,3 +28,6 @@
 **/.codegraph/graph.lock
 **/.codegraph/.graph-publish-*
 **/.codegraph/inference.sqlite3*
+
+# Isolated, locked Python verification dependencies.
+/.venv-verification/

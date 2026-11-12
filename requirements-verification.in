@@ -1,0 +1,2 @@
+# Existing JSON Schema contract checks require this test-only dependency.
+jsonschema==4.26.0

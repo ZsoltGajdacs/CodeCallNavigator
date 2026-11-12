@@ -4,6 +4,19 @@ Detailed usage, build, analyzer and validation notes. For a quick start, see the
 [README](../README.md). Commands below run from the repository root.
 
 
+## Build selection
+
+Click **Find builds** to rescan the repository and open the scrollable build picker
+beside the button. Checkboxes update the selection immediately; close the picker
+with its close button, Escape or a click outside. Hover over **Find builds** to see
+the selected builds. Rescanning preserves choices for existing targets and uses
+the usual defaults for newly discovered builds.
+
+Build labels show the last folder and the project name or configuration filename.
+Declared names are read directly from Maven, Gradle and C# project metadata;
+computed or unavailable names fall back to the folder or project file stem.
+Discovery does not execute build tools to resolve names.
+
 ## Project Explorer
 
 The left sidebar shows an expandable file tree below the repository and build
@@ -330,21 +343,115 @@ and [pipeline evidence](../evidence/analyzers/native-pipeline.md).
 
 ## Validation
 
+Use the repository entry points, which work from any current directory:
+
 ```sh
-cargo clippy --workspace --all-targets --no-deps -- -D warnings
-cargo test --workspace --all-targets -- --include-ignored
-python3.13 -m unittest discover -s tests -v
-cargo run --release --bin benchmark -- evidence/performance/cache-local
+./verify-light.sh
+./verify-full.sh
+./verify-full.sh --dry-run
+./verify-light.sh --base origin/main
 ```
 
-The ignored compiler/build regressions require bootstrapped artifacts, installed
-JDK 25 and working Maven/Gradle toolchains. To test a pinned Maven distribution,
-set `CODECALLNAVIGATOR_TEST_MAVEN=/absolute/path/to/bin/mvn` when running
-`cargo test --test java_builds maven_ -- --ignored --test-threads=1`.
-TypeScript compiler fixtures run with `node --test tools/typescript/*.test.js`;
-set `CODECALLNAVIGATOR_TEST_TYPESCRIPT_ROOT` to an installed TypeScript package if needed.
-The Rust TypeScript integration regressions are ignored by default alongside other
-real-toolchain tests; run `cargo test --test typescript_pipeline -- --ignored --test-threads=1`.
+Install the locked test-only Python dependencies once in the repository's isolated
+verification environment (the scripts select it automatically):
+
+```sh
+python3.13 -m venv .venv-verification
+.venv-verification/bin/python -m pip install --require-hashes -r requirements-verification.txt
+```
+
+The lock includes the existing JSON Schema contract-test dependency. Set `PYTHON`
+only when intentionally using another interpreter with these locked packages.
+Documentation-only light checks do not require the test packages.
+
+Choose light for small changes with minimal production-code effect. It checks
+whitespace and the syntax/formatting of changed project files, builds the matching
+debug engine, runs workspace compilation, Clippy, ordinary Rust tests, Python
+suites in both `tests/` and `tools/`, and changed-source CodeScene reviews plus the
+repository safeguard. For documentation-only changes, it performs static checks and artifact cleanup
+without builds, runtime tests or benchmarks. Formatting uses `rustfmt --check`
+with `skip_children=true` only on changed project-owned Rust files. It never
+rewrites files or recursively formats vendored sources.
+
+Choose full for substantial runtime/UI, analyzer, dependency, bootstrap or
+packaging changes. In addition to the regular checks, it bootstraps pinned
+analyzers, runs TypeScript tests, builds a matching release engine, runs **all**
+Rust tests including ignored tests in **release mode**, runs the storage benchmark,
+and builds/signature-verifies the local app and engine packages. Tests are serial
+and benchmark paths point to an isolated snapshot. This avoids invoking the
+release-only canvas benchmarks in debug mode. Offscreen GPU throughput does not
+claim interactive/native displayed FPS; perform change-specific visual acceptance
+separately when applicable.
+
+Full requires Apple Silicon macOS, native Metal/process-table access, Python 3.12+
+(the local verification environment, falling back to `python3.13`), Rust with Clippy/rustfmt, Node 24+, JDK 25,
+.NET SDK 10, Maven 3.9+/4, Graphviz and Xcode command-line/signing tools. Run it
+outside the macOS sandbox. It also requires explicit inputs, configured once in
+your shell (replace these example paths with your actual installations):
+
+```sh
+export CODECALLNAVIGATOR_TS_NODE_MODULES=/absolute/path/to/node_modules
+export CODECALLNAVIGATOR_RECURRING_BILLING=/absolute/path/to/Recurring-billing
+export CODECALLNAVIGATOR_VERIFY_PROFILE_SOURCE="/absolute/path/to/saved-application-data"
+./verify-full.sh
+```
+
+The modules directory must contain TypeScript 6.0.x, React 19 and Next 16 fixture
+dependencies. The runner supplies the matching
+`CODECALLNAVIGATOR_TEST_TYPESCRIPT_ROOT` and engine binary paths; conflicting
+TypeScript settings fail preflight. The private Recurring Billing acceptance
+requires its Maven checkout and private-repository access; it is not silently
+excluded. `CODECALLNAVIGATOR_TEST_MAVEN` can choose Maven for fixtures that support
+that override; `mvn` must also be available on PATH for the other fixtures.
+
+The profiling source is an application data directory with `catalog.sqlite3`,
+saved navigation and an active published graph with relationships. You can also
+pass `--profile-source /absolute/path`. The runner uses the SQLite backup API to
+snapshot the catalog (including committed WAL data), copies the immutable graph
+generation, and benchmarks only that copy. It never points benchmarks at the live
+application store. Keep the selected source available through snapshot creation.
+
+Artifact cleanup runs after verification, including failed/interrupted attempts,
+and has its own `cleanup.json` report. An active or uninspectable artifact is
+retained and cleanup reports a failure instead of deleting it. Use
+`--keep-artifacts` to retain all artifacts for investigation explicitly.
+
+- Light removes incremental compiler state while retaining compiled dependencies
+  and reusable debug/release binaries. Verification sets `CARGO_INCREMENTAL=0`
+  so its builds do not recreate that state.
+- Full cleans the debug and release Cargo profiles after verification/packaging,
+  including compiled dependency artifacts. The next build recompiles them. A full
+  run that fails before reaching build stages does not clean existing profiles.
+- Both remove their run-local profiling and scale benchmark data, and prune
+  rotated app backups, keeping the newest rollback for each current/legacy app
+  name. Current app/engine packages, ZIPs/DMGs and verification reports remain.
+- Cargo's own age-based cleanup is enabled for downloaded dependency caches using
+  `CARGO_CACHE_AUTO_CLEAN_FREQUENCY=always`; shared caches are not manually purged.
+  Cargo retains recently used cache entries according to its
+  [documented global-cache policy](https://doc.rust-lang.org/cargo/reference/config.html#global-caches).
+
+The checkout lock prevents competing verification runs. Cleanup additionally
+checks open-file usage with native `lsof` before removing artifact directories;
+insufficient access or active users produce an explicit cleanup failure.
+
+CodeScene uses the installed `cs-mcp` executable over stdio MCP, including its
+normal authentication/license configuration. Select another executable path with
+`--codescene-command`. Missing tools, unavailable checks, quality regressions and
+incomplete results fail verification. Sonar remains a separate connected quality
+gate if `.sonar/config.json` is configured; it is currently absent in this project.
+
+A checkout lock prevents competing full/light runs from sharing build/package
+outputs. Each invocation writes fresh numbered stage logs, `results.json`, `cleanup.json` and `changes.json`
+under `target/verification/`. Failed, timed-out and not-run stages remain distinct;
+a failed/incomplete full run never reports full success. `--timeout SECONDS`
+bounds each build/test/package stage (default 1800); interruption/timeout stops
+the process group. If OS restrictions prevent descendant cleanup, the script
+reports `cleanup-unavailable` and fails. `--output /new/directory` retains evidence
+elsewhere; existing output directories are rejected. `PYTHON=python3.12` chooses
+another supported interpreter. `--base` controls committed changes plus staged,
+unstaged and untracked files; the default base is HEAD. No-change light runs are
+static-only, so use full for an unconditional complete verification.
+
 See [TypeScript acceptance](../evidence/analyzers/typescript.md) and [Maven acceptance](../evidence/analyzers/maven.md) for the compatibility matrix. Headless Rune GPU screenshots and interaction checks are under
 `evidence/ui`; `--scene fixture` is an explicit synthetic test scene, never normal
 startup data. Real-project results and scale measurements are summarized in

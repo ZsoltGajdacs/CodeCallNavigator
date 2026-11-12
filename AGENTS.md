@@ -125,20 +125,42 @@ do not run app builds, Rust test suites, analyzer/UI acceptance or benchmarks.
 Changes to executable code, dependencies, bootstrap or packaging logic that can
 affect runtime behavior still require the applicable checks.
 
-For runtime-affecting changes, run from the workspace root:
+Use the verification entry points from the workspace root:
 
 ```sh
-cargo check --locked -p codecallnavigator --all-targets
-cargo test --locked -p codecallnavigator --all-targets
-cargo clippy --workspace --all-targets --no-deps -- -D warnings
-cargo test --workspace --all-targets -- --include-ignored
+./verify-light.sh   # Minimal changes with minimal production-code effect
+./verify-full.sh    # Substantial runtime, analyzer, dependency, bootstrap or packaging changes
 ```
 
-The final two commands are the full Rust validation documented in
-[README.md](README.md); ignored acceptance tests need their actual toolchains.
+Light verification checks changed-file formatting/syntax, workspace compilation,
+Clippy, ordinary Rust tests, both Python suites and CodeScene. For changes limited
+to documentation/descriptive metadata, it runs static content/diff checks and
+artifact cleanup without runtime verification.
+Full verification adds explicit toolchain/dependency preflight, analyzer bootstrap,
+TypeScript tests, all ignored Rust acceptance tests **in release mode**, storage
+and CPU/GPU benchmarks, and local packaging/signature verification. It snapshots
+the configured profiling workspace; never benchmark the live application store.
+Run full outside the macOS sandbox so Metal and descendant-process cleanup are
+available. Required inputs and commands are in
+[the validation reference](docs/reference.md#validation).
+
+Both scripts also clean generated artifacts after checks, including failures:
+light reclaims incremental state while preserving dependency caches; full cleans
+debug/release build profiles after build stages. Retain current packages/reports
+and one rollback per app name; verify active artifact usage before deletion.
+Use `--keep-artifacts` only when retaining diagnostic build state is intentional.
+
+Both scripts check formatting without rewriting files, log every stage under
+`target/verification/`, stop with nonzero status on missing prerequisites,
+failures or timeouts, and mark later steps not run. Use `--dry-run` to inspect the
+exact commands and `--base <ref>` when verifying committed changes against another
+revision. Do not run debug-profile `--include-ignored`: the canvas benchmarks
+require release mode and an isolated copied profiling workspace.
+
 Format only touched project-owned Rust files, for example
 `rustfmt --edition 2024 --config skip_children=true path/to/changed.rs`.
 Do not run formatting recursively into vendored sources. For bootstrap,
-packaging, analyzer or UI changes, run the corresponding README acceptance and
-packaging checks as well. Report unavailable prerequisites and pre-existing
-failures precisely; never describe an unrun check as passing.
+packaging, analyzer or substantial UI changes, use full verification and perform
+any change-specific visual acceptance described in the README/reference as well.
+Report unavailable prerequisites and pre-existing failures precisely; never
+describe an unrun check as passing.

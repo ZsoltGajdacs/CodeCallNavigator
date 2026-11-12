@@ -1,0 +1,41 @@
+{
+  "date": "2026-11-12",
+  "full_verification": "passed",
+  "stage_count": 50,
+  "ordinary_rust": {
+    "passed": 494,
+    "ignored": 84
+  },
+  "release_rust": {
+    "passed": 578,
+    "failed": 0,
+    "ignored": 0
+  },
+  "python": {
+    "tests_directory": 154,
+    "tools_directory": 26
+  },
+  "typescript": {
+    "passed": 112,
+    "failed": 0,
+    "skipped": 0
+  },
+  "focused_verifier_tests": 49,
+  "codescene": {
+    "reviewed": 29,
+    "scores": [
+      10.0
+    ],
+    "safeguard": "passed"
+  },
+  "cleanup": {
+    "status": "passed",
+    "estimated_bytes_removed": 21961868325,
+    "estimated_gib_removed": 20.45,
+    "removed_or_cleaned_actions": 62,
+    "blocked_or_unavailable_actions": 0
+  },
+  "packaging": "passed",
+  "commit_created": false,
+  "push_performed": false
+}

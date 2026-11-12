@@ -201,9 +201,18 @@ fn single_click_is_isolated_and_large_tree_is_virtualized() {
                 .is_some_and(|key| key.starts_with("explorer-row-"))
         })
         .count();
+    let viewport = fixture
+        .runtime
+        .elements()
+        .into_iter()
+        .find(|element| element.key.as_deref() == Some("explorer-scroll"))
+        .unwrap()
+        .rect;
+    // At the top Rune mounts the visible viewport and two viewports of overscan below it.
+    let row_budget = (viewport[3] / crate::explorer::ROW_HEIGHT).ceil() as usize * 3 + 2;
     assert!(
-        rendered < 40,
-        "Rendered {rendered} of 300+ filesystem entries"
+        rendered <= row_budget,
+        "Rendered {rendered} rows for a {row_budget}-row viewport budget"
     );
     fixture
         .runtime
@@ -439,7 +448,7 @@ fn assert_file_cards_clear_filters(runtime: &Runtime<State>) {
     }
 }
 
-fn capture(runtime: &mut Runtime<State>, size: (f32, f32), path: &Path) {
+pub(super) fn capture(runtime: &mut Runtime<State>, size: (f32, f32), path: &Path) {
     use rune::render::{Gpu, OFFSCREEN_FORMAT, Offscreen, Renderer, write_png};
     let gpu = Gpu::try_new(Gpu::instance(), None)
         .expect("Native Metal access for requested explorer evidence");

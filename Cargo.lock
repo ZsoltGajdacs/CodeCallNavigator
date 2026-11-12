@@ -600,6 +600,7 @@ dependencies = [
  "globset",
  "petgraph",
  "regex",
+ "roxmltree 0.21.2",
  "rusqlite",
  "serde",
  "serde_json",

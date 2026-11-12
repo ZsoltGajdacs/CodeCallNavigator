@@ -1,4 +1,5 @@
 //! Graph Studio shell. Content and application actions live in focused modules.
+mod build_picker;
 mod drawer;
 mod explorer;
 mod graph_canvas;
@@ -108,6 +109,7 @@ pub(crate) fn with_overlays(state: &State, k: &Kit, body: El, mut layer: Vec<El>
     if let Some(popup) = crate::source_popup::view(state, k) {
         layer.push(popup);
     }
+    build_picker::layer(state, k, &mut layer);
     search_modal::layer(state, k, &mut layer);
     rune_kit::root(body, layer)
 }
@@ -296,6 +298,9 @@ fn status_bar(state: &State, k: &Kit) -> El {
 }
 
 pub fn key(state: &mut State, event: &KeyEvent, tx: &mut Tx) -> bool {
+    if state.ui.overlay == Some(presentation::Overlay::Builds) {
+        return false;
+    }
     if crate::search::key(state, event, tx) {
         return true;
     }
