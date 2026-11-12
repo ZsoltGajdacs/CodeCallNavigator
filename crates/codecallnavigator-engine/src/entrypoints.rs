@@ -2,10 +2,12 @@
 mod analysis;
 mod arguments;
 mod cancellation;
+mod comparison;
 mod inference;
 mod linked_roots;
 mod machine;
 mod query;
+mod query_executor;
 mod query_session;
 mod verification;
 use anyhow::Result;

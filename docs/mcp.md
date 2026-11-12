@@ -52,6 +52,7 @@ Queries never start analysis. Only `refresh_graph` changes analyzed data.
 
 | Tool | Arguments |
 | --- | --- |
+| `compare_graphs` | `base`, `head?` (`WORKTREE`), `offset?` (0), `limit?` (100; 1–500), `expected_comparison?`, `expected_generation?` |
 | `graph_status` | `expected_generation?` |
 | `find_symbols` | `text`, `category?` (`all`, `classes`, `methods`), `offset?` (0), `limit?` (50; 1–200), `expected_generation?` |
 | `symbol_details` | `symbol`, `expected_generation?` |
@@ -99,6 +100,18 @@ filter delegates defaults to the CLI. The adapter validates shapes/bounds only;
 search, traversal, class membership, certainty and flow support remain CLI-owned.
 
 ## Responses, refresh and cancellation
+
+`compare_graphs` forwards the CLI's [Git comparison contract](cli-queries.md#git-graph-comparison).
+It reads saved artifacts only: a committed baseline against the saved working
+graph by default, or two explicit committed revisions. It returns full paged
+changes, including flows and separately identified analysis metadata. Carry
+`comparison_id` as `expected_comparison` on subsequent pages and follow
+`next_offset`; ref/artifact changes fail with `comparison_mismatch`. A committed
+target has null freshness, while a working target reports observed-input
+freshness and may be stale. Never interpret a saved graph as unsaved editor state.
+The 24 MiB CLI page budget is below the adapter's 32 MiB transport limit.
+Startup requires comparison format 1 with snapshot binding and the `compare`
+query capability; older CLIs must be upgraded with this adapter.
 
 A graph tool's `structuredContent` is the complete CLI query envelope, unchanged,
 including generation, freshness, provenance, diagnostic and truncation metadata.

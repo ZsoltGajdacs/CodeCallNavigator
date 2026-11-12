@@ -5,7 +5,7 @@ use codecallnavigator_core::{
 };
 use serde_json::Value;
 
-pub(super) fn summary(mut report: Report) -> query::Result<Value> {
+pub(in crate::entrypoints) fn summary(mut report: Report) -> query::Result<Value> {
     let total = report.reasons.len();
     let mut bytes = 2; // JSON array brackets.
     let mut retained = 0;

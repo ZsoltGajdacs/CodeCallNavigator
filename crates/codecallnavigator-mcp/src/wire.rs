@@ -1,11 +1,13 @@
 //! Independent wire DTOs: no CLI library imports or graph interpretation.
 mod freshness;
+pub mod metadata;
 pub mod results;
 use anyhow::{Context, Result, ensure};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
 pub const OPERATIONS: &[&str] = &[
+    "compare",
     "status",
     "search",
     "symbol",
@@ -32,6 +34,12 @@ struct Capabilities {
     query_version: u32,
     generation_binding: bool,
     operations: Vec<String>,
+    comparison: ComparisonCapabilities,
+}
+#[derive(Deserialize)]
+struct ComparisonCapabilities {
+    version: u32,
+    snapshot_binding: bool,
 }
 pub fn capabilities(value: &Value) -> Result<()> {
     let capabilities: Capabilities =
@@ -39,6 +47,10 @@ pub fn capabilities(value: &Value) -> Result<()> {
     ensure!(
         capabilities.query_version == 1 && capabilities.generation_binding,
         "Incompatible CLI query contract: version 1 with generation binding is required"
+    );
+    ensure!(
+        capabilities.comparison.version == 1 && capabilities.comparison.snapshot_binding,
+        "Incompatible CLI comparison contract"
     );
     for operation in OPERATIONS {
         ensure!(

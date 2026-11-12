@@ -1,5 +1,72 @@
 # Public CLI graph queries
 
+## Git graph comparison
+
+Both `ccnavigator` and `codecallnavigator-engine` support saved-graph comparison
+through `query` and `query-session`. Graph refresh and committing the graph are
+separate operations. For example, send this JSON to `ccnavigator query`:
+
+```json
+{"version":1,"project":"/checkout","query":{"kind":"compare","base":"main","head":"WORKTREE","offset":0,"limit":100}}
+```
+
+`base` must resolve to a commit; `head` defaults to `WORKTREE` (the saved graph,
+including uncommitted graph changes), or accepts another commit, branch or tag.
+This compares endpoints directly, without merge-base calculation. Git blobs are
+read at the project's repository-relative `.codecallnavigator/graph.json` path;
+no checkout, fetch, compilation, publication or cache write occurs. A renamed
+artifact path in history is not searched automatically. Git commands have a
+30-second deadline and share the query process group for cancellation.
+
+The version-1 result contains `base` and `head` endpoint metadata (`kind`,
+`requested_ref`, resolved `commit`, repository-relative `path`, `schema`, exact-byte
+BLAKE3 `digest`), `comparison_id`, `graph_equal`, `metadata_equal`, per-section
+`summary`, and `changes`. Summary keys are JSON Pointer section locations such as
+`/graph/nodes`, `/graph/analysis`, or `/extension-name` for an artifact extension.
+Summary counts are `changed_entities`, `records`,
+`added`, `removed` and `replaced`; operation counts count records, not entities.
+Analysis provenance and top-level artifact extensions are metadata. Other graph
+sections contribute to `graph_equal`. Formatting-only differences affect digests
+and comparison binding but leave both equality flags true.
+
+Each change has `scope` (`graph` or `artifact`), `section`, `entity`,
+`operation` (`add`, `remove`, `replace`), an
+entity-relative JSON Pointer `path`, and applicable `before`/`after` values.
+Absent sides are omitted; JSON null remains an explicit value. Nodes match exact
+stable IDs, so identity-changing moves, renames and signature changes are
+removal/addition. Relationships group all variants by `(from,to,kind)`; certainty,
+provenance, counts and evidence remain intact. Flows match function symbols and
+architecture files match `(build,project,file)`. Boundary facts, diagnostics and
+entry memberships use exact-value groups. Changed ordered arrays are replaced
+whole; control-flow and opaque extension array order remain meaningful. Unordered
+collections follow the existing artifact canonicalization policy.
+
+Pages have `offset`, `limit`, `returned`, `total`, `more` and `next_offset`.
+`limit` defaults to 100 and accepts 1–500. For subsequent pages, use the returned
+`next_offset` and pass the first page's `comparison_id` as `expected_comparison`:
+
+```json
+{"version":1,"project":"/checkout","query":{"kind":"compare","base":"main","offset":100,"limit":100,"expected_comparison":"<64-character comparison_id>"}}
+```
+
+Every page rechecks refs and artifact bytes. Moving a ref, even to a commit with
+identical graph bytes, invalidates the binding. `expected_generation` optionally
+binds the target artifact digest. The envelope generation always identifies that
+target. Working targets include normal source freshness and permit stale saved
+graphs; committed targets have null freshness and need no working artifact or
+linked checkout. Historical source freshness is not inferred.
+
+The complete JSON envelope is capped at 24 MiB. Pages may contain fewer records
+than requested; use `returned`/`next_offset`. Values are never silently shortened.
+A single oversized record fails with `response_too_large`. Other errors include
+`comparison_mismatch`, `revision_unavailable`, `graph_missing`, `invalid_graph`,
+`git_timeout` and the existing query errors. Queries exit 0 for a successful
+comparison, including differences, and 2 for structured errors.
+
+The older standalone `compare --project ... --base ... --head ...` command keeps
+its original output and exits 0 for equal, 1 for different graphs. Use the query
+operation for detailed, paged results and metadata.
+
 The engine is the backend for desktop and external clients. Query operations do
 not compile, refresh, publish or write graph caches. Refresh is an explicit
 `analyze` command. Failed or cancelled analysis preserves the last successful

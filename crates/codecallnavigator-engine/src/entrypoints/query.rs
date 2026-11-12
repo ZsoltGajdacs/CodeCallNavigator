@@ -1,6 +1,6 @@
 //! Query lifecycle: load exactly one artifact generation, then dispatch shared semantics.
 mod filesystem;
-mod freshness;
+pub(super) mod freshness;
 mod layers;
 use codecallnavigator_core::{
     artifact::{self, Artifact, verification},
@@ -20,14 +20,6 @@ pub(super) struct Loaded {
     pub freshness: serde_json::Value,
     pub roots: Vec<(String, std::path::PathBuf)>,
     layers: std::sync::Mutex<Option<layers::Resolved>>,
-}
-
-pub(super) fn load(request: &Request) -> query::Result<Loaded> {
-    let roots = roots(request)?;
-    let project = &roots.last().expect("project root is always appended").1;
-    let bytes = read_generation(project)?;
-    let generation = blake3::hash(&bytes).to_hex().to_string();
-    load_bytes(request, roots, &bytes, generation)
 }
 
 pub(super) fn roots(request: &Request) -> query::Result<Vec<(String, std::path::PathBuf)>> {
@@ -259,11 +251,7 @@ pub fn run() -> anyhow::Result<i32> {
         let request: Request = serde_json::from_slice(&bytes)
             .map_err(|e| Error::new("invalid_request", e.to_string()))?;
         validate(&request)?;
-        if let Some(response) = live_response(&request) {
-            return Ok(response);
-        }
-        let loaded = load(&request)?;
-        Ok(respond(&loaded, &request))
+        Ok(super::query_executor::Executor::default().respond(&request))
     })()
     .unwrap_or_else(|error| envelope(None, Err(error)));
     let status = if response.error.is_some() { 2 } else { 0 };
