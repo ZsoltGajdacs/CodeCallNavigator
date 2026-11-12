@@ -9,6 +9,7 @@ mod function_flows;
 mod graph_fit;
 mod graph_studio;
 mod lambda_names;
+mod project_explorer;
 mod search_modal;
 mod source_popup;
 mod traversal;

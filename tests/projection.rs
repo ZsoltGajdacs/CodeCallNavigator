@@ -1,6 +1,8 @@
 #[path = "../src/projection.rs"]
 #[allow(dead_code)]
 mod projection;
+#[path = "../src/source_path.rs"]
+mod source_path;
 
 use codecallnavigator::{
     graph::{Filter, GraphIndex},

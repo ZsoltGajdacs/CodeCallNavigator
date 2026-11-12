@@ -85,10 +85,20 @@ pub struct Request {
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub enum FocusTarget {
+    FileClasses(String),
     Method(String),
     Group(String),
     ClassMethods(String),
     GroupChildren(String),
+}
+
+/// Preflight uses the same node and layer visibility as focused projection.
+pub(crate) fn file_classes_visible(graph: &GraphIndex, request: &Request, path: &str) -> bool {
+    graph.data.nodes.iter().any(|node| {
+        crate::source_path::identity(&node.file) == path
+            && request.filter.accepts_node(node)
+            && layers::includes(node, request)
+    })
 }
 
 #[derive(Clone, Debug)]

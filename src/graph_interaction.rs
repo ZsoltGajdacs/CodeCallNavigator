@@ -16,6 +16,7 @@ pub enum SelectionAction {
 pub struct Interaction {
     pending: Option<PendingPress>,
     pub center_after_layout: bool,
+    pub filter_height: f32,
 }
 
 struct PendingPress {
@@ -114,6 +115,35 @@ impl State {
         self.select_method(member, SelectionAction::Focus);
     }
 
+    /// File navigation retains filters and preflights before changing history or camera.
+    pub(crate) fn reveal_file_classes(&mut self, path: String) -> bool {
+        let path = self.explorer.graph_path(&crate::source_path::identity(&path));
+        let (Some(graph), Some(mut request)) = (&self.graph, self.request()) else {
+            self.status = "No analyzed classes for this file".into();
+            return false;
+        };
+        request.scope = crate::projection::Scope::Overview;
+        if !crate::projection::file_classes_visible(graph, &request, &path) {
+            self.status = if graph
+                .data
+                .nodes
+                .iter()
+                .any(|node| crate::source_path::identity(&node.file) == path)
+            {
+                "Current filters hide the classes in this file"
+            } else {
+                "No analyzed classes for this file"
+            }
+            .into();
+            return false;
+        }
+        self.checkpoint();
+        self.visual_selection = None;
+        self.nav.selected = None;
+        self.apply_focus(FocusTarget::FileClasses(path));
+        true
+    }
+
     pub fn select_method(&mut self, member: u32, action: SelectionAction) {
         self.cancel_graph_press();
         let Some(identity) = self.method_identity(member) else {
@@ -200,6 +230,7 @@ impl State {
     }
 
     fn inspect_visible(&mut self, key: String, member: Option<u32>) {
+        self.explorer.graph_selected();
         self.visual_selection = Some(key);
         self.nav.selected = member.and_then(|member| self.method_identity(member));
         self.neighbor_pages = [0, 0];

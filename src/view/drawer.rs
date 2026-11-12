@@ -1,4 +1,5 @@
-//! Repository discovery drawer.
+//! Repository discovery and project explorer drawer.
+use super::explorer;
 use crate::{app::State, theme};
 use rune::{El, col, text};
 use rune_kit::{Button, Checkbox, Kit, ScrollBar, ScrollBarStyle, TextInput};
@@ -29,8 +30,10 @@ pub fn view(state: &State, k: &Kit) -> El {
                         .w(state.ui.sidebar.width() - 2.0 * theme::SPACE)
                         .gap(theme::SPACE)
                         .grow(1.0)
+                        .max_h(370.0)
                         .min_h(0.0),
-                ),
+                )
+                .child(explorer::view(state, k).w(state.ui.sidebar.width() - 2.0 * theme::SPACE)),
         )
 }
 

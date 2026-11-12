@@ -1,5 +1,6 @@
 //! Graph Studio shell. Content and application actions live in focused modules.
 mod drawer;
+mod explorer;
 mod graph_canvas;
 mod graph_controls;
 mod search_modal;
@@ -119,7 +120,11 @@ fn graph_with_filters(state: &State, cx: &mut Cx<State>, k: &Kit) -> El {
         .min_w(0.0)
         .min_h(0.0)
         .child(graph_canvas::graph_canvas(state, cx, k))
-        .child(graph_controls::filters(state, k).absolute(0.0, 0.0))
+        .child(
+            graph_controls::filters(state, k)
+                .absolute(0.0, 0.0)
+                .on_layout(|state: &mut State, rect| state.set_graph_filter_height(rect[3])),
+        )
 }
 
 fn activity_rail(state: &State, k: &Kit) -> El {

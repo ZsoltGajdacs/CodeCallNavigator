@@ -298,6 +298,7 @@ pub fn poll(state: &mut State, time: f64, tx: &mut Tx) -> bool {
         | poll_staleness(state, time, tx)
         | crate::architecture_workspace::poll(state, time, tx)
         | crate::flow_workspace::poll(state, tx);
+    changed |= crate::explorer::poll(state, time, tx);
     changed |= state.constrain_panes(state.ui.window_width);
     if state.needs_layout {
         state.request_layout();

@@ -73,6 +73,19 @@ impl FocusProjection {
         nodes: &[u32],
         target: &FocusTarget,
     ) -> Option<Self> {
+        if let FocusTarget::FileClasses(path) = target {
+            let members: Vec<_> = nodes
+                .iter()
+                .copied()
+                .filter(|&index| {
+                    crate::source_path::identity(&graph.data.nodes[index as usize].file) == *path
+                })
+                .collect();
+            return (!members.is_empty()).then_some(Self {
+                level: PresentationLevel::Class,
+                members,
+            });
+        }
         if let FocusTarget::Method(identity) = target {
             let member = nodes
                 .iter()

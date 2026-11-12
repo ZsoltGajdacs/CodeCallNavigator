@@ -3,6 +3,27 @@
 Detailed usage, build, analyzer and validation notes. For a quick start, see the
 [README](../README.md). Commands below run from the repository root.
 
+
+## Project Explorer
+
+The left sidebar shows an expandable file tree below the repository and build
+controls. It includes hidden, ignored and non-source files. Folders load when
+expanded; symbolic links are listed without following linked directories. Use
+**Refresh files** to reload listings after filesystem changes. Directory errors
+include a retry action.
+
+Click a file once to select its row. Double-click it to reveal and frame its
+existing class nodes in the graph, including classes from multiple analyzed
+builds. Current filters still apply; files without visible analyzed classes show
+an explanation without changing graph navigation. Back/Forward retraces file
+navigation. This does not open a source preview.
+
+Selecting graph nodes highlights their files, expands their parent folders and
+scrolls the tree to the first highlighted file. Graph keyboard focus stays in
+the graph, and a closed sidebar stays closed. Files outside the project folder
+are not added to the tree. Explorer selection and expansion are local to the
+current session; refresh preserves entries that still exist.
+
 ## Run the local app
 
 Run `./dev.sh` to bootstrap dependencies, build and launch directly from the
