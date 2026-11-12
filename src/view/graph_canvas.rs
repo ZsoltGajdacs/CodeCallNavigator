@@ -23,7 +23,7 @@ pub fn graph_canvas(state: &State, _: &mut Cx<State>, k: &Kit) -> El {
             state
                 .nav
                 .camera
-                .zoom_at([event.x, event.y], (-event.dy / 240.0).exp());
+                .zoom_at([event.x, event.y], (event.dy / 240.0).exp());
             state.dirty_session = true;
             true
         })
