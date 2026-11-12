@@ -67,6 +67,7 @@ replace compiler, analyzer-acceptance, or packaging verification.
 | Root package, `src/` | Native desktop, presentation, interaction, background jobs and engine process client |
 | [`codecallnavigator-core`](crates/codecallnavigator-core/AGENTS.md) | Shared contracts, graph/flow operations, canonical artifacts, discovery and storage support |
 | [`codecallnavigator-engine`](crates/codecallnavigator-engine/AGENTS.md) | Standalone CLI, analysis lifecycle, build preparation and compiler-backed language adapters |
+| `crates/codecallnavigator-mcp/` | Independently installed MCP adapter, public CLI wire contracts and owned process lifecycle |
 | `tools/` | Analyzer resources, bootstrap, acceptance helpers and packaging |
 | `fixtures/`, `tests/`, `evidence/` | Reproducible inputs, integration checks and measured verification records |
 | `vendor/`, `patches/` | Upstream checkouts and the recorded patches applied to them |
@@ -77,6 +78,12 @@ do not introduce production calls into its analyzer library. Engine dependencies
 used by desktop acceptance tests are distinct from production coupling.
 Use [the engine contract](docs/standalone-engine.md) for artifact, protocol and
 language-extension behavior.
+
+The MCP package communicates only with the installed CLI for graph information.
+It must not depend on core, engine or desktop libraries, including test
+dependencies or source inclusion. Keep project/source/artifact/database access,
+graph algorithms and graph caching in the CLI; MCP owns argument/wire validation
+and subprocess lifecycle. See [its contract and installation](docs/mcp.md).
 
 ## Organizing changes
 

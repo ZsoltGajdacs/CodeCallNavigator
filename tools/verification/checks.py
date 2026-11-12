@@ -43,6 +43,7 @@ def runtime_steps(root, python, timeout):
     return [
         Step("build-debug-engine", ["cargo", "build", "--locked", "-p", "codecallnavigator-engine", "--bin", "codecallnavigator-engine"], timeout),
         Step("cargo-check", ["cargo", "check", "--locked", "--workspace", "--all-targets"], timeout),
+        Step("mcp-dependency-boundary", [python, "tools/mcp_boundary.py", "--root", str(root)], timeout),
         Step("clippy", ["cargo", "clippy", "--locked", "--workspace", "--all-targets", "--no-deps", "--", "-D", "warnings"], timeout),
         Step("rust-tests", ["cargo", "test", "--locked", "--workspace", "--all-targets", "--", "--test-threads=1"], timeout),
         Step("python-tests", [python, "-m", "unittest", "discover", "-s", "tests", "-v"], timeout),
@@ -66,4 +67,5 @@ def full_steps(root, args, output):
         Step("package", [python, "tools/package.py"], timeout),
         Step("package-signature", ["codesign", "--verify", "--deep", "--strict", "dist/CodeCallNavigator.app"]),
         Step("packaged-engine", [str(root / "dist/CodeCallNavigatorEngine/bin/codecallnavigator-engine"), "--help"]),
+        Step("mcp-independent-install", [python, "tools/package_mcp.py", "--engine", str(root / "dist/CodeCallNavigatorEngine/bin/codecallnavigator-engine")], timeout),
     ]

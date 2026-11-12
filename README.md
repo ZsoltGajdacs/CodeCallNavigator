@@ -56,6 +56,7 @@ data while keeping that graph and navigation.
 - [Detailed reference](docs/reference.md): controls, search, cache, build steps,
   analyzer behavior and toolchain-specific validation.
 - [Standalone engine and CLI](docs/standalone-engine.md)
+- [CLI-only MCP server and independent installation](docs/mcp.md)
 - [Function flowcharts](docs/function-flowcharts.md)
 - [Architectural layers](docs/architectural-layers.md)
 - [Analyzer acceptance](evidence/analyzers/ACCEPTANCE.md) and

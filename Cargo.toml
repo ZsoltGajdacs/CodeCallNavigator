@@ -1,5 +1,5 @@
 [workspace]
-members = ["crates/codecallnavigator-core", "crates/codecallnavigator-engine"]
+members = ["crates/codecallnavigator-core", "crates/codecallnavigator-engine", "crates/codecallnavigator-mcp"]
 exclude = ["vendor/rune"]
 resolver = "3"
 
