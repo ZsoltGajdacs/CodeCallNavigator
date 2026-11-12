@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-11-12T06:04:00Z'
-updated_date: '2026-11-12T06:14:00Z'
+updated_date: '2026-11-12T06:18:00Z'
 labels: []
 dependencies: []
 type: chore
@@ -44,4 +44,6 @@ The public project has a verified local macOS/source release packager but no Git
 Implemented new-tag trigger with main ancestry guard, manual main build-only dispatch, isolated write-permission publication, and draft-first asset uploads. Hosted target is documented xcode-27 Apple Silicon/macOS27 runner. Exact official Homebrew bottle digests verified by explorer against live GHCR bytes; provisioning installs the pinned native versions and all corresponding sources. Fourteen CI behavior tests and actionlint pass; CodeScene reviews of both CI helpers and their tests score10.0. Reviewing before pushing and running a live build-only workflow.
 
 Independent review found no blocking issues. Tester added owned-draft retry, published-release no-overwrite, duplicate-checksum and missing-asset cases. All18 CI tests,15 packaging tests,6 source tests and actionlint pass. No local Homebrew modifications. Workflow/manual dispatch ready for hosted integration. Unrelated README.md and docs/reference.md edits are excluded from this task commit.
+
+First hosted build-only run43166736110 reached native provisioning, then failed because xcode-27 ships Homebrew7.0.12. That version routes local bottle paths through a path-restricted generic loader. Explorer traced upstream fix31986b7 (released7.0.13), which adds explicit supported bottle dispatch. Fix will explicitly update Homebrew CLI and require>=7.0.13 before removing any native package; no developer/path-security bypass and no local Homebrew mutation. The publish job was skipped as designed.
 <!-- SECTION:NOTES:END -->

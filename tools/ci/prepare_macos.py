@@ -7,6 +7,7 @@ import json
 import os
 from pathlib import Path
 import platform
+import re
 import shutil
 import subprocess
 import sys
@@ -85,6 +86,19 @@ def _remove_existing_package(name):
         brew("uninstall", "--ignore-dependencies", "--force", name)
 
 
+def _update_homebrew():
+    # The xcode-27 image initially shipped 7.0.12, before Homebrew fixed local
+    # bottle dispatch. Refresh brew itself explicitly, without upgrading kegs.
+    brew("update")
+    output = brew("--version").stdout.strip()
+    print(output, flush=True)
+    version = re.match(r"Homebrew (\d+)\.(\d+)\.(\d+)", output)
+    if version is None:
+        raise RuntimeError(f"Cannot determine Homebrew version: {output}")
+    if tuple(map(int, version.groups())) < (7, 0, 13):
+        raise RuntimeError("Homebrew 7.0.13 or newer is required for pinned local bottle installation")
+
+
 def _verify_package_version(name, specification):
     versions = brew("list", "--versions", name).stdout.strip().split()
     if versions != [name, specification["version"]]:
@@ -96,6 +110,7 @@ def install_bottles(specifications, directory):
     # Verify every input before removing either installed package. These names
     # intentionally retain the Cellar identities checked by the packager.
     archives = {name: verified_archive(directory, specification) for name, specification in specifications.items()}
+    _update_homebrew()
     for name in ("graphviz", "libtool"):
         _remove_existing_package(name)
     for name in ("libtool", "graphviz"):

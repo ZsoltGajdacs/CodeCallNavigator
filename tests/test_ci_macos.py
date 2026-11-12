@@ -76,7 +76,8 @@ class MacOSProvisioningTests(unittest.TestCase):
             def run(arguments, **kwargs):
                 operations.append(arguments)
                 self.assertEqual(kwargs["env"]["HOMEBREW_NO_AUTO_UPDATE"], "1")
-                output = "libtool 2.6.2\n" if arguments[-1] == "libtool" else "graphviz 16.1.0\n"
+                outputs = {"--version": "Homebrew 7.0.13\n", "libtool": "libtool 2.6.2\n"}
+                output = outputs.get(arguments[-1], "graphviz 16.1.0\n")
                 return subprocess.CompletedProcess(arguments, 0, stdout=output)
 
             with patch.object(CI, "require_ci_runner"), \
@@ -84,10 +85,24 @@ class MacOSProvisioningTests(unittest.TestCase):
                  patch.object(CI.subprocess, "run", side_effect=run):
                 CI.install_bottles(specifications, root)
             installs = [operation for operation in operations if operation[1] == "install"]
+            self.assertEqual(operations[:2], [["brew", "update"], ["brew", "--version"]])
             self.assertEqual([operation[-1] for operation in installs],
                              [str(root / "libtool.bottle.tar.gz"), str(root / "graphviz.bottle.tar.gz")])
             removals = [operation[-1] for operation in operations if operation[1] == "uninstall"]
             self.assertEqual(set(removals), {"libtool", "graphviz"})
+
+    def test_old_homebrew_is_rejected_before_removing_packages(self):
+        specifications = {name: {"version": version, "filename": name + ".bottle.tar.gz"}
+                          for name, version in (("libtool", "2.6.2"), ("graphviz", "16.1.0"))}
+        results = [subprocess.CompletedProcess(["brew", "update"], 0, stdout=""),
+                   subprocess.CompletedProcess(["brew", "--version"], 0, stdout="Homebrew 7.0.12\n")]
+        with tempfile.TemporaryDirectory() as temporary, \
+             patch.object(CI, "require_ci_runner"), \
+             patch.object(CI, "verified_archive", side_effect=lambda directory, spec: directory / spec["filename"]), \
+             patch.object(CI, "brew", side_effect=results) as brew:
+            with self.assertRaisesRegex(RuntimeError, "7.0.13"):
+                CI.install_bottles(specifications, Path(temporary))
+            self.assertEqual([call.args for call in brew.call_args_list], [("update",), ("--version",)])
 
     def test_native_bottles_match_existing_source_versions(self):
         specifications = json.loads((ROOT / "tools/ci/native-bottles.lock.json").read_text())
