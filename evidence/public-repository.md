@@ -70,3 +70,27 @@ scanning selection is deferred until GitHub can detect the published languages.
 No release upload or Linux-support claim was made.
 
 Detailed command logs for this run were saved under `/tmp/codecallnavigator-*task43.log`.
+
+## Requested commit, push and live verification
+
+On 2026-11-12 the owner explicitly requested publication. After the passing
+four-file CodeScene safeguard, committed the 22 approved files as
+`fcc74a8d0ef2f53ae8a79651e52363eaf432d812` and pushed `HEAD:main` without force.
+GitHub's default branch read back with that exact commit.
+
+The public Community Standards UI marks README, code of conduct, contributing,
+license, security policy and issue templates Added. The license page displays
+the GNU AGPLv3 summary. Both public YAML previews render their intended forms and
+required-field markers without template errors. The eight published community
+and template blobs match the commit exactly. Private reporting is enabled and
+the security policy URL resolves in GitHub metadata.
+
+`Repository.isBlankIssuesEnabled` reports viewer permission, not the raw config
+value: it is true for the owner. The published config is false, and GitHub
+documents the maintainer exception. REST community-profile `issue_template` is
+null and GraphQL `issueTemplates` is empty for these YAML forms; the public
+community UI and rendered previews are the relevant evidence. The composer
+itself required browser sign-in, so no issue submission was tested or created.
+
+The prior full ignored Rust-suite limitation remains unchanged. This publication
+does not assert a full-suite pass or mark that outstanding gate waived.

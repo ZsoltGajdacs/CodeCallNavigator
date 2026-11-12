@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-11-12T04:55:00Z'
-updated_date: '2026-11-12T05:22:00Z'
+updated_date: '2026-11-12T05:26:00Z'
 labels: []
 dependencies: []
 references:
@@ -24,7 +24,7 @@ Plan for an intentionally public, solo-maintainer project owned by Zsolt Gajdacs
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
 - [x] #1 Standard AGPLv3 text, project copyright, consistent Rust package metadata and README licensing information distinguish project code from third-party licenses.
-- [ ] #2 Structured bug and feature forms are available, blank issues are disabled, privacy reminders are included and no response or implementation is promised.
+- [x] #2 Structured bug and feature forms are available, blank issues are disabled, privacy reminders are included and no response or implementation is promised.
 - [x] #3 Bug reports capture version or commit, install method, OS, relevant analyzer/toolchain, reproduction and expected versus actual behavior, with optional logs and examples; feature requests capture problem, desired behavior and optional alternatives.
 - [x] #4 Contribution guidance accepts bug reports and feature requests only; no outside code or documentation submissions, support requests or GitHub Discussions.
 - [x] #5 SECURITY.md directs vulnerabilities to enabled GitHub private reporting with best-effort handling and no guaranteed response or fix.
@@ -58,10 +58,12 @@ Validation: planner/explorer/implementer/reviewer/tester roles completed. Review
 Final checks: full Python suite 87/87 passed; both real packaged_java acceptance tests passed. Review/test evidence is evidence/public-repository.md; live settings checklist docs/public-repository-checklist.md. AC2 remains pending live issue-chooser verification after default-branch publication. Task remains In Progress because source has not been published and the mandatory debug include-ignored command still fails on release-only benchmarks; no waiver claimed. All source changes are uncommitted and no push/release upload was performed.
 
 User requested commit, push and live GitHub verification. Pre-commit safeguard initially failed tools/package.py mean complexity 4.04; split installed-native-dependency validation into a named operation. CodeScene now scores 10.0 with no findings; 15 packaging and 6 source tests pass; pre-commit safeguard passes across all 4 eligible files. Remote main is configured as default but no branches exist; publish HEAD to main without force.
+
+Published fcc74a8d0ef2f53ae8a79651e52363eaf432d812 to default main without force. GitHub public UI marks all intended community files and issue templates Added; license detected AGPL-3.0 and displayed GNU AGPLv3 summary. Both YAML form previews render required/optional fields and notices correctly. All eight remote community/template blobs match commit. GraphQL isBlankIssuesEnabled is viewer permission (owner true), consistent with the documented maintainer exception to config false. Private reporting/security policy and public issue/collaborator-only PR/Discussions settings verified. Composer required browser login, so no issues/reports submitted. AC2 verified through public previews/community detection; task remains In Progress solely for the prior unwaived full ignored Rust-suite gate.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
 
 <!-- SECTION:FINAL_SUMMARY:BEGIN -->
-Implemented local AGPLv3 licensing, bug/feature issue forms, contribution/conduct/security policies and matching-source release packaging. Applied and verified approved GitHub settings including private reporting. Verified 87 Python tests, Cargo check/regular tests/Clippy, packaged Java fixtures and a full isolated macOS/source release with 23,613 verified source hashes. Remaining: publish files to default branch and verify live chooser; resolve or explicitly accept full ignored-suite benchmark prerequisites/failures. No commit/push or release publication.
+Implemented and published AGPLv3 licensing, public bug/feature forms and solo-maintainer policies, matching-source macOS release packaging and GitHub settings. Implementation commit fcc74a8 is live on default main. GitHub detects the license and community files; both form previews render correctly; published blobs match. Four-file pre-commit CodeScene safeguard and 21 focused packaging/source tests pass. Prior 87 Python tests, regular Rust checks/Clippy, packaged Java acceptance and isolated source release evidence retained. No test issues, release assets or security reports published. Full ignored Rust-suite benchmark prerequisites remain unwaived; task stays In Progress.
 <!-- SECTION:FINAL_SUMMARY:END -->
