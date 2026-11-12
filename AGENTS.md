@@ -118,7 +118,14 @@ add regressions that assert observable results. Use real compiler/build fixtures
 for analyzer behavior and narrow unit tests for isolated graph or geometry logic.
 For documentation-only edits, verify paths, commands and the diff.
 
-Run from the workspace root:
+Runtime verification is not required when changes cannot affect runtime behavior,
+such as documentation, issue templates, licensing text or descriptive metadata.
+For those changes, check the affected content, syntax, links and diff instead;
+do not run app builds, Rust test suites, analyzer/UI acceptance or benchmarks.
+Changes to executable code, dependencies, bootstrap or packaging logic that can
+affect runtime behavior still require the applicable checks.
+
+For runtime-affecting changes, run from the workspace root:
 
 ```sh
 cargo check --locked -p codecallnavigator --all-targets

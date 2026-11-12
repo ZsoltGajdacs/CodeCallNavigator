@@ -31,8 +31,8 @@ Three unchanged canvas benchmarks explicitly reject debug builds; saved/GPU
 workloads also require an explicit copied profiling workspace. The ignored
 process-group cancellation regression passed when rerun with permission to
 manage its own subprocess group. The workspace-wide command did not continue to
-later test binaries after the desktop failure. This is not a full Rust-suite pass
-or an accepted waiver, and the task remains open for that gate.
+later test binaries after the desktop failure. This was not a full Rust-suite
+pass; at that checkpoint no waiver existed and the task remained open.
 
 ## Actual release workflow
 
@@ -92,5 +92,18 @@ null and GraphQL `issueTemplates` is empty for these YAML forms; the public
 community UI and rendered previews are the relevant evidence. The composer
 itself required browser sign-in, so no issue submission was tested or created.
 
-The prior full ignored Rust-suite limitation remains unchanged. This publication
-does not assert a full-suite pass or mark that outstanding gate waived.
+The publication itself did not assert a full-suite pass or waive that gate.
+
+## Accepted verification exception
+
+On 2026-11-12 the owner explicitly accepted the remaining full ignored Rust-suite
+limitation for TASK-43 ("Accept this for now"). All task acceptance criteria and
+live GitHub verification are complete; this exception allows the task to close
+without claiming that the interrupted workspace-wide test run passed.
+
+The owner also requested that AGENTS.md make runtime verification conditional on
+runtime impact. Documentation, issue templates, licensing text and descriptive
+metadata now use content/syntax/link/diff checks; runtime-affecting code,
+dependency, bootstrap and packaging changes retain their applicable checks.
+This final policy/evidence update changes no runtime behavior, so no runtime
+tests were rerun.

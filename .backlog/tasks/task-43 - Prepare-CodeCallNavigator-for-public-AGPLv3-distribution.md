@@ -1,11 +1,11 @@
 ---
 id: TASK-43
 title: Prepare CodeCallNavigator for public AGPLv3 distribution
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-11-12T04:55:00Z'
-updated_date: '2026-11-12T05:26:00Z'
+updated_date: '2026-11-12T05:36:00Z'
 labels: []
 dependencies: []
 references:
@@ -60,10 +60,12 @@ Final checks: full Python suite 87/87 passed; both real packaged_java acceptance
 User requested commit, push and live GitHub verification. Pre-commit safeguard initially failed tools/package.py mean complexity 4.04; split installed-native-dependency validation into a named operation. CodeScene now scores 10.0 with no findings; 15 packaging and 6 source tests pass; pre-commit safeguard passes across all 4 eligible files. Remote main is configured as default but no branches exist; publish HEAD to main without force.
 
 Published fcc74a8d0ef2f53ae8a79651e52363eaf432d812 to default main without force. GitHub public UI marks all intended community files and issue templates Added; license detected AGPL-3.0 and displayed GNU AGPLv3 summary. Both YAML form previews render required/optional fields and notices correctly. All eight remote community/template blobs match commit. GraphQL isBlankIssuesEnabled is viewer permission (owner true), consistent with the documented maintainer exception to config false. Private reporting/security policy and public issue/collaborator-only PR/Discussions settings verified. Composer required browser login, so no issues/reports submitted. AC2 verified through public previews/community detection; task remains In Progress solely for the prior unwaived full ignored Rust-suite gate.
+
+Owner explicitly accepted the remaining full ignored Rust-suite limitation for this task: "Accept this for now." This waives only completion of that interrupted full-suite gate for TASK-43; it does not claim a pass or waive future runtime-affecting checks. All eight acceptance criteria and the DoD are already verified. Updated root AGENTS.md at owner request: runtime verification is unnecessary for changes that cannot affect runtime behavior; validate relevant content/syntax/links/diff instead, while retaining applicable checks for runtime-affecting executable/dependency/bootstrap/packaging changes. This final update is documentation/task metadata only; verified the diff and guidance, without rerunning runtime tests.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
 
 <!-- SECTION:FINAL_SUMMARY:BEGIN -->
-Implemented and published AGPLv3 licensing, public bug/feature forms and solo-maintainer policies, matching-source macOS release packaging and GitHub settings. Implementation commit fcc74a8 is live on default main. GitHub detects the license and community files; both form previews render correctly; published blobs match. Four-file pre-commit CodeScene safeguard and 21 focused packaging/source tests pass. Prior 87 Python tests, regular Rust checks/Clippy, packaged Java acceptance and isolated source release evidence retained. No test issues, release assets or security reports published. Full ignored Rust-suite benchmark prerequisites remain unwaived; task stays In Progress.
+Completed and published AGPLv3 licensing, public bug/feature forms, solo-maintainer policies, matching-source macOS release packaging and approved GitHub settings. Commits fcc74a8 and a9d8958 are live on main; GitHub recognizes the license and community files and renders both forms. Verification includes 87 Python tests, regular Rust checks/Clippy, packaged Java acceptance, CodeScene safeguards, and an isolated release with 23,613 verified source hashes. The owner explicitly accepted the remaining full ignored Rust-suite limitation on 2026-11-12; no full-suite pass is claimed. Root AGENTS.md now scopes runtime verification to runtime-affecting changes. All acceptance criteria and DoD complete.
 <!-- SECTION:FINAL_SUMMARY:END -->
