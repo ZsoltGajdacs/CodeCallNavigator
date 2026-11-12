@@ -1,7 +1,7 @@
 //! Generation-bound flow sessions, background construction and independent navigation.
 use crate::{app::State, camera::Camera, source};
 use codecallnavigator::{
-    flow::{self, FlowChart, FunctionFlowIR},
+    flow::{self, FlowChart},
     graph::GraphIndex,
 };
 use rune::{Latest, Tx};
@@ -49,6 +49,7 @@ pub struct Workspace {
     pub source_width: f32,
     pub drag_width: f32,
     cache: HashMap<(u64, String), Arc<Ready>>,
+    cancelled: Arc<std::sync::atomic::AtomicBool>,
     serial: u64,
     epoch: u64,
     restore_scroll: Option<[f32; 2]>,
@@ -61,6 +62,9 @@ pub struct Output {
 }
 impl Workspace {
     pub fn invalidate(&mut self) {
+        self.cancelled
+            .store(true, std::sync::atomic::Ordering::Release);
+        self.cancelled = Arc::new(std::sync::atomic::AtomicBool::new(false));
         self.serial += 1;
         self.job.cancel();
         self.current = None;
@@ -112,14 +116,19 @@ impl State {
             self.request_flow(graph, symbol);
         }
     }
-    fn request_flow(&mut self, graph: Arc<GraphIndex>, symbol: String) {
-        let function = match lookup(&graph, &symbol) {
-            Ok(function) => function,
+    fn request_flow(&mut self, _graph: Arc<GraphIndex>, symbol: String) {
+        let queries = match self.graph_queries() {
+            Ok(queries) => queries,
             Err(error) => {
                 self.flow_workspace.current.as_mut().unwrap().message = error;
                 return;
             }
         };
+        self.flow_workspace
+            .cancelled
+            .store(true, std::sync::atomic::Ordering::Release);
+        self.flow_workspace.cancelled = Arc::new(std::sync::atomic::AtomicBool::new(false));
+        let cancel = self.flow_workspace.cancelled.clone();
         let dot = self
             .runtime
             .as_ref()
@@ -128,7 +137,15 @@ impl State {
         let epoch = self.epoch;
         let serial = self.flow_workspace.serial;
         self.flow_workspace.job.request(symbol, move |symbol| {
-            let result = prepare(&graph, &function, &dot).map_err(|error| format!("{error:#}"));
+            let result = queries
+                .flow(&symbol, &cancel)
+                .and_then(|(chart, content, file)| {
+                    Ok(Ready {
+                        chart: flow::layout(chart, &dot)?,
+                        source: source::from_snapshot(content, Path::new(&file)),
+                    })
+                })
+                .map_err(|error| format!("{error:#}"));
             Output {
                 serial,
                 epoch,
@@ -138,6 +155,9 @@ impl State {
         });
     }
     pub fn close_flow(&mut self) {
+        self.flow_workspace
+            .cancelled
+            .store(true, std::sync::atomic::Ordering::Release);
         self.flow_workspace.serial += 1;
         self.flow_workspace.job.cancel();
         self.flow_workspace.current = None;
@@ -193,42 +213,6 @@ impl State {
             format!("flow-source-line-{target}"),
         );
     }
-}
-
-fn lookup(graph: &GraphIndex, symbol: &str) -> Result<FunctionFlowIR, String> {
-    flow::lookup(&graph.data, symbol).cloned()
-}
-fn prepare(graph: &GraphIndex, function: &FunctionFlowIR, dot: &Path) -> anyhow::Result<Ready> {
-    let facts = graph
-        .data
-        .architecture
-        .as_ref()
-        .and_then(|i| {
-            i.files.iter().find(|file| {
-                file.file == function.file
-                    && file.build == function.build
-                    && file.project == function.project
-            })
-        })
-        .ok_or_else(|| {
-            anyhow::anyhow!("Refresh the graph to cache this function's analyzed source")
-        })?;
-    anyhow::ensure!(
-        function.span.start <= function.span.end
-            && function.span.end <= facts.content.len()
-            && facts.content.is_char_boundary(function.span.start)
-            && facts.content.is_char_boundary(function.span.end),
-        "The flow source range does not match its cached snapshot"
-    );
-    anyhow::ensure!(
-        facts.content.len() as u64 <= source::MAX_SOURCE_BYTES,
-        "The analyzed source exceeds the 16 MiB flow source limit"
-    );
-    let chart = flow::layout(flow::build(function)?, dot)?;
-    Ok(Ready {
-        chart,
-        source: source::from_snapshot(facts.content.clone(), Path::new(&function.file)),
-    })
 }
 
 pub fn poll(state: &mut State, tx: &mut Tx) -> bool {

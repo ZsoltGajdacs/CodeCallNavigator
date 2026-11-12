@@ -25,7 +25,7 @@ fn press(runtime: &mut Runtime<State>, key: Key) {
 }
 
 fn narrow_runtime(max_panes: bool) -> Runtime<State> {
-    let mut state = State::new();
+    let mut state = State::fixture();
     scenes::install(&mut state);
     if max_panes {
         state.ui.sidebar.set_width(400.0);
@@ -466,7 +466,7 @@ fn reduced_motion_pane_collapse_snaps_width_and_keeps_controls_reachable() {
 fn empty_workspace_shows_discovery_progress_and_a_real_directory_error() {
     let directory = tempfile::tempdir().unwrap();
     let mut runtime = Runtime::new(
-        State::new(),
+        State::fixture(),
         view::view,
         (1050.0, 680.0),
         Env::new(true, 1.0),

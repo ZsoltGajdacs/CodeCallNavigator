@@ -42,7 +42,7 @@ pub(super) fn select(graph: &GraphIndex, request: &Request, selection: &mut Sele
     let Some(_) = &request.architecture else {
         selection.nodes.clear();
         selection.edges.clear();
-        selection.message = "Choose a layer preset or repository configuration. Refresh an older graph to collect architectural facts.".into();
+        selection.message = super::LAYER_NOTICE.into();
         return;
     };
     let visible: HashSet<_> = selection.nodes.iter().copied().collect();

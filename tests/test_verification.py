@@ -190,6 +190,46 @@ def profiling_source(root):
 
 
 class ProfilingSnapshots(unittest.TestCase):
+    def test_cli_cache_mismatch_is_rejected_before_copying_graph(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory)
+            source=root/'live'
+            connection=profiling_source(source)
+            try:
+                session={'navigation':{},'graph_context':{'generation':'a'*64},
+                         'presentation_cache':{'source_generation':'b'*64,'cache_generation':'generation.sqlite3'}}
+                connection.execute("UPDATE catalog SET value=? WHERE key='session'",(json.dumps(session),))
+                connection.commit()
+                with self.assertRaisesRegex(ValueError,'cache'):
+                    profile.validate(source)
+                with self.assertRaisesRegex(ValueError,'cache'):
+                    snapshot_store(source,root/'rejected')
+                self.assertFalse((root/'rejected/generation.sqlite3').exists())
+            finally:
+                connection.close()
+
+    def test_coherent_cli_cache_and_context_are_copied_together(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory)
+            source,destination=root/'live',root/'snapshot'
+            connection=profiling_source(source)
+            try:
+                session={'navigation':{},'graph_context':{'generation':'a'*64},
+                         'presentation_cache':{'source_generation':'a'*64,'cache_generation':'generation.sqlite3'}}
+                connection.execute("UPDATE catalog SET value=? WHERE key='session'",(json.dumps(session),))
+                connection.commit()
+                profile.validate(source)
+                snapshot_store(source,destination)
+                profile.validate(destination)
+                connection.execute("UPDATE catalog SET value='different.sqlite3' WHERE key='active'")
+                connection.commit()
+                with self.assertRaisesRegex(ValueError,'cache'):
+                    profile.validate(source)
+                profile.validate(destination)
+                self.assertEqual((source/'generation.sqlite3').read_bytes(),(destination/'generation.sqlite3').read_bytes())
+            finally:
+                connection.close()
+
     def test_backup_includes_committed_wal_and_isolates_mutations(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

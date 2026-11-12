@@ -272,32 +272,35 @@ impl Expression {
     }
 }
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
 pub struct FlowStep {
     pub id: usize,
     pub kind: String,
     pub label: String,
     pub span: SourceSpan,
     pub calls: Vec<CallSite>,
+    #[serde(skip)]
     pub position: [f32; 2],
+    #[serde(skip)]
     pub size: [f32; 2],
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
 pub struct FlowLink {
     pub from: usize,
     pub to: usize,
     pub label: String,
     pub kind: String,
+    #[serde(skip)]
     pub points: Vec<[f32; 2]>,
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
 pub struct FlowRegion {
     pub label: String,
     pub deferred: bool,
     pub entry: usize,
     pub steps: Vec<usize>,
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
 pub struct FlowChart {
     pub symbol: String,
     pub file: String,
@@ -306,6 +309,7 @@ pub struct FlowChart {
     pub steps: Vec<FlowStep>,
     pub links: Vec<FlowLink>,
     pub regions: Vec<FlowRegion>,
+    #[serde(skip)]
     pub size: [f32; 2],
     pub diagnostics: Vec<String>,
     pub partial: bool,

@@ -1,4 +1,6 @@
 use super::*;
+use codecallnavigator::artifact::{Artifact, GRAPH_PATH};
+use std::fs;
 use std::{
     os::unix::fs::symlink,
     sync::Arc,
@@ -143,13 +145,10 @@ while True: time.sleep(1)
     );
 }
 
-#[test]
-#[ignore = "requires built standalone engine and installed TypeScript/React/Next dependencies"]
-fn real_engine_roundtrip_publishes_and_preserves_graph_on_failure() {
-    let root = tempfile::tempdir().unwrap();
-    let project = root.path().canonicalize().unwrap().join("project");
+fn linked_typescript_project(root: &Path) -> (std::path::PathBuf, std::path::PathBuf) {
+    let project = root.canonicalize().unwrap().join("project");
     fs::create_dir_all(project.join("src")).unwrap();
-    let linked = root.path().canonicalize().unwrap().join("linked.ts");
+    let linked = root.canonicalize().unwrap().join("linked.ts");
     fs::write(&linked, "export function linkedLeaf() { return 2; }").unwrap();
     fs::write(project.join("tsconfig.json"), r#"{"compilerOptions":{"strict":true,"target":"ES2022","module":"NodeNext","moduleResolution":"NodeNext","skipLibCheck":true},"include":["src/**/*.ts","../linked.ts"]}"#).unwrap();
     fs::write(
@@ -163,12 +162,20 @@ fn real_engine_roundtrip_publishes_and_preserves_graph_on_failure() {
             Path::new(env!("CARGO_MANIFEST_DIR")).join("../PacificFateMapEditor/node_modules")
         });
     symlink(modules, project.join("node_modules")).unwrap();
+    (project, linked)
+}
+
+#[test]
+#[ignore = "requires built standalone engine and installed TypeScript/React/Next dependencies"]
+fn real_engine_roundtrip_publishes_and_preserves_graph_on_failure() {
+    let root = tempfile::tempdir().unwrap();
+    let (project, linked) = linked_typescript_project(root.path());
     let runtime = Runtime::discover().unwrap();
     let targets = discover(&runtime, &project).unwrap();
     assert_eq!(targets.len(), 1);
     let metrics = codecallnavigator::metrics::Metrics::default();
     let _scope = metrics.enter();
-    let graph = analyze(
+    let snapshot = analyze_snapshot(
         &runtime,
         Analysis {
             project: project.clone(),
@@ -178,13 +185,22 @@ fn real_engine_roundtrip_publishes_and_preserves_graph_on_failure() {
         &|_| {},
     )
     .unwrap();
+    let graph = &snapshot.graph.data;
     assert!(
         graph
             .nodes
             .iter()
             .any(|node| node.label == "leaf" && Path::new(&node.file).is_absolute())
     );
-    assert!(!graph.fingerprints.is_empty());
+    let status = snapshot
+        .context
+        .response(
+            codecallnavigator::query::Query::Status,
+            &AtomicBool::new(false),
+        )
+        .unwrap();
+    assert_eq!(status.generation, snapshot.context.descriptor.generation);
+    assert_eq!(status.freshness.unwrap()["contract_valid"], true);
     assert!(
         graph
             .nodes

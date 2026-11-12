@@ -99,10 +99,10 @@ graph; standalone configuration/resource files do not become new graph nodes.
 ## Import from Interactive Review
 
 If `.codecallnavigator/layers.yml` is missing and the selected repository contains
-`.interactive-review/layers.yml`, Repository configuration automatically converts
-and saves it once. An existing native file always wins, including an invalid one;
-fix it explicitly instead of expecting a fallback. Import does not overwrite a
-concurrently created native file.
+`.interactive-review/layers.yml`, Repository configuration converts it in memory.
+The CLI-backed desktop queries do not create a native file. An existing native
+file always wins, including an invalid one; fix it explicitly instead of
+expecting a fallback.
 
 The importer translates Java/TS sections, matchers, layer order, tabs, flows and
 support lanes. `package`, `methodAnnotation`, `implements` and
@@ -118,23 +118,23 @@ rules default to repository-relative paths.
 
 ## Cache and module boundaries
 
-New graph generations retain compiler-owned per-file declaration facts **and source
-text** in SQLite so content rules can be reevaluated without mixing current files
+Project graph artifacts retain compiler-owned per-file declaration facts **and source
+text** so content rules can be reevaluated without mixing current files
 with an older graph. This differs from older versions, which did not cache source
-text. Source popups still read current files from disk. Refresh after source changes
-to update facts; older caches remain usable in ordinary groupings and require a
+text. Source popups request current files through the CLI. Refresh after source changes
+to update facts; older artifacts remain usable in ordinary groupings and require a
 refresh before Layer mode can classify them.
 
 The shared `architecture` library separates native validation, review-format import,
 pattern compilation, classification and filesystem loading. Analyzer adapters export
 facts only. Layer assignments are disposable presentation data. Native workspace
-jobs handle reloads; projection owns aggregation and band metadata; Graphviz owns
+jobs request CLI reloads and classification; projection owns aggregation and band metadata; Graphviz owns
 geometry. No layer rule changes graph symbol identities or analyzer call bindings.
 
 ## Headless classification
 
-The analysis CLI can print the same file-layer classification before publishing
-its graph. `--layer-root` defaults to the current directory; pass it explicitly
+The desktop launcher's analysis CLI can print the same file-layer classification
+through the public CLI query interface. `--layer-root` defaults to the current directory; pass it explicitly
 when analyzing a repository elsewhere. `--layers` accepts `none`, `spring`, `react`
 or `repository`.
 

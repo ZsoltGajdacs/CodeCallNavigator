@@ -1,8 +1,5 @@
 //! Explicit tooling scenes use an actual checked-in Java source, never normal startup.
-use crate::{
-    app::State,
-    projection::{self, Grouping},
-};
+use crate::{app::State, projection::Grouping};
 use codecallnavigator::graph::GraphIndex;
 use std::sync::Arc;
 
@@ -49,7 +46,7 @@ pub fn files(state: &mut State) {
     state.graph = Some(Arc::new(GraphIndex::new(Arc::new(data)).unwrap()));
     state.nav.focus = None;
     state.nav.grouping = Grouping::Namespace;
-    state.replace_graph_view(projection::project(
+    state.replace_graph_view(crate::fixture_queries::project(
         state.graph.as_ref().unwrap(),
         &state.request().unwrap(),
     ));

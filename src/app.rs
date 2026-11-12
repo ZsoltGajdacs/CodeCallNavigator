@@ -31,6 +31,10 @@ pub struct State {
     pub saved_builds: Vec<PathBuf>,
     pub saved_targets: Option<Vec<crate::discovery::BuildIdentity>>,
     pub graph: Option<Arc<GraphIndex>>,
+    pub query_context: Option<crate::engine_client::QueryContext>,
+    pub presentation_cache: Option<crate::presentation_cache::PresentationCache>,
+    pub browser_context: Option<crate::engine_client::QueryContext>,
+    pub fixture_queries: bool,
     pub architecture: Option<Arc<codecallnavigator::architecture::LayerAssignments>>,
     pub architecture_selection: Option<codecallnavigator::architecture::Selection>,
     pub architecture_workspace: crate::architecture_workspace::Workspace,
@@ -50,6 +54,8 @@ pub struct State {
     pub neighbors: (Vec<u32>, Vec<u32>),
     pub neighbor_pages: [usize; 2],
     pub relationships: Vec<u32>,
+    pub relationship_classifications:
+        std::collections::HashMap<u32, codecallnavigator::model::RelationshipClassification>,
     pub relationship_page: usize,
     pub selected_edge: Option<u32>,
     pub show_provenance: bool,
@@ -87,6 +93,10 @@ impl State {
             saved_builds: Vec::new(),
             saved_targets: None,
             graph: None,
+            query_context: None,
+            presentation_cache: None,
+            browser_context: None,
+            fixture_queries: false,
             architecture: None,
             architecture_selection: None,
             architecture_workspace: Default::default(),
@@ -106,6 +116,7 @@ impl State {
             neighbors: (Vec::new(), Vec::new()),
             neighbor_pages: [0, 0],
             relationships: Vec::new(),
+            relationship_classifications: Default::default(),
             relationship_page: 0,
             selected_edge: None,
             show_provenance: false,
@@ -134,6 +145,43 @@ impl State {
 
     pub fn checkpoint(&mut self) {
         self.record_graph_step(self.nav.clone());
+    }
+
+    pub fn uses_fixture_queries(&self) -> bool {
+        self.fixture_queries || self.scene || self.deterministic
+    }
+
+    pub fn graph_queries(&self) -> Result<crate::graph_queries::GraphQueries, String> {
+        let graph = self.graph.clone().ok_or("No analyzed graph is loaded")?;
+        if self.uses_fixture_queries() {
+            return Ok(crate::graph_queries::GraphQueries::fixture(graph));
+        }
+        let context = self
+            .query_context
+            .clone()
+            .ok_or("The loaded graph has no CLI query context; refresh the workspace")?;
+        Ok(
+            crate::graph_queries::GraphQueries::cli(graph, context).with_layers(
+                self.architecture_selection,
+                self.architecture_workspace.signature(),
+            ),
+        )
+    }
+
+    pub fn flow_supported(&self, language: &str) -> bool {
+        if self.uses_fixture_queries() {
+            return crate::fixture_queries::flow_supported(language);
+        }
+        self.query_context
+            .as_ref()
+            .is_some_and(|context| context.flow_supported(language))
+    }
+
+    #[cfg(test)]
+    pub fn fixture() -> Self {
+        let mut state = Self::new();
+        state.fixture_queries = true;
+        state
     }
 
     /// Install a new layout, including same-sized replacements, before rendering it.
@@ -233,6 +281,11 @@ impl State {
 
     pub fn session(&self) -> SavedSession {
         SavedSession {
+            presentation_cache: self.presentation_cache.clone(),
+            graph_context: self
+                .query_context
+                .as_ref()
+                .map(|context| context.descriptor.clone()),
             root: self.root.text.clone(),
             selected_builds: self
                 .targets
@@ -259,7 +312,8 @@ impl State {
     }
 
     pub fn root_edited(&mut self) {
-        self.reset_architecture();
+        self.jobs.file_focus_cancel.store(true, Ordering::Release);
+        self.jobs.file_focus.cancel();
         self.root_was_edited = true;
         self.reset_build_discovery();
         self.close_overlay();

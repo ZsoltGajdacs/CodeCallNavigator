@@ -1,0 +1,30 @@
+{
+  "generation": "99fce3cfdb1b68fd72ffa55a38ab2294cf99331812ff4ab4c0fabed865ff12a3",
+  "artifact_bytes": 113628316,
+  "initial_load": {
+    "milliseconds": 2639.29,
+    "response_bytes": 1783222
+  },
+  "render_samples": [
+    {
+      "milliseconds": 305.56,
+      "response_bytes": 13340573,
+      "nodes": 4977,
+      "edges": 5604
+    },
+    {
+      "milliseconds": 292.81,
+      "response_bytes": 13340573,
+      "nodes": 4977,
+      "edges": 5604
+    },
+    {
+      "milliseconds": 324.92,
+      "response_bytes": 13340573,
+      "nodes": 4977,
+      "edges": 5604
+    }
+  ],
+  "median_render_ms": 305.56,
+  "method": "Optimized persistent CLI; complete default-filter overview; wall time includes CLI computation, pipe transfer and Python JSON decoding; no UI layout."
+}

@@ -5,7 +5,7 @@ use rune::{Env, Runtime};
 use std::{thread, time::Duration};
 
 fn runtime() -> Runtime<State> {
-    let mut state = State::new();
+    let mut state = State::fixture();
     flow_scenes::install(&mut state);
     let mut runtime = Runtime::new(state, view::view, (1420.0, 900.0), Env::new(true, 1.0));
     runtime.poll = Some(jobs::poll);
@@ -137,6 +137,13 @@ fn old_graph_opens_an_actionable_refresh_message() {
         state.flow_workspace.invalidate();
         state.open_flow("flow/load".into());
     });
+    super::wait_for(&mut runtime, |state| {
+        state
+            .flow_workspace
+            .current
+            .as_ref()
+            .is_some_and(|session| session.message.contains("Refresh"))
+    });
     runtime.frame(1.0 / 60.0);
     assert!(
         runtime
@@ -231,7 +238,7 @@ fn session(runtime: &Runtime<State>) -> &crate::flow_workspace::Session {
 
 #[test]
 fn inspector_action_opens_flow_and_switching_during_load_keeps_latest_function() {
-    let mut state = State::new();
+    let mut state = State::fixture();
     flow_scenes::install(&mut state);
     state.close_flow();
     let mut runtime = Runtime::new(state, view::view, (1420.0, 900.0), Env::new(true, 1.0));
@@ -269,7 +276,7 @@ fn shift_spans(value: &mut serde_json::Value, delta: usize) {
 
 #[test]
 fn previous_function_restores_the_actual_source_scroll_offset() {
-    let mut state = State::new();
+    let mut state = State::fixture();
     flow_scenes::install(&mut state);
     state.flow_workspace.invalidate();
     let prefix = "// earlier source\n".repeat(200);

@@ -4,7 +4,9 @@ use crate::{
     app::{Navigation, State},
     projection::{self, Grouping},
 };
-use codecallnavigator::architecture::{Assignment, LayerAssignments, LayerDefinition, Selection, file_key};
+use codecallnavigator::architecture::{
+    Assignment, LayerAssignments, LayerDefinition, Selection, file_key,
+};
 use std::sync::Arc;
 
 pub fn install(state: &mut State) {
@@ -50,7 +52,7 @@ pub fn install(state: &mut State) {
         origin: "Synthetic architectural fixture · no project scanned".into(),
     }));
     for _ in 0..3 {
-        let view = projection::project(&graph, &state.request().unwrap());
+        let view = crate::fixture_queries::project(&graph, &state.request().unwrap());
         state.nav.expanded.extend(
             view.nodes
                 .into_iter()
@@ -61,7 +63,7 @@ pub fn install(state: &mut State) {
     let result = (|| {
         let runtime = Arc::new(AnalyzerRuntime::discover()?);
         state.replace_graph_view(projection::layout(
-            projection::project(&graph, &state.request().unwrap()),
+            crate::fixture_queries::project(&graph, &state.request().unwrap()),
             &runtime.dot,
         )?);
         state.runtime = Some(runtime);

@@ -19,7 +19,7 @@ pub struct Entry {
     pub kind: Kind,
 }
 
-pub fn read(path: &str, cancelled: &AtomicBool) -> Result<Vec<Entry>, String> {
+pub fn read_fixture(path: &str, cancelled: &AtomicBool) -> Result<Vec<Entry>, String> {
     let entries = fs::read_dir(path).map_err(|error| format!("Could not read {path}: {error}"))?;
     let mut result = Vec::new();
     for entry in entries {

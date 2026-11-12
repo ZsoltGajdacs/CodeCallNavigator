@@ -74,7 +74,7 @@ fn aggregate_nodes(
     selection: &Selection,
     level: Option<PresentationLevel>,
 ) -> Aggregates {
-    let summary = graph.filter_summary(&request.filter);
+    let summary = &selection.summary;
     let starts: HashSet<_> = graph
         .data
         .entry_points
@@ -91,7 +91,7 @@ fn aggregate_nodes(
         let representative = representatives.entry(node.key.clone()).or_insert(node);
         add_member_metadata(representative, &graph.data.nodes[index as usize], index);
         representative.count += 1;
-        representative.cyclic |= summary.cyclic[index as usize];
+        representative.cyclic |= summary.cyclic.contains(&index);
     }
     for node in representatives.values_mut() {
         finish_metadata(node);
@@ -166,7 +166,7 @@ fn aggregate_edges(graph: &GraphIndex, selection: &Selection, aggregates: &mut A
                 to,
                 edge.kind.clone(),
                 edge.certainty.clone(),
-                graph.classification(index),
+                selection.classifications[&index],
             ))
             .or_insert(0_u64) += u64::from(edge.count);
     }
@@ -203,7 +203,7 @@ pub(super) fn project_page(
     let ordered = layers::order(&aggregates.nodes, ordered, request);
     let mut view = page(aggregates, ordered, request.page, &[]);
     view.layer_bands = layers::bands(request);
-    let summary = graph.filter_summary(&request.filter);
+    let summary = &selection.summary;
     (view.hidden_nodes, view.hidden_edges) = (summary.hidden_nodes, summary.hidden_edges);
     view.omitted_nodes += selection.omitted_nodes;
     view.omitted_edges += selection.omitted_edges;
@@ -211,15 +211,18 @@ pub(super) fn project_page(
     view
 }
 
-pub(super) fn focused(graph: &GraphIndex, request: &Request, target: &FocusTarget) -> GraphView {
+pub(super) fn focused(
+    graph: &GraphIndex,
+    request: &Request,
+    target: &FocusTarget,
+    selection: Selection,
+) -> GraphView {
     let mut all_request = request.clone();
     all_request.scope = Scope::Overview;
     all_request.focus_target = None;
-    let mut selection = super::selection::all(graph, &all_request);
-    layers::select(graph, &all_request, &mut selection);
     let Some(focus) = FocusProjection::resolve(graph, &all_request, &selection.nodes, target)
     else {
-        return super::project(graph, &all_request);
+        return super::project_prepared(graph, &all_request, selection);
     };
     let mut aggregates = aggregate_nodes(graph, &all_request, &selection, Some(focus.level));
     aggregate_edges(graph, &selection, &mut aggregates);
@@ -251,7 +254,7 @@ pub(super) fn focused(graph: &GraphIndex, request: &Request, target: &FocusTarge
     view.focus_keys = focus_keys;
     view.focus_valid = true;
     view.message = format!("Callers above · Callees below · depth {}", request.depth);
-    let summary = graph.filter_summary(&request.filter);
+    let summary = &selection.summary;
     (view.hidden_nodes, view.hidden_edges) = (summary.hidden_nodes, summary.hidden_edges);
     view
 }

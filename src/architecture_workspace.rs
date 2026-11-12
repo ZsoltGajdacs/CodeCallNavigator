@@ -1,8 +1,14 @@
 //! Background configuration reload and classification, independent of rendering.
 use crate::app::State;
-use codecallnavigator::architecture::{self, LayerAssignments, Selection};
+use codecallnavigator::architecture::{LayerAssignments, Selection};
 use rune::{Latest, Tx};
-use std::{path::PathBuf, sync::Arc, time::Duration};
+use std::{
+    sync::{
+        Arc,
+        atomic::{AtomicBool, Ordering},
+    },
+    time::Duration,
+};
 
 #[derive(Default)]
 pub struct Workspace {
@@ -10,6 +16,7 @@ pub struct Workspace {
     next_check: f64,
     signature: String,
     serial: u64,
+    cancelled: Arc<AtomicBool>,
 }
 
 pub struct Output {
@@ -23,7 +30,12 @@ pub struct Output {
 }
 
 impl Workspace {
+    pub fn signature(&self) -> Option<String> {
+        (!self.signature.is_empty()).then(|| self.signature.clone())
+    }
     pub fn invalidate(&mut self) {
+        self.cancelled.store(true, Ordering::Release);
+        self.cancelled = Arc::new(AtomicBool::new(false));
         self.next_check = 0.0;
         self.signature.clear();
         self.serial += 1;
@@ -32,13 +44,6 @@ impl Workspace {
 }
 
 impl State {
-    pub fn reset_architecture(&mut self) {
-        self.architecture = None;
-        self.architecture_selection = None;
-        self.nav.layer_tab = None;
-        self.architecture_workspace.invalidate();
-    }
-
     pub fn set_architecture_selection(&mut self, selection: Selection) {
         self.architecture_selection = Some(selection);
         self.architecture_workspace.invalidate();
@@ -57,10 +62,10 @@ impl State {
 
 pub fn poll(state: &mut State, time: f64, tx: &mut Tx) -> bool {
     let changed = take_result(state);
-    if state.scene || state.deterministic {
+    if state.uses_fixture_queries() {
         return changed;
     }
-    if state.closing || state.root.text.trim().is_empty() {
+    if state.closing || state.query_context.is_none() {
         return changed;
     }
     if time >= state.architecture_workspace.next_check
@@ -73,29 +78,34 @@ pub fn poll(state: &mut State, time: f64, tx: &mut Tx) -> bool {
 }
 
 fn request(state: &mut State, time: f64) {
-    let Some(graph) = state.graph.clone() else {
+    let Ok(queries) = state.graph_queries() else {
         return;
     };
+    let root = state
+        .query_context
+        .as_ref()
+        .expect("production context")
+        .descriptor
+        .project
+        .to_string_lossy()
+        .into_owned();
     let workspace = &mut state.architecture_workspace;
     workspace.next_check = time + 2.0;
     let epoch = state.epoch;
     let serial = workspace.serial;
-    let root = state.root.text.trim().to_owned();
-    let selection = state.architecture_selection;
     let previous = workspace.signature.clone();
-    workspace.job.request(root, move |root| {
-        let path = PathBuf::from(&root);
-        let selection = selection.unwrap_or_else(|| automatic_selection(&path));
-        let result = load(&path, selection, &graph.data, &previous);
-        match result {
-            Ok((signature, assignments)) => Output {
+    let selection = state.architecture_selection.unwrap_or(Selection::None);
+    let cancel = workspace.cancelled.clone();
+    workspace.job.request(queries, move |queries| {
+        match queries.architecture(Some(previous.clone()), &cancel) {
+            Ok(result) => Output {
                 serial,
                 epoch,
                 root,
-                selection,
-                changed: signature != previous,
-                signature,
-                result: Ok(assignments),
+                selection: result.selection,
+                signature: result.signature,
+                changed: result.changed,
+                result: Ok(result.assignments),
             },
             Err(error) => Output {
                 serial,
@@ -104,22 +114,13 @@ fn request(state: &mut State, time: f64) {
                 selection,
                 signature: previous,
                 changed: false,
-                result: Err(error.to_string()),
+                result: Err(format!("{error:#}")),
             },
         }
     });
 }
 
-fn automatic_selection(root: &std::path::Path) -> Selection {
-    if root.join(".codecallnavigator/layers.yml").is_file()
-        || root.join(".interactive-review/layers.yml").is_file()
-    {
-        Selection::Repository
-    } else {
-        Selection::None
-    }
-}
-
+#[cfg(test)]
 fn load(
     root: &std::path::Path,
     selection: Selection,
@@ -129,14 +130,14 @@ fn load(
     if selection == Selection::None {
         return Ok(("None".into(), None));
     }
-    let loaded = architecture::load(root, selection)?;
+    let loaded = codecallnavigator::architecture::load(root, selection)?;
     let signature = serde_json::to_string(&(selection, &loaded.config, &loaded.origin))?;
     if signature == previous {
         return Ok((signature, None));
     }
     Ok((
         signature,
-        Some(architecture::classify(
+        Some(codecallnavigator::architecture::classify(
             graph,
             &loaded.config,
             loaded.origin,
@@ -155,7 +156,11 @@ fn apply_result(state: &mut State, output: Output) -> bool {
     let current = (
         state.architecture_workspace.serial,
         state.epoch,
-        state.root.text.trim(),
+        state
+            .query_context
+            .as_ref()
+            .map(|context| context.descriptor.project.to_str().unwrap_or(""))
+            .unwrap_or(state.root.text.trim()),
     );
     if (output.serial, output.epoch, output.root.as_str()) != current {
         return false;

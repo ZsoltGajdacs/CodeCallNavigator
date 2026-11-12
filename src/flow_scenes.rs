@@ -164,7 +164,7 @@ pub fn install(state: &mut State) {
     state.graph = Some(Arc::new(GraphIndex::new(Arc::new(data())).unwrap()));
     state.nav = crate::app::Navigation::default();
     state.nav.selected = Some("flow/load".into());
-    state.replace_graph_view(crate::projection::project(
+    state.replace_graph_view(crate::fixture_queries::project(
         state.graph.as_ref().unwrap(),
         &state.request().unwrap(),
     ));

@@ -5,10 +5,13 @@ use crate::{
 };
 use codecallnavigator::{
     graph::GraphIndex,
-    search::{NameSearchIndex, NameSearchQuery, SearchCategory, SearchHit, SearchPage},
+    search::{NameSearchQuery, SearchCategory, SearchHit, SearchPage, SearchTarget},
 };
 use rune::{Key, KeyEvent, TextEdit, Tx};
-use std::sync::Arc;
+use std::sync::{
+    Arc,
+    atomic::{AtomicBool, Ordering},
+};
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 struct Request {
@@ -36,7 +39,8 @@ pub struct Workspace {
     pub results: Results,
     pub shortcut: DoubleShift,
     source: Option<Arc<GraphIndex>>,
-    index: Option<Arc<NameSearchIndex>>,
+    cancelled: Arc<AtomicBool>,
+    activation_cancelled: Arc<AtomicBool>,
     serial: u64,
     requested: Option<Request>,
 }
@@ -51,7 +55,8 @@ impl Default for Workspace {
             results: Results::Idle,
             shortcut: DoubleShift::default(),
             source: None,
-            index: None,
+            cancelled: Arc::new(AtomicBool::new(false)),
+            activation_cancelled: Arc::new(AtomicBool::new(false)),
             serial: 0,
             requested: None,
         }
@@ -79,9 +84,10 @@ impl Workspace {
     }
 }
 
-pub struct IndexOutput {
-    serial: u64,
-    index: Result<Arc<NameSearchIndex>, String>,
+pub struct ActivationOutput {
+    epoch: u64,
+    revision: u64,
+    result: Result<SearchTarget, String>,
 }
 pub struct SearchOutput {
     request: Request,
@@ -97,6 +103,12 @@ impl State {
         }
     }
     pub fn open_search(&mut self) {
+        self.cancel_search_activation();
+        if !matches!(self.search.results, Results::Ready(_)) {
+            self.search.cancelled.store(true, Ordering::Release);
+            self.jobs.search.cancel();
+            self.search.requested = None;
+        }
         self.cancel_graph_press();
         self.close_source();
         self.ui.overlay = None;
@@ -108,9 +120,18 @@ impl State {
         self.search.shortcut.reset();
     }
     pub fn close_search(&mut self) {
+        self.search.cancelled.store(true, Ordering::Release);
+        self.cancel_search_activation();
         self.search.open = false;
         self.search.input.focused = false;
         self.search.shortcut.reset();
+    }
+
+    fn cancel_search_activation(&mut self) {
+        self.search
+            .activation_cancelled
+            .store(true, Ordering::Release);
+        self.jobs.search_activation.cancel();
     }
     pub fn set_search_category(&mut self, category: SearchCategory) {
         if self.search.category != category {
@@ -120,6 +141,7 @@ impl State {
         self.search.input.focused = true;
     }
     pub fn request_search(&mut self) {
+        self.search.cancelled.store(true, Ordering::Release);
         self.search.page = 0;
         self.search.selected = 0;
         self.search.requested = None;
@@ -151,7 +173,47 @@ impl State {
         };
         self.close_search();
         self.close_flow();
-        self.reveal_search_target(hit.target);
+        self.activate_search_target(hit.target);
+    }
+
+    fn activate_search_target(&mut self, target: SearchTarget) {
+        if self.uses_fixture_queries() || matches!(target, SearchTarget::Method { .. }) {
+            self.reveal_search_target(target);
+            return;
+        }
+        let queries = match self.graph_queries() {
+            Ok(queries) => queries,
+            Err(error) => {
+                self.warning = error;
+                return;
+            }
+        };
+        let epoch = self.epoch;
+        let revision = self.revision;
+        self.search.activation_cancelled = Arc::new(AtomicBool::new(false));
+        let cancel = self.search.activation_cancelled.clone();
+        self.jobs.search_activation.request(target, move |target| {
+            let result = match target {
+                SearchTarget::Class {
+                    identity,
+                    file_container,
+                    ..
+                } => queries
+                    .class_members(&identity, &cancel)
+                    .map(|members| SearchTarget::Class {
+                        identity,
+                        members,
+                        file_container,
+                    })
+                    .map_err(|error| format!("{error:#}")),
+                target => Ok(target),
+            };
+            ActivationOutput {
+                epoch,
+                revision,
+                result,
+            }
+        });
     }
 }
 
@@ -168,38 +230,19 @@ fn sync_graph(state: &mut State) -> bool {
         return false;
     }
     state.jobs.search.cancel();
-    state.jobs.search_index.cancel();
+    state.jobs.search_activation.cancel();
+    state.search.cancelled.store(true, Ordering::Release);
+    state
+        .search
+        .activation_cancelled
+        .store(true, Ordering::Release);
     state.search.serial += 1;
     state.search.source = state.graph.clone();
-    state.search.index = None;
     state.search.requested = None;
     state.search.results = Results::Idle;
     state.search.page = 0;
     state.search.selected = 0;
-    if let Some(graph) = state.graph.clone() {
-        let serial = state.search.serial;
-        state
-            .jobs
-            .search_index
-            .request(graph, move |graph| IndexOutput {
-                serial,
-                index: Ok(Arc::new(NameSearchIndex::new(&graph.data))),
-            });
-    }
-    true
-}
 
-fn poll_index(state: &mut State) -> bool {
-    let Some(output) = state.jobs.search_index.take() else {
-        return false;
-    };
-    if output.serial != state.search.serial {
-        return false;
-    }
-    match output.index {
-        Ok(index) => state.search.index = Some(index),
-        Err(error) => state.search.results = Results::Failed(error),
-    }
     true
 }
 
@@ -229,24 +272,34 @@ fn submit(state: &mut State) -> bool {
         state.search.requested = Some(request);
         return true;
     }
-    let Some(index) = state.search.index.clone() else {
-        if !matches!(state.search.results, Results::Failed(_)) {
-            state.search.results = Results::Loading;
+    let queries = match state.graph_queries() {
+        Ok(queries) => queries,
+        Err(error) => {
+            state.search.results = Results::Failed(error);
+            state.search.requested = Some(request);
+            return true;
         }
-        return false;
     };
     state.search.requested = Some(request.clone());
     state.search.results = Results::Loading;
+    state.search.cancelled.store(true, Ordering::Release);
+    state.search.cancelled = Arc::new(AtomicBool::new(false));
+    let cancel = state.search.cancelled.clone();
     state
         .jobs
         .search
-        .request((index, request), |(index, request)| SearchOutput {
-            result: Ok(index.search(&NameSearchQuery {
-                text: &request.query,
-                category: request.category,
-                offset: request.page * RESULT_PAGE_SIZE,
-                limit: RESULT_PAGE_SIZE,
-            })),
+        .request((queries, request), move |(queries, request)| SearchOutput {
+            result: queries
+                .search(
+                    &NameSearchQuery {
+                        text: &request.query,
+                        category: request.category,
+                        offset: request.page * RESULT_PAGE_SIZE,
+                        limit: RESULT_PAGE_SIZE,
+                    },
+                    &cancel,
+                )
+                .map_err(|error| format!("{error:#}")),
             request,
         });
     true
@@ -267,8 +320,22 @@ fn poll_results(state: &mut State) -> bool {
     true
 }
 
+fn poll_activation(state: &mut State) -> bool {
+    let Some(output) = state.jobs.search_activation.take() else {
+        return false;
+    };
+    if output.epoch != state.epoch || output.revision != state.revision {
+        return false;
+    }
+    match output.result {
+        Ok(target) => state.reveal_search_target(target),
+        Err(error) => state.warning = error,
+    }
+    true
+}
+
 pub fn poll(state: &mut State) -> bool {
-    sync_graph(state) | poll_index(state) | submit(state) | poll_results(state)
+    sync_graph(state) | submit(state) | poll_results(state) | poll_activation(state)
 }
 
 pub fn key(state: &mut State, event: &KeyEvent, tx: &mut Tx) -> bool {
@@ -317,4 +384,74 @@ pub(crate) fn pointer_activity(state: &mut State, tx: &mut Tx) {
 pub(crate) fn focus_changed(state: &mut State, _: bool, tx: &mut Tx) {
     state.search.shortcut.reset();
     tx.live_only();
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::{sync::mpsc, time::Duration};
+
+    #[test]
+    fn reopening_search_discards_a_delayed_class_activation() {
+        let mut state = State::fixture();
+        crate::scenes::install(&mut state);
+        let node = &state.graph.as_ref().unwrap().data.nodes[0];
+        let target = SearchTarget::Class {
+            identity: codecallnavigator::search::ClassIdentity::from_node(node),
+            members: Arc::from([0]),
+            file_container: false,
+        };
+        let before = serde_json::to_value(&state.nav).unwrap();
+        let epoch = state.epoch;
+        let revision = state.revision;
+        let (started, waiting) = mpsc::channel();
+        let (release, proceed) = mpsc::channel();
+        state.jobs.search_activation.request((), move |_| {
+            started.send(()).unwrap();
+            proceed.recv_timeout(Duration::from_secs(2)).unwrap();
+            ActivationOutput {
+                epoch,
+                revision,
+                result: Ok(target),
+            }
+        });
+        waiting.recv_timeout(Duration::from_secs(2)).unwrap();
+        state.open_search();
+        release.send(()).unwrap();
+        for _ in 0..100 {
+            poll_activation(&mut state);
+            std::thread::sleep(Duration::from_millis(1));
+        }
+        assert!(state.search.open);
+        assert_eq!(
+            serde_json::to_value(&state.nav).unwrap(),
+            before,
+            "Old class activation navigated behind the reopened modal"
+        );
+        assert!(state.search.activation_cancelled.load(Ordering::Acquire));
+    }
+    #[test]
+    fn reopening_the_same_inflight_query_resubmits_it() {
+        let mut state = State::fixture();
+        crate::scenes::install(&mut state);
+        state.search.source = state.graph.clone();
+        state.search.input = rune::TextEdit::new("LoadOrder");
+        state.search.results = Results::Loading;
+        state.search.requested = Some(state.search.request(&state));
+        state.close_search();
+        state.open_search();
+        assert!(
+            submit(&mut state),
+            "Reopened loading query retained its cancelled request identity"
+        );
+        for _ in 0..100 {
+            poll_results(&mut state);
+            if matches!(state.search.results, Results::Ready(_)) {
+                break;
+            }
+            std::thread::sleep(Duration::from_millis(1));
+        }
+        assert!(matches!(state.search.results, Results::Ready(_)));
+        assert!(!state.search.hits().is_empty());
+    }
 }

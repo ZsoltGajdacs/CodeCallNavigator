@@ -1,9 +1,6 @@
 //! Optional headless classification uses the same configuration and facts as Graph Studio.
 use anyhow::{Context, Result, ensure};
-use codecallnavigator::{
-    architecture::{self, Selection},
-    model::GraphData,
-};
+use codecallnavigator::architecture::Selection;
 use std::{collections::BTreeMap, path::PathBuf};
 
 #[derive(Default)]
@@ -45,7 +42,11 @@ impl Arguments {
         );
         Ok(())
     }
-    pub fn report(&self, graph: &GraphData) -> Result<()> {
+    pub fn report(
+        &self,
+        context: &crate::engine_client::QueryContext,
+        cancel: &std::sync::atomic::AtomicBool,
+    ) -> Result<()> {
         let Some(selection) = self.selection else {
             return Ok(());
         };
@@ -58,8 +59,17 @@ impl Arguments {
             .unwrap_or(std::env::current_dir()?)
             .canonicalize()
             .context("Cannot open layer configuration root")?;
-        let loaded = architecture::load(&root, selection)?;
-        let assignments = architecture::classify(graph, &loaded.config, loaded.origin)?;
+        let result: crate::graph_queries::ArchitectureResult = context.request(
+            codecallnavigator::query::Query::Architecture {
+                selection: Some(selection),
+                previous_signature: None,
+                configuration_root: Some(root),
+            },
+            cancel,
+        )?;
+        let Some(assignments) = result.assignments else {
+            return Ok(());
+        };
         let mut counts = BTreeMap::new();
         for assignment in assignments.files.values() {
             *counts.entry(&assignment.layer).or_insert(0usize) += 1;

@@ -19,7 +19,7 @@ pub fn install(state: &mut State) {
     state.nav.focus = Some("fixture/project/Start".into());
     state.nav.depth = 4;
     state.status = "Deterministic test fixture · 6 symbols · 6 relationships".into();
-    state.replace_graph_view(projection::project(
+    state.replace_graph_view(crate::fixture_queries::project(
         state.graph.as_ref().unwrap(),
         &state.request().unwrap(),
     ));
@@ -157,7 +157,7 @@ fn cached_scene(state: &mut State, focus: bool) {
     state.deterministic = true;
     state.jobs.boot.cancel();
     let result = (|| {
-        let boot = crate::jobs::load_boot(crate::jobs::data_directory())?;
+        let boot = crate::fixture_queries::cached_boot(crate::jobs::data_directory())?;
         let loaded = boot
             .graph
             .ok_or_else(|| anyhow::anyhow!("No published graph in CODECALLNAVIGATOR_DATA_DIR"))?;
@@ -173,7 +173,7 @@ fn cached_scene(state: &mut State, focus: bool) {
         let request = state.request().unwrap();
         let graph = state.graph.as_ref().unwrap().clone();
         state.replace_graph_view(projection::layout(
-            projection::project(&graph, &request),
+            crate::fixture_queries::project(&graph, &request),
             &state.runtime.as_ref().unwrap().dot,
         )?);
         state.nav.camera.fit(state.graph_view.size, state.viewport);

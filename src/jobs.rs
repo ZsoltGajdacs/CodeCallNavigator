@@ -1,12 +1,12 @@
+mod analysis;
+mod queries;
 pub(crate) use crate::workspace::{Boot, LoadedGraph, data_directory, load_boot};
-use crate::{
-    app::{RESULT_PAGE_SIZE, State},
-    engine_client, fingerprint, projection,
-};
-use codecallnavigator::graph::{Direction, GraphIndex};
+use crate::{app::State, projection};
+use analysis::{install_graph, poll_analysis};
+pub use queries::NeighborOutput;
+use queries::{poll_graph, poll_staleness};
 use rune::{Latest, Tx, Waker};
 use std::{
-    path::PathBuf,
     sync::{
         Arc, Mutex,
         atomic::{AtomicU64, Ordering},
@@ -16,14 +16,6 @@ use std::{
 };
 
 type Fallible<T> = Result<T, String>;
-pub struct NeighborOutput {
-    pub epoch: u64,
-    pub revision: u64,
-    pub selected: u32,
-    pub incoming: Vec<u32>,
-    pub outgoing: Vec<u32>,
-    pub relationships: Vec<u32>,
-}
 
 pub struct Jobs {
     pub boot: Latest<Fallible<Boot>>,
@@ -33,13 +25,18 @@ pub struct Jobs {
     pub cache_clear: Latest<crate::cache_jobs::Output>,
     pub layout: Latest<(u64, u64, Fallible<projection::GraphView>)>,
     pub search: Latest<crate::search::SearchOutput>,
-    pub search_index: Latest<crate::search::IndexOutput>,
+    pub search_activation: Latest<crate::search::ActivationOutput>,
     pub neighbors: Latest<NeighborOutput>,
+    pub file_focus: Latest<crate::graph_interaction::FileFocusOutput>,
+    pub file_focus_cancel: Arc<std::sync::atomic::AtomicBool>,
     pub stale: Latest<(u64, Fallible<bool>)>,
     pub persistence: Latest<Fallible<()>>,
     pub progress_sender: mpsc::Sender<String>,
     pub progress_receiver: mpsc::Receiver<String>,
     pub waker: Option<Waker>,
+    pub layout_cancel: Arc<std::sync::atomic::AtomicBool>,
+    pub neighbors_cancel: Arc<std::sync::atomic::AtomicBool>,
+    pub stale_cancel: Arc<std::sync::atomic::AtomicBool>,
     save_revision: Arc<AtomicU64>,
     save_lock: Arc<Mutex<()>>,
 }
@@ -55,13 +52,18 @@ impl Default for Jobs {
             cache_clear: Latest::default(),
             layout: Latest::default().debounce(Duration::from_millis(50)),
             search: Latest::default().debounce(Duration::from_millis(100)),
-            search_index: Latest::default(),
+            search_activation: Latest::default(),
             neighbors: Latest::default(),
+            file_focus: Latest::default(),
+            file_focus_cancel: Arc::new(std::sync::atomic::AtomicBool::new(false)),
             stale: Latest::default(),
             persistence: Latest::default().debounce(Duration::from_millis(300)),
             progress_sender,
             progress_receiver,
             waker: None,
+            layout_cancel: Arc::new(std::sync::atomic::AtomicBool::new(false)),
+            neighbors_cancel: Arc::new(std::sync::atomic::AtomicBool::new(false)),
+            stale_cancel: Arc::new(std::sync::atomic::AtomicBool::new(false)),
             save_revision: Arc::new(AtomicU64::new(0)),
             save_lock: Arc::new(Mutex::new(())),
         }
@@ -78,12 +80,13 @@ pub fn setup(state: &mut State, waker: Waker) {
     state.jobs.cache_clear.set_waker(waker.clone());
     state.jobs.layout.set_waker(waker.clone());
     state.jobs.search.set_waker(waker.clone());
-    state.jobs.search_index.set_waker(waker.clone());
+    state.jobs.search_activation.set_waker(waker.clone());
     state.jobs.neighbors.set_waker(waker.clone());
+    state.jobs.file_focus.set_waker(waker.clone());
     state.jobs.stale.set_waker(waker.clone());
     state.jobs.persistence.set_waker(waker.clone());
     state.jobs.waker = Some(waker);
-    if state.scene || state.deterministic {
+    if state.uses_fixture_queries() {
         return;
     }
     state.status = "Opening saved workspace…".into();
@@ -109,129 +112,6 @@ impl State {
         });
     }
 
-    pub fn analyze_selected(&mut self) {
-        if self.project_job_busy() {
-            return;
-        }
-        let targets: Vec<_> = self
-            .targets
-            .iter()
-            .filter(|choice| choice.selected)
-            .map(|choice| choice.target.clone())
-            .collect();
-        let (Some(runtime), Some(store)) = (self.runtime.clone(), self.store.clone()) else {
-            return;
-        };
-        if targets.is_empty() {
-            self.warning =
-                "Select at least one solution, project, Java build or TypeScript configuration."
-                    .into();
-            return;
-        }
-        self.cancel = Arc::new(std::sync::atomic::AtomicBool::new(false));
-        let cancel = self.cancel.clone();
-        let progress = self.jobs.progress_sender.clone();
-        let wake = self.jobs.waker.clone();
-        self.analyzing = true;
-        self.warning.clear();
-        self.status = if self.graph.is_some() {
-            "Analyzing selected builds · showing the last successful graph"
-        } else {
-            "Preparing project analysis…"
-        }
-        .into();
-        let project = PathBuf::from(self.root.text.trim());
-        self.jobs.analysis.request(targets, move |targets| {
-            let metrics = codecallnavigator::metrics::Metrics::default();
-            let _scope = metrics.enter();
-            let report = |message| {
-                let _ = progress.send(message);
-                if let Some(wake) = &wake {
-                    wake();
-                }
-            };
-            let result = (|| {
-                let data = Arc::new(engine_client::analyze(
-                    &runtime,
-                    engine_client::Analysis { project, targets },
-                    &cancel,
-                    &report,
-                )?);
-                let graph = {
-                    let _timer = codecallnavigator::metrics::stage("indexing");
-                    Arc::new(GraphIndex::new(data.clone())?)
-                };
-                let generation = {
-                    let _timer = codecallnavigator::metrics::stage("publication");
-                    store.publish(&data, &cancel)?
-                };
-                Ok::<_, anyhow::Error>(LoadedGraph {
-                    graph,
-                    generation,
-                    metrics: Some(metrics),
-                })
-            })();
-            result.map_err(|error| format!("{error:#}"))
-        });
-    }
-
-    pub fn request_layout(&mut self) {
-        self.needs_layout = false;
-        let (Some(graph), Some(request)) = (self.graph.clone(), self.request()) else {
-            return;
-        };
-        if self.scene {
-            let mut view = projection::project(&graph, &request);
-            crate::scenes::position(&mut view);
-            self.complete_graph_layout(view);
-            return;
-        }
-        let Some(runtime) = &self.runtime else {
-            return;
-        };
-        let dot = runtime.dot.clone();
-        let epoch = self.epoch;
-        let revision = self.revision;
-        let first_layout = self.visible_revision.is_none();
-        let metrics = first_layout
-            .then(|| self.analysis_metrics.clone())
-            .flatten();
-        self.jobs.layout.request(request, move |request| {
-            let _scope = metrics
-                .as_ref()
-                .map(codecallnavigator::metrics::Metrics::enter);
-            let _timer = codecallnavigator::metrics::stage(if first_layout {
-                "initial_layout"
-            } else {
-                "layout"
-            });
-            let result = projection::layout(projection::project(&graph, &request), &dot)
-                .map_err(|error| error.to_string());
-            (epoch, revision, result)
-        });
-    }
-
-    pub fn request_neighbors(&mut self) {
-        self.neighbors = (Vec::new(), Vec::new());
-        self.relationships.clear();
-        let (Some(graph), Some(node)) = (self.graph.clone(), self.selected()) else {
-            return;
-        };
-        let filter = self.nav.filter.clone();
-        let epoch = self.epoch;
-        let revision = self.revision;
-        self.jobs
-            .neighbors
-            .request(node, move |node| NeighborOutput {
-                epoch,
-                revision,
-                selected: node,
-                incoming: graph.neighbors(node, Direction::Incoming, &filter),
-                outgoing: graph.neighbors(node, Direction::Outgoing, &filter),
-                relationships: graph.incident_edges(node, Direction::Both, &filter),
-            });
-    }
-
     pub fn save_session(&mut self) {
         self.dirty_session = false;
         if self.scene {
@@ -253,9 +133,7 @@ impl State {
             if latest.load(Ordering::Acquire) != revision {
                 return Ok(());
             }
-            store
-                .save_session(&session)
-                .map_err(|error| error.to_string())
+            crate::workspace::save_session(&store, session).map_err(|error| error.to_string())
         });
     }
 }
@@ -357,151 +235,15 @@ fn poll_boot(state: &mut State) -> bool {
     true
 }
 
-fn poll_analysis(state: &mut State) -> bool {
-    let Some(result) = state.jobs.analysis.take() else {
-        return false;
-    };
-    state.analyzing = false;
-    match result {
-        Ok(graph) => {
-            install_graph(state, graph);
-            state.stale = false;
-            state.auto_fit = true;
-            state.changed();
-        }
-        Err(error) => {
-            state.warning = error;
-            state.status = "Analysis did not complete; the previous graph is preserved".into();
-        }
-    }
-    true
-}
-
-fn install_graph(state: &mut State, loaded: LoadedGraph) {
-    state.close_source();
-    state.epoch += 1;
-    state.nav.retain_known(&loaded.graph);
-    state.graph = Some(loaded.graph);
-    state.analysis_metrics = loaded.metrics;
-    state.generation = Some(loaded.generation);
-    state.next_stale_check = 0.0;
-    state.architecture = None;
-    state.architecture_workspace.invalidate();
-    state.selected_edge = None;
-    state.replace_graph_view(projection::GraphView::default());
-    state.visible_revision = None;
-    state.visual_selection = None;
-    state.cancel_graph_press();
-    state.status = format!(
-        "{} symbols · {} relationships",
-        state.graph.as_ref().unwrap().data.nodes.len(),
-        state.graph.as_ref().unwrap().data.edges.len()
-    );
-    state.back.clear();
-    state.forward.clear();
-    state.needs_layout = true;
-    state.request_neighbors();
-}
-
-fn poll_graph(state: &mut State) -> bool {
-    poll_layout(state) | crate::search::poll(state) | poll_neighbors(state)
-}
-
-fn poll_layout(state: &mut State) -> bool {
-    let Some((epoch, revision, result)) = state.jobs.layout.take() else {
-        return false;
-    };
-    if epoch != state.epoch || revision != state.revision {
-        return false;
-    }
-    if state.visible_revision.is_none()
-        && let Some(metrics) = &state.analysis_metrics
-    {
-        metrics.finish();
-    }
-    match result {
-        Ok(view) => {
-            state.complete_graph_layout(view);
-        }
-        Err(error) => state.warning = error,
-    }
-    true
-}
-
-fn poll_neighbors(state: &mut State) -> bool {
-    let Some(output) = state.jobs.neighbors.take() else {
-        return false;
-    };
-    if output.epoch != state.epoch {
-        return false;
-    }
-    if output.revision != state.revision {
-        return false;
-    }
-    if Some(output.selected) != state.selected() {
-        return false;
-    }
-    state.neighbors = (output.incoming, output.outgoing);
-    state.relationships = output.relationships;
-    state.neighbor_pages[0] =
-        state.neighbor_pages[0].min(state.neighbors.0.len().saturating_sub(1) / RESULT_PAGE_SIZE);
-    state.neighbor_pages[1] =
-        state.neighbor_pages[1].min(state.neighbors.1.len().saturating_sub(1) / RESULT_PAGE_SIZE);
-    state.relationship_page = state
-        .relationship_page
-        .min(state.relationships.len().saturating_sub(1) / RESULT_PAGE_SIZE);
-    state.selected_edge = state
-        .selected_edge
-        .filter(|edge| state.relationships.contains(edge));
-    true
-}
-
-fn poll_staleness(state: &mut State, time: f64, tx: &mut Tx) -> bool {
-    let changed = poll_stale_result(state);
-    if state.scene || state.closing {
-        return changed;
-    }
-    if time >= state.next_stale_check {
-        request_stale_check(state, time);
-    }
-    tx.wake_after(Duration::from_secs(30));
-    changed
-}
-
-fn poll_stale_result(state: &mut State) -> bool {
-    let Some((epoch, result)) = state.jobs.stale.take() else {
-        return false;
-    };
-    if epoch != state.epoch {
-        return false;
-    }
-    match result {
-        Ok(stale) => state.stale = stale,
-        Err(error) => {
-            state.stale = true;
-            state.warning = format!("Could not verify cached source files: {error}");
-        }
-    }
-    true
-}
-
-fn request_stale_check(state: &mut State, time: f64) {
-    state.next_stale_check = time + 30.0;
-    let Some(graph) = &state.graph else {
-        return;
-    };
-    let fingerprints = graph.data.fingerprints.clone();
-    let epoch = state.epoch;
-    state.jobs.stale.request(fingerprints, move |items| {
-        (
-            epoch,
-            fingerprint::is_stale(&items).map_err(|error| error.to_string()),
-        )
-    });
-}
-
 pub fn close(state: &mut State, _: &mut Tx) {
     state.closing = true;
     state.cancel.store(true, Ordering::Release);
+    state.jobs.layout_cancel.store(true, Ordering::Release);
+    state.jobs.neighbors_cancel.store(true, Ordering::Release);
+    state.jobs.stale_cancel.store(true, Ordering::Release);
+    state.jobs.file_focus_cancel.store(true, Ordering::Release);
+    state.close_source();
+    state.close_search();
+    state.close_flow();
     state.save_session();
 }

@@ -1,18 +1,23 @@
 //! The desktop consumes the same published artifact as standalone CLI users.
+#[cfg(test)]
+use codecallnavigator::model::GraphData;
+mod capabilities;
 mod process;
+mod queries;
+mod query_process;
+pub use queries::{Descriptor, QueryContext, Snapshot};
+#[cfg(test)]
+mod query_tests;
 #[cfg(test)]
 mod tests;
 
 use crate::runtime::Runtime;
 use anyhow::{Context, Result, bail, ensure};
 use codecallnavigator::{
-    artifact::{Artifact, GRAPH_PATH},
     discovery::BuildTarget,
-    model::GraphData,
     protocol::{Event, Request, VERSION},
 };
 use std::{
-    fs,
     path::Path,
     sync::atomic::{AtomicBool, Ordering},
 };
@@ -44,12 +49,12 @@ pub struct Analysis {
     pub targets: Vec<BuildTarget>,
 }
 
-pub fn analyze(
+pub fn analyze_snapshot(
     runtime: &Runtime,
     selection: Analysis,
     cancel: &AtomicBool,
     progress: &dyn Fn(String),
-) -> Result<GraphData> {
+) -> Result<Snapshot> {
     let project = selection
         .project
         .canonicalize()
@@ -64,26 +69,39 @@ pub fn analyze(
     let Event::Complete {
         roots,
         digest,
-        fingerprints,
-        engine_versions,
         metrics,
+        engine_versions,
+        ..
     } = exchange(runtime, &request, cancel, progress)?
     else {
         bail!("Engine returned discovery results for analysis");
     };
     ensure!(!cancel.load(Ordering::Relaxed), "Analysis cancelled");
-    let bytes =
-        fs::read(project.join(GRAPH_PATH)).context("Cannot read published project graph")?;
-    ensure!(
-        blake3::hash(&bytes).to_hex().as_str() == digest,
-        "Published graph differs from engine result"
-    );
-    let mut graph = Artifact::from_bytes(&bytes)?.hydrate(&roots)?;
-    graph.fingerprints = fingerprints;
-    graph.engine_versions = engine_versions;
-    graph.validate()?;
     codecallnavigator::metrics::absorb(&metrics)?;
-    Ok(graph)
+    let roots = roots
+        .into_iter()
+        .filter(|(name, _)| name != "repo")
+        .collect();
+    QueryContext::new(
+        runtime,
+        Descriptor {
+            project,
+            roots,
+            generation: Some(digest),
+        },
+    )
+    .snapshot_with_versions(cancel, Some(engine_versions))
+}
+
+#[cfg(test)]
+fn analyze(
+    runtime: &Runtime,
+    selection: Analysis,
+    cancel: &AtomicBool,
+    progress: &dyn Fn(String),
+) -> Result<GraphData> {
+    let snapshot = analyze_snapshot(runtime, selection, cancel, progress)?;
+    Ok(snapshot.graph.data.as_ref().clone())
 }
 
 fn exchange(

@@ -21,7 +21,7 @@ fn frames(runtime: &mut Runtime<State>, count: usize) {
 }
 
 fn runtime() -> Runtime<State> {
-    let mut state = State::new();
+    let mut state = State::fixture();
     state.scene = true;
     state.jobs.boot.cancel();
     let mut nodes: Vec<_> = (0..19)

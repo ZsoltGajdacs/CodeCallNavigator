@@ -18,7 +18,7 @@ fn focus_view(state: &State, cx: &mut Cx<State>) -> El {
 }
 
 fn runtime(flow: bool) -> Runtime<State> {
-    let mut state = State::new();
+    let mut state = State::fixture();
     if flow {
         flow_scenes::install(&mut state);
     } else {

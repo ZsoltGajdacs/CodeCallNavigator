@@ -23,31 +23,7 @@ fn arguments(values: impl Iterator<Item = String>) -> Result<Arguments> {
     while let Some(value) = values.next() {
         match value.as_str() {
             "--" if options => options = false,
-            "--project" if options => {
-                ensure!(
-                    result.project.is_none(),
-                    "--project may only be specified once"
-                );
-                result.project = Some(values.next().context("--project requires a path")?.into());
-            }
-            "--timings" if options => {
-                ensure!(
-                    result.timings.is_none(),
-                    "--timings may only be specified once"
-                );
-                result.timings = Some(
-                    values
-                        .next()
-                        .context("--timings requires a JSON output path")?
-                        .into(),
-                );
-            }
-            "--layers" | "--layer-root" if options => {
-                let argument = values
-                    .next()
-                    .with_context(|| format!("{value} requires a value"))?;
-                result.layers.option(&value, argument)?;
-            }
+            _ if options => result.option(value, &mut values)?,
             _ => result.paths.push(value.into()),
         }
     }
@@ -60,6 +36,41 @@ fn arguments(values: impl Iterator<Item = String>) -> Result<Arguments> {
         validate_report_path(path)?;
     }
     Ok(result)
+}
+
+impl Arguments {
+    /// Consume option values separately from positional/terminator handling.
+    fn option(&mut self, value: String, values: &mut impl Iterator<Item = String>) -> Result<()> {
+        match value.as_str() {
+            "--project" => {
+                ensure!(
+                    self.project.is_none(),
+                    "--project may only be specified once"
+                );
+                self.project = Some(values.next().context("--project requires a path")?.into());
+            }
+            "--timings" => {
+                ensure!(
+                    self.timings.is_none(),
+                    "--timings may only be specified once"
+                );
+                self.timings = Some(
+                    values
+                        .next()
+                        .context("--timings requires a JSON output path")?
+                        .into(),
+                );
+            }
+            "--layers" | "--layer-root" => {
+                let argument = values
+                    .next()
+                    .with_context(|| format!("{value} requires a value"))?;
+                self.layers.option(&value, argument)?;
+            }
+            _ => self.paths.push(value.into()),
+        }
+        Ok(())
+    }
 }
 
 pub fn analyze() -> Result<()> {
@@ -118,24 +129,48 @@ fn run(paths: Vec<PathBuf>, layers: layers::Arguments, project: Option<PathBuf>)
     let runtime = crate::runtime::Runtime::discover()?;
     let targets = discover(paths, &runtime)?;
     let cancelled = AtomicBool::new(false);
-    let graph = crate::engine_client::analyze(
+    let selected_targets = targets.clone();
+    let saved_root = project.clone();
+    let snapshot = crate::engine_client::analyze_snapshot(
         &runtime,
         crate::engine_client::Analysis { project, targets },
         &cancelled,
         &|message| eprintln!("{message}"),
     )?;
-    layers.report(&graph)?;
+    layers.report(&snapshot.context, &cancelled)?;
+    let graph = &snapshot.graph.data;
     let store = SqliteStore::open(crate::jobs::data_directory())?;
-    let generation = {
-        let _timer = metrics::stage("publication");
-        store.publish(&graph, &cancelled)?
-    };
+    let presentation_cache = crate::presentation_cache::retain(&store, &snapshot, &cancelled)?;
+    let generation = snapshot
+        .context
+        .descriptor
+        .generation
+        .as_deref()
+        .context("CLI omitted generation")?;
+    let mut session = store
+        .load_session()?
+        .and_then(|value| serde_json::from_value::<crate::app::SavedSession>(value).ok())
+        .unwrap_or_default();
+    session.root = saved_root.to_string_lossy().into_owned();
+    session.graph_context = Some(snapshot.context.descriptor.clone());
+    session.presentation_cache = Some(presentation_cache);
+    session.selected_builds = selected_targets
+        .iter()
+        .map(|target| target.path.clone())
+        .collect();
+    session.selected_targets = Some(
+        selected_targets
+            .iter()
+            .map(|target| target.identity())
+            .collect(),
+    );
+    crate::workspace::save_session(&store, serde_json::to_value(session)?)?;
     println!(
         "Published {generation}: {} symbols, {} relationships",
         graph.nodes.len(),
         graph.edges.len()
     );
-    for diagnostic in graph.diagnostics {
+    for diagnostic in &graph.diagnostics {
         eprintln!("Analysis note: {diagnostic}");
     }
     Ok(())

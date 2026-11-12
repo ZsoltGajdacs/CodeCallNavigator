@@ -10,7 +10,7 @@ use std::sync::Arc;
 
 #[test]
 fn fit_uses_the_full_canvas_beneath_wrapped_filters() {
-    let mut state = State::new();
+    let mut state = State::fixture();
     state.scene = true;
     state.jobs.boot.cancel();
     state.graph = Some(Arc::new(GraphIndex::new(Arc::new(data())).unwrap()));

@@ -11,7 +11,7 @@ fn workspace(path: &Path) -> Workspace {
 }
 fn load_next(workspace: &mut Workspace) {
     let path = workspace.queue.pop_front().expect("directory request");
-    let result = loader::read(&path, &workspace.cancelled);
+    let result = loader::read_fixture(&path, &workspace.cancelled);
     workspace.accept(Output {
         generation: workspace.generation,
         canonical_root: (path == workspace.root)
@@ -33,7 +33,7 @@ fn lists_every_entry_folders_first_without_following_directory_links() {
     #[cfg(unix)]
     std::os::unix::fs::symlink(temporary.path(), temporary.path().join("link")).unwrap();
     let entries =
-        loader::read(&temporary.path().to_string_lossy(), &AtomicBool::new(false)).unwrap();
+        loader::read_fixture(&temporary.path().to_string_lossy(), &AtomicBool::new(false)).unwrap();
     assert_eq!(entries[0].label, "z-folder");
     assert_eq!(entries[0].kind, Kind::Directory);
     assert!(entries.iter().any(|entry| entry.label == "ignored.bin"));
@@ -127,7 +127,9 @@ fn empty_error_retry_cancel_and_stale_completion_are_observable() {
     load_next(&mut failed);
     assert!(matches!(failed.rows[0].kind, RowKind::Empty));
     fs::write(temporary.path().join("file"), "x").unwrap();
-    assert!(loader::read(temporary.path().to_str().unwrap(), &AtomicBool::new(true)).is_err());
+    assert!(
+        loader::read_fixture(temporary.path().to_str().unwrap(), &AtomicBool::new(true)).is_err()
+    );
 }
 
 #[test]
@@ -137,7 +139,7 @@ fn method_and_group_files_resolve_without_navigation_mutation() {
         graph::GraphIndex,
         model::{GraphData, Node},
     };
-    let mut state = State::new();
+    let mut state = State::fixture();
     state.graph = Some(Arc::new(
         GraphIndex::new(Arc::new(GraphData {
             nodes: vec![Node {
@@ -194,7 +196,7 @@ fn method_and_group_files_resolve_without_navigation_mutation() {
 #[test]
 fn layout_reconciliation_does_not_overwrite_explorer_only_selection() {
     use crate::projection::{FocusTarget, SourcePath, ViewNode};
-    let mut state = State::new();
+    let mut state = State::fixture();
     state.explorer.root = "/repo".into();
     state.graph_view.nodes.push(ViewNode {
         key: "group".into(),
@@ -258,7 +260,7 @@ fn selected_root_alias_maps_canonical_graph_files_without_following_interior_lin
     std::os::unix::fs::symlink(&real, &alias).unwrap();
     std::os::unix::fs::symlink(&real, real.join("interior-link")).unwrap();
     let tree = workspace(&alias);
-    let mut state = State::new();
+    let mut state = State::fixture();
     state.explorer = tree;
     selection::sync(&mut state);
     let mut tree = std::mem::take(&mut state.explorer);

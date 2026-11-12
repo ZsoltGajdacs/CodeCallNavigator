@@ -209,7 +209,7 @@ fn grouped_filters_fit_and_expose_full_names_in_both_themes() {
             (1230.0, 900.0, false),
             (1420.0, 900.0, false),
         ] {
-            let mut state = State::new();
+            let mut state = State::fixture();
             scenes::install(&mut state);
             state.ui.sidebar.set_width(400.0);
             state.ui.inspector.set_width(420.0);
@@ -269,7 +269,7 @@ fn saved_sessions_migrate_legacy_filters_and_preserve_new_empty_selections() {
 #[test]
 fn filters_share_one_line_when_wide_and_wrap_when_narrow() {
     for (width, single_line) in [(2200.0, true), (1050.0, false)] {
-        let mut state = State::new();
+        let mut state = State::fixture();
         scenes::install(&mut state);
         state.ui.sidebar.set_open(false);
         state.ui.inspector.set_open(false);

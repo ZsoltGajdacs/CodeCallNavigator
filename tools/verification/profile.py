@@ -7,6 +7,7 @@ import sys
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from pan_profile import snapshot_store
+from profile_cache import validate_presentation_cache
 
 
 def catalog_rows(source):
@@ -19,6 +20,7 @@ def catalog_rows(source):
 
 def saved_generation(source):
     rows = catalog_rows(source)
+    validate_presentation_cache(rows)
     if "session" not in rows:
         raise ValueError("Profiling source needs saved navigation; open and save a workspace in the app")
     if not isinstance(json.loads(rows["session"]), dict):

@@ -73,18 +73,16 @@ fn real_compiler_keeps_callback_calls_on_the_callback_and_roundtrips_provenance(
         "export function leaf() { return 1; }\nexport function start() { const work = () => leaf(); return work(); }\nexport function disconnected() { return 2; }\n",
     );
     let graph = run(vec![target(fixture.path(), "tsconfig.json")]).unwrap();
-    assert!(has_edge(&graph, "start", "work"));
-    assert!(has_edge(&graph, "work", "leaf"));
-    assert!(!has_edge(&graph, "start", "leaf"));
+    for (from, to, expected) in [
+        ("start", "work", true),
+        ("work", "leaf", true),
+        ("start", "leaf", false),
+    ] {
+        assert_eq!(has_edge(&graph, from, to), expected, "{from} -> {to}");
+    }
     assert!(graph.nodes.iter().any(|node| node.label == "disconnected"));
-    assert!(graph.edges.iter().all(|edge| !edge.provenance.is_empty()));
-    assert!(
-        graph
-            .edges
-            .iter()
-            .all(|edge| edge.classification().kind
-                == codecallnavigator::model::RelationshipKind::Call)
-    );
+    assert!(graph.edges.iter().all(|edge| !edge.provenance.is_empty()
+        && edge.classification().kind == codecallnavigator::model::RelationshipKind::Call));
     assert!(graph.engine_versions.contains("6.0."));
     let facts = graph.architecture.as_ref().unwrap();
     let source = facts
@@ -208,8 +206,7 @@ fn type_errors_and_cancellation_preserve_the_previous_generation() {
         String::from_utf8_lossy(&success.stderr)
     );
     let store = SqliteStore::open(cache.path()).unwrap();
-    let active = store.active_generation().unwrap().unwrap();
-    let graph = store.load_active().unwrap().unwrap();
+    let published = published_cli_graph(fixture.path(), &store);
     write(
         fixture.path(),
         "src/main.ts",
@@ -218,6 +215,7 @@ fn type_errors_and_cancellation_preserve_the_previous_generation() {
     let failure = cli();
     assert!(!failure.status.success());
     assert!(String::from_utf8_lossy(&failure.stderr).contains("2322"));
+    assert_cli_graph_preserved(fixture.path(), &store, &published);
     let result = analyze(
         vec![build],
         &AnalyzerRuntime::discover().unwrap(),
@@ -225,14 +223,138 @@ fn type_errors_and_cancellation_preserve_the_previous_generation() {
         &|_| {},
     );
     assert!(result.is_err());
-    assert_eq!(
-        store.active_generation().unwrap().as_deref(),
-        Some(active.as_str())
+    assert_cli_graph_preserved(fixture.path(), &store, &published);
+}
+
+#[test]
+#[ignore = "requires built CLI, Node24 and installed TypeScript6"]
+fn root_cli_retains_a_profiling_cache_for_a_fresh_metadata_only_store() {
+    let fixture = fixture();
+    write(
+        fixture.path(),
+        "src/main.ts",
+        "export function leaf() { return 1; } export function main() { return leaf(); }\n",
     );
-    assert_eq!(
-        store.load_active().unwrap().unwrap().nodes.len(),
-        graph.nodes.len()
+    let cache = tempfile::tempdir().unwrap();
+    let store = SqliteStore::open(cache.path()).unwrap();
+    store
+        .save_session(&serde_json::json!({"root":fixture.path(),"navigation":{}}))
+        .unwrap();
+    assert!(store.active_generation().unwrap().is_none());
+    let output = std::process::Command::new(env!("CARGO_BIN_EXE_codecallnavigator"))
+        .arg("analyze")
+        .arg(fixture.path().join("tsconfig.json"))
+        .env("CODECALLNAVIGATOR_DATA_DIR", cache.path())
+        .output()
+        .unwrap();
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
     );
+    let saved = store.load_session().unwrap().unwrap();
+    let marker = &saved["presentation_cache"];
+    assert_eq!(
+        marker["source_generation"],
+        saved["graph_context"]["generation"]
+    );
+    let cached = marker["cache_generation"]
+        .as_str()
+        .expect("Fresh CLI analysis did not retain a profiling cache");
+    assert_eq!(store.active_generation().unwrap().as_deref(), Some(cached));
+    let snapshot = query_cli_snapshot(&saved["graph_context"]);
+    let presentation = store.load_generation(cached).unwrap();
+    assert_eq!(
+        presentation.nodes.len(),
+        snapshot["result"]["nodes"].as_array().unwrap().len()
+    );
+    assert!(
+        !presentation.edges.is_empty(),
+        "Profiling cache must contain the analyzed relationships"
+    );
+}
+
+struct PublishedCliGraph {
+    bytes: Vec<u8>,
+    context: serde_json::Value,
+}
+
+fn published_cli_graph(project: &Path, store: &SqliteStore) -> PublishedCliGraph {
+    let bytes = fs::read(project.join(codecallnavigator::artifact::GRAPH_PATH)).unwrap();
+    let context = store.load_session().unwrap().unwrap()["graph_context"].clone();
+    let response = query_cli_snapshot(&context);
+    let published = PublishedCliGraph { bytes, context };
+    published.assert_identity(project, &response);
+    assert!(
+        response["result"]["nodes"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|node| node["label"] == "main")
+    );
+    published
+}
+
+impl PublishedCliGraph {
+    fn assert_identity(&self, project: &Path, response: &serde_json::Value) {
+        assert_eq!(
+            response["generation"],
+            blake3::hash(&self.bytes).to_hex().to_string()
+        );
+        assert_eq!(self.context["generation"], response["generation"]);
+        assert_eq!(
+            Path::new(self.context["project"].as_str().unwrap()),
+            project.canonicalize().unwrap()
+        );
+    }
+}
+
+fn assert_cli_graph_preserved(project: &Path, store: &SqliteStore, published: &PublishedCliGraph) {
+    assert_eq!(
+        fs::read(project.join(codecallnavigator::artifact::GRAPH_PATH)).unwrap(),
+        published.bytes
+    );
+    let context = store.load_session().unwrap().unwrap()["graph_context"].clone();
+    assert_eq!(context, published.context);
+    let response = query_cli_snapshot(&context);
+    assert_eq!(response["generation"], context["generation"]);
+}
+
+fn query_cli_snapshot(context: &serde_json::Value) -> serde_json::Value {
+    use std::{
+        io::Write,
+        process::{Command, Stdio},
+    };
+    let engine = std::env::var_os("CODECALLNAVIGATOR_TEST_ENGINE")
+        .or_else(|| std::env::var_os("CODECALLNAVIGATOR_ENGINE"))
+        .map(PathBuf::from)
+        .unwrap_or_else(|| {
+            Path::new(env!("CARGO_BIN_EXE_codecallnavigator"))
+                .with_file_name("codecallnavigator-engine")
+        });
+    let mut child = Command::new(engine)
+        .arg("query")
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .unwrap();
+    let request = serde_json::json!({"version":1,"project":context["project"],"roots":context["roots"],"expected_generation":context["generation"],"query":{"kind":"snapshot"}});
+    child
+        .stdin
+        .take()
+        .unwrap()
+        .write_all(request.to_string().as_bytes())
+        .unwrap();
+    let output = child.wait_with_output().unwrap();
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let response: serde_json::Value = serde_json::from_slice(&output.stdout).unwrap();
+    assert!(response["error"].is_null(), "{response}");
+    response
 }
 
 #[test]
@@ -318,16 +440,7 @@ fn framework_entries_and_render_edges_survive_the_production_pipeline() {
         .iter()
         .find(|edge| edge.kind == "react-render")
         .unwrap();
-    assert_eq!(graph.nodes[render.from as usize].label, "Page");
-    assert_eq!(graph.nodes[render.to as usize].label, "Child");
-    assert_eq!(
-        render.classification(),
-        codecallnavigator::model::RelationshipClassification {
-            kind: codecallnavigator::model::RelationshipKind::FrameworkLifecycle,
-            resolution: codecallnavigator::model::TargetResolution::Possible,
-        }
-    );
-    assert!(render.provenance.contains("react"));
+    assert_react_render(&graph, render);
     assert!(!has_edge(&graph, "Page", "effectLeaf"));
     let cache = tempfile::tempdir().unwrap();
     let store = SqliteStore::open(cache.path()).unwrap();
@@ -343,6 +456,24 @@ fn framework_entries_and_render_edges_survive_the_production_pipeline() {
             .provenance,
         render.provenance
     );
+}
+
+fn assert_react_render(graph: &GraphData, render: &codecallnavigator::model::Edge) {
+    assert_eq!(
+        (
+            graph.nodes[render.from as usize].label.as_str(),
+            graph.nodes[render.to as usize].label.as_str()
+        ),
+        ("Page", "Child")
+    );
+    assert_eq!(
+        render.classification(),
+        codecallnavigator::model::RelationshipClassification {
+            kind: codecallnavigator::model::RelationshipKind::FrameworkLifecycle,
+            resolution: codecallnavigator::model::TargetResolution::Possible,
+        }
+    );
+    assert!(render.provenance.contains("react"));
 }
 
 #[test]
@@ -495,12 +626,12 @@ fn multiple_selected_configs_bound_live_compiler_workers_and_preserve_graphs() {
     done.store(true, Ordering::Release);
     let maximum = sampler.join().unwrap();
     let graph = result.unwrap();
-    assert!(has_edge(&graph, "startOne", "leafOne"));
-    assert!(has_edge(&graph, "startTwo", "leafTwo"));
-    assert!(maximum > 0, "Sampler never observed a real compiler worker");
-    assert!(
-        maximum <= 1,
-        "Observed {maximum} live TypeScript compiler workers"
+    for (from, to) in [("startOne", "leafOne"), ("startTwo", "leafTwo")] {
+        assert!(has_edge(&graph, from, to));
+    }
+    assert_eq!(
+        maximum, 1,
+        "Expected exactly one live compiler worker to be observed"
     );
     assert_eq!(
         live_typescript_workers(&scope),

@@ -6,6 +6,7 @@ mod build_picker;
 mod cache_clear;
 mod canvas_gpu_performance;
 mod canvas_performance;
+mod cli_backend;
 mod function_flows;
 mod graph_fit;
 mod graph_studio;
@@ -16,7 +17,7 @@ mod source_popup;
 mod traversal;
 
 fn runtime() -> Runtime<State> {
-    let mut state = State::new();
+    let mut state = State::fixture();
     scenes::install(&mut state);
     let mut runtime = Runtime::new(state, view::view, (1420.0, 900.0), Env::new(true, 1.0));
     runtime.poll = Some(jobs::poll);
@@ -198,17 +199,81 @@ fn corrupt_session_is_recoverable_while_the_cached_graph_still_opens() {
             &std::sync::atomic::AtomicBool::new(false),
         )
         .unwrap();
-    store
-        .save_session(&serde_json::json!({ "navigation": "corrupt" }))
-        .unwrap();
-    let loaded = jobs::load_boot(directory.path().into()).unwrap();
-    assert!(loaded.graph.is_some());
+    let project = tempfile::tempdir().unwrap();
+    let project = project.path().canonicalize().unwrap();
+    let artifact = codecallnavigator::artifact::canonical(
+        &codecallnavigator::model::GraphData::default(),
+        &[("repo".into(), project.clone())],
+    )
+    .unwrap();
+    std::fs::create_dir(project.join(".codecallnavigator")).unwrap();
+    std::fs::write(
+        project.join(codecallnavigator::artifact::GRAPH_PATH),
+        artifact.bytes().unwrap(),
+    )
+    .unwrap();
+    let aliases = tempfile::tempdir().unwrap();
+    let alias = aliases.path().join("checkout");
+    std::os::unix::fs::symlink(&project, &alias).unwrap();
+    for addressing in [
+        serde_json::json!({"graph_context":crate::engine_client::Descriptor {project:project.clone(),roots:Vec::new(),generation:None},"root":"/another/pending/project"}),
+        serde_json::json!({"root":project}),
+        serde_json::json!({"root":alias}),
+    ] {
+        let mut saved = addressing;
+        saved["navigation"] = "corrupt".into();
+        let editable_root = saved["root"].clone();
+        store.save_session(&saved).unwrap();
+        let loaded = jobs::load_boot(directory.path().into()).unwrap();
+        assert_recovered_cli_graph(&loaded, &project);
+        assert_reusable_presentation_cache(&store, directory.path(), &loaded, &editable_root);
+    }
+}
+
+fn assert_recovered_cli_graph(loaded: &crate::workspace::Boot, project: &std::path::Path) {
+    let snapshot = loaded.graph.as_ref().unwrap();
+    let context = &snapshot.context.as_ref().unwrap().descriptor;
+    assert_eq!(
+        (snapshot.graph.data.nodes.len(), context.project.as_path()),
+        (0, project),
+        "Graph must come from CLI artifact and pin the physical checkout"
+    );
     assert!(loaded.session.is_none());
     assert!(
         loaded
             .warnings
             .iter()
             .any(|warning| warning.contains("navigation could not be restored"))
+    );
+}
+
+fn assert_reusable_presentation_cache(
+    store: &codecallnavigator::store::SqliteStore,
+    directory: &std::path::Path,
+    loaded: &crate::workspace::Boot,
+    editable_root: &serde_json::Value,
+) {
+    let saved = store.load_session().unwrap().unwrap();
+    assert_eq!(
+        (&saved["navigation"], &saved["root"]),
+        (&serde_json::json!("corrupt"), editable_root),
+        "Boot replaced raw navigation/root metadata"
+    );
+    let marker = &saved["presentation_cache"];
+    let generation = &loaded.graph.as_ref().unwrap().generation;
+    assert_eq!(marker["source_generation"], *generation);
+    let cached = marker["cache_generation"]
+        .as_str()
+        .expect("CLI snapshot must retain profiling cache");
+    assert_eq!(store.active_generation().unwrap().as_deref(), Some(cached));
+    let repeated = jobs::load_boot(directory.into()).unwrap();
+    assert_eq!(
+        (
+            &repeated.graph.unwrap().generation,
+            store.active_generation().unwrap().as_deref()
+        ),
+        (generation, Some(cached)),
+        "Unchanged CLI snapshot was republished"
     );
 }
 
@@ -271,7 +336,7 @@ fn search_and_neighbor_pages_can_reach_every_indexed_match() {
         ..Default::default()
     });
     let generation = store.publish(&data, &AtomicBool::new(false)).unwrap();
-    let mut state = State::new();
+    let mut state = State::fixture();
     state.graph = Some(Arc::new(GraphIndex::new(data).unwrap()));
     state.store = Some(store);
     state.generation = Some(generation);

@@ -1,5 +1,7 @@
 use super::{click, runtime};
-use codecallnavigator::architecture::{Assignment, LayerAssignments, LayerDefinition, Selection, file_key};
+use codecallnavigator::architecture::{
+    Assignment, LayerAssignments, LayerDefinition, Selection, file_key,
+};
 use std::sync::Arc;
 
 #[test]
@@ -89,7 +91,7 @@ fn assignments(state: &crate::app::State) -> Arc<LayerAssignments> {
 
 #[test]
 fn layer_controls_stay_inside_the_minimum_window_with_both_panes_open() {
-    let mut state = crate::app::State::new();
+    let mut state = crate::app::State::fixture();
     crate::scenes::install(&mut state);
     state.ui.sidebar.set_width(400.0);
     state.ui.inspector.set_width(420.0);

@@ -11,7 +11,7 @@ use rune::{Env, Key, KeyEvent, Mods, Runtime};
 use std::sync::Arc;
 
 fn runtime(size: (f32, f32), dark: bool) -> Runtime<State> {
-    let mut state = State::new();
+    let mut state = State::fixture();
     scenes::install(&mut state);
     state.root = rune::TextEdit::new("/repo");
     state.runtime = Some(Arc::new(crate::runtime::Runtime {
