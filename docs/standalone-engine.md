@@ -7,6 +7,10 @@ engine package includes both binaries beside the same analyzer resources.
 The agent skills use the independent [MCP adapter](mcp.md), configured for an
 explicit project and invoking `ccnavigator` from PATH without a binary path.
 
+Run the standalone package's `install.py` to expose the command in your terminal.
+See [installation, updates and removal](cli-installation.md) for default and
+custom-prefix instructions.
+
 `codecallnavigator-core` owns shared graph/flow/architecture contracts and pure graph
 operations. `codecallnavigator-engine` owns the coordinator and compiler-backed language
 adapters. The desktop owns presentation and workspace caching and invokes the

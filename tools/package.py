@@ -288,6 +288,8 @@ def make_engine(destination):
     resources.mkdir()
     shutil.copy2(ROOT / "target/release/codecallnavigator-engine", binary)
     shutil.copy2(ROOT / "target/release/ccnavigator", binary)
+    shutil.copy2(ROOT / "tools/install_cli.py", destination / "install.py")
+    shutil.copy2(ROOT / "docs/cli-installation.md", destination / "INSTALL.md")
     copy_analyzers(resources)
     dependency_notices(resources)
     write_build_manifest(ROOT, resources)

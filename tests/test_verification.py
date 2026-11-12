@@ -331,6 +331,10 @@ class VerificationPlans(unittest.TestCase):
         self.assertLess(names.index("release-acceptance-and-benchmarks"), names.index("package"))
         self.assertLess(names.index("cargo-check"), names.index("mcp-dependency-boundary"))
         self.assertLess(names.index("packaged-engine"), names.index("mcp-independent-install"))
+        self.assertLess(names.index("packaged-engine"), names.index("installed-cli"))
+        installed = steps[names.index("installed-cli")]
+        self.assertIn(str(ROOT / "dist/CodeCallNavigatorEngine"), installed.command)
+        self.assertIn(str(output / "installed-cli.json"), installed.command)
         mcp = steps[names.index("mcp-independent-install")]
         self.assertEqual(mcp.command[-1], str(ROOT / "dist/CodeCallNavigatorEngine/bin/codecallnavigator-engine"))
         self.assertLess(names.index('packaged-engine'), names.index('agent-cli-journeys'))
