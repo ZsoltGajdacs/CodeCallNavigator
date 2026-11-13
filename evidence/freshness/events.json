@@ -1,0 +1,1041 @@
+{
+  "schema": "codecallnavigator.freshness_events.v1",
+  "node": "v24.15.0",
+  "platform": "darwin",
+  "architecture": "arm64",
+  "method": "First recursive fs.watch event in isolated tiny temporary directory; no graph verification, production integration, dropped-event recovery or large-tree coverage.",
+  "records": [
+    {
+      "scenario": "body",
+      "repetition": 1,
+      "milliseconds": 13.568625000000004,
+      "event": "rename",
+      "filename": "app.ts"
+    },
+    {
+      "scenario": "body",
+      "repetition": 2,
+      "milliseconds": 39.89804199999999,
+      "event": "rename",
+      "filename": "app.ts"
+    },
+    {
+      "scenario": "body",
+      "repetition": 3,
+      "milliseconds": 38.34783300000001,
+      "event": "rename",
+      "filename": "app.ts"
+    },
+    {
+      "scenario": "body",
+      "repetition": 4,
+      "milliseconds": 36.334374999999994,
+      "event": "rename",
+      "filename": "app.ts"
+    },
+    {
+      "scenario": "body",
+      "repetition": 5,
+      "milliseconds": 2.681041999999991,
+      "event": "rename",
+      "filename": "app.ts"
+    },
+    {
+      "scenario": "body",
+      "repetition": 6,
+      "milliseconds": 6.009457999999995,
+      "event": "rename",
+      "filename": "app.ts"
+    },
+    {
+      "scenario": "body",
+      "repetition": 7,
+      "milliseconds": 32.064374999999984,
+      "event": "rename",
+      "filename": "app.ts"
+    },
+    {
+      "scenario": "body",
+      "repetition": 8,
+      "milliseconds": 34.806542000000036,
+      "event": "rename",
+      "filename": "app.ts"
+    },
+    {
+      "scenario": "body",
+      "repetition": 9,
+      "milliseconds": 2.5223329999999464,
+      "event": "rename",
+      "filename": "app.ts"
+    },
+    {
+      "scenario": "body",
+      "repetition": 10,
+      "milliseconds": 30.122416999999984,
+      "event": "rename",
+      "filename": "app.ts"
+    },
+    {
+      "scenario": "body",
+      "repetition": 11,
+      "milliseconds": 39.598749999999995,
+      "event": "rename",
+      "filename": "app.ts"
+    },
+    {
+      "scenario": "body",
+      "repetition": 12,
+      "milliseconds": 11.214999999999918,
+      "event": "rename",
+      "filename": "app.ts"
+    },
+    {
+      "scenario": "body",
+      "repetition": 13,
+      "milliseconds": 39.61008400000003,
+      "event": "rename",
+      "filename": "app.ts"
+    },
+    {
+      "scenario": "body",
+      "repetition": 14,
+      "milliseconds": 31.589083999999957,
+      "event": "rename",
+      "filename": "app.ts"
+    },
+    {
+      "scenario": "body",
+      "repetition": 15,
+      "milliseconds": 31.783708000000047,
+      "event": "rename",
+      "filename": "app.ts"
+    },
+    {
+      "scenario": "body",
+      "repetition": 16,
+      "milliseconds": 42.34733300000005,
+      "event": "rename",
+      "filename": "app.ts"
+    },
+    {
+      "scenario": "body",
+      "repetition": 17,
+      "milliseconds": 30.64129200000002,
+      "event": "rename",
+      "filename": "app.ts"
+    },
+    {
+      "scenario": "body",
+      "repetition": 18,
+      "milliseconds": 38.322791999999936,
+      "event": "rename",
+      "filename": "app.ts"
+    },
+    {
+      "scenario": "body",
+      "repetition": 19,
+      "milliseconds": 16.40141600000004,
+      "event": "rename",
+      "filename": "app.ts"
+    },
+    {
+      "scenario": "body",
+      "repetition": 20,
+      "milliseconds": 38.87475000000006,
+      "event": "rename",
+      "filename": "app.ts"
+    },
+    {
+      "scenario": "addition",
+      "repetition": 1,
+      "milliseconds": 33.90704200000005,
+      "event": "rename",
+      "filename": "added-1.ts"
+    },
+    {
+      "scenario": "addition",
+      "repetition": 2,
+      "milliseconds": 34.121624999999995,
+      "event": "rename",
+      "filename": "added-2.ts"
+    },
+    {
+      "scenario": "addition",
+      "repetition": 3,
+      "milliseconds": 38.3447920000001,
+      "event": "rename",
+      "filename": "added-3.ts"
+    },
+    {
+      "scenario": "addition",
+      "repetition": 4,
+      "milliseconds": 35.416165999999976,
+      "event": "rename",
+      "filename": "added-4.ts"
+    },
+    {
+      "scenario": "addition",
+      "repetition": 5,
+      "milliseconds": 39.162042000000156,
+      "event": "rename",
+      "filename": "added-5.ts"
+    },
+    {
+      "scenario": "addition",
+      "repetition": 6,
+      "milliseconds": 40.32629100000008,
+      "event": "rename",
+      "filename": "added-6.ts"
+    },
+    {
+      "scenario": "addition",
+      "repetition": 7,
+      "milliseconds": 32.066332999999986,
+      "event": "rename",
+      "filename": "added-7.ts"
+    },
+    {
+      "scenario": "addition",
+      "repetition": 8,
+      "milliseconds": 36.53204200000005,
+      "event": "rename",
+      "filename": "added-8.ts"
+    },
+    {
+      "scenario": "addition",
+      "repetition": 9,
+      "milliseconds": 38.17820800000004,
+      "event": "rename",
+      "filename": "added-9.ts"
+    },
+    {
+      "scenario": "addition",
+      "repetition": 10,
+      "milliseconds": 0.8258330000001024,
+      "event": "rename",
+      "filename": "added-10.ts"
+    },
+    {
+      "scenario": "addition",
+      "repetition": 11,
+      "milliseconds": 40.53424999999993,
+      "event": "rename",
+      "filename": "added-11.ts"
+    },
+    {
+      "scenario": "addition",
+      "repetition": 12,
+      "milliseconds": 3.293333000000075,
+      "event": "rename",
+      "filename": "added-12.ts"
+    },
+    {
+      "scenario": "addition",
+      "repetition": 13,
+      "milliseconds": 36.20054200000004,
+      "event": "rename",
+      "filename": "added-13.ts"
+    },
+    {
+      "scenario": "addition",
+      "repetition": 14,
+      "milliseconds": 39.7661250000001,
+      "event": "rename",
+      "filename": "added-14.ts"
+    },
+    {
+      "scenario": "addition",
+      "repetition": 15,
+      "milliseconds": 8.398042000000032,
+      "event": "rename",
+      "filename": "added-15.ts"
+    },
+    {
+      "scenario": "addition",
+      "repetition": 16,
+      "milliseconds": 37.78816700000016,
+      "event": "rename",
+      "filename": "added-16.ts"
+    },
+    {
+      "scenario": "addition",
+      "repetition": 17,
+      "milliseconds": 32.16825000000017,
+      "event": "rename",
+      "filename": "added-17.ts"
+    },
+    {
+      "scenario": "addition",
+      "repetition": 18,
+      "milliseconds": 31.455667000000176,
+      "event": "rename",
+      "filename": "added-18.ts"
+    },
+    {
+      "scenario": "addition",
+      "repetition": 19,
+      "milliseconds": 40.5346669999999,
+      "event": "rename",
+      "filename": "added-19.ts"
+    },
+    {
+      "scenario": "addition",
+      "repetition": 20,
+      "milliseconds": 35.36683300000004,
+      "event": "rename",
+      "filename": "added-20.ts"
+    },
+    {
+      "scenario": "deletion",
+      "repetition": 1,
+      "milliseconds": 33.89587500000016,
+      "event": "rename",
+      "filename": "app.ts"
+    },
+    {
+      "scenario": "deletion",
+      "repetition": 2,
+      "milliseconds": 39.992583000000195,
+      "event": "rename",
+      "filename": "app.ts"
+    },
+    {
+      "scenario": "deletion",
+      "repetition": 3,
+      "milliseconds": 30.032208999999966,
+      "event": "rename",
+      "filename": "app.ts"
+    },
+    {
+      "scenario": "deletion",
+      "repetition": 4,
+      "milliseconds": 30.82283299999972,
+      "event": "rename",
+      "filename": "app.ts"
+    },
+    {
+      "scenario": "deletion",
+      "repetition": 5,
+      "milliseconds": 44.214958000000024,
+      "event": "rename",
+      "filename": "app.ts"
+    },
+    {
+      "scenario": "deletion",
+      "repetition": 6,
+      "milliseconds": 38.3380830000001,
+      "event": "rename",
+      "filename": "app.ts"
+    },
+    {
+      "scenario": "deletion",
+      "repetition": 7,
+      "milliseconds": 34.896584000000075,
+      "event": "rename",
+      "filename": "app.ts"
+    },
+    {
+      "scenario": "deletion",
+      "repetition": 8,
+      "milliseconds": 38.005499999999756,
+      "event": "rename",
+      "filename": "app.ts"
+    },
+    {
+      "scenario": "deletion",
+      "repetition": 9,
+      "milliseconds": 40.675208999999995,
+      "event": "rename",
+      "filename": "app.ts"
+    },
+    {
+      "scenario": "deletion",
+      "repetition": 10,
+      "milliseconds": 37.95179199999984,
+      "event": "rename",
+      "filename": "app.ts"
+    },
+    {
+      "scenario": "deletion",
+      "repetition": 11,
+      "milliseconds": 38.50833300000022,
+      "event": "rename",
+      "filename": "app.ts"
+    },
+    {
+      "scenario": "deletion",
+      "repetition": 12,
+      "milliseconds": 41.057624999999916,
+      "event": "rename",
+      "filename": "app.ts"
+    },
+    {
+      "scenario": "deletion",
+      "repetition": 13,
+      "milliseconds": 39.65995799999973,
+      "event": "rename",
+      "filename": "app.ts"
+    },
+    {
+      "scenario": "deletion",
+      "repetition": 14,
+      "milliseconds": 33.31337500000018,
+      "event": "rename",
+      "filename": "app.ts"
+    },
+    {
+      "scenario": "deletion",
+      "repetition": 15,
+      "milliseconds": 40.29912499999955,
+      "event": "rename",
+      "filename": "app.ts"
+    },
+    {
+      "scenario": "deletion",
+      "repetition": 16,
+      "milliseconds": 41.04950000000008,
+      "event": "rename",
+      "filename": "app.ts"
+    },
+    {
+      "scenario": "deletion",
+      "repetition": 17,
+      "milliseconds": 11.44220899999982,
+      "event": "rename",
+      "filename": "app.ts"
+    },
+    {
+      "scenario": "deletion",
+      "repetition": 18,
+      "milliseconds": 38.2038749999997,
+      "event": "rename",
+      "filename": "app.ts"
+    },
+    {
+      "scenario": "deletion",
+      "repetition": 19,
+      "milliseconds": 39.742541000000074,
+      "event": "rename",
+      "filename": "app.ts"
+    },
+    {
+      "scenario": "deletion",
+      "repetition": 20,
+      "milliseconds": 3.751166000000012,
+      "event": "rename",
+      "filename": "app.ts"
+    },
+    {
+      "scenario": "rename",
+      "repetition": 1,
+      "milliseconds": 33.06562500000018,
+      "event": "rename",
+      "filename": "app.ts"
+    },
+    {
+      "scenario": "rename",
+      "repetition": 2,
+      "milliseconds": 36.41691699999956,
+      "event": "rename",
+      "filename": "app.ts"
+    },
+    {
+      "scenario": "rename",
+      "repetition": 3,
+      "milliseconds": 37.84937499999978,
+      "event": "rename",
+      "filename": "app.ts"
+    },
+    {
+      "scenario": "rename",
+      "repetition": 4,
+      "milliseconds": 39.90120799999977,
+      "event": "rename",
+      "filename": "app.ts"
+    },
+    {
+      "scenario": "rename",
+      "repetition": 5,
+      "milliseconds": 39.64216699999997,
+      "event": "rename",
+      "filename": "app.ts"
+    },
+    {
+      "scenario": "rename",
+      "repetition": 6,
+      "milliseconds": 40.95120799999995,
+      "event": "rename",
+      "filename": "app.ts"
+    },
+    {
+      "scenario": "rename",
+      "repetition": 7,
+      "milliseconds": 5.943958999999722,
+      "event": "rename",
+      "filename": "app.ts"
+    },
+    {
+      "scenario": "rename",
+      "repetition": 8,
+      "milliseconds": 37.092375000000175,
+      "event": "rename",
+      "filename": "app.ts"
+    },
+    {
+      "scenario": "rename",
+      "repetition": 9,
+      "milliseconds": 31.95745799999986,
+      "event": "rename",
+      "filename": "app.ts"
+    },
+    {
+      "scenario": "rename",
+      "repetition": 10,
+      "milliseconds": 40.35554100000036,
+      "event": "rename",
+      "filename": "app.ts"
+    },
+    {
+      "scenario": "rename",
+      "repetition": 11,
+      "milliseconds": 35.22054100000014,
+      "event": "rename",
+      "filename": "app.ts"
+    },
+    {
+      "scenario": "rename",
+      "repetition": 12,
+      "milliseconds": 40.07499999999982,
+      "event": "rename",
+      "filename": "app.ts"
+    },
+    {
+      "scenario": "rename",
+      "repetition": 13,
+      "milliseconds": 10.452584000000115,
+      "event": "rename",
+      "filename": "app.ts"
+    },
+    {
+      "scenario": "rename",
+      "repetition": 14,
+      "milliseconds": 41.118958999999904,
+      "event": "rename",
+      "filename": "app.ts"
+    },
+    {
+      "scenario": "rename",
+      "repetition": 15,
+      "milliseconds": 39.40883399999984,
+      "event": "rename",
+      "filename": "app.ts"
+    },
+    {
+      "scenario": "rename",
+      "repetition": 16,
+      "milliseconds": 35.20849999999973,
+      "event": "rename",
+      "filename": "app.ts"
+    },
+    {
+      "scenario": "rename",
+      "repetition": 17,
+      "milliseconds": 39.128208000000086,
+      "event": "rename",
+      "filename": "app.ts"
+    },
+    {
+      "scenario": "rename",
+      "repetition": 18,
+      "milliseconds": 40.53008299999965,
+      "event": "rename",
+      "filename": "app.ts"
+    },
+    {
+      "scenario": "rename",
+      "repetition": 19,
+      "milliseconds": 39.92620799999986,
+      "event": "rename",
+      "filename": "app.ts"
+    },
+    {
+      "scenario": "rename",
+      "repetition": 20,
+      "milliseconds": 43.06175000000076,
+      "event": "rename",
+      "filename": "app.ts"
+    },
+    {
+      "scenario": "atomic",
+      "repetition": 1,
+      "milliseconds": 12.445542000000387,
+      "event": "rename",
+      "filename": "app.ts"
+    },
+    {
+      "scenario": "atomic",
+      "repetition": 2,
+      "milliseconds": 12.060166999999637,
+      "event": "rename",
+      "filename": "app.ts"
+    },
+    {
+      "scenario": "atomic",
+      "repetition": 3,
+      "milliseconds": 40.08820800000012,
+      "event": "rename",
+      "filename": "app.ts"
+    },
+    {
+      "scenario": "atomic",
+      "repetition": 4,
+      "milliseconds": 36.82458399999996,
+      "event": "rename",
+      "filename": "app.ts"
+    },
+    {
+      "scenario": "atomic",
+      "repetition": 5,
+      "milliseconds": 35.58883400000013,
+      "event": "rename",
+      "filename": "app.ts"
+    },
+    {
+      "scenario": "atomic",
+      "repetition": 6,
+      "milliseconds": 38.84179099999983,
+      "event": "rename",
+      "filename": "app.ts"
+    },
+    {
+      "scenario": "atomic",
+      "repetition": 7,
+      "milliseconds": 32.01570900000024,
+      "event": "rename",
+      "filename": "app.ts"
+    },
+    {
+      "scenario": "atomic",
+      "repetition": 8,
+      "milliseconds": 32.94108299999971,
+      "event": "rename",
+      "filename": "app.ts"
+    },
+    {
+      "scenario": "atomic",
+      "repetition": 9,
+      "milliseconds": 41.006124999999884,
+      "event": "rename",
+      "filename": "app.ts"
+    },
+    {
+      "scenario": "atomic",
+      "repetition": 10,
+      "milliseconds": 5.768707999999606,
+      "event": "rename",
+      "filename": "app.ts"
+    },
+    {
+      "scenario": "atomic",
+      "repetition": 11,
+      "milliseconds": 40.977625000000444,
+      "event": "rename",
+      "filename": "app.ts"
+    },
+    {
+      "scenario": "atomic",
+      "repetition": 12,
+      "milliseconds": 38.640041999999994,
+      "event": "rename",
+      "filename": "app.ts"
+    },
+    {
+      "scenario": "atomic",
+      "repetition": 13,
+      "milliseconds": 41.28070800000023,
+      "event": "rename",
+      "filename": "app.ts"
+    },
+    {
+      "scenario": "atomic",
+      "repetition": 14,
+      "milliseconds": 38.942417000000205,
+      "event": "rename",
+      "filename": "app.ts"
+    },
+    {
+      "scenario": "atomic",
+      "repetition": 15,
+      "milliseconds": 38.733000000000175,
+      "event": "rename",
+      "filename": "app.ts"
+    },
+    {
+      "scenario": "atomic",
+      "repetition": 16,
+      "milliseconds": 41.81279200000063,
+      "event": "rename",
+      "filename": "app.ts"
+    },
+    {
+      "scenario": "atomic",
+      "repetition": 17,
+      "milliseconds": 43.07066699999996,
+      "event": "rename",
+      "filename": "app.ts"
+    },
+    {
+      "scenario": "atomic",
+      "repetition": 18,
+      "milliseconds": 40.3623749999997,
+      "event": "rename",
+      "filename": "app.ts"
+    },
+    {
+      "scenario": "atomic",
+      "repetition": 19,
+      "milliseconds": 39.87483299999985,
+      "event": "rename",
+      "filename": "app.ts"
+    },
+    {
+      "scenario": "atomic",
+      "repetition": 20,
+      "milliseconds": 33.04020799999944,
+      "event": "rename",
+      "filename": "app.ts"
+    },
+    {
+      "scenario": "burst",
+      "repetition": 1,
+      "milliseconds": 38.089625000000524,
+      "event": "rename",
+      "filename": "app.ts"
+    },
+    {
+      "scenario": "burst",
+      "repetition": 2,
+      "milliseconds": 39.82979199999954,
+      "event": "rename",
+      "filename": "app.ts"
+    },
+    {
+      "scenario": "burst",
+      "repetition": 3,
+      "milliseconds": 30.664958000000297,
+      "event": "rename",
+      "filename": "app.ts"
+    },
+    {
+      "scenario": "burst",
+      "repetition": 4,
+      "milliseconds": 35.17637500000001,
+      "event": "rename",
+      "filename": "app.ts"
+    },
+    {
+      "scenario": "burst",
+      "repetition": 5,
+      "milliseconds": 40.95479199999954,
+      "event": "rename",
+      "filename": "app.ts"
+    },
+    {
+      "scenario": "burst",
+      "repetition": 6,
+      "milliseconds": 39.137666999999965,
+      "event": "rename",
+      "filename": "app.ts"
+    },
+    {
+      "scenario": "burst",
+      "repetition": 7,
+      "milliseconds": 39.31929200000013,
+      "event": "rename",
+      "filename": "app.ts"
+    },
+    {
+      "scenario": "burst",
+      "repetition": 8,
+      "milliseconds": 32.33662499999991,
+      "event": "rename",
+      "filename": "app.ts"
+    },
+    {
+      "scenario": "burst",
+      "repetition": 9,
+      "milliseconds": 47.87733399999979,
+      "event": "rename",
+      "filename": "app.ts"
+    },
+    {
+      "scenario": "burst",
+      "repetition": 10,
+      "milliseconds": 4.41504200000054,
+      "event": "rename",
+      "filename": "app.ts"
+    },
+    {
+      "scenario": "burst",
+      "repetition": 11,
+      "milliseconds": 40.06162500000028,
+      "event": "rename",
+      "filename": "app.ts"
+    },
+    {
+      "scenario": "burst",
+      "repetition": 12,
+      "milliseconds": 31.133875000000444,
+      "event": "rename",
+      "filename": "app.ts"
+    },
+    {
+      "scenario": "burst",
+      "repetition": 13,
+      "milliseconds": 41.63704200000029,
+      "event": "rename",
+      "filename": "app.ts"
+    },
+    {
+      "scenario": "burst",
+      "repetition": 14,
+      "milliseconds": 39.008458000000246,
+      "event": "rename",
+      "filename": "app.ts"
+    },
+    {
+      "scenario": "burst",
+      "repetition": 15,
+      "milliseconds": 32.63287499999933,
+      "event": "rename",
+      "filename": "app.ts"
+    },
+    {
+      "scenario": "burst",
+      "repetition": 16,
+      "milliseconds": 39.021083000000544,
+      "event": "rename",
+      "filename": "app.ts"
+    },
+    {
+      "scenario": "burst",
+      "repetition": 17,
+      "milliseconds": 39.19029200000023,
+      "event": "rename",
+      "filename": "app.ts"
+    },
+    {
+      "scenario": "burst",
+      "repetition": 18,
+      "milliseconds": 40.51466700000037,
+      "event": "rename",
+      "filename": "app.ts"
+    },
+    {
+      "scenario": "burst",
+      "repetition": 19,
+      "milliseconds": 40.60516699999971,
+      "event": "rename",
+      "filename": "app.ts"
+    },
+    {
+      "scenario": "burst",
+      "repetition": 20,
+      "milliseconds": 40.83266700000058,
+      "event": "rename",
+      "filename": "app.ts"
+    },
+    {
+      "scenario": "configuration",
+      "repetition": 1,
+      "milliseconds": 39.05504099999962,
+      "event": "rename",
+      "filename": "tsconfig.json"
+    },
+    {
+      "scenario": "configuration",
+      "repetition": 2,
+      "milliseconds": 32.17283300000054,
+      "event": "rename",
+      "filename": "tsconfig.json"
+    },
+    {
+      "scenario": "configuration",
+      "repetition": 3,
+      "milliseconds": 38.52591600000051,
+      "event": "rename",
+      "filename": "tsconfig.json"
+    },
+    {
+      "scenario": "configuration",
+      "repetition": 4,
+      "milliseconds": 40.17383299999983,
+      "event": "rename",
+      "filename": "tsconfig.json"
+    },
+    {
+      "scenario": "configuration",
+      "repetition": 5,
+      "milliseconds": 41.29700000000048,
+      "event": "rename",
+      "filename": "tsconfig.json"
+    },
+    {
+      "scenario": "configuration",
+      "repetition": 6,
+      "milliseconds": 11.56762499999968,
+      "event": "rename",
+      "filename": "tsconfig.json"
+    },
+    {
+      "scenario": "configuration",
+      "repetition": 7,
+      "milliseconds": 39.27666700000009,
+      "event": "rename",
+      "filename": "tsconfig.json"
+    },
+    {
+      "scenario": "configuration",
+      "repetition": 8,
+      "milliseconds": 41.28620799999953,
+      "event": "rename",
+      "filename": "tsconfig.json"
+    },
+    {
+      "scenario": "configuration",
+      "repetition": 9,
+      "milliseconds": 38.42725000000064,
+      "event": "rename",
+      "filename": "tsconfig.json"
+    },
+    {
+      "scenario": "configuration",
+      "repetition": 10,
+      "milliseconds": 39.8902079999998,
+      "event": "rename",
+      "filename": "tsconfig.json"
+    },
+    {
+      "scenario": "configuration",
+      "repetition": 11,
+      "milliseconds": 41.55724999999984,
+      "event": "rename",
+      "filename": "tsconfig.json"
+    },
+    {
+      "scenario": "configuration",
+      "repetition": 12,
+      "milliseconds": 39.69591599999967,
+      "event": "rename",
+      "filename": "tsconfig.json"
+    },
+    {
+      "scenario": "configuration",
+      "repetition": 13,
+      "milliseconds": 41.26600000000053,
+      "event": "rename",
+      "filename": "tsconfig.json"
+    },
+    {
+      "scenario": "configuration",
+      "repetition": 14,
+      "milliseconds": 38.88991700000042,
+      "event": "rename",
+      "filename": "tsconfig.json"
+    },
+    {
+      "scenario": "configuration",
+      "repetition": 15,
+      "milliseconds": 40.843957999999475,
+      "event": "rename",
+      "filename": "tsconfig.json"
+    },
+    {
+      "scenario": "configuration",
+      "repetition": 16,
+      "milliseconds": 40.064790999999786,
+      "event": "rename",
+      "filename": "tsconfig.json"
+    },
+    {
+      "scenario": "configuration",
+      "repetition": 17,
+      "milliseconds": 39.802458999999544,
+      "event": "rename",
+      "filename": "tsconfig.json"
+    },
+    {
+      "scenario": "configuration",
+      "repetition": 18,
+      "milliseconds": 11.041458999999122,
+      "event": "rename",
+      "filename": "tsconfig.json"
+    },
+    {
+      "scenario": "configuration",
+      "repetition": 19,
+      "milliseconds": 41.415124999999534,
+      "event": "rename",
+      "filename": "tsconfig.json"
+    },
+    {
+      "scenario": "configuration",
+      "repetition": 20,
+      "milliseconds": 38.614040999999816,
+      "event": "rename",
+      "filename": "tsconfig.json"
+    }
+  ],
+  "summary": {
+    "body": {
+      "count": 20,
+      "p50_ms": 31.783708000000047,
+      "p95_ms": 39.89804199999999,
+      "max_ms": 42.34733300000005
+    },
+    "addition": {
+      "count": 20,
+      "p50_ms": 35.416165999999976,
+      "p95_ms": 40.53424999999993,
+      "max_ms": 40.5346669999999
+    },
+    "deletion": {
+      "count": 20,
+      "p50_ms": 38.2038749999997,
+      "p95_ms": 41.057624999999916,
+      "max_ms": 44.214958000000024
+    },
+    "rename": {
+      "count": 20,
+      "p50_ms": 39.128208000000086,
+      "p95_ms": 41.118958999999904,
+      "max_ms": 43.06175000000076
+    },
+    "atomic": {
+      "count": 20,
+      "p50_ms": 38.733000000000175,
+      "p95_ms": 41.81279200000063,
+      "max_ms": 43.07066699999996
+    },
+    "burst": {
+      "count": 20,
+      "p50_ms": 39.137666999999965,
+      "p95_ms": 41.63704200000029,
+      "max_ms": 47.87733399999979
+    },
+    "configuration": {
+      "count": 20,
+      "p50_ms": 39.69591599999967,
+      "p95_ms": 41.415124999999534,
+      "max_ms": 41.55724999999984
+    }
+  },
+  "idle": {
+    "duration_ms": 2001.4343339999996,
+    "cpu_microseconds": {
+      "user": 175,
+      "system": 41
+    },
+    "events": 0
+  }
+}

@@ -1,0 +1,393 @@
+{
+  "schema": "codecallnavigator.freshness-research.v1",
+  "requested_warm_runs": 20,
+  "summary": {
+    "csharp/body": {
+      "cold_records": 1,
+      "warm_records": 20,
+      "failed_records": 0,
+      "detection_ms": {
+        "count": 20,
+        "median": 19.39614603179507,
+        "p95": 20.935875014401972,
+        "maximum": 35.99983296589926
+      },
+      "refresh_ms": {
+        "count": 20,
+        "median": 1832.3508120083716,
+        "p95": 2015.0898330030032,
+        "maximum": 2263.547458976973
+      },
+      "adoption_ms": {
+        "count": 20,
+        "median": 20.59366650064476,
+        "p95": 20.885540987364948,
+        "maximum": 20.948207995388657
+      },
+      "save_to_adoption_ms": {
+        "count": 20,
+        "median": 1873.740479000844,
+        "p95": 2047.497832973022,
+        "maximum": 2320.2528749243356
+      },
+      "refresh_cpu_seconds": {
+        "count": 20,
+        "median": 2.302532999999999,
+        "p95": 2.4963400000000036,
+        "maximum": 2.631246000000006
+      },
+      "refresh_sampled_peak_tree_rss_bytes": {
+        "count": 20,
+        "median": 269180928.0,
+        "p95": 277020672,
+        "maximum": 277053440
+      },
+      "equivalent": true
+    },
+    "csharp/signature": {
+      "cold_records": 1,
+      "warm_records": 20,
+      "failed_records": 0,
+      "detection_ms": {
+        "count": 20,
+        "median": 15.385270991828293,
+        "p95": 20.86704201065004,
+        "maximum": 21.072499977890402
+      },
+      "refresh_ms": {
+        "count": 20,
+        "median": 1826.5533960075118,
+        "p95": 2033.842291973997,
+        "maximum": 2061.8127919733524
+      },
+      "adoption_ms": {
+        "count": 20,
+        "median": 20.005500002298504,
+        "p95": 20.99599997745827,
+        "maximum": 40.616124984808266
+      },
+      "save_to_adoption_ms": {
+        "count": 20,
+        "median": 1858.3046259591356,
+        "p95": 2074.174041976221,
+        "maximum": 2101.5641248668544
+      },
+      "refresh_cpu_seconds": {
+        "count": 20,
+        "median": 2.311818500000003,
+        "p95": 2.44298000000002,
+        "maximum": 2.456657
+      },
+      "refresh_sampled_peak_tree_rss_bytes": {
+        "count": 20,
+        "median": 268992512.0,
+        "p95": 276742144,
+        "maximum": 277217280
+      },
+      "equivalent": true
+    },
+    "csharp/cross_file": {
+      "cold_records": 1,
+      "warm_records": 20,
+      "failed_records": 0,
+      "detection_ms": {
+        "count": 20,
+        "median": 20.059792004758492,
+        "p95": 20.95020900014788,
+        "maximum": 20.963124989066273
+      },
+      "refresh_ms": {
+        "count": 20,
+        "median": 1905.0673749588896,
+        "p95": 1978.8345000124536,
+        "maximum": 1993.2589590316638
+      },
+      "adoption_ms": {
+        "count": 20,
+        "median": 19.69425001880154,
+        "p95": 20.930458966176957,
+        "maximum": 21.108584012836218
+      },
+      "save_to_adoption_ms": {
+        "count": 20,
+        "median": 1942.3436035285704,
+        "p95": 2016.572000051383,
+        "maximum": 2018.747916969005
+      },
+      "refresh_cpu_seconds": {
+        "count": 20,
+        "median": 2.365322499999994,
+        "p95": 2.4054180000000045,
+        "maximum": 2.4202350000000123
+      },
+      "refresh_sampled_peak_tree_rss_bytes": {
+        "count": 20,
+        "median": 268648448.0,
+        "p95": 277069824,
+        "maximum": 277184512
+      },
+      "equivalent": true
+    },
+    "csharp/addition": {
+      "cold_records": 1,
+      "warm_records": 20,
+      "failed_records": 0,
+      "detection_ms": {
+        "count": 20,
+        "median": 19.80381246539764,
+        "p95": 20.902416028548032,
+        "maximum": 21.037291968241334
+      },
+      "refresh_ms": {
+        "count": 20,
+        "median": 1838.9622715185396,
+        "p95": 1954.5557500096038,
+        "maximum": 1966.8190000229515
+      },
+      "adoption_ms": {
+        "count": 20,
+        "median": 20.555082999635488,
+        "p95": 21.256875013932586,
+        "maximum": 40.38129199761897
+      },
+      "save_to_adoption_ms": {
+        "count": 20,
+        "median": 1879.6635835024063,
+        "p95": 1998.4669570694678,
+        "maximum": 1999.2349579697475
+      },
+      "refresh_cpu_seconds": {
+        "count": 20,
+        "median": 2.3195050000000066,
+        "p95": 2.395975000000007,
+        "maximum": 2.4257419999999996
+      },
+      "refresh_sampled_peak_tree_rss_bytes": {
+        "count": 20,
+        "median": 268967936.0,
+        "p95": 277118976,
+        "maximum": 277299200
+      },
+      "equivalent": true
+    },
+    "csharp/deletion": {
+      "cold_records": 1,
+      "warm_records": 20,
+      "failed_records": 0,
+      "detection_ms": {
+        "count": 20,
+        "median": 20.63937549246475,
+        "p95": 21.266499999910593,
+        "maximum": 21.329124982003123
+      },
+      "refresh_ms": {
+        "count": 20,
+        "median": 1770.9868334932253,
+        "p95": 1959.339082997758,
+        "maximum": 1963.3679169928655
+      },
+      "adoption_ms": {
+        "count": 20,
+        "median": 20.85270849056542,
+        "p95": 23.618832987267524,
+        "maximum": 40.430583991110325
+      },
+      "save_to_adoption_ms": {
+        "count": 20,
+        "median": 1812.028125015786,
+        "p95": 1999.0090019418858,
+        "maximum": 2004.982459009625
+      },
+      "refresh_cpu_seconds": {
+        "count": 20,
+        "median": 2.1917270000000215,
+        "p95": 2.36091500000002,
+        "maximum": 2.3735900000000356
+      },
+      "refresh_sampled_peak_tree_rss_bytes": {
+        "count": 20,
+        "median": 268681216.0,
+        "p95": 276611072,
+        "maximum": 276742144
+      },
+      "equivalent": true
+    },
+    "csharp/rename": {
+      "cold_records": 1,
+      "warm_records": 20,
+      "failed_records": 0,
+      "detection_ms": {
+        "count": 20,
+        "median": 19.246291543822736,
+        "p95": 30.547292029950768,
+        "maximum": 36.20020899688825
+      },
+      "refresh_ms": {
+        "count": 20,
+        "median": 2757.693395979004,
+        "p95": 4372.489458997734,
+        "maximum": 4565.204457961954
+      },
+      "adoption_ms": {
+        "count": 20,
+        "median": 19.49962499202229,
+        "p95": 32.85741701256484,
+        "maximum": 34.14487501140684
+      },
+      "save_to_adoption_ms": {
+        "count": 20,
+        "median": 2802.156501013087,
+        "p95": 4403.525126108434,
+        "maximum": 4619.329125969671
+      },
+      "refresh_cpu_seconds": {
+        "count": 20,
+        "median": 2.8658195000000006,
+        "p95": 3.5667739999999952,
+        "maximum": 3.6218050000000375
+      },
+      "refresh_sampled_peak_tree_rss_bytes": {
+        "count": 20,
+        "median": 267853824.0,
+        "p95": 277200896,
+        "maximum": 277741568
+      },
+      "equivalent": true
+    },
+    "csharp/atomic_save": {
+      "cold_records": 1,
+      "warm_records": 20,
+      "failed_records": 0,
+      "detection_ms": {
+        "count": 20,
+        "median": 11.549271002877504,
+        "p95": 23.088957997970283,
+        "maximum": 27.56879199296236
+      },
+      "refresh_ms": {
+        "count": 20,
+        "median": 2113.099562993739,
+        "p95": 2866.666207963135,
+        "maximum": 2929.049375001341
+      },
+      "adoption_ms": {
+        "count": 20,
+        "median": 12.806104001356289,
+        "p95": 24.18700000271201,
+        "maximum": 25.06916702259332
+      },
+      "save_to_adoption_ms": {
+        "count": 20,
+        "median": 2135.9533130016644,
+        "p95": 2901.8802500213496,
+        "maximum": 2966.5938750258647
+      },
+      "refresh_cpu_seconds": {
+        "count": 20,
+        "median": 2.603441999999987,
+        "p95": 2.88065899999998,
+        "maximum": 2.980860999999976
+      },
+      "refresh_sampled_peak_tree_rss_bytes": {
+        "count": 20,
+        "median": 268967936.0,
+        "p95": 277528576,
+        "maximum": 279052288
+      },
+      "equivalent": true
+    },
+    "csharp/burst": {
+      "cold_records": 1,
+      "warm_records": 20,
+      "failed_records": 0,
+      "detection_ms": {
+        "count": 20,
+        "median": 13.13002101960592,
+        "p95": 23.423625039868057,
+        "maximum": 44.357583043165505
+      },
+      "refresh_ms": {
+        "count": 20,
+        "median": 2569.63085453026,
+        "p95": 2788.9778329990804,
+        "maximum": 2866.778958006762
+      },
+      "adoption_ms": {
+        "count": 20,
+        "median": 13.122791482601315,
+        "p95": 24.232333002146333,
+        "maximum": 27.924166002776474
+      },
+      "save_to_adoption_ms": {
+        "count": 20,
+        "median": 2595.7230835338123,
+        "p95": 2828.857250045985,
+        "maximum": 2899.6928339474835
+      },
+      "refresh_cpu_seconds": {
+        "count": 20,
+        "median": 2.9465959999999853,
+        "p95": 3.109084999999993,
+        "maximum": 3.125858999999963
+      },
+      "refresh_sampled_peak_tree_rss_bytes": {
+        "count": 20,
+        "median": 268738560.0,
+        "p95": 277331968,
+        "maximum": 277463040
+      },
+      "equivalent": true
+    },
+    "csharp/configuration": {
+      "cold_records": 1,
+      "warm_records": 20,
+      "failed_records": 0,
+      "detection_ms": {
+        "count": 20,
+        "median": 21.67295801336877,
+        "p95": 43.910459033213556,
+        "maximum": 319.86225000582635
+      },
+      "refresh_ms": {
+        "count": 20,
+        "median": 3415.4274164757226,
+        "p95": 5207.441958016716,
+        "maximum": 7052.664333023131
+      },
+      "adoption_ms": {
+        "count": 20,
+        "median": 14.571875013643876,
+        "p95": 30.06920899497345,
+        "maximum": 42.32041700743139
+      },
+      "save_to_adoption_ms": {
+        "count": 20,
+        "median": 3452.0456044992898,
+        "p95": 5269.834957027342,
+        "maximum": 7116.812042018864
+      },
+      "refresh_cpu_seconds": {
+        "count": 20,
+        "median": 3.246244499999989,
+        "p95": 3.5613700000000392,
+        "maximum": 3.7161479999999756
+      },
+      "refresh_sampled_peak_tree_rss_bytes": {
+        "count": 20,
+        "median": 263962624.0,
+        "p95": 277807104,
+        "maximum": 277856256
+      },
+      "equivalent": true
+    }
+  },
+  "failure_journeys": {
+    "csharp": {
+      "invalid_code_rejected": true,
+      "previous_artifact_preserved": true,
+      "generation_mismatch_rejected": true,
+      "generation": "6b43dbb999ef62dfea14c61f314d36b9d18396c375b3294a735bb5a1df974d15",
+      "failure": "{\"measurement\": {\"milliseconds\": 3688.9057499938644, \"exit_code\": 2, \"timed_out\": false, \"cpu_seconds\": 3.44170100000008, \"sampled_peak_tree_rss_bytes\": 260227072, \"resource_samples\": 23, \"sampling_errors\": [], \"stdout\": \"{\\\"event\\\":\\\"hello\\\",\\\"version\\\":1}\\n{\\\"event\\\":\\\"progress\\\",\\\"message\\\":\\\"Analyzing ccn-freshness-csharp-s33x20t9 / Freshness (C# project) (1/1)\\\"}\\n{\\\"event\\\":\\\"progress\\\",\\\"message\\\":\\\"Restoring ccn-freshness-csharp-s33x20t9 / Freshness (C# project)\\u2026\\\"}\\n{\\\"event\\\":\\\"progress\\\",\\\"message\\\":\\\"Reading compiler call graph for ccn-freshness-csharp-s33x20t9 / Freshness (C# project)\\u2026\\\"}\\n{\\\"event\\\":\\\"failed\\\",\\\"message\\\":\\\"Analysis failed. Logs: /var/folders/9t/j3qnf2cn5fx1tqgq8gm50vf80000gq/T/codecallnavigator-92981-1794557616330445000-0/0: callatlas failed (exit status: 1). \\\"}\\n\", \"stderr\": \"Analysis failed. Logs: /var/folders/9t/j3qnf2cn5fx1tqgq8gm50vf80000gq/T/codecallnavigator-92981-1794557616330445000-0/0: callatlas failed (exit status: 1). \\n\"}, \"events\": [{\"event\": \"hello\", \"version\": 1}, {\"event\": \"progress\", \"message\": \"Analyzing ccn-freshness-csharp-s33x20t9 / Freshness (C# project) (1/1)\"}, {\"event\": \"progress\", \"message\": \"Restoring ccn-freshness-csharp-s33x20t9 / Freshness (C# project)\\u2026\"}, {\"event\": \"progress\", \"message\": \"Reading compiler call graph for ccn-freshness-csharp-s33x20t9 / Freshness (C# project)\\u2026\"}, {\"event\": \"failed\", \"message\": \"Analysis failed. Logs: /var/folders/9t/j3qnf2cn5fx1tqgq8gm50vf80000gq/T/codecallnavigator-92981-1794557616330445000-0/0: callatlas failed (exit status: 1). \"}]}"
+    }
+  }
+}

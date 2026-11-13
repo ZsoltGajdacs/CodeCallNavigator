@@ -1,0 +1,47 @@
+{
+  "summary": {
+    "gradle/body": {
+      "cold_records": 1,
+      "warm_records": 20,
+      "failed_records": 0,
+      "detection_ms": {
+        "count": 20,
+        "median": 12.687625508988276,
+        "p95": 21.22987504117191,
+        "maximum": 21.445500024128705
+      },
+      "refresh_ms": {
+        "count": 20,
+        "median": 10723.98491651984,
+        "p95": 13120.225833030418,
+        "maximum": 13680.582041037269
+      },
+      "adoption_ms": {
+        "count": 20,
+        "median": 12.160708516603336,
+        "p95": 20.71129099931568,
+        "maximum": 25.95304202986881
+      },
+      "save_to_adoption_ms": {
+        "count": 20,
+        "median": 10752.012750017457,
+        "p95": 13155.085250036791,
+        "maximum": 13703.971625014674
+      },
+      "refresh_cpu_seconds": {
+        "count": 20,
+        "median": 23.516709499999997,
+        "p95": 24.98562300000001,
+        "maximum": 25.297596000000013
+      },
+      "refresh_sampled_peak_tree_rss_bytes": {
+        "count": 20,
+        "median": 646569984.0,
+        "p95": 658276352,
+        "maximum": 660176896
+      },
+      "equivalent": true
+    }
+  },
+  "method": "Completed body scenario retained from sequential sweep; other partial rows excluded from final timing selection."
+}

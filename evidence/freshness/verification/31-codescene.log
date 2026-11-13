@@ -1,0 +1,100 @@
+{
+  "status": "passed",
+  "reviews": [
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "tools/freshness_measurement.py"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "tools/freshness_scenarios.py"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "tools/measure_freshness.py"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "tools/measure_freshness_corpus.py"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "tools/measure_freshness_events.js"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "tools/test_freshness.py"
+    }
+  ],
+  "safeguard": {
+    "results": [],
+    "quality_gates": "passed",
+    "metadata": {
+      "checked-file-count": 6,
+      "code-health-eligible-file-count": 6,
+      "status": "no-issues-found",
+      "total-modified-file-count": 60
+    }
+  },
+  "errors": [],
+  "skipped_files": [
+    ".backlog/tasks/task-59 - Explore-near-real-time-graph-freshness-during-code-edits.md",
+    ".backlog/tasks/task-60 - Expose-typed-CLI-owned-saved-input-freshness-observations.md",
+    ".backlog/tasks/task-61 - Adopt-typed-freshness-and-new-generations-in-desktop-and-MCP.md",
+    ".backlog/tasks/task-62 - Add-opt-in-engine-owned-automatic-graph-refresh.md",
+    ".backlog/tasks/task-63 - Make-C-cold-and-warm-analysis-input-coverage-consistent.md",
+    "docs/graph-freshness.md",
+    "evidence/freshness/README.md",
+    "evidence/freshness/clean-audit/audit-conclusions.json",
+    "evidence/freshness/clean-audit/csharp-body-candidate.json",
+    "evidence/freshness/clean-audit/csharp-body-reference.json",
+    "evidence/freshness/clean-audit/metadata.json",
+    "evidence/freshness/clean-audit/samples.jsonl",
+    "evidence/freshness/clean-audit/summary.json",
+    "evidence/freshness/csharp-import-probe.json",
+    "evidence/freshness/csharp/metadata.json",
+    "evidence/freshness/csharp/samples.jsonl",
+    "evidence/freshness/csharp/summary.json",
+    "evidence/freshness/events.json",
+    "evidence/freshness/gradle-final/metadata.json",
+    "evidence/freshness/gradle-final/samples.jsonl",
+    "evidence/freshness/gradle-final/summary-body.json",
+    "evidence/freshness/gradle-part-1/metadata.json",
+    "evidence/freshness/gradle-part-1/samples.jsonl",
+    "evidence/freshness/gradle-part-2/metadata.json",
+    "evidence/freshness/gradle-part-2/samples.jsonl",
+    "evidence/freshness/gradle-part-3/metadata.json",
+    "evidence/freshness/gradle-part-3/samples.jsonl",
+    "evidence/freshness/gradle-part-4/metadata.json",
+    "evidence/freshness/gradle-part-4/samples.jsonl",
+    "evidence/freshness/gradle-verified/metadata.json",
+    "evidence/freshness/gradle-verified/samples.jsonl",
+    "evidence/freshness/gradle/metadata.json",
+    "evidence/freshness/gradle/samples.jsonl",
+    "evidence/freshness/gradle/summary.json",
+    "evidence/freshness/large-project-attempt.json",
+    "evidence/freshness/large-project-attempt.log",
+    "evidence/freshness/maven-verified/metadata.json",
+    "evidence/freshness/maven-verified/samples.jsonl",
+    "evidence/freshness/maven/metadata.json",
+    "evidence/freshness/maven/samples.jsonl",
+    "evidence/freshness/maven/summary.json",
+    "evidence/freshness/provenance.json",
+    "evidence/freshness/storyengine/samples.jsonl",
+    "evidence/freshness/typescript/metadata.json",
+    "evidence/freshness/typescript/samples.jsonl",
+    "evidence/freshness/typescript/summary.json"
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "schema": "codecallnavigator.freshness-research.v1",
+  "requested_warm_runs": 20,
+  "summary": {},
+  "failure_journeys": {
+    "maven": {
+      "unavailable": "Expected one target, found []"
+    }
+  }
+}
