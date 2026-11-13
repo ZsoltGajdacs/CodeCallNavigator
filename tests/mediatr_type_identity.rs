@@ -51,7 +51,7 @@ fn fixture(root: &Path) {
 }
 
 #[test]
-#[ignore = "requires pinned CallAtlas, .NET10 and cached public MediatR12.4.1"]
+#[ignore = "requires pinned CallAtlas, .NET11 and cached public MediatR12.4.1"]
 fn closed_compiler_types_and_direct_await_have_distinct_evidence() {
     let root = tempfile::Builder::new()
         .prefix("CodeCallNavigator MediatR types ")
@@ -112,7 +112,7 @@ fn closed_compiler_types_and_direct_await_have_distinct_evidence() {
 }
 
 #[test]
-#[ignore = "requires pinned CallAtlas, .NET10 and cached public MediatR12.4.1"]
+#[ignore = "requires pinned CallAtlas, .NET11 and cached public MediatR12.4.1"]
 fn unsupported_handler_reports_compiler_error_instead_of_internal_exception() {
     let root = tempfile::tempdir().unwrap();
     fixture(root.path());
@@ -126,11 +126,17 @@ fn unsupported_handler_reports_compiler_error_instead_of_internal_exception() {
         .arg(root.path().join("NuGet.config"))
         .output()
         .unwrap();
-    assert!(restore.status.success());
+    assert!(
+        restore.status.success(),
+        "fixture restore failed ({}):\n{}\n{}",
+        restore.status,
+        String::from_utf8_lossy(&restore.stdout),
+        String::from_utf8_lossy(&restore.stderr)
+    );
     let runtime = AnalyzerRuntime::discover().unwrap();
     let analyzer = [
         "analyzers/callatlas/callatlas.dll",
-        "vendor/callatlas/src/CallAtlas.Cli/bin/Release/net10.0/callatlas.dll",
+        "vendor/callatlas/src/CallAtlas.Cli/bin/Release/net11.0/callatlas.dll",
     ]
     .map(|path| runtime.bundle_root.join(path))
     .into_iter()

@@ -31,3 +31,4 @@
 
 # Isolated, locked Python verification dependencies.
 /.venv-verification/
+/.idea/*

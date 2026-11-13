@@ -2,7 +2,9 @@
 
 import hashlib
 import importlib.util
+import json
 from pathlib import Path
+import shutil
 import subprocess
 import tempfile
 import unittest
@@ -65,6 +67,39 @@ class RepositoryBootstrapTests(unittest.TestCase):
         self.assertEqual(git(self.checkout, "rev-parse", "HEAD"), self.newer)
         self.assertEqual(edited.read_text(), "uncommitted user change\n")
         self.assertIn("dependency.txt", git(self.checkout, "status", "--porcelain"))
+
+
+@unittest.skipUnless(shutil.which("dotnet"), "Requires installed .NET SDK")
+class CallAtlasBuildTests(unittest.TestCase):
+    def test_patched_framework_builds_cli_and_core_into_packaged_output(self):
+        with tempfile.TemporaryDirectory(prefix="codecallnavigator-dotnet-build-") as temporary:
+            root = Path(temporary)
+            project = root / "vendor/callatlas/src/CallAtlas.Cli"
+            project.mkdir(parents=True)
+            source = project / "CallAtlas.Cli.csproj"
+            contents = '<Project Sdk="Microsoft.NET.Sdk"><PropertyGroup><OutputType>Exe</OutputType><TargetFramework>net11.0</TargetFramework><AssemblyName>callatlas</AssemblyName></PropertyGroup><ItemGroup><ProjectReference Include="../CallAtlas.Core/CallAtlas.Core.csproj" /></ItemGroup></Project>'
+            source.write_text(contents)
+            core = project.with_name("CallAtlas.Core")
+            core.mkdir()
+            core_source = core / "CallAtlas.Core.csproj"
+            core_contents = '<Project Sdk="Microsoft.NET.Sdk"><PropertyGroup><TargetFramework>net11.0</TargetFramework></PropertyGroup></Project>'
+            core_source.write_text(core_contents)
+            (core / "FixtureCore.cs").write_text('public static class FixtureCore { public static string Value => "fixture"; }')
+            (project / "Program.cs").write_text('System.Console.WriteLine(FixtureCore.Value);')
+            (root / "NuGet.config").write_text('<configuration><packageSources><clear /></packageSources></configuration>')
+            original_root = bootstrap.ROOT
+            bootstrap.ROOT = root
+            try:
+                bootstrap.build_callatlas()
+            finally:
+                bootstrap.ROOT = original_root
+            output = bootstrap.callatlas_output(root)
+            self.assertTrue((output / "callatlas.dll").is_file())
+            runtime = json.loads((output / "callatlas.runtimeconfig.json").read_text())
+            self.assertEqual(runtime["runtimeOptions"]["tfm"], "net11.0")
+            self.assertEqual(source.read_text(), contents)
+            self.assertEqual(core_source.read_text(), core_contents)
+            self.assertTrue((core / "bin/Release/net11.0/CallAtlas.Core.dll").is_file())
 
 
 class PatchBootstrapTests(unittest.TestCase):
@@ -133,6 +168,11 @@ class PatchBootstrapTests(unittest.TestCase):
 
     def test_exact_older_patch_upgrades_without_losing_other_supported_versions(self):
         self.save_patch("older_", "assembly identities\nolder entry metadata\n")
+        bootstrap.apply_patch(self.spec)
+        self.assert_current()
+
+    def test_exact_pre_sdk_patch_upgrades_without_losing_other_supported_versions(self):
+        self.save_patch("pre_sdk_", "assembly identities\nprevious SDK target\n")
         bootstrap.apply_patch(self.spec)
         self.assert_current()
 

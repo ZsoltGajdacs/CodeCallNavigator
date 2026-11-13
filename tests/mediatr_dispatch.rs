@@ -74,7 +74,7 @@ fn assert_evidence(graph: &GraphData, edge: &Edge) {
 }
 
 #[test]
-#[ignore = "requires pinned CallAtlas, .NET10 and restored public MediatR fixture"]
+#[ignore = "requires pinned CallAtlas, .NET11 and restored public MediatR fixture"]
 fn real_framework_dispatch_uses_request_symbols_and_application_scope() {
     let project =
         Path::new(env!("CARGO_MANIFEST_DIR")).join("fixtures/mediatr-dispatch/MediatRDispatch.sln");

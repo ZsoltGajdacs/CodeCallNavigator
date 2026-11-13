@@ -34,7 +34,8 @@ impl AnalyzerRuntime {
             .and_then(Path::parent)
             .unwrap_or(Path::new("."))
             .join("Resources");
-        let bundle_root = if let Some(configured) = std::env::var_os("CODECALLNAVIGATOR_RESOURCES") {
+        let bundle_root = if let Some(configured) = std::env::var_os("CODECALLNAVIGATOR_RESOURCES")
+        {
             let root = PathBuf::from(configured);
             ensure!(
                 root.is_dir(),
@@ -59,7 +60,7 @@ impl AnalyzerRuntime {
             &self.bundle_root,
             &[
                 "analyzers/callatlas/callatlas.dll",
-                "vendor/callatlas/src/CallAtlas.Cli/bin/Release/net10.0/callatlas.dll",
+                "vendor/callatlas/src/CallAtlas.Cli/bin/Release/net11.0/callatlas.dll",
             ],
         )
     }

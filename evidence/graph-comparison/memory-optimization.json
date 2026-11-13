@@ -1,0 +1,154 @@
+{
+  "version": 1,
+  "profile": "release",
+  "command": "ccnavigator query; base=HEAD head=WORKTREE limit=100",
+  "source_base": "df205b56a5bb6e530e5e278702cd8edf27bc2318",
+  "inputs": {
+    "baseline_bytes": 113628316,
+    "target_bytes": 113682167,
+    "nodes": 10827,
+    "edges": 17331,
+    "baseline_sha256": "5beea9accee026e93514ac0a9da06997e4bc5d4d99d6d1291758156008325483",
+    "target_sha256": "840cea87a1e7587a73171ec4cdae84d05f3fa420a5f861c426cbb4061ea3f5c3",
+    "changes": "Controlled label and diagnostic edits to a copied compiler-produced graph; no source project changes."
+  },
+  "cases": {
+    "original": {
+      "before": {
+        "samples": [
+          {
+            "seconds": 4.783845291,
+            "peak_rss_bytes": 4001988608,
+            "response_bytes": 7492
+          },
+          {
+            "seconds": 4.692912709000001,
+            "peak_rss_bytes": 4006789120,
+            "response_bytes": 7492
+          },
+          {
+            "seconds": 4.498957582999999,
+            "peak_rss_bytes": 4004888576,
+            "response_bytes": 7492
+          }
+        ],
+        "median_seconds": 4.692912709000001,
+        "maximum_peak_rss_bytes": 4006789120,
+        "median_peak_rss_bytes": 4004888576,
+        "target_bytes": 113682167,
+        "target_sha256": "840cea87a1e7587a73171ec4cdae84d05f3fa420a5f861c426cbb4061ea3f5c3",
+        "envelope_sha256": "62c7d23e5ef0ed5da4607a45df983c0cd6bda53a7ba330f2e9fcf39205576629"
+      },
+      "after": {
+        "samples": [
+          {
+            "seconds": 2.983537333,
+            "peak_rss_bytes": 2227568640,
+            "response_bytes": 7492
+          },
+          {
+            "seconds": 2.8975677920000003,
+            "peak_rss_bytes": 2225831936,
+            "response_bytes": 7492
+          },
+          {
+            "seconds": 2.911265833,
+            "peak_rss_bytes": 2227191808,
+            "response_bytes": 7492
+          }
+        ],
+        "median_seconds": 2.911265833,
+        "maximum_peak_rss_bytes": 2227568640,
+        "median_peak_rss_bytes": 2227191808,
+        "target_bytes": 113682167,
+        "target_sha256": "840cea87a1e7587a73171ec4cdae84d05f3fa420a5f861c426cbb4061ea3f5c3",
+        "envelope_sha256": "62c7d23e5ef0ed5da4607a45df983c0cd6bda53a7ba330f2e9fcf39205576629"
+      },
+      "peak_rss_reduction_percent": 44.405144037128665,
+      "median_latency_reduction_percent": 37.96462850423755,
+      "complete_envelopes_equal": true
+    },
+    "flow_change": {
+      "before": {
+        "samples": [
+          {
+            "seconds": 5.106591041999998,
+            "peak_rss_bytes": 5534613504,
+            "response_bytes": 8482
+          },
+          {
+            "seconds": 5.019269583,
+            "peak_rss_bytes": 5551685632,
+            "response_bytes": 8482
+          },
+          {
+            "seconds": 5.164892208000001,
+            "peak_rss_bytes": 5560090624,
+            "response_bytes": 8482
+          }
+        ],
+        "median_seconds": 5.106591041999998,
+        "maximum_peak_rss_bytes": 5560090624,
+        "median_peak_rss_bytes": 5551685632,
+        "target_bytes": 113682191,
+        "target_sha256": "7152ac34fcb40611836f54001994c290400ad25743b61246c4a05c8a3928b90d",
+        "envelope_sha256": "aba5bbf82324597bc4598506e0f616716d688cf05761dcf08ffd07b182061384"
+      },
+      "after": {
+        "samples": [
+          {
+            "seconds": 2.9469197499999993,
+            "peak_rss_bytes": 2224095232,
+            "response_bytes": 8482
+          },
+          {
+            "seconds": 2.8463768750000007,
+            "peak_rss_bytes": 2221211648,
+            "response_bytes": 8482
+          },
+          {
+            "seconds": 3.0737478750000005,
+            "peak_rss_bytes": 2225913856,
+            "response_bytes": 8482
+          }
+        ],
+        "median_seconds": 2.9469197499999993,
+        "maximum_peak_rss_bytes": 2225913856,
+        "median_peak_rss_bytes": 2224095232,
+        "target_bytes": 113682191,
+        "target_sha256": "7152ac34fcb40611836f54001994c290400ad25743b61246c4a05c8a3928b90d",
+        "envelope_sha256": "aba5bbf82324597bc4598506e0f616716d688cf05761dcf08ffd07b182061384"
+      },
+      "peak_rss_reduction_percent": 59.96623065113551,
+      "median_latency_reduction_percent": 42.291839590000976,
+      "complete_envelopes_equal": true
+    }
+  },
+  "measurement": "Three sequential one-shot processes per binary and case, macOS time -l, with full verification completed and idle. The after binary is the verified packaged release CLI. Peak figures use maximum RSS across samples; latencies use medians. Before and after use identical saved artifacts, project paths and Git endpoint commits. Each complete parsed JSON envelope equals the saved pre-change envelope, including generation, comparison ID, freshness, ordering, summaries and all records. No analysis or source project edits. Filesystem caches and other machine load are uncontrolled; these are local measurements, not resource guarantees.",
+  "retained_data": "target/verification/task58-memory-optimization/ contains executables/inputs/envelopes and raw time logs; target/verification/task58-large-comparison/ contains the original pair. Private graph contents are excluded from tracked evidence.",
+  "binary_sha256": {
+    "before": "ea7e4d2da36d276bc647b3516a6e1e5c2cd840ae219a6c0dc1b4ead25f2d5e5a",
+    "after": "491ed72960e4d9d941ff044d240f7f3480997138126e8cb6f7c6db49128098c0"
+  },
+  "raw_sample_prefixes": {
+    "before": "before-final",
+    "after": "after-final",
+    "earlier_idle": "before / after",
+    "concurrent_verification": "after-latest"
+  },
+  "verification": {
+    "run": "target/verification/task58-memory-final-rerun",
+    "stages_passed": 43,
+    "ordinary_rust_tests_passed": 574,
+    "release_rust_tests_passed": 667,
+    "python_tests_passed": 218,
+    "typescript_tests_passed": 112,
+    "dotnet_sdk": "11.0.100",
+    "graphviz": "16.1.1",
+    "supplemental_upstream": {
+      "passed": 262,
+      "failed": 29,
+      "classification": "All29 observed first failures expect unqualified IDs; later assertions are masked; no .NET10 control run."
+    }
+  }
+}

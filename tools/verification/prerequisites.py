@@ -70,13 +70,23 @@ def maven_supported(output):
     return major == 4 or (major == 3 and minor >= 9)
 
 
-def version_problems():
+def dotnet_supported(output):
+    return any(line.startswith("11.") for line in output.splitlines())
+
+
+def graphviz_supported(output, expected):
+    match = re.search(r"graphviz version (\d+\.\d+\.\d+)(?:\s|$)", output)
+    return match is not None and match.group(1) == expected
+
+
+def version_problems(root):
+    graphviz = json.loads((root / "analyzers.lock.json").read_text())["graphviz"]["version"]
     specifications = [
         (["node", "--version"], lambda s: int(s.strip().lstrip("v").split(".")[0]) >= 24, "Node 24+"),
-        (["dotnet", "--list-sdks"], lambda s: any(line.startswith("10.") for line in s.splitlines()), ".NET SDK 10"),
+        (["dotnet", "--list-sdks"], dotnet_supported, ".NET SDK 11"),
         (["java", "-version"], lambda s: 'version "25' in s, "JDK 25"),
         (["mvn", "--version"], maven_supported, "Maven 3.9+/4"),
-        (["dot", "-V"], lambda s: "version 16.1.0" in s, "Graphviz 16.1.0"),
+        (["dot", "-V"], lambda s: graphviz_supported(s, graphviz), f"Graphviz {graphviz}"),
     ]
     errors = []
     for command, matches, hint in specifications:
@@ -117,7 +127,7 @@ def full_problems(root, source, codescene):
         errors.append("Full verification requires Apple Silicon macOS with native Metal/process-table access")
     tools = ["git", "cargo", "rustfmt", "node", "dotnet", "java", "mvn", "dot", "codesign", "otool", "install_name_tool", "/usr/sbin/lsof", codescene]
     errors.extend(f"Missing executable: {tool}" for tool in tools if not shutil.which(tool))
-    errors.extend(version_problems())
+    errors.extend(checked(lambda: version_problems(root)))
     errors.extend(checked(lambda: dependencies(root, os.environ)))
     errors.extend(profile_problems(source))
     return errors

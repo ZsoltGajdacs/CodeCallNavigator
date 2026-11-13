@@ -1,0 +1,113 @@
+{
+  "version": 1,
+  "cases": [
+    {
+      "case": "unchanged",
+      "full_query_envelope_equal": true,
+      "pages": 1,
+      "query_exit": 0,
+      "legacy_exit": 0,
+      "legacy_stdout_stderr_equal": true,
+      "artifact_unchanged": true
+    },
+    {
+      "case": "metadata_only",
+      "full_query_envelope_equal": true,
+      "pages": 1,
+      "query_exit": 0,
+      "legacy_exit": 0,
+      "legacy_stdout_stderr_equal": true,
+      "artifact_unchanged": true
+    },
+    {
+      "case": "edge_variants",
+      "full_query_envelope_equal": true,
+      "pages": 1,
+      "query_exit": 0,
+      "legacy_exit": 1,
+      "legacy_stdout_stderr_equal": true,
+      "artifact_unchanged": true
+    },
+    {
+      "case": "flow_diagnostic",
+      "full_query_envelope_equal": true,
+      "pages": 1,
+      "query_exit": 0,
+      "legacy_exit": 1,
+      "legacy_stdout_stderr_equal": true,
+      "artifact_unchanged": true
+    },
+    {
+      "case": "ordered_flow",
+      "full_query_envelope_equal": true,
+      "pages": 1,
+      "query_exit": 0,
+      "legacy_exit": 1,
+      "legacy_stdout_stderr_equal": true,
+      "artifact_unchanged": true
+    },
+    {
+      "case": "duplicate_inventory_groups",
+      "full_query_envelope_equal": true,
+      "pages": 2,
+      "query_exit": 0,
+      "legacy_exit": 1,
+      "legacy_stdout_stderr_equal": true,
+      "artifact_unchanged": true
+    },
+    {
+      "case": "opaque_and_node_fields",
+      "full_query_envelope_equal": true,
+      "pages": 3,
+      "query_exit": 0,
+      "legacy_exit": 1,
+      "legacy_stdout_stderr_equal": true,
+      "artifact_unchanged": true
+    },
+    {
+      "case": "unordered_permutation",
+      "full_query_envelope_equal": true,
+      "pages": 1,
+      "query_exit": 0,
+      "legacy_exit": 1,
+      "legacy_stdout_stderr_equal": true,
+      "artifact_unchanged": true
+    },
+    {
+      "case": "invalid_schema",
+      "full_query_envelope_equal": true,
+      "pages": 0,
+      "query_exit": 2,
+      "legacy_exit": 2,
+      "legacy_stdout_stderr_equal": true,
+      "artifact_unchanged": true
+    },
+    {
+      "case": "invalid_flow_reference",
+      "full_query_envelope_equal": true,
+      "pages": 0,
+      "query_exit": 2,
+      "legacy_exit": 2,
+      "legacy_stdout_stderr_equal": true,
+      "artifact_unchanged": true
+    },
+    {
+      "case": "invalid_field_type",
+      "full_query_envelope_equal": true,
+      "pages": 0,
+      "query_exit": 2,
+      "legacy_exit": 2,
+      "legacy_stdout_stderr_equal": true,
+      "artifact_unchanged": true
+    },
+    {
+      "case": "invalid_provenance",
+      "full_query_envelope_equal": true,
+      "pages": 0,
+      "query_exit": 2,
+      "legacy_exit": 2,
+      "legacy_stdout_stderr_equal": true,
+      "artifact_unchanged": true
+    }
+  ]
+}

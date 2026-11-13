@@ -11,7 +11,7 @@ use std::{fs, sync::atomic::AtomicBool};
 fn source_callables_exclude_object_boilerplate_without_losing_overloads() {
     let root = tempfile::tempdir().unwrap();
     let project = root.path().join("Policy.csproj");
-    fs::write(&project, "<Project Sdk=\"Microsoft.NET.Sdk\"><PropertyGroup><TargetFramework>net10.0</TargetFramework><OutputType>Exe</OutputType></PropertyGroup></Project>").unwrap();
+    fs::write(&project, "<Project Sdk=\"Microsoft.NET.Sdk\"><PropertyGroup><TargetFramework>net11.0</TargetFramework><OutputType>Exe</OutputType></PropertyGroup></Project>").unwrap();
     fs::write(
         root.path().join("Program.cs"),
         include_str!("../fixtures/dotnet-policy/Program.cs"),
@@ -125,7 +125,7 @@ fn assert_visibility(nodes: &[codecallnavigator::model::Node]) {
 fn architecture_facts_include_attributes_inheritance_and_type_only_files() {
     let root = tempfile::tempdir().unwrap();
     let project = root.path().join("Architecture.csproj");
-    fs::write(&project, "<Project Sdk=\"Microsoft.NET.Sdk\"><PropertyGroup><TargetFramework>net10.0</TargetFramework></PropertyGroup></Project>").unwrap();
+    fs::write(&project, "<Project Sdk=\"Microsoft.NET.Sdk\"><PropertyGroup><TargetFramework>net11.0</TargetFramework></PropertyGroup></Project>").unwrap();
     fs::write(
         root.path().join("Store.cs"),
         r#"using System;
@@ -204,7 +204,7 @@ public class Service { public void Run() {} }
     for (project, constants) in [("A", "FIRST"), ("B", "SECOND")] {
         let folder = root.path().join(project);
         fs::create_dir(&folder).unwrap();
-        fs::write(folder.join(format!("{project}.csproj")), format!(r#"<Project Sdk="Microsoft.NET.Sdk"><PropertyGroup><TargetFramework>net10.0</TargetFramework><DefineConstants>{constants}</DefineConstants></PropertyGroup><ItemGroup><Compile Include="../Shared.cs" Link="Shared.cs" /></ItemGroup></Project>"#)).unwrap();
+        fs::write(folder.join(format!("{project}.csproj")), format!(r#"<Project Sdk="Microsoft.NET.Sdk"><PropertyGroup><TargetFramework>net11.0</TargetFramework><DefineConstants>{constants}</DefineConstants></PropertyGroup><ItemGroup><Compile Include="../Shared.cs" Link="Shared.cs" /></ItemGroup></Project>"#)).unwrap();
     }
     let solution = root.path().join("Linked.slnx");
     fs::write(
@@ -254,7 +254,7 @@ fn compiler_method_references_and_invocations_have_independent_classifications()
     use codecallnavigator::model::{RelationshipKind as Kind, TargetResolution as Resolution};
     let root = tempfile::tempdir().unwrap();
     let project = root.path().join("Classification.csproj");
-    fs::write(&project, "<Project Sdk=\"Microsoft.NET.Sdk\"><PropertyGroup><TargetFramework>net10.0</TargetFramework></PropertyGroup></Project>").unwrap();
+    fs::write(&project, "<Project Sdk=\"Microsoft.NET.Sdk\"><PropertyGroup><TargetFramework>net11.0</TargetFramework></PropertyGroup></Project>").unwrap();
     fs::write(
         root.path().join("Entry.cs"),
         r#"

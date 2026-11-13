@@ -139,8 +139,7 @@ pub fn read(graph: &Value) -> Result<Option<Analysis>> {
         .get("analysis")
         .filter(|value| !value.is_null())
         .map(|value| {
-            let analysis: Analysis =
-                serde_json::from_value(value.clone()).context("Invalid analysis provenance")?;
+            let analysis = Analysis::deserialize(value).context("Invalid analysis provenance")?;
             analysis.validate()?;
             Ok(analysis)
         })

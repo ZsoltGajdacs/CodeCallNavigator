@@ -4,8 +4,8 @@ Analyze `MediatRDispatch.sln` as one target. `Contracts` contains shared message
 types; `AppA` and `AppB` each reference `Contracts`, without referencing each
 other. Their handlers must remain separate even when payload symbols are shared.
 
-The fixture uses .NET SDK 10.0.403, targets `net10.0`, and pins the public MediatR
-package to exactly 12.4.1. Each project commits its NuGet lock file. The local
+The fixture uses .NET SDK 11.0.100 (latest patch), targets `net11.0`, and pins
+the public MediatR package to exactly 12.4.1. Each project commits its NuGet lock file. The local
 `NuGet.config` clears inherited sources and uses only nuget.org; no global NuGet
 configuration changes are required.
 
