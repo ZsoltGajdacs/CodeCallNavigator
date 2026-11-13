@@ -208,9 +208,14 @@ impl Query {
 pub fn parse(name: &str, value: Value) -> Result<Query> {
     match name {
         "compare_graphs" => comparison(serde_json::from_value(value)?),
-        "graph_status" => {
+        "graph_status" | "graph_freshness" => {
             let args: GraphArgs = serde_json::from_value(value)?;
-            Query::new(json!({"kind":"status"}), args.expected_generation)
+            let query = if name == "graph_freshness" {
+                json!({"kind":"freshness","observation_version":1})
+            } else {
+                json!({"kind":"status"})
+            };
+            Query::new(query, args.expected_generation)
         }
         "find_symbols" => search(serde_json::from_value(value)?),
         "symbol_details" | "function_flow" => {

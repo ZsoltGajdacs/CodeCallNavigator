@@ -288,6 +288,7 @@ impl State {
     }
 
     pub(crate) fn record_graph_step(&mut self, previous: Navigation) {
+        self.preserve_adoption_camera = false;
         self.back.push(previous);
         if self.back.len() > 100 {
             self.back.remove(0);

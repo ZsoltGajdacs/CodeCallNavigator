@@ -1,5 +1,7 @@
 //! Independent wire DTOs: no CLI library imports or graph interpretation.
 mod freshness;
+mod observation;
+pub use observation::Support as FreshnessSupport;
 pub mod metadata;
 pub mod results;
 use anyhow::{Context, Result, ensure};
@@ -30,19 +32,23 @@ pub fn validate_generation(value: Option<&str>) -> Result<()> {
 }
 
 #[derive(Deserialize)]
-struct Capabilities {
+struct WireCapabilities {
     query_version: u32,
     generation_binding: bool,
     operations: Vec<String>,
     comparison: ComparisonCapabilities,
+}
+#[derive(Clone)]
+pub struct Capabilities {
+    pub freshness: FreshnessSupport,
 }
 #[derive(Deserialize)]
 struct ComparisonCapabilities {
     version: u32,
     snapshot_binding: bool,
 }
-pub fn capabilities(value: &Value) -> Result<()> {
-    let capabilities: Capabilities =
+pub fn capabilities(value: &Value) -> Result<Capabilities> {
+    let capabilities: WireCapabilities =
         serde_json::from_value(value.clone()).context("Malformed CLI capabilities")?;
     ensure!(
         capabilities.query_version == 1 && capabilities.generation_binding,
@@ -58,7 +64,9 @@ pub fn capabilities(value: &Value) -> Result<()> {
             "Incompatible CLI: missing operation {operation}"
         );
     }
-    Ok(())
+    Ok(Capabilities {
+        freshness: observation::negotiate(value.get("freshness"), &capabilities.operations),
+    })
 }
 
 #[derive(Deserialize)]

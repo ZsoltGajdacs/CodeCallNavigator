@@ -3,11 +3,7 @@ use crate::{
     app::{RESULT_PAGE_SIZE, State},
     projection,
 };
-use rune::Tx;
-use std::{
-    sync::{Arc, atomic::Ordering},
-    time::Duration,
-};
+use std::sync::{Arc, atomic::Ordering};
 
 pub struct NeighborOutput {
     pub epoch: u64,
@@ -181,50 +177,4 @@ fn poll_neighbors(state: &mut State) -> bool {
         .selected_edge
         .filter(|edge| state.relationships.contains(edge));
     true
-}
-
-pub(super) fn poll_staleness(state: &mut State, time: f64, tx: &mut Tx) -> bool {
-    let changed = poll_stale_result(state);
-    if state.scene || state.closing {
-        return changed;
-    }
-    if time >= state.next_stale_check {
-        request_stale_check(state, time);
-    }
-    tx.wake_after(Duration::from_secs(30));
-    changed
-}
-
-fn poll_stale_result(state: &mut State) -> bool {
-    let Some((epoch, result)) = state.jobs.stale.take() else {
-        return false;
-    };
-    if epoch != state.epoch {
-        return false;
-    }
-    match result {
-        Ok(stale) => state.stale = stale,
-        Err(error) => {
-            state.stale = true;
-            state.warning = format!("Could not verify cached source files: {error}");
-        }
-    }
-    true
-}
-
-fn request_stale_check(state: &mut State, time: f64) {
-    state.next_stale_check = time + 30.0;
-    let Ok(queries) = state.graph_queries() else {
-        return;
-    };
-    state.jobs.stale_cancel.store(true, Ordering::Release);
-    state.jobs.stale_cancel = Arc::new(std::sync::atomic::AtomicBool::new(false));
-    let cancel = state.jobs.stale_cancel.clone();
-    let epoch = state.epoch;
-    state.jobs.stale.request(queries, move |queries| {
-        (
-            epoch,
-            queries.stale(&cancel).map_err(|error| format!("{error:#}")),
-        )
-    });
 }

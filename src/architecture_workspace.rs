@@ -26,7 +26,8 @@ pub struct Output {
     selection: Selection,
     signature: String,
     changed: bool,
-    result: Result<Option<LayerAssignments>, String>,
+    result: Result<Option<Arc<LayerAssignments>>, String>,
+    navigation: Option<crate::projection::LayerInventory>,
 }
 
 impl Workspace {
@@ -89,6 +90,9 @@ fn request(state: &mut State, time: f64) {
         .project
         .to_string_lossy()
         .into_owned();
+    let Some(graph) = state.graph.clone() else {
+        return;
+    };
     let workspace = &mut state.architecture_workspace;
     workspace.next_check = time + 2.0;
     let epoch = state.epoch;
@@ -98,15 +102,22 @@ fn request(state: &mut State, time: f64) {
     let cancel = workspace.cancelled.clone();
     workspace.job.request(queries, move |queries| {
         match queries.architecture(Some(previous.clone()), &cancel) {
-            Ok(result) => Output {
-                serial,
-                epoch,
-                root,
-                selection: result.selection,
-                signature: result.signature,
-                changed: result.changed,
-                result: Ok(result.assignments),
-            },
+            Ok(result) => {
+                let assignments = result.assignments.map(Arc::new);
+                let navigation = assignments.as_ref().map(|assignments| {
+                    crate::projection::LayerInventory::new(&graph, assignments.clone())
+                });
+                Output {
+                    serial,
+                    epoch,
+                    root,
+                    selection: result.selection,
+                    signature: result.signature,
+                    changed: result.changed,
+                    result: Ok(assignments),
+                    navigation,
+                }
+            }
             Err(error) => Output {
                 serial,
                 epoch,
@@ -115,6 +126,7 @@ fn request(state: &mut State, time: f64) {
                 signature: previous,
                 changed: false,
                 result: Err(format!("{error:#}")),
+                navigation: None,
             },
         }
     });
@@ -173,9 +185,10 @@ fn apply_result(state: &mut State, output: Output) -> bool {
             state.architecture_selection = Some(output.selection);
             if output.changed {
                 state.architecture_workspace.signature = output.signature;
-                state.architecture = assignments.map(Arc::new);
+                state.architecture = assignments;
+                reconcile_navigation(state, output.navigation);
                 retain_tab(state);
-                state.auto_fit = !state.has_graph_focus();
+                state.auto_fit = !state.preserve_adoption_camera && !state.has_graph_focus();
                 state.changed();
             }
         }
@@ -185,6 +198,18 @@ fn apply_result(state: &mut State, output: Output) -> bool {
         }
     }
     true
+}
+
+fn reconcile_navigation(state: &mut State, inventory: Option<crate::projection::LayerInventory>) {
+    let Some(inventory) = inventory else {
+        return;
+    };
+    for navigation in std::iter::once(&mut state.nav)
+        .chain(state.back.iter_mut())
+        .chain(state.forward.iter_mut())
+    {
+        navigation.retain_layers(&inventory);
+    }
 }
 
 fn retain_tab(state: &mut State) {
@@ -299,7 +324,8 @@ mod tests {
             selection: Selection::Repository,
             signature: "valid".into(),
             changed: true,
-            result,
+            result: result.map(|assignments| assignments.map(Arc::new)),
+            navigation: None,
         }
     }
 
@@ -329,6 +355,47 @@ mod tests {
         let none = output(&state, Ok(None));
         assert!(apply_result(&mut state, none));
         assert!(state.architecture.is_none());
+    }
+
+    #[test]
+    fn deferred_layers_reconcile_all_history_without_late_camera_placement() {
+        use crate::projection::{FocusTarget, Grouping};
+        let mut state = State::fixture();
+        crate::scenes::install(&mut state);
+        state.nav.grouping = Grouping::Layer;
+        let valid = serde_json::to_string(&["layer", "Other"]).unwrap();
+        let removed = serde_json::to_string(&["layer", "Removed"]).unwrap();
+        state.nav.focus_target = Some(FocusTarget::Group(valid.clone()));
+        state.nav.expanded = [valid.clone(), removed.clone()].into_iter().collect();
+        state.nav.camera.pan = [73.0, -45.0];
+        state.nav.camera.zoom = 0.7;
+        state.preserve_adoption_camera = true;
+        state.back.push(state.nav.clone());
+        let mut deleted = state.nav.clone();
+        deleted.focus_target = Some(FocusTarget::GroupChildren(removed));
+        deleted.layer_tab = Some("Deleted tab".into());
+        state.forward.push(deleted);
+        state.complete_graph_layout(crate::projection::GraphView::default());
+        assert!(
+            state.nav.focus_target.is_some(),
+            "Pending architecture must not discard a potentially valid layer focus"
+        );
+        let assignments = Arc::new(LayerAssignments::default());
+        let inventory = crate::projection::LayerInventory::new(
+            state.graph.as_ref().unwrap(),
+            assignments.clone(),
+        );
+        let mut ready = output(&state, Ok(None));
+        ready.result = Ok(Some(assignments));
+        ready.navigation = Some(inventory);
+        assert!(apply_result(&mut state, ready));
+        assert_eq!(state.nav.focus_target, Some(FocusTarget::Group(valid)));
+        assert_eq!(state.back[0].expanded.len(), 1);
+        assert!(state.forward[0].focus_target.is_none());
+        assert!(state.forward[0].layer_tab.is_none());
+        assert_eq!(state.nav.camera.pan, [73.0, -45.0]);
+        assert_eq!(state.nav.camera.zoom, 0.7);
+        assert!(!state.auto_fit && !state.graph_interaction.center_after_layout);
     }
 
     #[test]

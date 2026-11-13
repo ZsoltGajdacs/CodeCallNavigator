@@ -1,0 +1,173 @@
+{
+  "legacy_cli_capabilities": {
+    "comparison": {
+      "default_limit": 100,
+      "maximum_limit": 500,
+      "maximum_response_bytes": 25165824,
+      "snapshot_binding": true,
+      "version": 1
+    },
+    "default_limits": {
+      "edges": 6000,
+      "nodes": 1500,
+      "search": 50
+    },
+    "flow_languages": [
+      "java",
+      "typescript"
+    ],
+    "generation_binding": true,
+    "generation_required": [
+      "render_selection",
+      "inspect"
+    ],
+    "maximum_limits": {
+      "diagnostic_characters": 8192,
+      "diagnostics": 50,
+      "edges": 6000,
+      "freshness_reason_bytes": 8192,
+      "freshness_reasons": 50,
+      "nodes": 1500,
+      "search": 200
+    },
+    "operations": [
+      "status",
+      "snapshot",
+      "inspect",
+      "live_source",
+      "architecture",
+      "search",
+      "symbol",
+      "source",
+      "explorer",
+      "selection",
+      "render_selection",
+      "neighbors",
+      "flow",
+      "compare"
+    ],
+    "query_version": 1,
+    "source_origins": [
+      "analyzed",
+      "live"
+    ]
+  },
+  "legacy_cli_sha256": "dbf3cd00c18935a07deeb88f107645a2f8778dcf3d86ee5190403f6e622afd6b",
+  "mcp_sha256": "a39fa57a435b2e2d373cd4dcb3bf0444f75aa73dbc11682c5809fc7963b01c42",
+  "records": [
+    {
+      "scenario": "legacy status",
+      "tool": "graph_status",
+      "arguments": {},
+      "milliseconds": 18.64,
+      "bytes": 657,
+      "response": {
+        "content": [
+          {
+            "type": "text",
+            "text": "CLI operation completed; structuredContent contains the full response and metadata."
+          }
+        ],
+        "structuredContent": {
+          "error": null,
+          "freshness": {
+            "contract_valid": true,
+            "digest": "b194223608db8bf504684ada4761c7b69c2951c388fbf5265d06ddfc574b4d7a",
+            "input_status": "unverifiable",
+            "omitted_reasons": 0,
+            "reasons": [
+              {
+                "code": "unmapped_input"
+              }
+            ],
+            "reasons_total": 1,
+            "version": 1
+          },
+          "generation": "b194223608db8bf504684ada4761c7b69c2951c388fbf5265d06ddfc574b4d7a",
+          "result": {
+            "diagnostics": [],
+            "diagnostics_total": 0,
+            "edges": 1,
+            "nodes": 5,
+            "omitted_diagnostics": 0,
+            "shortened_diagnostics": 0
+          },
+          "version": 1
+        },
+        "isError": false
+      }
+    },
+    {
+      "scenario": "unsupported optional freshness",
+      "tool": "graph_freshness",
+      "arguments": {},
+      "milliseconds": 0.21,
+      "bytes": 456,
+      "response": {
+        "content": [
+          {
+            "type": "text",
+            "text": "CLI error unsupported_capability: Configured CLI has no freshness operation; upgrade the CLI and restart the MCP server for graph_freshness"
+          }
+        ],
+        "structuredContent": {
+          "error": {
+            "code": "unsupported_capability",
+            "message": "Configured CLI has no freshness operation; upgrade the CLI and restart the MCP server for graph_freshness"
+          },
+          "freshness": null,
+          "generation": null,
+          "result": null,
+          "version": 1
+        },
+        "isError": true
+      }
+    },
+    {
+      "scenario": "legacy status remains usable",
+      "tool": "graph_status",
+      "arguments": {
+        "expected_generation": "b194223608db8bf504684ada4761c7b69c2951c388fbf5265d06ddfc574b4d7a"
+      },
+      "milliseconds": 18.17,
+      "bytes": 657,
+      "response": {
+        "content": [
+          {
+            "type": "text",
+            "text": "CLI operation completed; structuredContent contains the full response and metadata."
+          }
+        ],
+        "structuredContent": {
+          "error": null,
+          "freshness": {
+            "contract_valid": true,
+            "digest": "b194223608db8bf504684ada4761c7b69c2951c388fbf5265d06ddfc574b4d7a",
+            "input_status": "unverifiable",
+            "omitted_reasons": 0,
+            "reasons": [
+              {
+                "code": "unmapped_input"
+              }
+            ],
+            "reasons_total": 1,
+            "version": 1
+          },
+          "generation": "b194223608db8bf504684ada4761c7b69c2951c388fbf5265d06ddfc574b4d7a",
+          "result": {
+            "diagnostics": [],
+            "diagnostics_total": 0,
+            "edges": 1,
+            "nodes": 5,
+            "omitted_diagnostics": 0,
+            "shortened_diagnostics": 0
+          },
+          "version": 1
+        },
+        "isError": false
+      }
+    }
+  ],
+  "read_only_artifact_unchanged": true,
+  "shutdown": "graceful SDK/CLI cleanup completed"
+}

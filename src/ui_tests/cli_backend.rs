@@ -11,7 +11,7 @@ use std::{
     time::{Duration, Instant},
 };
 
-fn settle(runtime: &mut Runtime<State>, ready: impl Fn(&State) -> bool) {
+pub(super) fn settle(runtime: &mut Runtime<State>, ready: impl Fn(&State) -> bool) {
     let started = Instant::now();
     while started.elapsed() < Duration::from_secs(30) {
         runtime.frame(1.0 / 60.0);
@@ -42,12 +42,16 @@ fn shift(runtime: &mut Runtime<State>) {
     }
 }
 
-fn analyze(project: &Path) -> engine_client::Snapshot {
+pub(super) fn analyze(project: &Path) -> engine_client::Snapshot {
     fs::write(project.join("tsconfig.json"),r#"{"compilerOptions":{"strict":true,"target":"ES2022","types":[]},"include":["example.ts"]}"#).unwrap();
     fs::write(project.join("example.ts"),"export function leaf(): number { return 1; }\nexport function start(flag: boolean): number { if(flag) return leaf(); return 0; }\n").unwrap();
     let modules = std::env::var_os("CODECALLNAVIGATOR_TS_NODE_MODULES")
         .expect("Pinned TypeScript dependencies");
     std::os::unix::fs::symlink(modules, project.join("node_modules")).unwrap();
+    analyze_existing(project)
+}
+
+pub(super) fn analyze_existing(project: &Path) -> engine_client::Snapshot {
     let runtime = crate::runtime::Runtime::discover().unwrap();
     let targets = engine_client::discover(&runtime, project).unwrap();
     engine_client::analyze_snapshot(
@@ -62,7 +66,7 @@ fn analyze(project: &Path) -> engine_client::Snapshot {
     .unwrap()
 }
 
-fn desktop(snapshot: engine_client::Snapshot, pending: &Path) -> Runtime<State> {
+pub(super) fn desktop(snapshot: engine_client::Snapshot, pending: &Path) -> Runtime<State> {
     let mut state = State::new();
     state.runtime = Some(Arc::new(crate::runtime::Runtime::discover().unwrap()));
     state.generation = snapshot.context.descriptor.generation.clone();
@@ -81,7 +85,7 @@ fn desktop(snapshot: engine_client::Snapshot, pending: &Path) -> Runtime<State> 
     runtime
 }
 
-fn search_start(runtime: &mut Runtime<State>) -> String {
+pub(super) fn search_start(runtime: &mut Runtime<State>) -> String {
     shift(runtime);
     shift(runtime);
     assert!(runtime.state.search.open);

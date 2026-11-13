@@ -82,11 +82,10 @@ fn header(state: &State, name: &str, k: &Kit) -> El {
 }
 fn notice(state: &State, session: &Session, k: &Kit) -> El {
     let mut content = col().w_full().px(12.0).gap(3.0);
-    let explanation = if state.stale {
-        "Analyzed source snapshot · disk has changed; refresh the call graph to update"
-    } else {
-        "Analyzed source snapshot · source-derived paths; callbacks and exceptions may be conditional"
-    };
+    let explanation = "Analyzed source snapshot · source-derived paths; callbacks and exceptions may be conditional";
+    if let Some(notice) = crate::view::freshness_notice(state, k) {
+        content = content.child(notice);
+    }
     content = content.child(
         text(explanation)
             .font(k.ty.small)

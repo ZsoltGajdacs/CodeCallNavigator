@@ -6,7 +6,35 @@ use crate::{
 use codecallnavigator::{graph::GraphIndex, store::SqliteStore};
 use std::{path::PathBuf, sync::Arc};
 
+/// Identity of the currently displayed workspace, independent of the folder editor.
+#[derive(Clone)]
+pub(crate) struct Binding {
+    epoch: u64,
+    context: Option<Descriptor>,
+}
+
+impl Binding {
+    pub fn capture(state: &crate::app::State) -> Self {
+        Self {
+            epoch: state.epoch,
+            context: state
+                .query_context
+                .as_ref()
+                .map(|context| context.descriptor.clone()),
+        }
+    }
+    pub fn matches(&self, state: &crate::app::State) -> bool {
+        self.epoch == state.epoch
+            && self.context.as_ref()
+                == state
+                    .query_context
+                    .as_ref()
+                    .map(|context| &context.descriptor)
+    }
+}
+
 pub struct LoadedGraph {
+    pub navigation: Arc<crate::projection::NavigationInventory>,
     pub graph: Arc<GraphIndex>,
     pub generation: String,
     pub metrics: Option<codecallnavigator::metrics::Metrics>,
@@ -17,6 +45,7 @@ pub struct Boot {
     pub store: Arc<SqliteStore>,
     pub graph: Option<LoadedGraph>,
     pub session: Option<SavedSession>,
+    pub editable_root: Option<String>,
     pub runtime: Arc<AnalyzerRuntime>,
     pub warnings: Vec<String>,
 }
@@ -42,6 +71,9 @@ pub(crate) fn load_boot(directory: PathBuf) -> anyhow::Result<Boot> {
             None
         }
     };
+    let editable_root = store
+        .load_session()?
+        .and_then(|saved| saved.get("root")?.as_str().map(str::to_owned));
     let runtime = Arc::new(AnalyzerRuntime::discover()?);
     let graph = match read_graph(&runtime, &store) {
         Ok(graph) => graph,
@@ -56,6 +88,7 @@ pub(crate) fn load_boot(directory: PathBuf) -> anyhow::Result<Boot> {
         store,
         graph,
         session,
+        editable_root,
         runtime,
         warnings,
     })
@@ -102,32 +135,24 @@ fn read_graph(
     descriptor.generation = None;
     let snapshot = QueryContext::new(runtime, descriptor)
         .snapshot(&std::sync::atomic::AtomicBool::new(false))?;
-    Ok(Some(retain_snapshot(
-        store,
-        snapshot,
-        &std::sync::atomic::AtomicBool::new(false),
-    )?))
+    Ok(Some(from_snapshot(snapshot)))
 }
 
-pub(crate) fn retain_snapshot(
-    store: &SqliteStore,
-    snapshot: crate::engine_client::Snapshot,
-    cancel: &std::sync::atomic::AtomicBool,
-) -> anyhow::Result<LoadedGraph> {
-    let presentation_cache = crate::presentation_cache::retain(store, &snapshot, cancel)?;
+pub(crate) fn from_snapshot(snapshot: crate::engine_client::Snapshot) -> LoadedGraph {
     let generation = snapshot
         .context
         .descriptor
         .generation
         .clone()
         .expect("validated snapshot generation");
-    Ok(LoadedGraph {
+    LoadedGraph {
+        navigation: snapshot.navigation,
         graph: snapshot.graph,
         generation,
         context: Some(snapshot.context),
-        presentation_cache: Some(presentation_cache),
+        presentation_cache: None,
         metrics: None,
-    })
+    }
 }
 
 /// Retain opaque recovered settings while typed navigation becomes usable again.
@@ -135,11 +160,22 @@ pub(crate) fn save_session(
     store: &SqliteStore,
     mut session: serde_json::Value,
 ) -> anyhow::Result<()> {
-    if let Some(recovered) = store
+    let mut saved = store
         .load_session()?
-        .and_then(|saved| saved.get("recovered_session").cloned())
-    {
-        session["recovered_session"] = recovered;
+        .unwrap_or_else(|| serde_json::json!({}));
+    if !saved.is_object() {
+        saved = serde_json::json!({"recovered_session": saved});
     }
-    store.save_session(&session)
+    if serde_json::from_value::<SavedSession>(saved.clone()).is_err()
+        && saved.get("recovered_session").is_none()
+    {
+        saved["recovered_session"] = saved.clone();
+    }
+    if let Some(values) = session.as_object_mut() {
+        saved
+            .as_object_mut()
+            .expect("normalized settings object")
+            .append(values);
+    }
+    store.save_session(&saved)
 }

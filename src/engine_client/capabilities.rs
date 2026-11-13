@@ -10,11 +10,17 @@ use std::{
     time::{Duration, Instant},
 };
 
+#[derive(Clone)]
+pub(super) struct Capabilities {
+    pub flow_languages: Vec<String>,
+    pub observation: bool,
+}
+
 pub(super) fn check(
     runtime: &Runtime,
     cancel: &AtomicBool,
     started: Instant,
-) -> Result<Vec<String>> {
+) -> Result<Capabilities> {
     let mut child = Command::new(&runtime.engine)
         .arg("capabilities")
         .stdin(Stdio::null())
@@ -57,7 +63,7 @@ fn read_output(child: &mut Child, cancel: &AtomicBool, started: Instant) -> Resu
     }
 }
 
-fn validate(bytes: &[u8]) -> Result<Vec<String>> {
+fn validate(bytes: &[u8]) -> Result<Capabilities> {
     ensure!(
         bytes.len() <= 1024 * 1024,
         "CLI capability response exceeds 1 MiB"
@@ -87,8 +93,22 @@ fn validate(bytes: &[u8]) -> Result<Vec<String>> {
             "Configured CLI lacks required desktop operation {operation}"
         );
     }
-    serde_json::from_value(capabilities["flow_languages"].clone())
-        .context("CLI omitted supported flow languages")
+    let flow_languages = serde_json::from_value(capabilities["flow_languages"].clone())
+        .context("CLI omitted supported flow languages")?;
+    let freshness = &capabilities["freshness"];
+    let observation = operations.iter().any(|name| name == "freshness")
+        && freshness["version"] == codecallnavigator::freshness::VERSION
+        && freshness["streaming"] == true
+        && freshness["mode"] == "verified_polling"
+        && freshness["limited"] == true
+        && freshness["reconcile_milliseconds"]
+            == codecallnavigator::freshness::RECONCILE_MILLISECONDS
+        && freshness["heartbeat_milliseconds"]
+            == codecallnavigator::freshness::HEARTBEAT_MILLISECONDS;
+    Ok(Capabilities {
+        flow_languages,
+        observation,
+    })
 }
 
 fn require_exit(child: &mut Child, cancel: &AtomicBool, started: Instant) -> Result<()> {
@@ -104,5 +124,28 @@ fn require_exit(child: &mut Child, cancel: &AtomicBool, started: Instant) -> Res
             "CLI capability command did not exit promptly"
         );
         std::thread::sleep(Duration::from_millis(10));
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn optional_observation_support_does_not_disable_legacy_graph_queries() {
+        let mut capabilities = codecallnavigator::query::capabilities();
+        assert!(
+            validate(&serde_json::to_vec(&capabilities).unwrap())
+                .unwrap()
+                .observation
+        );
+        capabilities.as_object_mut().unwrap().remove("freshness");
+        let legacy = validate(&serde_json::to_vec(&capabilities).unwrap()).unwrap();
+        assert!(!legacy.observation);
+        assert!(
+            legacy
+                .flow_languages
+                .iter()
+                .any(|language| language == "typescript")
+        );
     }
 }

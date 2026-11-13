@@ -1,6 +1,11 @@
 //! Analysis installs CLI snapshots and retains their derived presentation cache.
-use crate::{app::State, engine_client, projection, workspace::LoadedGraph};
+use crate::{app::State, engine_client, workspace::LoadedGraph};
 use std::{path::PathBuf, sync::Arc};
+
+pub struct Output {
+    binding: crate::workspace::Binding,
+    result: Result<LoadedGraph, String>,
+}
 
 impl State {
     pub fn analyze_selected(&mut self) {
@@ -13,7 +18,7 @@ impl State {
             .filter(|choice| choice.selected)
             .map(|choice| choice.target.clone())
             .collect();
-        let (Some(runtime), Some(store)) = (self.runtime.clone(), self.store.clone()) else {
+        let Some(runtime) = self.runtime.clone() else {
             return;
         };
         if targets.is_empty() {
@@ -35,12 +40,13 @@ impl State {
         }
         .into();
         let project = PathBuf::from(self.root.text.trim());
-        let cache_lock = self.jobs.save_lock.clone();
+        let epoch = self.epoch;
+        let binding = crate::workspace::Binding::capture(self);
         self.jobs.analysis.request(targets, move |targets| {
             let metrics = codecallnavigator::metrics::Metrics::default();
             let _scope = metrics.enter();
             let report = |message| {
-                let _ = progress.send(message);
+                let _ = progress.send((epoch, message));
                 if let Some(wake) = &wake {
                     wake();
                 }
@@ -52,31 +58,29 @@ impl State {
                     &cancel,
                     &report,
                 )?;
-                let mut loaded = {
-                    let _guard = cache_lock
-                        .lock()
-                        .map_err(|_| anyhow::anyhow!("Presentation cache writer failed"))?;
-                    crate::workspace::retain_snapshot(&store, snapshot, &cancel)?
-                };
+                let mut loaded = crate::workspace::from_snapshot(snapshot);
                 loaded.metrics = Some(metrics);
                 Ok::<_, anyhow::Error>(loaded)
             })();
-            result.map_err(|error| format!("{error:#}"))
+            Output {
+                binding,
+                result: result.map_err(|error| format!("{error:#}")),
+            }
         });
     }
 }
 
 pub(super) fn poll_analysis(state: &mut State) -> bool {
-    let Some(result) = state.jobs.analysis.take() else {
+    let Some(output) = state.jobs.analysis.take() else {
         return false;
     };
     state.analyzing = false;
-    match result {
+    if state.closing || !output.binding.matches(state) {
+        return true;
+    }
+    match output.result {
         Ok(graph) => {
             install_graph(state, graph);
-            state.stale = false;
-            state.auto_fit = true;
-            state.changed();
         }
         Err(error) => {
             state.warning = error;
@@ -87,29 +91,6 @@ pub(super) fn poll_analysis(state: &mut State) -> bool {
 }
 
 pub(super) fn install_graph(state: &mut State, loaded: LoadedGraph) {
-    state.close_source();
-    state.epoch += 1;
-    state.nav.retain_known(&loaded.graph);
-    state.query_context = loaded.context;
-    state.presentation_cache = loaded.presentation_cache;
-    state.graph = Some(loaded.graph);
-    state.analysis_metrics = loaded.metrics;
-    state.generation = Some(loaded.generation);
-    state.next_stale_check = 0.0;
-    state.architecture = None;
-    state.architecture_workspace.invalidate();
-    state.selected_edge = None;
-    state.replace_graph_view(projection::GraphView::default());
-    state.visible_revision = None;
-    state.visual_selection = None;
-    state.cancel_graph_press();
-    state.status = format!(
-        "{} symbols · {} relationships",
-        state.graph.as_ref().unwrap().data.nodes.len(),
-        state.graph.as_ref().unwrap().data.edges.len()
-    );
-    state.back.clear();
-    state.forward.clear();
-    state.needs_layout = true;
-    state.request_neighbors();
+    let mode = crate::graph_install::mode(state, &loaded);
+    crate::graph_install::install(state, loaded, mode);
 }

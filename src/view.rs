@@ -152,17 +152,19 @@ fn activity_rail(state: &State, k: &Kit) -> El {
 }
 
 fn workspace_identity(state: &State, k: &Kit) -> El {
-    let path = if state.root.text.is_empty() {
-        state
-            .graph
-            .as_ref()
-            .and_then(|graph| graph.data.roots.first())
-            .map(String::as_str)
-            .unwrap_or("")
-    } else {
-        &state.root.text
-    };
-    let label = std::path::Path::new(path)
+    let path = state
+        .query_context
+        .as_ref()
+        .map(|context| context.descriptor.project.as_path())
+        .or_else(|| {
+            state
+                .graph
+                .as_ref()
+                .and_then(|graph| graph.data.roots.first())
+                .map(std::path::Path::new)
+        })
+        .unwrap_or_else(|| std::path::Path::new(&state.root.text));
+    let label = path
         .file_name()
         .map(|name| name.to_string_lossy())
         .unwrap_or_else(|| "Local workspace".into());
@@ -173,7 +175,7 @@ fn workspace_identity(state: &State, k: &Kit) -> El {
         .min_w(0.0)
         .max_w(200.0)
         .truncate()
-        .help(path)
+        .help(path.to_string_lossy())
 }
 
 fn clear_cache_action(state: &State, k: &Kit) -> El {
@@ -203,8 +205,7 @@ fn analysis_action(state: &State, k: &Kit) -> El {
             "Generate graph"
         })
         .disabled(
-            state.clearing_cache
-                || state.closing
+            state.project_job_busy()
                 || state.store.is_none()
                 || state.targets.iter().all(|t| !t.selected),
         )
@@ -253,8 +254,6 @@ fn active_analysis(state: &State, k: &Kit) -> El {
 fn status_bar(state: &State, k: &Kit) -> El {
     let status = if !state.warning.is_empty() {
         &state.warning
-    } else if state.stale && !state.cache_status_visible() {
-        "Source files changed · refresh to update this graph"
     } else {
         &state.status
     };
@@ -268,7 +267,7 @@ fn status_bar(state: &State, k: &Kit) -> El {
         state.graph_view.omitted_edges,
         state.graph_view.hidden_edges
     );
-    col()
+    let mut bar = col()
         .key("status-bar")
         .w_full()
         .px(theme::SPACE)
@@ -294,7 +293,59 @@ fn status_bar(state: &State, k: &Kit) -> El {
                 .wrap()
                 .font(k.ty.small)
                 .color(k.c.text_muted),
-        )
+        );
+    if let Some(notice) = freshness_notice(state, k) {
+        bar = bar.child(notice);
+    }
+    bar
+}
+
+pub(crate) fn freshness_notice(state: &State, k: &Kit) -> Option<El> {
+    let message = state.freshness.message(state.generation.as_deref())?;
+    let mut bar = row()
+        .key("freshness-status")
+        .w_full()
+        .gap(8.0)
+        .center_y()
+        .flex_wrap()
+        .child(
+            text(&message)
+                .key("freshness-message")
+                .max_lines(2)
+                .truncate()
+                .help(message.clone())
+                .font(k.ty.small)
+                .color(k.c.text_muted)
+                .wrap()
+                .grow(1.0)
+                .min_w(0.0),
+        );
+    if state
+        .freshness
+        .new_generation(state.generation.as_deref())
+        .is_some()
+    {
+        bar = bar.child(
+            Button::new(if state.reload.job.is_pending() {
+                "Loading saved graph…"
+            } else {
+                "Reload saved graph"
+            })
+            .disabled(state.project_job_busy())
+            .on_press(State::reload_generation)
+            .build(k)
+            .key("freshness-reload"),
+        );
+    }
+    if state.freshness.retry_available() {
+        bar = bar.child(
+            Button::new("Retry freshness")
+                .on_press(State::retry_freshness)
+                .build(k)
+                .key("freshness-retry"),
+        );
+    }
+    Some(bar)
 }
 
 pub fn key(state: &mut State, event: &KeyEvent, tx: &mut Tx) -> bool {

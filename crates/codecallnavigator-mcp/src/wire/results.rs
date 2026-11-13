@@ -9,6 +9,8 @@ pub fn validate(operation: &str, result: &Value) -> Result<()> {
     match operation {
         "compare" => comparison(result),
         "status" => integers(result, &["nodes", "edges"]),
+        // Full typed observation and envelope binding are checked by metadata.
+        "freshness" => Ok(()),
         "search" => {
             integers(result, &["offset", "limit"])?;
             boolean(result, "more")?;

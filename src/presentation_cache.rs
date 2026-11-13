@@ -29,12 +29,9 @@ pub fn retain(
         .as_deref()
         .context("CLI snapshot omitted its source generation")?;
     let address = serde_json::to_value(&snapshot.context.descriptor)?;
-    let mut saved = store
+    let saved = store
         .load_session()?
         .unwrap_or_else(|| serde_json::json!({}));
-    if !saved.is_object() {
-        saved = serde_json::json!({"recovered_session":saved});
-    }
     let marker = match reusable(store, &saved, &address, generation)? {
         Some(marker) => marker,
         None => PresentationCache {
@@ -44,22 +41,8 @@ pub fn retain(
                 .context("CLI snapshot loaded, but its profiling cache could not be retained")?,
         },
     };
-    // Preserve editable root, navigation and unknown settings exactly, including
-    // malformed navigation that prevented typed session restoration at startup.
-    saved["graph_context"] = address;
-    saved["presentation_cache"] = serde_json::to_value(&marker)?;
-    if saved.get("root").is_none() {
-        saved["root"] = snapshot
-            .context
-            .descriptor
-            .project
-            .to_string_lossy()
-            .into_owned()
-            .into();
-    }
-    store
-        .save_session(&saved)
-        .context("CLI snapshot loaded, but its profiling cache marker could not be saved")?;
+    // Retention owns only a derived profiling generation. Accepted UI state is
+    // the sole writer of graph_context/cache markers through session persistence.
     Ok(marker)
 }
 
@@ -147,10 +130,9 @@ mod tests {
             retained.nodes[0].file, second.graph.data.nodes[0].file,
             "Profiling retained another checkout's hydrated source location"
         );
-        let saved = store.load_session().unwrap().unwrap();
-        assert_eq!(
-            saved["graph_context"]["project"],
-            second.context.descriptor.project.to_string_lossy().as_ref()
+        assert!(
+            store.load_session().unwrap().is_none(),
+            "Background retention must not claim accepted graph addressing"
         );
     }
 
@@ -168,9 +150,9 @@ mod tests {
         let after = retain(&reopened, &snapshot, &AtomicBool::new(false)).unwrap();
         assert_ne!(before.cache_generation, after.cache_generation);
         assert!(cache.path().join(&after.cache_generation).is_file());
-        assert_eq!(
-            reopened.load_session().unwrap().unwrap()["presentation_cache"],
-            serde_json::to_value(after).unwrap()
+        assert!(
+            reopened.load_session().unwrap().is_none(),
+            "Rebuilding a cache must not write session metadata"
         );
     }
 
@@ -183,8 +165,11 @@ mod tests {
         let original = serde_json::json!("malformed settings");
         store.save_session(&original).unwrap();
         let marker = retain(&store, &snapshot, &AtomicBool::new(false)).unwrap();
-        let saved = store.load_session().unwrap().unwrap();
-        assert_eq!(saved["recovered_session"], original);
+        assert_eq!(
+            store.load_session().unwrap(),
+            Some(original.clone()),
+            "Retention must preserve raw settings without rewriting them"
+        );
         assert_eq!(
             store.active_generation().unwrap().as_deref(),
             Some(marker.cache_generation.as_str())

@@ -7,6 +7,7 @@ mod cache_clear;
 mod canvas_gpu_performance;
 mod canvas_performance;
 mod cli_backend;
+mod cli_freshness;
 mod function_flows;
 mod graph_fit;
 mod graph_studio;
@@ -109,20 +110,15 @@ fn native_path_controls_show_a_real_directed_path_and_filter_can_reveal_tests() 
 #[test]
 fn stale_worker_result_updates_the_native_status_text() {
     let mut runtime = runtime();
-    let epoch = runtime.state.epoch;
     runtime
         .state
-        .jobs
-        .stale
-        .request((), move |_| (epoch, Ok(true)));
-    for _ in 0..100 {
-        runtime.frame(1.0 / 60.0);
-        if runtime.state.stale {
-            break;
-        }
-        std::thread::sleep(std::time::Duration::from_millis(1));
-    }
-    assert!(runtime.state.stale);
+        .freshness
+        .accept(crate::freshness_workspace::fixture(
+            codecallnavigator::artifact::verification::InputStatus::Stale,
+            runtime.state.generation.as_deref().unwrap_or("fixture"),
+        ));
+    runtime.frame(1.0 / 60.0);
+    assert!(runtime.state.freshness.is_stale());
     assert!(runtime.elements().iter().any(|element| {
         element
             .text
@@ -253,19 +249,51 @@ fn assert_reusable_presentation_cache(
     loaded: &crate::workspace::Boot,
     editable_root: &serde_json::Value,
 ) {
-    let saved = store.load_session().unwrap().unwrap();
+    let untouched = store.load_session().unwrap().unwrap();
     assert_eq!(
-        (&saved["navigation"], &saved["root"]),
+        (&untouched["navigation"], &untouched["root"]),
         (&serde_json::json!("corrupt"), editable_root),
-        "Boot replaced raw navigation/root metadata"
+        "Background boot must not rewrite raw settings"
+    );
+    let graph = loaded.graph.as_ref().unwrap();
+    let mut state = State::new();
+    state.store = Some(loaded.store.clone());
+    state.root = rune::TextEdit::new(editable_root.as_str().unwrap());
+    crate::graph_install::install(
+        &mut state,
+        crate::workspace::LoadedGraph {
+            graph: graph.graph.clone(),
+            navigation: graph.navigation.clone(),
+            generation: graph.generation.clone(),
+            metrics: None,
+            context: graph.context.clone(),
+            presentation_cache: None,
+        },
+        crate::graph_install::Mode::Restore,
+    );
+    let deadline = std::time::Instant::now() + std::time::Duration::from_secs(5);
+    while state.presentation_cache.is_none() && std::time::Instant::now() < deadline {
+        crate::cache_retention::poll(&mut state);
+        std::thread::sleep(std::time::Duration::from_millis(5));
+    }
+    assert!(
+        state.presentation_cache.is_some(),
+        "Accepted UI graph must retain a profiling cache"
+    );
+    crate::workspace::save_session(store, serde_json::to_value(state.session()).unwrap()).unwrap();
+    let saved = store.load_session().unwrap().unwrap();
+    assert_eq!(&saved["root"], editable_root);
+    assert_eq!(saved["recovered_session"]["navigation"], "corrupt");
+    assert!(
+        saved["navigation"].is_object(),
+        "Accepted UI navigation replaces the corrupt typed view while retaining recovery metadata"
     );
     let marker = &saved["presentation_cache"];
     let generation = &loaded.graph.as_ref().unwrap().generation;
     assert_eq!(marker["source_generation"], *generation);
-    let cached = marker["cache_generation"]
-        .as_str()
-        .expect("CLI snapshot must retain profiling cache");
+    let cached = marker["cache_generation"].as_str().unwrap();
     assert_eq!(store.active_generation().unwrap().as_deref(), Some(cached));
+    state.cache_retention.stop();
     let repeated = jobs::load_boot(directory.into()).unwrap();
     assert_eq!(
         (
@@ -684,4 +712,29 @@ fn inspector_selection_and_restored_selection_update_graph_emphasis() {
         runtime.state.visual_selection.as_deref(),
         Some(second_key.as_str())
     );
+}
+
+#[test]
+fn failed_freshness_check_preserves_matching_state_instead_of_claiming_stale() {
+    let mut runtime = runtime();
+    runtime
+        .state
+        .freshness
+        .accept(crate::freshness_workspace::fixture(
+            codecallnavigator::artifact::verification::InputStatus::Match,
+            runtime.state.generation.as_deref().unwrap_or("fixture"),
+        ));
+    runtime.state.freshness.status =
+        crate::freshness_workspace::Status::Failed("CLI stopped".into());
+    runtime.frame(1.0 / 60.0);
+    assert!(
+        !runtime.state.freshness.is_stale(),
+        "A verification failure must not claim a stale input observation"
+    );
+    assert!(runtime.elements().iter().any(|element| {
+        element
+            .text
+            .as_deref()
+            .is_some_and(|text| text.contains("Freshness check failed"))
+    }));
 }

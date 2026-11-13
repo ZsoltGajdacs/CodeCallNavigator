@@ -116,6 +116,11 @@ fn definitions() -> Vec<Tool> {
             "Saved graph generation, freshness, counts and diagnostics; never analyzes.",
             true,
         ),
+        tool::<GraphArgs>(
+            "graph_freshness",
+            "Generation-bound saved-input observation with match/stale/unverifiable status, live input revision and limitations. Requires CLI freshness v1; never watches or analyzes.",
+            true,
+        ),
         tool::<SearchArgs>(
             "find_symbols",
             "Bounded stable symbol/class search (limit1..200); query version1.",

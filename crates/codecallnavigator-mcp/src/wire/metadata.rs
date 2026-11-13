@@ -1,5 +1,5 @@
 //! Operation-specific query envelope validation, independent of process transport.
-use super::results::comparison_metadata;
+use super::{observation, results::comparison_metadata};
 use anyhow::{Result, ensure};
 use serde_json::Value;
 
@@ -18,6 +18,10 @@ pub fn validate(value: &Value, operation: &str, bound: bool) -> Result<()> {
         value["generation"].as_str().is_some(),
         "CLI omitted analyzed graph generation"
     );
+    if operation == "freshness" {
+        observation::validate(&value["result"], value["generation"].as_str())?;
+        observation::binding(&value["result"], &value["freshness"])?;
+    }
     Ok(())
 }
 

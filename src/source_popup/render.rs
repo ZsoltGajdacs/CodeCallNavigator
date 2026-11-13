@@ -118,12 +118,14 @@ fn header(state: &State, k: &Kit) -> El {
 
 fn notice(state: &State, k: &Kit) -> El {
     let preview = state.source_popup.active.as_ref().unwrap();
-    let message = match (state.stale, preview.location_warning.as_deref()) {
-        (true, Some(w)) => format!("Source changed · refresh the graph. {w}"),
-        (true, None) => "Source changed · refresh the graph to update recorded locations.".into(),
-        (false, Some(w)) => w.into(),
-        _ => String::new(),
-    };
+    let message = [
+        state.freshness.attention(state.generation.as_deref()),
+        preview.location_warning.clone(),
+    ]
+    .into_iter()
+    .flatten()
+    .collect::<Vec<_>>()
+    .join(" · ");
     if message.is_empty() {
         el()
     } else {

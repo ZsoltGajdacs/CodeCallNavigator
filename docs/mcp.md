@@ -42,6 +42,10 @@ Startup requires CLI query contract version 1, generation binding, and every
 advertised operation used by the tools. Incompatible capabilities or a failed
 capabilities process prevent startup. MCP negotiation is handled by the SDK;
 stdout carries MCP messages only and startup failures go to stderr.
+Freshness observation v1 is optional at startup: older compatible CLIs retain
+their existing tools, while `graph_freshness` returns `unsupported_capability`.
+Capabilities are negotiated for the server lifetime; restart the MCP server
+after upgrading the configured CLI.
 
 ## Tools and arguments
 
@@ -54,6 +58,7 @@ Queries never start analysis. Only `refresh_graph` changes analyzed data.
 | --- | --- |
 | `compare_graphs` | `base`, `head?` (`WORKTREE`), `offset?` (0), `limit?` (100; 1–500), `expected_comparison?`, `expected_generation?` |
 | `graph_status` | `expected_generation?` |
+| `graph_freshness` | `expected_generation?` |
 | `find_symbols` | `text`, `category?` (`all`, `classes`, `methods`), `offset?` (0), `limit?` (50; 1–200), `expected_generation?` |
 | `symbol_details` | `symbol`, `expected_generation?` |
 | `graph_section` | `selection`, `filter?`, `limits?`, `expected_generation?` |
@@ -100,6 +105,18 @@ filter delegates defaults to the CLI. The adapter validates shapes/bounds only;
 search, traversal, class membership, certainty and flow support remain CLI-owned.
 
 ## Responses, refresh and cancellation
+
+`graph_freshness` forwards the CLI's one-shot [saved-input observation](cli-queries.md#saved-input-freshness-observations)
+with its generation, content-derived input revision, typed
+`match`/`stale`/`unverifiable` status, coverage, limitations and measured verification
+duration. It requires the negotiated freshness-v1 operation and currently supports
+the explicitly limited `verified_polling` mode. Complete observed-input coverage
+does not certify the build environment or include unsaved editor buffers.
+The adapter validates required wire fields, finite timing, digest/envelope binding,
+bounded reasons and the explicit legacy-summary conversion, then forwards the
+complete envelope unchanged. It starts one ordinary CLI query, owns no observer
+or watcher, and never refreshes implicitly. An unavailable optional capability
+affects only this tool; configured project/root addresses remain unchanged.
 
 `compare_graphs` forwards the CLI's [Git comparison contract](cli-queries.md#git-graph-comparison).
 It reads saved artifacts only: a committed baseline against the saved working

@@ -246,6 +246,7 @@ impl State {
     }
 
     pub fn fit_graph(&mut self) {
+        self.preserve_adoption_camera = false;
         self.cancel_graph_camera();
         self.fit_visible_graph();
         self.dirty_session = true;

@@ -14,6 +14,7 @@ const REFRESH_DEADLINE: Duration = Duration::from_secs(1800);
 pub struct Backend {
     config: Configuration,
     processes: process::Processes,
+    capabilities: wire::Capabilities,
 }
 pub struct Reply {
     pub value: Value,
@@ -36,10 +37,14 @@ impl Backend {
             )
             .await?;
         process::require_success(&output)?;
-        wire::capabilities(
+        let capabilities = wire::capabilities(
             &serde_json::from_slice(&output.stdout).context("Invalid CLI capabilities JSON")?,
         )?;
-        Ok(Self { config, processes })
+        Ok(Self {
+            config,
+            processes,
+            capabilities,
+        })
     }
     pub async fn shutdown(&self) {
         self.processes.shutdown().await;
@@ -53,6 +58,9 @@ impl Backend {
             .as_str()
             .context("Missing query kind")?
             .to_owned();
+        if let Some(reply) = self.unsupported_observation(&operation) {
+            return Ok(reply);
+        }
         let request = json!({"version":1,"project":self.config.project,"roots":self.config.roots,"expected_generation":query.generation,"query":query.query});
         let output = self
             .processes
@@ -82,6 +90,18 @@ impl Backend {
             wire::results::binding(&query.query, &value["result"])?;
         }
         Ok(Reply { value, is_error })
+    }
+    fn unsupported_observation(&self, operation: &str) -> Option<Reply> {
+        if operation != "freshness" {
+            return None;
+        }
+        let wire::FreshnessSupport::Unsupported(message) = self.capabilities.freshness else {
+            return None;
+        };
+        Some(Reply {
+            value: json!({"version":1,"generation":null,"freshness":null,"result":null,"error":{"code":"unsupported_capability","message":message}}),
+            is_error: true,
+        })
     }
     pub async fn discovery(&self, cancel: &CancellationToken) -> Result<Value> {
         let output = self

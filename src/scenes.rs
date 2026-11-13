@@ -178,7 +178,6 @@ fn cached_scene(state: &mut State, focus: bool) {
         )?);
         state.nav.camera.fit(state.graph_view.size, state.viewport);
         state.visible_revision = Some((state.epoch, state.revision));
-        state.next_stale_check = f64::MAX;
         state.auto_fit = false;
         state.status = format!(
             "Last successful analysis · {} symbols · {} relationships",
