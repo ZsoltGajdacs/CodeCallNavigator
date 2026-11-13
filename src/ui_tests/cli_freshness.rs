@@ -271,3 +271,161 @@ fn actual_cli_freshness_reload_preserves_loaded_binding_camera_and_discards_obso
             && !state.jobs.persistence.is_pending()
     });
 }
+
+#[test]
+fn automatic_refresh_is_an_explicit_loaded_project_action() {
+    let mut state = State::fixture();
+    state.freshness.accept(crate::freshness_workspace::fixture(
+        InputStatus::Match,
+        &"a".repeat(64),
+    ));
+    let mut runtime = Runtime::new(
+        state,
+        crate::view::view,
+        (1420.0, 900.0),
+        rune::Env::new(true, 1.0),
+    );
+    runtime.frame(1.0 / 60.0);
+    let action = runtime
+        .elements()
+        .into_iter()
+        .find(|element| element.key.as_deref() == Some("freshness-auto-toggle"));
+    assert!(
+        action.is_some(),
+        "Saved-input status needs an explicit automatic-refresh opt-in action"
+    );
+}
+
+#[test]
+#[ignore = "requires built CLI with automatic refresh, Node24/TypeScript6; optional captures require Metal"]
+fn actual_cli_automatic_refresh_requires_opt_in_and_preserves_loaded_context() {
+    let directory = tempfile::tempdir().unwrap();
+    let project = directory.path().canonicalize().unwrap();
+    let pending = tempfile::tempdir().unwrap();
+    let snapshot = analyze(&project);
+    let original = snapshot.context.descriptor.generation.clone();
+    let mut runtime = desktop(snapshot, pending.path());
+    wait_observation(&mut runtime);
+    source(&project, 2, true);
+    settle(&mut runtime, |state| state.freshness.is_stale());
+    assert_eq!(
+        runtime.state.generation, original,
+        "Passive observation must not analyze or adopt"
+    );
+    runtime.update(|state, _| {
+        state.nav.camera.pan = [71.0, -29.0];
+        state.nav.camera.zoom = 0.73;
+    });
+    click(&mut runtime, "freshness-auto-toggle");
+    settle(&mut runtime, |state| {
+        state.generation != original && state.view_is_current()
+    });
+    assert_eq!(
+        runtime
+            .state
+            .query_context
+            .as_ref()
+            .unwrap()
+            .descriptor
+            .project,
+        project
+    );
+    assert!(runtime.state.freshness.automatic.enabled(&project));
+    assert_eq!(runtime.state.nav.camera.pan, [71.0, -29.0]);
+    assert_eq!(runtime.state.nav.camera.zoom, 0.73);
+    capture_state(&mut runtime, "automatic-enabled");
+    invalid_automatic_code_recovers(&mut runtime, &project);
+    manual_analysis_waits_for_automatic_cleanup(&mut runtime, &project);
+    click(&mut runtime, "freshness-auto-toggle");
+    settle(&mut runtime, |state| {
+        !state.freshness.automatic.enabled(&project)
+    });
+    let disabled = runtime.state.generation.clone();
+    source(&project, 4, true);
+    settle(&mut runtime, |state| state.freshness.is_stale());
+    assert_eq!(runtime.state.generation, disabled);
+    capture_state(&mut runtime, "automatic-disabled");
+    runtime.update(jobs::close);
+    settle(&mut runtime, |state| state.freshness.stopped());
+}
+
+fn invalid_automatic_code_recovers(runtime: &mut Runtime<State>, project: &Path) {
+    use codecallnavigator::refresh::Phase;
+    let successful = runtime.state.generation.clone();
+    fs::write(project.join("example.ts"), "export function broken( {\n").unwrap();
+    settle(runtime, |state| {
+        state
+            .freshness
+            .automatic
+            .activity
+            .as_ref()
+            .is_some_and(|activity| matches!(activity.phase, Phase::Failed { .. }))
+    });
+    assert_eq!(
+        runtime.state.generation, successful,
+        "Invalid code must preserve the successful graph"
+    );
+    assert!(
+        runtime.state.freshness.is_stale(),
+        "Activity must not replace input validity"
+    );
+    capture_state(runtime, "automatic-invalid-code");
+    capture_automatic_compact_failure(runtime);
+    source(project, 3, true);
+    settle(runtime, |state| {
+        state.generation != successful && state.view_is_current()
+    });
+}
+
+fn manual_analysis_waits_for_automatic_cleanup(runtime: &mut Runtime<State>, project: &Path) {
+    use codecallnavigator::refresh::Phase;
+    let engine = crate::runtime::Runtime::discover().unwrap();
+    let targets = crate::engine_client::discover(&engine, project).unwrap();
+    runtime.update(|state, _| {
+        state.root = rune::TextEdit::new(project.to_string_lossy());
+        state.targets = targets
+            .into_iter()
+            .map(|target| crate::app::TargetChoice {
+                target,
+                selected: true,
+            })
+            .collect();
+    });
+    source(project, 5, true);
+    settle(runtime, |state| {
+        state
+            .freshness
+            .automatic
+            .activity
+            .as_ref()
+            .is_some_and(|activity| matches!(activity.phase, Phase::Running { .. }))
+    });
+    runtime.update(|state, _| state.analyze_selected());
+    assert!(runtime.state.freshness.manual_pending());
+    settle(runtime, |state| state.analyzing);
+    settle(runtime, |state| !state.analyzing && state.view_is_current());
+    assert!(
+        runtime.state.warning.is_empty(),
+        "{}",
+        runtime.state.warning
+    );
+    assert!(runtime.state.freshness.automatic.enabled(project));
+}
+
+fn capture_automatic_compact_failure(runtime: &mut Runtime<State>) {
+    let Some(output) = std::env::var_os("CODECALLNAVIGATOR_FRESHNESS_UI_CAPTURES") else {
+        return;
+    };
+    runtime.set_system_dark(false);
+    runtime.set_viewport((1050.0, 680.0), 1.0);
+    for _ in 0..20 {
+        runtime.frame(1.0 / 60.0);
+    }
+    capture(
+        runtime,
+        (1050.0, 680.0),
+        &PathBuf::from(output).join("automatic-invalid-light-compact.png"),
+    );
+    runtime.set_viewport((1420.0, 900.0), 1.0);
+    runtime.set_system_dark(true);
+}

@@ -11,7 +11,10 @@ pub mod graphviz;
 pub mod method_policy;
 pub mod metrics;
 pub mod model;
+#[cfg(unix)]
+pub mod process_ownership;
 pub mod protocol;
 pub mod query;
+pub mod refresh;
 pub mod search;
 pub mod store;

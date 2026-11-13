@@ -72,6 +72,65 @@ impl Executor {
         super::observer::observe(&loaded.artifact, &loaded.generation, &loaded.roots, cancel)
     }
 
+    pub(super) fn refresh_plan(
+        &self,
+        cancel: &std::sync::atomic::AtomicBool,
+    ) -> codecallnavigator_core::query::Result<super::refresh_coordinator::Plan> {
+        use codecallnavigator_core::{artifact, protocol, query::Error};
+        let loaded = self
+            .loaded
+            .as_ref()
+            .ok_or_else(|| Error::new("selection_unavailable", "No observed graph generation"))?;
+        let result = (|| {
+            let analysis =
+                artifact::provenance::read(&loaded.artifact.graph)?.ok_or_else(|| {
+                    anyhow::anyhow!(
+                        "Legacy graph has no exact build selection; run a manual refresh"
+                    )
+                })?;
+            let targets = artifact::selection::resolve(analysis.selection.as_ref(), &loaded.roots)?
+                .iter()
+                .map(codecallnavigator_core::discovery::rediscover_exact)
+                .collect::<anyhow::Result<Vec<_>>>()?;
+            let trigger = if targets.iter().any(|target| target.language == "java") {
+                Some(artifact::verification::observe_refresh_trigger(
+                    &loaded.artifact,
+                    &loaded.generation,
+                    &loaded.roots,
+                    cancel,
+                )?)
+            } else {
+                None
+            };
+            let project = loaded
+                .roots
+                .iter()
+                .find(|(name, _)| name == "repo")
+                .expect("loaded project root")
+                .1
+                .clone();
+            let selection = blake3::hash(&serde_json::to_vec(&analysis.selection)?)
+                .to_hex()
+                .to_string();
+            Ok::<_, anyhow::Error>(super::refresh_coordinator::Plan {
+                request: protocol::Request::Analyze {
+                    version: protocol::VERSION,
+                    project: project.clone(),
+                    roots: loaded.roots.clone(),
+                    targets,
+                    infer_linked_roots: false,
+                    failure_version: Some(1),
+                    expected_generation: Some(loaded.generation.clone()),
+                },
+                generation: loaded.generation.clone(),
+                selection,
+                project,
+                trigger,
+            })
+        })();
+        result.map_err(|error| Error::new("selection_unavailable", format!("{error:#}")))
+    }
+
     fn prepare(&mut self, request: &Request) -> codecallnavigator_core::query::Result<()> {
         query::validate(request)?;
         // Always hash current saved bytes: timestamps alone cannot prove identity.

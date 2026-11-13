@@ -42,6 +42,12 @@ pub(crate) fn install(state: &mut State, loaded: LoadedGraph, mode: Mode) {
         navigation.retain_with_inventory(&loaded.graph, &loaded.navigation);
     }
     state.query_context = loaded.context;
+    state.freshness.installed(
+        state
+            .query_context
+            .as_ref()
+            .map(|context| &context.descriptor),
+    );
     state.presentation_cache = loaded.presentation_cache;
     state.graph = Some(loaded.graph);
     state.analysis_metrics = loaded.metrics;

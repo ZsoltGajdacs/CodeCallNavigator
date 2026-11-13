@@ -36,6 +36,8 @@ mod tests {
         Analysis {
             version: 1,
             targets: targets.iter().map(|value| (*value).into()).collect(),
+            selection: None,
+            refresh_inputs: None,
             roots: vec![],
             engine_versions: versions.to_string(),
             inputs: vec![],

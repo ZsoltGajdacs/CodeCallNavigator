@@ -11,7 +11,11 @@ pub(crate) struct Output {
 
 impl State {
     pub(crate) fn project_job_busy(&self) -> bool {
-        self.analyzing || self.clearing_cache || self.closing || self.reload.job.is_pending()
+        self.analyzing
+            || self.clearing_cache
+            || self.closing
+            || self.reload.job.is_pending()
+            || self.freshness.manual_pending()
     }
 
     pub(crate) fn can_clear_cache(&self) -> bool {

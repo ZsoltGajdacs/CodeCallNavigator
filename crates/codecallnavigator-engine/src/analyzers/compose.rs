@@ -54,6 +54,7 @@ impl GraphComposition {
         self.graph.folder_project_builds.sort();
         self.graph.folder_project_builds.dedup();
         self.graph.fingerprints.extend(part.fingerprints);
+        merge_outputs(&mut self.graph.refresh_outputs, part.refresh_outputs);
         Ok(())
     }
 
@@ -103,6 +104,31 @@ impl GraphComposition {
     pub(super) fn finish(self) -> GraphData {
         self.graph
     }
+}
+
+fn merge_outputs(
+    combined: &mut Option<crate::model::CompilerOutputs>,
+    part: Option<crate::model::CompilerOutputs>,
+) {
+    let Some(part) = part else { return };
+    let Some(combined) = combined.as_mut() else {
+        *combined = Some(part);
+        return;
+    };
+    combined
+        .bytecode_directories
+        .extend(part.bytecode_directories);
+    combined.compile_classpath.extend(part.compile_classpath);
+    combined.source_roots.extend(part.source_roots);
+    combined.build_inputs.extend(part.build_inputs);
+    combined.raw_bytecode_directories = combined
+        .raw_bytecode_directories
+        .take()
+        .zip(part.raw_bytecode_directories)
+        .map(|(mut existing, part)| {
+            existing.extend(part);
+            existing
+        });
 }
 
 fn edge_key(edge: &Edge) -> EdgeKey {

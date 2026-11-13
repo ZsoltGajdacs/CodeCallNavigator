@@ -1,0 +1,1730 @@
+[
+  {
+    "name": "prerequisites",
+    "command": [
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/.venv-verification/bin/python",
+      "tools/verification/prerequisites.py",
+      "--root",
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph",
+      "--codescene-command",
+      "cs-mcp",
+      "--profile-source",
+      "/Users/zsolt.gajdacs/Library/Application Support/CodeCallNavigator"
+    ],
+    "timeout": 180,
+    "status": "passed",
+    "log": "01-prerequisites.log",
+    "exit_code": 0,
+    "seconds": 0.855
+  },
+  {
+    "name": "whitespace",
+    "command": [
+      "git",
+      "diff",
+      "--check",
+      "HEAD",
+      "--"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "02-whitespace.log",
+    "exit_code": 0,
+    "seconds": 0.05
+  },
+  {
+    "name": "syntax-format-001",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "crates/codecallnavigator-core/src/artifact.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "03-syntax-format-001.log",
+    "exit_code": 0,
+    "seconds": 0.145
+  },
+  {
+    "name": "syntax-format-002",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "crates/codecallnavigator-core/src/artifact/provenance.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "04-syntax-format-002.log",
+    "exit_code": 0,
+    "seconds": 0.043
+  },
+  {
+    "name": "syntax-format-003",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "crates/codecallnavigator-core/src/artifact/provenance_selection_tests.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "05-syntax-format-003.log",
+    "exit_code": 0,
+    "seconds": 0.049
+  },
+  {
+    "name": "syntax-format-004",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "crates/codecallnavigator-core/src/artifact/publish.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "06-syntax-format-004.log",
+    "exit_code": 0,
+    "seconds": 0.049
+  },
+  {
+    "name": "syntax-format-005",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "crates/codecallnavigator-core/src/artifact/refresh_inputs.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "07-syntax-format-005.log",
+    "exit_code": 0,
+    "seconds": 0.049
+  },
+  {
+    "name": "syntax-format-006",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "crates/codecallnavigator-core/src/artifact/selection.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "08-syntax-format-006.log",
+    "exit_code": 0,
+    "seconds": 0.048
+  },
+  {
+    "name": "syntax-format-007",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "crates/codecallnavigator-core/src/artifact/verification.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "09-syntax-format-007.log",
+    "exit_code": 0,
+    "seconds": 0.047
+  },
+  {
+    "name": "syntax-format-008",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "crates/codecallnavigator-core/src/artifact/verification/csharp_policy.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "10-syntax-format-008.log",
+    "exit_code": 0,
+    "seconds": 0.048
+  },
+  {
+    "name": "syntax-format-009",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "crates/codecallnavigator-core/src/artifact/verification/live.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "11-syntax-format-009.log",
+    "exit_code": 0,
+    "seconds": 0.037
+  },
+  {
+    "name": "syntax-format-010",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "crates/codecallnavigator-core/src/artifact/verification/observation_tests.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "12-syntax-format-010.log",
+    "exit_code": 0,
+    "seconds": 0.045
+  },
+  {
+    "name": "syntax-format-011",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "crates/codecallnavigator-core/src/discovery.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "13-syntax-format-011.log",
+    "exit_code": 0,
+    "seconds": 0.045
+  },
+  {
+    "name": "syntax-format-012",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "crates/codecallnavigator-core/src/fingerprint.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "14-syntax-format-012.log",
+    "exit_code": 0,
+    "seconds": 0.049
+  },
+  {
+    "name": "syntax-format-013",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "crates/codecallnavigator-core/src/freshness.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "15-syntax-format-013.log",
+    "exit_code": 0,
+    "seconds": 0.046
+  },
+  {
+    "name": "syntax-format-014",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "crates/codecallnavigator-core/src/lib.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "16-syntax-format-014.log",
+    "exit_code": 0,
+    "seconds": 0.049
+  },
+  {
+    "name": "syntax-format-015",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "crates/codecallnavigator-core/src/model.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "17-syntax-format-015.log",
+    "exit_code": 0,
+    "seconds": 0.045
+  },
+  {
+    "name": "syntax-format-016",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "crates/codecallnavigator-core/src/process_ownership.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "18-syntax-format-016.log",
+    "exit_code": 0,
+    "seconds": 0.048
+  },
+  {
+    "name": "syntax-format-017",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "crates/codecallnavigator-core/src/protocol.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "19-syntax-format-017.log",
+    "exit_code": 0,
+    "seconds": 0.043
+  },
+  {
+    "name": "syntax-format-018",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "crates/codecallnavigator-core/src/query.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "20-syntax-format-018.log",
+    "exit_code": 0,
+    "seconds": 0.049
+  },
+  {
+    "name": "syntax-format-019",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "crates/codecallnavigator-core/src/refresh.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "21-syntax-format-019.log",
+    "exit_code": 0,
+    "seconds": 0.049
+  },
+  {
+    "name": "syntax-format-020",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "crates/codecallnavigator-engine/src/analyzers.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "22-syntax-format-020.log",
+    "exit_code": 0,
+    "seconds": 0.049
+  },
+  {
+    "name": "syntax-format-021",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "crates/codecallnavigator-engine/src/analyzers/compose.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "23-syntax-format-021.log",
+    "exit_code": 0,
+    "seconds": 0.049
+  },
+  {
+    "name": "syntax-format-022",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "crates/codecallnavigator-engine/src/analyzers/java.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "24-syntax-format-022.log",
+    "exit_code": 0,
+    "seconds": 0.048
+  },
+  {
+    "name": "syntax-format-023",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "crates/codecallnavigator-engine/src/analyzers/java/build.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "25-syntax-format-023.log",
+    "exit_code": 0,
+    "seconds": 0.049
+  },
+  {
+    "name": "syntax-format-024",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "crates/codecallnavigator-engine/src/analyzers/java/contexts.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "26-syntax-format-024.log",
+    "exit_code": 0,
+    "seconds": 0.049
+  },
+  {
+    "name": "syntax-format-025",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "crates/codecallnavigator-engine/src/analyzers/java/lambda_correlation_tests.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "27-syntax-format-025.log",
+    "exit_code": 0,
+    "seconds": 0.049
+  },
+  {
+    "name": "syntax-format-026",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "crates/codecallnavigator-engine/src/analyzers/java/refresh_outputs.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "28-syntax-format-026.log",
+    "exit_code": 0,
+    "seconds": 0.047
+  },
+  {
+    "name": "syntax-format-027",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "crates/codecallnavigator-engine/src/analyzers/process.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "29-syntax-format-027.log",
+    "exit_code": 0,
+    "seconds": 0.049
+  },
+  {
+    "name": "syntax-format-028",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "crates/codecallnavigator-engine/src/entrypoints.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "30-syntax-format-028.log",
+    "exit_code": 0,
+    "seconds": 0.048
+  },
+  {
+    "name": "syntax-format-029",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "crates/codecallnavigator-engine/src/entrypoints/analysis.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "31-syntax-format-029.log",
+    "exit_code": 0,
+    "seconds": 0.045
+  },
+  {
+    "name": "syntax-format-030",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "crates/codecallnavigator-engine/src/entrypoints/arguments.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "32-syntax-format-030.log",
+    "exit_code": 0,
+    "seconds": 0.048
+  },
+  {
+    "name": "syntax-format-031",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "crates/codecallnavigator-engine/src/entrypoints/machine.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "33-syntax-format-031.log",
+    "exit_code": 0,
+    "seconds": 0.049
+  },
+  {
+    "name": "syntax-format-032",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "crates/codecallnavigator-engine/src/entrypoints/observation_stream.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "34-syntax-format-032.log",
+    "exit_code": 0,
+    "seconds": 0.049
+  },
+  {
+    "name": "syntax-format-033",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "crates/codecallnavigator-engine/src/entrypoints/observation_transport.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "35-syntax-format-033.log",
+    "exit_code": 0,
+    "seconds": 0.048
+  },
+  {
+    "name": "syntax-format-034",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "crates/codecallnavigator-engine/src/entrypoints/query_executor.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "36-syntax-format-034.log",
+    "exit_code": 0,
+    "seconds": 0.048
+  },
+  {
+    "name": "syntax-format-035",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "crates/codecallnavigator-engine/src/entrypoints/refresh_child.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "37-syntax-format-035.log",
+    "exit_code": 0,
+    "seconds": 0.048
+  },
+  {
+    "name": "syntax-format-036",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "crates/codecallnavigator-engine/src/entrypoints/refresh_coordinator.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "38-syntax-format-036.log",
+    "exit_code": 0,
+    "seconds": 0.043
+  },
+  {
+    "name": "syntax-format-037",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "crates/codecallnavigator-engine/src/entrypoints/refresh_policy.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "39-syntax-format-037.log",
+    "exit_code": 0,
+    "seconds": 0.044
+  },
+  {
+    "name": "syntax-format-038",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "crates/codecallnavigator-engine/src/lib.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "40-syntax-format-038.log",
+    "exit_code": 0,
+    "seconds": 0.049
+  },
+  {
+    "name": "syntax-format-039",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "crates/codecallnavigator-engine/src/process_ownership.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "41-syntax-format-039.log",
+    "exit_code": 0,
+    "seconds": 0.048
+  },
+  {
+    "name": "syntax-format-040",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "crates/codecallnavigator-engine/tests/automatic_refresh.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "42-syntax-format-040.log",
+    "exit_code": 0,
+    "seconds": 0.045
+  },
+  {
+    "name": "syntax-format-041",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "crates/codecallnavigator-engine/tests/clear_cache.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "43-syntax-format-041.log",
+    "exit_code": 0,
+    "seconds": 0.048
+  },
+  {
+    "name": "syntax-format-042",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "crates/codecallnavigator-engine/tests/refresh_contract.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "44-syntax-format-042.log",
+    "exit_code": 0,
+    "seconds": 0.048
+  },
+  {
+    "name": "syntax-format-154",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "src/app.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "45-syntax-format-154.log",
+    "exit_code": 0,
+    "seconds": 0.044
+  },
+  {
+    "name": "syntax-format-155",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "src/automatic_refresh.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "46-syntax-format-155.log",
+    "exit_code": 0,
+    "seconds": 0.049
+  },
+  {
+    "name": "syntax-format-156",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "src/cache_jobs.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "47-syntax-format-156.log",
+    "exit_code": 0,
+    "seconds": 0.049
+  },
+  {
+    "name": "syntax-format-157",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "src/engine_client.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "48-syntax-format-157.log",
+    "exit_code": 0,
+    "seconds": 0.047
+  },
+  {
+    "name": "syntax-format-158",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "src/engine_client/capabilities.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "49-syntax-format-158.log",
+    "exit_code": 0,
+    "seconds": 0.049
+  },
+  {
+    "name": "syntax-format-159",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "src/engine_client/observation_process.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "50-syntax-format-159.log",
+    "exit_code": 0,
+    "seconds": 0.041
+  },
+  {
+    "name": "syntax-format-160",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "src/engine_client/observation_process/activity.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "51-syntax-format-160.log",
+    "exit_code": 0,
+    "seconds": 0.044
+  },
+  {
+    "name": "syntax-format-161",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "src/engine_client/queries.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "52-syntax-format-161.log",
+    "exit_code": 0,
+    "seconds": 0.049
+  },
+  {
+    "name": "syntax-format-162",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "src/engine_client/query_process.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "53-syntax-format-162.log",
+    "exit_code": 0,
+    "seconds": 0.049
+  },
+  {
+    "name": "syntax-format-163",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "src/engine_client/query_tests.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "54-syntax-format-163.log",
+    "exit_code": 0,
+    "seconds": 0.049
+  },
+  {
+    "name": "syntax-format-164",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "src/freshness_workspace.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "55-syntax-format-164.log",
+    "exit_code": 0,
+    "seconds": 0.049
+  },
+  {
+    "name": "syntax-format-165",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "src/freshness_workspace/worker.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "56-syntax-format-165.log",
+    "exit_code": 0,
+    "seconds": 0.049
+  },
+  {
+    "name": "syntax-format-166",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "src/graph_install.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "57-syntax-format-166.log",
+    "exit_code": 0,
+    "seconds": 0.048
+  },
+  {
+    "name": "syntax-format-167",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "src/jobs/analysis.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "58-syntax-format-167.log",
+    "exit_code": 0,
+    "seconds": 0.048
+  },
+  {
+    "name": "syntax-format-168",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "src/main.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "59-syntax-format-168.log",
+    "exit_code": 0,
+    "seconds": 0.048
+  },
+  {
+    "name": "syntax-format-169",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "src/ui_tests/cli_freshness.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "60-syntax-format-169.log",
+    "exit_code": 0,
+    "seconds": 0.049
+  },
+  {
+    "name": "syntax-format-170",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "src/view.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "61-syntax-format-170.log",
+    "exit_code": 0,
+    "seconds": 0.049
+  },
+  {
+    "name": "syntax-format-171",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "src/view/automatic_refresh.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "62-syntax-format-171.log",
+    "exit_code": 0,
+    "seconds": 0.049
+  },
+  {
+    "name": "syntax-format-172",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "tests/java_output_metadata.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "63-syntax-format-172.log",
+    "exit_code": 0,
+    "seconds": 0.049
+  },
+  {
+    "name": "syntax-format-173",
+    "command": [
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/.venv-verification/bin/python",
+      "-c",
+      "import ast, pathlib, sys; ast.parse(pathlib.Path(sys.argv[1]).read_bytes(), filename=sys.argv[1])",
+      "tools/automatic_refresh_acceptance.py"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "64-syntax-format-173.log",
+    "exit_code": 0,
+    "seconds": 0.046
+  },
+  {
+    "name": "syntax-format-174",
+    "command": [
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/.venv-verification/bin/python",
+      "-c",
+      "import ast, pathlib, sys; ast.parse(pathlib.Path(sys.argv[1]).read_bytes(), filename=sys.argv[1])",
+      "tools/freshness_observer_measurement.py"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "65-syntax-format-174.log",
+    "exit_code": 0,
+    "seconds": 0.049
+  },
+  {
+    "name": "syntax-format-177",
+    "command": [
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/.venv-verification/bin/python",
+      "-c",
+      "import ast, pathlib, sys; ast.parse(pathlib.Path(sys.argv[1]).read_bytes(), filename=sys.argv[1])",
+      "tools/measure_automatic_refresh.py"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "66-syntax-format-177.log",
+    "exit_code": 0,
+    "seconds": 0.048
+  },
+  {
+    "name": "syntax-format-178",
+    "command": [
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/.venv-verification/bin/python",
+      "-c",
+      "import ast, pathlib, sys; ast.parse(pathlib.Path(sys.argv[1]).read_bytes(), filename=sys.argv[1])",
+      "tools/measure_freshness_idle.py"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "67-syntax-format-178.log",
+    "exit_code": 0,
+    "seconds": 0.046
+  },
+  {
+    "name": "syntax-format-179",
+    "command": [
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/.venv-verification/bin/python",
+      "-c",
+      "import ast, pathlib, sys; ast.parse(pathlib.Path(sys.argv[1]).read_bytes(), filename=sys.argv[1])",
+      "tools/test_automatic_refresh_measurement.py"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "68-syntax-format-179.log",
+    "exit_code": 0,
+    "seconds": 0.048
+  },
+  {
+    "name": "syntax-format-180",
+    "command": [
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/.venv-verification/bin/python",
+      "-c",
+      "import ast, pathlib, sys; ast.parse(pathlib.Path(sys.argv[1]).read_bytes(), filename=sys.argv[1])",
+      "tools/test_freshness_observer_measurement.py"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "69-syntax-format-180.log",
+    "exit_code": 0,
+    "seconds": 0.046
+  },
+  {
+    "name": "bootstrap",
+    "command": [
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/.venv-verification/bin/python",
+      "tools/bootstrap.py"
+    ],
+    "timeout": 3600,
+    "status": "passed",
+    "log": "70-bootstrap.log",
+    "exit_code": 0,
+    "seconds": 5.766
+  },
+  {
+    "name": "build-debug-engine",
+    "command": [
+      "cargo",
+      "build",
+      "--locked",
+      "-p",
+      "codecallnavigator-engine",
+      "--bin",
+      "codecallnavigator-engine"
+    ],
+    "timeout": 3600,
+    "status": "passed",
+    "log": "71-build-debug-engine.log",
+    "exit_code": 0,
+    "seconds": 4.418
+  },
+  {
+    "name": "cargo-check",
+    "command": [
+      "cargo",
+      "check",
+      "--locked",
+      "--workspace",
+      "--all-targets"
+    ],
+    "timeout": 3600,
+    "status": "passed",
+    "log": "72-cargo-check.log",
+    "exit_code": 0,
+    "seconds": 4.532
+  },
+  {
+    "name": "mcp-dependency-boundary",
+    "command": [
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/.venv-verification/bin/python",
+      "tools/mcp_boundary.py",
+      "--root",
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph"
+    ],
+    "timeout": 3600,
+    "status": "passed",
+    "log": "73-mcp-dependency-boundary.log",
+    "exit_code": 0,
+    "seconds": 0.31
+  },
+  {
+    "name": "clippy",
+    "command": [
+      "cargo",
+      "clippy",
+      "--locked",
+      "--workspace",
+      "--all-targets",
+      "--no-deps",
+      "--",
+      "-D",
+      "warnings"
+    ],
+    "timeout": 3600,
+    "status": "passed",
+    "log": "74-clippy.log",
+    "exit_code": 0,
+    "seconds": 4.462
+  },
+  {
+    "name": "rust-tests",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "--workspace",
+      "--all-targets",
+      "--",
+      "--test-threads=1"
+    ],
+    "timeout": 3600,
+    "status": "passed",
+    "log": "75-rust-tests.log",
+    "exit_code": 0,
+    "seconds": 148.308
+  },
+  {
+    "name": "python-tests",
+    "command": [
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/.venv-verification/bin/python",
+      "-m",
+      "unittest",
+      "discover",
+      "-s",
+      "tests",
+      "-v"
+    ],
+    "timeout": 3600,
+    "status": "passed",
+    "log": "76-python-tests.log",
+    "exit_code": 0,
+    "seconds": 36.31
+  },
+  {
+    "name": "python-tool-tests",
+    "command": [
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/.venv-verification/bin/python",
+      "-m",
+      "unittest",
+      "discover",
+      "-s",
+      "tools",
+      "-p",
+      "test_*.py",
+      "-v"
+    ],
+    "timeout": 3600,
+    "status": "passed",
+    "log": "77-python-tool-tests.log",
+    "exit_code": 0,
+    "seconds": 10.983
+  },
+  {
+    "name": "typescript-tests",
+    "command": [
+      "node",
+      "--test",
+      "tools/typescript/adapter.test.js",
+      "tools/typescript/boundary.test.js",
+      "tools/typescript/callable.test.js",
+      "tools/typescript/flow-export.test.js",
+      "tools/typescript/observations.test.js",
+      "tools/typescript/observer.test.js",
+      "tools/typescript/paths.test.js",
+      "tools/typescript/signature.test.js",
+      "tools/typescript/worker.test.js"
+    ],
+    "timeout": 3600,
+    "status": "passed",
+    "log": "78-typescript-tests.log",
+    "exit_code": 0,
+    "seconds": 25.259
+  },
+  {
+    "name": "build-release-engine",
+    "command": [
+      "cargo",
+      "build",
+      "--locked",
+      "--release",
+      "-p",
+      "codecallnavigator-engine",
+      "--bin",
+      "codecallnavigator-engine"
+    ],
+    "timeout": 3600,
+    "status": "passed",
+    "log": "79-build-release-engine.log",
+    "exit_code": 0,
+    "seconds": 0.249
+  },
+  {
+    "name": "profile-snapshot",
+    "command": [
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/.venv-verification/bin/python",
+      "tools/verification/profile.py",
+      "/Users/zsolt.gajdacs/Library/Application Support/CodeCallNavigator",
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/target/verification/task62-full/profile"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "80-profile-snapshot.log",
+    "exit_code": 0,
+    "seconds": 0.09
+  },
+  {
+    "name": "release-acceptance-and-benchmarks",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "--release",
+      "--workspace",
+      "--all-targets",
+      "--no-fail-fast",
+      "--",
+      "--include-ignored",
+      "--test-threads=1",
+      "--nocapture"
+    ],
+    "timeout": 3600,
+    "status": "passed",
+    "log": "81-release-acceptance-and-benchmarks.log",
+    "exit_code": 0,
+    "seconds": 1601.933
+  },
+  {
+    "name": "storage-benchmark",
+    "command": [
+      "cargo",
+      "run",
+      "--locked",
+      "--release",
+      "--bin",
+      "benchmark",
+      "--",
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/target/verification/task62-full/scale-cache"
+    ],
+    "timeout": 3600,
+    "status": "passed",
+    "log": "82-storage-benchmark.log",
+    "exit_code": 0,
+    "seconds": 11.753
+  },
+  {
+    "name": "package",
+    "command": [
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/.venv-verification/bin/python",
+      "tools/package.py"
+    ],
+    "timeout": 3600,
+    "status": "passed",
+    "log": "83-package.log",
+    "exit_code": 0,
+    "seconds": 19.987
+  },
+  {
+    "name": "package-signature",
+    "command": [
+      "codesign",
+      "--verify",
+      "--deep",
+      "--strict",
+      "dist/CodeCallNavigator.app"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "84-package-signature.log",
+    "exit_code": 0,
+    "seconds": 0.09
+  },
+  {
+    "name": "packaged-engine",
+    "command": [
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/dist/CodeCallNavigatorEngine/bin/codecallnavigator-engine",
+      "--help"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "85-packaged-engine.log",
+    "exit_code": 0,
+    "seconds": 0.317
+  },
+  {
+    "name": "installed-cli",
+    "command": [
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/.venv-verification/bin/python",
+      "tools/installed_cli_acceptance.py",
+      "--package",
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/dist/CodeCallNavigatorEngine",
+      "--node-modules",
+      "/Users/zsolt.gajdacs/Zs/Programming/PacificFateMapEditor/node_modules",
+      "--output",
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/target/verification/task62-full/installed-cli.json"
+    ],
+    "timeout": 3600,
+    "status": "passed",
+    "log": "86-installed-cli.log",
+    "exit_code": 0,
+    "seconds": 3.096
+  },
+  {
+    "name": "agent-integrations-check",
+    "command": [
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/.venv-verification/bin/python",
+      "tools/package_agent_integrations.py",
+      "--host",
+      "all",
+      "--check"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "87-agent-integrations-check.log",
+    "exit_code": 0,
+    "seconds": 0.048
+  },
+  {
+    "name": "agent-integrations-package",
+    "command": [
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/.venv-verification/bin/python",
+      "tools/package_agent_integrations.py",
+      "--host",
+      "all",
+      "--output",
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/target/verification/task62-full/agent-integrations"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "88-agent-integrations-package.log",
+    "exit_code": 0,
+    "seconds": 0.046
+  },
+  {
+    "name": "agent-cli-journeys",
+    "command": [
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/.venv-verification/bin/python",
+      "tools/agent_journeys.py",
+      "--node-modules",
+      "/Users/zsolt.gajdacs/Zs/Programming/PacificFateMapEditor/node_modules",
+      "--output",
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/target/verification/task62-full/agent-journeys.json"
+    ],
+    "timeout": 3600,
+    "status": "passed",
+    "log": "89-agent-cli-journeys.log",
+    "exit_code": 0,
+    "seconds": 1.771
+  },
+  {
+    "name": "mcp-independent-install",
+    "command": [
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/.venv-verification/bin/python",
+      "tools/package_mcp.py",
+      "--engine",
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/dist/CodeCallNavigatorEngine/bin/codecallnavigator-engine"
+    ],
+    "timeout": 3600,
+    "status": "passed",
+    "log": "90-mcp-independent-install.log",
+    "exit_code": 0,
+    "seconds": 16.348
+  },
+  {
+    "name": "agent-mcp-journeys",
+    "command": [
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/.venv-verification/bin/python",
+      "tools/agent_mcp_journeys.py",
+      "--node-modules",
+      "/Users/zsolt.gajdacs/Zs/Programming/PacificFateMapEditor/node_modules",
+      "--output",
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/target/verification/task62-full/agent-mcp-journeys.json"
+    ],
+    "timeout": 3600,
+    "status": "passed",
+    "log": "91-agent-mcp-journeys.log",
+    "exit_code": 0,
+    "seconds": 1.639
+  },
+  {
+    "name": "codescene",
+    "command": [
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/.venv-verification/bin/python",
+      "tools/verification/quality.py",
+      "--root",
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph",
+      "--command",
+      "cs-mcp",
+      "--timeout",
+      "120",
+      "--files",
+      ".backlog/tasks/task-62 - Add-opt-in-engine-owned-automatic-graph-refresh.md",
+      "crates/codecallnavigator-core/src/artifact.rs",
+      "crates/codecallnavigator-core/src/artifact/provenance.rs",
+      "crates/codecallnavigator-core/src/artifact/provenance_selection_tests.rs",
+      "crates/codecallnavigator-core/src/artifact/publish.rs",
+      "crates/codecallnavigator-core/src/artifact/refresh_inputs.rs",
+      "crates/codecallnavigator-core/src/artifact/selection.rs",
+      "crates/codecallnavigator-core/src/artifact/verification.rs",
+      "crates/codecallnavigator-core/src/artifact/verification/csharp_policy.rs",
+      "crates/codecallnavigator-core/src/artifact/verification/live.rs",
+      "crates/codecallnavigator-core/src/artifact/verification/observation_tests.rs",
+      "crates/codecallnavigator-core/src/discovery.rs",
+      "crates/codecallnavigator-core/src/fingerprint.rs",
+      "crates/codecallnavigator-core/src/freshness.rs",
+      "crates/codecallnavigator-core/src/lib.rs",
+      "crates/codecallnavigator-core/src/model.rs",
+      "crates/codecallnavigator-core/src/process_ownership.rs",
+      "crates/codecallnavigator-core/src/protocol.rs",
+      "crates/codecallnavigator-core/src/query.rs",
+      "crates/codecallnavigator-core/src/refresh.rs",
+      "crates/codecallnavigator-engine/src/analyzers.rs",
+      "crates/codecallnavigator-engine/src/analyzers/compose.rs",
+      "crates/codecallnavigator-engine/src/analyzers/java.rs",
+      "crates/codecallnavigator-engine/src/analyzers/java/build.rs",
+      "crates/codecallnavigator-engine/src/analyzers/java/contexts.rs",
+      "crates/codecallnavigator-engine/src/analyzers/java/lambda_correlation_tests.rs",
+      "crates/codecallnavigator-engine/src/analyzers/java/refresh_outputs.rs",
+      "crates/codecallnavigator-engine/src/analyzers/process.rs",
+      "crates/codecallnavigator-engine/src/entrypoints.rs",
+      "crates/codecallnavigator-engine/src/entrypoints/analysis.rs",
+      "crates/codecallnavigator-engine/src/entrypoints/arguments.rs",
+      "crates/codecallnavigator-engine/src/entrypoints/machine.rs",
+      "crates/codecallnavigator-engine/src/entrypoints/observation_stream.rs",
+      "crates/codecallnavigator-engine/src/entrypoints/observation_transport.rs",
+      "crates/codecallnavigator-engine/src/entrypoints/query_executor.rs",
+      "crates/codecallnavigator-engine/src/entrypoints/refresh_child.rs",
+      "crates/codecallnavigator-engine/src/entrypoints/refresh_coordinator.rs",
+      "crates/codecallnavigator-engine/src/entrypoints/refresh_policy.rs",
+      "crates/codecallnavigator-engine/src/lib.rs",
+      "crates/codecallnavigator-engine/src/process_ownership.rs",
+      "crates/codecallnavigator-engine/tests/automatic_refresh.rs",
+      "crates/codecallnavigator-engine/tests/clear_cache.rs",
+      "crates/codecallnavigator-engine/tests/refresh_contract.rs",
+      "docs/cli-queries.md",
+      "docs/desktop-cli.md",
+      "docs/graph-contract.md",
+      "docs/graph.schema.json",
+      "docs/standalone-engine.md",
+      "evidence/freshness/automatic-refresh/acceptance-before-guards/broken-pipe-events.json",
+      "evidence/freshness/automatic-refresh/acceptance-before-guards/burst-latest-events.json",
+      "evidence/freshness/automatic-refresh/acceptance-before-guards/concurrent-edit-events.json",
+      "evidence/freshness/automatic-refresh/acceptance-before-guards/coordinator-lease-events.json",
+      "evidence/freshness/automatic-refresh/acceptance-before-guards/eof-events.json",
+      "evidence/freshness/automatic-refresh/acceptance-before-guards/future-selection-events.json",
+      "evidence/freshness/automatic-refresh/acceptance-before-guards/future-version-events.json",
+      "evidence/freshness/automatic-refresh/acceptance-before-guards/generated-output-events.json",
+      "evidence/freshness/automatic-refresh/acceptance-before-guards/invalid-repair-events.json",
+      "evidence/freshness/automatic-refresh/acceptance-before-guards/legacy-selection-events.json",
+      "evidence/freshness/automatic-refresh/acceptance-before-guards/manual-lock-events.json",
+      "evidence/freshness/automatic-refresh/acceptance-before-guards/metadata.json",
+      "evidence/freshness/automatic-refresh/acceptance-before-guards/results.json",
+      "evidence/freshness/automatic-refresh/acceptance-before-guards/sigterm-events.json",
+      "evidence/freshness/automatic-refresh/acceptance-before-guards/undrained-output-events.json",
+      "evidence/freshness/automatic-refresh/acceptance-before-guards/user-cancel-events.json",
+      "evidence/freshness/automatic-refresh/acceptance-pre-output-policy/broken-pipe-events.json",
+      "evidence/freshness/automatic-refresh/acceptance-pre-output-policy/burst-latest-events.json",
+      "evidence/freshness/automatic-refresh/acceptance-pre-output-policy/concurrent-edit-events.json",
+      "evidence/freshness/automatic-refresh/acceptance-pre-output-policy/coordinator-lease-events.json",
+      "evidence/freshness/automatic-refresh/acceptance-pre-output-policy/eof-events.json",
+      "evidence/freshness/automatic-refresh/acceptance-pre-output-policy/future-selection-events.json",
+      "evidence/freshness/automatic-refresh/acceptance-pre-output-policy/future-version-events.json",
+      "evidence/freshness/automatic-refresh/acceptance-pre-output-policy/generated-output-events.json",
+      "evidence/freshness/automatic-refresh/acceptance-pre-output-policy/invalid-repair-events.json",
+      "evidence/freshness/automatic-refresh/acceptance-pre-output-policy/legacy-selection-events.json",
+      "evidence/freshness/automatic-refresh/acceptance-pre-output-policy/manual-lock-events.json",
+      "evidence/freshness/automatic-refresh/acceptance-pre-output-policy/metadata.json",
+      "evidence/freshness/automatic-refresh/acceptance-pre-output-policy/results.json",
+      "evidence/freshness/automatic-refresh/acceptance-pre-output-policy/sigterm-events.json",
+      "evidence/freshness/automatic-refresh/acceptance-pre-output-policy/undrained-output-events.json",
+      "evidence/freshness/automatic-refresh/acceptance-pre-output-policy/user-cancel-events.json",
+      "evidence/freshness/automatic-refresh/acceptance/broken-pipe-events.json",
+      "evidence/freshness/automatic-refresh/acceptance/burst-latest-events.json",
+      "evidence/freshness/automatic-refresh/acceptance/concurrent-edit-events.json",
+      "evidence/freshness/automatic-refresh/acceptance/coordinator-lease-events.json",
+      "evidence/freshness/automatic-refresh/acceptance/eof-events.json",
+      "evidence/freshness/automatic-refresh/acceptance/future-selection-events.json",
+      "evidence/freshness/automatic-refresh/acceptance/future-version-events.json",
+      "evidence/freshness/automatic-refresh/acceptance/generated-output-events.json",
+      "evidence/freshness/automatic-refresh/acceptance/invalid-repair-events.json",
+      "evidence/freshness/automatic-refresh/acceptance/legacy-selection-events.json",
+      "evidence/freshness/automatic-refresh/acceptance/manual-lock-events.json",
+      "evidence/freshness/automatic-refresh/acceptance/metadata.json",
+      "evidence/freshness/automatic-refresh/acceptance/results.json",
+      "evidence/freshness/automatic-refresh/acceptance/sigterm-events.json",
+      "evidence/freshness/automatic-refresh/acceptance/undrained-output-events.json",
+      "evidence/freshness/automatic-refresh/acceptance/user-cancel-events.json",
+      "evidence/freshness/automatic-refresh/code-health.json",
+      "evidence/freshness/automatic-refresh/idle/csharp-automatic-stream.jsonl",
+      "evidence/freshness/automatic-refresh/idle/csharp-passive-stream.jsonl",
+      "evidence/freshness/automatic-refresh/idle/gradle-automatic-stream.jsonl",
+      "evidence/freshness/automatic-refresh/idle/gradle-passive-stream.jsonl",
+      "evidence/freshness/automatic-refresh/idle/maven-automatic-stream.jsonl",
+      "evidence/freshness/automatic-refresh/idle/maven-passive-stream.jsonl",
+      "evidence/freshness/automatic-refresh/idle/metadata.json",
+      "evidence/freshness/automatic-refresh/idle/summary.json",
+      "evidence/freshness/automatic-refresh/idle/typescript-automatic-stream.jsonl",
+      "evidence/freshness/automatic-refresh/idle/typescript-passive-stream.jsonl",
+      "evidence/freshness/automatic-refresh/output-trigger-diagnostics/csharp-stream.jsonl.gz",
+      "evidence/freshness/automatic-refresh/output-trigger-diagnostics/csharp-variant-0.json.gz",
+      "evidence/freshness/automatic-refresh/output-trigger-diagnostics/csharp-variant-1.json.gz",
+      "evidence/freshness/automatic-refresh/output-trigger-diagnostics/gradle-stream.jsonl.gz",
+      "evidence/freshness/automatic-refresh/output-trigger-diagnostics/gradle-variant-0.json.gz",
+      "evidence/freshness/automatic-refresh/output-trigger-diagnostics/gradle-variant-1.json.gz",
+      "evidence/freshness/automatic-refresh/output-trigger-diagnostics/maven-stream.jsonl.gz",
+      "evidence/freshness/automatic-refresh/output-trigger-diagnostics/maven-variant-0.json.gz",
+      "evidence/freshness/automatic-refresh/output-trigger-diagnostics/maven-variant-1.json.gz",
+      "evidence/freshness/automatic-refresh/output-trigger-diagnostics/metadata.json",
+      "evidence/freshness/automatic-refresh/output-trigger-diagnostics/samples.jsonl.gz",
+      "evidence/freshness/automatic-refresh/output-trigger-diagnostics/summary.json",
+      "evidence/freshness/automatic-refresh/output-trigger-diagnostics/typescript-stream.jsonl.gz",
+      "evidence/freshness/automatic-refresh/output-trigger-diagnostics/typescript-variant-0.json.gz",
+      "evidence/freshness/automatic-refresh/output-trigger-diagnostics/typescript-variant-1.json.gz",
+      "evidence/freshness/automatic-refresh/publications-initial/csharp-variant-0.json.gz",
+      "evidence/freshness/automatic-refresh/publications-initial/csharp-variant-1.json.gz",
+      "evidence/freshness/automatic-refresh/publications-initial/gradle-variant-0.json.gz",
+      "evidence/freshness/automatic-refresh/publications-initial/gradle-variant-1.json.gz",
+      "evidence/freshness/automatic-refresh/publications-initial/maven-variant-0.json.gz",
+      "evidence/freshness/automatic-refresh/publications-initial/maven-variant-1.json.gz",
+      "evidence/freshness/automatic-refresh/publications-initial/metadata.json",
+      "evidence/freshness/automatic-refresh/publications-initial/samples.jsonl.gz",
+      "evidence/freshness/automatic-refresh/publications-initial/summary.json",
+      "evidence/freshness/automatic-refresh/publications-initial/typescript-variant-0.json.gz",
+      "evidence/freshness/automatic-refresh/publications-initial/typescript-variant-1.json.gz",
+      "evidence/freshness/automatic-refresh/publications/csharp-stream.jsonl",
+      "evidence/freshness/automatic-refresh/publications/csharp-variant-0.json.gz",
+      "evidence/freshness/automatic-refresh/publications/csharp-variant-1.json.gz",
+      "evidence/freshness/automatic-refresh/publications/gradle-stream.jsonl",
+      "evidence/freshness/automatic-refresh/publications/gradle-variant-0.json.gz",
+      "evidence/freshness/automatic-refresh/publications/gradle-variant-1.json.gz",
+      "evidence/freshness/automatic-refresh/publications/maven-stream.jsonl",
+      "evidence/freshness/automatic-refresh/publications/maven-variant-0.json.gz",
+      "evidence/freshness/automatic-refresh/publications/maven-variant-1.json.gz",
+      "evidence/freshness/automatic-refresh/publications/metadata.json",
+      "evidence/freshness/automatic-refresh/publications/samples.jsonl",
+      "evidence/freshness/automatic-refresh/publications/summary.json",
+      "evidence/freshness/automatic-refresh/publications/typescript-stream.jsonl",
+      "evidence/freshness/automatic-refresh/publications/typescript-variant-0.json.gz",
+      "evidence/freshness/automatic-refresh/publications/typescript-variant-1.json.gz",
+      "evidence/freshness/task62-desktop/README.md",
+      "evidence/freshness/task62-desktop/automatic-disabled.png",
+      "evidence/freshness/task62-desktop/automatic-enabled.png",
+      "evidence/freshness/task62-desktop/automatic-invalid-code.png",
+      "evidence/freshness/task62-desktop/automatic-invalid-light-compact.png",
+      "evidence/freshness/task62-desktop/run.json",
+      "src/app.rs",
+      "src/automatic_refresh.rs",
+      "src/cache_jobs.rs",
+      "src/engine_client.rs",
+      "src/engine_client/capabilities.rs",
+      "src/engine_client/observation_process.rs",
+      "src/engine_client/observation_process/activity.rs",
+      "src/engine_client/queries.rs",
+      "src/engine_client/query_process.rs",
+      "src/engine_client/query_tests.rs",
+      "src/freshness_workspace.rs",
+      "src/freshness_workspace/worker.rs",
+      "src/graph_install.rs",
+      "src/jobs/analysis.rs",
+      "src/main.rs",
+      "src/ui_tests/cli_freshness.rs",
+      "src/view.rs",
+      "src/view/automatic_refresh.rs",
+      "tests/java_output_metadata.rs",
+      "tools/automatic_refresh_acceptance.py",
+      "tools/freshness_observer_measurement.py",
+      "tools/gradle-metadata.gradle",
+      "tools/maven-metadata/src/main/java/codecallnavigator/maven/BuildMetadata.java",
+      "tools/measure_automatic_refresh.py",
+      "tools/measure_freshness_idle.py",
+      "tools/test_automatic_refresh_measurement.py",
+      "tools/test_freshness_observer_measurement.py"
+    ],
+    "timeout": 180,
+    "status": "passed",
+    "log": "92-codescene.log",
+    "exit_code": 0,
+    "seconds": 26.668
+  },
+  {
+    "name": "cleanup",
+    "command": [
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/.venv-verification/bin/python",
+      "tools/verification/cleanup.py",
+      "--root",
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph",
+      "--output",
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/target/verification/task62-full",
+      "--mode",
+      "full"
+    ],
+    "timeout": 600,
+    "status": "failed",
+    "log": "93-cleanup.log",
+    "exit_code": 1,
+    "seconds": 9.505
+  }
+]

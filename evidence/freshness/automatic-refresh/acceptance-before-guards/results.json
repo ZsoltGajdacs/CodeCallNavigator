@@ -1,0 +1,44 @@
+{
+  "burst-latest": {
+    "passed": true
+  },
+  "invalid-repair": {
+    "passed": true
+  },
+  "manual-lock": {
+    "passed": true
+  },
+  "coordinator-lease": {
+    "passed": true
+  },
+  "generated-output": {
+    "passed": true
+  },
+  "user-cancel": {
+    "passed": true
+  },
+  "eof": {
+    "passed": true
+  },
+  "sigterm": {
+    "passed": true
+  },
+  "broken-pipe": {
+    "passed": true
+  },
+  "undrained-output": {
+    "passed": true
+  },
+  "concurrent-edit": {
+    "passed": true
+  },
+  "legacy-selection": {
+    "passed": true
+  },
+  "future-selection": {
+    "passed": true
+  },
+  "future-version": {
+    "passed": true
+  }
+}

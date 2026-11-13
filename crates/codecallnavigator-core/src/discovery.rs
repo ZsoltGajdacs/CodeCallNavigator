@@ -66,6 +66,9 @@ pub fn generated_graph_output(path: &Path) -> bool {
 }
 
 fn generated_analysis_name(name: &str) -> bool {
+    if name == crate::artifact::COORDINATOR_LOCK_NAME {
+        return true;
+    }
     matches!(
         name,
         "graph.json"
@@ -86,12 +89,7 @@ pub fn discover(root: &Path) -> Result<Vec<BuildTarget>> {
     let mut gradle_roots = BTreeSet::new();
     discover_directory(&root, &mut targets, &mut gradle_roots)?;
     for path in independent_gradle_roots(&gradle_roots) {
-        targets.push(BuildTarget {
-            label: names::label(&path, names::Kind::Gradle),
-            path,
-            language: "java".into(),
-            kind: "gradle".into(),
-        });
+        targets.push(gradle_target(path));
     }
     targets.sort_by(|a, b| a.path.cmp(&b.path));
     Ok(targets)
@@ -167,6 +165,43 @@ pub fn target_from_file(path: &Path) -> Result<BuildTarget> {
         language: "csharp".into(),
         kind: kind.into(),
     })
+}
+
+/// Revalidate one recorded identity without expanding directories or applying defaults.
+pub fn rediscover_exact(selected: &BuildTarget) -> Result<BuildTarget> {
+    let mut found = Vec::new();
+    if selected.path.is_file() {
+        found.push(target_from_file(&selected.path)?);
+    } else {
+        let mut gradle = BTreeSet::new();
+        for entry in fs::read_dir(&selected.path).context("Cannot open recorded target")? {
+            let entry = entry?;
+            if entry.file_type()?.is_file() {
+                discover_file(
+                    &entry.path(),
+                    &entry.file_name().to_string_lossy(),
+                    &mut found,
+                    &mut gradle,
+                );
+            }
+        }
+        found.extend(gradle.into_iter().map(gradle_target));
+    }
+    found
+        .into_iter()
+        .find(|target| {
+            target.identity() == selected.identity() && target.language == selected.language
+        })
+        .context("The exact recorded target is no longer available; run a manual refresh")
+}
+
+fn gradle_target(path: PathBuf) -> BuildTarget {
+    BuildTarget {
+        label: names::label(&path, names::Kind::Gradle),
+        path,
+        language: "java".into(),
+        kind: "gradle".into(),
+    }
 }
 
 fn has_gradle_settings(path: &Path) -> bool {
@@ -375,5 +410,35 @@ mod tests {
                 .iter()
                 .all(|target| !target.path.ends_with("module"))
         );
+    }
+    #[test]
+    fn exact_rediscovery_never_substitutes_another_kind_or_missing_file() {
+        let project = tempfile::tempdir().unwrap();
+        fs::write(project.path().join("pom.xml"), "").unwrap();
+        fs::write(project.path().join("build.gradle"), "").unwrap();
+        let targets = discover(project.path()).unwrap();
+        let maven = targets
+            .iter()
+            .find(|target| target.kind == "maven")
+            .unwrap();
+        let gradle = targets
+            .iter()
+            .find(|target| target.kind == "gradle")
+            .unwrap();
+        assert_eq!(
+            rediscover_exact(maven).unwrap().identity(),
+            maven.identity()
+        );
+        fs::remove_file(project.path().join("pom.xml")).unwrap();
+        assert!(rediscover_exact(maven).is_err());
+        assert_eq!(
+            rediscover_exact(gradle).unwrap().identity(),
+            gradle.identity()
+        );
+        let config = project.path().join("tsconfig.json");
+        fs::write(&config, "{}").unwrap();
+        let typescript = target_from_file(&config).unwrap();
+        fs::remove_file(config).unwrap();
+        assert!(rediscover_exact(&typescript).is_err());
     }
 }

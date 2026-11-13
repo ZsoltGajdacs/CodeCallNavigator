@@ -1,10 +1,13 @@
-//! Owned read-only CLI monitor; semantic freshness policy remains in the engine.
+//! Owned CLI observation/coordinator transport; refresh policy remains in the engine.
+mod activity;
 use super::{Descriptor, query_process};
 use crate::runtime::Runtime;
 use anyhow::{Context, Result, bail, ensure};
 use codecallnavigator::{
     freshness::{self, EventPayload, FreshnessObservation, StreamEvent},
+    process_ownership::Descendants,
     query::{self, Query},
+    refresh::{Activity, Control},
 };
 use std::{
     io::{BufRead, BufReader, Read},
@@ -20,13 +23,102 @@ use std::{
 const MAX_FRAME: u64 = 64 * 1024;
 const LIVENESS: Duration = Duration::from_secs(30);
 
+#[derive(Debug)]
+pub(crate) struct CleanupFailure(anyhow::Error);
+
+impl std::fmt::Display for CleanupFailure {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            formatter,
+            "Owned refresh cleanup could not be confirmed: {:#}",
+            self.0
+        )
+    }
+}
+impl std::error::Error for CleanupFailure {}
+
+pub(crate) enum Notice {
+    Observation(FreshnessObservation),
+    Activity(Activity),
+}
+
+pub(crate) struct ObservationOptions<'a> {
+    pub automatic: bool,
+    pub receive: &'a dyn Fn(Notice),
+    pub controls: Option<&'a mpsc::Receiver<Control>>,
+}
+
+impl<'a> ObservationOptions<'a> {
+    pub fn passive(receive: &'a dyn Fn(Notice)) -> Self {
+        Self {
+            automatic: false,
+            receive,
+            controls: None,
+        }
+    }
+}
+
 pub(super) fn run(
     runtime: &Runtime,
     descriptor: Descriptor,
     cancel: &AtomicBool,
-    receive: &dyn Fn(FreshnessObservation),
+    options: ObservationOptions<'_>,
 ) -> Result<()> {
-    let mut session = Session::start(runtime)?;
+    let mut session = Session::start(runtime, options.automatic)?;
+    let result = (|| {
+        let bytes = request_bytes(descriptor)?;
+        query_process::write_request(
+            session.input.as_mut().expect("owned monitor stdin"),
+            &bytes,
+            cancel,
+            Instant::now(),
+        )?;
+        let mut conversation = Conversation::default();
+        let mut last_event = Instant::now();
+        while !cancel.load(Ordering::Acquire) {
+            session.update_owned()?;
+            if let Some(controls) = options.controls {
+                for control in controls.try_iter() {
+                    let mut bytes = serde_json::to_vec(&control)?;
+                    bytes.push(b'\n');
+                    query_process::write_request(
+                        session.input.as_mut().context("Monitor stdin is closed")?,
+                        &bytes,
+                        cancel,
+                        Instant::now(),
+                    )?;
+                }
+            }
+            match session.frames.recv_timeout(Duration::from_millis(20)) {
+                Ok(frame) => {
+                    let observation = conversation.receive(frame?)?;
+                    last_event = Instant::now();
+                    (options.receive)(observation);
+                }
+                Err(mpsc::RecvTimeoutError::Disconnected) => {
+                    bail!("CLI freshness monitor disconnected: {}", session.log_tail())
+                }
+                Err(mpsc::RecvTimeoutError::Timeout) => ensure!(
+                    last_event.elapsed() < LIVENESS,
+                    "CLI freshness monitor stopped responding"
+                ),
+            }
+        }
+        Ok(())
+    })();
+    let cleanup = session
+        .finish()
+        .map_err(|error| anyhow::Error::new(CleanupFailure(error)));
+    match (result, cleanup) {
+        (Ok(()), cleanup) => cleanup,
+        (Err(error), Ok(())) => Err(error),
+        (Err(error), Err(cleanup)) => {
+            Err(cleanup.context(format!("Monitor also failed: {error:#}")))
+        }
+    }
+}
+
+fn request_bytes(descriptor: Descriptor) -> Result<Vec<u8>> {
     let request = query::Request {
         version: query::VERSION,
         project: descriptor.project,
@@ -42,31 +134,7 @@ pub(super) fn run(
         "Observation request exceeds 4 MiB"
     );
     bytes.push(b'\n');
-    query_process::write_request(
-        session.input.as_mut().expect("owned monitor stdin"),
-        &bytes,
-        cancel,
-        Instant::now(),
-    )?;
-    let mut conversation = Conversation::default();
-    let mut last_event = Instant::now();
-    while !cancel.load(Ordering::Acquire) {
-        match session.frames.recv_timeout(Duration::from_millis(20)) {
-            Ok(frame) => {
-                let observation = conversation.receive(frame?)?;
-                last_event = Instant::now();
-                receive(observation);
-            }
-            Err(mpsc::RecvTimeoutError::Disconnected) => {
-                bail!("CLI freshness monitor disconnected: {}", session.log_tail())
-            }
-            Err(mpsc::RecvTimeoutError::Timeout) => ensure!(
-                last_event.elapsed() < LIVENESS,
-                "CLI freshness monitor stopped responding"
-            ),
-        }
-    }
-    Ok(())
+    Ok(bytes)
 }
 
 #[derive(Default)]
@@ -74,10 +142,11 @@ struct Conversation {
     sequence: u64,
     generation: Option<String>,
     revision: Option<String>,
+    runs_started: u64,
 }
 
 impl Conversation {
-    fn receive(&mut self, frame: StreamEvent) -> Result<FreshnessObservation> {
+    fn receive(&mut self, frame: StreamEvent) -> Result<Notice> {
         ensure!(
             frame.version == freshness::VERSION,
             "Unsupported freshness event version"
@@ -87,6 +156,20 @@ impl Conversation {
             "Freshness event sequence did not increase"
         );
         let observation = match frame.payload {
+            EventPayload::Activity { activity } => {
+                ensure!(
+                    self.sequence != 0,
+                    "Refresh activity preceded initial observation"
+                );
+                activity::validate(&activity)?;
+                ensure!(
+                    activity.runs_started >= self.runs_started,
+                    "Refresh run counter moved backwards"
+                );
+                self.runs_started = activity.runs_started;
+                self.sequence = frame.sequence;
+                return Ok(Notice::Activity(activity));
+            }
             EventPayload::Initial { observation } => {
                 ensure!(
                     self.sequence == 0 && frame.sequence == 1,
@@ -116,7 +199,7 @@ impl Conversation {
         self.sequence = frame.sequence;
         self.generation = Some(observation.generation.clone());
         self.revision = observation.input_revision.clone();
-        Ok(observation)
+        Ok(Notice::Observation(observation))
     }
 }
 
@@ -173,17 +256,25 @@ fn validate(observation: &FreshnessObservation) -> Result<()> {
 }
 
 struct Session {
-    child: Child,
+    child: Option<Child>,
     input: Option<ChildStdin>,
     frames: mpsc::Receiver<Result<StreamEvent>>,
     log: tempfile::NamedTempFile,
+    automatic: bool,
+    owned: Option<Descendants>,
+    last_inventory: Instant,
+    stopped: bool,
 }
 
 impl Session {
-    fn start(runtime: &Runtime) -> Result<Self> {
+    fn start(runtime: &Runtime, automatic: bool) -> Result<Self> {
         let log = tempfile::NamedTempFile::new()?;
-        let child = Command::new(&runtime.engine)
-            .arg("observe")
+        let mut command = Command::new(&runtime.engine);
+        command.arg("observe");
+        if automatic {
+            command.arg("--auto-refresh");
+        }
+        let child = command
             .env("CODECALLNAVIGATOR_RESOURCES", &runtime.resources)
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
@@ -194,13 +285,24 @@ impl Session {
         let (send, frames) = mpsc::sync_channel(1);
         // Own the child before configuring any fallible pipe operation.
         let mut session = Self {
-            child,
+            child: Some(child),
             input: None,
             frames,
             log,
+            automatic,
+            owned: None,
+            last_inventory: Instant::now(),
+            stopped: false,
         };
+        if automatic {
+            session.owned = Some(Descendants::new(
+                session.child.as_ref().expect("owned monitor child"),
+            )?);
+        }
         let input = session
             .child
+            .as_mut()
+            .expect("owned monitor child")
             .stdin
             .take()
             .context("Missing freshness monitor stdin")?;
@@ -208,6 +310,8 @@ impl Session {
         session.input = Some(input);
         let output = session
             .child
+            .as_mut()
+            .expect("owned monitor child")
             .stdout
             .take()
             .context("Missing freshness monitor stdout")?;
@@ -223,6 +327,84 @@ impl Session {
         });
         Ok(session)
     }
+    fn update_owned(&mut self) -> Result<()> {
+        if self.last_inventory.elapsed() >= Duration::from_secs(1) {
+            if let Some(owned) = &mut self.owned {
+                owned.refresh()?;
+            }
+            self.last_inventory = Instant::now();
+        }
+        Ok(())
+    }
+
+    fn finish(&mut self) -> Result<()> {
+        self.finish_with_grace(Duration::from_secs(15))
+    }
+
+    fn finish_with_grace(&mut self, grace: Duration) -> Result<()> {
+        if self.stopped {
+            return Ok(());
+        }
+        let mut diagnostic = self.update_owned_now().err();
+        self.input.take();
+        if let Some(child) = self.child.as_mut() {
+            child.stdin.take();
+        }
+        if self.automatic {
+            self.graceful_exit(&mut diagnostic, grace);
+        }
+        if let Err(error) = self.update_owned_now() {
+            diagnostic = Some(error);
+        }
+        if let Err(error) = self.terminate_owned() {
+            diagnostic = Some(error);
+        }
+        self.stopped = true;
+        diagnostic.map_or(Ok(()), |error| {
+            Err(error.context("Automatic refresh descendant cleanup could not be confirmed"))
+        })
+    }
+
+    fn update_owned_now(&mut self) -> Result<()> {
+        self.owned.as_mut().map_or(Ok(()), Descendants::refresh)
+    }
+
+    fn terminate_owned(&mut self) -> Result<()> {
+        let Some(child) = self.child.as_mut() else {
+            return Ok(());
+        };
+        let result = match &mut self.owned {
+            Some(owned) => owned.stop(child),
+            None => {
+                query_process::stop_child(child);
+                Ok(())
+            }
+        };
+        if result.is_err()
+            && let Some(child) = self.child.take()
+        {
+            codecallnavigator::process_ownership::reap_eventually(child);
+        }
+        result
+    }
+
+    fn graceful_exit(&mut self, diagnostic: &mut Option<anyhow::Error>, grace: Duration) {
+        let started = Instant::now();
+        while started.elapsed() < grace {
+            if let Err(error) = self.update_owned() {
+                *diagnostic = Some(error);
+            }
+            if self
+                .child
+                .as_mut()
+                .is_none_or(|child| child.try_wait().ok().flatten().is_some())
+            {
+                return;
+            }
+            std::thread::sleep(Duration::from_millis(20));
+        }
+    }
+
     fn log_tail(&self) -> String {
         std::fs::read_to_string(self.log.path())
             .unwrap_or_default()
@@ -248,8 +430,9 @@ fn read_frame(reader: &mut impl BufRead) -> Result<StreamEvent> {
 
 impl Drop for Session {
     fn drop(&mut self) {
-        self.input.take();
-        query_process::stop_child(&mut self.child);
+        if let Err(error) = self.finish() {
+            eprintln!("{error:#}");
+        }
     }
 }
 
@@ -265,6 +448,107 @@ mod tests {
             payload,
         }
     }
+    #[test]
+    fn stalled_auto_coordinator_cleanup_reaches_independently_grouped_worker() {
+        use std::os::unix::fs::PermissionsExt;
+        let root = tempfile::tempdir().unwrap();
+        let executable = root.path().join("coordinator");
+        let marker = root.path().join("worker.pid");
+        let script = format!(
+            r#"#!/usr/bin/env python3
+import pathlib,subprocess,time
+worker=subprocess.Popen(['python3','-c','import time;time.sleep(60)'],start_new_session=True)
+pathlib.Path({marker:?}).write_text(str(worker.pid))
+time.sleep(60)
+"#,
+            marker = marker.to_string_lossy()
+        );
+        std::fs::write(&executable, script).unwrap();
+        std::fs::set_permissions(&executable, std::fs::Permissions::from_mode(0o755)).unwrap();
+        let runtime = Runtime {
+            engine: executable,
+            resources: root.path().into(),
+            dot: Default::default(),
+        };
+        let mut session = Session::start(&runtime, true).unwrap();
+        let started = Instant::now();
+        while !marker.is_file() && started.elapsed() < Duration::from_secs(5) {
+            std::thread::sleep(Duration::from_millis(10));
+        }
+        let pid = std::fs::read_to_string(marker).unwrap();
+        session
+            .finish_with_grace(Duration::from_millis(80))
+            .unwrap();
+        assert!(
+            session
+                .child
+                .as_mut()
+                .unwrap()
+                .try_wait()
+                .unwrap()
+                .is_some()
+        );
+        let started = Instant::now();
+        loop {
+            let output = Command::new("/bin/ps")
+                .args(["-o", "stat=", "-p", pid.trim()])
+                .output()
+                .unwrap();
+            if output.stdout.is_empty() || output.stdout.starts_with(b"Z") {
+                break;
+            }
+            assert!(
+                started.elapsed() < Duration::from_secs(2),
+                "Owned worker survived cleanup"
+            );
+            std::thread::sleep(Duration::from_millis(10));
+        }
+    }
+
+    #[test]
+    fn refresh_activity_is_separate_from_validity_and_counters_cannot_regress() {
+        use codecallnavigator::refresh::{Activity, Phase};
+        let mut conversation = Conversation::default();
+        conversation
+            .receive(frame(
+                1,
+                EventPayload::Initial {
+                    observation: observation(),
+                },
+            ))
+            .unwrap();
+        let mut activity = Activity::new(Phase::Watching);
+        activity.runs_started = 2;
+        assert!(matches!(
+            conversation
+                .receive(frame(
+                    2,
+                    EventPayload::Activity {
+                        activity: activity.clone()
+                    }
+                ))
+                .unwrap(),
+            Notice::Activity(_)
+        ));
+        assert!(matches!(
+            conversation
+                .receive(frame(
+                    3,
+                    EventPayload::Heartbeat {
+                        observation: observation()
+                    }
+                ))
+                .unwrap(),
+            Notice::Observation(_)
+        ));
+        activity.runs_started = 1;
+        assert!(
+            conversation
+                .receive(frame(4, EventPayload::Activity { activity }))
+                .is_err()
+        );
+    }
+
     fn observation() -> FreshnessObservation {
         crate::freshness_workspace::fixture(InputStatus::Match, &"a".repeat(64))
     }

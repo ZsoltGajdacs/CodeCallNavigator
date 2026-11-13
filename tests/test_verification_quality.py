@@ -200,6 +200,8 @@ class QualitySessionTests(unittest.TestCase):
         for content in [
             'pub fn execute() {}\n',
             '#[cfg(test)] mod tests;\n',
+            '#[cfg(unix)] pub fn execute() {}\n',
+            '#[cfg(unix)] mod implementation { fn execute() {} }\n',
             'include!("generated.rs");\n',
             'pub const SIZE: usize = compute();\n',
             'mod implementation { fn execute() {} }\n',
@@ -211,6 +213,15 @@ class QualitySessionTests(unittest.TestCase):
                 report = self.check({'review': {'score': None}}, files=['unknown.rs'])
                 self.assertEqual(report['status'], 'failed', report)
                 self.assertIn('numeric score', report['errors'][0])
+
+    def test_null_unix_module_declaration_is_explicitly_non_executable(self):
+        (self.root / 'unix.rs').write_text('#[cfg(unix)]\npub mod process_ownership;\n')
+        report = self.check({'review': {'score': None}, 'safeguard': {'metadata': {
+            'checked-file-count': 0, 'code-health-eligible-file-count': 0,
+            'total-modified-file-count': 1, 'status': 'no-applicable-files',
+        }}}, files=['unix.rs'])
+        self.assertEqual(report['status'], 'passed', report)
+        self.assertEqual(report['reviews'][0]['applicability'], 'declarations_only')
 
     def test_null_declaration_review_still_requires_well_formed_empty_findings(self):
         (self.root / 'flow.rs').write_text('pub mod builder;\n')

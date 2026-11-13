@@ -29,6 +29,8 @@ pub(super) struct JavaSourceSet {
     pub generated_roots: Vec<PathBuf>,
     pub class_dirs: Vec<PathBuf>,
     #[serde(default)]
+    pub raw_class_dirs: Option<Vec<PathBuf>>,
+    #[serde(default)]
     pub build_inputs: Vec<PathBuf>,
 }
 

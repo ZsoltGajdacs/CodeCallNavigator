@@ -13,6 +13,18 @@ pub const CSHARP_INPUT_POLICY: &str = "msbuild-preprocess.v2";
 pub struct Analysis {
     pub version: u32,
     pub targets: Vec<String>,
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        deserialize_with = "selection_value"
+    )]
+    pub selection: Option<Value>,
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        deserialize_with = "selection_value"
+    )]
+    pub refresh_inputs: Option<Value>,
     pub roots: Vec<String>,
     pub engine_versions: String,
     pub inputs: Vec<Input>,
@@ -46,6 +58,8 @@ pub fn build(
     let mut analysis = Analysis {
         version: 1,
         targets: Vec::new(),
+        selection: None,
+        refresh_inputs: None,
         roots: roots.iter().map(|(name, _)| name.clone()).collect(),
         engine_versions: portable_versions(engine_versions, &paths)?,
         inputs: Vec::new(),
@@ -83,6 +97,31 @@ pub fn build(
     Ok(analysis)
 }
 
+fn selection_value<'de, D: serde::Deserializer<'de>>(
+    deserializer: D,
+) -> std::result::Result<Option<Value>, D::Error> {
+    Value::deserialize(deserializer).map(Some)
+}
+
+/// Preserve exact identities before analysis consumes its selected build targets.
+pub fn build_selected(
+    fingerprints: &[FileFingerprint],
+    targets: &[crate::discovery::BuildTarget],
+    engine_versions: &str,
+    roots: &Roots,
+) -> Result<Analysis> {
+    let legacy = targets
+        .iter()
+        .map(|target| target.path.to_string_lossy().into_owned())
+        .collect::<Vec<_>>();
+    let mut analysis = build(fingerprints, &legacy, engine_versions, roots)?;
+    analysis.selection = Some(serde_json::to_value(super::selection::capture(
+        targets, roots,
+    )?)?);
+    analysis.validate()?;
+    Ok(analysis)
+}
+
 fn portable_input(fingerprint: &FileFingerprint, paths: &Paths) -> Option<Input> {
     let path = paths.portable(&fingerprint.path).ok()?;
     let kind = if fingerprint.missing {
@@ -106,7 +145,7 @@ fn portable_input(fingerprint: &FileFingerprint, paths: &Paths) -> Option<Input>
     })
 }
 impl Input {
-    fn validate(&self) -> Result<()> {
+    pub(super) fn validate(&self) -> Result<()> {
         ensure!(
             valid_content_hash(self.kind, &self.hash),
             "Invalid analysis content hash"
@@ -156,6 +195,12 @@ pub fn validate_analysis(graph: &Value) -> Result<()> {
 impl Analysis {
     pub fn validate(&self) -> Result<()> {
         ensure!(self.version == 1, "Unsupported analysis provenance version");
+        if let Some(selection) = &self.selection {
+            super::selection::validate_owned(selection, &self.roots)?;
+        }
+        if let Some(refresh) = &self.refresh_inputs {
+            super::refresh_inputs::validate(refresh, self)?;
+        }
         let roots: BTreeSet<_> = self.roots.iter().collect();
         ensure!(roots.len() == self.roots.len(), "Duplicate analysis root");
         for root in &roots {
@@ -195,6 +240,12 @@ impl Analysis {
 pub(super) fn sort_analysis(analysis: &mut Value) -> Result<()> {
     if analysis.is_null() {
         return Ok(());
+    }
+    if let Some(selection) = analysis.get_mut("selection") {
+        super::selection::normalize(selection);
+    }
+    if let Some(refresh) = analysis.get_mut("refresh_inputs") {
+        super::refresh_inputs::normalize(refresh);
     }
     if let Some(inputs) = analysis.get_mut("inputs").and_then(Value::as_array_mut) {
         for input in inputs {
@@ -307,3 +358,7 @@ mod tests {
         );
     }
 }
+
+#[cfg(test)]
+#[path = "provenance_selection_tests.rs"]
+mod selection_tests;

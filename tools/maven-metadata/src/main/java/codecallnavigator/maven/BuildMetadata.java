@@ -27,8 +27,8 @@ final class BuildMetadata {
             outputs.addAll(metadata.outputs());
             // Aggregators retain ownership but have no compilation output of their own.
             if (!"pom".equals(project.getPackaging())) {
-                sourceSets.add(metadata.sourceSet(false, evaluated));
-                sourceSets.add(metadata.sourceSet(true, evaluated));
+                sourceSets.add(sourceSet(project, metadata, false, evaluated));
+                sourceSets.add(sourceSet(project, metadata, true, evaluated));
             }
         }
         Map<String, Object> result = new LinkedHashMap<>();
@@ -36,6 +36,21 @@ final class BuildMetadata {
         result.put("sourceSets", sourceSets);
         result.put("buildInputs", inputs);
         result.put("outputRoots", outputs);
+        return result;
+    }
+
+    private static Map<String, Object> sourceSet(MavenProject project, ProjectMetadata metadata,
+            boolean test, boolean evaluated) throws IOException {
+        Map<String, Object> result = metadata.sourceSet(test, evaluated);
+        String output = test ? project.getBuild().getTestOutputDirectory()
+                : project.getBuild().getOutputDirectory();
+        File directory = new File(output);
+        if (!directory.isAbsolute()) {
+            directory = new File(project.getBasedir(), output);
+        }
+        // Canonical classDirs retain ownership semantics; this observation must not
+        // erase a symlink in the evaluated output spelling used by the build tool.
+        result.put("rawClassDirs", List.of(directory.getAbsolutePath()));
         return result;
     }
 

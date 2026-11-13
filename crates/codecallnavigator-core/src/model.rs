@@ -79,7 +79,20 @@ pub struct EntryPoints {
 }
 
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
+#[serde(default)]
+pub struct CompilerOutputs {
+    pub bytecode_directories: Vec<String>,
+    pub raw_bytecode_directories: Option<Vec<String>>,
+    pub compile_classpath: Vec<String>,
+    pub source_roots: Vec<String>,
+    pub build_inputs: Vec<String>,
+}
+
+#[derive(Clone, Debug, Default, Deserialize, Serialize)]
 pub struct GraphData {
+    /// Runtime-only compiler ownership used to build portable refresh policy.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub refresh_outputs: Option<CompilerOutputs>,
     /// Compiler-owned context directories embedded in native identities.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub identity_roots: Vec<String>,

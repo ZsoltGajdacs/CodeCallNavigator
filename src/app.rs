@@ -313,11 +313,16 @@ impl State {
     }
 
     pub fn cancel_analysis(&mut self) {
+        if self.freshness.cancel_pending_manual() {
+            self.status = "Manual analysis cancelled; previous graph preserved".into();
+            return;
+        }
         self.cancel.store(true, Ordering::Release);
         self.status = "Cancelling analysis; the previous graph is preserved".into();
     }
 
     pub fn root_edited(&mut self) {
+        self.freshness.cancel_pending_manual();
         self.jobs.file_focus_cancel.store(true, Ordering::Release);
         self.jobs.file_focus.cancel();
         self.root_was_edited = true;

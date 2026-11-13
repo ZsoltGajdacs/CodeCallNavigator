@@ -1,0 +1,125 @@
+{
+  "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+  "machine": "arm64",
+  "cpu_count": 12,
+  "executable_sha256": "8373daf934cc84dd6b78e5bccb71b156f76ea7d888f6393fbf8035c278bed5b0",
+  "analyzer_lock_sha256": "3376e6c012159b8615ad6d1432392b57f83118bcdb33f8778c9fd2bc6635694b",
+  "source_commit": "19b6b8abdd8f6a532dd517763f11ff3f3d123a1c",
+  "toolchains": {
+    "node": "v24.15.0\n",
+    "java": "openjdk version \"25.0.2\" 2026-01-20\nOpenJDK Runtime Environment JBR-25.0.2+10-300.57-jcef (build 25.0.2+10-b300.57)\nOpenJDK 64-Bit Server VM JBR-25.0.2+10-300.57-jcef (build 25.0.2+10-b300.57, mixed mode, sharing)\n",
+    "dotnet": "11.0.100 [/usr/local/share/dotnet/sdk]\n",
+    "maven": "Apache Maven 3.10.0 (c43a36b8d67be7e0805a411bc0898af1a51f5472)\nMaven home: /opt/homebrew/Cellar/maven/3.10.0/libexec\nJava version: 25.0.2, vendor: JetBrains s.r.o., runtime: /Users/zsolt.gajdacs/.sdkman/candidates/java/25.0.2-jbr\nDefault locale: en_US, platform encoding: UTF-8, time zone: Europe/Stockholm\nOS name: \"mac os x\", version: \"27.0.1\", arch: \"aarch64\", family: \"mac\"\n"
+  },
+  "dependency_cache": "shared existing toolchain caches; no downloads intentionally cleared",
+  "sampling": "50ms process-tree RSS sampling; shared pages can be counted repeatedly; brief peaks may be missed",
+  "cpu": "RUSAGE_CHILDREN user+system delta, includes resource sampler subprocesses",
+  "detection": "save start through receipt of verified observation of the expected new generation",
+  "stages": "save-to-publication timing ends at verified new-generation receipt; saved bytes then held stable until matching current Published activity delivers compiler metrics; coalesced stream is not a durable stage journal; separate atomic rename timestamp remains unavailable",
+  "idle_monitor": "stream process-tree RSS and CPU totals cover initialization and all publications; no isolated steady-state CPU claim",
+  "reset_protocol": "two independently fully analyzed clean references; alternating saved body bytes; no manual analysis between automatic publications",
+  "capabilities": {
+    "automatic_refresh": {
+      "activity_version": 1,
+      "cancel_command": "cancel_refresh",
+      "debounce_milliseconds": 300,
+      "observe_flag": "--auto-refresh",
+      "version": 1
+    },
+    "comparison": {
+      "default_limit": 100,
+      "maximum_limit": 500,
+      "maximum_response_bytes": 25165824,
+      "snapshot_binding": true,
+      "version": 1
+    },
+    "default_limits": {
+      "edges": 6000,
+      "nodes": 1500,
+      "search": 50
+    },
+    "flow_languages": [
+      "java",
+      "typescript"
+    ],
+    "freshness": {
+      "heartbeat_milliseconds": 5000,
+      "limited": true,
+      "mode": "verified_polling",
+      "reconcile_milliseconds": 250,
+      "streaming": true,
+      "version": 1
+    },
+    "generation_binding": true,
+    "generation_required": [
+      "render_selection",
+      "inspect"
+    ],
+    "maximum_limits": {
+      "diagnostic_characters": 8192,
+      "diagnostics": 50,
+      "edges": 6000,
+      "freshness_reason_bytes": 8192,
+      "freshness_reasons": 50,
+      "nodes": 1500,
+      "search": 200
+    },
+    "operations": [
+      "status",
+      "freshness",
+      "snapshot",
+      "inspect",
+      "live_source",
+      "architecture",
+      "search",
+      "symbol",
+      "source",
+      "explorer",
+      "selection",
+      "render_selection",
+      "neighbors",
+      "flow",
+      "compare"
+    ],
+    "query_version": 1,
+    "source_origins": [
+      "analyzed",
+      "live"
+    ]
+  },
+  "hardware": {
+    "milliseconds": 12.086125032510608,
+    "exit_code": 0,
+    "timed_out": false,
+    "cpu_seconds": 0.002381000000000133,
+    "sampled_peak_tree_rss_bytes": null,
+    "resource_samples": 0,
+    "sampling_errors": [],
+    "cleanup_errors": [],
+    "stdout": "machdep.cpu.brand_string: Apple M4 Pro\nhw.memsize: 51539607552\nhw.physicalcpu: 12\nhw.logicalcpu: 12\n",
+    "stderr": ""
+  },
+  "command": [
+    "python3.13",
+    "tools/measure_automatic_refresh.py",
+    "--executable",
+    "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/target/freshness/task62-race-bin/ccnavigator",
+    "--output",
+    "target/freshness/task62-four-route-diagnostics",
+    "--runs",
+    "2",
+    "--languages",
+    "typescript,csharp,maven,gradle",
+    "--timeout",
+    "120.0",
+    "--typescript-modules",
+    "/Users/zsolt.gajdacs/Zs/Programming/PacificFateMapEditor/node_modules"
+  ],
+  "source_state": "Working tree; binary SHA identifies measured executable; source_commit identifies prior HEAD",
+  "unavailable": [
+    "desktop frame adoption latency",
+    "large-project publication distributions",
+    "cold compiler/dependency caches",
+    "separate atomic rename timestamp"
+  ]
+}

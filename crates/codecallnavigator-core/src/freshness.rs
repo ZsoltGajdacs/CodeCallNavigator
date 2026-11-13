@@ -73,6 +73,7 @@ pub struct StreamEvent {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(tag = "kind", rename_all = "snake_case")]
 pub enum EventPayload {
+    Activity { activity: crate::refresh::Activity },
     Initial { observation: FreshnessObservation },
     Change { observation: FreshnessObservation },
     Heartbeat { observation: FreshnessObservation },

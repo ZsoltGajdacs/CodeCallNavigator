@@ -80,6 +80,7 @@ pub fn analyze(
         RootOptions {
             configured,
             infer_linked: false,
+            expected_generation: None,
         },
         targets,
         progress,
@@ -89,6 +90,7 @@ pub fn analyze(
 pub struct RootOptions {
     pub configured: Vec<(String, PathBuf)>,
     pub infer_linked: bool,
+    pub expected_generation: Option<String>,
 }
 
 pub fn analyze_with_linked_roots(
@@ -101,6 +103,9 @@ pub fn analyze_with_linked_roots(
     ensure!(project.is_dir(), "Project must be a directory");
     let roots = roots(&project, options.configured)?;
     let lock = artifact::AnalysisLock::acquire(&project)?;
+    if let Some(expected) = &options.expected_generation {
+        lock.require_generation(expected)?;
+    }
     let metrics = metrics::Metrics::default();
     let _scope = metrics.enter();
     let mut targets = targets;
@@ -108,10 +113,7 @@ pub fn analyze_with_linked_roots(
     targets.dedup_by(|a, b| a.identity() == b.identity());
     let (boundaries, boundary_inputs) =
         codecallnavigator_core::boundary::Configuration::load(&project, &targets)?;
-    let target_paths: Vec<_> = targets
-        .iter()
-        .map(|target| target.path.to_string_lossy().into_owned())
-        .collect();
+    let selection = targets.clone();
     let mut graph = native(targets, progress)?;
     graph.fingerprints.extend(boundary_inputs);
     let cache = super::inference::resolve(&project, &mut graph, &boundaries)?;
@@ -122,18 +124,30 @@ pub fn analyze_with_linked_roots(
     };
     let mut artifact =
         artifact::canonical_with_identities(&graph, &roots, &graph.export_identities)?;
-    artifact.graph["analysis"] = serde_json::to_value(artifact::provenance::build(
+    let mut provenance = artifact::provenance::build_selected(
         &graph.fingerprints,
-        &target_paths,
+        &selection,
         &graph.engine_versions,
         &roots,
-    )?)?;
+    )?;
+    let mut refresh_validation = Vec::new();
+    if let Some(outputs) = &graph.refresh_outputs {
+        let safe = selection.iter().all(|target| target.language == "java");
+        let captured = artifact::refresh_inputs::capture(&provenance, outputs, safe, &roots)?;
+        provenance.refresh_inputs = Some(captured.value);
+        refresh_validation = captured.validation;
+    }
+    artifact.graph["analysis"] = serde_json::to_value(provenance)?;
     let bytes = artifact.encode()?;
     let digest = blake3::hash(bytes.as_ref()).to_hex().to_string();
-    ensure!(
-        !codecallnavigator_core::fingerprint::is_stale(&graph.fingerprints)?,
-        "Project inputs changed before graph publication"
-    );
+    codecallnavigator_core::fingerprint::require_unchanged(
+        &graph.fingerprints,
+        "Project inputs changed before graph publication",
+    )?;
+    codecallnavigator_core::fingerprint::require_unchanged(
+        &refresh_validation,
+        "Input membership changed before graph publication",
+    )?;
     lock.publish_encoded(&bytes, &CANCELLED)?;
     super::inference::finish(cache, progress);
     metrics.finish();

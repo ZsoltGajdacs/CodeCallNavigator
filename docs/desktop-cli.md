@@ -92,7 +92,34 @@ continuous freshness is explicitly unavailable.
 
 A newly published generation offers **Reload saved graph**. Reload requests the
 advertised digest and retains the previous view on errors or races; it never runs
-analysis. Automatic analysis and automatic adoption remain outside this delivery.
+analysis. **Enable automatic refresh** explicitly authorizes the CLI coordinator
+for the currently loaded canonical project for this application session. It is off
+at startup and after switching projects; editing the pending folder does not move
+that authorization. Linked-root changes restart the bound monitor while retaining
+same-project authorization. Capability negotiation keeps older freshness CLIs in
+passive observation mode and reports automatic refresh as unavailable.
+
+In automatic mode the CLI debounces and runs compiler-backed refreshes; the desktop
+only displays separate activity and input-validity states. Successful generations
+use the same generation-bound adoption path and preserve valid camera/navigation.
+A failed load is attempted once per advertised generation; explicit Reload remains
+available. Invalid code retains the previous graph and the engine waits for a new
+saved-input revision before retrying. **Cancel automatic refresh** cancels the
+current/pending revision while leaving monitoring enabled. **Disable automatic
+refresh** stops owned analysis and returns to passive observation.
+
+Manual analysis remains available: it freezes the selected project/targets, stops
+the automatic monitor and waits for owned cleanup before running. Editing the
+folder, explicit cancellation or a changed loaded binding discards a queued manual
+request. Same-project authorization resumes after manual completion. Refresh
+activity, counters and authorization are not persisted into graph artifacts.
+
+Automatic monitor shutdown gives the coordinator bounded cleanup grace, inventories
+owned descendants before EOF and throughout cleanup, and terminates matching
+independently grouped processes if required. Passive observation retains its short
+shutdown path. Cleanup failures are contextual errors rather than successful
+shutdown claims.
+
 Shutdown, rebinding and explicit retry cancel and reap owned monitor processes;
 the UI waits for their cleanup on close. Observations/timings are not persisted in
 canonical graph artifacts.
@@ -138,3 +165,12 @@ failure/manual retry and a different-project reset. Set
 graph and a compact light-theme failure capture. The linked-root/SQLite regression
 uses identical portable bytes with two actual CLI root mappings and verifies
 source locations, reply ownership and retained-cache identity separately.
+
+The automatic-refresh journey is
+`ui_tests::cli_freshness::actual_cli_automatic_refresh_requires_opt_in_and_preserves_loaded_context`.
+It verifies default-off passive behavior, explicit opt-in bound to the loaded
+project despite a different pending folder, generation-bound adoption with camera
+retention, invalid-code preservation/recovery, manual-analysis handoff and opt-out.
+The same capture variable retains enabled, invalid-code and disabled UI states.
+Unit/process regressions cover authorization reset, stale pending-manual requests,
+optional-capability fallback and cleanup of independently grouped descendants.

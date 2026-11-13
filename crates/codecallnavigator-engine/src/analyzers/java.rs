@@ -30,6 +30,7 @@ mod maven;
 mod metadata;
 mod normalize;
 mod policy;
+mod refresh_outputs;
 mod source_inventory;
 mod tables;
 #[cfg(test)]
@@ -75,6 +76,7 @@ fn analyze_compiled(
     let bytecode_before = contexts::snapshot(&contexts)?;
     let before_engine = build::snapshot(build, metadata, true)?;
     let mut graph = compiled_graph(build, metadata);
+    graph.refresh_outputs = Some(refresh_outputs::ownership(metadata)?);
     let mut composer = compose::Composer::default();
     let mut inventories = engine::SourceInventories::default();
     for (index, planned) in contexts.iter().enumerate() {
@@ -448,6 +450,7 @@ mod tests {
                 source_roots: vec![source_root],
                 generated_roots: Vec::new(),
                 class_dirs: vec![classes],
+                raw_class_dirs: None,
                 build_inputs: Vec::new(),
             }),
         }

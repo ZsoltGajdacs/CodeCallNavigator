@@ -5,7 +5,9 @@ pub enum Command {
     Capabilities,
     Query,
     QuerySession,
-    Observe,
+    Observe {
+        automatic: bool,
+    },
     Help,
     Discover(PathBuf),
     ClearCache(PathBuf),
@@ -31,8 +33,13 @@ pub fn parse(values: impl Iterator<Item = String>) -> Result<Command> {
     let command = values.next().unwrap_or_else(|| "--help".into());
     match command.as_str() {
         "observe" => {
-            ensure!(values.next().is_none(), "observe takes no arguments");
-            Ok(Command::Observe)
+            let automatic = match values.next().as_deref() {
+                None => false,
+                Some("--auto-refresh") => true,
+                Some(_) => bail!("observe accepts only --auto-refresh"),
+            };
+            ensure!(values.next().is_none(), "Unexpected observe argument");
+            Ok(Command::Observe { automatic })
         }
         "query-session" => {
             ensure!(values.next().is_none(), "query-session takes no arguments");

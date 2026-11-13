@@ -1,0 +1,81 @@
+{
+  "status": "failed",
+  "mode": "full",
+  "keep_artifacts": false,
+  "actions": [
+    {
+      "path": "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/target/debug",
+      "operation": "cargo-dev",
+      "status": "cleaned",
+      "estimated_bytes_before": 16065211080,
+      "estimated_bytes_after": 0
+    },
+    {
+      "path": "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/target/release",
+      "operation": "cargo-release",
+      "status": "unavailable",
+      "estimated_bytes_before": 3040093998,
+      "estimated_bytes_after": 3040093998,
+      "reason": "Native lsof did not return a conclusive process result"
+    },
+    {
+      "path": "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/target/verification/task62-full/profile",
+      "operation": "remove",
+      "status": "removed",
+      "estimated_bytes_before": 120721536,
+      "estimated_bytes_after": 0
+    },
+    {
+      "path": "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/target/verification/task62-full/scale-cache",
+      "operation": "remove",
+      "status": "removed",
+      "estimated_bytes_before": 250097792,
+      "estimated_bytes_after": 0
+    },
+    {
+      "path": "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/dist/CodeCallNavigator.previous-20261113-190022.app",
+      "operation": "retain",
+      "status": "retained",
+      "estimated_bytes_before": 91620590,
+      "estimated_bytes_after": 91620590,
+      "reason": "Keep newest previous package"
+    },
+    {
+      "path": "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/dist/CodeCallNavigator.previous-20261113-154513.app",
+      "operation": "remove",
+      "status": "removed",
+      "estimated_bytes_before": 91385582,
+      "estimated_bytes_after": 0
+    },
+    {
+      "path": "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/dist/CodeCallNavigator.previous-20261113-141820.app",
+      "operation": "remove",
+      "status": "removed",
+      "estimated_bytes_before": 91188398,
+      "estimated_bytes_after": 0
+    },
+    {
+      "path": "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/dist/CodeCallNavigator.previous-20261113-125332.app",
+      "operation": "remove",
+      "status": "removed",
+      "estimated_bytes_before": 91097150,
+      "estimated_bytes_after": 0
+    },
+    {
+      "path": "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/dist/CodeCallNavigator.previous-20261113-095244.app",
+      "operation": "remove",
+      "status": "removed",
+      "estimated_bytes_before": 91097150,
+      "estimated_bytes_after": 0
+    },
+    {
+      "path": "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/dist/CodeGraph.previous-20261111-092521.app",
+      "operation": "retain",
+      "status": "retained",
+      "estimated_bytes_before": 85509166,
+      "estimated_bytes_after": 85509166,
+      "reason": "Keep newest previous package"
+    }
+  ],
+  "errors": []
+}

@@ -24,7 +24,17 @@ pub fn serve_once() -> Result<i32> {
     emit(&Event::Hello {
         version: protocol::VERSION,
     })?;
-    match request() {
+    let request = request();
+    let typed = request.as_ref().is_ok_and(|(request, _)| {
+        matches!(
+            request,
+            Request::Analyze {
+                failure_version: Some(1),
+                ..
+            }
+        )
+    });
+    match request.and_then(|(request, input)| perform(request, input)) {
         Ok(event) => {
             emit(&event)?;
             Ok(0)
@@ -32,13 +42,14 @@ pub fn serve_once() -> Result<i32> {
         Err(error) => {
             emit(&Event::Failed {
                 message: format!("{error:#}"),
+                code: typed.then(|| failure_code(&error)),
             })?;
             Err(error)
         }
     }
 }
 
-fn request() -> Result<Event> {
+fn request() -> Result<(Request, BufReader<io::Stdin>)> {
     let (line, input) = initial_request()?;
     let request: Request = serde_json::from_str(&line).context("Invalid engine request")?;
     ensure!(
@@ -46,6 +57,20 @@ fn request() -> Result<Event> {
         "Unsupported engine protocol version: {}",
         request.version()
     );
+    if let Request::Analyze {
+        failure_version: Some(version),
+        ..
+    } = &request
+    {
+        ensure!(
+            *version == 1,
+            "Unsupported analysis failure contract version"
+        );
+    }
+    Ok((request, input))
+}
+
+fn perform(request: Request, input: BufReader<io::Stdin>) -> Result<Event> {
     match request {
         Request::Discover { project, .. } => Ok(Event::Discovered {
             targets: discovery::discover(&project)?,
@@ -58,6 +83,7 @@ fn request() -> Result<Event> {
             roots,
             targets,
             infer_linked_roots,
+            expected_generation,
             ..
         } => {
             monitor(input);
@@ -66,6 +92,7 @@ fn request() -> Result<Event> {
                 analysis::RootOptions {
                     configured: roots,
                     infer_linked: infer_linked_roots,
+                    expected_generation,
                 },
                 targets,
                 &|message| {
@@ -75,6 +102,21 @@ fn request() -> Result<Event> {
                 },
             )
         }
+    }
+}
+
+fn failure_code(error: &anyhow::Error) -> protocol::AnalysisFailureCode {
+    use protocol::AnalysisFailureCode as Code;
+    if error.is::<codecallnavigator_core::artifact::LockBusy>() {
+        Code::Busy
+    } else if error.is::<codecallnavigator_core::artifact::GenerationChanged>() {
+        Code::GenerationChanged
+    } else if error.is::<codecallnavigator_core::fingerprint::InputsChanged>() {
+        Code::InputsChanged
+    } else if CANCELLED.load(Ordering::Acquire) {
+        Code::Cancelled
+    } else {
+        Code::Failed
     }
 }
 

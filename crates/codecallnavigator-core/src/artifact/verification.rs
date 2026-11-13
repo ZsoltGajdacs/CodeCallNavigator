@@ -116,48 +116,91 @@ fn inspect(
     roots: &Roots,
     cancel: Option<&AtomicBool>,
 ) -> Result<Observation> {
-    let mappings = Mappings {
+    let analysis = provenance::read(&artifact.graph)?;
+    Inspection {
+        artifact,
+        digest,
         roots,
-        paths: Paths::new(roots)?,
-    };
-    let mut report = report(digest);
-    let Some(analysis) = provenance::read(&artifact.graph)? else {
-        report.input_status = InputStatus::Unverifiable;
-        report.reason("missing_analysis", None);
-        return Ok(Observation {
-            report,
-            input_revision: None,
-            complete: false,
-        });
-    };
-    if csharp_policy::legacy(&artifact.graph, &analysis) {
-        report.reason("legacy_csharp_input_policy", None);
     }
-    let mut live = cancel.map(|cancel| live::Inputs::new(&mappings.paths, cancel));
-    let stale = verify_manifest(&analysis, &mappings, &mut report, live.as_mut())?;
-    let (input_revision, complete) = match live {
-        Some(live) => {
-            let revision = live.finish()?;
-            report.reasons.extend(revision.reasons);
-            (
-                Some(revision.revision),
-                revision.complete && !analysis.inputs.is_empty(),
-            )
+    .manifest(analysis.as_ref(), cancel, &[])
+}
+
+/// Scheduling-only observation using explicit compiler-output ownership. This
+/// never replaces the ordinary report or full live input revision.
+pub fn observe_refresh_trigger(
+    artifact: &Artifact,
+    digest: &str,
+    roots: &Roots,
+    cancel: &AtomicBool,
+) -> Result<Observation> {
+    let analysis = provenance::read(&artifact.graph)?.context("Missing refresh provenance")?;
+    let filtered = super::refresh_inputs::filtered(&analysis)?;
+    let outputs = super::refresh_inputs::owned_outputs(&analysis, roots)?;
+    Inspection {
+        artifact,
+        digest,
+        roots,
+    }
+    .manifest(Some(&filtered), Some(cancel), &outputs)
+}
+
+struct Inspection<'a> {
+    artifact: &'a Artifact,
+    digest: &'a str,
+    roots: &'a Roots,
+}
+
+impl Inspection<'_> {
+    fn manifest(
+        self,
+        analysis: Option<&provenance::Analysis>,
+        cancel: Option<&AtomicBool>,
+        outputs: &[std::path::PathBuf],
+    ) -> Result<Observation> {
+        let mappings = Mappings {
+            roots: self.roots,
+            paths: Paths::new(self.roots)?,
+        };
+        let mut report = report(self.digest);
+        let Some(analysis) = analysis else {
+            report.input_status = InputStatus::Unverifiable;
+            report.reason("missing_analysis", None);
+            return Ok(Observation {
+                report,
+                input_revision: None,
+                complete: false,
+            });
+        };
+        if csharp_policy::legacy(&self.artifact.graph, analysis) {
+            report.reason("legacy_csharp_input_policy", None);
         }
-        None => (None, false),
-    };
-    report.input_status = if stale {
-        InputStatus::Stale
-    } else if !report.reasons.is_empty() {
-        InputStatus::Unverifiable
-    } else {
-        InputStatus::Match
-    };
-    Ok(Observation {
-        report,
-        input_revision,
-        complete,
-    })
+        let mut live =
+            cancel.map(|cancel| live::Inputs::excluding(&mappings.paths, cancel, outputs));
+        let stale = verify_manifest(analysis, &mappings, &mut report, live.as_mut())?;
+        let (input_revision, complete) = match live {
+            Some(live) => {
+                let revision = live.finish()?;
+                report.reasons.extend(revision.reasons);
+                (
+                    Some(revision.revision),
+                    revision.complete && !analysis.inputs.is_empty(),
+                )
+            }
+            None => (None, false),
+        };
+        report.input_status = if stale {
+            InputStatus::Stale
+        } else if !report.reasons.is_empty() {
+            InputStatus::Unverifiable
+        } else {
+            InputStatus::Match
+        };
+        Ok(Observation {
+            report,
+            input_revision,
+            complete,
+        })
+    }
 }
 
 fn verify_manifest(

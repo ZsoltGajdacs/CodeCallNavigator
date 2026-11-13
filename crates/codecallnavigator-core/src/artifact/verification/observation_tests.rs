@@ -14,6 +14,23 @@ fn inspect(artifact: &Artifact, roots: &Roots) -> Observation {
     observe_artifact(artifact, "saved-generation", roots, &AtomicBool::new(false)).unwrap()
 }
 
+fn record_owned_class_directory(artifact: &mut Artifact, classes: &std::path::Path, roots: &Roots) {
+    let mut analysis = provenance::read(&artifact.graph).unwrap().unwrap();
+    let captured = artifact::refresh_inputs::capture(
+        &analysis,
+        &crate::model::CompilerOutputs {
+            bytecode_directories: vec![classes.to_string_lossy().into_owned()],
+            raw_bytecode_directories: Some(vec![classes.to_string_lossy().into_owned()]),
+            ..Default::default()
+        },
+        true,
+        roots,
+    )
+    .unwrap();
+    analysis.refresh_inputs = Some(captured.value);
+    artifact.graph["analysis"] = serde_json::to_value(analysis).unwrap();
+}
+
 #[test]
 fn known_stale_and_new_file_repairs_change_content_revision_without_timestamps() {
     let root = tempfile::tempdir().unwrap();
@@ -285,4 +302,73 @@ fn excluded_directory_symlinks_do_not_hide_explicit_dependency_inputs() {
     assert!(changed.complete);
     assert_ne!(initial.input_revision, changed.input_revision);
     assert_eq!(changed.report.input_status, InputStatus::Stale);
+}
+
+#[test]
+fn refresh_trigger_keeps_full_freshness_but_excludes_only_owned_bytecode() {
+    let root = tempfile::tempdir().unwrap();
+    let classes = root.path().join("custom/classes");
+    let generated = root.path().join("custom/generated");
+    let dependency = root.path().join("dependency/classes");
+    for path in [&classes, &generated, &dependency] {
+        fs::create_dir_all(path).unwrap();
+    }
+    let class = classes.join("App.class");
+    let source = root.path().join("App.java");
+    fs::write(&class, "class-v1").unwrap();
+    fs::write(&source, "class App {}").unwrap();
+    let roots = [("repo".into(), root.path().into())];
+    let observed =
+        fingerprint::observation_paths(&[root.path().into()], &[], &AtomicBool::new(false))
+            .unwrap();
+    let mut artifact = artifact_for(&roots, observed, &[]);
+    record_owned_class_directory(&mut artifact, &classes, &roots);
+    let trigger = |artifact: &Artifact| {
+        observe_refresh_trigger(artifact, "generation", &roots, &AtomicBool::new(false)).unwrap()
+    };
+    let initial = trigger(&artifact);
+    let full_initial = inspect(&artifact, &roots);
+    fs::write(&class, "class-v2").unwrap();
+    let output_change = trigger(&artifact);
+    assert_ne!(
+        inspect(&artifact, &roots).input_revision,
+        full_initial.input_revision
+    );
+    assert_eq!(output_change.input_revision, initial.input_revision);
+    assert_eq!(output_change.report.input_status, InputStatus::Match);
+    fs::remove_file(&class).unwrap();
+    let fifo = std::ffi::CString::new(class.as_os_str().as_encoded_bytes()).unwrap();
+    assert_eq!(unsafe { libc::mkfifo(fifo.as_ptr(), 0o600) }, 0);
+    assert!(
+        !inspect(&artifact, &roots).complete,
+        "Full report retains unreadable owned-output coverage"
+    );
+    let during_compile = trigger(&artifact);
+    assert!(
+        during_compile.complete,
+        "Owned-output FIFO cannot cancel a valid filtered refresh"
+    );
+    assert_eq!(during_compile.input_revision, initial.input_revision);
+    fs::remove_file(&class).unwrap();
+    fs::remove_dir_all(&classes).unwrap();
+    assert_eq!(
+        trigger(&artifact).input_revision,
+        initial.input_revision,
+        "Owned output directory membership is excluded too"
+    );
+    fs::write(generated.join("Generated.java"), "class Generated {}").unwrap();
+    let generated_change = trigger(&artifact);
+    assert_ne!(generated_change.input_revision, initial.input_revision);
+    fs::write(dependency.join("Dependency.class"), "dependency-v2").unwrap();
+    assert_ne!(
+        trigger(&artifact).input_revision,
+        generated_change.input_revision
+    );
+    fs::write(&source, "class App { void changed(){} }").unwrap();
+    assert_eq!(trigger(&artifact).report.input_status, InputStatus::Stale);
+    std::os::unix::fs::symlink(&dependency, &classes).unwrap();
+    assert!(
+        observe_refresh_trigger(&artifact, "generation", &roots, &AtomicBool::new(false)).is_err(),
+        "Replacing an owned output with a symlink invalidates scheduling ownership"
+    );
 }

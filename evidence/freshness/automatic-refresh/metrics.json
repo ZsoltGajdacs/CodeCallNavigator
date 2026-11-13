@@ -1,0 +1,531 @@
+{
+  "schema": "codecallnavigator.automatic-refresh-metrics.v1",
+  "budget_formula": "ceil(max(current warm p95 * 1.25, TASK59 manual body refresh p95 + 550ms)/500ms)*500ms; fixture-specific local budgets, not universal promises",
+  "nested_stage_note": "Compiler stage durations overlap; do not add. Supervised lifecycle includes cleanup; exact atomic rename timestamp unavailable.",
+  "routes": {
+    "typescript": {
+      "warm_count": 20,
+      "all_exact": true,
+      "detection_ms": {
+        "count": 20,
+        "median": 258.4888539859094,
+        "p95": 263.2778749684803,
+        "maximum": 264.1120829503052
+      },
+      "save_to_verified_publication_ms": {
+        "count": 20,
+        "median": 1545.9083335008472,
+        "p95": 1556.5435000462458,
+        "maximum": 1558.678500005044
+      },
+      "configured_debounce_ms": {
+        "count": 20,
+        "median": 300.0,
+        "p95": 300.0,
+        "maximum": 300.0
+      },
+      "additional_queue_wait_ms": {
+        "count": 20,
+        "median": 216.207917,
+        "p95": 222.52612499999998,
+        "maximum": 224.149625
+      },
+      "supervised_analysis_ms": {
+        "count": 20,
+        "median": 745.613875,
+        "p95": 783.1961670000001,
+        "maximum": 830.4243749999999
+      },
+      "compiler_stages_ms": {
+        "analysis": {
+          "count": 20,
+          "median": 635.332959,
+          "p95": 650.962292,
+          "maximum": 663.1161249999999
+        },
+        "composition": {
+          "count": 20,
+          "median": 0.0161665,
+          "p95": 0.018000000000000002,
+          "maximum": 0.019042000000000003
+        },
+        "fingerprints.capture": {
+          "count": 20,
+          "median": 7.3634795,
+          "p95": 8.189791999999999,
+          "maximum": 8.191959
+        },
+        "fingerprints.verify": {
+          "count": 20,
+          "median": 28.115104000000002,
+          "p95": 30.448583000000003,
+          "maximum": 31.0555
+        },
+        "inference.boundaries": {
+          "count": 20,
+          "median": 0.35318799999999995,
+          "p95": 0.385917,
+          "maximum": 0.4318340000000001
+        },
+        "inference.cache_commit": {
+          "count": 20,
+          "median": 0.756729,
+          "p95": 0.8915000000000001,
+          "maximum": 1.111833
+        },
+        "preparation": {
+          "count": 20,
+          "median": 311.217333,
+          "p95": 330.73008300000004,
+          "maximum": 335.544125
+        },
+        "typescript.extract": {
+          "count": 20,
+          "median": 307.44297900000004,
+          "p95": 317.531583,
+          "maximum": 321.519334
+        },
+        "typescript.prepare": {
+          "count": 20,
+          "median": 311.156646,
+          "p95": 330.67454200000003,
+          "maximum": 335.48587499999996
+        },
+        "verification": {
+          "count": 20,
+          "median": 21.2651875,
+          "p95": 22.4675,
+          "maximum": 22.747875
+        }
+      },
+      "task59_manual_body_refresh_p95_ms": 817.1027090284042,
+      "initial_fixture_p95_budget_ms": 2000,
+      "stream_cpu_seconds_including_sampler": 40.908114000000005,
+      "stream_sampled_peak_tree_rss_bytes": 414760960,
+      "project_size": {
+        "artifact_bytes": 19874,
+        "nodes": 5,
+        "relationships": 1,
+        "observed_inputs": 91,
+        "authored_source_files": 2
+      }
+    },
+    "csharp": {
+      "warm_count": 20,
+      "all_exact": true,
+      "detection_ms": {
+        "count": 20,
+        "median": 255.2382915164344,
+        "p95": 261.093917011749,
+        "maximum": 261.40158297494054
+      },
+      "save_to_verified_publication_ms": {
+        "count": 20,
+        "median": 7204.952667001635,
+        "p95": 7454.988375015091,
+        "maximum": 7456.517749989871
+      },
+      "configured_debounce_ms": {
+        "count": 20,
+        "median": 300.0,
+        "p95": 300.0,
+        "maximum": 300.0
+      },
+      "additional_queue_wait_ms": {
+        "count": 20,
+        "median": 213.9706045,
+        "p95": 222.512584,
+        "maximum": 225.267375
+      },
+      "supervised_analysis_ms": {
+        "count": 20,
+        "median": 6358.045479,
+        "p95": 6601.914833000001,
+        "maximum": 6733.632584000001
+      },
+      "compiler_stages_ms": {
+        "analysis": {
+          "count": 20,
+          "median": 6222.307291499999,
+          "p95": 6426.484917,
+          "maximum": 6642.1355
+        },
+        "composition": {
+          "count": 20,
+          "median": 0.008854,
+          "p95": 0.010625,
+          "maximum": 0.010917
+        },
+        "csharp.engine": {
+          "count": 20,
+          "median": 1176.92825,
+          "p95": 1187.766083,
+          "maximum": 1191.999458
+        },
+        "csharp.metadata": {
+          "count": 20,
+          "median": 3922.5625,
+          "p95": 4135.87,
+          "maximum": 4356.729917
+        },
+        "csharp.normalization": {
+          "count": 20,
+          "median": 0.062959,
+          "p95": 0.069917,
+          "maximum": 0.076166
+        },
+        "csharp.restore": {
+          "count": 20,
+          "median": 212.964542,
+          "p95": 220.187542,
+          "maximum": 220.587958
+        },
+        "fingerprints.capture": {
+          "count": 20,
+          "median": 7.301646,
+          "p95": 7.879834000000001,
+          "maximum": 8.233541
+        },
+        "fingerprints.discover": {
+          "count": 20,
+          "median": 0.8915420000000001,
+          "p95": 1.003584,
+          "maximum": 1.059791
+        },
+        "fingerprints.verify": {
+          "count": 20,
+          "median": 37.8687705,
+          "p95": 39.901793999999995,
+          "maximum": 40.452665
+        },
+        "inference.boundaries": {
+          "count": 20,
+          "median": 0.32754150000000004,
+          "p95": 0.361542,
+          "maximum": 0.368208
+        },
+        "inference.cache_commit": {
+          "count": 20,
+          "median": 0.8315000000000001,
+          "p95": 1.4508329999999998,
+          "maximum": 1.67825
+        },
+        "preparation": {
+          "count": 20,
+          "median": 0.0610625,
+          "p95": 0.077625,
+          "maximum": 0.079125
+        },
+        "subprocess": {
+          "count": 20,
+          "median": 6143.463874,
+          "p95": 6350.334334000001,
+          "maximum": 6561.899669
+        },
+        "verification": {
+          "count": 20,
+          "median": 33.6276875,
+          "p95": 35.273210000000006,
+          "maximum": 35.64079
+        }
+      },
+      "task59_manual_body_refresh_p95_ms": 2015.0898330030032,
+      "initial_fixture_p95_budget_ms": 9500,
+      "stream_cpu_seconds_including_sampler": 187.65895799999998,
+      "stream_sampled_peak_tree_rss_bytes": 291012608,
+      "project_size": {
+        "artifact_bytes": 6579,
+        "nodes": 3,
+        "relationships": 1,
+        "observed_inputs": 8,
+        "authored_source_files": 2
+      }
+    },
+    "maven": {
+      "warm_count": 20,
+      "all_exact": true,
+      "detection_ms": {
+        "count": 20,
+        "median": 256.0123125149403,
+        "p95": 261.6704169777222,
+        "maximum": 262.8957499982789
+      },
+      "save_to_verified_publication_ms": {
+        "count": 20,
+        "median": 3344.182083499618,
+        "p95": 3371.4572500321083,
+        "maximum": 3586.481250007637
+      },
+      "configured_debounce_ms": {
+        "count": 20,
+        "median": 300.0,
+        "p95": 300.0,
+        "maximum": 300.0
+      },
+      "additional_queue_wait_ms": {
+        "count": 20,
+        "median": 212.870562,
+        "p95": 224.242167,
+        "maximum": 224.557917
+      },
+      "supervised_analysis_ms": {
+        "count": 20,
+        "median": 2576.4217715,
+        "p95": 2647.763,
+        "maximum": 2723.0033750000002
+      },
+      "compiler_stages_ms": {
+        "analysis": {
+          "count": 20,
+          "median": 2471.9392705,
+          "p95": 2541.9110840000003,
+          "maximum": 2582.236291
+        },
+        "composition": {
+          "count": 20,
+          "median": 0.0060835,
+          "p95": 0.006916,
+          "maximum": 0.008624999999999999
+        },
+        "fingerprints.capture": {
+          "count": 20,
+          "median": 1.110189,
+          "p95": 1.239332,
+          "maximum": 1.4177499999999998
+        },
+        "fingerprints.discover": {
+          "count": 20,
+          "median": 0.8189995,
+          "p95": 0.928334,
+          "maximum": 1.055542
+        },
+        "fingerprints.verify": {
+          "count": 20,
+          "median": 2.918729,
+          "p95": 3.1868339999999997,
+          "maximum": 4.051959
+        },
+        "inference.boundaries": {
+          "count": 20,
+          "median": 0.34825,
+          "p95": 0.369208,
+          "maximum": 0.374708
+        },
+        "inference.cache_commit": {
+          "count": 20,
+          "median": 0.869375,
+          "p95": 1.172833,
+          "maximum": 1.361458
+        },
+        "java.build_preparation": {
+          "count": 20,
+          "median": 645.2586455000001,
+          "p95": 653.457416,
+          "maximum": 662.120208
+        },
+        "java.bytecode": {
+          "count": 20,
+          "median": 327.13672900000006,
+          "p95": 426.383041,
+          "maximum": 427.431208
+        },
+        "java.classpath_staging": {
+          "count": 20,
+          "median": 205.1306875,
+          "p95": 218.774209,
+          "maximum": 220.4295
+        },
+        "java.compilation": {
+          "count": 20,
+          "median": 965.4979165,
+          "p95": 977.67275,
+          "maximum": 979.2735
+        },
+        "java.normalization": {
+          "count": 20,
+          "median": 0.22097899999999998,
+          "p95": 0.238125,
+          "maximum": 0.3690000000000001
+        },
+        "java.source_attribution": {
+          "count": 20,
+          "median": 322.40099999999995,
+          "p95": 329.702375,
+          "maximum": 329.87875
+        },
+        "preparation": {
+          "count": 20,
+          "median": 645.3397705,
+          "p95": 653.5387499999999,
+          "maximum": 662.184083
+        },
+        "subprocess": {
+          "count": 20,
+          "median": 2460.7993545,
+          "p95": 2531.4228749999997,
+          "maximum": 2570.518793
+        },
+        "verification": {
+          "count": 20,
+          "median": 2.37125,
+          "p95": 2.601043,
+          "maximum": 3.467875
+        }
+      },
+      "task59_manual_body_refresh_p95_ms": 4986.060541996267,
+      "initial_fixture_p95_budget_ms": 6000,
+      "stream_cpu_seconds_including_sampler": 141.809572,
+      "stream_sampled_peak_tree_rss_bytes": 320143360,
+      "project_size": {
+        "artifact_bytes": 10655,
+        "nodes": 3,
+        "relationships": 1,
+        "observed_inputs": 21,
+        "authored_source_files": 2
+      }
+    },
+    "gradle": {
+      "warm_count": 20,
+      "all_exact": true,
+      "detection_ms": {
+        "count": 20,
+        "median": 257.2488540026825,
+        "p95": 262.93437503045425,
+        "maximum": 263.6748750228435
+      },
+      "save_to_verified_publication_ms": {
+        "count": 20,
+        "median": 6950.832959002582,
+        "p95": 7194.718124985229,
+        "maximum": 7215.644708019681
+      },
+      "configured_debounce_ms": {
+        "count": 20,
+        "median": 300.0,
+        "p95": 300.0,
+        "maximum": 300.0
+      },
+      "additional_queue_wait_ms": {
+        "count": 20,
+        "median": 215.2357915,
+        "p95": 224.501958,
+        "maximum": 225.52154199999998
+      },
+      "supervised_analysis_ms": {
+        "count": 20,
+        "median": 6134.619271,
+        "p95": 6309.456792,
+        "maximum": 6348.4400000000005
+      },
+      "compiler_stages_ms": {
+        "analysis": {
+          "count": 20,
+          "median": 6024.988021000001,
+          "p95": 6191.241416000001,
+          "maximum": 6228.093875
+        },
+        "composition": {
+          "count": 20,
+          "median": 0.006479,
+          "p95": 0.007625,
+          "maximum": 0.009041
+        },
+        "fingerprints.capture": {
+          "count": 20,
+          "median": 1.317083,
+          "p95": 1.507459,
+          "maximum": 1.600375
+        },
+        "fingerprints.discover": {
+          "count": 20,
+          "median": 0.7892915,
+          "p95": 0.8696240000000001,
+          "maximum": 0.989999
+        },
+        "fingerprints.verify": {
+          "count": 20,
+          "median": 3.4909160000000004,
+          "p95": 3.748586,
+          "maximum": 3.896792
+        },
+        "inference.boundaries": {
+          "count": 20,
+          "median": 0.33575,
+          "p95": 0.367125,
+          "maximum": 0.395125
+        },
+        "inference.cache_commit": {
+          "count": 20,
+          "median": 0.822792,
+          "p95": 1.503833,
+          "maximum": 1.953042
+        },
+        "java.build_preparation": {
+          "count": 20,
+          "median": 2482.6551045,
+          "p95": 2565.342458,
+          "maximum": 2569.2183330000003
+        },
+        "java.bytecode": {
+          "count": 20,
+          "median": 324.2635205,
+          "p95": 330.596167,
+          "maximum": 330.653458
+        },
+        "java.classpath_staging": {
+          "count": 20,
+          "median": 209.88604199999997,
+          "p95": 219.001834,
+          "maximum": 220.508042
+        },
+        "java.compilation": {
+          "count": 20,
+          "median": 2682.913479,
+          "p95": 2782.973084,
+          "maximum": 2788.9691669999997
+        },
+        "java.normalization": {
+          "count": 20,
+          "median": 0.2169165,
+          "p95": 0.239583,
+          "maximum": 0.25025
+        },
+        "java.source_attribution": {
+          "count": 20,
+          "median": 325.71379149999996,
+          "p95": 329.949792,
+          "maximum": 330.72887499999996
+        },
+        "preparation": {
+          "count": 20,
+          "median": 2482.728646,
+          "p95": 2565.407625,
+          "maximum": 2569.292458
+        },
+        "subprocess": {
+          "count": 20,
+          "median": 6013.578562999999,
+          "p95": 6179.935292,
+          "maximum": 6216.519040999999
+        },
+        "verification": {
+          "count": 20,
+          "median": 2.852542,
+          "p95": 3.109167,
+          "maximum": 3.201624
+        }
+      },
+      "task59_manual_body_refresh_p95_ms": 13120.225833030418,
+      "initial_fixture_p95_budget_ms": 14000,
+      "stream_cpu_seconds_including_sampler": 387.1613400000001,
+      "stream_sampled_peak_tree_rss_bytes": 678330368,
+      "project_size": {
+        "artifact_bytes": 11453,
+        "nodes": 3,
+        "relationships": 1,
+        "observed_inputs": 22,
+        "authored_source_files": 2
+      }
+    }
+  }
+}

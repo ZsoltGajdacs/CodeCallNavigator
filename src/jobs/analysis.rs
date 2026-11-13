@@ -18,15 +18,26 @@ impl State {
             .filter(|choice| choice.selected)
             .map(|choice| choice.target.clone())
             .collect();
-        let Some(runtime) = self.runtime.clone() else {
-            return;
-        };
         if targets.is_empty() {
             self.warning =
                 "Select at least one solution, project, Java build or TypeScript configuration."
                     .into();
             return;
         }
+        let selection = engine_client::Analysis {
+            project: PathBuf::from(self.root.text.trim()),
+            targets,
+        };
+        if self.defer_manual_analysis(&selection) {
+            return;
+        }
+        self.start_selected_analysis(selection);
+    }
+
+    pub(crate) fn start_selected_analysis(&mut self, selection: engine_client::Analysis) {
+        let Some(runtime) = self.runtime.clone() else {
+            return;
+        };
         self.cancel = Arc::new(std::sync::atomic::AtomicBool::new(false));
         let cancel = self.cancel.clone();
         let progress = self.jobs.progress_sender.clone();
@@ -39,10 +50,9 @@ impl State {
             "Preparing project analysis…"
         }
         .into();
-        let project = PathBuf::from(self.root.text.trim());
         let epoch = self.epoch;
         let binding = crate::workspace::Binding::capture(self);
-        self.jobs.analysis.request(targets, move |targets| {
+        self.jobs.analysis.request(selection, move |selection| {
             let metrics = codecallnavigator::metrics::Metrics::default();
             let _scope = metrics.enter();
             let report = |message| {
@@ -52,12 +62,8 @@ impl State {
                 }
             };
             let result = (|| {
-                let snapshot = engine_client::analyze_snapshot(
-                    &runtime,
-                    engine_client::Analysis { project, targets },
-                    &cancel,
-                    &report,
-                )?;
+                let snapshot =
+                    engine_client::analyze_snapshot(&runtime, selection, &cancel, &report)?;
                 let mut loaded = crate::workspace::from_snapshot(snapshot);
                 loaded.metrics = Some(metrics);
                 Ok::<_, anyhow::Error>(loaded)

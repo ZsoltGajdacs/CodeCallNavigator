@@ -1,0 +1,22 @@
+{
+  "date": "2026-11-13",
+  "test": "ui_tests::cli_freshness::actual_cli_automatic_refresh_requires_opt_in_and_preserves_loaded_context",
+  "profile": "release",
+  "result": "passed",
+  "seconds": 15.19,
+  "tests_passed": 1,
+  "runtime": "real Rune controls and native Metal offscreen rendering",
+  "engine_sha256": "f2880a4f32b24be8a8e90edfa4e93c88ff9903c6c61a551797c8baa4449876f3",
+  "test_binary_sha256": "1444a23f2bff9c42fd06b1ac94ad03b5afe7548ae3acd93b288c95bc793c6645",
+  "captures": {
+    "automatic-enabled.png": "181978d48d2e3c9feb98335becc01f76b3161389c1902cf0b46ea4fe74a56526",
+    "automatic-invalid-code.png": "11c4c5458987cf69a2ef5dad424326ffa1d950f5d37c5c31a6ea62eea56e9af0",
+    "automatic-invalid-light-compact.png": "0ff2c2333b6d6895cae5632dd18fe10a4f48edc4ed25d8242901b81855b2f51b",
+    "automatic-disabled.png": "06337223499054652eeeb4521d94f54c6ea2c3490031cc232b5b19ae3fd13f3b"
+  },
+  "limitations": [
+    "Synthetic real TypeScript compiler project; not a cross-language UI performance measurement.",
+    "The screenshot preserves an intentionally panned/zoomed camera; graph fitting is not part of automatic adoption.",
+    "Standalone full-verification and broad engine acceptance results are tracked separately."
+  ]
+}

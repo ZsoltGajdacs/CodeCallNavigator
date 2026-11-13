@@ -65,6 +65,8 @@ gradle.projectsEvaluated {
                      sourceRoots: sources.allJava.srcDirs.collect { it.canonicalPath },
                      generatedRoots: generatedRoots.collect { it.canonicalPath }.unique(),
                      buildInputs: compile ? taskSourceInputs(compile) : [],
+                     // Keep the evaluated spelling so refresh policy can detect output aliases.
+                     rawClassDirs: sources.output.classesDirs.files.collect { it.absolutePath },
                      classDirs: sources.output.classesDirs.files.collect { it.canonicalPath }]
                 }
             }

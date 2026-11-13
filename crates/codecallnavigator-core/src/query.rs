@@ -16,6 +16,7 @@ pub fn capabilities() -> serde_json::Value {
     serde_json::json!({
         "query_version": VERSION,
         "operations": ["status", "freshness", "snapshot", "inspect", "live_source", "architecture", "search", "symbol", "source", "explorer", "selection", "render_selection", "neighbors", "flow", "compare"],
+        "automatic_refresh": {"version":crate::refresh::VERSION,"activity_version":crate::refresh::VERSION,"observe_flag":"--auto-refresh","debounce_milliseconds":crate::refresh::DEBOUNCE_MILLISECONDS,"cancel_command":"cancel_refresh"},
         "comparison": {"version":1,"default_limit":100,"maximum_limit":500,"maximum_response_bytes":24*1024*1024,"snapshot_binding":true},
         "freshness": {"version":crate::freshness::VERSION,"streaming":true,"mode":"verified_polling","limited":true,"reconcile_milliseconds":crate::freshness::RECONCILE_MILLISECONDS,"heartbeat_milliseconds":crate::freshness::HEARTBEAT_MILLISECONDS},
         "flow_languages": ["java", "typescript"],
