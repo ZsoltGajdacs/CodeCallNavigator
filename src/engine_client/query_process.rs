@@ -63,6 +63,10 @@ impl Client {
         Ok(super::capabilities::check(&self.runtime, cancel, Instant::now())?.observation)
     }
 
+    pub(super) fn automatic_refresh_supported(&self, cancel: &AtomicBool) -> Result<bool> {
+        Ok(super::capabilities::check(&self.runtime, cancel, Instant::now())?.automatic_refresh)
+    }
+
     fn capabilities(
         &self,
         cancel: &AtomicBool,

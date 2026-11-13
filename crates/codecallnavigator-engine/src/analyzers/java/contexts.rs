@@ -255,6 +255,7 @@ mod tests {
             source_set: "main".into(),
             project_dir: root.path().into(),
             class_dirs: vec![classes],
+            raw_class_dirs: None,
             compile_classpath: vec![absent.clone()],
             classpath_aliases: Vec::new(),
             source_roots: Vec::new(),

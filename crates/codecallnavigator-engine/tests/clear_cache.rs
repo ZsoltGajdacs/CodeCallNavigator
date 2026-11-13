@@ -45,7 +45,12 @@ fn cli_clears_only_inference_cache_and_is_idempotent() {
         assert!(
             String::from_utf8_lossy(&output.stdout).contains(&format!("{removed} files removed"))
         );
-        assert!(!project.path().join(".codecallnavigator/inference.sqlite3").exists());
+        assert!(
+            !project
+                .path()
+                .join(".codecallnavigator/inference.sqlite3")
+                .exists()
+        );
         assert_eq!(
             fs::read_to_string(project.path().join(".codecallnavigator/graph.json")).unwrap(),
             "last successful graph"
@@ -161,15 +166,25 @@ fn protocol_reports_completion_or_lock_failure() {
         assert_eq!(output.status.success(), !locked);
         if locked {
             assert!(
-                matches!(events.last(), Some(Event::Failed { message }) if message.contains("Another analysis"))
+                matches!(events.last(), Some(Event::Failed { message, .. }) if message.contains("Another analysis"))
             );
-            assert!(project.path().join(".codecallnavigator/inference.sqlite3").exists());
+            assert!(
+                project
+                    .path()
+                    .join(".codecallnavigator/inference.sqlite3")
+                    .exists()
+            );
         } else {
             assert!(matches!(
                 events.last(),
                 Some(Event::CacheCleared { removed_files: 1 })
             ));
-            assert!(!project.path().join(".codecallnavigator/inference.sqlite3").exists());
+            assert!(
+                !project
+                    .path()
+                    .join(".codecallnavigator/inference.sqlite3")
+                    .exists()
+            );
         }
         drop(lock);
     }

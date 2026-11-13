@@ -50,10 +50,11 @@ pub(super) struct Inputs<'a> {
     scopes: BTreeSet<Scope>,
     complete: bool,
     reasons: Vec<Reason>,
+    ignored_outputs: Vec<PathBuf>,
 }
 
 impl<'a> Inputs<'a> {
-    pub fn new(paths: &'a Paths, cancel: &'a AtomicBool) -> Self {
+    pub fn excluding(paths: &'a Paths, cancel: &'a AtomicBool, outputs: &[PathBuf]) -> Self {
         Self {
             paths,
             cancel,
@@ -61,6 +62,7 @@ impl<'a> Inputs<'a> {
             scopes: BTreeSet::new(),
             complete: true,
             reasons: Vec::new(),
+            ignored_outputs: outputs.into(),
         }
     }
 
@@ -173,9 +175,11 @@ impl<'a> Inputs<'a> {
         self.check()?;
         for scope in self.scopes.clone() {
             let outputs = scope.outputs();
+            let mut traversal_outputs = outputs.clone();
+            traversal_outputs.extend(self.ignored_outputs.clone());
             let paths = fingerprint::observation_paths(
                 std::slice::from_ref(&scope.path),
-                &outputs,
+                &traversal_outputs,
                 self.cancel,
             )
             .context("Cannot reconcile observed input scopes")?;
@@ -212,7 +216,13 @@ impl<'a> Inputs<'a> {
     fn observe_path(&mut self, local: &Path, outputs: &[PathBuf]) -> Result<()> {
         self.check()?;
         let path = self.paths.portable(&local.to_string_lossy())?;
-        let excluded_children = fingerprint::excluded_children(local, outputs);
+        let mut excluded_children = fingerprint::excluded_children(local, outputs);
+        excluded_children.extend(super::super::refresh_inputs::direct_children(
+            local,
+            &self.ignored_outputs,
+        ));
+        excluded_children.sort();
+        excluded_children.dedup();
         let key = Key {
             path,
             excluded_children,

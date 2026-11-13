@@ -122,7 +122,10 @@ def rust_declarations_only(path):
         return False
     identifier = r'[A-Za-z_][A-Za-z_0-9]*'
     visibility = r'(?:pub(?:\s*\(\s*(?:crate|self|super)\s*\))?\s+)?'
-    module = rf'{visibility}mod\s+{identifier}\s*;'
+    # This built-in platform predicate does not add an executable body. Unknown
+    # attributes and attributes on functions remain subject to numeric review.
+    unix_module = r'(?:#\s*\[\s*cfg\s*\(\s*unix\s*\)\s*\]\s*)?'
+    module = rf'{unix_module}{visibility}mod\s+{identifier}\s*;'
     imports = rf'(?:{identifier}\s*::\s*)*(?:{identifier}|\*|\{{\s*{identifier}(?:\s*,\s*{identifier})*\s*,?\s*\}})'
     use = rf'{visibility}use\s+{imports}\s*;'
     numeric_type = r'(?:usize|isize|u8|u16|u32|u64|u128|i8|i16|i32|i64|i128|f32|f64)'

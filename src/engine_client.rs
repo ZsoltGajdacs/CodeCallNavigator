@@ -3,6 +3,7 @@
 use codecallnavigator::model::GraphData;
 mod capabilities;
 mod observation_process;
+pub(crate) use observation_process::{CleanupFailure, Notice, ObservationOptions};
 mod process;
 mod queries;
 mod query_process;
@@ -45,6 +46,7 @@ pub fn clear_cache(runtime: &Runtime, project: &Path) -> Result<u32> {
     }
 }
 
+#[derive(Clone)]
 pub struct Analysis {
     pub project: std::path::PathBuf,
     pub targets: Vec<BuildTarget>,
@@ -65,6 +67,8 @@ pub fn analyze_snapshot(
         project: project.clone(),
         roots: Vec::new(),
         infer_linked_roots: true,
+        failure_version: None,
+        expected_generation: None,
         targets: selection.targets,
     };
     let Event::Complete {
@@ -160,7 +164,7 @@ impl Conversation {
         match event {
             Event::Hello { .. } => bail!("Engine sent a duplicate hello"),
             Event::Progress { message } => Ok(Some(message)),
-            Event::Failed { message } => bail!("Engine analysis failed: {message}"),
+            Event::Failed { message, .. } => bail!("Engine analysis failed: {message}"),
             terminal => {
                 self.terminal = Some(terminal);
                 Ok(None)

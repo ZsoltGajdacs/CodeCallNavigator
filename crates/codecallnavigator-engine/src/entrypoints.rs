@@ -12,6 +12,9 @@ mod observer;
 mod query;
 mod query_executor;
 mod query_session;
+mod refresh_child;
+mod refresh_coordinator;
+mod refresh_policy;
 mod verification;
 use anyhow::Result;
 use arguments::Command;
@@ -33,7 +36,7 @@ pub fn run() -> Result<i32> {
     // so an idle session blocked on stdin also terminates promptly on cancellation.
     if !matches!(
         command,
-        Command::Query | Command::QuerySession | Command::Observe
+        Command::Query | Command::QuerySession | Command::Observe { automatic: false }
     ) {
         cancellation::install();
     }
@@ -44,7 +47,7 @@ pub fn run() -> Result<i32> {
         }
         Command::Query => query::run(),
         Command::QuerySession => query_session::run(),
-        Command::Observe => observation_stream::run(),
+        Command::Observe { automatic } => observation_stream::run(automatic),
         Command::Help => {
             print_help();
             Ok(0)
@@ -114,6 +117,6 @@ fn print_help() {
         "codecallnavigator-engine"
     };
     println!(
-        "{program} capabilities\n{program} query < request.json\n{program} query-session < requests.ndjson\n{program} observe < observation-request.ndjson\n{program} discover PROJECT\n{program} analyze --project PROJECT [--root NAME=PATH] TARGET...\n{program} clear-cache --project PROJECT\n{program} verify --project PROJECT [--root NAME=PATH]\n{program} compare --project PROJECT --base REF --head REF|WORKTREE"
+        "{program} capabilities\n{program} query < request.json\n{program} query-session < requests.ndjson\n{program} observe [--auto-refresh] < observation-request.ndjson\n{program} discover PROJECT\n{program} analyze --project PROJECT [--root NAME=PATH] TARGET...\n{program} clear-cache --project PROJECT\n{program} verify --project PROJECT [--root NAME=PATH]\n{program} compare --project PROJECT --base REF --head REF|WORKTREE"
     );
 }

@@ -306,10 +306,10 @@ fn engine_versions() -> Result<String> {
 
 fn ensure_unchanged(before: &[FileFingerprint]) -> Result<()> {
     let _timer = crate::metrics::stage("verification");
-    ensure!(
-        !fingerprint::is_stale(before)?,
-        "Project inputs changed during analysis. Refresh again after editing stops; the previous graph is preserved."
-    );
+    fingerprint::require_unchanged(
+        before,
+        "Project inputs changed during analysis. Refresh again after editing stops; the previous graph is preserved.",
+    )?;
     Ok(())
 }
 

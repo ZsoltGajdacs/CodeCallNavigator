@@ -86,6 +86,17 @@ The desktop uses the versioned `serve-once` newline-delimited JSON protocol.
 Runtime observations and metrics travel separately from the artifact. The client
 verifies the protocol version and artifact digest before caching the result.
 Cancellation or a disconnected client stops analysis and its owned subprocesses.
+
+Analysis requests may negotiate `"failure_version":1` to receive a typed `code`
+on `failed`: `busy`, `inputs_changed`, `generation_changed`, `cancelled` or
+`failed`. Requests omitting this field retain the existing message-only failure
+envelope. Unknown failure versions are rejected before analysis. Optional
+`expected_generation` binds an analysis request to the current canonical digest;
+the engine checks it while holding the analysis lock, before build preparation.
+A mismatch reports `generation_changed` without replacing the artifact. Manual
+analysis omits this precondition. Automatic refresh uses a fresh `serve-once`
+process for every run, so cancellation never resets process-global state.
+
 Protocol version 1 also accepts
 `{"command":"clear_cache","version":1,"project":"/checkout"}`.
 The engine responds with its usual `hello`, followed by

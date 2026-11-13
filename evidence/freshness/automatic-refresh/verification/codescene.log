@@ -1,0 +1,539 @@
+{
+  "status": "passed",
+  "reviews": [
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "crates/codecallnavigator-core/src/artifact.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "crates/codecallnavigator-core/src/artifact/provenance.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "crates/codecallnavigator-core/src/artifact/provenance_selection_tests.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "crates/codecallnavigator-core/src/artifact/publish.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "crates/codecallnavigator-core/src/artifact/refresh_inputs.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "crates/codecallnavigator-core/src/artifact/selection.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "crates/codecallnavigator-core/src/artifact/verification.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "crates/codecallnavigator-core/src/artifact/verification/csharp_policy.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "crates/codecallnavigator-core/src/artifact/verification/live.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "crates/codecallnavigator-core/src/artifact/verification/observation_tests.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "crates/codecallnavigator-core/src/discovery.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "crates/codecallnavigator-core/src/fingerprint.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "crates/codecallnavigator-core/src/freshness.rs"
+    },
+    {
+      "score": null,
+      "review": [],
+      "applicability": "declarations_only",
+      "path": "crates/codecallnavigator-core/src/lib.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "crates/codecallnavigator-core/src/model.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "crates/codecallnavigator-core/src/process_ownership.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "crates/codecallnavigator-core/src/protocol.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "crates/codecallnavigator-core/src/query.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "crates/codecallnavigator-core/src/refresh.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "crates/codecallnavigator-engine/src/analyzers.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "crates/codecallnavigator-engine/src/analyzers/compose.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "crates/codecallnavigator-engine/src/analyzers/java.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "crates/codecallnavigator-engine/src/analyzers/java/build.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "crates/codecallnavigator-engine/src/analyzers/java/contexts.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "crates/codecallnavigator-engine/src/analyzers/java/lambda_correlation_tests.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "crates/codecallnavigator-engine/src/analyzers/java/refresh_outputs.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "crates/codecallnavigator-engine/src/analyzers/process.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "crates/codecallnavigator-engine/src/entrypoints.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "crates/codecallnavigator-engine/src/entrypoints/analysis.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "crates/codecallnavigator-engine/src/entrypoints/arguments.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "crates/codecallnavigator-engine/src/entrypoints/machine.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "crates/codecallnavigator-engine/src/entrypoints/observation_stream.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "crates/codecallnavigator-engine/src/entrypoints/observation_transport.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "crates/codecallnavigator-engine/src/entrypoints/query_executor.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "crates/codecallnavigator-engine/src/entrypoints/refresh_child.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "crates/codecallnavigator-engine/src/entrypoints/refresh_coordinator.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "crates/codecallnavigator-engine/src/entrypoints/refresh_policy.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "crates/codecallnavigator-engine/src/lib.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "crates/codecallnavigator-engine/src/process_ownership.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "crates/codecallnavigator-engine/tests/automatic_refresh.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "crates/codecallnavigator-engine/tests/clear_cache.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "crates/codecallnavigator-engine/tests/refresh_contract.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "src/app.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "src/automatic_refresh.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "src/cache_jobs.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "src/engine_client.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "src/engine_client/capabilities.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "src/engine_client/observation_process.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "src/engine_client/observation_process/activity.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "src/engine_client/queries.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "src/engine_client/query_process.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "src/engine_client/query_tests.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "src/freshness_workspace.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "src/freshness_workspace/worker.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "src/graph_install.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "src/jobs/analysis.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "src/main.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "src/ui_tests/cli_freshness.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "src/view.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "src/view/automatic_refresh.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "tests/java_output_metadata.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "tools/automatic_refresh_acceptance.py"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "tools/freshness_observer_measurement.py"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "tools/maven-metadata/src/main/java/codecallnavigator/maven/BuildMetadata.java"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "tools/measure_automatic_refresh.py"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "tools/measure_freshness_idle.py"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "tools/test_automatic_refresh_measurement.py"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "tools/test_freshness_observer_measurement.py"
+    }
+  ],
+  "safeguard": {
+    "results": [],
+    "quality_gates": "passed",
+    "metadata": {
+      "checked-file-count": 70,
+      "code-health-eligible-file-count": 70,
+      "status": "no-issues-found",
+      "total-modified-file-count": 185
+    }
+  },
+  "errors": [],
+  "skipped_files": [
+    ".backlog/tasks/task-62 - Add-opt-in-engine-owned-automatic-graph-refresh.md",
+    "docs/cli-queries.md",
+    "docs/desktop-cli.md",
+    "docs/graph-contract.md",
+    "docs/graph.schema.json",
+    "docs/standalone-engine.md",
+    "evidence/freshness/automatic-refresh/acceptance-before-guards/broken-pipe-events.json",
+    "evidence/freshness/automatic-refresh/acceptance-before-guards/burst-latest-events.json",
+    "evidence/freshness/automatic-refresh/acceptance-before-guards/concurrent-edit-events.json",
+    "evidence/freshness/automatic-refresh/acceptance-before-guards/coordinator-lease-events.json",
+    "evidence/freshness/automatic-refresh/acceptance-before-guards/eof-events.json",
+    "evidence/freshness/automatic-refresh/acceptance-before-guards/future-selection-events.json",
+    "evidence/freshness/automatic-refresh/acceptance-before-guards/future-version-events.json",
+    "evidence/freshness/automatic-refresh/acceptance-before-guards/generated-output-events.json",
+    "evidence/freshness/automatic-refresh/acceptance-before-guards/invalid-repair-events.json",
+    "evidence/freshness/automatic-refresh/acceptance-before-guards/legacy-selection-events.json",
+    "evidence/freshness/automatic-refresh/acceptance-before-guards/manual-lock-events.json",
+    "evidence/freshness/automatic-refresh/acceptance-before-guards/metadata.json",
+    "evidence/freshness/automatic-refresh/acceptance-before-guards/results.json",
+    "evidence/freshness/automatic-refresh/acceptance-before-guards/sigterm-events.json",
+    "evidence/freshness/automatic-refresh/acceptance-before-guards/undrained-output-events.json",
+    "evidence/freshness/automatic-refresh/acceptance-before-guards/user-cancel-events.json",
+    "evidence/freshness/automatic-refresh/acceptance-pre-output-policy/broken-pipe-events.json",
+    "evidence/freshness/automatic-refresh/acceptance-pre-output-policy/burst-latest-events.json",
+    "evidence/freshness/automatic-refresh/acceptance-pre-output-policy/concurrent-edit-events.json",
+    "evidence/freshness/automatic-refresh/acceptance-pre-output-policy/coordinator-lease-events.json",
+    "evidence/freshness/automatic-refresh/acceptance-pre-output-policy/eof-events.json",
+    "evidence/freshness/automatic-refresh/acceptance-pre-output-policy/future-selection-events.json",
+    "evidence/freshness/automatic-refresh/acceptance-pre-output-policy/future-version-events.json",
+    "evidence/freshness/automatic-refresh/acceptance-pre-output-policy/generated-output-events.json",
+    "evidence/freshness/automatic-refresh/acceptance-pre-output-policy/invalid-repair-events.json",
+    "evidence/freshness/automatic-refresh/acceptance-pre-output-policy/legacy-selection-events.json",
+    "evidence/freshness/automatic-refresh/acceptance-pre-output-policy/manual-lock-events.json",
+    "evidence/freshness/automatic-refresh/acceptance-pre-output-policy/metadata.json",
+    "evidence/freshness/automatic-refresh/acceptance-pre-output-policy/results.json",
+    "evidence/freshness/automatic-refresh/acceptance-pre-output-policy/sigterm-events.json",
+    "evidence/freshness/automatic-refresh/acceptance-pre-output-policy/undrained-output-events.json",
+    "evidence/freshness/automatic-refresh/acceptance-pre-output-policy/user-cancel-events.json",
+    "evidence/freshness/automatic-refresh/acceptance/broken-pipe-events.json",
+    "evidence/freshness/automatic-refresh/acceptance/burst-latest-events.json",
+    "evidence/freshness/automatic-refresh/acceptance/concurrent-edit-events.json",
+    "evidence/freshness/automatic-refresh/acceptance/coordinator-lease-events.json",
+    "evidence/freshness/automatic-refresh/acceptance/eof-events.json",
+    "evidence/freshness/automatic-refresh/acceptance/future-selection-events.json",
+    "evidence/freshness/automatic-refresh/acceptance/future-version-events.json",
+    "evidence/freshness/automatic-refresh/acceptance/generated-output-events.json",
+    "evidence/freshness/automatic-refresh/acceptance/invalid-repair-events.json",
+    "evidence/freshness/automatic-refresh/acceptance/legacy-selection-events.json",
+    "evidence/freshness/automatic-refresh/acceptance/manual-lock-events.json",
+    "evidence/freshness/automatic-refresh/acceptance/metadata.json",
+    "evidence/freshness/automatic-refresh/acceptance/results.json",
+    "evidence/freshness/automatic-refresh/acceptance/sigterm-events.json",
+    "evidence/freshness/automatic-refresh/acceptance/undrained-output-events.json",
+    "evidence/freshness/automatic-refresh/acceptance/user-cancel-events.json",
+    "evidence/freshness/automatic-refresh/code-health.json",
+    "evidence/freshness/automatic-refresh/idle/csharp-automatic-stream.jsonl",
+    "evidence/freshness/automatic-refresh/idle/csharp-passive-stream.jsonl",
+    "evidence/freshness/automatic-refresh/idle/gradle-automatic-stream.jsonl",
+    "evidence/freshness/automatic-refresh/idle/gradle-passive-stream.jsonl",
+    "evidence/freshness/automatic-refresh/idle/maven-automatic-stream.jsonl",
+    "evidence/freshness/automatic-refresh/idle/maven-passive-stream.jsonl",
+    "evidence/freshness/automatic-refresh/idle/metadata.json",
+    "evidence/freshness/automatic-refresh/idle/summary.json",
+    "evidence/freshness/automatic-refresh/idle/typescript-automatic-stream.jsonl",
+    "evidence/freshness/automatic-refresh/idle/typescript-passive-stream.jsonl",
+    "evidence/freshness/automatic-refresh/output-trigger-diagnostics/csharp-stream.jsonl.gz",
+    "evidence/freshness/automatic-refresh/output-trigger-diagnostics/csharp-variant-0.json.gz",
+    "evidence/freshness/automatic-refresh/output-trigger-diagnostics/csharp-variant-1.json.gz",
+    "evidence/freshness/automatic-refresh/output-trigger-diagnostics/gradle-stream.jsonl.gz",
+    "evidence/freshness/automatic-refresh/output-trigger-diagnostics/gradle-variant-0.json.gz",
+    "evidence/freshness/automatic-refresh/output-trigger-diagnostics/gradle-variant-1.json.gz",
+    "evidence/freshness/automatic-refresh/output-trigger-diagnostics/maven-stream.jsonl.gz",
+    "evidence/freshness/automatic-refresh/output-trigger-diagnostics/maven-variant-0.json.gz",
+    "evidence/freshness/automatic-refresh/output-trigger-diagnostics/maven-variant-1.json.gz",
+    "evidence/freshness/automatic-refresh/output-trigger-diagnostics/metadata.json",
+    "evidence/freshness/automatic-refresh/output-trigger-diagnostics/samples.jsonl.gz",
+    "evidence/freshness/automatic-refresh/output-trigger-diagnostics/summary.json",
+    "evidence/freshness/automatic-refresh/output-trigger-diagnostics/typescript-stream.jsonl.gz",
+    "evidence/freshness/automatic-refresh/output-trigger-diagnostics/typescript-variant-0.json.gz",
+    "evidence/freshness/automatic-refresh/output-trigger-diagnostics/typescript-variant-1.json.gz",
+    "evidence/freshness/automatic-refresh/publications-initial/csharp-variant-0.json.gz",
+    "evidence/freshness/automatic-refresh/publications-initial/csharp-variant-1.json.gz",
+    "evidence/freshness/automatic-refresh/publications-initial/gradle-variant-0.json.gz",
+    "evidence/freshness/automatic-refresh/publications-initial/gradle-variant-1.json.gz",
+    "evidence/freshness/automatic-refresh/publications-initial/maven-variant-0.json.gz",
+    "evidence/freshness/automatic-refresh/publications-initial/maven-variant-1.json.gz",
+    "evidence/freshness/automatic-refresh/publications-initial/metadata.json",
+    "evidence/freshness/automatic-refresh/publications-initial/samples.jsonl.gz",
+    "evidence/freshness/automatic-refresh/publications-initial/summary.json",
+    "evidence/freshness/automatic-refresh/publications-initial/typescript-variant-0.json.gz",
+    "evidence/freshness/automatic-refresh/publications-initial/typescript-variant-1.json.gz",
+    "evidence/freshness/automatic-refresh/publications/csharp-stream.jsonl",
+    "evidence/freshness/automatic-refresh/publications/csharp-variant-0.json.gz",
+    "evidence/freshness/automatic-refresh/publications/csharp-variant-1.json.gz",
+    "evidence/freshness/automatic-refresh/publications/gradle-stream.jsonl",
+    "evidence/freshness/automatic-refresh/publications/gradle-variant-0.json.gz",
+    "evidence/freshness/automatic-refresh/publications/gradle-variant-1.json.gz",
+    "evidence/freshness/automatic-refresh/publications/maven-stream.jsonl",
+    "evidence/freshness/automatic-refresh/publications/maven-variant-0.json.gz",
+    "evidence/freshness/automatic-refresh/publications/maven-variant-1.json.gz",
+    "evidence/freshness/automatic-refresh/publications/metadata.json",
+    "evidence/freshness/automatic-refresh/publications/samples.jsonl",
+    "evidence/freshness/automatic-refresh/publications/summary.json",
+    "evidence/freshness/automatic-refresh/publications/typescript-stream.jsonl",
+    "evidence/freshness/automatic-refresh/publications/typescript-variant-0.json.gz",
+    "evidence/freshness/automatic-refresh/publications/typescript-variant-1.json.gz",
+    "evidence/freshness/task62-desktop/README.md",
+    "evidence/freshness/task62-desktop/automatic-disabled.png",
+    "evidence/freshness/task62-desktop/automatic-enabled.png",
+    "evidence/freshness/task62-desktop/automatic-invalid-code.png",
+    "evidence/freshness/task62-desktop/automatic-invalid-light-compact.png",
+    "evidence/freshness/task62-desktop/run.json",
+    "tools/gradle-metadata.gradle"
+  ]
+}

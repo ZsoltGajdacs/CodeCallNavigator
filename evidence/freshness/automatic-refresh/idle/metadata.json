@@ -1,0 +1,82 @@
+{
+  "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+  "machine": "arm64",
+  "cpu_count": 12,
+  "executable_sha256": "454cd768ed652fc2faa587459da648b76be41d8d651613e7d2db4f38c5b895b6",
+  "analyzer_lock_sha256": "3376e6c012159b8615ad6d1432392b57f83118bcdb33f8778c9fd2bc6635694b",
+  "source_commit": "19b6b8abdd8f6a532dd517763f11ff3f3d123a1c",
+  "toolchains": {
+    "node": "v24.15.0\n",
+    "java": "openjdk version \"25.0.2\" 2026-01-20\nOpenJDK Runtime Environment JBR-25.0.2+10-300.57-jcef (build 25.0.2+10-b300.57)\nOpenJDK 64-Bit Server VM JBR-25.0.2+10-300.57-jcef (build 25.0.2+10-b300.57, mixed mode, sharing)\n",
+    "dotnet": "11.0.100 [/usr/local/share/dotnet/sdk]\n",
+    "maven": "Apache Maven 3.10.0 (c43a36b8d67be7e0805a411bc0898af1a51f5472)\nMaven home: /opt/homebrew/Cellar/maven/3.10.0/libexec\nJava version: 25.0.2, vendor: JetBrains s.r.o., runtime: /Users/zsolt.gajdacs/.sdkman/candidates/java/25.0.2-jbr\nDefault locale: en_US, platform encoding: UTF-8, time zone: Europe/Stockholm\nOS name: \"mac os x\", version: \"27.0.1\", arch: \"aarch64\", family: \"mac\"\n"
+  },
+  "dependency_cache": "shared existing toolchain caches; no downloads intentionally cleared",
+  "sampling": "50ms process-tree RSS samples restricted to idle window; shared pages may be counted repeatedly; brief peaks can be missed",
+  "cpu": "Idle-window fields use CLI self CPU only; stream_resources totals use RUSAGE_CHILDREN and include sampler subprocesses and startup/shutdown",
+  "detection": "No edits or detection-latency measurement in these idle windows",
+  "stages": "Compiler baseline is outside the idle window; no compiler stage latency claim",
+  "idle_monitor": "Single idle window per mode/route, not a statistical p95. CLI self CPU from ps cumulative centisecond time after initial/Watching readiness; CPU wall interval brackets endpoint ps calls and their overhead is reported; percentage of one core, not whole-machine CPU; sampler/helper CPU excluded",
+  "reset_protocol": "One independent compiler baseline per route, then sequential passive/automatic monitor processes without saved edits",
+  "hardware": {
+    "milliseconds": 12.290207960177213,
+    "exit_code": 0,
+    "timed_out": false,
+    "cpu_seconds": 0.0019039999999999335,
+    "sampled_peak_tree_rss_bytes": null,
+    "resource_samples": 0,
+    "sampling_errors": [],
+    "cleanup_errors": [],
+    "stdout": "machdep.cpu.brand_string: Apple M4 Pro\nhw.memsize: 51539607552\nhw.physicalcpu: 12\nhw.logicalcpu: 12\n",
+    "stderr": ""
+  },
+  "analysis_resources": {
+    "root": "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph",
+    "files": {
+      "callatlas": {
+        "path": "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/vendor/callatlas/src/CallAtlas.Cli/bin/Release/net11.0/callatlas.dll",
+        "sha256": "0f15d2377d2dd2ca8eeb8ff40e4b409f80943c90edaf1fa74c3a0f46c870726d"
+      },
+      "bytecode": {
+        "path": "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/tools/java-bytecode/build/install/codecallnavigator-bytecode/lib/codecallnavigator-bytecode.jar",
+        "sha256": "eca8febbfa40f22a245884f1adfabe6558aa1dd6e7ee77fa6a874a0037b7cee2"
+      },
+      "maven_metadata": {
+        "path": "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/tools/maven-metadata/build/libs/codecallnavigator-maven-metadata.jar",
+        "sha256": "102bab067f36eb331da00822225b5bf6e2da26c2d8d2a93b3b5d77c9c129dcd2"
+      },
+      "gradle_metadata": {
+        "path": "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/tools/gradle-metadata.gradle",
+        "sha256": "837e42599ff759f27d0321e91d935c1c52448d2bc8b1cf83ed043cf50dd410f7"
+      },
+      "typescript": {
+        "path": "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/tools/typescript/analyze.js",
+        "sha256": "e2b469e120bf044e0078f0fa08d9d2ba3a7451e0e7ba57f89c6477f64cdb57fd"
+      },
+      "gradle_wrapper": {
+        "path": "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/fixtures/gradle/gradle/wrapper/gradle-wrapper.properties",
+        "sha256": "917cbae9c254baa50fc0274f5eeca7f280f9c7ceda17a802d11653ef86244044"
+      },
+      "typescript_version": "6.0.3"
+    }
+  },
+  "purpose": "No saved edits; compiler baseline finishes before either monitor starts",
+  "command": [
+    "python3.13",
+    "tools/measure_freshness_idle.py",
+    "--executable",
+    "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/target/freshness/task62-final-frozen/ccnavigator",
+    "--output",
+    "evidence/freshness/automatic-refresh/idle",
+    "--seconds",
+    "10.0",
+    "--languages",
+    "typescript,csharp,maven,gradle",
+    "--modes",
+    "passive,automatic",
+    "--typescript-modules",
+    "/Users/zsolt.gajdacs/Zs/Programming/PacificFateMapEditor/node_modules",
+    "--timeout",
+    "120"
+  ]
+}

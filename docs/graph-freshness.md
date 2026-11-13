@@ -1,8 +1,14 @@
 # Saved-edit graph freshness
 
-This is the TASK-59 feasibility recommendation and delivery contract, not a
-claim that continuous refresh is shipped. Measurements and reproduction commands
-are in [the evidence report](../evidence/freshness/README.md).
+This document records the TASK-59 feasibility recommendation and delivery contract.
+TASK-63, TASK-60, TASK-61 and TASK-62 now deliver the C# input-coverage fix,
+typed CLI observations, desktop/MCP adoption and opt-in automatic refresh.
+The implemented observer uses verified polling; event-based monitoring and
+cross-edit compiler reuse remain outside this delivery. Initial measurements
+are in [the spike report](../evidence/freshness/README.md); delivered behavior,
+publication budgets and verification are in
+[the automatic-refresh report](../evidence/freshness/automatic-refresh/README.md).
+The recommendations below retain the original design rationale.
 
 ## What current means
 

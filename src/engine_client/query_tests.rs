@@ -286,3 +286,63 @@ for line in sys.stdin:
     .unwrap();
     assert_eq!(snapshot.graph.data.engine_versions, "fresh-runtime-record");
 }
+
+#[test]
+fn automatic_capability_absence_preserves_passive_freshness() {
+    let root = tempfile::tempdir().unwrap();
+    let mut capabilities = codecallnavigator::query::capabilities();
+    capabilities
+        .as_object_mut()
+        .unwrap()
+        .remove("automatic_refresh");
+    let observation = crate::freshness_workspace::fixture(
+        codecallnavigator::artifact::verification::InputStatus::Match,
+        &"a".repeat(64),
+    );
+    let frame = serde_json::to_string(&codecallnavigator::freshness::StreamEvent {
+        version: 1,
+        sequence: 1,
+        payload: codecallnavigator::freshness::EventPayload::Initial { observation },
+    })
+    .unwrap();
+    let source = format!(
+        r#"#!/usr/bin/env python3
+import json,sys,time
+if sys.argv[1] == 'capabilities':
+ print({capabilities:?})
+ sys.exit(0)
+assert sys.argv[1:] == ['observe'], 'unsupported automatic flag was sent'
+sys.stdin.readline()
+print({frame:?},flush=True)
+time.sleep(30)
+"#,
+        capabilities = capabilities.to_string()
+    );
+    let runtime = executable(root.path(), &source);
+    let context = QueryContext::for_project(&runtime, root.path().into());
+    let cancel = AtomicBool::new(false);
+    let unavailable = AtomicBool::new(false);
+    let observed = AtomicBool::new(false);
+    let (_send, controls) = std::sync::mpsc::channel();
+    assert!(
+        context
+            .observe_automatic(&cancel, &controls, &|notice| {
+                match notice {
+                    Notice::Activity(activity) => {
+                        assert!(matches!(
+                            activity.phase,
+                            codecallnavigator::refresh::Phase::Unavailable { .. }
+                        ));
+                        unavailable.store(true, Ordering::Release);
+                    }
+                    Notice::Observation(_) => {
+                        observed.store(true, Ordering::Release);
+                        cancel.store(true, Ordering::Release);
+                    }
+                }
+            })
+            .unwrap()
+    );
+    assert!(unavailable.load(Ordering::Acquire));
+    assert!(observed.load(Ordering::Acquire));
+}

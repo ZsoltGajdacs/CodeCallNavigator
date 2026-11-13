@@ -110,6 +110,7 @@ New production analyses add `graph.analysis` with:
 
 - `version: 1`;
 - `targets`: selected build targets as logical paths;
+- optional `selection`: exact selected build identities, described below;
 - `roots`: logical root names;
 - `engine_versions`: available analyzer/toolchain version information;
 - `inputs`: sorted records with logical `path`, `kind` (`file`, `directory`, or
@@ -124,6 +125,43 @@ paths and runtime performance metrics are excluded. Matching provenance verifies
 recorded observed inputs, not dependency availability or a complete reproducible
 build environment. New files are detected through recorded directory listings;
 inputs outside recorded discovery scope are not implicitly covered.
+
+New analyses also record `selection: {"version":1,"complete":true,"targets":[...]}`.
+Each target has portable `path`, `kind`, and `language`. This preserves distinct
+Maven and Gradle selections at the same directory, including graphs with no
+symbols. The existing `targets` path set keeps its original meaning. Selection
+records are ordered deterministically; unknown extension fields remain intact.
+An unmapped target makes `complete` false; omitted `complete` means false.
+
+Automatic refresh requires a complete, supported exact selection. It never
+reconstructs build intent from current discovery defaults, graph nodes, or the
+legacy path set. Older artifacts need one explicit manual refresh to record it.
+Future selection versions remain opaque to ordinary loading, querying and
+round-tripping; automatic refresh reports them unavailable. Selection metadata
+does not contain machine paths, monitor state, counters, or performance metrics.
+
+Java analyses additionally record optional `refresh_inputs` version 1 with
+`complete`, `binding_policy: "direct.v1"`, `owned_bytecode_directories`, and
+`directories`. The output paths come
+from evaluated compiler source-set class directories, including custom output
+locations. Directory records reuse the input format to save filtered membership
+only where an owned output is an immediate child. Each original input's exclusion
+policy is retained; sibling generated sources and dependency bytecode remain
+inputs. These hashes are stable provenance, not monitor state.
+
+This metadata supplies an internal scheduling view. Full freshness verification
+and its public `input_revision` still include the owned compiler outputs. Missing,
+unsafe or future ownership metadata makes Java automatic refresh unavailable;
+ordinary queries remain supported. Source/configuration overlap and ambiguous
+mixed-language ownership require manual refresh rather than hiding real inputs.
+Dependency classpaths must remain separate from owned outputs except for exact
+aliases of another selected source set's own classes. The adapters retain raw
+evaluated output bindings so symlink-bearing bindings can disable automation;
+observation also rejects a later symlink substitution. These runtime binding
+checks add no machine paths or volatile state to the canonical artifact.
+Automatic refresh requires the known binding-policy marker. Older experimental
+metadata without it and future policy strings remain readable by ordinary graph
+consumers but require explicit manual refresh before automation can use them.
 
 Run the read-only command:
 

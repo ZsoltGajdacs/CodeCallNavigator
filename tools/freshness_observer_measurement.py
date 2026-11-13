@@ -49,8 +49,9 @@ class Boundary:
 
 class Observer:
     """Keep stdin open, timestamp complete output lines, and reap on every exit."""
-    def __init__(self, command, initial_request, timeout):
+    def __init__(self, command, initial_request, timeout, on_event=None):
         self.timeout, self.events = timeout, queue.Queue()
+        self.on_event = on_event
         self.stop_reader, self.output_eof = threading.Event(), False
         self.stderr = tempfile.TemporaryFile()
         self.measurement = ProcessMeasurement(command, subprocess.PIPE, self.stderr)
@@ -66,7 +67,10 @@ class Observer:
         try:
             for line in self.lines():
                 received = time.monotonic()
-                self.events.put((received, decode_event(line)))
+                event = decode_event(line)
+                if self.on_event is not None:
+                    self.on_event(received, event)
+                self.events.put((received, event))
         except (OSError, ValueError) as error:
             self.events.put((time.monotonic(), error))
         finally:

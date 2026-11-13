@@ -1,0 +1,504 @@
+{
+  "schema": "codecallnavigator.task62.code-health.v1",
+  "tool": "CodeScene MCP code_health_review",
+  "reviewed_files": 71,
+  "note": "69 numeric source reviews are 10.0/no findings. Core lib.rs is declarations-only/no numeric score. Gradle .gradle extension is unsupported by CodeScene; real Gradle exporter/compiler acceptance covers it.",
+  "files": [
+    {
+      "score": 10,
+      "review": [],
+      "path": "crates/codecallnavigator-core/src/artifact.rs",
+      "sha256": "0e5ab1d8acad27b820a524affcce7b65e86bb8ee5501c97ec38515d9eea57bd1",
+      "status": "reviewed"
+    },
+    {
+      "score": 10,
+      "review": [],
+      "path": "crates/codecallnavigator-core/src/artifact/provenance.rs",
+      "sha256": "194bccf0de6ce4cd1882c475bc2c2f670adf0f58e244f1433096bd4b385c3bc1",
+      "status": "reviewed"
+    },
+    {
+      "path": "crates/codecallnavigator-core/src/artifact/provenance_selection_tests.rs",
+      "sha256": "a623b8f5a29441db82b67b78a0da76e95286092e721d5b812a39d687928b8c3f",
+      "score": 10,
+      "review": [],
+      "status": "reviewed"
+    },
+    {
+      "score": 10,
+      "review": [],
+      "path": "crates/codecallnavigator-core/src/artifact/publish.rs",
+      "sha256": "cde47897dc88adaafdd857cf1624f4ded6417f5ac0bed34f92a567bf3ca6d90e",
+      "status": "reviewed"
+    },
+    {
+      "score": 10,
+      "review": [],
+      "path": "crates/codecallnavigator-core/src/artifact/refresh_inputs.rs",
+      "sha256": "29cb3fcea29510fae13d7dfc1b5a824e84d9eb710c6a6a5fe13d25f116f0d87f",
+      "status": "reviewed"
+    },
+    {
+      "path": "crates/codecallnavigator-core/src/artifact/selection.rs",
+      "sha256": "5d10c872ff91d9b22c7b33af90b7cb634da4da114ca77b0aa6c162c0152b09f9",
+      "score": 10,
+      "review": [],
+      "status": "reviewed"
+    },
+    {
+      "score": 10,
+      "review": [],
+      "path": "crates/codecallnavigator-core/src/artifact/verification.rs",
+      "sha256": "5b5b222a6a8341c0c9f67b6f2edc9298fb79b7a6b6955df569c32e89d8386ec9",
+      "status": "reviewed"
+    },
+    {
+      "score": 10,
+      "review": [],
+      "path": "crates/codecallnavigator-core/src/artifact/verification/csharp_policy.rs",
+      "sha256": "57062db259e75ccff4f9eb935ae482d682b1cf55deb2fe114febd54c9854e806",
+      "status": "reviewed"
+    },
+    {
+      "score": 10,
+      "review": [],
+      "path": "crates/codecallnavigator-core/src/artifact/verification/live.rs",
+      "sha256": "de879e67c6bcbd2bd7bcd09e979463df84fddec1f2e3319a3ab57da2e1da6ecc",
+      "status": "reviewed"
+    },
+    {
+      "path": "crates/codecallnavigator-core/src/artifact/verification/observation_tests.rs",
+      "sha256": "0ce6ed677a2c00a35a7b13b14e5ab34cc4ce3bdd9a985b699645ade1789b7cc9",
+      "status": "reviewed",
+      "score": 10,
+      "review": []
+    },
+    {
+      "path": "crates/codecallnavigator-core/src/discovery.rs",
+      "sha256": "7a4285c6a42362ca80ae3245a5df458016eb70e8b38ac5ca46258c87b38ba5c5",
+      "score": 10,
+      "review": [],
+      "status": "reviewed"
+    },
+    {
+      "path": "crates/codecallnavigator-core/src/fingerprint.rs",
+      "sha256": "58a6790c6f0593bbda67198b5bea1245a5fa6b738c9f05bed3de8111ae885264",
+      "score": 10,
+      "review": [],
+      "status": "reviewed"
+    },
+    {
+      "path": "crates/codecallnavigator-core/src/freshness.rs",
+      "sha256": "6cefd8a4cf5b6273d66c5962fcbe796e8b2bbcb0899f049bd5fb79f440fce30a",
+      "score": 10,
+      "review": [],
+      "status": "reviewed"
+    },
+    {
+      "score": null,
+      "review": [],
+      "path": "crates/codecallnavigator-core/src/lib.rs",
+      "sha256": "e333c0ac1ecb23b22725acc469b52760c8cd843fdaffbd52605c7f746b5cca5b",
+      "status": "declarations_only"
+    },
+    {
+      "score": 10,
+      "review": [],
+      "path": "crates/codecallnavigator-core/src/model.rs",
+      "sha256": "0ae9d9880d76bda145b9f174f7519e8b5a36549ec1a37659bcd2ddf565bafd63",
+      "status": "reviewed"
+    },
+    {
+      "path": "crates/codecallnavigator-core/src/process_ownership.rs",
+      "sha256": "9ee99bd4316889836bd1cd130b29310f6782890884d5d9e6102fe97349252f95",
+      "score": 10,
+      "review": [],
+      "status": "reviewed"
+    },
+    {
+      "path": "crates/codecallnavigator-core/src/protocol.rs",
+      "sha256": "95a83be88889d63f9775056a385a1b7d99829703e9476ab836bb96b83a665ff3",
+      "score": 10,
+      "review": [],
+      "status": "reviewed"
+    },
+    {
+      "path": "crates/codecallnavigator-core/src/query.rs",
+      "sha256": "994a9e35a8162dae9a68b5aaf5bd8d754b37950ea762de9f796b1812ac931c05",
+      "score": 10,
+      "review": [],
+      "status": "reviewed"
+    },
+    {
+      "score": 10,
+      "review": [],
+      "path": "crates/codecallnavigator-core/src/refresh.rs",
+      "sha256": "efd4844972071bd028644954b26a95d4b6707b39ab2ae9c985227c9c9906712e",
+      "status": "reviewed"
+    },
+    {
+      "path": "crates/codecallnavigator-engine/src/analyzers.rs",
+      "sha256": "e2837526cee9c7a1547121b454d96b585aa0878a0328503b0091ba95370d4bc7",
+      "score": 10,
+      "review": [],
+      "status": "reviewed"
+    },
+    {
+      "score": 10,
+      "review": [],
+      "path": "crates/codecallnavigator-engine/src/analyzers/compose.rs",
+      "sha256": "368d4cc0d754d0a36680f68f95fc8678f334308503c01da5195fab9231812535",
+      "status": "reviewed"
+    },
+    {
+      "score": 10,
+      "review": [],
+      "path": "crates/codecallnavigator-engine/src/analyzers/java.rs",
+      "sha256": "55e5b02aa25f3b493e903c9bd0acf264487b22c87156deeaef5c0aa6d7c4b355",
+      "status": "reviewed"
+    },
+    {
+      "score": 10,
+      "review": [],
+      "path": "crates/codecallnavigator-engine/src/analyzers/java/build.rs",
+      "sha256": "7462f24437e5ae764b30ea9115d249483b11a9fd2dfe42e07829e33492af52ad",
+      "status": "reviewed"
+    },
+    {
+      "score": 10,
+      "review": [],
+      "path": "crates/codecallnavigator-engine/src/analyzers/java/contexts.rs",
+      "sha256": "978a32c83a2a7614af109c3b888bd0ce5c7ecd92bab3a6aa8eeab1811245fa33",
+      "status": "reviewed"
+    },
+    {
+      "score": 10,
+      "review": [],
+      "path": "crates/codecallnavigator-engine/src/analyzers/java/lambda_correlation_tests.rs",
+      "sha256": "c66481eae8ffd06755caecdb0cf6a1e87c81c0c026d75b1fa05b2b0da2a156bc",
+      "status": "reviewed"
+    },
+    {
+      "score": 10,
+      "review": [],
+      "path": "crates/codecallnavigator-engine/src/analyzers/java/refresh_outputs.rs",
+      "sha256": "29307d200aa35334f8e5760166a26b01b13520310550b46b2615bbe535b357c6",
+      "status": "reviewed"
+    },
+    {
+      "path": "crates/codecallnavigator-engine/src/analyzers/process.rs",
+      "sha256": "74a302221dfb484552bcaee6b87b13e7c91cf8a875f7f1d94f1fc5572823a5f7",
+      "score": 10,
+      "review": [],
+      "status": "reviewed"
+    },
+    {
+      "path": "crates/codecallnavigator-engine/src/entrypoints.rs",
+      "sha256": "8a03bf008717e14626c8c75de9c78939136f4c67d946d70773dd3201816983fa",
+      "score": 10,
+      "review": [],
+      "status": "reviewed"
+    },
+    {
+      "score": 10,
+      "review": [],
+      "path": "crates/codecallnavigator-engine/src/entrypoints/analysis.rs",
+      "sha256": "fe62a2fdf871d496410c73474c71ac83470ce19b260413ee1e97443ce973d0ce",
+      "status": "reviewed"
+    },
+    {
+      "path": "crates/codecallnavigator-engine/src/entrypoints/arguments.rs",
+      "sha256": "00d4fd0e86d23bf54a93f910dc7cb9fe640d882a6e7df0fc6a04bffb1471a4ad",
+      "score": 10,
+      "review": [],
+      "status": "reviewed"
+    },
+    {
+      "path": "crates/codecallnavigator-engine/src/entrypoints/machine.rs",
+      "sha256": "f26e5234ab4df97dd97d9132413e4534c5f4c42f5d5d215f5428e346d04b0a6b",
+      "score": 10,
+      "review": [],
+      "status": "reviewed"
+    },
+    {
+      "score": 10,
+      "review": [],
+      "path": "crates/codecallnavigator-engine/src/entrypoints/observation_stream.rs",
+      "sha256": "70299eaf8e9dcbbf296ea9e86996e46e717a6f4fa38d13da3a873b2c08812867",
+      "status": "reviewed"
+    },
+    {
+      "path": "crates/codecallnavigator-engine/src/entrypoints/observation_transport.rs",
+      "sha256": "6b96f1e0aa8746722ce593368a54ae546d6a12dd9f36b6aa6b912b8ab2716181",
+      "score": 10,
+      "review": [],
+      "status": "reviewed"
+    },
+    {
+      "score": 10,
+      "review": [],
+      "path": "crates/codecallnavigator-engine/src/entrypoints/query_executor.rs",
+      "sha256": "0859af235f16af843850ac483c487e9e1067d8d20e47e4f5b17b42f6f141d25c",
+      "status": "reviewed"
+    },
+    {
+      "path": "crates/codecallnavigator-engine/src/entrypoints/refresh_child.rs",
+      "sha256": "97e158f04f94ca100c5447bfc77dc00e5d4f3b1765c85471bf08287e13278150",
+      "score": 10,
+      "review": [],
+      "status": "reviewed"
+    },
+    {
+      "score": 10,
+      "review": [],
+      "path": "crates/codecallnavigator-engine/src/entrypoints/refresh_coordinator.rs",
+      "sha256": "5a2e8bd1d5d9613dfbc42ff3e85a26ebef31f986c8a15df9e8e5188a2c440ab7",
+      "status": "reviewed"
+    },
+    {
+      "score": 10,
+      "review": [],
+      "path": "crates/codecallnavigator-engine/src/entrypoints/refresh_policy.rs",
+      "sha256": "cf364d32f25a1b0b7a8d8b82f3251195b1b3e96b1b11d4f3f6da8cd41e1bad11",
+      "status": "reviewed"
+    },
+    {
+      "path": "crates/codecallnavigator-engine/src/lib.rs",
+      "sha256": "d07d6479545b52fd87864ef978cb3c575f6fc666ea75f6acfa136732705ee285",
+      "score": 10,
+      "review": [],
+      "status": "reviewed"
+    },
+    {
+      "path": "crates/codecallnavigator-engine/src/process_ownership.rs",
+      "sha256": "5b2754c5fbc91f973b4e2c8c0173cf610d966ececa170c1a48cfbd63b54b9cff",
+      "score": 10,
+      "review": [],
+      "status": "reviewed"
+    },
+    {
+      "path": "crates/codecallnavigator-engine/tests/automatic_refresh.rs",
+      "sha256": "83f4a3efd83a8417b92c462427186a8557460b5a0ac82a70790858236c77970a",
+      "score": 10,
+      "review": [],
+      "status": "reviewed"
+    },
+    {
+      "path": "crates/codecallnavigator-engine/tests/clear_cache.rs",
+      "sha256": "87de14162b4396bd9b84fc1c501c65155e87ec17872baf92231b48e26883ad20",
+      "score": 10,
+      "review": [],
+      "status": "reviewed"
+    },
+    {
+      "path": "crates/codecallnavigator-engine/tests/refresh_contract.rs",
+      "sha256": "94bf7aba9343c0df2162e1133b951e7e4a16ee44d8f6da54f9d89b19f3c34373",
+      "score": 10,
+      "review": [],
+      "status": "reviewed"
+    },
+    {
+      "path": "src/app.rs",
+      "sha256": "4ca40e06cf4bf6787cb25ee89ca3709732259ba8d939ddf6c22ca10979b12c7a",
+      "score": 10,
+      "review": [],
+      "status": "reviewed"
+    },
+    {
+      "path": "src/automatic_refresh.rs",
+      "sha256": "ae94a3c36e9e006604fd6ce67a1f0f1d24ea50157ff80b9fe6d9e65dee54765f",
+      "score": 10,
+      "review": [],
+      "status": "reviewed"
+    },
+    {
+      "path": "src/cache_jobs.rs",
+      "sha256": "23fcada82fc075d856923b20a08d5f736118d4187b1ce36ccb1415fbbcec6b99",
+      "score": 10,
+      "review": [],
+      "status": "reviewed"
+    },
+    {
+      "path": "src/engine_client.rs",
+      "sha256": "6648d77346ae902fc68c6a3f9a8940f5f5e6b75502f9f68088e7e9c0ef7e4db4",
+      "score": 10,
+      "review": [],
+      "status": "reviewed"
+    },
+    {
+      "path": "src/engine_client/capabilities.rs",
+      "sha256": "4016259881f634929cffadca7556517cdc8adaa0d2a2c32677097e70b4b791b3",
+      "score": 10,
+      "review": [],
+      "status": "reviewed"
+    },
+    {
+      "path": "src/engine_client/observation_process.rs",
+      "sha256": "27daab3e6fda54a87a81b29166ccf0644c1ccf66eccae661738199d31ad28aec",
+      "score": 10,
+      "review": [],
+      "status": "reviewed"
+    },
+    {
+      "score": 10,
+      "review": [],
+      "path": "src/engine_client/observation_process/activity.rs",
+      "sha256": "ca89da503704b8ac67b2100ac0ae519afeba41c8b6d53177c7b4f2eee93683b7",
+      "status": "reviewed"
+    },
+    {
+      "path": "src/engine_client/queries.rs",
+      "sha256": "b7a2ef0cef1ed0727c875c01f57039aeb01cb33fa024c2adf2f36a26de020006",
+      "score": 10,
+      "review": [],
+      "status": "reviewed"
+    },
+    {
+      "path": "src/engine_client/query_process.rs",
+      "sha256": "3e2df375ab13f16e994947725a3e7c14c6bb4f0df78c00929875391ae1487e56",
+      "score": 10,
+      "review": [],
+      "status": "reviewed"
+    },
+    {
+      "path": "src/engine_client/query_tests.rs",
+      "sha256": "4002eb4963f4a2c811c100c7bf88cb2ff22aa17ab0170546b7257f87144c0df7",
+      "score": 10,
+      "review": [],
+      "status": "reviewed"
+    },
+    {
+      "path": "src/freshness_workspace.rs",
+      "sha256": "0643916401c738d9375c8de2b26c9ff034f9d5bcc5539e649f5d7fa1208920de",
+      "score": 10,
+      "review": [],
+      "status": "reviewed"
+    },
+    {
+      "path": "src/freshness_workspace/worker.rs",
+      "sha256": "fcda37501f6b83e148dac06321d0cb0d6d2fe9102de8a6e03acac43d90f2755f",
+      "score": 10,
+      "review": [],
+      "status": "reviewed"
+    },
+    {
+      "path": "src/graph_install.rs",
+      "sha256": "893cbbfdaed146b530d14dab147796fc5e4a33557f373cf6178ddf71dc056a16",
+      "score": 10,
+      "review": [],
+      "status": "reviewed"
+    },
+    {
+      "path": "src/jobs/analysis.rs",
+      "sha256": "7e9339c88e0e0bcb2431b7289c28c3643f65a4e9e336851c5aad6b784b09f977",
+      "score": 10,
+      "review": [],
+      "status": "reviewed"
+    },
+    {
+      "path": "src/main.rs",
+      "sha256": "b0a350036a0897daadd797378a362726fdf87bc1fb42523e0d014f23d8701510",
+      "score": 10,
+      "review": [],
+      "status": "reviewed"
+    },
+    {
+      "path": "src/ui_tests/cli_freshness.rs",
+      "sha256": "74faf3b878e372cb20e3d55d6cdaabfedfd03ab53b0e11b707e31ba553de52aa",
+      "score": 10,
+      "review": [],
+      "status": "reviewed"
+    },
+    {
+      "path": "src/view.rs",
+      "sha256": "6ace341d80f93d759e4530f365737935ddc96d3e3af20199547d21c3a21ec03a",
+      "score": 10,
+      "review": [],
+      "status": "reviewed"
+    },
+    {
+      "path": "src/view/automatic_refresh.rs",
+      "sha256": "47104fb1ddc1cba24cc34011a9d9df00776c7633b878a706c6c1f2f587906fd9",
+      "score": 10,
+      "review": [],
+      "status": "reviewed"
+    },
+    {
+      "score": 10,
+      "review": [],
+      "path": "tests/java_output_metadata.rs",
+      "sha256": "02394f148d1cacd0108dfbda9ba623809d560a93d355060e84813d5cede6c995",
+      "status": "reviewed"
+    },
+    {
+      "score": 10,
+      "review": [],
+      "path": "tests/test_verification_quality.py",
+      "sha256": "a696873289a1f18f25bec620335a0b683282f1d1e32289e3352bcd398418f44c",
+      "status": "reviewed"
+    },
+    {
+      "path": "tools/automatic_refresh_acceptance.py",
+      "sha256": "4e76de9d6ee739a27bf72bcfe0bd901c41498779928316f3c3b9ab700fa5c19a",
+      "score": 10,
+      "review": [],
+      "status": "reviewed"
+    },
+    {
+      "score": 10,
+      "review": [],
+      "path": "tools/freshness_observer_measurement.py",
+      "sha256": "b8575d3d210013460b9e4bf23bd4ffd53b2c6017deb28422c6e98682f7d1b5f6",
+      "status": "reviewed"
+    },
+    {
+      "path": "tools/gradle-metadata.gradle",
+      "sha256": "837e42599ff759f27d0321e91d935c1c52448d2bc8b1cf83ed043cf50dd410f7",
+      "status": "unsupported",
+      "reason": "Unsupported file type \".gradle\". CodeScene Code Health analysis supports these file types: .c, .cc, .cpp, .cxx, .h, .hh, .hpp, .hxx, .ipp, .cs, .java, .groovy, .js, .mjs, .cjs, .sj, .ts, .mts, .cts, .jsx, .tsx, .vue, .m, .mm, .scala, .py, .pyi, .swift, .go, .dart, .vb, .php, .rs, .rb, .kt, .kts, .pl, .pm, .erl, .hrl, .ex, .exs, .clj, .cljc, .cljs, .ps1, .psm1, .psd1, .tcl, .cls, .trigger, .tgr, .brs, .bs, .efx, .emx.\n\nSee https://codescene.io/docs/usage/language-support.html for details."
+    },
+    {
+      "score": 10,
+      "review": [],
+      "path": "tools/maven-metadata/src/main/java/codecallnavigator/maven/BuildMetadata.java",
+      "sha256": "4b18df77ba4013ba13e7dadcbb6f4b73e8e33cc032f536002e3cb44830731258",
+      "status": "reviewed"
+    },
+    {
+      "score": 10,
+      "review": [],
+      "path": "tools/measure_automatic_refresh.py",
+      "sha256": "e28bd668f85301f76826a227feb3190eeb182042ec9e7981f2c574de2c628209",
+      "status": "reviewed"
+    },
+    {
+      "score": 10,
+      "review": [],
+      "path": "tools/measure_freshness_idle.py",
+      "sha256": "cf9e7e82e24dfec3b63fe93b4b58e5c56a9a877d44124030a47c2f2b6ac49f26",
+      "status": "reviewed"
+    },
+    {
+      "score": 10,
+      "review": [],
+      "path": "tools/test_automatic_refresh_measurement.py",
+      "sha256": "73e9f89d09c953eb9fc2b81ce4c39d8fdd8a047208a672869fae1551d40fe08e",
+      "status": "reviewed"
+    },
+    {
+      "score": 10,
+      "review": [],
+      "path": "tools/test_freshness_observer_measurement.py",
+      "sha256": "267e5d58150d3c7241279e7554e67cde09a583d95da64d1b3e85b670cfe608a2",
+      "status": "reviewed"
+    },
+    {
+      "score": 10,
+      "review": [],
+      "path": "tools/verification/quality.py",
+      "sha256": "665d8590b13048c667ddc4db020342f645a96e0464794ba0b67180091453ffb5",
+      "status": "reviewed"
+    }
+  ]
+}

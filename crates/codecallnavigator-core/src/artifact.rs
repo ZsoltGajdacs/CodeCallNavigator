@@ -7,7 +7,9 @@ mod paths;
 mod portable;
 pub mod provenance;
 mod publish;
+pub mod refresh_inputs;
 pub mod revision;
+pub mod selection;
 mod transform;
 mod validation;
 pub mod verification;
@@ -18,7 +20,10 @@ mod tests;
 
 use anyhow::{Context, Result, ensure};
 pub use compare::{Comparison, compare, compare_git};
-pub use publish::{AnalysisLock, load, publish};
+pub use publish::{
+    AnalysisLock, COORDINATOR_LOCK_NAME, CoordinatorLease, GenerationChanged, LockBusy, LockOwner,
+    load, publish,
+};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::{collections::HashMap, path::PathBuf};

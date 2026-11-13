@@ -24,6 +24,12 @@ pub enum Request {
         /// Desktop preserves compiler-declared sources outside the selected root.
         #[serde(default)]
         infer_linked_roots: bool,
+        /// Opt in to typed failures while preserving legacy message-only events.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        failure_version: Option<u32>,
+        /// Checked after taking graph.lock, before observing or compiling inputs.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        expected_generation: Option<String>,
     },
 }
 
@@ -61,5 +67,17 @@ pub enum Event {
     },
     Failed {
         message: String,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        code: Option<AnalysisFailureCode>,
     },
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum AnalysisFailureCode {
+    Busy,
+    InputsChanged,
+    GenerationChanged,
+    Cancelled,
+    Failed,
 }

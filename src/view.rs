@@ -1,4 +1,5 @@
 //! Graph Studio shell. Content and application actions live in focused modules.
+mod automatic_refresh;
 mod build_picker;
 mod drawer;
 mod explorer;
@@ -345,7 +346,7 @@ pub(crate) fn freshness_notice(state: &State, k: &Kit) -> Option<El> {
                 .key("freshness-retry"),
         );
     }
-    Some(bar)
+    Some(automatic_refresh::append(state, k, bar))
 }
 
 pub fn key(state: &mut State, event: &KeyEvent, tx: &mut Tx) -> bool {

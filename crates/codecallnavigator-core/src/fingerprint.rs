@@ -45,6 +45,23 @@ pub fn capture_excluding(
         .collect()
 }
 
+/// A captured analysis input changed, so its result must not be published.
+#[derive(Debug)]
+pub struct InputsChanged(pub &'static str);
+impl std::fmt::Display for InputsChanged {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter.write_str(self.0)
+    }
+}
+impl std::error::Error for InputsChanged {}
+
+pub fn require_unchanged(items: &[FileFingerprint], message: &'static str) -> Result<()> {
+    if is_stale(items)? {
+        return Err(InputsChanged(message).into());
+    }
+    Ok(())
+}
+
 pub fn is_stale(items: &[FileFingerprint]) -> Result<bool> {
     let _stage = crate::metrics::stage("fingerprints.verify");
     for item in items {

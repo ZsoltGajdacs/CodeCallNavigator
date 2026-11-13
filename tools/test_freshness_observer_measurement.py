@@ -14,8 +14,8 @@ EMIT = 'print(json.dumps({"sequence":0,"observation":{"input_revision":"ready"}}
 
 
 class StreamOwnershipTests(unittest.TestCase):
-    def observer(self, body, timeout=2):
-        observer = Observer([sys.executable, "-c", PRELUDE + body], {}, timeout)
+    def observer(self, body, timeout=2, on_event=None):
+        observer = Observer([sys.executable, "-c", PRELUDE + body], {}, timeout, on_event=on_event)
         self.addCleanup(self.close_remaining, observer)
         return observer
 
@@ -38,6 +38,14 @@ class StreamOwnershipTests(unittest.TestCase):
         observer = self.observer(body)
         _, event = observer.wait(lambda item: item["input_revision"] == "same", Boundary(2, 0))
         self.assertEqual(event["sequence"], 3)
+
+    def test_trace_retains_events_filtered_by_the_measurement(self):
+        recorded = []
+        body = 'for seq in (1,2):\n print(json.dumps({"sequence":seq,"observation":{"input_revision":str(seq)}}),flush=True)\nsys.stdin.read()\n'
+        observer = self.observer(body, on_event=lambda received, event: recorded.append((received, event)))
+        observer.wait(lambda item: item["input_revision"] == "2")
+        self.assertEqual([event["sequence"] for _, event in recorded], [1, 2])
+        self.assertTrue(all(received > 0 for received, _ in recorded))
 
     def test_receipt_before_save_cannot_qualify(self):
         observer = self.observer(EMIT + 'sys.stdin.read()\n', timeout=.1)

@@ -1457,6 +1457,97 @@
       ],
       "additionalProperties": true
     },
+    "analysisSelection": {
+      "description": "Optional exact build selection. Version 1 paths are portable; complete must be true for automatic refresh. Future payloads remain opaque to basic graph consumers.",
+      "if": {
+        "type": "object",
+        "properties": {
+          "version": {
+            "const": 1
+          }
+        },
+        "required": ["version"]
+      },
+      "then": {
+        "type": "object",
+        "properties": {
+          "version": {
+            "const": 1
+          },
+          "complete": {
+            "type": "boolean",
+            "default": false
+          },
+          "targets": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "path": {
+                  "$ref": "#/$defs/path"
+                },
+                "kind": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "language": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "required": ["path", "kind", "language"],
+              "additionalProperties": true
+            }
+          }
+        },
+        "required": ["version", "targets"],
+        "additionalProperties": true
+      }
+    },
+    "analysisRefreshInputs": {
+      "description": "Optional compiler-output ownership for automatic scheduling. Automation requires complete ownership and binding_policy direct.v1. Full freshness still verifies every analysis input. Future payloads remain opaque.",
+      "if": {
+        "type": "object",
+        "properties": {
+          "version": {
+            "const": 1
+          }
+        },
+        "required": ["version"]
+      },
+      "then": {
+        "type": "object",
+        "properties": {
+          "version": {
+            "const": 1
+          },
+          "complete": {
+            "type": "boolean"
+          },
+          "binding_policy": {
+            "type": "string",
+            "minLength": 1
+          },
+          "owned_bytecode_directories": {
+            "type": "array",
+            "items": {
+              "$ref": "#/$defs/path"
+            }
+          },
+          "directories": {
+            "type": "array",
+            "items": {
+              "allOf": [
+                {"$ref": "#/$defs/analysisInput"},
+                {"properties": {"kind": {"const": "directory"}}}
+              ]
+            }
+          }
+        },
+        "required": ["version", "complete", "owned_bytecode_directories", "directories"],
+        "additionalProperties": true
+      }
+    },
     "analysis": {
       "type": "object",
       "properties": {
@@ -1468,6 +1559,12 @@
           "items": {
             "$ref": "#/$defs/path"
           }
+        },
+        "selection": {
+          "$ref": "#/$defs/analysisSelection"
+        },
+        "refresh_inputs": {
+          "$ref": "#/$defs/analysisRefreshInputs"
         },
         "roots": {
           "type": "array",

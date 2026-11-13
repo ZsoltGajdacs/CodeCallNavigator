@@ -240,6 +240,7 @@ fn binding_keeps_complete_native_nodes_and_edges_unchanged_for_legacy_and_v8() {
         source_roots: vec![],
         generated_roots: vec![],
         class_dirs: vec![],
+        raw_class_dirs: None,
         build_inputs: vec![],
     };
     let prefix = super::normalize::identity_prefix(&build, &source_set);

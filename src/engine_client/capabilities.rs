@@ -14,6 +14,7 @@ use std::{
 pub(super) struct Capabilities {
     pub flow_languages: Vec<String>,
     pub observation: bool,
+    pub automatic_refresh: bool,
 }
 
 pub(super) fn check(
@@ -95,8 +96,21 @@ fn validate(bytes: &[u8]) -> Result<Capabilities> {
     }
     let flow_languages = serde_json::from_value(capabilities["flow_languages"].clone())
         .context("CLI omitted supported flow languages")?;
+    let observation = supports_observation(&capabilities, operations);
+    let automatic_refresh = observation && supports_automatic(&capabilities["automatic_refresh"]);
+    Ok(Capabilities {
+        flow_languages,
+        observation,
+        automatic_refresh,
+    })
+}
+
+fn supports_observation(
+    capabilities: &serde_json::Value,
+    operations: &[serde_json::Value],
+) -> bool {
     let freshness = &capabilities["freshness"];
-    let observation = operations.iter().any(|name| name == "freshness")
+    operations.iter().any(|name| name == "freshness")
         && freshness["version"] == codecallnavigator::freshness::VERSION
         && freshness["streaming"] == true
         && freshness["mode"] == "verified_polling"
@@ -104,11 +118,15 @@ fn validate(bytes: &[u8]) -> Result<Capabilities> {
         && freshness["reconcile_milliseconds"]
             == codecallnavigator::freshness::RECONCILE_MILLISECONDS
         && freshness["heartbeat_milliseconds"]
-            == codecallnavigator::freshness::HEARTBEAT_MILLISECONDS;
-    Ok(Capabilities {
-        flow_languages,
-        observation,
-    })
+            == codecallnavigator::freshness::HEARTBEAT_MILLISECONDS
+}
+
+fn supports_automatic(automatic: &serde_json::Value) -> bool {
+    automatic["version"] == 1
+        && automatic["activity_version"] == 1
+        && automatic["observe_flag"] == "--auto-refresh"
+        && automatic["debounce_milliseconds"] == 300
+        && automatic["cancel_command"] == "cancel_refresh"
 }
 
 fn require_exit(child: &mut Child, cancel: &AtomicBool, started: Instant) -> Result<()> {
@@ -130,6 +148,32 @@ fn require_exit(child: &mut Child, cancel: &AtomicBool, started: Instant) -> Res
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn automatic_refresh_requires_its_complete_optional_contract() {
+        let mut value = codecallnavigator::query::capabilities();
+        value["automatic_refresh"] = serde_json::json!({
+            "version":1,"activity_version":1,"observe_flag":"--auto-refresh",
+            "debounce_milliseconds":300,"cancel_command":"cancel_refresh"
+        });
+        assert!(
+            validate(&serde_json::to_vec(&value).unwrap())
+                .unwrap()
+                .automatic_refresh
+        );
+        value["automatic_refresh"]["activity_version"] = 2.into();
+        assert!(
+            !validate(&serde_json::to_vec(&value).unwrap())
+                .unwrap()
+                .automatic_refresh
+        );
+        value.as_object_mut().unwrap().remove("automatic_refresh");
+        assert!(
+            !validate(&serde_json::to_vec(&value).unwrap())
+                .unwrap()
+                .automatic_refresh
+        );
+    }
+
     #[test]
     fn optional_observation_support_does_not_disable_legacy_graph_queries() {
         let mut capabilities = codecallnavigator::query::capabilities();

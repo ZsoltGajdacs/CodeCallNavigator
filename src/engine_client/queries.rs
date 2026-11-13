@@ -126,7 +126,52 @@ impl QueryContext {
         let mut descriptor = self.descriptor.clone();
         // Observations follow saved publications while UI adoption stays explicit.
         descriptor.generation = None;
-        super::observation_process::run(self.client.runtime(), descriptor, cancel, receive)?;
+        super::observation_process::run(
+            self.client.runtime(),
+            descriptor,
+            cancel,
+            super::ObservationOptions::passive(&|notice| {
+                if let super::Notice::Observation(observation) = notice {
+                    receive(observation);
+                }
+            }),
+        )?;
+        Ok(true)
+    }
+
+    pub fn observe_automatic(
+        &self,
+        cancel: &AtomicBool,
+        controls: &std::sync::mpsc::Receiver<codecallnavigator::refresh::Control>,
+        receive: &dyn Fn(super::Notice),
+    ) -> Result<bool> {
+        if !self.client.automatic_refresh_supported(cancel)? {
+            receive(super::Notice::Activity(
+                codecallnavigator::refresh::Activity::new(
+                    codecallnavigator::refresh::Phase::Unavailable {
+                        error: query::Error::new(
+                            "automatic_refresh_unsupported",
+                            "Update the CLI for automatic refresh; saved-input observation remains available",
+                        ),
+                    },
+                ),
+            ));
+            return self.observe(cancel, &|observation| {
+                receive(super::Notice::Observation(observation))
+            });
+        }
+        let mut descriptor = self.descriptor.clone();
+        descriptor.generation = None;
+        super::observation_process::run(
+            self.client.runtime(),
+            descriptor,
+            cancel,
+            super::ObservationOptions {
+                automatic: true,
+                receive,
+                controls: Some(controls),
+            },
+        )?;
         Ok(true)
     }
 }

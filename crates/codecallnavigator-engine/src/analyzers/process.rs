@@ -75,21 +75,7 @@ fn run_process_with_timeout(
 }
 
 fn stop_process_group(child: &mut std::process::Child) {
-    let group = -(child.id() as i32);
-    // Each child was created in its own process group above; never signal our UI's group.
-    unsafe {
-        libc::kill(group, libc::SIGTERM);
-    }
-    for _ in 0..20 {
-        if child.try_wait().ok().flatten().is_some() {
-            return;
-        }
-        thread::sleep(Duration::from_millis(100));
-    }
-    unsafe {
-        libc::kill(group, libc::SIGKILL);
-    }
-    let _ = child.wait();
+    crate::process_ownership::stop_group(child);
 }
 
 #[cfg(test)]

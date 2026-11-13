@@ -283,8 +283,8 @@ generation. EOF, signals, and broken output pipes terminate the owned process.
 
 Version 1 explicitly reports limited `verified_polling` mode. Reconciliation is
 sequential at a 250 ms minimum interval between starts; expensive passes extend
-the interval and never overlap. There is no native filesystem watcher or analysis
-trigger. Each observation verifies actual bytes rather than trusting timestamps.
+the interval and never overlap. Passive observation has no native filesystem
+watcher or analysis trigger. Each observation verifies actual bytes rather than trusting timestamps.
 The revision additionally hashes file contents recursively below recorded
 directory scopes, including new TypeScript files and later repairs, preserving
 each scope's own output exclusions. Explicit generated inputs remain observed.
@@ -308,6 +308,69 @@ Notifications represent current state and are not a durable change journal.
 A bounded output queue coalesces state under backpressure while reconciliation
 continues. Intermediate changes can be omitted. Consumers should adopt the latest
 observation by generation and revision, and restart after a failed event. EOF
-remains bounded even if the client stops draining stdout. Observation never
-compiles, publishes, writes caches, or resets process-global cancellation to
-support another analysis.
+remains bounded even if the client stops draining stdout. Passive observation
+never compiles, publishes, or writes caches.
+
+## Opt-in automatic refresh
+
+Check the separate `capabilities.automatic_refresh` contract before starting
+`ccnavigator observe --auto-refresh`. Version 1 advertises `activity_version: 1`,
+`debounce_milliseconds: 300` and `cancel_command: "cancel_refresh"`. Send the same
+initial freshness request and keep stdin open; omit `expected_generation`, since
+this mode follows subsequent saved generations. Passive observation and one-shot
+queries retain their existing behavior.
+
+Automatic mode verifies saved inputs, waits for edits to settle, and runs full
+analysis using the artifact's exact recorded build selection and root mappings.
+It keeps one active analysis child and one coalesced latest pending revision.
+A separate project coordinator lease prevents competing automatic schedulers;
+each child still acquires the existing publication lock shared by manual and
+agent analyses. The child checks its planned generation under that lock before
+starting, so an intervening manual publication cannot be overwritten using an
+obsolete selection. Contention uses bounded backoff. Unchanged failed or
+user-cancelled input bindings are suppressed until another saved revision or
+publication, or an explicit monitor restart.
+
+The stream begins with its normal `initial` observation. Additional
+`kind: "activity"` events carry `activity.version`, retained cumulative
+`runs_started`, and a tagged `state`: `watching`, `debouncing`, `running`, `busy`,
+`published`, `failed`, `cancelled`, or `unavailable`. Running and terminal phases
+carry their run identity and the nullable full observation revision seen when
+work was queued; queued cancellation and contention can have no run identity.
+The full revision can be null while a validated filtered scheduling view remains
+usable. It does not replace the current observation's revision. Published
+activity carries the resulting generation, supervised analysis duration
+(including cleanup), and compiler metrics. Running timing separates configured
+debounce from additional scheduling/queue wait. These notifications can be coalesced;
+the counter counts actual child starts for this monitor lifetime and is not a
+persistent journal. Refresh activity does not certify input validity or desktop
+adoption. Consumers adopt through generation-bound observations and snapshots.
+
+Send a later line `{"version":1,"command":"cancel_refresh"}` to cancel only the
+current refresh and pending revision while retaining observation. Cancellation
+reasons distinguish `user_cancelled`, `superseded`, and `shutdown`. EOF, SIGINT,
+SIGTERM and broken output pipes shut down the monitor and clean up its owned
+analysis processes. Each refresh uses a fresh one-shot child; no process-global
+cancellation flag is reset to permit another analysis. Cleanup uses bounded
+deadlines and reports uncertainty if termination cannot be confirmed.
+
+Invalid code keeps the last successful graph available. Generated graph, cache,
+lock and owned bytecode outputs do not schedule another refresh. Java scheduling
+uses recorded evaluated class-directory ownership, with a separately filtered
+trigger revision and validity; full public freshness still verifies those
+outputs. Generated sources and dependency bytecode remain triggering inputs.
+A missing, incomplete or
+unsupported exact selection reports unavailable automatic refresh while passive
+observation continues; one explicit manual refresh can upgrade legacy metadata.
+Java also requires complete `analysis.refresh_inputs` ownership metadata with
+`binding_policy: "direct.v1"`. Missing or future policy markers require manual
+refresh. Unsafe
+source/configuration/dependency overlaps, symlink-bearing output bindings, and
+mixed Java with another language currently require explicit manual refresh.
+Output bindings are checked at capture and again during observation. Multiple
+selected Java builds retain their exact build identities.
+Complete scheduling-input coverage is required; public output coverage can be
+temporarily incomplete while compilation replaces owned outputs. The existing
+saved-input limitations still apply. Unsaved editor buffers remain outside this contract.
+Publication latency depends on the selected compiler and workload; automatic
+refresh does not promise a universal one-second publication target.
