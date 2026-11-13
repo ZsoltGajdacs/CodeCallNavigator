@@ -1,6 +1,8 @@
 mod architecture;
 mod framework;
 mod http;
+mod inputs;
+mod ownership;
 mod policy;
 use super::process::run_process;
 use super::{AnalysisJob, ensure_unchanged, find_tool, source_snapshot};
@@ -108,7 +110,7 @@ struct AtlasEdge {
 }
 type SourceOwners = HashMap<PathBuf, HashMap<String, SourceOwner>>;
 
-#[derive(Clone)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 struct SourceOwner {
     project: String,
     is_test: bool,
@@ -141,13 +143,13 @@ pub(super) fn analyze_csharp(build: &BuildTarget, context: &AnalysisJob<'_>) -> 
     }
     let root = build.path.parent().context("Build has no parent folder")?;
     let before_metadata = source_snapshot(&[root.into()])?;
-    let (owners, mut inputs) = {
+    let mut sources = {
         let _timer = crate::metrics::stage("csharp.metadata");
         csharp_sources(build, &dotnet, job, cancel)?
     };
     ensure_unchanged(&before_metadata)?;
-    inputs.push(root.into());
-    let before_engine = source_snapshot(&inputs)?;
+    sources.inputs.push(root.into());
+    let before_engine = source_snapshot(&sources.inputs)?;
     let output = job.join("callatlas.json");
     progress(format!("Reading compiler call graph for {}…", build.label));
     {
@@ -167,9 +169,11 @@ pub(super) fn analyze_csharp(build: &BuildTarget, context: &AnalysisJob<'_>) -> 
     let map: AtlasMap = serde_json::from_slice(&fs::read(output)?)?;
     ensure_unchanged(&before_metadata)?;
     ensure_unchanged(&before_engine)?;
+    let preprocessor = inputs::Preprocessor::for_build(&dotnet, job, cancel, build);
+    sources.verify_imports(&preprocessor)?;
     let mut graph = {
         let _timer = crate::metrics::stage("csharp.normalization");
-        normalize_atlas(build, root, map, &owners)?
+        normalize_atlas(build, root, map, sources.owners.resolved())?
     };
     graph.fingerprints = before_engine;
     Ok(graph)
@@ -209,45 +213,74 @@ fn csharp_sources(
     dotnet: &Path,
     job: &Path,
     cancel: &AtomicBool,
-) -> Result<(SourceOwners, Vec<PathBuf>)> {
+) -> Result<CsharpSources> {
     let mut sources = CsharpSources {
         queue: VecDeque::from(csharp_projects(build, dotnet, job, cancel)?),
-        owners: HashMap::new(),
+        owners: ownership::Owners::default(),
         assembly_names: HashMap::new(),
         inputs: vec![build.path.clone()],
+        imports: Vec::new(),
     };
+    let preprocessor = inputs::Preprocessor::for_build(dotnet, job, cancel, build);
     let mut visited = HashSet::new();
     while let Some(project) = sources.queue.pop_front() {
         let project = project.canonicalize()?;
         if !visited.insert(project.clone()) {
             continue;
         }
-        let output = run_process(
-            Command::new(dotnet).arg("msbuild").arg(&project).args([
-                "-getItem:Compile,ProjectReference,AdditionalFiles",
-                "-getProperty:MSBuildProjectFullPath,IsTestProject,MSBuildAllProjects,AssemblyName",
-                "-nologo",
-            ]),
-            job,
-            &format!("msbuild-{}", visited.len()),
-            cancel,
-        )?;
-        let metadata: serde_json::Value = serde_json::from_slice(&fs::read(output)?)?;
-        record_csharp_items(&project, &metadata, &mut sources)?;
+        let observed = preprocessor.capture(&project, visited.len())?;
+        sources.record_metadata(&project, &observed, &preprocessor)?;
+        preprocessor.verify(&observed)?;
+        sources.inputs.extend(observed.paths.iter().cloned());
+        sources.imports.push(observed);
     }
-    Ok((sources.owners, sources.inputs))
+    sources.verify_imports(&preprocessor)?;
+    Ok(sources)
 }
 
 struct CsharpSources {
     assembly_names: HashMap<String, PathBuf>,
     queue: VecDeque<PathBuf>,
-    owners: SourceOwners,
+    owners: ownership::Owners,
     inputs: Vec<PathBuf>,
+    imports: Vec<inputs::Snapshot>,
+}
+
+impl CsharpSources {
+    fn record_metadata(
+        &mut self,
+        project: &Path,
+        snapshot: &inputs::Snapshot,
+        preprocessor: &inputs::Preprocessor<'_>,
+    ) -> Result<()> {
+        for (index, context) in snapshot.contexts().iter().enumerate() {
+            let metadata = preprocessor.metadata(
+                project,
+                context,
+                &format!("msbuild-{}-{index}", snapshot.sequence()),
+            )?;
+            let origin = if context.is_configured_normal() {
+                ownership::Origin::ConfiguredNormal
+            } else {
+                ownership::Origin::ContextFallback
+            };
+            record_csharp_items(project, &metadata, origin, self)?;
+        }
+        Ok(())
+    }
+
+    fn verify_imports(&self, preprocessor: &inputs::Preprocessor<'_>) -> Result<()> {
+        for snapshot in &self.imports {
+            preprocessor.verify(snapshot)?;
+        }
+        Ok(())
+    }
 }
 
 fn record_csharp_items(
     project: &Path,
     metadata: &serde_json::Value,
+    origin: ownership::Origin,
     sources: &mut CsharpSources,
 ) -> Result<()> {
     record_project_properties(project, metadata, sources)?;
@@ -282,11 +315,14 @@ fn record_csharp_items(
         let assembly = metadata["Properties"]["AssemblyName"]
             .as_str()
             .context("MSBuild omitted AssemblyName")?;
-        sources
-            .owners
-            .entry(path.clone())
-            .or_default()
-            .insert(assembly.into(), owner);
+        sources.owners.record(
+            ownership::Claim {
+                file: path.clone(),
+                assembly: assembly.into(),
+                owner,
+            },
+            origin,
+        )?;
         if let Some(root) = compile_source_root(item, &path) {
             sources.inputs.push(root);
         }
@@ -336,17 +372,6 @@ fn record_project_properties(
             "Projects {} and {} share AssemblyName {assembly}; their analyzer identities cannot be distinguished",
             previous.display(),
             project.display()
-        );
-    }
-    if let Some(imports) = metadata
-        .pointer("/Properties/MSBuildAllProjects")
-        .and_then(|value| value.as_str())
-    {
-        sources.inputs.extend(
-            imports
-                .split(';')
-                .map(PathBuf::from)
-                .filter(|path| path.is_file()),
         );
     }
     if let Some(additional) = metadata

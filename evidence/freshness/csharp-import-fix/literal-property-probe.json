@@ -1,0 +1,27 @@
+{
+  "policy": "msbuild-preprocess.v2",
+  "scenario": "solution directory contains semicolon DesignTimeBuild assignment, comma, and literal percent; same source/import bytes, differing Import expression",
+  "solution_basename": "solution;DesignTimeBuild=FALSE,part%literal",
+  "records": {
+    "solution_dir_expanded": {
+      "exit_code": 0,
+      "stderr": "Analyzing solution;DesignTimeBuild=FALSE,part%literal / Fixture (Solution) (1/1)\nRestoring solution;DesignTimeBuild=FALSE,part%literal / Fixture (Solution)\u2026\nReading compiler call graph for solution;DesignTimeBuild=FALSE,part%literal / Fixture (Solution)\u2026\nVerifying source state\u2026\nInference cache: 0 hits, 0 recomputed, 0 rejected\n",
+      "artifact_sha256": "6261ac2fff6f3ab4b55bca214c08b4a5737a46d4951d12d526bbe33e3acc951e",
+      "labels": [
+        "Always"
+      ],
+      "import_observed": true
+    },
+    "relative_design_time": {
+      "exit_code": 0,
+      "stderr": "Analyzing solution;DesignTimeBuild=FALSE,part%literal / Fixture (Solution) (1/1)\nRestoring solution;DesignTimeBuild=FALSE,part%literal / Fixture (Solution)\u2026\nReading compiler call graph for solution;DesignTimeBuild=FALSE,part%literal / Fixture (Solution)\u2026\nVerifying source state\u2026\nInference cache: 0 hits, 0 recomputed, 0 rejected\n",
+      "artifact_sha256": "1b92746ac73644a47722acc6f547ac5018c5f31aab1fe780dcc1035a631dac66",
+      "labels": [
+        "Always",
+        "FromSolution"
+      ],
+      "import_observed": true
+    }
+  },
+  "limitation": "Pinned native Roslyn/CallAtlas omits FromSolution for SolutionDir-expanded import in this special path; relative DesignTimeBuild import is consumed. No upstream fix applied."
+}

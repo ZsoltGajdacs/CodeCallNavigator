@@ -1,0 +1,393 @@
+{
+  "schema": "codecallnavigator.freshness-research.v1",
+  "requested_warm_runs": 1,
+  "summary": {
+    "csharp/body": {
+      "cold_records": 1,
+      "warm_records": 1,
+      "failed_records": 0,
+      "detection_ms": {
+        "count": 1,
+        "median": 18.64004199160263,
+        "p95": 18.64004199160263,
+        "maximum": 18.64004199160263
+      },
+      "refresh_ms": {
+        "count": 1,
+        "median": 2819.4104590220377,
+        "p95": 2819.4104590220377,
+        "maximum": 2819.4104590220377
+      },
+      "adoption_ms": {
+        "count": 1,
+        "median": 20.374167012050748,
+        "p95": 20.374167012050748,
+        "maximum": 20.374167012050748
+      },
+      "save_to_adoption_ms": {
+        "count": 1,
+        "median": 2860.1964580011554,
+        "p95": 2860.1964580011554,
+        "maximum": 2860.1964580011554
+      },
+      "refresh_cpu_seconds": {
+        "count": 1,
+        "median": 3.390804,
+        "p95": 3.390804,
+        "maximum": 3.390804
+      },
+      "refresh_sampled_peak_tree_rss_bytes": {
+        "count": 1,
+        "median": 265469952,
+        "p95": 265469952,
+        "maximum": 265469952
+      },
+      "equivalent": true
+    },
+    "csharp/signature": {
+      "cold_records": 1,
+      "warm_records": 1,
+      "failed_records": 0,
+      "detection_ms": {
+        "count": 1,
+        "median": 10.749874985776842,
+        "p95": 10.749874985776842,
+        "maximum": 10.749874985776842
+      },
+      "refresh_ms": {
+        "count": 1,
+        "median": 3628.1247079605237,
+        "p95": 3628.1247079605237,
+        "maximum": 3628.1247079605237
+      },
+      "adoption_ms": {
+        "count": 1,
+        "median": 20.802332961466163,
+        "p95": 20.802332961466163,
+        "maximum": 20.802332961466163
+      },
+      "save_to_adoption_ms": {
+        "count": 1,
+        "median": 3661.473665968515,
+        "p95": 3661.473665968515,
+        "maximum": 3661.473665968515
+      },
+      "refresh_cpu_seconds": {
+        "count": 1,
+        "median": 4.087534,
+        "p95": 4.087534,
+        "maximum": 4.087534
+      },
+      "refresh_sampled_peak_tree_rss_bytes": {
+        "count": 1,
+        "median": 269860864,
+        "p95": 269860864,
+        "maximum": 269860864
+      },
+      "equivalent": true
+    },
+    "csharp/cross_file": {
+      "cold_records": 1,
+      "warm_records": 1,
+      "failed_records": 0,
+      "detection_ms": {
+        "count": 1,
+        "median": 19.87258403096348,
+        "p95": 19.87258403096348,
+        "maximum": 19.87258403096348
+      },
+      "refresh_ms": {
+        "count": 1,
+        "median": 2820.957374991849,
+        "p95": 2820.957374991849,
+        "maximum": 2820.957374991849
+      },
+      "adoption_ms": {
+        "count": 1,
+        "median": 19.79145797668025,
+        "p95": 19.79145797668025,
+        "maximum": 19.79145797668025
+      },
+      "save_to_adoption_ms": {
+        "count": 1,
+        "median": 2862.359541002661,
+        "p95": 2862.359541002661,
+        "maximum": 2862.359541002661
+      },
+      "refresh_cpu_seconds": {
+        "count": 1,
+        "median": 3.461352999999999,
+        "p95": 3.461352999999999,
+        "maximum": 3.461352999999999
+      },
+      "refresh_sampled_peak_tree_rss_bytes": {
+        "count": 1,
+        "median": 264978432,
+        "p95": 264978432,
+        "maximum": 264978432
+      },
+      "equivalent": true
+    },
+    "csharp/addition": {
+      "cold_records": 1,
+      "warm_records": 1,
+      "failed_records": 0,
+      "detection_ms": {
+        "count": 1,
+        "median": 19.850292010232806,
+        "p95": 19.850292010232806,
+        "maximum": 19.850292010232806
+      },
+      "refresh_ms": {
+        "count": 1,
+        "median": 2978.0874170246534,
+        "p95": 2978.0874170246534,
+        "maximum": 2978.0874170246534
+      },
+      "adoption_ms": {
+        "count": 1,
+        "median": 19.927333982195705,
+        "p95": 19.927333982195705,
+        "maximum": 19.927333982195705
+      },
+      "save_to_adoption_ms": {
+        "count": 1,
+        "median": 3019.68049997231,
+        "p95": 3019.68049997231,
+        "maximum": 3019.68049997231
+      },
+      "refresh_cpu_seconds": {
+        "count": 1,
+        "median": 3.5802429999999994,
+        "p95": 3.5802429999999994,
+        "maximum": 3.5802429999999994
+      },
+      "refresh_sampled_peak_tree_rss_bytes": {
+        "count": 1,
+        "median": 267091968,
+        "p95": 267091968,
+        "maximum": 267091968
+      },
+      "equivalent": true
+    },
+    "csharp/deletion": {
+      "cold_records": 1,
+      "warm_records": 1,
+      "failed_records": 0,
+      "detection_ms": {
+        "count": 1,
+        "median": 18.800499965436757,
+        "p95": 18.800499965436757,
+        "maximum": 18.800499965436757
+      },
+      "refresh_ms": {
+        "count": 1,
+        "median": 2813.2436249870807,
+        "p95": 2813.2436249870807,
+        "maximum": 2813.2436249870807
+      },
+      "adoption_ms": {
+        "count": 1,
+        "median": 19.067500019446015,
+        "p95": 19.067500019446015,
+        "maximum": 19.067500019446015
+      },
+      "save_to_adoption_ms": {
+        "count": 1,
+        "median": 2853.0487079988234,
+        "p95": 2853.0487079988234,
+        "maximum": 2853.0487079988234
+      },
+      "refresh_cpu_seconds": {
+        "count": 1,
+        "median": 3.376353999999999,
+        "p95": 3.376353999999999,
+        "maximum": 3.376353999999999
+      },
+      "refresh_sampled_peak_tree_rss_bytes": {
+        "count": 1,
+        "median": 282017792,
+        "p95": 282017792,
+        "maximum": 282017792
+      },
+      "equivalent": true
+    },
+    "csharp/rename": {
+      "cold_records": 1,
+      "warm_records": 1,
+      "failed_records": 0,
+      "detection_ms": {
+        "count": 1,
+        "median": 20.634707994759083,
+        "p95": 20.634707994759083,
+        "maximum": 20.634707994759083
+      },
+      "refresh_ms": {
+        "count": 1,
+        "median": 2844.4752499926835,
+        "p95": 2844.4752499926835,
+        "maximum": 2844.4752499926835
+      },
+      "adoption_ms": {
+        "count": 1,
+        "median": 19.965209008660167,
+        "p95": 19.965209008660167,
+        "maximum": 19.965209008660167
+      },
+      "save_to_adoption_ms": {
+        "count": 1,
+        "median": 2886.8688750080764,
+        "p95": 2886.8688750080764,
+        "maximum": 2886.8688750080764
+      },
+      "refresh_cpu_seconds": {
+        "count": 1,
+        "median": 3.3991460000000018,
+        "p95": 3.3991460000000018,
+        "maximum": 3.3991460000000018
+      },
+      "refresh_sampled_peak_tree_rss_bytes": {
+        "count": 1,
+        "median": 267730944,
+        "p95": 267730944,
+        "maximum": 267730944
+      },
+      "equivalent": true
+    },
+    "csharp/atomic_save": {
+      "cold_records": 1,
+      "warm_records": 1,
+      "failed_records": 0,
+      "detection_ms": {
+        "count": 1,
+        "median": 20.503500010818243,
+        "p95": 20.503500010818243,
+        "maximum": 20.503500010818243
+      },
+      "refresh_ms": {
+        "count": 1,
+        "median": 2985.027540998999,
+        "p95": 2985.027540998999,
+        "maximum": 2985.027540998999
+      },
+      "adoption_ms": {
+        "count": 1,
+        "median": 20.428332965821028,
+        "p95": 20.428332965821028,
+        "maximum": 20.428332965821028
+      },
+      "save_to_adoption_ms": {
+        "count": 1,
+        "median": 3027.9371670330875,
+        "p95": 3027.9371670330875,
+        "maximum": 3027.9371670330875
+      },
+      "refresh_cpu_seconds": {
+        "count": 1,
+        "median": 3.436681000000007,
+        "p95": 3.436681000000007,
+        "maximum": 3.436681000000007
+      },
+      "refresh_sampled_peak_tree_rss_bytes": {
+        "count": 1,
+        "median": 265928704,
+        "p95": 265928704,
+        "maximum": 265928704
+      },
+      "equivalent": true
+    },
+    "csharp/burst": {
+      "cold_records": 1,
+      "warm_records": 1,
+      "failed_records": 0,
+      "detection_ms": {
+        "count": 1,
+        "median": 20.60079202055931,
+        "p95": 20.60079202055931,
+        "maximum": 20.60079202055931
+      },
+      "refresh_ms": {
+        "count": 1,
+        "median": 4197.91195797734,
+        "p95": 4197.91195797734,
+        "maximum": 4197.91195797734
+      },
+      "adoption_ms": {
+        "count": 1,
+        "median": 497.33229202684015,
+        "p95": 497.33229202684015,
+        "maximum": 497.33229202684015
+      },
+      "save_to_adoption_ms": {
+        "count": 1,
+        "median": 4718.245041032787,
+        "p95": 4718.245041032787,
+        "maximum": 4718.245041032787
+      },
+      "refresh_cpu_seconds": {
+        "count": 1,
+        "median": 4.332864000000008,
+        "p95": 4.332864000000008,
+        "maximum": 4.332864000000008
+      },
+      "refresh_sampled_peak_tree_rss_bytes": {
+        "count": 1,
+        "median": 268795904,
+        "p95": 268795904,
+        "maximum": 268795904
+      },
+      "equivalent": true
+    },
+    "csharp/configuration": {
+      "cold_records": 1,
+      "warm_records": 1,
+      "failed_records": 0,
+      "detection_ms": {
+        "count": 1,
+        "median": 18.872999993618578,
+        "p95": 18.872999993618578,
+        "maximum": 18.872999993618578
+      },
+      "refresh_ms": {
+        "count": 1,
+        "median": 2882.862541999202,
+        "p95": 2882.862541999202,
+        "maximum": 2882.862541999202
+      },
+      "adoption_ms": {
+        "count": 1,
+        "median": 18.052792001981288,
+        "p95": 18.052792001981288,
+        "maximum": 18.052792001981288
+      },
+      "save_to_adoption_ms": {
+        "count": 1,
+        "median": 2921.185792016331,
+        "p95": 2921.185792016331,
+        "maximum": 2921.185792016331
+      },
+      "refresh_cpu_seconds": {
+        "count": 1,
+        "median": 3.521940999999998,
+        "p95": 3.521940999999998,
+        "maximum": 3.521940999999998
+      },
+      "refresh_sampled_peak_tree_rss_bytes": {
+        "count": 1,
+        "median": 262635520,
+        "p95": 262635520,
+        "maximum": 262635520
+      },
+      "equivalent": true
+    }
+  },
+  "failure_journeys": {
+    "csharp": {
+      "invalid_code_rejected": true,
+      "previous_artifact_preserved": true,
+      "generation_mismatch_rejected": true,
+      "generation": "4fcacfdeb236511473bec7ce373f7463ffe05d9ac75772320a1298bc89eeb371",
+      "failure": "{\"measurement\": {\"milliseconds\": 2545.0209170230664, \"exit_code\": 2, \"timed_out\": false, \"cpu_seconds\": 3.2357970000000122, \"sampled_peak_tree_rss_bytes\": 268959744, \"resource_samples\": 25, \"sampling_errors\": [], \"cleanup_errors\": [], \"stdout\": \"{\\\"event\\\":\\\"hello\\\",\\\"version\\\":1}\\n{\\\"event\\\":\\\"progress\\\",\\\"message\\\":\\\"Analyzing ccn-freshness-csharp-thb8_apl / Freshness (C# project) (1/1)\\\"}\\n{\\\"event\\\":\\\"progress\\\",\\\"message\\\":\\\"Restoring ccn-freshness-csharp-thb8_apl / Freshness (C# project)\\u2026\\\"}\\n{\\\"event\\\":\\\"progress\\\",\\\"message\\\":\\\"Reading compiler call graph for ccn-freshness-csharp-thb8_apl / Freshness (C# project)\\u2026\\\"}\\n{\\\"event\\\":\\\"failed\\\",\\\"message\\\":\\\"Analysis failed. Logs: /var/folders/9t/j3qnf2cn5fx1tqgq8gm50vf80000gq/T/codecallnavigator-96862-1794564158845280000-0/0: callatlas failed (exit status: 1). \\\"}\\n\", \"stderr\": \"Analysis failed. Logs: /var/folders/9t/j3qnf2cn5fx1tqgq8gm50vf80000gq/T/codecallnavigator-96862-1794564158845280000-0/0: callatlas failed (exit status: 1). \\n\"}, \"events\": [{\"event\": \"hello\", \"version\": 1}, {\"event\": \"progress\", \"message\": \"Analyzing ccn-freshness-csharp-thb8_apl / Freshness (C# project) (1/1)\"}, {\"event\": \"progress\", \"message\": \"Restoring ccn-freshness-csharp-thb8_apl / Freshness (C# project)\\u2026\"}, {\"event\": \"progress\", \"message\": \"Reading compiler call graph for ccn-freshness-csharp-thb8_apl / Freshness (C# project)\\u2026\"}, {\"event\": \"failed\", \"message\": \"Analysis failed. Logs: /var/folders/9t/j3qnf2cn5fx1tqgq8gm50vf80000gq/T/codecallnavigator-96862-1794564158845280000-0/0: callatlas failed (exit status: 1). \"}]}"
+    }
+  }
+}

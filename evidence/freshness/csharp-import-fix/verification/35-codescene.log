@@ -1,0 +1,93 @@
+{
+  "status": "passed",
+  "reviews": [
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "crates/codecallnavigator-core/src/artifact/provenance.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "crates/codecallnavigator-core/src/artifact/verification.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "crates/codecallnavigator-core/src/artifact/verification/csharp_policy.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "crates/codecallnavigator-engine/src/analyzers.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "crates/codecallnavigator-engine/src/analyzers/csharp.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "crates/codecallnavigator-engine/src/analyzers/csharp/inputs.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "crates/codecallnavigator-engine/src/analyzers/csharp/inputs/contexts.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "crates/codecallnavigator-engine/src/analyzers/csharp/inputs/tests.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "crates/codecallnavigator-engine/src/analyzers/csharp/ownership.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "crates/codecallnavigator-engine/tests/csharp_inputs.rs"
+    }
+  ],
+  "safeguard": {
+    "results": [],
+    "quality_gates": "passed",
+    "metadata": {
+      "checked-file-count": 10,
+      "code-health-eligible-file-count": 10,
+      "status": "no-issues-found",
+      "total-modified-file-count": 25
+    }
+  },
+  "errors": [],
+  "skipped_files": [
+    ".backlog/tasks/task-63 - Make-C-cold-and-warm-analysis-input-coverage-consistent.md",
+    "Cargo.lock",
+    "crates/codecallnavigator-engine/Cargo.toml",
+    "docs/standalone-engine.md",
+    "evidence/freshness/csharp-import-fix/README.md",
+    "evidence/freshness/csharp-import-fix/cli-audit-v2/metadata.json",
+    "evidence/freshness/csharp-import-fix/cli-audit-v2/samples.jsonl.gz",
+    "evidence/freshness/csharp-import-fix/cli-audit-v2/summary.json",
+    "evidence/freshness/csharp-import-fix/cli-audit/metadata.json",
+    "evidence/freshness/csharp-import-fix/cli-audit/samples.jsonl.gz",
+    "evidence/freshness/csharp-import-fix/cli-audit/summary.json",
+    "evidence/freshness/csharp-import-fix/literal-property-probe.json",
+    "evidence/freshness/csharp-import-fix/manifests.json",
+    "evidence/freshness/csharp-import-fix/verification/full-timeout-results.json",
+    "evidence/freshness/csharp-import-fix/verification/pre-commit-code-health.json"
+  ]
+}
