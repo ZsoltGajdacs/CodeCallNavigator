@@ -66,7 +66,13 @@ fn clear_cache_button_uses_real_engine_preserves_graph_and_allows_retry() {
     let mut runtime = cache_runtime(project.path());
     let graph = runtime.state.graph.clone().unwrap();
     let nav = runtime.state.session();
-    runtime.state.stale = true;
+    runtime
+        .state
+        .freshness
+        .accept(crate::freshness_workspace::fixture(
+            codecallnavigator::artifact::verification::InputStatus::Stale,
+            runtime.state.generation.as_deref().unwrap_or("fixture"),
+        ));
     click(&mut runtime, "clear-cache");
     wait_for(&mut runtime, |state| !state.clearing_cache);
     assert!(!cache.exists());

@@ -1,0 +1,307 @@
+{
+  "status": "passed",
+  "reviews": [
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "crates/codecallnavigator-mcp/src/arguments.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "crates/codecallnavigator-mcp/src/backend.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "crates/codecallnavigator-mcp/src/tools.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "crates/codecallnavigator-mcp/src/wire.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "crates/codecallnavigator-mcp/src/wire/metadata.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "crates/codecallnavigator-mcp/src/wire/observation.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "crates/codecallnavigator-mcp/src/wire/results.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "crates/codecallnavigator-mcp/tests/stdio_freshness.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "crates/codecallnavigator-mcp/tests/stdio_freshness_failures.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "src/app.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "src/architecture_workspace.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "src/cache_jobs.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "src/cache_retention.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "src/engine_client.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "src/engine_client/capabilities.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "src/engine_client/observation_process.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "src/engine_client/queries.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "src/engine_client/query_process.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "src/fixture_queries.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "src/flow_view.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "src/freshness_workspace.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "src/generation_reload.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "src/graph_install.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "src/graph_interaction.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "src/graph_layout.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "src/graph_queries.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "src/jobs.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "src/jobs/adoption_tests.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "src/jobs/analysis.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "src/jobs/queries.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "src/main.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "src/navigation.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "src/presentation.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "src/presentation_cache.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "src/projection.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "src/projection/navigation_inventory.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "src/scenes.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "src/source_popup/render.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "src/ui_tests.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "src/ui_tests/cache_clear.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "src/ui_tests/cli_backend.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "src/ui_tests/cli_freshness.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "src/ui_tests/project_explorer.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "src/ui_tests/source_popup.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "src/view.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "src/workspace.rs"
+    }
+  ],
+  "safeguard": {
+    "results": [],
+    "quality_gates": "passed",
+    "metadata": {
+      "checked-file-count": 46,
+      "code-health-eligible-file-count": 46,
+      "status": "no-issues-found",
+      "total-modified-file-count": 59
+    }
+  },
+  "errors": [],
+  "skipped_files": [
+    ".backlog/tasks/task-61 - Adopt-typed-freshness-and-new-generations-in-desktop-and-MCP.md",
+    "docs/desktop-cli.md",
+    "docs/mcp.md",
+    "evidence/freshness/consumer-adoption/README.md",
+    "evidence/freshness/consumer-adoption/mcp-legacy-cli.json",
+    "evidence/freshness/task61-desktop/README.md",
+    "evidence/freshness/task61-desktop/adopted.png",
+    "evidence/freshness/task61-desktop/deleted-selection.png",
+    "evidence/freshness/task61-desktop/failed-light-compact.png",
+    "evidence/freshness/task61-desktop/fitted-view.png",
+    "evidence/freshness/task61-desktop/reload-offered.png",
+    "evidence/freshness/task61-desktop/stale.png",
+    "evidence/freshness/task61-desktop/unverifiable.png"
+  ]
+}

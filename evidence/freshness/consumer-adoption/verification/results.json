@@ -1,0 +1,1270 @@
+[
+  {
+    "name": "prerequisites",
+    "command": [
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/.venv-verification/bin/python",
+      "tools/verification/prerequisites.py",
+      "--root",
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph",
+      "--codescene-command",
+      "cs-mcp",
+      "--profile-source",
+      "/Users/zsolt.gajdacs/Library/Application Support/CodeCallNavigator"
+    ],
+    "timeout": 180,
+    "status": "passed",
+    "log": "01-prerequisites.log",
+    "exit_code": 0,
+    "seconds": 0.906
+  },
+  {
+    "name": "whitespace",
+    "command": [
+      "git",
+      "diff",
+      "--check",
+      "HEAD",
+      "--"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "02-whitespace.log",
+    "exit_code": 0,
+    "seconds": 0.02
+  },
+  {
+    "name": "syntax-format-001",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "crates/codecallnavigator-mcp/src/arguments.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "03-syntax-format-001.log",
+    "exit_code": 0,
+    "seconds": 0.178
+  },
+  {
+    "name": "syntax-format-002",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "crates/codecallnavigator-mcp/src/backend.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "04-syntax-format-002.log",
+    "exit_code": 0,
+    "seconds": 0.036
+  },
+  {
+    "name": "syntax-format-003",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "crates/codecallnavigator-mcp/src/tools.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "05-syntax-format-003.log",
+    "exit_code": 0,
+    "seconds": 0.037
+  },
+  {
+    "name": "syntax-format-004",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "crates/codecallnavigator-mcp/src/wire.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "06-syntax-format-004.log",
+    "exit_code": 0,
+    "seconds": 0.04
+  },
+  {
+    "name": "syntax-format-005",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "crates/codecallnavigator-mcp/src/wire/metadata.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "07-syntax-format-005.log",
+    "exit_code": 0,
+    "seconds": 0.039
+  },
+  {
+    "name": "syntax-format-006",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "crates/codecallnavigator-mcp/src/wire/observation.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "08-syntax-format-006.log",
+    "exit_code": 0,
+    "seconds": 0.038
+  },
+  {
+    "name": "syntax-format-007",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "crates/codecallnavigator-mcp/src/wire/results.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "09-syntax-format-007.log",
+    "exit_code": 0,
+    "seconds": 0.037
+  },
+  {
+    "name": "syntax-format-008",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "crates/codecallnavigator-mcp/tests/stdio_freshness.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "10-syntax-format-008.log",
+    "exit_code": 0,
+    "seconds": 0.038
+  },
+  {
+    "name": "syntax-format-009",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "crates/codecallnavigator-mcp/tests/stdio_freshness_failures.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "11-syntax-format-009.log",
+    "exit_code": 0,
+    "seconds": 0.037
+  },
+  {
+    "name": "syntax-format-022",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "src/app.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "12-syntax-format-022.log",
+    "exit_code": 0,
+    "seconds": 0.036
+  },
+  {
+    "name": "syntax-format-023",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "src/architecture_workspace.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "13-syntax-format-023.log",
+    "exit_code": 0,
+    "seconds": 0.037
+  },
+  {
+    "name": "syntax-format-024",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "src/cache_jobs.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "14-syntax-format-024.log",
+    "exit_code": 0,
+    "seconds": 0.041
+  },
+  {
+    "name": "syntax-format-025",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "src/cache_retention.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "15-syntax-format-025.log",
+    "exit_code": 0,
+    "seconds": 0.036
+  },
+  {
+    "name": "syntax-format-026",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "src/engine_client.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "16-syntax-format-026.log",
+    "exit_code": 0,
+    "seconds": 0.04
+  },
+  {
+    "name": "syntax-format-027",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "src/engine_client/capabilities.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "17-syntax-format-027.log",
+    "exit_code": 0,
+    "seconds": 0.039
+  },
+  {
+    "name": "syntax-format-028",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "src/engine_client/observation_process.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "18-syntax-format-028.log",
+    "exit_code": 0,
+    "seconds": 0.039
+  },
+  {
+    "name": "syntax-format-029",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "src/engine_client/queries.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "19-syntax-format-029.log",
+    "exit_code": 0,
+    "seconds": 0.035
+  },
+  {
+    "name": "syntax-format-030",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "src/engine_client/query_process.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "20-syntax-format-030.log",
+    "exit_code": 0,
+    "seconds": 0.04
+  },
+  {
+    "name": "syntax-format-031",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "src/fixture_queries.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "21-syntax-format-031.log",
+    "exit_code": 0,
+    "seconds": 0.038
+  },
+  {
+    "name": "syntax-format-032",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "src/flow_view.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "22-syntax-format-032.log",
+    "exit_code": 0,
+    "seconds": 0.041
+  },
+  {
+    "name": "syntax-format-033",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "src/freshness_workspace.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "23-syntax-format-033.log",
+    "exit_code": 0,
+    "seconds": 0.036
+  },
+  {
+    "name": "syntax-format-034",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "src/generation_reload.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "24-syntax-format-034.log",
+    "exit_code": 0,
+    "seconds": 0.039
+  },
+  {
+    "name": "syntax-format-035",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "src/graph_install.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "25-syntax-format-035.log",
+    "exit_code": 0,
+    "seconds": 0.04
+  },
+  {
+    "name": "syntax-format-036",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "src/graph_interaction.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "26-syntax-format-036.log",
+    "exit_code": 0,
+    "seconds": 0.037
+  },
+  {
+    "name": "syntax-format-037",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "src/graph_layout.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "27-syntax-format-037.log",
+    "exit_code": 0,
+    "seconds": 0.037
+  },
+  {
+    "name": "syntax-format-038",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "src/graph_queries.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "28-syntax-format-038.log",
+    "exit_code": 0,
+    "seconds": 0.039
+  },
+  {
+    "name": "syntax-format-039",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "src/jobs.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "29-syntax-format-039.log",
+    "exit_code": 0,
+    "seconds": 0.037
+  },
+  {
+    "name": "syntax-format-040",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "src/jobs/adoption_tests.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "30-syntax-format-040.log",
+    "exit_code": 0,
+    "seconds": 0.04
+  },
+  {
+    "name": "syntax-format-041",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "src/jobs/analysis.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "31-syntax-format-041.log",
+    "exit_code": 0,
+    "seconds": 0.04
+  },
+  {
+    "name": "syntax-format-042",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "src/jobs/queries.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "32-syntax-format-042.log",
+    "exit_code": 0,
+    "seconds": 0.04
+  },
+  {
+    "name": "syntax-format-043",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "src/main.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "33-syntax-format-043.log",
+    "exit_code": 0,
+    "seconds": 0.039
+  },
+  {
+    "name": "syntax-format-044",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "src/navigation.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "34-syntax-format-044.log",
+    "exit_code": 0,
+    "seconds": 0.037
+  },
+  {
+    "name": "syntax-format-045",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "src/presentation.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "35-syntax-format-045.log",
+    "exit_code": 0,
+    "seconds": 0.037
+  },
+  {
+    "name": "syntax-format-046",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "src/presentation_cache.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "36-syntax-format-046.log",
+    "exit_code": 0,
+    "seconds": 0.034
+  },
+  {
+    "name": "syntax-format-047",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "src/projection.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "37-syntax-format-047.log",
+    "exit_code": 0,
+    "seconds": 0.037
+  },
+  {
+    "name": "syntax-format-048",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "src/projection/navigation_inventory.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "38-syntax-format-048.log",
+    "exit_code": 0,
+    "seconds": 0.037
+  },
+  {
+    "name": "syntax-format-049",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "src/scenes.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "39-syntax-format-049.log",
+    "exit_code": 0,
+    "seconds": 0.038
+  },
+  {
+    "name": "syntax-format-050",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "src/source_popup/render.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "40-syntax-format-050.log",
+    "exit_code": 0,
+    "seconds": 0.039
+  },
+  {
+    "name": "syntax-format-051",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "src/ui_tests.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "41-syntax-format-051.log",
+    "exit_code": 0,
+    "seconds": 0.041
+  },
+  {
+    "name": "syntax-format-052",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "src/ui_tests/cache_clear.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "42-syntax-format-052.log",
+    "exit_code": 0,
+    "seconds": 0.038
+  },
+  {
+    "name": "syntax-format-053",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "src/ui_tests/cli_backend.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "43-syntax-format-053.log",
+    "exit_code": 0,
+    "seconds": 0.037
+  },
+  {
+    "name": "syntax-format-054",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "src/ui_tests/cli_freshness.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "44-syntax-format-054.log",
+    "exit_code": 0,
+    "seconds": 0.035
+  },
+  {
+    "name": "syntax-format-055",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "src/ui_tests/project_explorer.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "45-syntax-format-055.log",
+    "exit_code": 0,
+    "seconds": 0.034
+  },
+  {
+    "name": "syntax-format-056",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "src/ui_tests/source_popup.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "46-syntax-format-056.log",
+    "exit_code": 0,
+    "seconds": 0.04
+  },
+  {
+    "name": "syntax-format-057",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "src/view.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "47-syntax-format-057.log",
+    "exit_code": 0,
+    "seconds": 0.036
+  },
+  {
+    "name": "syntax-format-058",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "src/workspace.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "48-syntax-format-058.log",
+    "exit_code": 0,
+    "seconds": 0.04
+  },
+  {
+    "name": "bootstrap",
+    "command": [
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/.venv-verification/bin/python",
+      "tools/bootstrap.py"
+    ],
+    "timeout": 3600,
+    "status": "passed",
+    "log": "49-bootstrap.log",
+    "exit_code": 0,
+    "seconds": 4.403
+  },
+  {
+    "name": "build-debug-engine",
+    "command": [
+      "cargo",
+      "build",
+      "--locked",
+      "-p",
+      "codecallnavigator-engine",
+      "--bin",
+      "codecallnavigator-engine"
+    ],
+    "timeout": 3600,
+    "status": "passed",
+    "log": "50-build-debug-engine.log",
+    "exit_code": 0,
+    "seconds": 0.282
+  },
+  {
+    "name": "cargo-check",
+    "command": [
+      "cargo",
+      "check",
+      "--locked",
+      "--workspace",
+      "--all-targets"
+    ],
+    "timeout": 3600,
+    "status": "passed",
+    "log": "51-cargo-check.log",
+    "exit_code": 0,
+    "seconds": 2.308
+  },
+  {
+    "name": "mcp-dependency-boundary",
+    "command": [
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/.venv-verification/bin/python",
+      "tools/mcp_boundary.py",
+      "--root",
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph"
+    ],
+    "timeout": 3600,
+    "status": "passed",
+    "log": "52-mcp-dependency-boundary.log",
+    "exit_code": 0,
+    "seconds": 0.335
+  },
+  {
+    "name": "clippy",
+    "command": [
+      "cargo",
+      "clippy",
+      "--locked",
+      "--workspace",
+      "--all-targets",
+      "--no-deps",
+      "--",
+      "-D",
+      "warnings"
+    ],
+    "timeout": 3600,
+    "status": "passed",
+    "log": "53-clippy.log",
+    "exit_code": 0,
+    "seconds": 2.474
+  },
+  {
+    "name": "rust-tests",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "--workspace",
+      "--all-targets",
+      "--",
+      "--test-threads=1"
+    ],
+    "timeout": 3600,
+    "status": "passed",
+    "log": "54-rust-tests.log",
+    "exit_code": 0,
+    "seconds": 113.036
+  },
+  {
+    "name": "python-tests",
+    "command": [
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/.venv-verification/bin/python",
+      "-m",
+      "unittest",
+      "discover",
+      "-s",
+      "tests",
+      "-v"
+    ],
+    "timeout": 3600,
+    "status": "passed",
+    "log": "55-python-tests.log",
+    "exit_code": 0,
+    "seconds": 37.87
+  },
+  {
+    "name": "python-tool-tests",
+    "command": [
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/.venv-verification/bin/python",
+      "-m",
+      "unittest",
+      "discover",
+      "-s",
+      "tools",
+      "-p",
+      "test_*.py",
+      "-v"
+    ],
+    "timeout": 3600,
+    "status": "passed",
+    "log": "56-python-tool-tests.log",
+    "exit_code": 0,
+    "seconds": 10.615
+  },
+  {
+    "name": "typescript-tests",
+    "command": [
+      "node",
+      "--test",
+      "tools/typescript/adapter.test.js",
+      "tools/typescript/boundary.test.js",
+      "tools/typescript/callable.test.js",
+      "tools/typescript/flow-export.test.js",
+      "tools/typescript/observations.test.js",
+      "tools/typescript/observer.test.js",
+      "tools/typescript/paths.test.js",
+      "tools/typescript/signature.test.js",
+      "tools/typescript/worker.test.js"
+    ],
+    "timeout": 3600,
+    "status": "passed",
+    "log": "57-typescript-tests.log",
+    "exit_code": 0,
+    "seconds": 26.237
+  },
+  {
+    "name": "build-release-engine",
+    "command": [
+      "cargo",
+      "build",
+      "--locked",
+      "--release",
+      "-p",
+      "codecallnavigator-engine",
+      "--bin",
+      "codecallnavigator-engine"
+    ],
+    "timeout": 3600,
+    "status": "passed",
+    "log": "58-build-release-engine.log",
+    "exit_code": 0,
+    "seconds": 0.281
+  },
+  {
+    "name": "profile-snapshot",
+    "command": [
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/.venv-verification/bin/python",
+      "tools/verification/profile.py",
+      "/Users/zsolt.gajdacs/Library/Application Support/CodeCallNavigator",
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/target/verification/task61-full/profile"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "59-profile-snapshot.log",
+    "exit_code": 0,
+    "seconds": 0.125
+  },
+  {
+    "name": "release-acceptance-and-benchmarks",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "--release",
+      "--workspace",
+      "--all-targets",
+      "--no-fail-fast",
+      "--",
+      "--include-ignored",
+      "--test-threads=1",
+      "--nocapture"
+    ],
+    "timeout": 3600,
+    "status": "passed",
+    "log": "60-release-acceptance-and-benchmarks.log",
+    "exit_code": 0,
+    "seconds": 946.102
+  },
+  {
+    "name": "storage-benchmark",
+    "command": [
+      "cargo",
+      "run",
+      "--locked",
+      "--release",
+      "--bin",
+      "benchmark",
+      "--",
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/target/verification/task61-full/scale-cache"
+    ],
+    "timeout": 3600,
+    "status": "passed",
+    "log": "61-storage-benchmark.log",
+    "exit_code": 0,
+    "seconds": 6.324
+  },
+  {
+    "name": "package",
+    "command": [
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/.venv-verification/bin/python",
+      "tools/package.py"
+    ],
+    "timeout": 3600,
+    "status": "passed",
+    "log": "62-package.log",
+    "exit_code": 0,
+    "seconds": 20.836
+  },
+  {
+    "name": "package-signature",
+    "command": [
+      "codesign",
+      "--verify",
+      "--deep",
+      "--strict",
+      "dist/CodeCallNavigator.app"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "63-package-signature.log",
+    "exit_code": 0,
+    "seconds": 0.084
+  },
+  {
+    "name": "packaged-engine",
+    "command": [
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/dist/CodeCallNavigatorEngine/bin/codecallnavigator-engine",
+      "--help"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "64-packaged-engine.log",
+    "exit_code": 0,
+    "seconds": 0.283
+  },
+  {
+    "name": "installed-cli",
+    "command": [
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/.venv-verification/bin/python",
+      "tools/installed_cli_acceptance.py",
+      "--package",
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/dist/CodeCallNavigatorEngine",
+      "--node-modules",
+      "/Users/zsolt.gajdacs/Zs/Programming/PacificFateMapEditor/node_modules",
+      "--output",
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/target/verification/task61-full/installed-cli.json"
+    ],
+    "timeout": 3600,
+    "status": "passed",
+    "log": "65-installed-cli.log",
+    "exit_code": 0,
+    "seconds": 2.95
+  },
+  {
+    "name": "agent-integrations-check",
+    "command": [
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/.venv-verification/bin/python",
+      "tools/package_agent_integrations.py",
+      "--host",
+      "all",
+      "--check"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "66-agent-integrations-check.log",
+    "exit_code": 0,
+    "seconds": 0.043
+  },
+  {
+    "name": "agent-integrations-package",
+    "command": [
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/.venv-verification/bin/python",
+      "tools/package_agent_integrations.py",
+      "--host",
+      "all",
+      "--output",
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/target/verification/task61-full/agent-integrations"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "67-agent-integrations-package.log",
+    "exit_code": 0,
+    "seconds": 0.048
+  },
+  {
+    "name": "agent-cli-journeys",
+    "command": [
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/.venv-verification/bin/python",
+      "tools/agent_journeys.py",
+      "--node-modules",
+      "/Users/zsolt.gajdacs/Zs/Programming/PacificFateMapEditor/node_modules",
+      "--output",
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/target/verification/task61-full/agent-journeys.json"
+    ],
+    "timeout": 3600,
+    "status": "passed",
+    "log": "68-agent-cli-journeys.log",
+    "exit_code": 0,
+    "seconds": 1.712
+  },
+  {
+    "name": "mcp-independent-install",
+    "command": [
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/.venv-verification/bin/python",
+      "tools/package_mcp.py",
+      "--engine",
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/dist/CodeCallNavigatorEngine/bin/codecallnavigator-engine"
+    ],
+    "timeout": 3600,
+    "status": "passed",
+    "log": "69-mcp-independent-install.log",
+    "exit_code": 0,
+    "seconds": 16.777
+  },
+  {
+    "name": "agent-mcp-journeys",
+    "command": [
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/.venv-verification/bin/python",
+      "tools/agent_mcp_journeys.py",
+      "--node-modules",
+      "/Users/zsolt.gajdacs/Zs/Programming/PacificFateMapEditor/node_modules",
+      "--output",
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/target/verification/task61-full/agent-mcp-journeys.json"
+    ],
+    "timeout": 3600,
+    "status": "passed",
+    "log": "70-agent-mcp-journeys.log",
+    "exit_code": 0,
+    "seconds": 1.672
+  },
+  {
+    "name": "codescene",
+    "command": [
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/.venv-verification/bin/python",
+      "tools/verification/quality.py",
+      "--root",
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph",
+      "--command",
+      "cs-mcp",
+      "--timeout",
+      "120",
+      "--files",
+      ".backlog/tasks/task-61 - Adopt-typed-freshness-and-new-generations-in-desktop-and-MCP.md",
+      "crates/codecallnavigator-mcp/src/arguments.rs",
+      "crates/codecallnavigator-mcp/src/backend.rs",
+      "crates/codecallnavigator-mcp/src/tools.rs",
+      "crates/codecallnavigator-mcp/src/wire.rs",
+      "crates/codecallnavigator-mcp/src/wire/metadata.rs",
+      "crates/codecallnavigator-mcp/src/wire/observation.rs",
+      "crates/codecallnavigator-mcp/src/wire/results.rs",
+      "crates/codecallnavigator-mcp/tests/stdio_freshness.rs",
+      "crates/codecallnavigator-mcp/tests/stdio_freshness_failures.rs",
+      "docs/desktop-cli.md",
+      "docs/mcp.md",
+      "evidence/freshness/consumer-adoption/README.md",
+      "evidence/freshness/consumer-adoption/mcp-legacy-cli.json",
+      "evidence/freshness/task61-desktop/README.md",
+      "evidence/freshness/task61-desktop/adopted.png",
+      "evidence/freshness/task61-desktop/deleted-selection.png",
+      "evidence/freshness/task61-desktop/failed-light-compact.png",
+      "evidence/freshness/task61-desktop/fitted-view.png",
+      "evidence/freshness/task61-desktop/reload-offered.png",
+      "evidence/freshness/task61-desktop/stale.png",
+      "evidence/freshness/task61-desktop/unverifiable.png",
+      "src/app.rs",
+      "src/architecture_workspace.rs",
+      "src/cache_jobs.rs",
+      "src/cache_retention.rs",
+      "src/engine_client.rs",
+      "src/engine_client/capabilities.rs",
+      "src/engine_client/observation_process.rs",
+      "src/engine_client/queries.rs",
+      "src/engine_client/query_process.rs",
+      "src/fixture_queries.rs",
+      "src/flow_view.rs",
+      "src/freshness_workspace.rs",
+      "src/generation_reload.rs",
+      "src/graph_install.rs",
+      "src/graph_interaction.rs",
+      "src/graph_layout.rs",
+      "src/graph_queries.rs",
+      "src/jobs.rs",
+      "src/jobs/adoption_tests.rs",
+      "src/jobs/analysis.rs",
+      "src/jobs/queries.rs",
+      "src/main.rs",
+      "src/navigation.rs",
+      "src/presentation.rs",
+      "src/presentation_cache.rs",
+      "src/projection.rs",
+      "src/projection/navigation_inventory.rs",
+      "src/scenes.rs",
+      "src/source_popup/render.rs",
+      "src/ui_tests.rs",
+      "src/ui_tests/cache_clear.rs",
+      "src/ui_tests/cli_backend.rs",
+      "src/ui_tests/cli_freshness.rs",
+      "src/ui_tests/project_explorer.rs",
+      "src/ui_tests/source_popup.rs",
+      "src/view.rs",
+      "src/workspace.rs"
+    ],
+    "timeout": 180,
+    "status": "passed",
+    "log": "71-codescene.log",
+    "exit_code": 0,
+    "seconds": 12.261
+  },
+  {
+    "name": "cleanup",
+    "command": [
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/.venv-verification/bin/python",
+      "tools/verification/cleanup.py",
+      "--root",
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph",
+      "--output",
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/target/verification/task61-full",
+      "--mode",
+      "full",
+      "--keep-artifacts"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "72-cleanup.log",
+    "exit_code": 0,
+    "seconds": 0.691
+  }
+]

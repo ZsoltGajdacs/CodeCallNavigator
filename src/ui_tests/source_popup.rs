@@ -303,14 +303,19 @@ fn invalid_line_notice_and_stale_graph_are_local_and_navigation_clears_preview()
             .location_warning
             .is_some()
     );
-    runtime.update(|state, _| state.stale = true);
+    runtime.update(|state, _| {
+        state.freshness.accept(crate::freshness_workspace::fixture(
+            codecallnavigator::artifact::verification::InputStatus::Stale,
+            state.generation.as_deref().unwrap_or("fixture"),
+        ))
+    });
     frames(&mut runtime, 2);
     let notice = runtime
         .elements()
         .into_iter()
         .find(|e| e.key.as_deref() == Some("source-notice"))
         .unwrap();
-    assert!(notice.text.unwrap().contains("Source changed"));
+    assert!(notice.text.unwrap().contains("Source files changed"));
     runtime.update(|state, _| state.changed());
     frames(&mut runtime, 1);
     assert!(runtime.state.source_popup.active.is_none());

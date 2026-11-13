@@ -13,7 +13,7 @@ use std::{
     sync::{Arc, atomic::AtomicBool},
 };
 
-#[derive(Clone, Debug, Default, Serialize, Deserialize)]
+#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Descriptor {
     pub project: PathBuf,
     pub roots: Vec<(String, PathBuf)>,
@@ -107,23 +107,32 @@ impl QueryContext {
             data.engine_versions = versions;
         }
         let graph = Arc::new(GraphIndex::new(Arc::new(data))?);
+        let navigation = Arc::new(crate::projection::NavigationInventory::new(&graph));
         Ok(Snapshot {
             graph,
+            navigation,
             context: self,
         })
     }
 
-    pub fn stale(&self, cancel: &AtomicBool) -> Result<bool> {
-        let response = self.response(Query::Status, cancel)?;
-        Ok(response
-            .freshness
-            .as_ref()
-            .and_then(|f| f["input_status"].as_str())
-            != Some("match"))
+    pub fn observe(
+        &self,
+        cancel: &AtomicBool,
+        receive: &dyn Fn(codecallnavigator::freshness::FreshnessObservation),
+    ) -> Result<bool> {
+        if !self.client.observation_supported(cancel)? {
+            return Ok(false);
+        }
+        let mut descriptor = self.descriptor.clone();
+        // Observations follow saved publications while UI adoption stays explicit.
+        descriptor.generation = None;
+        super::observation_process::run(self.client.runtime(), descriptor, cancel, receive)?;
+        Ok(true)
     }
 }
 
 pub struct Snapshot {
+    pub navigation: Arc<crate::projection::NavigationInventory>,
     pub graph: Arc<GraphIndex>,
     pub context: QueryContext,
 }

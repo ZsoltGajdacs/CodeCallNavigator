@@ -14,6 +14,10 @@ mod focus_level;
 mod geometry;
 #[path = "projection/groups.rs"]
 mod groups;
+#[path = "projection/navigation_inventory.rs"]
+mod navigation_inventory;
+pub(crate) type NavigationInventory = navigation_inventory::NavigationInventory;
+pub(crate) type LayerInventory = navigation_inventory::LayerInventory;
 #[path = "projection/labels.rs"]
 mod labels;
 #[path = "projection/layer_geometry.rs"]

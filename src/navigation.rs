@@ -89,14 +89,40 @@ impl Navigation {
             .unwrap_or(Scope::Overview)
     }
 
+    pub fn retain_layers(&mut self, inventory: &crate::projection::LayerInventory) {
+        if !inventory.tab(&self.layer_tab) {
+            self.layer_tab = None;
+        }
+        if self.grouping != Grouping::Layer {
+            return;
+        }
+        self.expanded.retain(|key| inventory.group(key));
+        self.focus_target = self.focus_target.take().filter(|target| match target {
+            FocusTarget::Group(key)
+            | FocusTarget::GroupChildren(key)
+            | FocusTarget::ClassMethods(key) => inventory.group(key),
+            _ => true,
+        });
+    }
+
+    #[cfg(test)]
     pub fn retain_known(&mut self, graph: &GraphIndex) {
+        self.retain_with_inventory(graph, &crate::projection::NavigationInventory::new(graph));
+    }
+
+    pub fn retain_with_inventory(
+        &mut self,
+        graph: &GraphIndex,
+        inventory: &crate::projection::NavigationInventory,
+    ) {
+        self.focus_target = self
+            .focus_target
+            .take()
+            .filter(|target| inventory.focus(graph, self.grouping, target));
+        self.expanded
+            .retain(|key| inventory.group(self.grouping, key));
         let known = |identity: &String| graph.node_index(identity).is_some();
         self.selected = self.selected.take().filter(known);
-        if let Some(FocusTarget::Method(identity)) = &self.focus_target
-            && !known(identity)
-        {
-            self.focus_target = None;
-        }
         self.focus = self.focus.take().filter(known);
         self.path_from = self.path_from.take().filter(known);
         self.path_to = self.path_to.take().filter(known);

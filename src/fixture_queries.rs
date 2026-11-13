@@ -70,10 +70,12 @@ pub fn cached_boot(directory: std::path::PathBuf) -> anyhow::Result<crate::works
     let graph = store
         .active_generation()?
         .map(|generation| -> anyhow::Result<_> {
+            let graph = Arc::new(GraphIndex::new(Arc::new(
+                store.load_generation(&generation)?,
+            ))?);
             Ok(crate::workspace::LoadedGraph {
-                graph: Arc::new(GraphIndex::new(Arc::new(
-                    store.load_generation(&generation)?,
-                ))?),
+                navigation: Arc::new(projection::NavigationInventory::new(&graph)),
+                graph,
                 generation,
                 context: None,
                 presentation_cache: None,
@@ -89,6 +91,7 @@ pub fn cached_boot(directory: std::path::PathBuf) -> anyhow::Result<crate::works
         store,
         graph,
         session,
+        editable_root: None,
         runtime: Arc::new(crate::runtime::Runtime::discover()?),
         warnings: Vec::new(),
     })

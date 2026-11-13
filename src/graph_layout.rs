@@ -8,11 +8,15 @@ impl State {
     pub fn complete_graph_layout(&mut self, view: GraphView) {
         if self.focus_was_removed(&view) {
             self.nav.overview();
-            self.auto_fit = true;
+            self.auto_fit = !self.preserve_adoption_camera;
             self.visual_selection = None;
             self.graph_interaction.center_after_layout = false;
             self.changed();
             return;
+        }
+        if self.preserve_adoption_camera {
+            self.auto_fit = false;
+            self.graph_interaction.center_after_layout = false;
         }
         self.replace_graph_view(view);
         self.reconcile_visual_selection();
@@ -60,6 +64,9 @@ impl State {
                 && (screen[1] - self.viewport[1] / 2.0).abs() < 0.1
         });
         self.viewport = viewport;
+        if self.preserve_adoption_camera {
+            return;
+        }
         if resized && self.file_focus_is_current() {
             self.fit_graph_focus();
             return;
@@ -74,6 +81,9 @@ impl State {
             return;
         }
         self.graph_interaction.filter_height = height;
+        if self.preserve_adoption_camera {
+            return;
+        }
         if self.file_focus_is_current() {
             self.fit_graph_focus();
         }

@@ -43,15 +43,59 @@ Unaddressable legacy graph caches require a project selection/refresh; productio
 startup does not fall back to querying their SQLite contents.
 
 Analysis completion supplies the publication digest and root mappings; the
-desktop requests that exact CLI snapshot. It retains the returned CLI snapshot
-in a write-only presentation cache for isolated profiling and rollback. This is never an alternate graph-query backend.
+desktop requests that exact CLI snapshot. Background analysis and explicit reload
+return validated snapshots without touching session metadata. The UI accepts a
+snapshot only for its current loaded descriptor and epoch. Same-primary-project
+refresh/reload preserves valid selection, history, path endpoints, method/class/
+file/group focus, expansion and camera; changed linked-root mappings still replace
+the descriptor and invalidate old jobs. Opening another project resets navigation.
+Navigation identities are prepared with the snapshot off the UI thread; layer
+identities are reconciled across current/back/forward navigation after new
+classification arrives. Adoption suppresses delayed layout fitting/centering.
+
+After acceptance, one writer retains the immutable snapshot in a write-only
+presentation cache for isolated profiling and rollback. One active retention and
+one latest pending request prevent overlapping publishers; superseded work is
+cancelled. The writer returns only a marker and never writes graph addressing,
+navigation or settings. Only a marker matching the current accepted descriptor
+and epoch enters serialized UI session persistence. Persistence merges current
+opaque settings, preserving malformed recovered values independently of typed
+navigation. A profiling-cache failure reports its operation while the validated
+CLI graph remains displayed and queryable.
+
 The canonical CLI digest remains the UI generation; a separate
-`presentation_cache` marker records `source_generation` (that digest) and
-`cache_generation` (the retained SQLite filename). Startup, background analysis
-and the headless desktop command share this retention helper. Matching source,
-physical project/root context and active cache metadata avoid republishing the
-same snapshot. A retention failure reports the failed cache operation explicitly.
-A failed/cancelled analysis preserves the displayed last successful graph.
+`presentation_cache` marker records `source_generation` and the retained SQLite
+`cache_generation` filename. Matching source, physical root mappings and active
+cache metadata avoid reusing a differently hydrated checkout. A superseded
+publication can transiently update this derived store's active pointer; production
+queries never read it. An obsolete marker cannot enter the session, and the next
+accepted retention checks metadata and restores the matching cache. The headless
+desktop command uses the same retention helper and saves its accepted metadata
+explicitly. A failed/cancelled analysis preserves the displayed successful graph.
+
+## Continuous saved-input observation
+
+After negotiating optional freshness observation v1, the desktop owns one
+asynchronous CLI `observe` process for the loaded project/root descriptor.
+Editing the folder field leaves that binding intact. The CLI owns verification
+and its limited verified-polling mode; the desktop does not watch or fingerprint
+files or schedule verification. It validates bounded frames, versions, monotonic
+sequences, generation/revision digests, reason counts, wire-state consistency and
+liveness before displaying observations.
+
+Checking, matching, stale, unverifiable, unsupported and failed states remain
+separate from analysis activity. A failure retains the last successful observation
+and stops the monitor until **Retry freshness** is selected. Retry renegotiates
+capabilities so upgrading the CLI in place is noticed. A compatible older CLI
+continues to answer ordinary graph queries and allows manual refresh while
+continuous freshness is explicitly unavailable.
+
+A newly published generation offers **Reload saved graph**. Reload requests the
+advertised digest and retains the previous view on errors or races; it never runs
+analysis. Automatic analysis and automatic adoption remain outside this delivery.
+Shutdown, rebinding and explicit retry cancel and reap owned monitor processes;
+the UI waits for their cleanup on close. Observations/timings are not persisted in
+canonical graph artifacts.
 
 ## Responsiveness and failures
 
@@ -83,3 +127,14 @@ Double Shift search and method selection, inspects relationships, changes the
 editable folder, opens original-project live source, and opens/returns from
 function flow. Set `CODECALLNAVIGATOR_CLI_UI_CAPTURES` to an output directory for
 optional dark/light native flow captures; Metal access is required for captures.
+
+The saved-edit acceptance journey is
+`ui_tests::cli_freshness::actual_cli_freshness_reload_preserves_loaded_binding_camera_and_discards_obsolete_jobs`.
+It uses actual TypeScript compilation, saved artifact publications and Rune
+controls to exercise stale detection, explicit adoption, old-layout rejection,
+legacy unverifiable input coverage, deleted selection, a terminal missing-artifact
+failure/manual retry and a different-project reset. Set
+`CODECALLNAVIGATOR_FRESHNESS_UI_CAPTURES` for dark wide states, an explicitly fitted
+graph and a compact light-theme failure capture. The linked-root/SQLite regression
+uses identical portable bytes with two actual CLI root mappings and verifies
+source locations, reply ownership and retained-cache identity separately.

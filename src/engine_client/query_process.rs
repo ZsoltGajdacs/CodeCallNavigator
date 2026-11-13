@@ -21,7 +21,7 @@ const MAX_REQUEST: usize = 4 * 1024 * 1024;
 pub(super) struct Client {
     runtime: Runtime,
     session: Mutex<Option<Session>>,
-    flow_languages: OnceLock<Vec<String>>,
+    capabilities: OnceLock<super::capabilities::Capabilities>,
 }
 
 impl Client {
@@ -29,7 +29,7 @@ impl Client {
         Self {
             runtime,
             session: Mutex::new(None),
-            flow_languages: OnceLock::new(),
+            capabilities: OnceLock::new(),
         }
     }
 
@@ -45,8 +45,7 @@ impl Client {
         };
         active(cancel, started)?;
         if session.is_none() {
-            let languages = super::capabilities::check(&self.runtime, cancel, started)?;
-            let _ = self.flow_languages.set(languages);
+            self.capabilities(cancel, started)?;
             *session = Some(Session::start(&self.runtime)?);
         }
         let result = session
@@ -59,10 +58,34 @@ impl Client {
         result
     }
 
+    pub(super) fn observation_supported(&self, cancel: &AtomicBool) -> Result<bool> {
+        // A monitor start/retry must notice an installed CLI upgraded in place.
+        Ok(super::capabilities::check(&self.runtime, cancel, Instant::now())?.observation)
+    }
+
+    fn capabilities(
+        &self,
+        cancel: &AtomicBool,
+        started: Instant,
+    ) -> Result<&super::capabilities::Capabilities> {
+        if self.capabilities.get().is_none() {
+            let capabilities = super::capabilities::check(&self.runtime, cancel, started)?;
+            let _ = self.capabilities.set(capabilities);
+        }
+        Ok(self.capabilities.get().expect("validated CLI capabilities"))
+    }
+
+    pub(super) fn runtime(&self) -> &Runtime {
+        &self.runtime
+    }
+
     pub fn flow_supported(&self, language: &str) -> bool {
-        self.flow_languages
-            .get()
-            .is_some_and(|languages| languages.iter().any(|supported| supported == language))
+        self.capabilities.get().is_some_and(|capabilities| {
+            capabilities
+                .flow_languages
+                .iter()
+                .any(|supported| supported == language)
+        })
     }
 }
 
@@ -157,7 +180,7 @@ impl Session {
     }
 }
 
-fn nonblocking(input: &ChildStdin) -> Result<()> {
+pub(super) fn nonblocking(input: &ChildStdin) -> Result<()> {
     let descriptor = input.as_raw_fd();
     // SAFETY: ChildStdin owns this live descriptor throughout configuration.
     let flags = unsafe { libc::fcntl(descriptor, libc::F_GETFL) };
@@ -175,7 +198,7 @@ fn nonblocking(input: &ChildStdin) -> Result<()> {
     Ok(())
 }
 
-fn write_request(
+pub(super) fn write_request(
     input: &mut ChildStdin,
     mut bytes: &[u8],
     cancel: &AtomicBool,

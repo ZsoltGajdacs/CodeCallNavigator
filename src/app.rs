@@ -61,7 +61,9 @@ pub struct State {
     pub show_provenance: bool,
     pub status: String,
     pub warning: String,
-    pub stale: bool,
+    pub freshness: crate::freshness_workspace::Workspace,
+    pub cache_retention: crate::cache_retention::Workspace,
+    pub reload: crate::generation_reload::Workspace,
     pub analyzing: bool,
     pub clearing_cache: bool,
     pub scene: bool,
@@ -73,9 +75,9 @@ pub struct State {
     pub needs_layout: bool,
     pub dirty_session: bool,
     pub root_was_edited: bool,
-    pub next_stale_check: f64,
     pub viewport: [f32; 2],
     pub auto_fit: bool,
+    pub preserve_adoption_camera: bool,
     pub visible_revision: Option<(u64, u64)>,
     pub cancel: Arc<AtomicBool>,
     pub jobs: Jobs,
@@ -122,7 +124,9 @@ impl State {
             show_provenance: false,
             status: "Choose a project folder to begin".into(),
             warning: String::new(),
-            stale: false,
+            freshness: Default::default(),
+            cache_retention: Default::default(),
+            reload: Default::default(),
             analyzing: false,
             clearing_cache: false,
             scene: false,
@@ -134,9 +138,9 @@ impl State {
             needs_layout: false,
             dirty_session: false,
             root_was_edited: false,
-            next_stale_check: 0.0,
             viewport: [720.0, 620.0],
             auto_fit: true,
+            preserve_adoption_camera: false,
             visible_revision: None,
             cancel: Arc::new(AtomicBool::new(false)),
             jobs: Jobs::default(),
@@ -144,6 +148,7 @@ impl State {
     }
 
     pub fn checkpoint(&mut self) {
+        self.preserve_adoption_camera = false;
         self.record_graph_step(self.nav.clone());
     }
 
@@ -196,7 +201,8 @@ impl State {
         self.cancel_graph_press();
         self.revision += 1;
         self.needs_layout = true;
-        self.graph_interaction.center_after_layout = self.has_graph_focus() && !self.nav.show_path;
+        self.graph_interaction.center_after_layout =
+            !self.preserve_adoption_camera && self.has_graph_focus() && !self.nav.show_path;
         self.dirty_session = true;
         self.refresh_neighbors();
     }

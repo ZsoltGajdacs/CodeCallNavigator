@@ -459,6 +459,8 @@ pub(super) fn capture(runtime: &mut Runtime<State>, size: (f32, f32), path: &Pat
         OFFSCREEN_FORMAT
     };
     let mut renderer = Renderer::new(&gpu.device, format);
+    // Each offscreen renderer owns new textures, including subsequent captures.
+    runtime.text.atlas.invalidate();
     renderer.set_srgb_blend(runtime.srgb_blend());
     renderer.upload_images(&gpu.device, &gpu.queue, &mut runtime.images);
     renderer.prepare_surfaces(&gpu.device, &gpu.queue, &runtime.surfaces, pixels);

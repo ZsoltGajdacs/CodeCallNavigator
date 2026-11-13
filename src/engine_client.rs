@@ -2,6 +2,7 @@
 #[cfg(test)]
 use codecallnavigator::model::GraphData;
 mod capabilities;
+mod observation_process;
 mod process;
 mod queries;
 mod query_process;

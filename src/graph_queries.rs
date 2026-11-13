@@ -158,13 +158,6 @@ impl GraphQueries {
         }
     }
 
-    pub fn stale(&self, cancel: &AtomicBool) -> Result<bool> {
-        match &self.backend {
-            Backend::Cli(context) => context.stale(cancel),
-            Backend::Fixture => Ok(false),
-        }
-    }
-
     pub fn architecture(
         &self,
         previous: Option<String>,
