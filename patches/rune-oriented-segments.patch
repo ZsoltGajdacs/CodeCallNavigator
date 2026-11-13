@@ -1,5 +1,12 @@
+diff --git a/changelog/unreleased/2026-11-13-codecallnavigator-integration.md b/changelog/unreleased/2026-11-13-codecallnavigator-integration.md
+new file mode 100644
+index 00000000..97ae0a35
+--- /dev/null
++++ b/changelog/unreleased/2026-11-13-codecallnavigator-integration.md
+@@ -0,0 +1 @@
++- CodeCallNavigator’s application integration retains oriented segment quads and platform warning fixes on the current runtime.
 diff --git a/crates/rune/src/quit.rs b/crates/rune/src/quit.rs
-index b52d675c..cabb9681 100644
+index 2eff27fd..88706122 100644
 --- a/crates/rune/src/quit.rs
 +++ b/crates/rune/src/quit.rs
 @@ -62,6 +62,7 @@ pub(crate) enum Event {
@@ -11,10 +18,10 @@ index b52d675c..cabb9681 100644
      /// The event loop ended.
      Exited,
 diff --git a/crates/rune/src/render/metallib.rs b/crates/rune/src/render/metallib.rs
-index d9c8fd0e..9bb9351e 100644
+index 91435e2e..dba10844 100644
 --- a/crates/rune/src/render/metallib.rs
 +++ b/crates/rune/src/render/metallib.rs
-@@ -900,4 +900,91 @@ pub(super) const UBER_WGSL_BLAKE3: &str = \"{wgsl_hash}\";", uber_abi_hash());
+@@ -957,4 +957,91 @@ pub(super) const UBER_WGSL_BLAKE3: &str = \"{wgsl_hash}\";", uber_abi_hash());
              }
          }
      }
@@ -28,10 +35,10 @@ index d9c8fd0e..9bb9351e 100644
 +        let branch = "    if (kind > 4.5 && kind < 5.5) {\n        p = segment_quad(i, corner);\n    }\n";
 +        assert_eq!(current.matches(branch).count(), 1);
 +        let reference = current.replacen(branch, "", 1);
-+        assert!(try_uber_metallib(&gpu.device, &current, uber_metallib(&gpu.device), UBER_WGSL_BLAKE3, |_| ()).is_none(),
++        assert!(try_uber_metallib(&gpu.device, uber_metallib(&gpu.device), UBER_WGSL_BLAKE3, |_| ()).is_none(),
 +            "the pinned AABB metallib must not replace the patched WGSL");
 +        for scale in [1.0, 2.0] {
-+            compare_segment_quads(&gpu, &current, &reference, scale);
++            compare_segment_quads(&gpu, current, &reference, scale);
 +        }
 +    }
 +
@@ -106,20 +113,8 @@ index d9c8fd0e..9bb9351e 100644
 +    }
 +
  }
-diff --git a/crates/rune/src/runtime/frame.rs b/crates/rune/src/runtime/frame.rs
-index ae2549ca..b3d6ec42 100644
---- a/crates/rune/src/runtime/frame.rs
-+++ b/crates/rune/src/runtime/frame.rs
-@@ -50,6 +50,7 @@ impl<S: 'static> Runtime<S> {
-     }
- 
-     /// Whether the window has the keyboard focus, as its last focus event said.
-+    #[cfg(target_os = "windows")]
-     pub(crate) fn has_window_focus(&self) -> bool { self.window_focused == Some(true) }
- 
-     /// Queue a native focus transition. Repeated notifications do not repeat the callback.
 diff --git a/crates/rune/src/shader.wgsl b/crates/rune/src/shader.wgsl
-index 19dedab0..58285152 100644
+index 2f70c035..b387f1fd 100644
 --- a/crates/rune/src/shader.wgsl
 +++ b/crates/rune/src/shader.wgsl
 @@ -52,6 +52,20 @@ fn vs(i: In) -> Out {
@@ -156,7 +151,7 @@ index 19dedab0..58285152 100644
      // Icon loops rotate the quad, not its atlas allocation. Local p still samples the glyph.
      if (kind > 1.5 && kind < 2.5 && i.params.x != 0.0) {
 diff --git a/crates/rune/src/window/redraw.rs b/crates/rune/src/window/redraw.rs
-index e819dfe2..4ae799c8 100644
+index f2c2477c..3b8889db 100644
 --- a/crates/rune/src/window/redraw.rs
 +++ b/crates/rune/src/window/redraw.rs
 @@ -36,8 +36,10 @@ pub(super) enum RedrawEvent {

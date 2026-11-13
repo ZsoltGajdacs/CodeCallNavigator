@@ -31,9 +31,12 @@ class RunePatchMigration(unittest.TestCase):
     def git(self, *arguments):
         return subprocess.check_output(["git", "-C", str(self.repository), *arguments], stderr=subprocess.STDOUT)
 
+    def checkout_diff(self):
+        return bootstrap.checkout_patch(["git", "-C", str(self.repository)])
+
     def prepare_repository(self):
         patch = (ROOT / self.spec["patch"]).read_text()
-        paths = [line.split(" b/", 1)[1] for line in patch.splitlines() if line.startswith("diff --git ")]
+        paths = [line.removeprefix("--- a/") for line in patch.splitlines() if line.startswith("--- a/")]
         for relative in paths:
             contents = subprocess.check_output(["git", "-C", str(ROOT / "vendor/rune"), "show", "HEAD:" + relative])
             destination = self.repository / relative
@@ -53,24 +56,24 @@ class RunePatchMigration(unittest.TestCase):
     def test_clean_checkout_and_prior_patch_reach_the_exact_pinned_diff(self):
         expected = (self.root / self.spec["patch"]).read_bytes()
         bootstrap.apply_patch(self.spec, "rune")
-        self.assertEqual(self.git("diff", "--binary", "HEAD"), expected)
+        self.assertEqual(self.checkout_diff(), expected)
         for key in sorted(key for key in self.spec if key.endswith("_patch")):
             with self.subTest(checkpoint=key):
                 self.git("apply", "--reverse", str(self.root / self.spec["patch"]))
                 self.git("apply", str(self.root / self.spec[key]))
                 bootstrap.apply_patch(self.spec, "rune")
-                self.assertEqual(self.git("diff", "--binary", "HEAD"), expected)
+                self.assertEqual(self.checkout_diff(), expected)
         bootstrap.apply_patch(self.spec, "rune")
-        self.assertEqual(self.git("diff", "--binary", "HEAD"), expected)
+        self.assertEqual(self.checkout_diff(), expected)
 
     def test_unknown_upstream_edits_are_rejected_without_modification(self):
         self.git("apply", str(self.root / self.spec["previous_patch"]))
         shader = self.repository / "crates/rune/src/shader.wgsl"
         shader.write_text(shader.read_text() + "\n// unrelated local change\n")
-        original = self.git("diff", "--binary", "HEAD")
+        original = self.checkout_diff()
         with self.assertRaisesRegex(RuntimeError, "Dependency source differs"):
             bootstrap.apply_patch(self.spec, "rune")
-        self.assertEqual(self.git("diff", "--binary", "HEAD"), original)
+        self.assertEqual(self.checkout_diff(), original)
 
 
 if __name__ == "__main__":
