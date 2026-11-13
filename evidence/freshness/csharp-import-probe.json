@@ -1,0 +1,8 @@
+{
+  "method": "Create net11.0 project, restore, get MSBuildAllProjects, rewrite identical csproj bytes, get property again",
+  "restore_exit_code": 0,
+  "before": "/var/folders/9t/j3qnf2cn5fx1tqgq8gm50vf80000gq/T/ccn-msbuild-imports-gemwtgcf/obj/Freshness.csproj.nuget.g.targets",
+  "after": "/var/folders/9t/j3qnf2cn5fx1tqgq8gm50vf80000gq/T/ccn-msbuild-imports-gemwtgcf/Freshness.csproj",
+  "before_exit_code": 0,
+  "after_exit_code": 0
+}

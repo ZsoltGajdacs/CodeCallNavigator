@@ -1,0 +1,21 @@
+{
+  "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+  "machine": "arm64",
+  "cpu_count": 12,
+  "executable_sha256": "491ed72960e4d9d941ff044d240f7f3480997138126e8cb6f7c6db49128098c0",
+  "analyzer_lock_sha256": "3376e6c012159b8615ad6d1432392b57f83118bcdb33f8778c9fd2bc6635694b",
+  "source_commit": "d1465790a8a1658d9ce4d153bf245c2cb30a7956",
+  "toolchains": {
+    "node": "v24.15.0\n",
+    "java": "openjdk version \"25.0.2\" 2026-01-20\nOpenJDK Runtime Environment JBR-25.0.2+10-300.57-jcef (build 25.0.2+10-b300.57)\nOpenJDK 64-Bit Server VM JBR-25.0.2+10-300.57-jcef (build 25.0.2+10-b300.57, mixed mode, sharing)\n",
+    "dotnet": "11.0.100 [/usr/local/share/dotnet/sdk]\n",
+    "maven": "Apache Maven 3.10.0 (c43a36b8d67be7e0805a411bc0898af1a51f5472)\nMaven home: /opt/homebrew/Cellar/maven/3.10.0/libexec\nJava version: 25.0.2, vendor: JetBrains s.r.o., runtime: /Users/zsolt.gajdacs/.sdkman/candidates/java/25.0.2-jbr\nDefault locale: en_US, platform encoding: UTF-8, time zone: Europe/Stockholm\nOS name: \"mac os x\", version: \"27.0.1\", arch: \"aarch64\", family: \"mac\"\n"
+  },
+  "dependency_cache": "shared existing toolchain caches; no downloads intentionally cleared",
+  "sampling": "50ms process-tree RSS sampling; shared pages can be counted repeatedly; brief peaks may be missed",
+  "cpu": "RUSAGE_CHILDREN user+system delta, includes resource sampler subprocesses",
+  "detection": "immediate one-shot status after save; excludes polling wait; not a native event measurement",
+  "stages": "CLI Complete metrics; nested stage durations must not be added",
+  "idle_monitor": "unavailable: no production continuous monitor exists",
+  "reset_protocol": "baseline analyzed once per scenario; each sample restores pristine source bytes and exact baseline artifact; identical mutation; full refresh compared against independent clean-project first-sample full reference; candidate build/dependency/inference caches retained"
+}

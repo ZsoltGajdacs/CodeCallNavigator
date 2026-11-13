@@ -1,0 +1,28 @@
+{
+  "save_to_adoption_ms": {
+    "count": 20,
+    "median": 75092.09793753689,
+    "p95": 142629.33920900105,
+    "maximum": 149181.94658396533
+  },
+  "detection_ms": {
+    "count": 20,
+    "median": 1003.0062495206948,
+    "p95": 2863.96487505408,
+    "maximum": 3476.7925000051036
+  },
+  "refresh_ms": {
+    "count": 20,
+    "median": 72856.927562505,
+    "p95": 138739.166415995,
+    "maximum": 145062.22033395898
+  },
+  "adoption_ms": {
+    "count": 20,
+    "median": 998.061187507119,
+    "p95": 3161.3730840035714,
+    "maximum": 3237.0990000199527
+  },
+  "method": "685-file StoryEngine copy plus one probe; identical body edits; baseline artifact restored; dependency/build caches retained; source generation may rewrite other observed inputs",
+  "correctness": "unavailable: independent clean large-corpus oracle"
+}

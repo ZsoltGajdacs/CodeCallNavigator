@@ -1,0 +1,27 @@
+{
+  "source_commit": "d1465790a8a1658d9ce4d153bf245c2cb30a7956",
+  "binary_sha256": "491ed72960e4d9d941ff044d240f7f3480997138126e8cb6f7c6db49128098c0",
+  "analyzer_lock_sha256": "3376e6c012159b8615ad6d1432392b57f83118bcdb33f8778c9fd2bc6635694b",
+  "final_harness_sha256": {
+    "tools/measure_freshness.py": "e4e6390e7d1100d0cd054fb2f03164c031b41189b8959bc6dc0f27e72d869670",
+    "tools/freshness_measurement.py": "aabb1f34ddd6b0ad470181c2ba0796fdf31a7ccec7d1c177333100bfdafb8835",
+    "tools/freshness_scenarios.py": "1ac21b53f64108120f7cb608436de895949717d158f16398460ef305c788f805",
+    "tools/test_freshness.py": "aed38acdde777d57ae93447cef9e17e4580b8840377e7809de3cd17b26c79f9f",
+    "tools/measure_freshness_events.js": "99afe51daff3c07f9cc46918754d7eb50bba372ff50a207c4c66efc9f3e6b7f4",
+    "tools/measure_freshness_corpus.py": "d533d2ee9a67416e9e19ae0102172fde6f3c342b2c7efbc0360170b37278eb75"
+  },
+  "hardware": {
+    "machdep.cpu.brand_string": "Apple M4 Pro",
+    "hw.memsize": "51539607552",
+    "hw.ncpu": "12"
+  },
+  "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+  "protocol_versions": {
+    "typescript": "initial repeatability matrix; clean-reference audit separate",
+    "csharp": "initial repeatability matrix; clean-reference audit separate",
+    "maven-verified": "clean-reference plus observable assertions before maintainability-only extractions",
+    "gradle-final": "final independent clean-reference protocol",
+    "storyengine": "latency-only corpus; no independent semantic oracle"
+  },
+  "concurrency": "Language measurements, audits and full verification overlapped on one host; no isolated latency SLO claim."
+}

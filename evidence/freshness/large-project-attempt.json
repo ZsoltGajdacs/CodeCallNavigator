@@ -1,0 +1,8 @@
+{
+  "workload": "isolated StoryEngine backend copy",
+  "authored_java_files": 685,
+  "result": 0,
+  "excluded": "build outputs, dependencies, local.properties, .env files, private keys",
+  "measurement_status": "availability probe only; no latency distribution",
+  "log": "large-project-attempt.log"
+}

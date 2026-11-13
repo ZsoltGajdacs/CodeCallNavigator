@@ -1,0 +1,99 @@
+{
+  "schema": "codecallnavigator.freshness-research.v1",
+  "requested_warm_runs": 20,
+  "summary": {
+    "gradle/burst": {
+      "cold_records": 1,
+      "warm_records": 20,
+      "failed_records": 0,
+      "detection_ms": {
+        "count": 20,
+        "median": 18.35243750247173,
+        "p95": 29.911792022176087,
+        "maximum": 42.75183298159391
+      },
+      "refresh_ms": {
+        "count": 20,
+        "median": 21535.801833495498,
+        "p95": 34809.186541009694,
+        "maximum": 35875.91237499146
+      },
+      "adoption_ms": {
+        "count": 20,
+        "median": 13.630603993078694,
+        "p95": 25.816791981924325,
+        "maximum": 155.55870899697766
+      },
+      "save_to_adoption_ms": {
+        "count": 20,
+        "median": 21570.37770850002,
+        "p95": 34866.31333298283,
+        "maximum": 36048.87433297699
+      },
+      "refresh_cpu_seconds": {
+        "count": 20,
+        "median": 27.88562149999999,
+        "p95": 31.294073999999995,
+        "maximum": 33.03479000000003
+      },
+      "refresh_sampled_peak_tree_rss_bytes": {
+        "count": 20,
+        "median": 632094720.0,
+        "p95": 653033472,
+        "maximum": 653508608
+      },
+      "equivalent": true
+    },
+    "gradle/configuration": {
+      "cold_records": 1,
+      "warm_records": 20,
+      "failed_records": 0,
+      "detection_ms": {
+        "count": 20,
+        "median": 21.296791499480605,
+        "p95": 24.200042011216283,
+        "maximum": 27.354208985343575
+      },
+      "refresh_ms": {
+        "count": 20,
+        "median": 20986.4504794823,
+        "p95": 31408.04587502498,
+        "maximum": 42653.226708003785
+      },
+      "adoption_ms": {
+        "count": 20,
+        "median": 19.02541652088985,
+        "p95": 39.62158295325935,
+        "maximum": 286.6205419995822
+      },
+      "save_to_adoption_ms": {
+        "count": 20,
+        "median": 21037.549708998995,
+        "p95": 31725.35045800032,
+        "maximum": 42700.58733399492
+      },
+      "refresh_cpu_seconds": {
+        "count": 20,
+        "median": 27.31445899999997,
+        "p95": 31.66224799999992,
+        "maximum": 33.36653000000001
+      },
+      "refresh_sampled_peak_tree_rss_bytes": {
+        "count": 20,
+        "median": 638738432.0,
+        "p95": 658653184,
+        "maximum": 660504576
+      },
+      "equivalent": true
+    }
+  },
+  "failure_journeys": {
+    "gradle": {
+      "invalid_code_rejected": true,
+      "previous_artifact_preserved": true,
+      "generation_mismatch_rejected": true,
+      "generation": "1c6a58b9191045a4cf51b3d2b59646cb5efc7384a335e645ef5463f6880939ba",
+      "failure": "{\"measurement\": {\"milliseconds\": 16352.183624985628, \"exit_code\": 2, \"timed_out\": false, \"cpu_seconds\": 23.668835, \"sampled_peak_tree_rss_bytes\": 644792320, \"resource_samples\": 114, \"sampling_errors\": [], \"cleanup_errors\": [], \"stdout\": \"{\\\"event\\\":\\\"hello\\\",\\\"version\\\":1}\\n{\\\"event\\\":\\\"progress\\\",\\\"message\\\":\\\"Reading Gradle source-set ownership for ccn-freshness-gradle-jaj20ke1 / freshness-probe (Gradle)\\u2026\\\"}\\n{\\\"event\\\":\\\"progress\\\",\\\"message\\\":\\\"Analyzing ccn-freshness-gradle-jaj20ke1 / freshness-probe (Gradle) (1/1)\\\"}\\n{\\\"event\\\":\\\"progress\\\",\\\"message\\\":\\\"Compiling all Java source sets for ccn-freshness-gradle-jaj20ke1 / freshness-probe (Gradle) (no tests run)\\u2026\\\"}\\n{\\\"event\\\":\\\"failed\\\",\\\"message\\\":\\\"Analysis failed. Logs: /var/folders/9t/j3qnf2cn5fx1tqgq8gm50vf80000gq/T/codecallnavigator-8133-1794559319054753000-0/0: codecallnavigatorCompileAndExport failed (exit status: 1). /private/var/folders/9t/j3qnf2cn5fx1tqgq8gm50vf80000gq/T/ccn-freshness-gradle-jaj20ke1/src/main/java/freshness/App.java:3: error: class, interface, enum, or record expected\\\\nthis is invalid {\\\\n^\\\\n1 error\\\\n\\\\nFAILURE: Build failed with an exception.\\\\n\\\\n* What went wrong:\\\\nExecution failed for task ':compileJava'.\\\\n> Compilation failed; see the compiler output below.\\\\n  /private/var/folders/9t/j3qnf2cn5fx1tqgq8gm50vf80000gq/T/ccn-freshness-gradle-jaj20ke1/src/main/java/freshness/App.java:3: error: class, interface, enum, or record expected\\\\n  this is invalid {\\\\n  ^\\\\n  1 error\\\\n\\\\n* Try:\\\\n> Check your code and dependencies to fix the compilation error(s)\\\\n> Run with --scan to get full insights from a Build Scan (powered by Develocity).\\\\n\\\\nBUILD FAILED in 8s\\\\n\\\"}\\n\", \"stderr\": \"Analysis failed. Logs: /var/folders/9t/j3qnf2cn5fx1tqgq8gm50vf80000gq/T/codecallnavigator-8133-1794559319054753000-0/0: codecallnavigatorCompileAndExport failed (exit status: 1). /private/var/folders/9t/j3qnf2cn5fx1tqgq8gm50vf80000gq/T/ccn-freshness-gradle-jaj20ke1/src/main/java/freshness/App.java:3: error: class, interface, enum, or record expected\\nthis is invalid {\\n^\\n1 error\\n\\nFAILURE: Build failed with an exception.\\n\\n* What went wrong:\\nExecution failed for task ':compileJava'.\\n> Compilation failed; see the compiler output below.\\n  /private/var/folders/9t/j3qnf2cn5fx1tqgq8gm50vf80000gq/T/ccn-freshness-gradle-jaj20ke1/src/main/java/freshness/App.java:3: error: class, interface, enum, or record expected\\n  this is invalid {\\n  ^\\n  1 error\\n\\n* Try:\\n> Check your code and dependencies to fix the compilation error(s)\\n> Run with --scan to get full insights from a Build Scan (powered by Develocity).\\n\\nBUILD FAILED in 8s\\n\\n\"}, \"events\": [{\"event\": \"hello\", \"version\": 1}, {\"event\": \"progress\", \"message\": \"Reading Gradle source-set ownership for ccn-freshness-gradle-jaj20ke1 / freshness-probe (Gradle)\\u2026\"}, {\"event\": \"progress\", \"message\": \"Analyzing ccn-freshness-gradle-jaj20ke1 / freshness-probe (Gradle) (1/1)\"}, {\"event\": \"progress\", \"message\": \"Compiling all Java source sets for ccn-freshness-gradle-jaj20ke1 / freshness-probe (Gradle) (no tests run)\\u2026\"}, {\"event\": \"failed\", \"message\": \"Analysis failed. Logs: /var/folders/9t/j3qnf2cn5fx1tqgq8gm50vf80000gq/T/codecallnavigator-8133-1794559319054753000-0/0: codecallnavigatorCompileAndExport failed (exit status: 1). /private/var/folders/9t/j3qnf2cn5fx1tqgq8gm50vf80000gq/T/ccn-freshness-gradle-jaj20ke1/src/main/java/freshness/App.java:3: error: class, interface, enum, or record expected\\nthis is invalid {\\n^\\n1 error\\n\\nFAILURE: Build failed with an exception.\\n\\n* What went wrong:\\nExecution failed for task ':compileJava'.\\n> Compilation failed; see the compiler output below.\\n  /private/var/folders/9t/j3qnf2cn5fx1tqgq8gm50vf80000gq/T/ccn-freshness-gradle-jaj20ke1/src/main/java/freshness/App.java:3: error: class, interface, enum, or record expected\\n  this is invalid {\\n  ^\\n  1 error\\n\\n* Try:\\n> Check your code and dependencies to fix the compilation error(s)\\n> Run with --scan to get full insights from a Build Scan (powered by Develocity).\\n\\nBUILD FAILED in 8s\\n\"}]}"
+    }
+  }
+}

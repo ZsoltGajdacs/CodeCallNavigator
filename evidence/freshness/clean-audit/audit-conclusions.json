@@ -1,0 +1,186 @@
+{
+  "typescript": {
+    "body": {
+      "clean_reference_matches_original_samples": true,
+      "observable_edit": {
+        "input_manifest_changed": true,
+        "added_symbols": 0,
+        "removed_symbols": 0,
+        "edges_changed": false,
+        "source_paths_changed": false
+      }
+    },
+    "signature": {
+      "clean_reference_matches_original_samples": true,
+      "observable_edit": {
+        "input_manifest_changed": true,
+        "added_symbols": 1,
+        "removed_symbols": 1,
+        "edges_changed": true,
+        "source_paths_changed": false
+      }
+    },
+    "cross_file": {
+      "clean_reference_matches_original_samples": true,
+      "observable_edit": {
+        "input_manifest_changed": true,
+        "added_symbols": 0,
+        "removed_symbols": 0,
+        "edges_changed": true,
+        "source_paths_changed": false
+      }
+    },
+    "addition": {
+      "clean_reference_matches_original_samples": true,
+      "observable_edit": {
+        "input_manifest_changed": true,
+        "added_symbols": 2,
+        "removed_symbols": 0,
+        "edges_changed": false,
+        "source_paths_changed": true
+      }
+    },
+    "deletion": {
+      "clean_reference_matches_original_samples": true,
+      "observable_edit": {
+        "input_manifest_changed": true,
+        "added_symbols": 0,
+        "removed_symbols": 2,
+        "edges_changed": false,
+        "source_paths_changed": true
+      }
+    },
+    "rename": {
+      "clean_reference_matches_original_samples": true,
+      "observable_edit": {
+        "input_manifest_changed": true,
+        "added_symbols": 2,
+        "removed_symbols": 2,
+        "edges_changed": false,
+        "source_paths_changed": true
+      }
+    },
+    "atomic_save": {
+      "clean_reference_matches_original_samples": true,
+      "observable_edit": {
+        "input_manifest_changed": true,
+        "added_symbols": 0,
+        "removed_symbols": 0,
+        "edges_changed": false,
+        "source_paths_changed": false
+      }
+    },
+    "burst": {
+      "clean_reference_matches_original_samples": true,
+      "observable_edit": {
+        "input_manifest_changed": true,
+        "added_symbols": 0,
+        "removed_symbols": 0,
+        "edges_changed": false,
+        "source_paths_changed": false
+      }
+    },
+    "configuration": {
+      "clean_reference_matches_original_samples": true,
+      "observable_edit": {
+        "input_manifest_changed": true,
+        "added_symbols": 0,
+        "removed_symbols": 0,
+        "edges_changed": false,
+        "source_paths_changed": false
+      }
+    }
+  },
+  "csharp": {
+    "body": {
+      "graph_equal_without_analysis_metadata": true,
+      "candidate_only_input_paths": [],
+      "reference_only_input_paths": [
+        "@repo/obj/Freshness.csproj.nuget.g.targets"
+      ],
+      "shared_inputs_equal": true,
+      "strict_artifact_equal": false,
+      "audit_candidate_matches_original_samples": true
+    },
+    "signature": {
+      "graph_equal_without_analysis_metadata": true,
+      "candidate_only_input_paths": [],
+      "reference_only_input_paths": [
+        "@repo/obj/Freshness.csproj.nuget.g.targets"
+      ],
+      "shared_inputs_equal": true,
+      "strict_artifact_equal": false,
+      "audit_candidate_matches_original_samples": true
+    },
+    "cross_file": {
+      "graph_equal_without_analysis_metadata": true,
+      "candidate_only_input_paths": [],
+      "reference_only_input_paths": [
+        "@repo/obj/Freshness.csproj.nuget.g.targets"
+      ],
+      "shared_inputs_equal": true,
+      "strict_artifact_equal": false,
+      "audit_candidate_matches_original_samples": true
+    },
+    "addition": {
+      "graph_equal_without_analysis_metadata": true,
+      "candidate_only_input_paths": [],
+      "reference_only_input_paths": [
+        "@repo/obj/Freshness.csproj.nuget.g.targets"
+      ],
+      "shared_inputs_equal": true,
+      "strict_artifact_equal": false,
+      "audit_candidate_matches_original_samples": true
+    },
+    "deletion": {
+      "graph_equal_without_analysis_metadata": true,
+      "candidate_only_input_paths": [],
+      "reference_only_input_paths": [
+        "@repo/obj/Freshness.csproj.nuget.g.targets"
+      ],
+      "shared_inputs_equal": true,
+      "strict_artifact_equal": false,
+      "audit_candidate_matches_original_samples": true
+    },
+    "rename": {
+      "graph_equal_without_analysis_metadata": true,
+      "candidate_only_input_paths": [],
+      "reference_only_input_paths": [
+        "@repo/obj/Freshness.csproj.nuget.g.targets"
+      ],
+      "shared_inputs_equal": true,
+      "strict_artifact_equal": false,
+      "audit_candidate_matches_original_samples": true
+    },
+    "atomic_save": {
+      "graph_equal_without_analysis_metadata": true,
+      "candidate_only_input_paths": [],
+      "reference_only_input_paths": [
+        "@repo/obj/Freshness.csproj.nuget.g.targets"
+      ],
+      "shared_inputs_equal": true,
+      "strict_artifact_equal": false,
+      "audit_candidate_matches_original_samples": true
+    },
+    "burst": {
+      "graph_equal_without_analysis_metadata": true,
+      "candidate_only_input_paths": [],
+      "reference_only_input_paths": [
+        "@repo/obj/Freshness.csproj.nuget.g.targets"
+      ],
+      "shared_inputs_equal": true,
+      "strict_artifact_equal": false,
+      "audit_candidate_matches_original_samples": true
+    },
+    "configuration": {
+      "graph_equal_without_analysis_metadata": true,
+      "candidate_only_input_paths": [],
+      "reference_only_input_paths": [
+        "@repo/obj/Freshness.csproj.nuget.g.targets"
+      ],
+      "shared_inputs_equal": true,
+      "strict_artifact_equal": false,
+      "audit_candidate_matches_original_samples": true
+    }
+  }
+}

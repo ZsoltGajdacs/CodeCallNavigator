@@ -1,0 +1,393 @@
+{
+  "schema": "codecallnavigator.freshness-research.v1",
+  "requested_warm_runs": 20,
+  "summary": {
+    "typescript/body": {
+      "cold_records": 1,
+      "warm_records": 20,
+      "failed_records": 0,
+      "detection_ms": {
+        "count": 20,
+        "median": 20.79149999190122,
+        "p95": 40.711125009693205,
+        "maximum": 41.21033300179988
+      },
+      "refresh_ms": {
+        "count": 20,
+        "median": 732.3205834836699,
+        "p95": 817.1027090284042,
+        "maximum": 1008.0017920117825
+      },
+      "adoption_ms": {
+        "count": 20,
+        "median": 20.75825000065379,
+        "p95": 40.97874998115003,
+        "maximum": 41.12654202617705
+      },
+      "save_to_adoption_ms": {
+        "count": 20,
+        "median": 781.6754805389792,
+        "p95": 878.8074589683674,
+        "maximum": 1053.3157089957967
+      },
+      "refresh_cpu_seconds": {
+        "count": 20,
+        "median": 1.5454765000000008,
+        "p95": 1.619794999999999,
+        "maximum": 1.7767359999999992
+      },
+      "refresh_sampled_peak_tree_rss_bytes": {
+        "count": 20,
+        "median": 389472256.0,
+        "p95": 438468608,
+        "maximum": 439369728
+      },
+      "equivalent": true
+    },
+    "typescript/signature": {
+      "cold_records": 1,
+      "warm_records": 20,
+      "failed_records": 0,
+      "detection_ms": {
+        "count": 20,
+        "median": 20.790583512280136,
+        "p95": 40.695790958125144,
+        "maximum": 40.93458299757913
+      },
+      "refresh_ms": {
+        "count": 20,
+        "median": 788.1896039762069,
+        "p95": 911.9878329802305,
+        "maximum": 1017.4025419983082
+      },
+      "adoption_ms": {
+        "count": 20,
+        "median": 20.85714600980282,
+        "p95": 39.439375046640635,
+        "maximum": 41.138915985357016
+      },
+      "save_to_adoption_ms": {
+        "count": 20,
+        "median": 839.6307300718036,
+        "p95": 970.307748997584,
+        "maximum": 1060.1015419815667
+      },
+      "refresh_cpu_seconds": {
+        "count": 20,
+        "median": 1.5880049999999999,
+        "p95": 1.7983849999999943,
+        "maximum": 1.801711000000008
+      },
+      "refresh_sampled_peak_tree_rss_bytes": {
+        "count": 20,
+        "median": 392978432.0,
+        "p95": 410730496,
+        "maximum": 413745152
+      },
+      "equivalent": true
+    },
+    "typescript/cross_file": {
+      "cold_records": 1,
+      "warm_records": 20,
+      "failed_records": 0,
+      "detection_ms": {
+        "count": 20,
+        "median": 21.06485451804474,
+        "p95": 40.58104194700718,
+        "maximum": 41.07720800675452
+      },
+      "refresh_ms": {
+        "count": 20,
+        "median": 772.6103754830547,
+        "p95": 875.7997080101632,
+        "maximum": 887.8832909977064
+      },
+      "adoption_ms": {
+        "count": 20,
+        "median": 37.29983349330723,
+        "p95": 40.65620800247416,
+        "maximum": 40.91379098827019
+      },
+      "save_to_adoption_ms": {
+        "count": 20,
+        "median": 828.2692704815418,
+        "p95": 936.9260419625789,
+        "maximum": 948.7871649907902
+      },
+      "refresh_cpu_seconds": {
+        "count": 20,
+        "median": 1.5850930000000023,
+        "p95": 1.6930459999999918,
+        "maximum": 1.7692879999999924
+      },
+      "refresh_sampled_peak_tree_rss_bytes": {
+        "count": 20,
+        "median": 386842624.0,
+        "p95": 417546240,
+        "maximum": 436862976
+      },
+      "equivalent": true
+    },
+    "typescript/addition": {
+      "cold_records": 1,
+      "warm_records": 20,
+      "failed_records": 0,
+      "detection_ms": {
+        "count": 20,
+        "median": 20.99747900501825,
+        "p95": 40.615125035401434,
+        "maximum": 41.0670829587616
+      },
+      "refresh_ms": {
+        "count": 20,
+        "median": 792.2718125046231,
+        "p95": 819.3139579962008,
+        "maximum": 825.3898340044543
+      },
+      "adoption_ms": {
+        "count": 20,
+        "median": 20.916979003231972,
+        "p95": 41.07162496075034,
+        "maximum": 41.1074580042623
+      },
+      "save_to_adoption_ms": {
+        "count": 20,
+        "median": 837.1169380261563,
+        "p95": 873.9154179929756,
+        "maximum": 886.7110419669189
+      },
+      "refresh_cpu_seconds": {
+        "count": 20,
+        "median": 1.5702420000000075,
+        "p95": 1.6373489999999968,
+        "maximum": 1.6935709999999844
+      },
+      "refresh_sampled_peak_tree_rss_bytes": {
+        "count": 20,
+        "median": 385220608.0,
+        "p95": 427655168,
+        "maximum": 437764096
+      },
+      "equivalent": true
+    },
+    "typescript/deletion": {
+      "cold_records": 1,
+      "warm_records": 20,
+      "failed_records": 0,
+      "detection_ms": {
+        "count": 20,
+        "median": 21.0747295350302,
+        "p95": 41.06154199689627,
+        "maximum": 41.47108300821856
+      },
+      "refresh_ms": {
+        "count": 20,
+        "median": 772.6436245138757,
+        "p95": 873.339916986879,
+        "maximum": 880.4236670257524
+      },
+      "adoption_ms": {
+        "count": 20,
+        "median": 21.0506044968497,
+        "p95": 41.22487502172589,
+        "maximum": 60.092250001616776
+      },
+      "save_to_adoption_ms": {
+        "count": 20,
+        "median": 832.4404994491488,
+        "p95": 921.8204589560628,
+        "maximum": 935.7728330069222
+      },
+      "refresh_cpu_seconds": {
+        "count": 20,
+        "median": 1.603591999999992,
+        "p95": 1.6897319999999993,
+        "maximum": 1.7896199999999851
+      },
+      "refresh_sampled_peak_tree_rss_bytes": {
+        "count": 20,
+        "median": 384000000.0,
+        "p95": 423215104,
+        "maximum": 431570944
+      },
+      "equivalent": true
+    },
+    "typescript/rename": {
+      "cold_records": 1,
+      "warm_records": 20,
+      "failed_records": 0,
+      "detection_ms": {
+        "count": 20,
+        "median": 37.979999964591116,
+        "p95": 40.72975000599399,
+        "maximum": 40.882542030885816
+      },
+      "refresh_ms": {
+        "count": 20,
+        "median": 777.4475204932969,
+        "p95": 836.6571249789558,
+        "maximum": 881.380959006492
+      },
+      "adoption_ms": {
+        "count": 20,
+        "median": 37.7422915189527,
+        "p95": 41.11045802710578,
+        "maximum": 41.34195897495374
+      },
+      "save_to_adoption_ms": {
+        "count": 20,
+        "median": 851.720520935487,
+        "p95": 918.9706679317169,
+        "maximum": 942.2895000316203
+      },
+      "refresh_cpu_seconds": {
+        "count": 20,
+        "median": 1.594973500000009,
+        "p95": 1.658009999999983,
+        "maximum": 1.671533999999994
+      },
+      "refresh_sampled_peak_tree_rss_bytes": {
+        "count": 20,
+        "median": 390332416.0,
+        "p95": 424722432,
+        "maximum": 436961280
+      },
+      "equivalent": true
+    },
+    "typescript/atomic_save": {
+      "cold_records": 1,
+      "warm_records": 20,
+      "failed_records": 0,
+      "detection_ms": {
+        "count": 20,
+        "median": 21.06556299258955,
+        "p95": 40.12829199200496,
+        "maximum": 40.32500000903383
+      },
+      "refresh_ms": {
+        "count": 20,
+        "median": 773.0936039879452,
+        "p95": 840.6201250036247,
+        "maximum": 853.0547090340406
+      },
+      "adoption_ms": {
+        "count": 20,
+        "median": 21.089375484734774,
+        "p95": 39.99345802003518,
+        "maximum": 40.85437499452382
+      },
+      "save_to_adoption_ms": {
+        "count": 20,
+        "median": 829.7179370420054,
+        "p95": 894.7328330250457,
+        "maximum": 900.8180420496501
+      },
+      "refresh_cpu_seconds": {
+        "count": 20,
+        "median": 1.5876954999999953,
+        "p95": 1.6639069999999805,
+        "maximum": 1.7094499999999755
+      },
+      "refresh_sampled_peak_tree_rss_bytes": {
+        "count": 20,
+        "median": 393297920.0,
+        "p95": 438845440,
+        "maximum": 439173120
+      },
+      "equivalent": true
+    },
+    "typescript/burst": {
+      "cold_records": 1,
+      "warm_records": 20,
+      "failed_records": 0,
+      "detection_ms": {
+        "count": 20,
+        "median": 21.255583502352238,
+        "p95": 41.01637500571087,
+        "maximum": 41.5694999974221
+      },
+      "refresh_ms": {
+        "count": 20,
+        "median": 777.1357919846196,
+        "p95": 831.6801670007408,
+        "maximum": 854.5589999994263
+      },
+      "adoption_ms": {
+        "count": 20,
+        "median": 21.129104017745703,
+        "p95": 41.12420795718208,
+        "maximum": 41.192582983057946
+      },
+      "save_to_adoption_ms": {
+        "count": 20,
+        "median": 843.5621449898463,
+        "p95": 892.8572080330923,
+        "maximum": 935.1408759248443
+      },
+      "refresh_cpu_seconds": {
+        "count": 20,
+        "median": 1.5899570000000018,
+        "p95": 1.6431280000000044,
+        "maximum": 1.682929999999999
+      },
+      "refresh_sampled_peak_tree_rss_bytes": {
+        "count": 20,
+        "median": 396296192.0,
+        "p95": 422428672,
+        "maximum": 437649408
+      },
+      "equivalent": true
+    },
+    "typescript/configuration": {
+      "cold_records": 1,
+      "warm_records": 20,
+      "failed_records": 0,
+      "detection_ms": {
+        "count": 20,
+        "median": 21.25508349854499,
+        "p95": 40.8856249996461,
+        "maximum": 41.4308340405114
+      },
+      "refresh_ms": {
+        "count": 20,
+        "median": 750.5262704798952,
+        "p95": 810.3919169516303,
+        "maximum": 828.2081250217743
+      },
+      "adoption_ms": {
+        "count": 20,
+        "median": 21.235624997643754,
+        "p95": 41.02441598661244,
+        "maximum": 41.1966250394471
+      },
+      "save_to_adoption_ms": {
+        "count": 20,
+        "median": 805.3697285067756,
+        "p95": 878.7518329918385,
+        "maximum": 890.7190830213949
+      },
+      "refresh_cpu_seconds": {
+        "count": 20,
+        "median": 1.537831500000003,
+        "p95": 1.6429589999999905,
+        "maximum": 1.6983150000000364
+      },
+      "refresh_sampled_peak_tree_rss_bytes": {
+        "count": 20,
+        "median": 384745472.0,
+        "p95": 401195008,
+        "maximum": 409042944
+      },
+      "equivalent": true
+    }
+  },
+  "failure_journeys": {
+    "typescript": {
+      "invalid_code_rejected": true,
+      "previous_artifact_preserved": true,
+      "generation_mismatch_rejected": true,
+      "generation": "3eddc3bed2905b3d611d3b88fba2776fbfc6a1b6a505b784eadd1258e80dc261",
+      "failure": "{\"measurement\": {\"milliseconds\": 664.1014579799958, \"exit_code\": 2, \"timed_out\": false, \"cpu_seconds\": 1.4698769999999968, \"sampled_peak_tree_rss_bytes\": 386531328, \"resource_samples\": 6, \"sampling_errors\": [], \"stdout\": \"{\\\"event\\\":\\\"hello\\\",\\\"version\\\":1}\\n{\\\"event\\\":\\\"progress\\\",\\\"message\\\":\\\"Analyzing ccn-freshness-typescript-4x_xtpcd / tsconfig.json (1/1)\\\"}\\n{\\\"event\\\":\\\"failed\\\",\\\"message\\\":\\\"Analysis failed. Logs: /var/folders/9t/j3qnf2cn5fx1tqgq8gm50vf80000gq/T/codecallnavigator-73215-1794557311977136000-0/0: Analysis worker exited before output (exit status: 1): ../../../../../private/var/folders/9t/j3qnf2cn5fx1tqgq8gm50vf80000gq/T/ccn-freshness-typescript-4x_xtpcd/app.ts(3,6): error TS1005: ';' expected.\\\\n../../../../../private/var/folders/9t/j3qnf2cn5fx1tqgq8gm50vf80000gq/T/ccn-freshness-typescript-4x_xtpcd/app.ts(3,6): error TS2304: Cannot find name 'is'.\\\\n../../../../../private/var/folders/9t/j3qnf2cn5fx1tqgq8gm50vf80000gq/T/ccn-freshness-typescript-4x_xtpcd/app.ts(3,9): error TS1434: Unexpected keyword or identifier.\\\\n../../../../../private/var/folders/9t/j3qnf2cn5fx1tqgq8gm50vf80000gq/T/ccn-freshness-typescript-4x_xtpcd/app.ts(3,9): error TS2552: Cannot find name 'invalid'. Did you mean 'oninvalid'?\\\\n../../../../../private/var/folders/9t/j3qnf2cn5fx1tqgq8gm50vf80000gq/T/ccn-freshness-typescript-4x_xtpcd/app.ts(4,1): error TS1005: '}' expected.\\\\n\\\\n\\\"}\\n\", \"stderr\": \"Analysis failed. Logs: /var/folders/9t/j3qnf2cn5fx1tqgq8gm50vf80000gq/T/codecallnavigator-73215-1794557311977136000-0/0: Analysis worker exited before output (exit status: 1): ../../../../../private/var/folders/9t/j3qnf2cn5fx1tqgq8gm50vf80000gq/T/ccn-freshness-typescript-4x_xtpcd/app.ts(3,6): error TS1005: ';' expected.\\n../../../../../private/var/folders/9t/j3qnf2cn5fx1tqgq8gm50vf80000gq/T/ccn-freshness-typescript-4x_xtpcd/app.ts(3,6): error TS2304: Cannot find name 'is'.\\n../../../../../private/var/folders/9t/j3qnf2cn5fx1tqgq8gm50vf80000gq/T/ccn-freshness-typescript-4x_xtpcd/app.ts(3,9): error TS1434: Unexpected keyword or identifier.\\n../../../../../private/var/folders/9t/j3qnf2cn5fx1tqgq8gm50vf80000gq/T/ccn-freshness-typescript-4x_xtpcd/app.ts(3,9): error TS2552: Cannot find name 'invalid'. Did you mean 'oninvalid'?\\n../../../../../private/var/folders/9t/j3qnf2cn5fx1tqgq8gm50vf80000gq/T/ccn-freshness-typescript-4x_xtpcd/app.ts(4,1): error TS1005: '}' expected.\\n\\n\\n\"}, \"events\": [{\"event\": \"hello\", \"version\": 1}, {\"event\": \"progress\", \"message\": \"Analyzing ccn-freshness-typescript-4x_xtpcd / tsconfig.json (1/1)\"}, {\"event\": \"failed\", \"message\": \"Analysis failed. Logs: /var/folders/9t/j3qnf2cn5fx1tqgq8gm50vf80000gq/T/codecallnavigator-73215-1794557311977136000-0/0: Analysis worker exited before output (exit status: 1): ../../../../../private/var/folders/9t/j3qnf2cn5fx1tqgq8gm50vf80000gq/T/ccn-freshness-typescript-4x_xtpcd/app.ts(3,6): error TS1005: ';' expected.\\n../../../../../private/var/folders/9t/j3qnf2cn5fx1tqgq8gm50vf80000gq/T/ccn-freshness-typescript-4x_xtpcd/app.ts(3,6): error TS2304: Cannot find name 'is'.\\n../../../../../private/var/folders/9t/j3qnf2cn5fx1tqgq8gm50vf80000gq/T/ccn-freshness-typescript-4x_xtpcd/app.ts(3,9): error TS1434: Unexpected keyword or identifier.\\n../../../../../private/var/folders/9t/j3qnf2cn5fx1tqgq8gm50vf80000gq/T/ccn-freshness-typescript-4x_xtpcd/app.ts(3,9): error TS2552: Cannot find name 'invalid'. Did you mean 'oninvalid'?\\n../../../../../private/var/folders/9t/j3qnf2cn5fx1tqgq8gm50vf80000gq/T/ccn-freshness-typescript-4x_xtpcd/app.ts(4,1): error TS1005: '}' expected.\\n\\n\"}]}"
+    }
+  }
+}

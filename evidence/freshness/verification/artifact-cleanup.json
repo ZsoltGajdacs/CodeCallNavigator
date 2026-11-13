@@ -1,0 +1,59 @@
+{
+  "status": "passed",
+  "mode": "full",
+  "keep_artifacts": false,
+  "actions": [
+    {
+      "path": "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/target/debug",
+      "operation": "cargo-dev",
+      "status": "cleaned",
+      "estimated_bytes_before": 4868750274,
+      "estimated_bytes_after": 0
+    },
+    {
+      "path": "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/target/release",
+      "operation": "cargo-release",
+      "status": "cleaned",
+      "estimated_bytes_before": 1966770857,
+      "estimated_bytes_after": 0
+    },
+    {
+      "path": "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/target/verification/freshness-final-20261113/profile",
+      "operation": "remove",
+      "status": "removed",
+      "estimated_bytes_before": 120721536,
+      "estimated_bytes_after": 0
+    },
+    {
+      "path": "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/target/verification/freshness-final-20261113/scale-cache",
+      "operation": "remove",
+      "status": "removed",
+      "estimated_bytes_before": 250097792,
+      "estimated_bytes_after": 0
+    },
+    {
+      "path": "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/dist/CodeCallNavigator.previous-20261113-095244.app",
+      "operation": "retain",
+      "status": "retained",
+      "estimated_bytes_before": 91097150,
+      "estimated_bytes_after": 91097150,
+      "reason": "Keep newest previous package"
+    },
+    {
+      "path": "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/dist/CodeCallNavigator.previous-20261113-084658.app",
+      "operation": "remove",
+      "status": "removed",
+      "estimated_bytes_before": 91802387,
+      "estimated_bytes_after": 0
+    },
+    {
+      "path": "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/dist/CodeGraph.previous-20261111-092521.app",
+      "operation": "retain",
+      "status": "retained",
+      "estimated_bytes_before": 85509166,
+      "estimated_bytes_after": 85509166,
+      "reason": "Keep newest previous package"
+    }
+  ],
+  "errors": []
+}

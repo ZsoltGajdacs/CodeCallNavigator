@@ -1,0 +1,564 @@
+[
+  {
+    "name": "prerequisites",
+    "command": [
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/.venv-verification/bin/python",
+      "tools/verification/prerequisites.py",
+      "--root",
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph",
+      "--codescene-command",
+      "cs-mcp",
+      "--profile-source",
+      "/Users/zsolt.gajdacs/Library/Application Support/CodeCallNavigator"
+    ],
+    "timeout": 180,
+    "status": "passed",
+    "log": "01-prerequisites.log",
+    "exit_code": 0,
+    "seconds": 1.613
+  },
+  {
+    "name": "whitespace",
+    "command": [
+      "git",
+      "diff",
+      "--check",
+      "HEAD",
+      "--"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "02-whitespace.log",
+    "exit_code": 0,
+    "seconds": 0.033
+  },
+  {
+    "name": "syntax-format-047",
+    "command": [
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/.venv-verification/bin/python",
+      "-c",
+      "import ast, pathlib, sys; ast.parse(pathlib.Path(sys.argv[1]).read_bytes(), filename=sys.argv[1])",
+      "tools/freshness_measurement.py"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "03-syntax-format-047.log",
+    "exit_code": 0,
+    "seconds": 0.086
+  },
+  {
+    "name": "syntax-format-048",
+    "command": [
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/.venv-verification/bin/python",
+      "-c",
+      "import ast, pathlib, sys; ast.parse(pathlib.Path(sys.argv[1]).read_bytes(), filename=sys.argv[1])",
+      "tools/freshness_scenarios.py"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "04-syntax-format-048.log",
+    "exit_code": 0,
+    "seconds": 0.04
+  },
+  {
+    "name": "syntax-format-049",
+    "command": [
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/.venv-verification/bin/python",
+      "-c",
+      "import ast, pathlib, sys; ast.parse(pathlib.Path(sys.argv[1]).read_bytes(), filename=sys.argv[1])",
+      "tools/measure_freshness.py"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "05-syntax-format-049.log",
+    "exit_code": 0,
+    "seconds": 0.039
+  },
+  {
+    "name": "syntax-format-050",
+    "command": [
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/.venv-verification/bin/python",
+      "-c",
+      "import ast, pathlib, sys; ast.parse(pathlib.Path(sys.argv[1]).read_bytes(), filename=sys.argv[1])",
+      "tools/measure_freshness_corpus.py"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "06-syntax-format-050.log",
+    "exit_code": 0,
+    "seconds": 0.046
+  },
+  {
+    "name": "syntax-format-051",
+    "command": [
+      "node",
+      "--check",
+      "tools/measure_freshness_events.js"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "07-syntax-format-051.log",
+    "exit_code": 0,
+    "seconds": 0.043
+  },
+  {
+    "name": "syntax-format-052",
+    "command": [
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/.venv-verification/bin/python",
+      "-c",
+      "import ast, pathlib, sys; ast.parse(pathlib.Path(sys.argv[1]).read_bytes(), filename=sys.argv[1])",
+      "tools/test_freshness.py"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "08-syntax-format-052.log",
+    "exit_code": 0,
+    "seconds": 0.041
+  },
+  {
+    "name": "bootstrap",
+    "command": [
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/.venv-verification/bin/python",
+      "tools/bootstrap.py"
+    ],
+    "timeout": 1800,
+    "status": "passed",
+    "log": "09-bootstrap.log",
+    "exit_code": 0,
+    "seconds": 7.64
+  },
+  {
+    "name": "build-debug-engine",
+    "command": [
+      "cargo",
+      "build",
+      "--locked",
+      "-p",
+      "codecallnavigator-engine",
+      "--bin",
+      "codecallnavigator-engine"
+    ],
+    "timeout": 1800,
+    "status": "passed",
+    "log": "10-build-debug-engine.log",
+    "exit_code": 0,
+    "seconds": 26.752
+  },
+  {
+    "name": "cargo-check",
+    "command": [
+      "cargo",
+      "check",
+      "--locked",
+      "--workspace",
+      "--all-targets"
+    ],
+    "timeout": 1800,
+    "status": "passed",
+    "log": "11-cargo-check.log",
+    "exit_code": 0,
+    "seconds": 79.528
+  },
+  {
+    "name": "mcp-dependency-boundary",
+    "command": [
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/.venv-verification/bin/python",
+      "tools/mcp_boundary.py",
+      "--root",
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph"
+    ],
+    "timeout": 1800,
+    "status": "passed",
+    "log": "12-mcp-dependency-boundary.log",
+    "exit_code": 0,
+    "seconds": 0.943
+  },
+  {
+    "name": "clippy",
+    "command": [
+      "cargo",
+      "clippy",
+      "--locked",
+      "--workspace",
+      "--all-targets",
+      "--no-deps",
+      "--",
+      "-D",
+      "warnings"
+    ],
+    "timeout": 1800,
+    "status": "passed",
+    "log": "13-clippy.log",
+    "exit_code": 0,
+    "seconds": 13.729
+  },
+  {
+    "name": "rust-tests",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "--workspace",
+      "--all-targets",
+      "--",
+      "--test-threads=1"
+    ],
+    "timeout": 1800,
+    "status": "passed",
+    "log": "14-rust-tests.log",
+    "exit_code": 0,
+    "seconds": 289.872
+  },
+  {
+    "name": "python-tests",
+    "command": [
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/.venv-verification/bin/python",
+      "-m",
+      "unittest",
+      "discover",
+      "-s",
+      "tests",
+      "-v"
+    ],
+    "timeout": 1800,
+    "status": "passed",
+    "log": "15-python-tests.log",
+    "exit_code": 0,
+    "seconds": 86.234
+  },
+  {
+    "name": "python-tool-tests",
+    "command": [
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/.venv-verification/bin/python",
+      "-m",
+      "unittest",
+      "discover",
+      "-s",
+      "tools",
+      "-p",
+      "test_*.py",
+      "-v"
+    ],
+    "timeout": 1800,
+    "status": "passed",
+    "log": "16-python-tool-tests.log",
+    "exit_code": 0,
+    "seconds": 25.24
+  },
+  {
+    "name": "typescript-tests",
+    "command": [
+      "node",
+      "--test",
+      "tools/typescript/adapter.test.js",
+      "tools/typescript/boundary.test.js",
+      "tools/typescript/callable.test.js",
+      "tools/typescript/flow-export.test.js",
+      "tools/typescript/observations.test.js",
+      "tools/typescript/observer.test.js",
+      "tools/typescript/paths.test.js",
+      "tools/typescript/signature.test.js",
+      "tools/typescript/worker.test.js"
+    ],
+    "timeout": 1800,
+    "status": "passed",
+    "log": "17-typescript-tests.log",
+    "exit_code": 0,
+    "seconds": 73.976
+  },
+  {
+    "name": "build-release-engine",
+    "command": [
+      "cargo",
+      "build",
+      "--locked",
+      "--release",
+      "-p",
+      "codecallnavigator-engine",
+      "--bin",
+      "codecallnavigator-engine"
+    ],
+    "timeout": 1800,
+    "status": "passed",
+    "log": "18-build-release-engine.log",
+    "exit_code": 0,
+    "seconds": 5.143
+  },
+  {
+    "name": "profile-snapshot",
+    "command": [
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/.venv-verification/bin/python",
+      "tools/verification/profile.py",
+      "/Users/zsolt.gajdacs/Library/Application Support/CodeCallNavigator",
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/target/verification/freshness-final-20261113/profile"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "19-profile-snapshot.log",
+    "exit_code": 0,
+    "seconds": 0.183
+  },
+  {
+    "name": "release-acceptance-and-benchmarks",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "--release",
+      "--workspace",
+      "--all-targets",
+      "--no-fail-fast",
+      "--",
+      "--include-ignored",
+      "--test-threads=1",
+      "--nocapture"
+    ],
+    "timeout": 1800,
+    "status": "passed",
+    "log": "20-release-acceptance-and-benchmarks.log",
+    "exit_code": 0,
+    "seconds": 934.712
+  },
+  {
+    "name": "storage-benchmark",
+    "command": [
+      "cargo",
+      "run",
+      "--locked",
+      "--release",
+      "--bin",
+      "benchmark",
+      "--",
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/target/verification/freshness-final-20261113/scale-cache"
+    ],
+    "timeout": 1800,
+    "status": "passed",
+    "log": "21-storage-benchmark.log",
+    "exit_code": 0,
+    "seconds": 41.926
+  },
+  {
+    "name": "package",
+    "command": [
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/.venv-verification/bin/python",
+      "tools/package.py"
+    ],
+    "timeout": 1800,
+    "status": "passed",
+    "log": "22-package.log",
+    "exit_code": 0,
+    "seconds": 20.983
+  },
+  {
+    "name": "package-signature",
+    "command": [
+      "codesign",
+      "--verify",
+      "--deep",
+      "--strict",
+      "dist/CodeCallNavigator.app"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "23-package-signature.log",
+    "exit_code": 0,
+    "seconds": 0.132
+  },
+  {
+    "name": "packaged-engine",
+    "command": [
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/dist/CodeCallNavigatorEngine/bin/codecallnavigator-engine",
+      "--help"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "24-packaged-engine.log",
+    "exit_code": 0,
+    "seconds": 0.348
+  },
+  {
+    "name": "installed-cli",
+    "command": [
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/.venv-verification/bin/python",
+      "tools/installed_cli_acceptance.py",
+      "--package",
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/dist/CodeCallNavigatorEngine",
+      "--node-modules",
+      "/Users/zsolt.gajdacs/Zs/Programming/PacificFateMapEditor/node_modules",
+      "--output",
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/target/verification/freshness-final-20261113/installed-cli.json"
+    ],
+    "timeout": 1800,
+    "status": "passed",
+    "log": "25-installed-cli.log",
+    "exit_code": 0,
+    "seconds": 2.92
+  },
+  {
+    "name": "agent-integrations-check",
+    "command": [
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/.venv-verification/bin/python",
+      "tools/package_agent_integrations.py",
+      "--host",
+      "all",
+      "--check"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "26-agent-integrations-check.log",
+    "exit_code": 0,
+    "seconds": 0.041
+  },
+  {
+    "name": "agent-integrations-package",
+    "command": [
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/.venv-verification/bin/python",
+      "tools/package_agent_integrations.py",
+      "--host",
+      "all",
+      "--output",
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/target/verification/freshness-final-20261113/agent-integrations"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "27-agent-integrations-package.log",
+    "exit_code": 0,
+    "seconds": 0.041
+  },
+  {
+    "name": "agent-cli-journeys",
+    "command": [
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/.venv-verification/bin/python",
+      "tools/agent_journeys.py",
+      "--node-modules",
+      "/Users/zsolt.gajdacs/Zs/Programming/PacificFateMapEditor/node_modules",
+      "--output",
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/target/verification/freshness-final-20261113/agent-journeys.json"
+    ],
+    "timeout": 1800,
+    "status": "passed",
+    "log": "28-agent-cli-journeys.log",
+    "exit_code": 0,
+    "seconds": 1.757
+  },
+  {
+    "name": "mcp-independent-install",
+    "command": [
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/.venv-verification/bin/python",
+      "tools/package_mcp.py",
+      "--engine",
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/dist/CodeCallNavigatorEngine/bin/codecallnavigator-engine"
+    ],
+    "timeout": 1800,
+    "status": "passed",
+    "log": "29-mcp-independent-install.log",
+    "exit_code": 0,
+    "seconds": 16.945
+  },
+  {
+    "name": "agent-mcp-journeys",
+    "command": [
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/.venv-verification/bin/python",
+      "tools/agent_mcp_journeys.py",
+      "--node-modules",
+      "/Users/zsolt.gajdacs/Zs/Programming/PacificFateMapEditor/node_modules",
+      "--output",
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/target/verification/freshness-final-20261113/agent-mcp-journeys.json"
+    ],
+    "timeout": 1800,
+    "status": "passed",
+    "log": "30-agent-mcp-journeys.log",
+    "exit_code": 0,
+    "seconds": 1.653
+  },
+  {
+    "name": "codescene",
+    "command": [
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/.venv-verification/bin/python",
+      "tools/verification/quality.py",
+      "--root",
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph",
+      "--command",
+      "cs-mcp",
+      "--timeout",
+      "120",
+      "--files",
+      ".backlog/tasks/task-59 - Explore-near-real-time-graph-freshness-during-code-edits.md",
+      ".backlog/tasks/task-60 - Expose-typed-CLI-owned-saved-input-freshness-observations.md",
+      ".backlog/tasks/task-61 - Adopt-typed-freshness-and-new-generations-in-desktop-and-MCP.md",
+      ".backlog/tasks/task-62 - Add-opt-in-engine-owned-automatic-graph-refresh.md",
+      ".backlog/tasks/task-63 - Make-C-cold-and-warm-analysis-input-coverage-consistent.md",
+      "docs/graph-freshness.md",
+      "evidence/freshness/README.md",
+      "evidence/freshness/clean-audit/audit-conclusions.json",
+      "evidence/freshness/clean-audit/csharp-body-candidate.json",
+      "evidence/freshness/clean-audit/csharp-body-reference.json",
+      "evidence/freshness/clean-audit/metadata.json",
+      "evidence/freshness/clean-audit/samples.jsonl",
+      "evidence/freshness/clean-audit/summary.json",
+      "evidence/freshness/csharp-import-probe.json",
+      "evidence/freshness/csharp/metadata.json",
+      "evidence/freshness/csharp/samples.jsonl",
+      "evidence/freshness/csharp/summary.json",
+      "evidence/freshness/events.json",
+      "evidence/freshness/gradle-final/metadata.json",
+      "evidence/freshness/gradle-final/samples.jsonl",
+      "evidence/freshness/gradle-final/summary-body.json",
+      "evidence/freshness/gradle-part-1/metadata.json",
+      "evidence/freshness/gradle-part-1/samples.jsonl",
+      "evidence/freshness/gradle-part-2/metadata.json",
+      "evidence/freshness/gradle-part-2/samples.jsonl",
+      "evidence/freshness/gradle-part-3/metadata.json",
+      "evidence/freshness/gradle-part-3/samples.jsonl",
+      "evidence/freshness/gradle-part-4/metadata.json",
+      "evidence/freshness/gradle-part-4/samples.jsonl",
+      "evidence/freshness/gradle-verified/metadata.json",
+      "evidence/freshness/gradle-verified/samples.jsonl",
+      "evidence/freshness/gradle/metadata.json",
+      "evidence/freshness/gradle/samples.jsonl",
+      "evidence/freshness/gradle/summary.json",
+      "evidence/freshness/large-project-attempt.json",
+      "evidence/freshness/large-project-attempt.log",
+      "evidence/freshness/maven-verified/metadata.json",
+      "evidence/freshness/maven-verified/samples.jsonl",
+      "evidence/freshness/maven/metadata.json",
+      "evidence/freshness/maven/samples.jsonl",
+      "evidence/freshness/maven/summary.json",
+      "evidence/freshness/provenance.json",
+      "evidence/freshness/storyengine/samples.jsonl",
+      "evidence/freshness/typescript/metadata.json",
+      "evidence/freshness/typescript/samples.jsonl",
+      "evidence/freshness/typescript/summary.json",
+      "tools/freshness_measurement.py",
+      "tools/freshness_scenarios.py",
+      "tools/measure_freshness.py",
+      "tools/measure_freshness_corpus.py",
+      "tools/measure_freshness_events.js",
+      "tools/test_freshness.py"
+    ],
+    "timeout": 180,
+    "status": "passed",
+    "log": "31-codescene.log",
+    "exit_code": 0,
+    "seconds": 7.231
+  },
+  {
+    "name": "cleanup",
+    "command": [
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/.venv-verification/bin/python",
+      "tools/verification/cleanup.py",
+      "--root",
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph",
+      "--output",
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/target/verification/freshness-final-20261113",
+      "--mode",
+      "full",
+      "--keep-artifacts"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "32-cleanup.log",
+    "exit_code": 0,
+    "seconds": 0.464
+  }
+]
