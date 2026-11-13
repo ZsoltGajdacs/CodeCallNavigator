@@ -1,5 +1,12 @@
+diff --git a/changelog/unreleased/2026-11-13-codecallnavigator-integration.md b/changelog/unreleased/2026-11-13-codecallnavigator-integration.md
+new file mode 100644
+index 00000000..723955a2
+--- /dev/null
++++ b/changelog/unreleased/2026-11-13-codecallnavigator-integration.md
+@@ -0,0 +1 @@
++- CodeCallNavigator’s application integration retains platform warning fixes on the current runtime.
 diff --git a/crates/rune/src/quit.rs b/crates/rune/src/quit.rs
-index b52d675c..cabb9681 100644
+index 2eff27fd..88706122 100644
 --- a/crates/rune/src/quit.rs
 +++ b/crates/rune/src/quit.rs
 @@ -62,6 +62,7 @@ pub(crate) enum Event {
@@ -10,20 +17,8 @@ index b52d675c..cabb9681 100644
      Cancel,
      /// The event loop ended.
      Exited,
-diff --git a/crates/rune/src/runtime/frame.rs b/crates/rune/src/runtime/frame.rs
-index ae2549ca..b3d6ec42 100644
---- a/crates/rune/src/runtime/frame.rs
-+++ b/crates/rune/src/runtime/frame.rs
-@@ -50,6 +50,7 @@ impl<S: 'static> Runtime<S> {
-     }
- 
-     /// Whether the window has the keyboard focus, as its last focus event said.
-+    #[cfg(target_os = "windows")]
-     pub(crate) fn has_window_focus(&self) -> bool { self.window_focused == Some(true) }
- 
-     /// Queue a native focus transition. Repeated notifications do not repeat the callback.
 diff --git a/crates/rune/src/window/redraw.rs b/crates/rune/src/window/redraw.rs
-index e819dfe2..4ae799c8 100644
+index f2c2477c..3b8889db 100644
 --- a/crates/rune/src/window/redraw.rs
 +++ b/crates/rune/src/window/redraw.rs
 @@ -36,8 +36,10 @@ pub(super) enum RedrawEvent {

@@ -21,7 +21,7 @@ rusqlite = { version = "0.41.1", features = ["bundled"] }
 petgraph = "0.8"
 blake3 = "1"
 shlex = "=2.0.1"
-rune = { path = "vendor/rune/crates/rune", features = ["native-file-dialog"] }
+rune = { path = "vendor/rune/crates/rune", features = ["native-file-dialog", "tooling"] }
 rune-kit = { path = "vendor/rune/crates/rune-kit" }
 libc = "0.2"
 tempfile = "3"
@@ -35,6 +35,13 @@ objc2-app-kit = { version = "0.2.2", features = ["NSEvent"] }
 
 [profile.release]
 debug = 0
+
+# Rune's upstream patches must be selected by the consuming workspace.
+[patch.crates-io]
+wgpu-hal = { path = "vendor/rune/vendor/wgpu-hal" }
+winit = { path = "vendor/rune/vendor/winit" }
+parley_engine = { path = "vendor/rune/vendor/parley_engine" }
+accesskit_windows = { path = "vendor/rune/vendor/accesskit_windows" }
 
 
 [dev-dependencies]

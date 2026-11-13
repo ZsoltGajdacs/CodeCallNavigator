@@ -118,17 +118,18 @@ Apply this combined patch once, in place of any exact recognized checkpoint.
 # Rune platform warnings patch
 
 `rune-platform-warnings.patch` applies to Rune revision
-`bba30a61cfcec6683e3fdedf156a92dae89d8b04` (SHA-256
-`418ed0965bac55c77a7742220cd7f8e2ee0a3a4a833523b12b67f24efb57439f`).
-It scopes platform-specific dead-code allowances and the Windows-only focus method
-to avoid warnings on macOS while preserving the shared state machines. Bootstrap
+`c4eda05889c984fff91ccd906e3c00cdfc4cae24` (SHA-256
+`c1684f68d909a509b471433bef8fa34339a6b64e5d8aec2ddec330e4761f46a6`).
+It scopes platform-specific dead-code allowances to avoid warnings on macOS
+while preserving the shared state machines. The old Windows-only focus method
+was removed upstream, so its obsolete gating hunk is no longer carried. Bootstrap
 applies it after checkout; no other Rune patches precede it. Bootstrap refuses
 unrelated Rune source changes rather than overwriting them.
 
 # Rune oriented segment quads
 
 `rune-oriented-segments.patch` replaces the warnings-only patch on Rune revision
-`bba30a61cfcec6683e3fdedf156a92dae89d8b04`. Its SHA-256 is pinned in
+`c4eda05889c984fff91ccd906e3c00cdfc4cae24`. Its SHA-256 is pinned in
 `analyzers.lock.json`. It contains the existing platform-warning fixes followed
 by tightly oriented vertex quads for line segments and a GPU pixel regression.
 Apply the combined patch once to the pristine pinned revision. Do not stack the
@@ -171,7 +172,7 @@ unrelated-file rejection tests:
 # Rune input activity observers
 
 `rune-input-observers.patch` replaces the oriented-segments combined patch on Rune
-revision `bba30a61cfcec6683e3fdedf156a92dae89d8b04`; its SHA-256 is pinned in
+revision `c4eda05889c984fff91ccd906e3c00cdfc4cae24`; its SHA-256 is pinned in
 `analyzers.lock.json`. It preserves the platform-warning and oriented-segment
 changes and adds non-consuming pointer and logical-key observers. CodeCallNavigator uses
 these to cancel a pending standalone Double Shift sequence even when a focused
@@ -190,10 +191,12 @@ Patch verification and migration: `python3 -m unittest discover -s tools -p 'tes
 
 # Rune latest-source refresh and commit meters
 
-All Rune patches above are rebased onto `bba30a61cfcec6683e3fdedf156a92dae89d8b04`
-(upstream `dev`, fetched 2026-11-11). The virtual desktop window moved from
-`desktop/window.rs` to `tooling/virtual_desktop/window.rs`; observer wiring now
-follows that owner. New upstream visibility hooks remain intact.
+All Rune patches above are rebased onto `c4eda05889c984fff91ccd906e3c00cdfc4cae24`
+(upstream `dev`, fetched 2026-11-13). Observer wiring follows the new browser
+`start_app` operation, preserving CPU-first startup and GPU handover. App
+initialization retains upstream `on_rest`; key and pointer observers still run
+before the new direction-chord and autoscroll early-return paths. The virtual
+desktop window stays at `tooling/virtual_desktop/window.rs`.
 
 The current combined `rune-input-observers.patch` also compiles
 `CommitMeter::handler` and `CommitMeter::frame_ends` only in debug builds, matching
@@ -208,12 +211,19 @@ upgrade the exact rebased pre-meter, oriented-segment or platform-only checkpoin
 Old-base checkouts must first verify and reverse their old recorded patch before
 moving revisions; bootstrap deliberately refuses to switch dirty revisions.
 CallAtlas (`916c2419c0cdb91b5b86b84df4842dadb17bb6b4`, `main`) and java-callgraph2
-(`77f566d0878958bab929b4cdeafcc2c762ff555e`, `main`) were fetched on the same date
-and already matched their upstream default-branch tips. Downloaded investigation
-binaries are separately pinned and are outside this source refresh.
+(`77f566d0878958bab929b4cdeafcc2c762ff555e`, `main`) were fetched on 2026-11-11
+and rechecked on 2026-11-13; they still matched their upstream default-branch tips.
+Downloaded investigation binaries are separately pinned and are outside this
+source refresh.
 
 The combined patch also narrows `Launches::commit`, `Launches::take_off`, and
 `press_repeat::step` to private helpers: all their callers belong to their own
 module or its test child. Their private state types therefore stay private and
 the latest upstream's three `private_interfaces` warnings disappear without
 expanding the runtime API.
+
+The focused segment pixel test uses the current `try_uber_metallib` interface.
+The upstream build-time shader hash guard still rejects stale precompiled
+bytecode; no shader fingerprint constant or precompiled library is rewritten.
+Each alternative includes one integration changelog entry, as required by the
+current upstream guide; they are replacements, never a patch stack.
