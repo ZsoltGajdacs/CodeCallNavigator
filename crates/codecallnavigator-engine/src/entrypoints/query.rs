@@ -10,12 +10,12 @@ use codecallnavigator_core::{
 use std::{
     fs,
     io::{self, Read},
-    sync::Arc,
+    sync::{Arc, OnceLock},
 };
 
 pub(super) struct Loaded {
     pub artifact: Artifact,
-    pub graph: GraphIndex,
+    graph: OnceLock<query::Result<GraphIndex>>,
     pub generation: String,
     pub freshness: serde_json::Value,
     pub roots: Vec<(String, std::path::PathBuf)>,
@@ -75,30 +75,35 @@ pub(super) fn load_bytes(
     check_generation(request, &generation)?;
     let artifact =
         Artifact::from_bytes(bytes).map_err(|e| Error::new("invalid_graph", format!("{e:#}")))?;
-    let freshness = verification::verify_artifact(&artifact, &generation, &roots)
-        .map_err(|e| Error::new("verification_failed", format!("{e:#}")))?;
-    let mut data = artifact
-        .hydrate(&roots)
-        .map_err(|e| Error::new("invalid_graph", format!("{e:#}")))?;
-    // Runtime graph snapshots retain the portable analyzer provenance recorded
-    // with this artifact; legacy artifacts explicitly have no version report.
-    data.engine_versions = artifact.graph["analysis"]["engine_versions"]
-        .as_str()
-        .unwrap_or_default()
-        .to_owned();
-    let graph = GraphIndex::new(Arc::new(data))
-        .map_err(|e| Error::new("invalid_graph", format!("{e:#}")))?;
     Ok(Loaded {
         artifact,
-        graph,
+        graph: OnceLock::new(),
         generation,
-        freshness: freshness::summary(freshness)?,
+        freshness: serde_json::Value::Null,
         roots,
         layers: Default::default(),
     })
 }
 
 impl Loaded {
+    pub(super) fn graph(&self) -> query::Result<&GraphIndex> {
+        self.graph
+            .get_or_init(|| {
+                let mut data = self
+                    .artifact
+                    .hydrate(&self.roots)
+                    .map_err(|error| Error::new("invalid_graph", format!("{error:#}")))?;
+                data.engine_versions = self.artifact.graph["analysis"]["engine_versions"]
+                    .as_str()
+                    .unwrap_or_default()
+                    .to_owned();
+                GraphIndex::new(Arc::new(data))
+                    .map_err(|error| Error::new("invalid_graph", format!("{error:#}")))
+            })
+            .as_ref()
+            .map_err(Clone::clone)
+    }
+
     pub(super) fn matches_generation(
         &self,
         generation: &str,
@@ -120,6 +125,16 @@ pub(super) fn validate(request: &Request) -> query::Result<()> {
         return Err(Error::new(
             "unsupported_version",
             "Unsupported query contract version",
+        ));
+    }
+    if let query::Query::Freshness {
+        observation_version,
+    } = request.query
+        && observation_version != codecallnavigator_core::freshness::VERSION
+    {
+        return Err(Error::new(
+            "unsupported_freshness_version",
+            "Unsupported freshness observation version",
         ));
     }
     if matches!(
@@ -188,7 +203,7 @@ pub(super) fn respond(loaded: &Loaded, request: &Request) -> Response {
                 offset,
                 limit,
             } => filesystem::directory(&loaded.roots, path, *offset, *limit),
-            query => query::execute(&loaded.graph, query),
+            query => query::execute(loaded.graph()?, query),
         }
     });
     envelope(Some(loaded), result)

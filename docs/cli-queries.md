@@ -260,3 +260,54 @@ Clients should keep graph selection and provenance policy in the CLI. Camera,
 layout, rendering, source highlighting and navigation history belong to the
 consumer. An MCP adapter uses these commands and must not inspect graph storage
 or reproduce semantic query logic.
+
+## Saved-input freshness observations
+
+Check `capabilities.freshness` before using observation version 1. The one-shot
+request is `{"version":1,"project":"/checkout","query":{"kind":"freshness","observation_version":1}}`.
+Its normal response envelope contains a typed `result` with `generation`,
+`input_status` (`match`, `stale`, or `unverifiable`), bounded contextual `reasons`,
+`input_revision`, `coverage`, `mode`, and `verification_milliseconds`. Existing
+query envelopes and the `status` operation keep their existing behavior. An
+optional `expected_generation` rejects observations of another saved artifact.
+
+`ccnavigator observe` reads that request as one newline-delimited JSON line and
+keeps observing while stdin remains open. It emits NDJSON events with `version`,
+monotonic `sequence`, `kind` (`initial`, `change`, `heartbeat`, or `failed`), and
+an `observation` or structured `error`. An initial observation is followed by
+changes to its state and a heartbeat after five seconds without a notification.
+The CLI rechecks saved artifact bytes each pass; replacing an artifact changes
+its generation. A generation-bound monitor fails when that generation changes.
+Failures terminate the monitor and never attach an observation from another
+generation. EOF, signals, and broken output pipes terminate the owned process.
+
+Version 1 explicitly reports limited `verified_polling` mode. Reconciliation is
+sequential at a 250 ms minimum interval between starts; expensive passes extend
+the interval and never overlap. There is no native filesystem watcher or analysis
+trigger. Each observation verifies actual bytes rather than trusting timestamps.
+The revision additionally hashes file contents recursively below recorded
+directory scopes, including new TypeScript files and later repairs, preserving
+each scope's own output exclusions. Explicit generated inputs remain observed.
+Generated graph outputs, excluded build directories and Maven's generated local
+repository marker do not trigger changes. Volatile revisions and timings are
+never written into canonical artifacts.
+
+`coverage.complete` means the currently recorded observable scopes were readable
+and traversable in that pass. Missing mapped roots, unreadable/nonregular inputs,
+and nested directory symlinks that were not explicitly recorded as scopes prevent
+complete coverage. Regular symlink targets and link identity are observed;
+nonregular targets such as devices and FIFOs are rejected without reading them.
+The Unix implementation uses a nonblocking open and verifies the opened file's
+type before hashing to prevent a raced symlink target from blocking observation.
+Regular-file hashing checks shutdown between chunks. `certifies_build` is always
+false: recorded inputs do not certify unsaved buffers, unrecorded dependencies,
+absent conditional imports, or external empty globs. Legacy incomplete C# input
+policies remain unverifiable until an explicit refresh.
+
+Notifications represent current state and are not a durable change journal.
+A bounded output queue coalesces state under backpressure while reconciliation
+continues. Intermediate changes can be omitted. Consumers should adopt the latest
+observation by generation and revision, and restart after a failed event. EOF
+remains bounded even if the client stops draining stdout. Observation never
+compiles, publishes, writes caches, or resets process-global cancellation to
+support another analysis.

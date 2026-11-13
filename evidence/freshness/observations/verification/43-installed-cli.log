@@ -1,0 +1,4 @@
+Installed terminal command: /private/var/folders/9t/j3qnf2cn5fx1tqgq8gm50vf80000gq/T/installed-cli-qlls_tdk/user prefix/bin/ccnavigator
+Add this directory to your shell PATH, then open a new terminal:
+export PATH='/private/var/folders/9t/j3qnf2cn5fx1tqgq8gm50vf80000gq/T/installed-cli-qlls_tdk/user prefix/bin':"$PATH"
+Passed 21 installed CLI operations; report: /Users/zsolt.gajdacs/Zs/Programming/CodeGraph/target/verification/task60-retry/installed-cli.json

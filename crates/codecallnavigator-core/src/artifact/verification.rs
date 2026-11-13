@@ -1,12 +1,15 @@
 //! Read-only verification of observed inputs; this does not certify a build environment.
 mod csharp_policy;
+mod live;
+#[cfg(test)]
+mod observation_tests;
 use super::{Artifact, GRAPH_PATH, Roots, paths::Paths, provenance};
 use crate::fingerprint::observe_content;
 use anyhow::{Context, Result};
-use serde::Serialize;
-use std::{collections::BTreeSet, fs, path::Path};
+use serde::{Deserialize, Serialize};
+use std::{collections::BTreeSet, fs, path::Path, sync::atomic::AtomicBool};
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum InputStatus {
     Match,
@@ -14,14 +17,14 @@ pub enum InputStatus {
     Unverifiable,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Reason {
     pub code: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub path: Option<String>,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Report {
     pub version: u32,
     pub contract_valid: bool,
@@ -83,17 +86,66 @@ fn report(digest: &str) -> Report {
 /// `digest` must identify the exact bytes used to load that artifact. Query
 /// sessions reuse parsing while checking current input contents on every request.
 pub fn verify_artifact(artifact: &Artifact, digest: &str, roots: &Roots) -> Result<Report> {
-    let paths = Paths::new(roots)?;
+    Ok(inspect(artifact, digest, roots, None)?.report)
+}
+
+pub struct Observation {
+    pub report: Report,
+    pub input_revision: Option<String>,
+    pub complete: bool,
+}
+
+/// Observe recorded inputs and current descendants; never certify unrecorded inputs.
+pub fn observe_artifact(
+    artifact: &Artifact,
+    digest: &str,
+    roots: &Roots,
+    cancel: &AtomicBool,
+) -> Result<Observation> {
+    inspect(artifact, digest, roots, Some(cancel))
+}
+
+struct Mappings<'a> {
+    roots: &'a Roots,
+    paths: Paths,
+}
+
+fn inspect(
+    artifact: &Artifact,
+    digest: &str,
+    roots: &Roots,
+    cancel: Option<&AtomicBool>,
+) -> Result<Observation> {
+    let mappings = Mappings {
+        roots,
+        paths: Paths::new(roots)?,
+    };
     let mut report = report(digest);
     let Some(analysis) = provenance::read(&artifact.graph)? else {
         report.input_status = InputStatus::Unverifiable;
         report.reason("missing_analysis", None);
-        return Ok(report);
+        return Ok(Observation {
+            report,
+            input_revision: None,
+            complete: false,
+        });
     };
     if csharp_policy::legacy(&artifact.graph, &analysis) {
         report.reason("legacy_csharp_input_policy", None);
     }
-    let stale = verify_manifest(&analysis, roots, &paths, &mut report);
+    let mut live = cancel.map(|cancel| live::Inputs::new(&mappings.paths, cancel));
+    let stale = verify_manifest(&analysis, &mappings, &mut report, live.as_mut())?;
+    let (input_revision, complete) = match live {
+        Some(live) => {
+            let revision = live.finish()?;
+            report.reasons.extend(revision.reasons);
+            (
+                Some(revision.revision),
+                revision.complete && !analysis.inputs.is_empty(),
+            )
+        }
+        None => (None, false),
+    };
     report.input_status = if stale {
         InputStatus::Stale
     } else if !report.reasons.is_empty() {
@@ -101,22 +153,33 @@ pub fn verify_artifact(artifact: &Artifact, digest: &str, roots: &Roots) -> Resu
     } else {
         InputStatus::Match
     };
-    Ok(report)
+    Ok(Observation {
+        report,
+        input_revision,
+        complete,
+    })
 }
 
 fn verify_manifest(
     analysis: &provenance::Analysis,
-    roots: &Roots,
-    paths: &Paths,
+    mappings: &Mappings<'_>,
     report: &mut Report,
-) -> bool {
+    mut live: Option<&mut live::Inputs<'_>>,
+) -> Result<bool> {
     for limitation in &analysis.limitations {
         report.reason(&limitation.code, None);
     }
     if analysis.inputs.is_empty() {
         report.reason("no_observed_inputs", None);
     }
-    let available = available_roots(analysis, roots, report);
+    let available = available_roots(analysis, mappings.roots, report);
+    if let Some(live) = &mut live {
+        for root in &analysis.roots {
+            if !available.contains(&format!("@{root}")) {
+                live.unavailable_root(root);
+            }
+        }
+    }
     let mut stale = false;
     for input in analysis.inputs.iter().filter(|input| {
         input
@@ -124,9 +187,9 @@ fn verify_manifest(
             .split_once('/')
             .is_some_and(|(root, _)| available.contains(root))
     }) {
-        stale |= verify_input(input, paths, report);
+        stale |= verify_input(input, &mappings.paths, report, live.as_deref_mut())?;
     }
-    stale
+    Ok(stale)
 }
 
 fn available_roots(
@@ -148,23 +211,38 @@ fn available_roots(
     available
 }
 
-fn verify_input(input: &provenance::Input, paths: &Paths, report: &mut Report) -> bool {
+fn verify_input(
+    input: &provenance::Input,
+    paths: &Paths,
+    report: &mut Report,
+    live: Option<&mut live::Inputs<'_>>,
+) -> Result<bool> {
+    if let Some(live) = &live {
+        live.check()?;
+    }
     let local = match paths.local(&input.path) {
         Ok(path) => path,
         Err(_) => {
             report.reason("unavailable_root", Some(input.path.clone()));
-            return false;
+            return Ok(false);
         }
     };
-    match observe_content(Path::new(&local), &input.excluded_children) {
-        Ok(current) if current.kind == input.kind && current.hash == input.hash => false,
+    let current = match &live {
+        Some(live) => live.observe(Path::new(&local), &input.excluded_children),
+        None => observe_content(Path::new(&local), &input.excluded_children),
+    };
+    if let Some(live) = live {
+        live.record(input, Path::new(&local), current.as_ref())?;
+    }
+    match current {
+        Ok(current) if current.kind == input.kind && current.hash == input.hash => Ok(false),
         Ok(_) => {
             report.reason("input_changed", Some(input.path.clone()));
-            true
+            Ok(true)
         }
         Err(_) => {
             report.reason("unreadable_input", Some(input.path.clone()));
-            false
+            Ok(false)
         }
     }
 }

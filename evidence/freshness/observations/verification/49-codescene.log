@@ -1,0 +1,170 @@
+{
+  "status": "passed",
+  "reviews": [
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "crates/codecallnavigator-core/src/artifact/verification.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "crates/codecallnavigator-core/src/artifact/verification/live.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "crates/codecallnavigator-core/src/artifact/verification/observation_tests.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "crates/codecallnavigator-core/src/fingerprint.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "crates/codecallnavigator-core/src/freshness.rs"
+    },
+    {
+      "score": null,
+      "review": [],
+      "applicability": "declarations_only",
+      "path": "crates/codecallnavigator-core/src/lib.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "crates/codecallnavigator-core/src/query.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "crates/codecallnavigator-core/src/query/contract.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "crates/codecallnavigator-core/src/query/operations.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "crates/codecallnavigator-engine/src/entrypoints.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "crates/codecallnavigator-engine/src/entrypoints/arguments.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "crates/codecallnavigator-engine/src/entrypoints/observation_stream.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "crates/codecallnavigator-engine/src/entrypoints/observation_transport.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "crates/codecallnavigator-engine/src/entrypoints/observer.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "crates/codecallnavigator-engine/src/entrypoints/query.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "crates/codecallnavigator-engine/src/entrypoints/query/filesystem.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "crates/codecallnavigator-engine/src/entrypoints/query/freshness.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "crates/codecallnavigator-engine/src/entrypoints/query/layers.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "crates/codecallnavigator-engine/src/entrypoints/query_executor.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "crates/codecallnavigator-engine/tests/freshness.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "tools/freshness_measurement.py"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "tools/freshness_observer_measurement.py"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "tools/measure_freshness_observer.py"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "tools/test_freshness_observer_measurement.py"
+    }
+  ],
+  "safeguard": {
+    "results": [],
+    "quality_gates": "passed",
+    "metadata": {
+      "checked-file-count": 24,
+      "code-health-eligible-file-count": 24,
+      "status": "no-issues-found",
+      "total-modified-file-count": 34
+    }
+  },
+  "errors": [],
+  "skipped_files": [
+    ".backlog/tasks/task-60 - Expose-typed-CLI-owned-saved-input-freshness-observations.md",
+    "Cargo.lock",
+    "crates/codecallnavigator-core/Cargo.toml",
+    "docs/cli-queries.md",
+    "evidence/freshness/observations/README.md",
+    "evidence/freshness/observations/fixture-series/metadata.json",
+    "evidence/freshness/observations/fixture-series/samples.jsonl.gz",
+    "evidence/freshness/observations/fixture-series/summary.json"
+  ]
+}

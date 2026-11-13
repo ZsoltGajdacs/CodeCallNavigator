@@ -19,6 +19,9 @@ pub struct Request {
 #[serde(tag = "kind", rename_all = "snake_case", deny_unknown_fields)]
 pub enum Query {
     Status,
+    Freshness {
+        observation_version: u32,
+    },
     Compare {
         base: String,
         #[serde(default = "comparison_head")]

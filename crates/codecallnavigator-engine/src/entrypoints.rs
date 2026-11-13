@@ -6,6 +6,9 @@ mod comparison;
 mod inference;
 mod linked_roots;
 mod machine;
+mod observation_stream;
+mod observation_transport;
+mod observer;
 mod query;
 mod query_executor;
 mod query_session;
@@ -28,7 +31,10 @@ pub fn run() -> Result<i32> {
     let command = arguments::parse(std::env::args().skip(1))?;
     // Read-only queries own no build subprocesses. Keep default signal handling
     // so an idle session blocked on stdin also terminates promptly on cancellation.
-    if !matches!(command, Command::Query | Command::QuerySession) {
+    if !matches!(
+        command,
+        Command::Query | Command::QuerySession | Command::Observe
+    ) {
         cancellation::install();
     }
     match command {
@@ -38,6 +44,7 @@ pub fn run() -> Result<i32> {
         }
         Command::Query => query::run(),
         Command::QuerySession => query_session::run(),
+        Command::Observe => observation_stream::run(),
         Command::Help => {
             print_help();
             Ok(0)
@@ -59,20 +66,7 @@ pub fn run() -> Result<i32> {
             Ok(0)
         }
         Command::Verify(arguments) => verification::run(arguments),
-        Command::Analyze(arguments) => {
-            let project = arguments.project.canonicalize()?;
-            let targets = analysis::select_targets(&project, arguments.targets)?;
-            let complete = analysis::analyze(&project, arguments.roots, targets, &|message| {
-                eprintln!("{message}")
-            })?;
-            if let codecallnavigator_core::protocol::Event::Complete { digest, .. } = complete {
-                println!(
-                    "Published {} ({digest})",
-                    project.join(artifact::GRAPH_PATH).display()
-                );
-            }
-            Ok(0)
-        }
+        Command::Analyze(arguments) => run_analysis(arguments),
         Command::Compare {
             project,
             base,
@@ -94,6 +88,21 @@ pub fn run() -> Result<i32> {
     }
 }
 
+fn run_analysis(arguments: arguments::Analysis) -> Result<i32> {
+    let project = arguments.project.canonicalize()?;
+    let targets = analysis::select_targets(&project, arguments.targets)?;
+    let complete = analysis::analyze(&project, arguments.roots, targets, &|message| {
+        eprintln!("{message}")
+    })?;
+    if let codecallnavigator_core::protocol::Event::Complete { digest, .. } = complete {
+        println!(
+            "Published {} ({digest})",
+            project.join(artifact::GRAPH_PATH).display()
+        );
+    }
+    Ok(0)
+}
+
 fn print_help() {
     let program = if std::env::args().next().is_some_and(|path| {
         std::path::Path::new(&path)
@@ -105,6 +114,6 @@ fn print_help() {
         "codecallnavigator-engine"
     };
     println!(
-        "{program} capabilities\n{program} query < request.json\n{program} query-session < requests.ndjson\n{program} discover PROJECT\n{program} analyze --project PROJECT [--root NAME=PATH] TARGET...\n{program} clear-cache --project PROJECT\n{program} verify --project PROJECT [--root NAME=PATH]\n{program} compare --project PROJECT --base REF --head REF|WORKTREE"
+        "{program} capabilities\n{program} query < request.json\n{program} query-session < requests.ndjson\n{program} observe < observation-request.ndjson\n{program} discover PROJECT\n{program} analyze --project PROJECT [--root NAME=PATH] TARGET...\n{program} clear-cache --project PROJECT\n{program} verify --project PROJECT [--root NAME=PATH]\n{program} compare --project PROJECT --base REF --head REF|WORKTREE"
     );
 }

@@ -18,3 +18,7 @@ serde_yaml = "0.9"
 globset = "0.4"
 regex = "1"
 roxmltree = "=0.21.2"
+
+# O_NONBLOCK prevents a raced symlink-to-FIFO open from blocking verification.
+[target.'cfg(unix)'.dependencies]
+libc = "0.2"

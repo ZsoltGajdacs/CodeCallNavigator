@@ -71,7 +71,7 @@ fn resolve(
     {
         return Ok(cached.clone());
     }
-    let assignments = architecture::classify(&loaded.graph.data, &config.config, config.origin)
+    let assignments = architecture::classify(&loaded.graph()?.data, &config.config, config.origin)
         .map_err(layer_error)?;
     let resolved = Resolved {
         selection,
@@ -109,11 +109,11 @@ pub(super) fn render(loaded: &Loaded, request: RenderRequest<'_>) -> query::Resu
             "Layer configuration changed; reload assignments before combining render results",
         ));
     }
-    let mut selected = query::select_render(&loaded.graph, request.selection, request.filter)?;
+    let mut selected = query::select_render(loaded.graph()?, request.selection, request.filter)?;
     let available = resolved.assignments.is_some();
     match resolved.assignments.as_deref() {
         Some(assignments) => retain_layer(
-            &loaded.graph,
+            loaded.graph()?,
             &mut selected,
             assignments,
             request.layer.tab.as_deref(),
@@ -124,7 +124,7 @@ pub(super) fn render(loaded: &Loaded, request: RenderRequest<'_>) -> query::Resu
             selected.roots.clear();
         }
     }
-    let mut result = query::render_section(&loaded.graph, selected, request.filter)?;
+    let mut result = query::render_section(loaded.graph()?, selected, request.filter)?;
     result["architecture_signature"] = json!(resolved.signature);
     if !available {
         result["message"] = json!(

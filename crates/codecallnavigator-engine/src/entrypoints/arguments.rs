@@ -5,6 +5,7 @@ pub enum Command {
     Capabilities,
     Query,
     QuerySession,
+    Observe,
     Help,
     Discover(PathBuf),
     ClearCache(PathBuf),
@@ -29,6 +30,10 @@ pub fn parse(values: impl Iterator<Item = String>) -> Result<Command> {
     let mut values = values.peekable();
     let command = values.next().unwrap_or_else(|| "--help".into());
     match command.as_str() {
+        "observe" => {
+            ensure!(values.next().is_none(), "observe takes no arguments");
+            Ok(Command::Observe)
+        }
         "query-session" => {
             ensure!(values.next().is_none(), "query-session takes no arguments");
             Ok(Command::QuerySession)
