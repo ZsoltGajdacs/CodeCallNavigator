@@ -5,6 +5,7 @@ pub mod boundary;
 pub mod discovery;
 pub mod fingerprint;
 pub mod flow;
+pub mod freshness;
 pub mod graph;
 pub mod graphviz;
 pub mod method_policy;

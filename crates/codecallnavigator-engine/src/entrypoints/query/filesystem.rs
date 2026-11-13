@@ -26,11 +26,11 @@ fn confined(roots: &[(String, PathBuf)], path: &Path) -> Result<PathBuf> {
 }
 
 pub(super) fn source(loaded: &Loaded, symbol: &str) -> Result<Value> {
-    let index = loaded
-        .graph
+    let graph = loaded.graph()?;
+    let index = graph
         .node_index(symbol)
         .ok_or_else(|| Error::new("symbol_missing", "No symbol in this graph generation"))?;
-    let node = &loaded.graph.data.nodes[index as usize];
+    let node = &graph.data.nodes[index as usize];
     let mut result = source_file(&loaded.roots, Path::new(&node.file))?;
     result["symbol"] = json!(symbol);
     result["line"] = json!(node.line);

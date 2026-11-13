@@ -8,6 +8,7 @@ use std::{
     fs,
     io::Read,
     path::{Path, PathBuf},
+    sync::atomic::{AtomicBool, Ordering},
     time::UNIX_EPOCH,
 };
 
@@ -63,33 +64,72 @@ pub fn is_stale(items: &[FileFingerprint]) -> Result<bool> {
 }
 
 pub fn source_paths(roots: &[PathBuf]) -> Result<Vec<PathBuf>> {
-    collect_roots(roots, &[], false, false)
+    collect_roots(roots, &[], false, FilePolicy::Sources)
 }
 
 /// Explicit roots remain included even inside build outputs, allowing callers to
 /// fingerprint generated sources after compilation without scanning class files.
 pub fn source_paths_excluding(roots: &[PathBuf], output_roots: &[PathBuf]) -> Result<Vec<PathBuf>> {
-    collect_roots(roots, output_roots, true, false)
+    collect_roots(roots, output_roots, true, FilePolicy::Sources)
 }
 
 /// Declared build inputs (resources/generator data/configuration) include all file types.
 pub fn input_paths_excluding(roots: &[PathBuf], output_roots: &[PathBuf]) -> Result<Vec<PathBuf>> {
-    collect_roots(roots, output_roots, true, true)
+    collect_roots(roots, output_roots, true, FilePolicy::BuildInputs)
+}
+
+/// Recursive observed scopes include all file types and symlink entries, without
+/// descending nested directory symlinks. Explicit scope roots remain traversable.
+pub(crate) fn observation_paths(
+    roots: &[PathBuf],
+    output_roots: &[PathBuf],
+    cancel: &AtomicBool,
+) -> Result<Vec<PathBuf>> {
+    collect_roots(
+        roots,
+        output_roots,
+        true,
+        FilePolicy::ObservedScopes(cancel),
+    )
+}
+
+#[derive(Clone, Copy)]
+enum FilePolicy<'a> {
+    Sources,
+    BuildInputs,
+    ObservedScopes(&'a AtomicBool),
+}
+
+impl FilePolicy<'_> {
+    fn check(self) -> Result<()> {
+        if let Self::ObservedScopes(cancel) = self {
+            anyhow::ensure!(
+                !cancel.load(Ordering::Acquire),
+                "Freshness observation cancelled"
+            );
+        }
+        Ok(())
+    }
+
+    fn accepts(self, path: &Path) -> bool {
+        !matches!(self, Self::Sources) || relevant_file(path)
+    }
 }
 
 fn collect_roots(
     roots: &[PathBuf],
     output_roots: &[PathBuf],
     include_missing: bool,
-    all_files: bool,
+    policy: FilePolicy<'_>,
 ) -> Result<Vec<PathBuf>> {
     let _stage = crate::metrics::stage("fingerprints.discover");
     let mut collector = SourceCollector {
         paths: BTreeSet::new(),
         visited: BTreeSet::new(),
-        all_files,
+        policy,
     };
     for root in roots {
+        policy.check()?;
         if generated_graph_output(root) {
             continue;
         }
@@ -107,13 +147,13 @@ fn collect_roots(
     Ok(collector.paths.into_iter().collect())
 }
 
-struct SourceCollector {
+struct SourceCollector<'a> {
     paths: BTreeSet<PathBuf>,
     visited: BTreeSet<(PathBuf, Vec<PathBuf>)>,
-    all_files: bool,
+    policy: FilePolicy<'a>,
 }
 
-impl SourceCollector {
+impl SourceCollector<'_> {
     fn visit(&mut self, root: &Path, output_roots: &[PathBuf]) -> Result<()> {
         let exclusions: Vec<_> = output_roots
             .iter()
@@ -130,32 +170,71 @@ impl SourceCollector {
         }
         crate::metrics::count("fingerprint.directories_visited", 1);
         self.paths.insert(root.into());
-        for entry in fs::read_dir(root)? {
+        for entry in fs::read_dir(root).with_context(|| {
+            format!(
+                "Cannot enumerate analysis input directory {}",
+                root.display()
+            )
+        })? {
             self.collect_entry(entry?, output_roots)?;
         }
         Ok(())
     }
 
     fn collect_entry(&mut self, entry: fs::DirEntry, output_roots: &[PathBuf]) -> Result<()> {
+        self.policy.check()?;
+        if self.excluded_entry(&entry, output_roots)? {
+            return Ok(());
+        }
+        let path = entry.path();
+        let kind = entry.file_type()?;
+        if matches!(self.policy, FilePolicy::ObservedScopes(_)) && !kind.is_dir() {
+            self.paths.insert(path);
+        } else {
+            self.collect_regular(path, kind, output_roots)?;
+        }
+        Ok(())
+    }
+
+    fn excluded_entry(&self, entry: &fs::DirEntry, output_roots: &[PathBuf]) -> Result<bool> {
         let path = entry.path();
         if generated_graph_output(&path)
             || output_roots.iter().any(|output| path.starts_with(output))
         {
-            return Ok(());
+            return Ok(true);
         }
-        let kind = entry.file_type()?;
-        let name = entry.file_name().to_string_lossy().into_owned();
+        if matches!(self.policy, FilePolicy::ObservedScopes(_)) {
+            return Ok(excluded_directory_entry(entry)?
+                || generated_graph_directory(entry)?
+                || generated_maven_marker(entry)?);
+        }
+        Ok(false)
+    }
+
+    fn collect_regular(
+        &mut self,
+        path: PathBuf,
+        kind: fs::FileType,
+        output_roots: &[PathBuf],
+    ) -> Result<()> {
+        let name = path.file_name().unwrap_or_default().to_string_lossy();
         if kind.is_dir() && !excluded_directory(&name) {
             self.visit(&path, output_roots)?;
-        } else if kind.is_file() && tracked_file(&path, self.all_files) {
+        } else if kind.is_file() && self.policy.accepts(&path) {
             self.paths.insert(path);
         }
         Ok(())
     }
 }
 
-fn tracked_file(path: &Path, all_files: bool) -> bool {
-    all_files || relevant_file(path)
+fn excluded_directory_entry(entry: &fs::DirEntry) -> Result<bool> {
+    if !excluded_directory(&entry.file_name().to_string_lossy()) {
+        return Ok(false);
+    }
+    let kind = entry.file_type()?;
+    // Directory aliases obey the same generated-output policy; ordinary files
+    // with names such as build/target remain observable.
+    Ok(kind.is_dir() || (kind.is_symlink() && entry.path().is_dir()))
 }
 
 fn relevant_file(path: &Path) -> bool {
@@ -216,6 +295,31 @@ pub struct ContentObservation {
 }
 
 pub fn observe_content(path: &Path, excluded_children: &[String]) -> Result<ContentObservation> {
+    observe_content_controlled(path, excluded_children, None)
+}
+
+pub(crate) fn observe_content_cancellable(
+    path: &Path,
+    excluded_children: &[String],
+    cancel: &AtomicBool,
+) -> Result<ContentObservation> {
+    observe_content_controlled(path, excluded_children, Some(cancel))
+}
+
+fn check_cancel(cancel: Option<&AtomicBool>) -> Result<()> {
+    anyhow::ensure!(
+        !cancel.is_some_and(|flag| flag.load(Ordering::Acquire)),
+        "Freshness observation cancelled"
+    );
+    Ok(())
+}
+
+fn observe_content_controlled(
+    path: &Path,
+    excluded_children: &[String],
+    cancel: Option<&AtomicBool>,
+) -> Result<ContentObservation> {
+    check_cancel(cancel)?;
     let metadata = match fs::metadata(path) {
         Ok(value) => value,
         Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
@@ -226,15 +330,20 @@ pub fn observe_content(path: &Path, excluded_children: &[String]) -> Result<Cont
         }
         Err(error) => return Err(error).context("Cannot read analysis input"),
     };
-    let kind = if metadata.is_dir() {
-        InputKind::Directory
+    let (kind, hash) = if metadata.is_dir() {
+        (
+            InputKind::Directory,
+            directory_hash_controlled(path, excluded_children, cancel)?,
+        )
     } else {
-        InputKind::File
+        anyhow::ensure!(
+            metadata.is_file(),
+            "Unsupported nonregular analysis input {}",
+            path.display()
+        );
+        (InputKind::File, file_hash_controlled(path, cancel)?)
     };
-    Ok(ContentObservation {
-        kind,
-        hash: content_hash(path, excluded_children, metadata.is_dir())?,
-    })
+    Ok(ContentObservation { kind, hash })
 }
 
 fn content_hash(path: &Path, excluded_children: &[String], directory: bool) -> Result<String> {
@@ -282,7 +391,7 @@ fn fingerprint(
     })
 }
 
-fn excluded_children(path: &Path, outputs: &[PathBuf]) -> Vec<String> {
+pub(crate) fn excluded_children(path: &Path, outputs: &[PathBuf]) -> Vec<String> {
     outputs
         .iter()
         .filter_map(|output| output.strip_prefix(path).ok()?.components().next())
@@ -293,8 +402,17 @@ fn excluded_children(path: &Path, outputs: &[PathBuf]) -> Vec<String> {
 }
 
 fn directory_hash(path: &Path, excluded_children: &[String]) -> Result<String> {
+    directory_hash_controlled(path, excluded_children, None)
+}
+
+fn directory_hash_controlled(
+    path: &Path,
+    excluded_children: &[String],
+    cancel: Option<&AtomicBool>,
+) -> Result<String> {
     let mut names = BTreeSet::new();
     for entry in fs::read_dir(path)? {
+        check_cancel(cancel)?;
         let entry = entry?;
         let name = entry.file_name().to_string_lossy().into_owned();
         if excluded_directory(&name) || excluded_children.contains(&name) {
@@ -347,11 +465,31 @@ fn maven_configuration_present(path: &Path) -> Result<bool> {
 }
 
 fn file_hash(path: &Path) -> Result<String> {
-    let mut file = fs::File::open(path)?;
+    file_hash_controlled(path, None)
+}
+
+fn file_hash_controlled(path: &Path, cancel: Option<&AtomicBool>) -> Result<String> {
+    check_cancel(cancel)?;
+    let mut options = fs::OpenOptions::new();
+    options.read(true);
+    // A symlink can change between metadata and open. Nonblocking open plus
+    // descriptor metadata prevents FIFO/device targets from blocking or streaming.
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::OpenOptionsExt;
+        options.custom_flags(libc::O_NONBLOCK);
+    }
+    let mut file = options.open(path)?;
+    anyhow::ensure!(
+        file.metadata()?.is_file(),
+        "Unsupported nonregular analysis input {}",
+        path.display()
+    );
     let mut hasher = blake3::Hasher::new();
     let mut buffer = [0u8; 65536];
     let mut bytes = 0;
     loop {
+        check_cancel(cancel)?;
         let count = file.read(&mut buffer)?;
         if count == 0 {
             break;

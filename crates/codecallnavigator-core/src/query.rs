@@ -15,8 +15,9 @@ pub const MAX_FRESHNESS_REASON_BYTES: usize = 8192;
 pub fn capabilities() -> serde_json::Value {
     serde_json::json!({
         "query_version": VERSION,
-        "operations": ["status", "snapshot", "inspect", "live_source", "architecture", "search", "symbol", "source", "explorer", "selection", "render_selection", "neighbors", "flow", "compare"],
+        "operations": ["status", "freshness", "snapshot", "inspect", "live_source", "architecture", "search", "symbol", "source", "explorer", "selection", "render_selection", "neighbors", "flow", "compare"],
         "comparison": {"version":1,"default_limit":100,"maximum_limit":500,"maximum_response_bytes":24*1024*1024,"snapshot_binding":true},
+        "freshness": {"version":crate::freshness::VERSION,"streaming":true,"mode":"verified_polling","limited":true,"reconcile_milliseconds":crate::freshness::RECONCILE_MILLISECONDS,"heartbeat_milliseconds":crate::freshness::HEARTBEAT_MILLISECONDS},
         "flow_languages": ["java", "typescript"],
         "source_origins": ["analyzed", "live"],
         "generation_binding": true,

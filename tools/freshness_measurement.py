@@ -122,25 +122,33 @@ class ProcessMeasurement:
         finally:
             self.finish()
 
-    def finish(self):
+    def close_input(self):
         if not self.process.stdin.closed:
             try:
                 self.process.stdin.close()
             except BrokenPipeError:
                 pass
+
+    def finish(self):
+        self.close_input()
         self.stopped.set()
         self.sampler.join()
 
-    def report(self):
+    def resource_report(self):
+        """Resource totals after reaping; streaming callers own their output reader."""
         elapsed = time.monotonic() - self.started
-        self.stdout.seek(0)
-        self.stderr.seek(0)
         after = resource.getrusage(resource.RUSAGE_CHILDREN)
         return {"milliseconds": elapsed * 1000, "exit_code": self.process.returncode, "timed_out": self.timed_out,
                 "cpu_seconds": after.ru_utime + after.ru_stime - self.before.ru_utime - self.before.ru_stime,
                 "sampled_peak_tree_rss_bytes": max(self.samples) if self.samples else None,
-                "resource_samples": len(self.samples), "sampling_errors": self.sampling_errors, "cleanup_errors": self.cleanup_errors,
-                "stdout": self.stdout.read().decode(errors="replace"), "stderr": self.stderr.read().decode(errors="replace")}
+                "resource_samples": len(self.samples), "sampling_errors": self.sampling_errors, "cleanup_errors": self.cleanup_errors}
+
+    def report(self):
+        self.stdout.seek(0)
+        self.stderr.seek(0)
+        return self.resource_report() | {
+            "stdout": self.stdout.read().decode(errors="replace"),
+            "stderr": self.stderr.read().decode(errors="replace")}
 
 
 def run(command, request=None, timeout=120, keep_open=False):
