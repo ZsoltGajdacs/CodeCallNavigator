@@ -31,6 +31,9 @@ compiler-owned framework metadata:
   Reading and writing snapshots preserves the capability and facts. CodeCallNavigator's
   language adapter creates possible relationships from them. Task return values
   describe completion contracts and do not prove asynchronous scheduling.
+- Retarget `CallAtlas.Cli`, `CallAtlas.Core` and `CallAtlas.Tests` to `net11.0`
+  so the installed .NET 11 SDK builds the complete analyzer and test project
+  graph consistently.
 
 The application must reject independent projects sharing an evaluated
 `AssemblyName` within one selected solution, because this identity format cannot
@@ -43,6 +46,13 @@ Apply after checkout and before the analyzer build:
 git -C vendor/callatlas apply ../../patches/callatlas-assembly-identity.patch
 dotnet build vendor/callatlas/src/CallAtlas.Cli/CallAtlas.Cli.csproj -c Release
 ```
+
+The current combined patch includes the .NET 11 project targets; no command-line
+framework override or custom MSBuild import is required. The complete prior
+`net10.0` combined patch is preserved in
+`callatlas-assembly-identity-pre-sdk.patch`, pinned by `callatlas.pre_sdk_patch`
+and its SHA-256 checksum in the lock. This remains an alternative checkpoint,
+not an additional patch to stack on the current patch.
 
 Bootstrap verifies the exact revision and patch hash. It accepts only a clean
 checkout, the exact current patch, the pre-framework checkpoint in

@@ -12,8 +12,8 @@ Java and TypeScript methods also support function flowcharts.
 
 - Apple Silicon Mac; packaged builds require macOS 27.0+.
 - To build the app: Rust/Cargo, Xcode command-line tools, Python 3.12+ and
-  Graphviz 16.1.0 (`dot` on PATH).
-- For C#: .NET 10 plus the SDKs and reference packs your projects need.
+  Graphviz 16.1.1 (`dot` on PATH).
+- For C#: .NET 11 plus the SDKs and reference packs your projects need.
 - For Java: JDK 25, plus a working Gradle wrapper or Maven 3.9+/4 and the
   toolchains your projects need.
 - For TypeScript: Node 24+ and project-installed TypeScript 6.0.x.

@@ -16,7 +16,7 @@ import tempfile
 import time
 import zipfile
 import xml.etree.ElementTree as ElementTree
-from bootstrap import checkout_patch
+from bootstrap import callatlas_output, checkout_patch
 from release_sources import (prepare_source_release, require_clean_source,
                              source_identity, write_build_manifest, write_release_checksums)
 
@@ -255,7 +255,7 @@ def copy_analyzers(resources):
     verify_java_adapter(ROOT / "tools/java-bytecode/build/install/codecallnavigator-bytecode")
     analyzers = resources / "analyzers"
     analyzers.mkdir()
-    copy_tree(ROOT / "vendor/callatlas/src/CallAtlas.Cli/bin/Release/net10.0", analyzers / "callatlas")
+    copy_tree(callatlas_output(ROOT), analyzers / "callatlas")
     copy_tree(ROOT / "tools/java-bytecode/build/install/codecallnavigator-bytecode", analyzers / "java-bytecode")
     copy_tree(ROOT / "tools/typescript", analyzers / "typescript")
     shutil.copy2(ROOT / "tools/gradle-metadata.gradle", analyzers)

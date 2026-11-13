@@ -7,7 +7,7 @@ use std::{
 };
 
 #[test]
-#[ignore = "requires pinned CallAtlas and installed .NET 10 SDK"]
+#[ignore = "requires pinned CallAtlas and installed .NET 11 SDK"]
 fn machine_preserves_linked_sources_and_human_cli_requires_declared_root() {
     let root = linked_project();
     let root = root.path().canonicalize().unwrap();
@@ -62,7 +62,7 @@ fn linked_project() -> tempfile::TempDir {
     let project = root.path().join("app");
     fs::create_dir(&project).unwrap();
     fs::write(root.path().join("Shared.cs"), "public class Shared { public static void Leaf() {} public static void Start() { Leaf(); } }").unwrap();
-    fs::write(project.join("Linked.csproj"), "<Project Sdk=\"Microsoft.NET.Sdk\"><PropertyGroup><TargetFramework>net10.0</TargetFramework></PropertyGroup><ItemGroup><Compile Include=\"../Shared.cs\" Link=\"Shared.cs\" /></ItemGroup></Project>").unwrap();
+    fs::write(project.join("Linked.csproj"), "<Project Sdk=\"Microsoft.NET.Sdk\"><PropertyGroup><TargetFramework>net11.0</TargetFramework></PropertyGroup><ItemGroup><Compile Include=\"../Shared.cs\" Link=\"Shared.cs\" /></ItemGroup></Project>").unwrap();
     root
 }
 

@@ -34,7 +34,7 @@ git push origin v0.1.0
 
 Use a new tag name for each release. The tag must include the workflow itself.
 The workflow uses GitHub's `xcode-27` Apple Silicon/macOS 27 runner (currently a
-public-preview image), Python 3.13, .NET 10, JDK 25, Rust 1.99.1 and Node 24+.
+public-preview image), Python 3.13, .NET 11, JDK 25, Rust 1.99.1 and Node 24+.
 Immutable, checksum-pinned official Homebrew bottles provide the reviewed
 Graphviz/libtool versions; their matching sources are also verified and bundled.
 Provisioning explicitly updates the runner's Homebrew CLI to at least 7.0.13,

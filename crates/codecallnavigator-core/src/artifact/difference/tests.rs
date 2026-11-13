@@ -4,6 +4,7 @@ use crate::{
     model::{GraphData, Node},
 };
 use serde_json::json;
+mod owned;
 
 fn fixture() -> artifact::Artifact {
     let data = GraphData {

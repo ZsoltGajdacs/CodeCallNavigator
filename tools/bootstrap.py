@@ -13,6 +13,16 @@ import tempfile
 import urllib.request
 
 ROOT = Path(__file__).resolve().parents[1]
+CALLATLAS_TARGET_FRAMEWORK = "net11.0"
+
+
+def callatlas_output(root):
+    return root / "vendor/callatlas/src/CallAtlas.Cli/bin/Release" / CALLATLAS_TARGET_FRAMEWORK
+
+
+def build_callatlas():
+    project = ROOT / "vendor/callatlas/src/CallAtlas.Cli/CallAtlas.Cli.csproj"
+    subprocess.run(["dotnet", "build", str(project), "-c", "Release"], check=True)
 
 
 def fetch_repository(name, spec):
@@ -178,8 +188,7 @@ def main():
     if args.jdt_investigation:
         fetch_jdt(lock["jdtls"])
         fetch_lombok(lock["lombok"])
-    subprocess.run(["dotnet", "build", str(ROOT / "vendor/callatlas/src/CallAtlas.Cli/CallAtlas.Cli.csproj"),
-                    "-c", "Release"], check=True)
+    build_callatlas()
     build_java_adapter()
     check_typescript_adapter()
 

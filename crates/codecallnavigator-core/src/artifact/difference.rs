@@ -56,14 +56,67 @@ pub struct Difference {
 }
 
 pub fn compare(before: &Artifact, after: &Artifact) -> Result<Difference> {
+    let before = ComparisonInput::validated(before)?;
+    let after = ComparisonInput::validated(after)?;
+    compare_graphs(
+        before.graph.clone(),
+        after.graph.clone(),
+        before.extensions,
+        after.extensions,
+    )
+}
+
+/// Consumes saved snapshots so validation and canonical ordering do not require
+/// retaining another complete JSON graph. Unknown fields remain in the raw graph.
+pub fn compare_owned(before: Artifact, after: Artifact) -> Result<Difference> {
     before.validate()?;
     after.validate()?;
-    let mut before_graph = before.graph.clone();
-    let mut after_graph = after.graph.clone();
-    sort_graph(&mut before_graph)?;
-    sort_graph(&mut after_graph)?;
+    compare_graphs(
+        before.graph,
+        after.graph,
+        &before.extensions,
+        &after.extensions,
+    )
+}
+
+fn compare_graphs(
+    mut before: Value,
+    mut after: Value,
+    before_extensions: &BTreeMap<String, Value>,
+    after_extensions: &BTreeMap<String, Value>,
+) -> Result<Difference> {
+    sort_graph(&mut before)?;
+    sort_graph(&mut after)?;
+    Ok(compare_canonical(
+        ComparisonInput {
+            graph: &before,
+            extensions: before_extensions,
+        },
+        ComparisonInput {
+            graph: &after,
+            extensions: after_extensions,
+        },
+    ))
+}
+
+struct ComparisonInput<'a> {
+    graph: &'a Value,
+    extensions: &'a BTreeMap<String, Value>,
+}
+
+impl<'a> ComparisonInput<'a> {
+    fn validated(artifact: &'a Artifact) -> Result<Self> {
+        artifact.validate()?;
+        Ok(Self {
+            graph: &artifact.graph,
+            extensions: &artifact.extensions,
+        })
+    }
+}
+
+fn compare_canonical(before: ComparisonInput<'_>, after: ComparisonInput<'_>) -> Difference {
     let mut changes = Vec::new();
-    for section in keys(Some(&before_graph), Some(&after_graph)) {
+    for section in keys(Some(before.graph), Some(after.graph)) {
         walk(
             Location {
                 scope: Scope::Graph,
@@ -71,8 +124,8 @@ pub fn compare(before: &Artifact, after: &Artifact) -> Result<Difference> {
                 entity: "",
                 path: "",
             },
-            before_graph.get(&section),
-            after_graph.get(&section),
+            before.graph.get(&section),
+            after.graph.get(&section),
             &mut changes,
         );
     }
@@ -106,12 +159,12 @@ pub fn compare(before: &Artifact, after: &Artifact) -> Result<Difference> {
     let graph_equal = changes.iter().all(metadata);
     let metadata_equal = changes.iter().all(|c| !metadata(c));
     let summary = summarize(&changes);
-    Ok(Difference {
+    Difference {
         graph_equal,
         metadata_equal,
         changes,
         summary,
-    })
+    }
 }
 
 fn metadata(change: &Change) -> bool {
@@ -178,21 +231,30 @@ fn walk(
     ) {
         compare_collection(CollectionContext { location, policy }, old, new, changes);
     } else {
-        let operation = match (before, after) {
-            (None, _) => Operation::Add,
-            (_, None) => Operation::Remove,
-            _ => Operation::Replace,
-        };
-        changes.push(Change {
-            scope,
-            section: section.into(),
-            entity: entity.into(),
-            operation,
-            path: path.into(),
-            before: before.cloned(),
-            after: after.cloned(),
-        });
+        record(location, before.cloned(), after.cloned(), changes);
     }
+}
+
+fn record(
+    location: Location<'_>,
+    before: Option<Value>,
+    after: Option<Value>,
+    changes: &mut Vec<Change>,
+) {
+    let operation = match (&before, &after) {
+        (None, _) => Operation::Add,
+        (_, None) => Operation::Remove,
+        _ => Operation::Replace,
+    };
+    changes.push(Change {
+        scope: location.scope,
+        section: location.section.into(),
+        entity: location.entity.into(),
+        operation,
+        path: location.path.into(),
+        before,
+        after,
+    });
 }
 
 #[derive(Clone, Copy)]
@@ -229,26 +291,45 @@ fn identity(value: &Value, policy: Collection) -> String {
     }
 }
 
-fn groups(values: &[Value], policy: Collection) -> BTreeMap<String, Value> {
-    let mut grouped = BTreeMap::<String, Vec<Value>>::new();
+#[derive(PartialEq)]
+enum Group<'a> {
+    Singleton(&'a Value),
+    Multiple(Vec<&'a Value>),
+}
+
+impl Group<'_> {
+    /// Allocate payloads only for emitted changes, never for unchanged groups.
+    fn to_value(&self) -> Value {
+        match self {
+            Self::Singleton(value) => (*value).clone(),
+            Self::Multiple(values) => {
+                Value::Array(values.iter().map(|value| (*value).clone()).collect())
+            }
+        }
+    }
+}
+
+fn groups(values: &[Value], policy: Collection) -> BTreeMap<String, Group<'_>> {
+    let mut grouped = BTreeMap::<String, Vec<&Value>>::new();
     for value in values {
         grouped
             .entry(identity(value, policy))
             .or_default()
-            .push(value.clone());
+            .push(value);
     }
     grouped
         .into_iter()
         .map(|(key, mut values)| {
-            values.sort_by_cached_key(Value::to_string);
+            // sort_graph globally orders every supported collection by serialized
+            // value. Filtering into groups retains precisely that variant order.
             let value = if matches!(
                 policy,
                 Collection::Nodes | Collection::Functions | Collection::Files
             ) && values.len() == 1
             {
-                values.remove(0)
+                Group::Singleton(values.remove(0))
             } else {
-                Value::Array(values)
+                Group::Multiple(values)
             };
             (key, value)
         })
@@ -284,7 +365,7 @@ fn compare_collection(
         } else {
             key.clone()
         };
-        walk(
+        compare_groups(
             Location {
                 scope,
                 section,
@@ -295,6 +376,28 @@ fn compare_collection(
             after.get(key),
             changes,
         );
+    }
+}
+
+fn compare_groups(
+    location: Location<'_>,
+    before: Option<&Group<'_>>,
+    after: Option<&Group<'_>>,
+    changes: &mut Vec<Change>,
+) {
+    if before == after {
+        return;
+    }
+    match (before, after) {
+        (Some(Group::Singleton(before)), Some(Group::Singleton(after))) => {
+            walk(location, Some(before), Some(after), changes);
+        }
+        _ => record(
+            location,
+            before.map(Group::to_value),
+            after.map(Group::to_value),
+            changes,
+        ),
     }
 }
 

@@ -60,8 +60,12 @@ You can also open `dist/CodeCallNavigator.app` directly. This local build is ad 
 signed, not notarized. The packaged minimum macOS version is 27.0; broader OS
 certification and Intel support are deferred.
 
-Installed toolchains remain prerequisites: Node 24+ and project-installed TypeScript 6.0.x for TypeScript analysis, .NET 10 to run CallAtlas, the SDKs and
+Installed toolchains remain prerequisites: Node 24+ and project-installed TypeScript 6.0.x for TypeScript analysis, .NET 11 to run CallAtlas, the SDKs and
 reference packs needed by your .NET projects, and JDK 25 to run the Java analyzer.
+Bootstrap applies the recorded CallAtlas patch targeting both its CLI and core
+projects at `net11.0`, then uses the standard build command. Upstream changes are
+preserved in the checked-in patch and checksum metadata.
+The analyzer and the MediatR fixture target `net11.0` and use the .NET 11 SDK.
 Gradle projects need a working wrapper and their configured Java toolchains.
 Maven projects need Maven 3.9+ or Maven 4, preferably through their Maven Wrapper.
 CodeCallNavigator honors existing project/user settings, profiles and toolchains. Maven
@@ -194,7 +198,7 @@ category for the current session. Source bodies and file paths are not searched.
 ## Reproduce the build
 
 Prerequisites: Apple Silicon macOS, Rust/Cargo, Xcode command-line tools, Python
-3.12+, installed .NET/JDK toolchains above, and Graphviz 16.1.0 (`dot` on PATH).
+3.12+, installed .NET/JDK toolchains above, and Graphviz 16.1.1 (`dot` on PATH).
 
 ```sh
 python3.13 tools/bootstrap.py
@@ -385,7 +389,7 @@ separately when applicable.
 
 Full requires Apple Silicon macOS, native Metal/process-table access, Python 3.12+
 (the local verification environment, falling back to `python3.13`), Rust with Clippy/rustfmt, Node 24+, JDK 25,
-.NET SDK 10, Maven 3.9+/4, Graphviz and Xcode command-line/signing tools. Run it
+.NET SDK 11, Maven 3.9+/4, Graphviz and Xcode command-line/signing tools. Run it
 outside the macOS sandbox. It also requires explicit inputs, configured once in
 your shell (replace these example paths with your actual installations):
 

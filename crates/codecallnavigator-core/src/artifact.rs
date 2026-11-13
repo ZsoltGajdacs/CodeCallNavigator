@@ -118,7 +118,7 @@ impl Artifact {
             "Reserved artifact extension property"
         );
         provenance::validate_analysis(&self.graph)?;
-        let mut graph: portable::PortableGraph = serde_json::from_value(self.graph.clone())?;
+        let mut graph = portable::PortableGraph::deserialize(&self.graph)?;
         let ids = validation::validate(&mut graph)?;
         Ok((graph, ids))
     }

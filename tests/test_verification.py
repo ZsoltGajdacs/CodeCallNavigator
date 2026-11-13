@@ -271,6 +271,14 @@ class ProfilingSnapshots(unittest.TestCase):
 
 
 class VerificationPlans(unittest.TestCase):
+    def test_current_toolchains_are_recognized_without_accepting_unreviewed_versions(self):
+        self.assertTrue(prerequisites.dotnet_supported("11.0.100 [/sdk]"))
+        self.assertFalse(prerequisites.dotnet_supported("10.0.404 [/sdk]"))
+        self.assertFalse(prerequisites.dotnet_supported("unrecognized"))
+        self.assertTrue(prerequisites.graphviz_supported("dot - graphviz version 16.1.1 (20261108.1752)", "16.1.1"))
+        self.assertFalse(prerequisites.graphviz_supported("dot - graphviz version 16.1.0", "16.1.1"))
+        self.assertFalse(prerequisites.graphviz_supported("dot - graphviz version 16.1.10", "16.1.1"))
+
     def args(self, mode, source=None):
         return SimpleNamespace(mode=mode, base="HEAD", timeout=123, profile_source=source, codescene_command="cs-mcp")
 

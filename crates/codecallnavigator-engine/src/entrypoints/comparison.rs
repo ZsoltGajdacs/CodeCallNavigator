@@ -73,7 +73,9 @@ fn execute(
     } else {
         None
     };
-    let diff = difference::compare(&before.artifact, &after.artifact)
+    // Binding and freshness describe the exact loaded bytes. Once recorded,
+    // comparison owns the artifacts and can canonicalize without full copies.
+    let diff = difference::compare_owned(before.artifact, after.artifact)
         .map_err(|e| Error::new("comparison_failed", format!("{e:#}")))?;
     let total = diff.changes.len();
     let result = json!({
