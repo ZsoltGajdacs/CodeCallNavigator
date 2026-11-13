@@ -6,6 +6,9 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::{collections::BTreeSet, path::Path};
 
+/// Complete evaluated C# import observations, independent of MSBuild input mtimes.
+pub const CSHARP_INPUT_POLICY: &str = "msbuild-preprocess.v2";
+
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Analysis {
     pub version: u32,

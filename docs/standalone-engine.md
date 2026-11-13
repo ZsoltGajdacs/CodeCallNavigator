@@ -189,6 +189,70 @@ lambda publishers, custom composed annotations and cross-context wiring remain
 unresolved. A concrete nongeneric subclass can retain generic superclass metadata.
 Runtime analysis requires the matching v6 Java source adapter, including its HTTP inventory capability.
 
+## C# evaluated build inputs
+
+After restore, the engine inventories each selected/referenced project's evaluated
+imports through MSBuild preprocessing in normal evaluation and the pinned Roslyn 5.9.0
+.NET design-time context. It queries TargetFramework/TargetFrameworks in both modes and
+includes each inner framework when required. Source/reference/additional-file metadata
+uses the same contexts, retaining design-only source scopes. Configured normal-root
+metadata remains authoritative for source ownership/classification; design-time and
+inner-framework metadata only fill missing file/assembly owners. Incompatible
+fallback-only classifications fail rather than letting evaluation order choose a result.
+Solution opens propagate the absolute SolutionDir with its trailing separator to every
+evaluation and metadata query. It snapshots those explicit files, including
+NuGet-generated `obj` imports and SDK/external imports, and repeats preprocessing under
+that snapshot before reading source metadata. It checks the same inventory and contents,
+including each context's exact import membership, after metadata and CallAtlas
+extraction; changes reject publication and preserve the previous graph. The existing
+authored-source/directory snapshots remain in force. Build outputs are excluded from
+directory scans, while evaluated import files remain explicit inputs, so ordinary output
+creation does not trigger refresh loops. No source/relationship normalization changes
+with this policy.
+
+The inventory uses strict SDK 11 XML comment framing, including balanced import end
+frames without parent labels. MSBuild escapes `--` as `__` in these comments; the engine
+resolves existing filesystem components and rejects ambiguous spellings instead of
+guessing. Unsupported framing, missing evaluated imports and ambiguity fail with project
+context. Evaluated lexical aliases are preserved.
+
+MSBuild command-line property values are encoded literally, escaping percent before
+semicolon and comma. This prevents a SolutionDir or dynamic target-framework value from
+introducing additional global-property assignments. A real SDK round-trip preserves the
+full value and the pinned design-time flags.
+
+The pinned native Roslyn/CallAtlas integration has a separate limitation in the retained
+delimiter/percent solution-path probe: a SolutionDir-expanded Import produces only the
+unconditional method, while a relative design-time Import produces the expected
+conditional method as well. Both imports are observed by the preflight inventory. This
+change fixes the CLI property boundary and does not repair that native import-expansion
+behavior; see the
+[probe](../evidence/freshness/csharp-import-fix/literal-property-probe.json). Ordinary
+SolutionDir-expanded imports remain covered by real compiler acceptance.
+
+The JSON version report in `analysis.engine_versions` records `csharp_input_policy` as
+`msbuild-preprocess.v2`. The contexts follow the pinned [Roslyn BuildHost
+source](https://github.com/dotnet/roslyn/blob/35d9211b841e7613c1d2f8f5af6d628ace696c4c/src/Workspaces/MSBuild/BuildHost/Build/ProjectBuildManager.cs#L25-L52).
+The .NET design-time host uses the NonExistentFile sentinel and does not set
+BuildingInsideVisualStudio. Revisit this policy when upgrading the Roslyn dependency.
+Earlier v1 and legacy C# artifacts remain readable, but verification reports
+`legacy_csharp_input_policy` and `unverifiable` until explicitly refreshed. Known
+changed inputs still take precedence as `stale`. This policy check applies to C# nodes
+or C# build targets, including valid empty graphs; Java/TypeScript artifacts are
+unaffected.
+
+Freshness verifies observed inputs only. SDK/external inputs outside declared logical
+roots produce `unmapped_input` and `unverifiable`; use explicit `--root` mappings when
+those inputs must be verifiable. Imports skipped by a false condition and absent
+conditional-resolution candidates are not recorded probes. The repeated evaluation
+detects membership changes during analysis, including normal/design imports swapping
+while their union stays unchanged. Creating an unobserved conditional input after
+publication is outside this guarantee. An empty external Compile glob returns no source
+item from which to derive a directory scope; its first later file is likewise unobserved
+unless a known project/import or recorded source scope covers it. This differs from an
+empty referenced project, whose directory is explicitly observed. No arbitrary MSBuild
+expression/glob parser is used to claim otherwise.
+
 ## MediatR dispatch
 
 C# analysis recognizes compiler-bound `ISender`/`IPublisher` contracts, including

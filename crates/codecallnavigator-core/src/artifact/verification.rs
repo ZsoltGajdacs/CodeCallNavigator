@@ -1,4 +1,5 @@
 //! Read-only verification of observed inputs; this does not certify a build environment.
+mod csharp_policy;
 use super::{Artifact, GRAPH_PATH, Roots, paths::Paths, provenance};
 use crate::fingerprint::observe_content;
 use anyhow::{Context, Result};
@@ -89,6 +90,9 @@ pub fn verify_artifact(artifact: &Artifact, digest: &str, roots: &Roots) -> Resu
         report.reason("missing_analysis", None);
         return Ok(report);
     };
+    if csharp_policy::legacy(&artifact.graph, &analysis) {
+        report.reason("legacy_csharp_input_policy", None);
+    }
     let stale = verify_manifest(&analysis, roots, &paths, &mut report);
     report.input_status = if stale {
         InputStatus::Stale
@@ -181,6 +185,32 @@ mod tests {
             serde_json::to_value(provenance::build(&fingerprints, &[], "{}", &roots).unwrap())
                 .unwrap();
         artifact.bytes().unwrap()
+    }
+    #[test]
+    fn legacy_csharp_is_unverifiable_without_rewriting_and_stale_takes_precedence() {
+        let root = tempfile::tempdir().unwrap();
+        fs::write(root.path().join("input.txt"), "one").unwrap();
+        let roots = vec![("repo".into(), root.path().into())];
+        let mut artifact = Artifact::from_bytes(&artifact_bytes(root.path())).unwrap();
+        artifact.graph["analysis"]["targets"] = serde_json::json!(["@repo/Empty.CSPROJ"]);
+        let bytes = artifact.bytes().unwrap();
+        fs::create_dir(root.path().join(".codecallnavigator")).unwrap();
+        let path = root.path().join(GRAPH_PATH);
+        fs::write(&path, &bytes).unwrap();
+        let report = verify(root.path(), &roots).unwrap();
+        assert_eq!(report.input_status, InputStatus::Unverifiable);
+        assert!(
+            report
+                .reasons
+                .iter()
+                .any(|reason| reason.code == "legacy_csharp_input_policy")
+        );
+        assert_eq!(fs::read(&path).unwrap(), bytes);
+        fs::write(root.path().join("input.txt"), "two").unwrap();
+        assert_eq!(
+            verify(root.path(), &roots).unwrap().input_status,
+            InputStatus::Stale
+        );
     }
     #[test]
     fn content_changes_directory_additions_missing_transitions_and_relocation() {

@@ -1,0 +1,624 @@
+[
+  {
+    "name": "prerequisites",
+    "command": [
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/.venv-verification/bin/python",
+      "tools/verification/prerequisites.py",
+      "--root",
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph",
+      "--codescene-command",
+      "cs-mcp",
+      "--profile-source",
+      "/Users/zsolt.gajdacs/Library/Application Support/CodeCallNavigator"
+    ],
+    "timeout": 180,
+    "status": "passed",
+    "log": "01-prerequisites.log",
+    "exit_code": 0,
+    "seconds": 0.945
+  },
+  {
+    "name": "whitespace",
+    "command": [
+      "git",
+      "diff",
+      "--check",
+      "HEAD",
+      "--"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "02-whitespace.log",
+    "exit_code": 0,
+    "seconds": 0.038
+  },
+  {
+    "name": "syntax-format-002",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "crates/codecallnavigator-core/src/artifact/provenance.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "03-syntax-format-002.log",
+    "exit_code": 0,
+    "seconds": 0.238
+  },
+  {
+    "name": "syntax-format-003",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "crates/codecallnavigator-core/src/artifact/verification.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "04-syntax-format-003.log",
+    "exit_code": 0,
+    "seconds": 0.042
+  },
+  {
+    "name": "syntax-format-004",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "crates/codecallnavigator-core/src/artifact/verification/csharp_policy.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "05-syntax-format-004.log",
+    "exit_code": 0,
+    "seconds": 0.074
+  },
+  {
+    "name": "syntax-format-006",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "crates/codecallnavigator-engine/src/analyzers.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "06-syntax-format-006.log",
+    "exit_code": 0,
+    "seconds": 0.039
+  },
+  {
+    "name": "syntax-format-007",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "crates/codecallnavigator-engine/src/analyzers/csharp.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "07-syntax-format-007.log",
+    "exit_code": 0,
+    "seconds": 0.041
+  },
+  {
+    "name": "syntax-format-008",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "crates/codecallnavigator-engine/src/analyzers/csharp/inputs.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "08-syntax-format-008.log",
+    "exit_code": 0,
+    "seconds": 0.042
+  },
+  {
+    "name": "syntax-format-009",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "crates/codecallnavigator-engine/src/analyzers/csharp/inputs/contexts.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "09-syntax-format-009.log",
+    "exit_code": 0,
+    "seconds": 0.041
+  },
+  {
+    "name": "syntax-format-010",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "crates/codecallnavigator-engine/src/analyzers/csharp/inputs/tests.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "10-syntax-format-010.log",
+    "exit_code": 0,
+    "seconds": 0.04
+  },
+  {
+    "name": "syntax-format-011",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "crates/codecallnavigator-engine/src/analyzers/csharp/ownership.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "11-syntax-format-011.log",
+    "exit_code": 0,
+    "seconds": 0.077
+  },
+  {
+    "name": "syntax-format-012",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "crates/codecallnavigator-engine/tests/csharp_inputs.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "12-syntax-format-012.log",
+    "exit_code": 0,
+    "seconds": 0.075
+  },
+  {
+    "name": "bootstrap",
+    "command": [
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/.venv-verification/bin/python",
+      "tools/bootstrap.py"
+    ],
+    "timeout": 3600,
+    "status": "passed",
+    "log": "13-bootstrap.log",
+    "exit_code": 0,
+    "seconds": 5.266
+  },
+  {
+    "name": "build-debug-engine",
+    "command": [
+      "cargo",
+      "build",
+      "--locked",
+      "-p",
+      "codecallnavigator-engine",
+      "--bin",
+      "codecallnavigator-engine"
+    ],
+    "timeout": 3600,
+    "status": "passed",
+    "log": "14-build-debug-engine.log",
+    "exit_code": 0,
+    "seconds": 0.505
+  },
+  {
+    "name": "cargo-check",
+    "command": [
+      "cargo",
+      "check",
+      "--locked",
+      "--workspace",
+      "--all-targets"
+    ],
+    "timeout": 3600,
+    "status": "passed",
+    "log": "15-cargo-check.log",
+    "exit_code": 0,
+    "seconds": 0.562
+  },
+  {
+    "name": "mcp-dependency-boundary",
+    "command": [
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/.venv-verification/bin/python",
+      "tools/mcp_boundary.py",
+      "--root",
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph"
+    ],
+    "timeout": 3600,
+    "status": "passed",
+    "log": "16-mcp-dependency-boundary.log",
+    "exit_code": 0,
+    "seconds": 0.409
+  },
+  {
+    "name": "clippy",
+    "command": [
+      "cargo",
+      "clippy",
+      "--locked",
+      "--workspace",
+      "--all-targets",
+      "--no-deps",
+      "--",
+      "-D",
+      "warnings"
+    ],
+    "timeout": 3600,
+    "status": "passed",
+    "log": "17-clippy.log",
+    "exit_code": 0,
+    "seconds": 0.612
+  },
+  {
+    "name": "rust-tests",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "--workspace",
+      "--all-targets",
+      "--",
+      "--test-threads=1"
+    ],
+    "timeout": 3600,
+    "status": "passed",
+    "log": "18-rust-tests.log",
+    "exit_code": 0,
+    "seconds": 105.138
+  },
+  {
+    "name": "python-tests",
+    "command": [
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/.venv-verification/bin/python",
+      "-m",
+      "unittest",
+      "discover",
+      "-s",
+      "tests",
+      "-v"
+    ],
+    "timeout": 3600,
+    "status": "passed",
+    "log": "19-python-tests.log",
+    "exit_code": 0,
+    "seconds": 49.381
+  },
+  {
+    "name": "python-tool-tests",
+    "command": [
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/.venv-verification/bin/python",
+      "-m",
+      "unittest",
+      "discover",
+      "-s",
+      "tools",
+      "-p",
+      "test_*.py",
+      "-v"
+    ],
+    "timeout": 3600,
+    "status": "passed",
+    "log": "20-python-tool-tests.log",
+    "exit_code": 0,
+    "seconds": 14.479
+  },
+  {
+    "name": "typescript-tests",
+    "command": [
+      "node",
+      "--test",
+      "tools/typescript/adapter.test.js",
+      "tools/typescript/boundary.test.js",
+      "tools/typescript/callable.test.js",
+      "tools/typescript/flow-export.test.js",
+      "tools/typescript/observations.test.js",
+      "tools/typescript/observer.test.js",
+      "tools/typescript/paths.test.js",
+      "tools/typescript/signature.test.js",
+      "tools/typescript/worker.test.js"
+    ],
+    "timeout": 3600,
+    "status": "passed",
+    "log": "21-typescript-tests.log",
+    "exit_code": 0,
+    "seconds": 37.801
+  },
+  {
+    "name": "build-release-engine",
+    "command": [
+      "cargo",
+      "build",
+      "--locked",
+      "--release",
+      "-p",
+      "codecallnavigator-engine",
+      "--bin",
+      "codecallnavigator-engine"
+    ],
+    "timeout": 3600,
+    "status": "passed",
+    "log": "22-build-release-engine.log",
+    "exit_code": 0,
+    "seconds": 0.3
+  },
+  {
+    "name": "profile-snapshot",
+    "command": [
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/.venv-verification/bin/python",
+      "tools/verification/profile.py",
+      "/Users/zsolt.gajdacs/Library/Application Support/CodeCallNavigator",
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/target/verification/task63-retry/profile"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "23-profile-snapshot.log",
+    "exit_code": 0,
+    "seconds": 0.147
+  },
+  {
+    "name": "release-acceptance-and-benchmarks",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "--release",
+      "--workspace",
+      "--all-targets",
+      "--no-fail-fast",
+      "--",
+      "--include-ignored",
+      "--test-threads=1",
+      "--nocapture"
+    ],
+    "timeout": 3600,
+    "status": "passed",
+    "log": "24-release-acceptance-and-benchmarks.log",
+    "exit_code": 0,
+    "seconds": 1653.302
+  },
+  {
+    "name": "storage-benchmark",
+    "command": [
+      "cargo",
+      "run",
+      "--locked",
+      "--release",
+      "--bin",
+      "benchmark",
+      "--",
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/target/verification/task63-retry/scale-cache"
+    ],
+    "timeout": 3600,
+    "status": "passed",
+    "log": "25-storage-benchmark.log",
+    "exit_code": 0,
+    "seconds": 42.225
+  },
+  {
+    "name": "package",
+    "command": [
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/.venv-verification/bin/python",
+      "tools/package.py"
+    ],
+    "timeout": 3600,
+    "status": "passed",
+    "log": "26-package.log",
+    "exit_code": 0,
+    "seconds": 19.34
+  },
+  {
+    "name": "package-signature",
+    "command": [
+      "codesign",
+      "--verify",
+      "--deep",
+      "--strict",
+      "dist/CodeCallNavigator.app"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "27-package-signature.log",
+    "exit_code": 0,
+    "seconds": 0.131
+  },
+  {
+    "name": "packaged-engine",
+    "command": [
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/dist/CodeCallNavigatorEngine/bin/codecallnavigator-engine",
+      "--help"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "28-packaged-engine.log",
+    "exit_code": 0,
+    "seconds": 0.237
+  },
+  {
+    "name": "installed-cli",
+    "command": [
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/.venv-verification/bin/python",
+      "tools/installed_cli_acceptance.py",
+      "--package",
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/dist/CodeCallNavigatorEngine",
+      "--node-modules",
+      "/Users/zsolt.gajdacs/Zs/Programming/PacificFateMapEditor/node_modules",
+      "--output",
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/target/verification/task63-retry/installed-cli.json"
+    ],
+    "timeout": 3600,
+    "status": "passed",
+    "log": "29-installed-cli.log",
+    "exit_code": 0,
+    "seconds": 2.799
+  },
+  {
+    "name": "agent-integrations-check",
+    "command": [
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/.venv-verification/bin/python",
+      "tools/package_agent_integrations.py",
+      "--host",
+      "all",
+      "--check"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "30-agent-integrations-check.log",
+    "exit_code": 0,
+    "seconds": 0.04
+  },
+  {
+    "name": "agent-integrations-package",
+    "command": [
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/.venv-verification/bin/python",
+      "tools/package_agent_integrations.py",
+      "--host",
+      "all",
+      "--output",
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/target/verification/task63-retry/agent-integrations"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "31-agent-integrations-package.log",
+    "exit_code": 0,
+    "seconds": 0.04
+  },
+  {
+    "name": "agent-cli-journeys",
+    "command": [
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/.venv-verification/bin/python",
+      "tools/agent_journeys.py",
+      "--node-modules",
+      "/Users/zsolt.gajdacs/Zs/Programming/PacificFateMapEditor/node_modules",
+      "--output",
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/target/verification/task63-retry/agent-journeys.json"
+    ],
+    "timeout": 3600,
+    "status": "passed",
+    "log": "32-agent-cli-journeys.log",
+    "exit_code": 0,
+    "seconds": 1.743
+  },
+  {
+    "name": "mcp-independent-install",
+    "command": [
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/.venv-verification/bin/python",
+      "tools/package_mcp.py",
+      "--engine",
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/dist/CodeCallNavigatorEngine/bin/codecallnavigator-engine"
+    ],
+    "timeout": 3600,
+    "status": "passed",
+    "log": "33-mcp-independent-install.log",
+    "exit_code": 0,
+    "seconds": 15.089
+  },
+  {
+    "name": "agent-mcp-journeys",
+    "command": [
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/.venv-verification/bin/python",
+      "tools/agent_mcp_journeys.py",
+      "--node-modules",
+      "/Users/zsolt.gajdacs/Zs/Programming/PacificFateMapEditor/node_modules",
+      "--output",
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/target/verification/task63-retry/agent-mcp-journeys.json"
+    ],
+    "timeout": 3600,
+    "status": "passed",
+    "log": "34-agent-mcp-journeys.log",
+    "exit_code": 0,
+    "seconds": 1.611
+  },
+  {
+    "name": "codescene",
+    "command": [
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/.venv-verification/bin/python",
+      "tools/verification/quality.py",
+      "--root",
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph",
+      "--command",
+      "cs-mcp",
+      "--timeout",
+      "120",
+      "--files",
+      ".backlog/tasks/task-63 - Make-C-cold-and-warm-analysis-input-coverage-consistent.md",
+      "Cargo.lock",
+      "crates/codecallnavigator-core/src/artifact/provenance.rs",
+      "crates/codecallnavigator-core/src/artifact/verification.rs",
+      "crates/codecallnavigator-core/src/artifact/verification/csharp_policy.rs",
+      "crates/codecallnavigator-engine/Cargo.toml",
+      "crates/codecallnavigator-engine/src/analyzers.rs",
+      "crates/codecallnavigator-engine/src/analyzers/csharp.rs",
+      "crates/codecallnavigator-engine/src/analyzers/csharp/inputs.rs",
+      "crates/codecallnavigator-engine/src/analyzers/csharp/inputs/contexts.rs",
+      "crates/codecallnavigator-engine/src/analyzers/csharp/inputs/tests.rs",
+      "crates/codecallnavigator-engine/src/analyzers/csharp/ownership.rs",
+      "crates/codecallnavigator-engine/tests/csharp_inputs.rs",
+      "docs/standalone-engine.md",
+      "evidence/freshness/csharp-import-fix/README.md",
+      "evidence/freshness/csharp-import-fix/cli-audit-v2/metadata.json",
+      "evidence/freshness/csharp-import-fix/cli-audit-v2/samples.jsonl.gz",
+      "evidence/freshness/csharp-import-fix/cli-audit-v2/summary.json",
+      "evidence/freshness/csharp-import-fix/cli-audit/metadata.json",
+      "evidence/freshness/csharp-import-fix/cli-audit/samples.jsonl.gz",
+      "evidence/freshness/csharp-import-fix/cli-audit/summary.json",
+      "evidence/freshness/csharp-import-fix/literal-property-probe.json",
+      "evidence/freshness/csharp-import-fix/manifests.json",
+      "evidence/freshness/csharp-import-fix/verification/full-timeout-results.json",
+      "evidence/freshness/csharp-import-fix/verification/pre-commit-code-health.json"
+    ],
+    "timeout": 180,
+    "status": "passed",
+    "log": "35-codescene.log",
+    "exit_code": 0,
+    "seconds": 3.205
+  },
+  {
+    "name": "cleanup",
+    "command": [
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/.venv-verification/bin/python",
+      "tools/verification/cleanup.py",
+      "--root",
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph",
+      "--output",
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/target/verification/task63-retry",
+      "--mode",
+      "full",
+      "--keep-artifacts"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "36-cleanup.log",
+    "exit_code": 0,
+    "seconds": 0.504
+  }
+]
