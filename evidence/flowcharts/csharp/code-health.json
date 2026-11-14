@@ -1,0 +1,965 @@
+{
+  "recorded_on": "2026-11-14",
+  "scope": "TASK-22.1 raw exporter and project-owned verification helpers",
+  "reviews": [
+    {
+      "path": "src/CallAtlas.Core/FlowStatements.cs",
+      "score": 9.38,
+      "review": [
+        {
+          "category": "Overall Code Complexity",
+          "description": "Overall Code Complexity is measured by the mean cyclomatic complexity across all functions in the file. The lower the number, the better.\n\nCyclomatic complexity is a function level metric that measures the number of logical branches (if-else, loops, etc.). Cyclomatic complexity is a rough complexity measure, but useful as a way of estimating the minimum number of unit tests you would need. As such, prefer functions with low cyclomatic complexity (2-3 branches).",
+          "indication": 2
+        }
+      ],
+      "workspace_path": "vendor/callatlas/src/CallAtlas.Core/FlowStatements.cs"
+    },
+    {
+      "path": "src/CallAtlas.Core/FlowBindings.cs",
+      "score": 9.53,
+      "review": [
+        {
+          "category": "Bumpy Road Ahead",
+          "functions": [
+            {
+              "title": "Add",
+              "details": "bumps = 2",
+              "start-line": 15,
+              "end-line": 31,
+              "url": ""
+            }
+          ],
+          "description": "A Bumpy Road is a function that contains multiple chunks of nested conditional logic inside the same function. The deeper the nesting and the more bumps, the lower the code health.\n\nA bumpy code road represents a lack of encapsulation which becomes an obstacle to comprehension. In imperative languages there\u2019s also an increased risk for feature entanglement, which leads to complex state management. CodeScene considers the following rules for the code health impact: 1) The deeper the nested conditional logic of each bump, the higher the tax on our working memory. 2) The more bumps inside a function, the more expensive it is to refactor as each bump represents a missing abstraction. 3) The larger each bump \u2013 that is, the more lines of code it spans \u2013 the harder it is to build up a mental model of the function. The nesting depth for what is considered a bump is 2 levels of conditionals.",
+          "indication": 3
+        },
+        {
+          "category": "Complex Method",
+          "functions": [
+            {
+              "title": "Add",
+              "details": "cc = 10",
+              "start-line": 15,
+              "end-line": 31,
+              "url": ""
+            }
+          ],
+          "description": "A Complex Method has a high cyclomatic complexity. The recommended threshold for the C# language is a cyclomatic complexity lower than 9.\n\nSeverity: Brain Method - Complex Method - Long Method.",
+          "indication": 2
+        }
+      ],
+      "workspace_path": "vendor/callatlas/src/CallAtlas.Core/FlowBindings.cs"
+    },
+    {
+      "path": "src/CallAtlas.Core/FlowExport.cs",
+      "score": 9.66,
+      "review": [
+        {
+          "category": "Complex Method",
+          "functions": [
+            {
+              "title": "Build",
+              "details": "cc = 12",
+              "start-line": 10,
+              "end-line": 42,
+              "url": ""
+            }
+          ],
+          "description": "A Complex Method has a high cyclomatic complexity. The recommended threshold for the C# language is a cyclomatic complexity lower than 9.\n\nSeverity: Brain Method - Complex Method - Long Method.",
+          "indication": 2
+        }
+      ],
+      "workspace_path": "vendor/callatlas/src/CallAtlas.Core/FlowExport.cs"
+    },
+    {
+      "path": "src/CallAtlas.Core/FlowValidation.cs",
+      "score": 10,
+      "review": [],
+      "workspace_path": "vendor/callatlas/src/CallAtlas.Core/FlowValidation.cs"
+    },
+    {
+      "path": "src/CallAtlas.Core/FlowContracts.cs",
+      "score": 10,
+      "review": [],
+      "workspace_path": "vendor/callatlas/src/CallAtlas.Core/FlowContracts.cs"
+    },
+    {
+      "path": "src/CallAtlas.Core/FlowUtf8Offsets.cs",
+      "score": 10,
+      "review": [],
+      "workspace_path": "vendor/callatlas/src/CallAtlas.Core/FlowUtf8Offsets.cs"
+    },
+    {
+      "path": "src/CallAtlas.Core/FlowStatementValidation.cs",
+      "score": 9.68,
+      "review": [
+        {
+          "category": "Complex Method",
+          "functions": [
+            {
+              "title": "Statement",
+              "details": "cc = 11",
+              "start-line": 5,
+              "end-line": 16,
+              "url": ""
+            }
+          ],
+          "description": "A Complex Method has a high cyclomatic complexity. The recommended threshold for the C# language is a cyclomatic complexity lower than 9.\n\nSeverity: Brain Method - Complex Method - Long Method.",
+          "indication": 2
+        }
+      ],
+      "workspace_path": "vendor/callatlas/src/CallAtlas.Core/FlowStatementValidation.cs"
+    },
+    {
+      "workspace_path": "vendor/callatlas/src/CallAtlas.Core/FlowExpressions.cs",
+      "score": 9.38,
+      "review": [
+        {
+          "category": "Complex Method",
+          "functions": [
+            {
+              "title": "OrderedExpression",
+              "details": "cc = 9",
+              "start-line": 29,
+              "end-line": 38,
+              "url": ""
+            }
+          ],
+          "description": "A Complex Method has a high cyclomatic complexity. The recommended threshold for the C# language is a cyclomatic complexity lower than 9.\n\nSeverity: Brain Method - Complex Method - Long Method.",
+          "indication": 2
+        },
+        {
+          "category": "Primitive Obsession",
+          "description": "Code that uses a high degree of built-in, primitives such as integers, strings, floats, lacks a domain language that encapsulates the validation and semantics of function arguments. Primitive Obsession has several consequences: 1) In a statically typed language, the compiler will detect less erroneous assignments. 2) Security impact since the possible value range of a variable/argument isn't retricted.\n\nIn this module, 39 % of all functions have primitive types as arguments.",
+          "indication": 2
+        }
+      ],
+      "path": "src/CallAtlas.Core/FlowExpressions.cs"
+    },
+    {
+      "path": "src/CallAtlas.Core/FlowExpressionValidation.cs",
+      "score": 10,
+      "review": [],
+      "workspace_path": "vendor/callatlas/src/CallAtlas.Core/FlowExpressionValidation.cs"
+    },
+    {
+      "path": "src/CallAtlas.Core/FlowSource.cs",
+      "score": 10,
+      "review": [],
+      "workspace_path": "vendor/callatlas/src/CallAtlas.Core/FlowSource.cs"
+    },
+    {
+      "path": "src/CallAtlas.Core/FlowJson.cs",
+      "score": 10,
+      "review": [],
+      "workspace_path": "vendor/callatlas/src/CallAtlas.Core/FlowJson.cs"
+    },
+    {
+      "path": "src/CallAtlas.Core/FlowOriginalSource.cs",
+      "score": 10,
+      "review": [],
+      "workspace_path": "vendor/callatlas/src/CallAtlas.Core/FlowOriginalSource.cs"
+    },
+    {
+      "path": "src/CallAtlas.Core/FlowText.cs",
+      "score": 9.68,
+      "review": [
+        {
+          "category": "Complex Conditional",
+          "functions": [
+            {
+              "title": "Label:14",
+              "details": "2 complex conditional expressions",
+              "start-line": 14,
+              "end-line": 14,
+              "url": ""
+            }
+          ],
+          "description": "A complex conditional is an expression inside a branch such as an <code>if</code>-statmeent which consists of multiple, logical operations. Example: <code>if (x.started() && y.running())</code>.Complex conditionals make the code even harder to read, and contribute to the Complex Method code smell. Encapsulate them.",
+          "indication": 2
+        }
+      ],
+      "workspace_path": "vendor/callatlas/src/CallAtlas.Core/FlowText.cs"
+    },
+    {
+      "path": "src/CallAtlas.Core/FlowBinding.cs",
+      "score": 10,
+      "review": [],
+      "workspace_path": "vendor/callatlas/src/CallAtlas.Core/FlowBinding.cs"
+    },
+    {
+      "path": "src/CallAtlas.Core/CallGraphBuilder.cs",
+      "score": 5.2,
+      "review": [
+        {
+          "category": "Bumpy Road Ahead",
+          "functions": [
+            {
+              "title": "ExtractCore",
+              "details": "bumps = 3",
+              "start-line": 655,
+              "end-line": 1029,
+              "url": ""
+            },
+            {
+              "title": "RecordVirtualTargets",
+              "details": "bumps = 3",
+              "start-line": 1387,
+              "end-line": 1451,
+              "url": ""
+            },
+            {
+              "title": "All",
+              "details": "bumps = 2",
+              "start-line": 1126,
+              "end-line": 1165,
+              "url": ""
+            },
+            {
+              "title": "CountBodyErrors",
+              "details": "bumps = 2",
+              "start-line": 1203,
+              "end-line": 1243,
+              "url": ""
+            }
+          ],
+          "description": "A Bumpy Road is a function that contains multiple chunks of nested conditional logic inside the same function. The deeper the nesting and the more bumps, the lower the code health.\n\nA bumpy code road represents a lack of encapsulation which becomes an obstacle to comprehension. In imperative languages there\u2019s also an increased risk for feature entanglement, which leads to complex state management. CodeScene considers the following rules for the code health impact: 1) The deeper the nested conditional logic of each bump, the higher the tax on our working memory. 2) The more bumps inside a function, the more expensive it is to refactor as each bump represents a missing abstraction. 3) The larger each bump \u2013 that is, the more lines of code it spans \u2013 the harder it is to build up a mental model of the function. The nesting depth for what is considered a bump is 2 levels of conditionals.",
+          "indication": 3
+        },
+        {
+          "category": "Deep, Nested Complexity",
+          "functions": [
+            {
+              "title": "ExtractCore.BindBodies",
+              "details": "Nesting depth = 4 conditionals",
+              "start-line": 805,
+              "end-line": 856,
+              "url": ""
+            },
+            {
+              "title": "All",
+              "details": "Nesting depth = 4 conditionals",
+              "start-line": 1126,
+              "end-line": 1165,
+              "url": ""
+            },
+            {
+              "title": "CountBodyErrors",
+              "details": "Nesting depth = 4 conditionals",
+              "start-line": 1203,
+              "end-line": 1243,
+              "url": ""
+            },
+            {
+              "title": "RecordVirtualTargets",
+              "details": "Nesting depth = 4 conditionals",
+              "start-line": 1387,
+              "end-line": 1451,
+              "url": ""
+            }
+          ],
+          "description": "Deep nested logic means that you have control structures like if-statements or loops inside other control structures. Deep nested logic increases the cognitive load on the programmer reading the code. The human working memory has a maximum capacity of 3-4 items; beyond that threshold, we struggle with keeping things in our head. Consequently, deep nested logic has a strong correlation to defects and accounts for roughly 20% of all programming mistakes.\n\nCodeScene measures the maximum nesting depth inside each function. The deeper the nesting, the lower the code health. The threshold for the C# language is 4 levels of nesting.",
+          "indication": 3
+        },
+        {
+          "category": "Complex Method",
+          "functions": [
+            {
+              "title": "ExtractCore",
+              "details": "cc = 25",
+              "start-line": 655,
+              "end-line": 1029,
+              "url": ""
+            },
+            {
+              "title": "ExtractCore.Collect",
+              "details": "cc = 20",
+              "start-line": 677,
+              "end-line": 772,
+              "url": ""
+            },
+            {
+              "title": "RecordMemberAccess",
+              "details": "cc = 18",
+              "start-line": 1703,
+              "end-line": 1773,
+              "url": ""
+            },
+            {
+              "title": "ExtractCore.BindBodies",
+              "details": "cc = 18",
+              "start-line": 805,
+              "end-line": 856,
+              "url": ""
+            },
+            {
+              "title": "RecordVirtualTargets",
+              "details": "cc = 14",
+              "start-line": 1387,
+              "end-line": 1451,
+              "url": ""
+            },
+            {
+              "title": "CountBodyErrors",
+              "details": "cc = 12",
+              "start-line": 1203,
+              "end-line": 1243,
+              "url": ""
+            },
+            {
+              "title": "All",
+              "details": "cc = 11",
+              "start-line": 1126,
+              "end-line": 1165,
+              "url": ""
+            },
+            {
+              "title": "BuildFromDirectory",
+              "details": "cc = 11",
+              "start-line": 494,
+              "end-line": 576,
+              "url": ""
+            },
+            {
+              "title": "AccessDirection",
+              "details": "cc = 9",
+              "start-line": 1798,
+              "end-line": 1828,
+              "url": ""
+            },
+            {
+              "title": "BuildFromSolution",
+              "details": "cc = 9",
+              "start-line": 206,
+              "end-line": 284,
+              "url": ""
+            }
+          ],
+          "description": "A Complex Method has a high cyclomatic complexity. The recommended threshold for the C# language is a cyclomatic complexity lower than 9.\n\nSeverity: Brain Method - Complex Method - Long Method.",
+          "indication": 2
+        },
+        {
+          "category": "Complex Conditional",
+          "functions": [
+            {
+              "title": "RecordMemberAccess:1720",
+              "details": "2 complex conditional expressions",
+              "start-line": 1720,
+              "end-line": 1720,
+              "url": ""
+            },
+            {
+              "title": "RecordMemberAccess:1726",
+              "details": "2 complex conditional expressions",
+              "start-line": 1726,
+              "end-line": 1726,
+              "url": ""
+            }
+          ],
+          "description": "A complex conditional is an expression inside a branch such as an <code>if</code>-statmeent which consists of multiple, logical operations. Example: <code>if (x.started() && y.running())</code>.Complex conditionals make the code even harder to read, and contribute to the Complex Method code smell. Encapsulate them.",
+          "indication": 2
+        },
+        {
+          "category": "Large Method",
+          "functions": [
+            {
+              "title": "ExtractCore.Collect",
+              "details": "LoC = 85 lines",
+              "start-line": 677,
+              "end-line": 772,
+              "url": ""
+            }
+          ],
+          "description": "Overly long functions make the code harder to read. The recommended maximum function length for the C# language is 70 lines of code. Severity: Brain Method - Complex Method - Long Method.",
+          "indication": 2
+        },
+        {
+          "category": "Excess Number of Function Arguments",
+          "functions": [
+            {
+              "title": "ExtractCore",
+              "details": "Arguments = 10",
+              "start-line": 655,
+              "end-line": 1029,
+              "url": ""
+            },
+            {
+              "title": "CollectDiagnostics",
+              "details": "Arguments = 6",
+              "start-line": 1107,
+              "end-line": 1180,
+              "url": ""
+            },
+            {
+              "title": "RegisterInit",
+              "details": "Arguments = 6",
+              "start-line": 1325,
+              "end-line": 1341,
+              "url": ""
+            },
+            {
+              "title": "RecordVirtualTargets",
+              "details": "Arguments = 5",
+              "start-line": 1387,
+              "end-line": 1451,
+              "url": ""
+            },
+            {
+              "title": "RecordCreation",
+              "details": "Arguments = 5",
+              "start-line": 1462,
+              "end-line": 1483,
+              "url": ""
+            },
+            {
+              "title": "RecordChained",
+              "details": "Arguments = 5",
+              "start-line": 1488,
+              "end-line": 1504,
+              "url": ""
+            },
+            {
+              "title": "Unresolve",
+              "details": "Arguments = 5",
+              "start-line": 1506,
+              "end-line": 1515,
+              "url": ""
+            },
+            {
+              "title": "RecordMemberAccess",
+              "details": "Arguments = 6",
+              "start-line": 1703,
+              "end-line": 1773,
+              "url": ""
+            }
+          ],
+          "description": "Functions with many arguments indicate either a) low cohesion where the function has too many responsibilities, or b) a missing abstraction that encapsulates those arguments.\n\nThe threshold for the C# language is 4 function arguments.",
+          "indication": 2
+        },
+        {
+          "category": "Primitive Obsession",
+          "description": "Code that uses a high degree of built-in, primitives such as integers, strings, floats, lacks a domain language that encapsulates the validation and semantics of function arguments. Primitive Obsession has several consequences: 1) In a statically typed language, the compiler will detect less erroneous assignments. 2) Security impact since the possible value range of a variable/argument isn't retricted.\n\nIn this module, 36 % of all functions have primitive types as arguments.",
+          "indication": 2
+        }
+      ],
+      "workspace_path": "vendor/callatlas/src/CallAtlas.Core/CallGraphBuilder.cs"
+    },
+    {
+      "path": "src/CallAtlas.Core/CallGraphBindings.cs",
+      "score": 9.68,
+      "review": [
+        {
+          "category": "Excess Number of Function Arguments",
+          "functions": [
+            {
+              "title": "RecordCall",
+              "details": "Arguments = 6",
+              "start-line": 9,
+              "end-line": 69,
+              "url": ""
+            }
+          ],
+          "description": "Functions with many arguments indicate either a) low cohesion where the function has too many responsibilities, or b) a missing abstraction that encapsulates those arguments.\n\nThe threshold for the C# language is 4 function arguments.",
+          "indication": 2
+        }
+      ],
+      "workspace_path": "vendor/callatlas/src/CallAtlas.Core/CallGraphBindings.cs"
+    },
+    {
+      "path": "src/CallAtlas.Core/CodeMap.cs",
+      "score": 9.38,
+      "review": [
+        {
+          "category": "Complex Conditional",
+          "functions": [
+            {
+              "title": "ForCall:467",
+              "details": "2 complex conditional expressions",
+              "start-line": 467,
+              "end-line": 467,
+              "url": ""
+            }
+          ],
+          "description": "A complex conditional is an expression inside a branch such as an <code>if</code>-statmeent which consists of multiple, logical operations. Example: <code>if (x.started() && y.running())</code>.Complex conditionals make the code even harder to read, and contribute to the Complex Method code smell. Encapsulate them.",
+          "indication": 2
+        },
+        {
+          "category": "Excess Number of Function Arguments",
+          "functions": [
+            {
+              "title": "EdgeIdentity",
+              "details": "Arguments = 5",
+              "start-line": 241,
+              "end-line": 257,
+              "url": ""
+            }
+          ],
+          "description": "Functions with many arguments indicate either a) low cohesion where the function has too many responsibilities, or b) a missing abstraction that encapsulates those arguments.\n\nThe threshold for the C# language is 4 function arguments.",
+          "indication": 2
+        }
+      ],
+      "workspace_path": "vendor/callatlas/src/CallAtlas.Core/CodeMap.cs"
+    },
+    {
+      "path": "src/CallAtlas.Core/CodeMapJson.cs",
+      "score": 7.81,
+      "review": [
+        {
+          "category": "Bumpy Road Ahead",
+          "functions": [
+            {
+              "title": "Read",
+              "details": "bumps = 5",
+              "start-line": 200,
+              "end-line": 327,
+              "url": ""
+            }
+          ],
+          "description": "A Bumpy Road is a function that contains multiple chunks of nested conditional logic inside the same function. The deeper the nesting and the more bumps, the lower the code health.\n\nA bumpy code road represents a lack of encapsulation which becomes an obstacle to comprehension. In imperative languages there\u2019s also an increased risk for feature entanglement, which leads to complex state management. CodeScene considers the following rules for the code health impact: 1) The deeper the nested conditional logic of each bump, the higher the tax on our working memory. 2) The more bumps inside a function, the more expensive it is to refactor as each bump represents a missing abstraction. 3) The larger each bump \u2013 that is, the more lines of code it spans \u2013 the harder it is to build up a mental model of the function. The nesting depth for what is considered a bump is 2 levels of conditionals.",
+          "indication": 3
+        },
+        {
+          "category": "Overall Code Complexity",
+          "description": "Overall Code Complexity is measured by the mean cyclomatic complexity across all functions in the file. The lower the number, the better.\n\nCyclomatic complexity is a function level metric that measures the number of logical branches (if-else, loops, etc.). Cyclomatic complexity is a rough complexity measure, but useful as a way of estimating the minimum number of unit tests you would need. As such, prefer functions with low cyclomatic complexity (2-3 branches).",
+          "indication": 2
+        },
+        {
+          "category": "Complex Method",
+          "functions": [
+            {
+              "title": "Read",
+              "details": "cc = 32",
+              "start-line": 200,
+              "end-line": 327,
+              "url": ""
+            }
+          ],
+          "description": "A Complex Method has a high cyclomatic complexity. The recommended threshold for the C# language is a cyclomatic complexity lower than 9.\n\nSeverity: Brain Method - Complex Method - Long Method.",
+          "indication": 2
+        },
+        {
+          "category": "Large Method",
+          "functions": [
+            {
+              "title": "Read",
+              "details": "LoC = 103 lines",
+              "start-line": 200,
+              "end-line": 327,
+              "url": ""
+            }
+          ],
+          "description": "Overly long functions make the code harder to read. The recommended maximum function length for the C# language is 70 lines of code. Severity: Brain Method - Complex Method - Long Method.",
+          "indication": 2
+        },
+        {
+          "category": "String Heavy Function Arguments",
+          "description": "String is a generic type that fail to capture the constraints of the domain object it represents. In this module, 40 % of all function arguments are string types.",
+          "indication": 2
+        }
+      ],
+      "workspace_path": "vendor/callatlas/src/CallAtlas.Core/CodeMapJson.cs"
+    },
+    {
+      "workspace_path": "vendor/callatlas/tests/CallAtlas.Tests/FlowFactsTests.cs",
+      "score": 9.84,
+      "review": [
+        {
+          "category": "Bumpy Road Ahead",
+          "functions": [
+            {
+              "title": "Objects",
+              "details": "bumps = 2",
+              "start-line": 17,
+              "end-line": 28,
+              "url": ""
+            }
+          ],
+          "description": "A Bumpy Road is a function that contains multiple chunks of nested conditional logic inside the same function. The deeper the nesting and the more bumps, the lower the code health.\n\nA bumpy code road represents a lack of encapsulation which becomes an obstacle to comprehension. In imperative languages there\u2019s also an increased risk for feature entanglement, which leads to complex state management. CodeScene considers the following rules for the code health impact: 1) The deeper the nested conditional logic of each bump, the higher the tax on our working memory. 2) The more bumps inside a function, the more expensive it is to refactor as each bump represents a missing abstraction. 3) The larger each bump \u2013 that is, the more lines of code it spans \u2013 the harder it is to build up a mental model of the function. The nesting depth for what is considered a bump is 2 levels of conditionals.",
+          "indication": 3
+        }
+      ],
+      "path": "tests/CallAtlas.Tests/FlowFactsTests.cs"
+    },
+    {
+      "path": "tools/csharp_flow_acceptance.py",
+      "score": 10,
+      "review": [],
+      "workspace_path": "tools/csharp_flow_acceptance.py"
+    },
+    {
+      "path": "tools/test_dependency_patches.py",
+      "score": 10,
+      "review": [],
+      "workspace_path": "tools/test_dependency_patches.py"
+    }
+  ],
+  "pre_flow": [
+    {
+      "file": "CallGraphBuilder.cs",
+      "score": 4.91,
+      "review": [
+        {
+          "category": "Bumpy Road Ahead",
+          "functions": [
+            {
+              "title": "ExtractCore",
+              "details": "bumps = 3",
+              "start-line": 655,
+              "end-line": 1024,
+              "url": ""
+            },
+            {
+              "title": "RecordVirtualTargets",
+              "details": "bumps = 3",
+              "start-line": 1382,
+              "end-line": 1446,
+              "url": ""
+            },
+            {
+              "title": "All",
+              "details": "bumps = 2",
+              "start-line": 1121,
+              "end-line": 1160,
+              "url": ""
+            },
+            {
+              "title": "CountBodyErrors",
+              "details": "bumps = 2",
+              "start-line": 1198,
+              "end-line": 1238,
+              "url": ""
+            }
+          ],
+          "description": "A Bumpy Road is a function that contains multiple chunks of nested conditional logic inside the same function. The deeper the nesting and the more bumps, the lower the code health.\n\nA bumpy code road represents a lack of encapsulation which becomes an obstacle to comprehension. In imperative languages there\u2019s also an increased risk for feature entanglement, which leads to complex state management. CodeScene considers the following rules for the code health impact: 1) The deeper the nested conditional logic of each bump, the higher the tax on our working memory. 2) The more bumps inside a function, the more expensive it is to refactor as each bump represents a missing abstraction. 3) The larger each bump \u2013 that is, the more lines of code it spans \u2013 the harder it is to build up a mental model of the function. The nesting depth for what is considered a bump is 2 levels of conditionals.",
+          "indication": 3
+        },
+        {
+          "category": "Deep, Nested Complexity",
+          "functions": [
+            {
+              "title": "ExtractCore.BindBodies",
+              "details": "Nesting depth = 4 conditionals",
+              "start-line": 805,
+              "end-line": 856,
+              "url": ""
+            },
+            {
+              "title": "All",
+              "details": "Nesting depth = 4 conditionals",
+              "start-line": 1121,
+              "end-line": 1160,
+              "url": ""
+            },
+            {
+              "title": "CountBodyErrors",
+              "details": "Nesting depth = 4 conditionals",
+              "start-line": 1198,
+              "end-line": 1238,
+              "url": ""
+            },
+            {
+              "title": "RecordVirtualTargets",
+              "details": "Nesting depth = 4 conditionals",
+              "start-line": 1382,
+              "end-line": 1446,
+              "url": ""
+            }
+          ],
+          "description": "Deep nested logic means that you have control structures like if-statements or loops inside other control structures. Deep nested logic increases the cognitive load on the programmer reading the code. The human working memory has a maximum capacity of 3-4 items; beyond that threshold, we struggle with keeping things in our head. Consequently, deep nested logic has a strong correlation to defects and accounts for roughly 20% of all programming mistakes.\n\nCodeScene measures the maximum nesting depth inside each function. The deeper the nesting, the lower the code health. The threshold for the C# language is 4 levels of nesting.",
+          "indication": 3
+        },
+        {
+          "category": "Overall Code Complexity",
+          "description": "Overall Code Complexity is measured by the mean cyclomatic complexity across all functions in the file. The lower the number, the better.\n\nCyclomatic complexity is a function level metric that measures the number of logical branches (if-else, loops, etc.). Cyclomatic complexity is a rough complexity measure, but useful as a way of estimating the minimum number of unit tests you would need. As such, prefer functions with low cyclomatic complexity (2-3 branches).",
+          "indication": 2
+        },
+        {
+          "category": "Complex Method",
+          "functions": [
+            {
+              "title": "ExtractCore",
+              "details": "cc = 25",
+              "start-line": 655,
+              "end-line": 1024,
+              "url": ""
+            },
+            {
+              "title": "ExtractCore.Collect",
+              "details": "cc = 20",
+              "start-line": 677,
+              "end-line": 772,
+              "url": ""
+            },
+            {
+              "title": "RecordMemberAccess",
+              "details": "cc = 18",
+              "start-line": 1805,
+              "end-line": 1871,
+              "url": ""
+            },
+            {
+              "title": "ExtractCore.BindBodies",
+              "details": "cc = 18",
+              "start-line": 805,
+              "end-line": 856,
+              "url": ""
+            },
+            {
+              "title": "RecordVirtualTargets",
+              "details": "cc = 14",
+              "start-line": 1382,
+              "end-line": 1446,
+              "url": ""
+            },
+            {
+              "title": "CountBodyErrors",
+              "details": "cc = 12",
+              "start-line": 1198,
+              "end-line": 1238,
+              "url": ""
+            },
+            {
+              "title": "All",
+              "details": "cc = 11",
+              "start-line": 1121,
+              "end-line": 1160,
+              "url": ""
+            },
+            {
+              "title": "BuildFromDirectory",
+              "details": "cc = 11",
+              "start-line": 494,
+              "end-line": 576,
+              "url": ""
+            },
+            {
+              "title": "AccessDirection",
+              "details": "cc = 9",
+              "start-line": 1896,
+              "end-line": 1926,
+              "url": ""
+            },
+            {
+              "title": "BuildFromSolution",
+              "details": "cc = 9",
+              "start-line": 206,
+              "end-line": 284,
+              "url": ""
+            }
+          ],
+          "description": "A Complex Method has a high cyclomatic complexity. The recommended threshold for the C# language is a cyclomatic complexity lower than 9.\n\nSeverity: Brain Method - Complex Method - Long Method.",
+          "indication": 2
+        },
+        {
+          "category": "Complex Conditional",
+          "functions": [
+            {
+              "title": "RecordMemberAccess:1822",
+              "details": "2 complex conditional expressions",
+              "start-line": 1822,
+              "end-line": 1822,
+              "url": ""
+            },
+            {
+              "title": "RecordMemberAccess:1827",
+              "details": "2 complex conditional expressions",
+              "start-line": 1827,
+              "end-line": 1827,
+              "url": ""
+            }
+          ],
+          "description": "A complex conditional is an expression inside a branch such as an <code>if</code>-statmeent which consists of multiple, logical operations. Example: <code>if (x.started() && y.running())</code>.Complex conditionals make the code even harder to read, and contribute to the Complex Method code smell. Encapsulate them.",
+          "indication": 2
+        },
+        {
+          "category": "Large Method",
+          "functions": [
+            {
+              "title": "ExtractCore.Collect",
+              "details": "LoC = 85 lines",
+              "start-line": 677,
+              "end-line": 772,
+              "url": ""
+            }
+          ],
+          "description": "Overly long functions make the code harder to read. The recommended maximum function length for the C# language is 70 lines of code. Severity: Brain Method - Complex Method - Long Method.",
+          "indication": 2
+        },
+        {
+          "category": "Excess Number of Function Arguments",
+          "functions": [
+            {
+              "title": "ExtractCore",
+              "details": "Arguments = 10",
+              "start-line": 655,
+              "end-line": 1024,
+              "url": ""
+            },
+            {
+              "title": "CollectDiagnostics",
+              "details": "Arguments = 6",
+              "start-line": 1102,
+              "end-line": 1175,
+              "url": ""
+            },
+            {
+              "title": "RegisterInit",
+              "details": "Arguments = 6",
+              "start-line": 1320,
+              "end-line": 1336,
+              "url": ""
+            },
+            {
+              "title": "RecordVirtualTargets",
+              "details": "Arguments = 5",
+              "start-line": 1382,
+              "end-line": 1446,
+              "url": ""
+            },
+            {
+              "title": "RecordCall",
+              "details": "Arguments = 6",
+              "start-line": 1457,
+              "end-line": 1507,
+              "url": ""
+            },
+            {
+              "title": "RecordCreation",
+              "details": "Arguments = 5",
+              "start-line": 1566,
+              "end-line": 1585,
+              "url": ""
+            },
+            {
+              "title": "RecordChained",
+              "details": "Arguments = 5",
+              "start-line": 1590,
+              "end-line": 1606,
+              "url": ""
+            },
+            {
+              "title": "Unresolve",
+              "details": "Arguments = 5",
+              "start-line": 1608,
+              "end-line": 1617,
+              "url": ""
+            },
+            {
+              "title": "RecordMemberAccess",
+              "details": "Arguments = 6",
+              "start-line": 1805,
+              "end-line": 1871,
+              "url": ""
+            }
+          ],
+          "description": "Functions with many arguments indicate either a) low cohesion where the function has too many responsibilities, or b) a missing abstraction that encapsulates those arguments.\n\nThe threshold for the C# language is 4 function arguments.",
+          "indication": 2
+        },
+        {
+          "category": "Primitive Obsession",
+          "description": "Code that uses a high degree of built-in, primitives such as integers, strings, floats, lacks a domain language that encapsulates the validation and semantics of function arguments. Primitive Obsession has several consequences: 1) In a statically typed language, the compiler will detect less erroneous assignments. 2) Security impact since the possible value range of a variable/argument isn't retricted.\n\nIn this module, 35 % of all functions have primitive types as arguments.",
+          "indication": 2
+        }
+      ],
+      "path": "target/verification/task22-pre-flow-health/CallGraphBuilder.cs"
+    },
+    {
+      "file": "CodeMap.cs",
+      "score": 9.38,
+      "review": [
+        {
+          "category": "Complex Conditional",
+          "functions": [
+            {
+              "title": "ForCall:465",
+              "details": "2 complex conditional expressions",
+              "start-line": 465,
+              "end-line": 465,
+              "url": ""
+            }
+          ],
+          "description": "A complex conditional is an expression inside a branch such as an <code>if</code>-statmeent which consists of multiple, logical operations. Example: <code>if (x.started() && y.running())</code>.Complex conditionals make the code even harder to read, and contribute to the Complex Method code smell. Encapsulate them.",
+          "indication": 2
+        },
+        {
+          "category": "Excess Number of Function Arguments",
+          "functions": [
+            {
+              "title": "EdgeIdentity",
+              "details": "Arguments = 5",
+              "start-line": 239,
+              "end-line": 255,
+              "url": ""
+            }
+          ],
+          "description": "Functions with many arguments indicate either a) low cohesion where the function has too many responsibilities, or b) a missing abstraction that encapsulates those arguments.\n\nThe threshold for the C# language is 4 function arguments.",
+          "indication": 2
+        }
+      ],
+      "path": "target/verification/task22-pre-flow-health/CodeMap.cs"
+    },
+    {
+      "file": "CodeMapJson.cs",
+      "score": 7.81,
+      "review": [
+        {
+          "category": "Bumpy Road Ahead",
+          "functions": [
+            {
+              "title": "Read",
+              "details": "bumps = 5",
+              "start-line": 199,
+              "end-line": 323,
+              "url": ""
+            }
+          ],
+          "description": "A Bumpy Road is a function that contains multiple chunks of nested conditional logic inside the same function. The deeper the nesting and the more bumps, the lower the code health.\n\nA bumpy code road represents a lack of encapsulation which becomes an obstacle to comprehension. In imperative languages there\u2019s also an increased risk for feature entanglement, which leads to complex state management. CodeScene considers the following rules for the code health impact: 1) The deeper the nested conditional logic of each bump, the higher the tax on our working memory. 2) The more bumps inside a function, the more expensive it is to refactor as each bump represents a missing abstraction. 3) The larger each bump \u2013 that is, the more lines of code it spans \u2013 the harder it is to build up a mental model of the function. The nesting depth for what is considered a bump is 2 levels of conditionals.",
+          "indication": 3
+        },
+        {
+          "category": "Overall Code Complexity",
+          "description": "Overall Code Complexity is measured by the mean cyclomatic complexity across all functions in the file. The lower the number, the better.\n\nCyclomatic complexity is a function level metric that measures the number of logical branches (if-else, loops, etc.). Cyclomatic complexity is a rough complexity measure, but useful as a way of estimating the minimum number of unit tests you would need. As such, prefer functions with low cyclomatic complexity (2-3 branches).",
+          "indication": 2
+        },
+        {
+          "category": "Complex Method",
+          "functions": [
+            {
+              "title": "Read",
+              "details": "cc = 32",
+              "start-line": 199,
+              "end-line": 323,
+              "url": ""
+            }
+          ],
+          "description": "A Complex Method has a high cyclomatic complexity. The recommended threshold for the C# language is a cyclomatic complexity lower than 9.\n\nSeverity: Brain Method - Complex Method - Long Method.",
+          "indication": 2
+        },
+        {
+          "category": "Large Method",
+          "functions": [
+            {
+              "title": "Read",
+              "details": "LoC = 100 lines",
+              "start-line": 199,
+              "end-line": 323,
+              "url": ""
+            }
+          ],
+          "description": "Overly long functions make the code harder to read. The recommended maximum function length for the C# language is 70 lines of code. Severity: Brain Method - Complex Method - Long Method.",
+          "indication": 2
+        },
+        {
+          "category": "String Heavy Function Arguments",
+          "description": "String is a generic type that fail to capture the constraints of the domain object it represents. In this module, 40 % of all function arguments are string types.",
+          "indication": 2
+        }
+      ],
+      "path": "target/verification/task22-pre-flow-health/CodeMapJson.cs"
+    }
+  ],
+  "verification_fixture": {
+    "workspace_path": "crates/codecallnavigator-engine/tests/freshness.rs",
+    "score": 10.0,
+    "review": "Controlled stdout-backpressure fixture independently reviewed; no production observer changes. Named queued-output and kernel-readiness facts resolve the initial complex-conditional finding; final review has no findings."
+  }
+}

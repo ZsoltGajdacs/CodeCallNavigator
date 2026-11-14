@@ -1,0 +1,495 @@
+{
+  "task": "TASK-22.1",
+  "branch": "feature/task-22-function-flowcharts",
+  "patch_sha256": "173f6ea6a771f5d2dded30f68319c3b7aa8dd4384a61fa43ad2f0bd71b5f3a7f",
+  "final_status": "passed",
+  "upstream_suite": {
+    "counters": {
+      "total": "319",
+      "executed": "319",
+      "passed": "290",
+      "failed": "29",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "baseline_failure_names_equal": true,
+    "failed_tests": [
+      "CallAtlas.Tests.AdversarialTests.File_scoped_namespaces_are_walked_like_block_namespaces",
+      "CallAtlas.Tests.AdversarialTests.Generic_instantiations_collapse_to_one_definition_node",
+      "CallAtlas.Tests.AdversarialTests.Generic_type_instantiations_do_not_split_the_container",
+      "CallAtlas.Tests.AdversarialTests.Top_level_statements_collapse_into_one_program_node",
+      "CallAtlas.Tests.CallGraphBuilderTests.Calls_inside_local_functions_belong_to_the_local_function",
+      "CallAtlas.Tests.CallGraphBuilderTests.Direct_call_and_ctor_produce_edges",
+      "CallAtlas.Tests.CallGraphBuilderTests.Overloads_get_distinct_ids_and_edges",
+      "CallAtlas.Tests.CallGraphBuilderTests.Repeated_calls_are_counted_not_duplicated",
+      "CallAtlas.Tests.EdgeTierTests.A_conditional_access_delegate_invocation_is_recorded_as_a_delegate_edge",
+      "CallAtlas.Tests.EdgeTierTests.A_delegate_invocation_is_recorded_as_a_delegate_edge",
+      "CallAtlas.Tests.EdgeTierTests.The_delegate_target_node_exists_and_is_marked_implicit",
+      "CallAtlas.Tests.ExtractorInvariantTests.A_root_named_obj_is_not_excluded_from_itself",
+      "CallAtlas.Tests.ExtractorInvariantTests.Abstract_dispatch_excludes_the_base_declaration",
+      "CallAtlas.Tests.ExtractorInvariantTests.Accessible_private_calls_within_the_same_type_are_edges",
+      "CallAtlas.Tests.ExtractorInvariantTests.Expression_bodied_properties_indexers_and_initializers_produce_edges",
+      "CallAtlas.Tests.ExtractorInvariantTests.Extension_method_calls_resolve_to_the_declared_symbol",
+      "CallAtlas.Tests.ExtractorInvariantTests.Interface_dispatch_lists_every_implementation_in_this_compilation",
+      "CallAtlas.Tests.ExtractorInvariantTests.Nested_bin_obj_and_friends_are_excluded_by_path_segment",
+      "CallAtlas.Tests.ExtractorInvariantTests.Virtual_dispatch_includes_the_base_body_itself",
+      "CallAtlas.Tests.ExtractorInvariantTests.Virtual_targets_survive_a_json_roundtrip",
+      "CallAtlas.Tests.MethodGroupTests.A_lambda_is_not_a_method_group_and_creates_no_node",
+      "CallAtlas.Tests.MethodGroupTests.A_method_group_to_an_interface_member_is_a_dispatch_with_resolved_implementations",
+      "CallAtlas.Tests.MethodGroupTests.An_event_handler_is_no_longer_reported_as_an_entry_candidate",
+      "CallAtlas.Tests.QaRegressionTests.Accessors_operators_destructors_field_inits_and_initializers_are_scanned",
+      "CallAtlas.Tests.QaRegressionTests.Calls_across_files_never_create_ghost_nodes",
+      "CallAtlas.Tests.QaRegressionTests.Constructed_calls_normalize_to_the_original_definition",
+      "CallAtlas.Tests.QaRegressionTests.Local_function_inside_local_function_builds_full_chain",
+      "CallAtlas.Tests.QaRegressionTests.Nested_local_function_chains_stay_distinct",
+      "CallAtlas.Tests.QaRegressionTests.Static_constructor_is_distinct_from_instance_constructor"
+    ]
+  },
+  "raw_cli_acceptance": "raw-cli-acceptance.json",
+  "source_code_health": "code-health.json",
+  "independent_review": "approved after nameof delta",
+  "observer_fixture_commit": "6071db0",
+  "full_verification": [
+    {
+      "directory": "target/verification/full-0yeay2xu",
+      "final_source": false,
+      "stages": [
+        {
+          "name": "prerequisites",
+          "status": "passed",
+          "seconds": 0.728
+        },
+        {
+          "name": "whitespace",
+          "status": "passed",
+          "seconds": 0.024
+        },
+        {
+          "name": "syntax-format-011",
+          "status": "passed",
+          "seconds": 0.041
+        },
+        {
+          "name": "syntax-format-012",
+          "status": "passed",
+          "seconds": 0.048
+        },
+        {
+          "name": "bootstrap",
+          "status": "passed",
+          "seconds": 8.333
+        },
+        {
+          "name": "build-debug-engine",
+          "status": "passed",
+          "seconds": 8.836
+        },
+        {
+          "name": "cargo-check",
+          "status": "passed",
+          "seconds": 23.631
+        },
+        {
+          "name": "mcp-dependency-boundary",
+          "status": "passed",
+          "seconds": 0.473
+        },
+        {
+          "name": "clippy",
+          "status": "passed",
+          "seconds": 4.384
+        },
+        {
+          "name": "rust-tests",
+          "status": "failed",
+          "seconds": 177.037
+        },
+        {
+          "name": "python-tests",
+          "status": "not-run"
+        },
+        {
+          "name": "python-tool-tests",
+          "status": "not-run"
+        },
+        {
+          "name": "typescript-tests",
+          "status": "not-run"
+        },
+        {
+          "name": "build-release-engine",
+          "status": "not-run"
+        },
+        {
+          "name": "profile-snapshot",
+          "status": "not-run"
+        },
+        {
+          "name": "release-acceptance-and-benchmarks",
+          "status": "not-run"
+        },
+        {
+          "name": "storage-benchmark",
+          "status": "not-run"
+        },
+        {
+          "name": "package",
+          "status": "not-run"
+        },
+        {
+          "name": "package-signature",
+          "status": "not-run"
+        },
+        {
+          "name": "packaged-engine",
+          "status": "not-run"
+        },
+        {
+          "name": "installed-cli",
+          "status": "not-run"
+        },
+        {
+          "name": "agent-integrations-check",
+          "status": "not-run"
+        },
+        {
+          "name": "agent-integrations-package",
+          "status": "not-run"
+        },
+        {
+          "name": "agent-cli-journeys",
+          "status": "not-run"
+        },
+        {
+          "name": "mcp-independent-install",
+          "status": "not-run"
+        },
+        {
+          "name": "agent-mcp-journeys",
+          "status": "not-run"
+        },
+        {
+          "name": "codescene",
+          "status": "not-run"
+        },
+        {
+          "name": "cleanup",
+          "status": "passed",
+          "seconds": 2.898
+        }
+      ]
+    },
+    {
+      "directory": "target/verification/full-sw04ibr8",
+      "final_source": false,
+      "stages": [
+        {
+          "name": "prerequisites",
+          "status": "passed",
+          "seconds": 0.667
+        },
+        {
+          "name": "whitespace",
+          "status": "passed",
+          "seconds": 0.025
+        },
+        {
+          "name": "syntax-format-004",
+          "status": "passed",
+          "seconds": 0.049
+        },
+        {
+          "name": "syntax-format-012",
+          "status": "passed",
+          "seconds": 0.044
+        },
+        {
+          "name": "syntax-format-013",
+          "status": "passed",
+          "seconds": 0.047
+        },
+        {
+          "name": "bootstrap",
+          "status": "passed",
+          "seconds": 4.356
+        },
+        {
+          "name": "build-debug-engine",
+          "status": "passed",
+          "seconds": 0.144
+        },
+        {
+          "name": "cargo-check",
+          "status": "passed",
+          "seconds": 22.802
+        },
+        {
+          "name": "mcp-dependency-boundary",
+          "status": "passed",
+          "seconds": 0.363
+        },
+        {
+          "name": "clippy",
+          "status": "passed",
+          "seconds": 4.615
+        },
+        {
+          "name": "rust-tests",
+          "status": "passed",
+          "seconds": 161.313
+        },
+        {
+          "name": "python-tests",
+          "status": "passed",
+          "seconds": 36.952
+        },
+        {
+          "name": "python-tool-tests",
+          "status": "passed",
+          "seconds": 8.696
+        },
+        {
+          "name": "typescript-tests",
+          "status": "passed",
+          "seconds": 26.201
+        },
+        {
+          "name": "build-release-engine",
+          "status": "passed",
+          "seconds": 24.033
+        },
+        {
+          "name": "profile-snapshot",
+          "status": "passed",
+          "seconds": 0.136
+        },
+        {
+          "name": "release-acceptance-and-benchmarks",
+          "status": "passed",
+          "seconds": 1670.153
+        },
+        {
+          "name": "storage-benchmark",
+          "status": "passed",
+          "seconds": 43.461
+        },
+        {
+          "name": "package",
+          "status": "passed",
+          "seconds": 23.989
+        },
+        {
+          "name": "package-signature",
+          "status": "passed",
+          "seconds": 0.087
+        },
+        {
+          "name": "packaged-engine",
+          "status": "passed",
+          "seconds": 0.483
+        },
+        {
+          "name": "installed-cli",
+          "status": "passed",
+          "seconds": 2.952
+        },
+        {
+          "name": "agent-integrations-check",
+          "status": "passed",
+          "seconds": 0.044
+        },
+        {
+          "name": "agent-integrations-package",
+          "status": "passed",
+          "seconds": 0.048
+        },
+        {
+          "name": "agent-cli-journeys",
+          "status": "passed",
+          "seconds": 1.746
+        },
+        {
+          "name": "mcp-independent-install",
+          "status": "passed",
+          "seconds": 19.353
+        },
+        {
+          "name": "agent-mcp-journeys",
+          "status": "passed",
+          "seconds": 1.646
+        },
+        {
+          "name": "codescene",
+          "status": "passed",
+          "seconds": 3.737
+        },
+        {
+          "name": "cleanup",
+          "status": "passed",
+          "seconds": 12.184
+        }
+      ]
+    },
+    {
+      "directory": "target/verification/full-38446p00",
+      "final_source": true,
+      "stages": [
+        {
+          "name": "prerequisites",
+          "status": "passed",
+          "seconds": 0.705
+        },
+        {
+          "name": "whitespace",
+          "status": "passed",
+          "seconds": 0.025
+        },
+        {
+          "name": "syntax-format-011",
+          "status": "passed",
+          "seconds": 0.042
+        },
+        {
+          "name": "syntax-format-012",
+          "status": "passed",
+          "seconds": 0.047
+        },
+        {
+          "name": "bootstrap",
+          "status": "passed",
+          "seconds": 3.657
+        },
+        {
+          "name": "build-debug-engine",
+          "status": "passed",
+          "seconds": 8.67
+        },
+        {
+          "name": "cargo-check",
+          "status": "passed",
+          "seconds": 22.126
+        },
+        {
+          "name": "mcp-dependency-boundary",
+          "status": "passed",
+          "seconds": 0.377
+        },
+        {
+          "name": "clippy",
+          "status": "passed",
+          "seconds": 4.551
+        },
+        {
+          "name": "rust-tests",
+          "status": "passed",
+          "seconds": 169.108
+        },
+        {
+          "name": "python-tests",
+          "status": "passed",
+          "seconds": 36.858
+        },
+        {
+          "name": "python-tool-tests",
+          "status": "passed",
+          "seconds": 8.611
+        },
+        {
+          "name": "typescript-tests",
+          "status": "passed",
+          "seconds": 26.903
+        },
+        {
+          "name": "build-release-engine",
+          "status": "passed",
+          "seconds": 25.076
+        },
+        {
+          "name": "profile-snapshot",
+          "status": "passed",
+          "seconds": 0.15
+        },
+        {
+          "name": "release-acceptance-and-benchmarks",
+          "status": "passed",
+          "seconds": 1661.326
+        },
+        {
+          "name": "storage-benchmark",
+          "status": "passed",
+          "seconds": 42.885
+        },
+        {
+          "name": "package",
+          "status": "passed",
+          "seconds": 23.489
+        },
+        {
+          "name": "package-signature",
+          "status": "passed",
+          "seconds": 0.088
+        },
+        {
+          "name": "packaged-engine",
+          "status": "passed",
+          "seconds": 0.479
+        },
+        {
+          "name": "installed-cli",
+          "status": "passed",
+          "seconds": 2.849
+        },
+        {
+          "name": "agent-integrations-check",
+          "status": "passed",
+          "seconds": 0.048
+        },
+        {
+          "name": "agent-integrations-package",
+          "status": "passed",
+          "seconds": 0.048
+        },
+        {
+          "name": "agent-cli-journeys",
+          "status": "passed",
+          "seconds": 1.804
+        },
+        {
+          "name": "mcp-independent-install",
+          "status": "passed",
+          "seconds": 18.357
+        },
+        {
+          "name": "agent-mcp-journeys",
+          "status": "passed",
+          "seconds": 1.699
+        },
+        {
+          "name": "codescene",
+          "status": "passed",
+          "seconds": 3.804
+        },
+        {
+          "name": "cleanup",
+          "status": "passed",
+          "seconds": 11.241
+        }
+      ]
+    }
+  ],
+  "limits": [
+    "Raw export only; C# ingestion and desktop acceptance remain subsequent subtasks.",
+    "29 upstream failures match the exact pre-export baseline; the upstream suite is not wholly green.",
+    "Sonar is inactive because this project has no .sonar/config.json; no PR was opened."
+  ]
+}

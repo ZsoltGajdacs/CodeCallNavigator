@@ -227,3 +227,39 @@ The upstream build-time shader hash guard still rejects stale precompiled
 bytecode; no shader fingerprint constant or precompiled library is rewritten.
 Each alternative includes one integration changelog entry, as required by the
 current upstream guide; they are replacements, never a patch stack.
+
+# CallAtlas source-flow facts
+
+The combined `callatlas-assembly-identity.patch` adds a version-1 source-flow
+capability on the same pinned CallAtlas base listed above. Apply this combined
+patch once to that pristine revision. The immediately preceding exact combined
+patch is retained in `callatlas-assembly-identity-pre-flow.patch`, with
+`callatlas.pre_flow_patch` and its checksum in `analyzers.lock.json`; bootstrap
+can migrate that checkpoint using the existing verified reverse-and-replace
+operation. It remains an alternative checkpoint, never a second patch to stack.
+
+`flowFactsVersion: "1"` and `flowInventory` extend `callatlas.ir.v3` additively.
+The detached statement/expression vocabulary matches the consumer's version-1
+flow IR. Existing body sites and worker-local compiler resolutions supply
+callable and call-site identities, declared/possible targets and diagnostic
+reasons. Source spans address exact original UTF-8 bytes, including a BOM.
+Snapshots without this capability retain its absence through JSON round trips;
+malformed or incompatible advertised facts fail explicitly.
+
+The initial exporter covers a bounded synchronous structured subset. Unsupported
+evaluation, cleanup, suspension and transfer semantics have explicit opaque
+boundaries, rather than fabricated eager calls. Labels and per-callable
+construction are bounded. Raw export is the first TASK-22 milestone; Rust
+ingestion and C# desktop availability follow in subsequent subtasks.
+
+Compiler-only `nameof` expressions remain atomic values. Ordinary methods named
+`nameof` retain argument evaluation; when the native analyzer omits their binding,
+flow facts carry an explicit targetless diagnostic instead of guessing a target.
+
+`FlowFactsTests` in the recorded upstream patch exercise capability/validation,
+compiler attribution, control structure, source bytes and bounded opaque cases.
+The project-owned `tools/csharp_flow_acceptance.py` exercises the built CLI,
+whole existing-graph parity, real assembly-collision ownership and source/limit
+probes. Dependency tests cover clean/repeated installation and every recorded
+checkpoint migration. Baseline and current verification evidence are tracked in
+[`evidence/flowcharts/csharp`](../evidence/flowcharts/csharp/README.md).

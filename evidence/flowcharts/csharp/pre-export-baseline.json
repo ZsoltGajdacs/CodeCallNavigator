@@ -1,0 +1,248 @@
+{
+  "recorded_on": "2026-11-14",
+  "purpose": "Pre-TASK-22.1 baseline from the exact currently pinned combined CallAtlas patch, before flow exporter edits.",
+  "patch_sha256": "ef1c3e2904a71549aa3591e64dad40a85bce2a2c1ad1a756d493b5332fb15465",
+  "test_command": "dotnet test vendor/callatlas/tests/CallAtlas.Tests/CallAtlas.Tests.csproj -c Release --no-restore --logger trx --results-directory /private/tmp/task22-callatlas-baseline",
+  "test_exit_code": 1,
+  "counters": {
+    "total": "291",
+    "executed": "291",
+    "passed": "262",
+    "failed": "29",
+    "error": "0",
+    "timeout": "0",
+    "aborted": "0",
+    "inconclusive": "0",
+    "passedButRunAborted": "0",
+    "notRunnable": "0",
+    "notExecuted": "0",
+    "disconnected": "0",
+    "warning": "0",
+    "completed": "0",
+    "inProgress": "0",
+    "pending": "0"
+  },
+  "failed_tests": [
+    "CallAtlas.Tests.AdversarialTests.File_scoped_namespaces_are_walked_like_block_namespaces",
+    "CallAtlas.Tests.AdversarialTests.Generic_instantiations_collapse_to_one_definition_node",
+    "CallAtlas.Tests.AdversarialTests.Generic_type_instantiations_do_not_split_the_container",
+    "CallAtlas.Tests.AdversarialTests.Top_level_statements_collapse_into_one_program_node",
+    "CallAtlas.Tests.CallGraphBuilderTests.Calls_inside_local_functions_belong_to_the_local_function",
+    "CallAtlas.Tests.CallGraphBuilderTests.Direct_call_and_ctor_produce_edges",
+    "CallAtlas.Tests.CallGraphBuilderTests.Overloads_get_distinct_ids_and_edges",
+    "CallAtlas.Tests.CallGraphBuilderTests.Repeated_calls_are_counted_not_duplicated",
+    "CallAtlas.Tests.EdgeTierTests.A_conditional_access_delegate_invocation_is_recorded_as_a_delegate_edge",
+    "CallAtlas.Tests.EdgeTierTests.A_delegate_invocation_is_recorded_as_a_delegate_edge",
+    "CallAtlas.Tests.EdgeTierTests.The_delegate_target_node_exists_and_is_marked_implicit",
+    "CallAtlas.Tests.ExtractorInvariantTests.A_root_named_obj_is_not_excluded_from_itself",
+    "CallAtlas.Tests.ExtractorInvariantTests.Abstract_dispatch_excludes_the_base_declaration",
+    "CallAtlas.Tests.ExtractorInvariantTests.Accessible_private_calls_within_the_same_type_are_edges",
+    "CallAtlas.Tests.ExtractorInvariantTests.Expression_bodied_properties_indexers_and_initializers_produce_edges",
+    "CallAtlas.Tests.ExtractorInvariantTests.Extension_method_calls_resolve_to_the_declared_symbol",
+    "CallAtlas.Tests.ExtractorInvariantTests.Interface_dispatch_lists_every_implementation_in_this_compilation",
+    "CallAtlas.Tests.ExtractorInvariantTests.Nested_bin_obj_and_friends_are_excluded_by_path_segment",
+    "CallAtlas.Tests.ExtractorInvariantTests.Virtual_dispatch_includes_the_base_body_itself",
+    "CallAtlas.Tests.ExtractorInvariantTests.Virtual_targets_survive_a_json_roundtrip",
+    "CallAtlas.Tests.MethodGroupTests.A_lambda_is_not_a_method_group_and_creates_no_node",
+    "CallAtlas.Tests.MethodGroupTests.A_method_group_to_an_interface_member_is_a_dispatch_with_resolved_implementations",
+    "CallAtlas.Tests.MethodGroupTests.An_event_handler_is_no_longer_reported_as_an_entry_candidate",
+    "CallAtlas.Tests.QaRegressionTests.Accessors_operators_destructors_field_inits_and_initializers_are_scanned",
+    "CallAtlas.Tests.QaRegressionTests.Calls_across_files_never_create_ghost_nodes",
+    "CallAtlas.Tests.QaRegressionTests.Constructed_calls_normalize_to_the_original_definition",
+    "CallAtlas.Tests.QaRegressionTests.Local_function_inside_local_function_builds_full_chain",
+    "CallAtlas.Tests.QaRegressionTests.Nested_local_function_chains_stay_distinct",
+    "CallAtlas.Tests.QaRegressionTests.Static_constructor_is_distinct_from_instance_constructor"
+  ],
+  "failure_context": "Existing upstream tests expect unqualified identities; current integration deliberately uses assembly-qualified identities. Compare exact failure names after changes, not only failure count.",
+  "fixture": {
+    "source_file": "Program.cs",
+    "source": "class Sample { static int Leaf(int v)=>v; static int Leaf(string v)=>v.Length; static int Run(int value) { int local(int n)=>Leaf(n); if (value<0) return Leaf(\"bad\"); for (int i=0;i<2;i++) value=local(value); return Leaf(value); } int Value { get => Leaf(1); set { Leaf(value); } } }\n",
+    "command": "dotnet vendor/callatlas/src/CallAtlas.Cli/bin/Release/net11.0/callatlas.dll map /private/tmp/task22-flow-baseline-source -o /private/tmp/task22-flow-baseline.json",
+    "exit_code": 0,
+    "projection_rule": "Remove root and additive flowFactsVersion/flowInventory fields only. All remaining existing JSON facts must equal this baseline; location paths are relative to fixture root.",
+    "graph": {
+      "schema": "callatlas.ir.v3",
+      "architectureFiles": [
+        {
+          "assembly": "callatlas.snapshot",
+          "file": "/private/tmp/task22-flow-baseline-source/Program.cs",
+          "content": "class Sample { static int Leaf(int v)=>v; static int Leaf(string v)=>v.Length; static int Run(int value) { int local(int n)=>Leaf(n); if (value<0) return Leaf(\"bad\"); for (int i=0;i<2;i++) value=local(value); return Leaf(value); } int Value { get => Leaf(1); set { Leaf(value); } } }\n",
+          "namespaces": [
+            "<global namespace>"
+          ],
+          "names": [
+            "Sample"
+          ],
+          "kinds": [
+            "class"
+          ],
+          "annotations": [],
+          "methodAnnotations": [],
+          "baseTypes": [
+            "Object",
+            "object"
+          ],
+          "annotatedInterfaces": [],
+          "isInterface": false
+        }
+      ],
+      "declarationFactsVersion": "2",
+      "frameworkFactsVersion": "1",
+      "frameworkEdges": [],
+      "frameworkEntries": [],
+      "frameworkDiagnostics": [],
+      "httpFactsVersion": "1",
+      "httpRoutes": [],
+      "entryPoints": {
+        "candidates": [
+          "[callatlas.snapshot]::Sample::Run(System.Int32)",
+          "[callatlas.snapshot]::Sample::get_Value()",
+          "[callatlas.snapshot]::Sample::set_Value(System.Int32)"
+        ],
+        "applicationStarts": []
+      },
+      "nodes": [
+        {
+          "id": "[callatlas.snapshot]::Sample::Leaf(System.Int32)",
+          "kind": "method",
+          "container": "Sample",
+          "name": "Leaf",
+          "location": "Program.cs:1",
+          "declaration": {
+            "hasSourceDeclaration": true,
+            "isImplicit": false,
+            "callableKind": "Ordinary",
+            "isObjectMember": false,
+            "visibility": "private",
+            "containerVisibility": "internal"
+          }
+        },
+        {
+          "id": "[callatlas.snapshot]::Sample::Leaf(System.String)",
+          "kind": "method",
+          "container": "Sample",
+          "name": "Leaf",
+          "location": "Program.cs:1",
+          "declaration": {
+            "hasSourceDeclaration": true,
+            "isImplicit": false,
+            "callableKind": "Ordinary",
+            "isObjectMember": false,
+            "visibility": "private",
+            "containerVisibility": "internal"
+          }
+        },
+        {
+          "id": "[callatlas.snapshot]::Sample::Run(System.Int32)",
+          "kind": "method",
+          "container": "Sample",
+          "name": "Run",
+          "location": "Program.cs:1",
+          "declaration": {
+            "hasSourceDeclaration": true,
+            "isImplicit": false,
+            "callableKind": "Ordinary",
+            "isObjectMember": false,
+            "visibility": "private",
+            "containerVisibility": "internal"
+          }
+        },
+        {
+          "id": "[callatlas.snapshot]::Sample::Run(System.Int32)::local#local",
+          "kind": "localfunction",
+          "container": "Sample",
+          "name": "local",
+          "location": "Program.cs:1",
+          "declaration": {
+            "hasSourceDeclaration": true,
+            "isImplicit": false,
+            "callableKind": "LocalFunction",
+            "isObjectMember": false,
+            "visibility": null,
+            "containerVisibility": "internal"
+          }
+        },
+        {
+          "id": "[callatlas.snapshot]::Sample::get_Value()",
+          "kind": "accessor",
+          "container": "Sample",
+          "name": "get_Value",
+          "location": "Program.cs:1",
+          "declaration": {
+            "hasSourceDeclaration": true,
+            "isImplicit": false,
+            "callableKind": "PropertyGet",
+            "isObjectMember": false,
+            "visibility": "private",
+            "containerVisibility": "internal"
+          }
+        },
+        {
+          "id": "[callatlas.snapshot]::Sample::set_Value(System.Int32)",
+          "kind": "accessor",
+          "container": "Sample",
+          "name": "set_Value",
+          "location": "Program.cs:1",
+          "declaration": {
+            "hasSourceDeclaration": true,
+            "isImplicit": false,
+            "callableKind": "PropertySet",
+            "isObjectMember": false,
+            "visibility": "private",
+            "containerVisibility": "internal"
+          }
+        }
+      ],
+      "edges": [
+        {
+          "from": "[callatlas.snapshot]::Sample::Run(System.Int32)",
+          "to": "[callatlas.snapshot]::Sample::Leaf(System.Int32)",
+          "kind": "call",
+          "count": 1,
+          "tier": "direct"
+        },
+        {
+          "from": "[callatlas.snapshot]::Sample::Run(System.Int32)",
+          "to": "[callatlas.snapshot]::Sample::Leaf(System.String)",
+          "kind": "call",
+          "count": 1,
+          "tier": "direct"
+        },
+        {
+          "from": "[callatlas.snapshot]::Sample::Run(System.Int32)",
+          "to": "[callatlas.snapshot]::Sample::Run(System.Int32)::local#local",
+          "kind": "call",
+          "count": 1,
+          "tier": "direct"
+        },
+        {
+          "from": "[callatlas.snapshot]::Sample::Run(System.Int32)::local#local",
+          "to": "[callatlas.snapshot]::Sample::Leaf(System.Int32)",
+          "kind": "call",
+          "count": 1,
+          "tier": "direct"
+        },
+        {
+          "from": "[callatlas.snapshot]::Sample::get_Value()",
+          "to": "[callatlas.snapshot]::Sample::Leaf(System.Int32)",
+          "kind": "call",
+          "count": 1,
+          "tier": "direct"
+        },
+        {
+          "from": "[callatlas.snapshot]::Sample::set_Value(System.Int32)",
+          "to": "[callatlas.snapshot]::Sample::Leaf(System.Int32)",
+          "kind": "call",
+          "count": 1,
+          "tier": "direct"
+        }
+      ],
+      "external": [],
+      "unresolved": [],
+      "diagnostics": [],
+      "diagnosticsTruncated": false,
+      "diagnosticsTotal": 0,
+      "bodyErrorCount": 0
+    }
+  }
+}

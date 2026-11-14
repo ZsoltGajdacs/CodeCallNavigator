@@ -7,7 +7,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-11-09T20:07:00Z'
-updated_date: '2026-11-14T11:57:00Z'
+updated_date: '2026-11-14T12:02:00Z'
 labels: []
 dependencies:
   - TASK-21
@@ -57,4 +57,6 @@ Planning-only handoff (2026-11-14): no implementation authorized or completed in
 Investigated current core IR, Roslyn body/binding pass and CallAtlas JSON, Rust C# adapter, generation-bound flow/source queries, desktop flow jobs, Git artifact loader/difference, existing trace fixtures and patch/bootstrap contracts. Created TASK-22.1 through TASK-22.11 as unassigned To Do subtasks with 5-6 observable ACs and task-specific verification/quality DoD. C# has no exported flow inventory today; historical flow rendering and provider-backed explanations are not implemented by current comparison/query infrastructure. Findings are a planning snapshot, not runtime verification. Original five acceptance criteria remain unchanged.
 
 Planning handoff complete: all 11 child records read back through the CLI; parent links, exact dependencies, existing references/documentation, 5-6 unchecked ACs and two DoD items per child verified. Independent ready entries are TASK-22.1, TASK-22.5, TASK-22.7 and TASK-22.9. ./verify-light.sh passed in documentation-only mode (target/verification/light-gotf5s9l/results.json); document links/paths and untracked Markdown whitespace checked. Returning the implementation parent to To Do/unassigned because this session was investigation/planning only. No parent delivery AC was checked and no runtime test or implementation completion is claimed.
+
+User approved sequential implementation of all subtasks on a new branch, with per-step testing, maintainability/refactoring review and verified commits. Active branch: feature/task-22-function-flowcharts. Planning baseline committed as 6162d4f. Execute C# 22.1-22.4, comparison 22.5-22.6, expansion 22.7-22.8, then explanation design/generation/UI 22.9-22.11; preserve the explicit provider/data decision checkpoint.
 <!-- SECTION:NOTES:END -->
