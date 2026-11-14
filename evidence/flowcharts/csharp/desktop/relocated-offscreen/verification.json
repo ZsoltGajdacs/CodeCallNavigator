@@ -1,0 +1,5 @@
+{
+  "status": "not_run",
+  "cause": "Full verifier finished and cleaned release test binary before this extra offscreen command could launch; no test or capture executed",
+  "native_status": "pending per user request"
+}

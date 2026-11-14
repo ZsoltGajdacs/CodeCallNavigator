@@ -158,6 +158,31 @@ fn old_graph_opens_an_actionable_refresh_message() {
     assert!(runtime.find("flow-close").is_some());
 }
 #[test]
+fn flow_header_respects_native_titlebar_controls_at_minimum_size() {
+    let mut runtime = runtime();
+    runtime.set_viewport((1050.0, 680.0), 1.0);
+    let inset = rune::tooling::Chrome::DEFAULT.titlebar_inset();
+    assert!(inset > 0.0);
+    runtime.set_titlebar_inset(inset);
+    for _ in 0..60 {
+        runtime.frame(1.0 / 60.0);
+    }
+    for key in ["open-search", "flow-close", "flow-back"] {
+        let element = runtime
+            .elements()
+            .into_iter()
+            .find(|element| element.key.as_deref() == Some(key))
+            .unwrap();
+        assert!(
+            element.rect[0] >= inset,
+            "{key} overlaps native controls: {:?}",
+            element.rect
+        );
+        assert!(element.visible[2] > 20.0 && element.visible[3] > 15.0);
+    }
+}
+
+#[test]
 fn flow_source_and_chart_remain_inside_minimum_window() {
     let mut runtime = runtime();
     runtime.set_viewport((1050.0, 680.0), 1.0);
@@ -276,24 +301,7 @@ fn shift_spans(value: &mut serde_json::Value, delta: usize) {
 
 #[test]
 fn previous_function_restores_the_actual_source_scroll_offset() {
-    let mut state = State::fixture();
-    flow_scenes::install(&mut state);
-    state.flow_workspace.invalidate();
-    let prefix = "// earlier source\n".repeat(200);
-    let mut data = flow_scenes::data();
-    data.architecture.as_mut().unwrap().files[0]
-        .content
-        .insert_str(0, &prefix);
-    let mut inventory = serde_json::to_value(data.flow_inventory.take().unwrap()).unwrap();
-    shift_spans(&mut inventory, prefix.len());
-    data.flow_inventory = Some(serde_json::from_value(inventory).unwrap());
-    state.graph = Some(std::sync::Arc::new(
-        codecallnavigator::graph::GraphIndex::new(std::sync::Arc::new(data)).unwrap(),
-    ));
-    state.open_flow("flow/load".into());
-    let mut runtime = Runtime::new(state, view::view, (1420.0, 900.0), Env::new(true, 1.0));
-    runtime.poll = Some(jobs::poll);
-    ready(&mut runtime);
+    let mut runtime = prefixed_runtime();
     scroll_source(&mut runtime, 120.0);
     let before = source_scroll(&runtime);
     assert!(
@@ -327,4 +335,155 @@ fn scroll_source(runtime: &mut Runtime<State>, y: f32) {
     runtime.update(move |_, tx| tx.scroll_to_instant(key, 0.0, y));
     runtime.frame(1.0 / 60.0);
     runtime.frame(1.0 / 60.0);
+}
+
+fn prefixed_runtime() -> Runtime<State> {
+    let mut state = State::fixture();
+    flow_scenes::install(&mut state);
+    state.flow_workspace.invalidate();
+    let prefix = "// earlier source\n".repeat(200);
+    let mut data = flow_scenes::data();
+    data.architecture.as_mut().unwrap().files[0]
+        .content
+        .insert_str(0, &prefix);
+    let mut inventory = serde_json::to_value(data.flow_inventory.take().unwrap()).unwrap();
+    shift_spans(&mut inventory, prefix.len());
+    data.flow_inventory = Some(serde_json::from_value(inventory).unwrap());
+    state.graph = Some(std::sync::Arc::new(
+        codecallnavigator::graph::GraphIndex::new(std::sync::Arc::new(data)).unwrap(),
+    ));
+    state.open_flow("flow/load".into());
+    let mut runtime = Runtime::new(state, view::view, (1420.0, 900.0), Env::new(true, 1.0));
+    runtime.poll = Some(jobs::poll);
+    ready(&mut runtime);
+    runtime
+}
+
+#[test]
+fn unlocated_flow_step_preserves_source_scroll_without_unrelated_highlight() {
+    let mut runtime = prefixed_runtime();
+    let index = session(&runtime)
+        .ready
+        .as_ref()
+        .unwrap()
+        .chart
+        .steps
+        .iter()
+        .position(|step| !step.calls.is_empty())
+        .unwrap();
+    runtime.update(move |state, _| {
+        let session = state.flow_workspace.current.as_mut().unwrap();
+        let previous = session.ready.as_ref().unwrap();
+        let mut chart = previous.chart.clone();
+        chart.steps[index].span = codecallnavigator::flow::SourceSpan::default();
+        session.ready = Some(std::sync::Arc::new(crate::flow_workspace::Ready {
+            chart,
+            source: crate::source::from_snapshot(
+                previous.source.text.clone(),
+                std::path::Path::new("/snapshot/flow.ts"),
+            ),
+        }));
+    });
+    scroll_source(&mut runtime, 120.0);
+    let before = source_scroll(&runtime);
+    click(&mut runtime, &format!("flow-step-{index}"));
+    assert_eq!(session(&runtime).selected, Some(index));
+    assert_eq!(
+        source_scroll(&runtime),
+        before,
+        "Unlocated selection moved the analyzed source"
+    );
+    let elements = runtime.elements();
+    let source_rows: Vec<_> = elements
+        .iter()
+        .filter(|element| {
+            element
+                .key
+                .as_deref()
+                .is_some_and(|key| key.starts_with("flow-source-line-"))
+        })
+        .collect();
+    assert!(!source_rows.is_empty());
+    assert!(
+        source_rows.iter().all(|row| row.fill.a < 0.01),
+        "Unlocated selection highlighted unrelated source"
+    );
+    assert!(elements.iter().any(|element| {
+        element.text.as_deref().is_some_and(|text| {
+            text.contains("Derived or unlocated step") && text.contains("no source location")
+        })
+    }));
+    assert!(
+        runtime.find("flow-target-0-0").is_some(),
+        "Unlocated step retains its attributed call target"
+    );
+}
+
+#[test]
+fn known_body_unavailable_disables_flow_action_with_a_reason() {
+    let mut graph = flow_scenes::data();
+    graph
+        .nodes
+        .iter_mut()
+        .find(|node| node.id == "flow/load")
+        .unwrap()
+        .body_unavailable = true;
+    let mut runtime = inspector_runtime(graph);
+    let button = runtime
+        .elements()
+        .into_iter()
+        .find(|element| element.key.as_deref() == Some("open-flowchart"))
+        .unwrap();
+    assert!(
+        !button.focusable,
+        "Known unavailable body still advertises an enabled action"
+    );
+    assert!(
+        button
+            .help
+            .as_deref()
+            .is_some_and(|help| help.contains("no project method body"))
+    );
+    assert!(runtime.elements().iter().any(|element| {
+        element
+            .text
+            .as_deref()
+            .is_some_and(|text| text.contains("no project method body"))
+    }));
+    click(&mut runtime, "open-flowchart");
+    assert!(runtime.state.flow_workspace.current.is_none());
+}
+
+#[test]
+fn missing_flow_inventory_remains_a_cli_checked_action() {
+    let mut graph = flow_scenes::data();
+    graph.flow_inventory = None;
+    let mut runtime = inspector_runtime(graph);
+    let button = runtime
+        .elements()
+        .into_iter()
+        .find(|element| element.key.as_deref() == Some("open-flowchart"))
+        .unwrap();
+    assert!(button.focusable);
+    click(&mut runtime, "open-flowchart");
+    super::wait_for(&mut runtime, |state| {
+        state
+            .flow_workspace
+            .current
+            .as_ref()
+            .is_some_and(|session| session.message.contains("Refresh"))
+    });
+}
+
+fn inspector_runtime(graph: codecallnavigator::model::GraphData) -> Runtime<State> {
+    let mut state = State::fixture();
+    flow_scenes::install(&mut state);
+    state.close_flow();
+    state.graph = Some(std::sync::Arc::new(
+        codecallnavigator::graph::GraphIndex::new(std::sync::Arc::new(graph)).unwrap(),
+    ));
+    let mut runtime = Runtime::new(state, view::view, (1420.0, 900.0), Env::new(true, 1.0));
+    runtime.poll = Some(jobs::poll);
+    runtime.frame(0.0);
+    runtime
 }

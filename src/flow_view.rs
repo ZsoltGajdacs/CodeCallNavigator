@@ -35,17 +35,18 @@ pub fn view(state: &State, cx: &mut Cx<State>) -> El {
         .min_h(0.0)
         .fill(k.c.bg_base)
         .on_layout(|s: &mut State, r| s.flow_workspace.window = [r[2], r[3]])
-        .child(header(state, name, &k))
+        .child(header(state, name, &k, cx.titlebar_inset()))
         .child(notice(state, session, &k))
         .child(body)
         .child(details::view(state, session, &k));
     crate::view::with_overlays(state, &k, content, Vec::new())
 }
-fn header(state: &State, name: &str, k: &Kit) -> El {
+fn header(state: &State, name: &str, k: &Kit, titlebar_inset: f32) -> El {
     row()
         .key("flow-toolbar")
         .w_full()
         .padding(10.0)
+        .pl(10.0 + titlebar_inset)
         .gap(10.0)
         .center_y()
         .flex_wrap()

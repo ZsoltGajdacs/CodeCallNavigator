@@ -1,0 +1,124 @@
+{
+  "reviews": [
+    {
+      "file": "src/flow_acceptance.rs",
+      "score": 10,
+      "review": [],
+      "path": "src/flow_acceptance.rs"
+    },
+    {
+      "file": "src/flow_acceptance/config.rs",
+      "score": 10,
+      "review": [],
+      "path": "src/flow_acceptance/config.rs"
+    },
+    {
+      "file": "src/flow_acceptance/driver.rs",
+      "score": 10,
+      "review": [],
+      "path": "src/flow_acceptance/driver.rs"
+    },
+    {
+      "file": "src/flow_acceptance/input.rs",
+      "score": 10,
+      "review": [],
+      "path": "src/flow_acceptance/input.rs"
+    },
+    {
+      "file": "src/flow_acceptance/io.rs",
+      "score": 10,
+      "review": [],
+      "path": "src/flow_acceptance/io.rs"
+    },
+    {
+      "file": "src/flow_acceptance/observation.rs",
+      "score": 10,
+      "review": [],
+      "path": "src/flow_acceptance/observation.rs"
+    },
+    {
+      "file": "src/flow_acceptance/report.rs",
+      "score": 10,
+      "review": [],
+      "path": "src/flow_acceptance/report.rs"
+    },
+    {
+      "file": "src/main.rs",
+      "score": 10,
+      "review": [],
+      "path": "src/main.rs"
+    },
+    {
+      "file": "src/flow_workspace.rs",
+      "score": 10,
+      "review": [],
+      "path": "src/flow_workspace.rs"
+    },
+    {
+      "file": "src/flow_workspace/tests.rs",
+      "score": 10,
+      "review": [],
+      "path": "src/flow_workspace/tests.rs"
+    },
+    {
+      "file": "src/flow_view.rs",
+      "score": 10,
+      "review": [],
+      "path": "src/flow_view.rs"
+    },
+    {
+      "file": "src/flow_view/details.rs",
+      "score": 10,
+      "review": [],
+      "path": "src/flow_view/details.rs"
+    },
+    {
+      "file": "src/inspector.rs",
+      "score": 10,
+      "review": [],
+      "path": "src/inspector.rs"
+    },
+    {
+      "file": "src/ui_tests.rs",
+      "score": 10,
+      "review": [],
+      "path": "src/ui_tests.rs"
+    },
+    {
+      "file": "src/ui_tests/function_flows.rs",
+      "score": 10,
+      "review": [],
+      "path": "src/ui_tests/function_flows.rs"
+    },
+    {
+      "file": "src/ui_tests/csharp_flows.rs",
+      "score": 10,
+      "review": [],
+      "path": "src/ui_tests/csharp_flows.rs"
+    },
+    {
+      "file": "fixtures/flow/csharp-desktop/Example.cs",
+      "score": 10,
+      "review": [],
+      "path": "fixtures/flow/csharp-desktop/Example.cs"
+    },
+    {
+      "file": "tools/csharp_desktop_acceptance.py",
+      "score": 10,
+      "review": [],
+      "path": "tools/csharp_desktop_acceptance.py"
+    },
+    {
+      "file": "tools/native_window_setup.py",
+      "score": 10,
+      "review": [],
+      "path": "tools/native_window_setup.py"
+    },
+    {
+      "file": "tools/test_native_window_setup.py",
+      "score": 10,
+      "review": [],
+      "path": "tools/test_native_window_setup.py"
+    }
+  ]
+}

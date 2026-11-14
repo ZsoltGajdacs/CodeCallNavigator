@@ -1,2 +1,4 @@
 # Patch checksums cover literal bytes, including empty unified-diff context lines.
 patches/*.patch -text -whitespace
+# This source fixture proves compiler byte spans across a UTF-8 BOM and CRLF.
+fixtures/flow/csharp-desktop/Example.cs -text whitespace=cr-at-eol

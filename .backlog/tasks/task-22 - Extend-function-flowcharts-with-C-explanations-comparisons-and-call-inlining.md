@@ -7,7 +7,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-11-09T20:07:00Z'
-updated_date: '2026-11-14T12:02:00Z'
+updated_date: '2026-11-14T21:39:00Z'
 labels: []
 dependencies:
   - TASK-21
@@ -26,7 +26,7 @@ TASK-21 establishes source-derived Java and TypeScript flowcharts. Track the def
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 C# methods can open source-linked flowcharts with validated language-specific control-flow semantics.
+- [x] #1 C# methods can open source-linked flowcharts with validated language-specific control-flow semantics.
 - [ ] #2 Optional AI explanations remain anchored to chart steps and distinguish generated interpretation from compiler/source facts.
 - [ ] #3 PR comparisons show before/after function flows with explicit revision and source provenance.
 - [ ] #4 Optional recursive call inlining preserves method identities and uncertainty, detects cycles and enforces visible expansion limits.
@@ -59,4 +59,6 @@ Investigated current core IR, Roslyn body/binding pass and CallAtlas JSON, Rust 
 Planning handoff complete: all 11 child records read back through the CLI; parent links, exact dependencies, existing references/documentation, 5-6 unchecked ACs and two DoD items per child verified. Independent ready entries are TASK-22.1, TASK-22.5, TASK-22.7 and TASK-22.9. ./verify-light.sh passed in documentation-only mode (target/verification/light-gotf5s9l/results.json); document links/paths and untracked Markdown whitespace checked. Returning the implementation parent to To Do/unassigned because this session was investigation/planning only. No parent delivery AC was checked and no runtime test or implementation completion is claimed.
 
 User approved sequential implementation of all subtasks on a new branch, with per-step testing, maintainability/refactoring review and verified commits. Active branch: feature/task-22-function-flowcharts. Planning baseline committed as 6162d4f. Execute C# 22.1-22.4, comparison 22.5-22.6, expansion 22.7-22.8, then explanation design/generation/UI 22.9-22.11; preserve the explicit provider/data decision checkpoint.
+
+C#firstmilestonecomplete:22.1 exporter a622c62,22.2 CLI/source persistence1e0465b,22.3 cleanup/provenance bff3d27,22.4 desktop/nativeacceptancecomplete afterfull-0tid44xs46/46passed+actualrelocatedlight/dark1050x680ownedwindows. ParentAC1proven/checked;othersremainopen. Evidence docs/function-flowcharts.md andevidence/flowcharts/csharp/{cleanup,desktop}. Root5historicalCLIpreparedinexplicitisolatedcheckoutwhile4frozen; willintegrateonto samefeaturebranch next. Provider/designcheckpoint9stillrequired; noAIproviderselected.
 <!-- SECTION:NOTES:END -->

@@ -1,0 +1,28 @@
+{
+  "status": "passed",
+  "mode": "Headless Rune production CLI workflow with GPU offscreen renders; no native window proof",
+  "command": [
+    "/private/tmp/task22-relocated-headless-e09djf4o/desktop-tests",
+    "--exact",
+    "ui_tests::csharp_flows::real_csharp_controls_keep_exact_source_cleanup_targets_and_history",
+    "--ignored",
+    "--nocapture",
+    "--test-threads=1"
+  ],
+  "exit_code": 0,
+  "seconds": 11.200766916037537,
+  "test_binary_sha256": "722c2b5d95ec61e3eca74bedbc3839a9ef80bd5a047d2d4acaf71b971e9643b8",
+  "relocated_runtime": {
+    "Contents/MacOS/codecallnavigator-engine": {
+      "path": "/private/tmp/task22-relocated-headless-e09djf4o/Relocated CodeCallNavigator.app/Contents/MacOS/codecallnavigator-engine",
+      "sha256": "1f8a0d17097037b1e57ee3beb2d1aa8dc472f029c2da854f8660edf34702a570"
+    },
+    "Contents/Resources/analyzers/graphviz/bin/dot": {
+      "path": "/private/tmp/task22-relocated-headless-e09djf4o/Relocated CodeCallNavigator.app/Contents/Resources/analyzers/graphviz/bin/dot",
+      "sha256": "c7c12a5779233eecd2a1fb4a0daf1f8b3c7e15f33dbdaf1eb544e51910d11e93"
+    }
+  },
+  "source_fixture_sha256": "15a5962665187d7c051e8ff783d411fe38dfc88067f236d2c8f25788cebed784",
+  "isolated_store": true,
+  "resource_overrides": "Explicitly point the test runtime at relocated bundle; native harness separately requires automatic discovery with no overrides"
+}

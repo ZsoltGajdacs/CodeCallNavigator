@@ -51,6 +51,16 @@ pub(super) fn view(state: &State, session: &Session, k: &Kit) -> El {
             .w_full()
             .wrap(),
     );
+    if session.selected_source_span().is_none() {
+        content = content.child(
+            text("Derived or unlocated step: no source location is available. Source position is unchanged.")
+                .key("flow-source-unlocated")
+                .font(k.ty.small)
+                .color(k.c.text_muted)
+                .w_full()
+                .wrap(),
+        );
+    }
     for (index, call) in step.calls.iter().enumerate() {
         content = content.child(call_details(state, call, index, k));
     }
@@ -69,7 +79,12 @@ fn target_name(state: &State, symbol: &str) -> String {
         .unwrap_or_else(|| symbol.to_owned())
 }
 
-fn call_details(state: &State, call: &codecallnavigator::flow::CallSite, call_index: usize, k: &Kit) -> El {
+fn call_details(
+    state: &State,
+    call: &codecallnavigator::flow::CallSite,
+    call_index: usize,
+    k: &Kit,
+) -> El {
     let mut content = col().w_full().gap(4.0);
     content = content.child(
         text(&call.label)
