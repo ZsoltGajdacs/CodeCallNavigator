@@ -1,0 +1,241 @@
+{
+  "status": "failed",
+  "candidate": {
+    "engine_path": "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/dist/CodeCallNavigatorEngine/bin/codecallnavigator-engine",
+    "engine_sha256": "bf0809d34ddabd7444957a27a92a6554041e32a79484c2dae4feb98dfe7229bf",
+    "callatlas_revision": "916c2419c0cdb91b5b86b84df4842dadb17bb6b4",
+    "combined_patch_sha256": "c937ed67e92cc45783ad57289e8bfc15a4d55e3548bfe173ee7eacbe12f3990d"
+  },
+  "using_scope": {
+    "status": "failed",
+    "runtime": {
+      "scenario": "using-scope",
+      "events": [
+        {
+          "operation": "acquire",
+          "name": "one",
+          "outcome": "normal",
+          "value": null
+        },
+        {
+          "operation": "mark",
+          "name": "body",
+          "outcome": "normal",
+          "value": null
+        },
+        {
+          "operation": "dispose",
+          "name": "one",
+          "outcome": "normal",
+          "value": null
+        }
+      ],
+      "result": 0,
+      "outcome": "normal",
+      "error": null
+    },
+    "chart": {
+      "diagnostics": [
+        "Unsupported LocalDeclarationStatement control flow"
+      ],
+      "entry": 0,
+      "file": "<cleanup-work>/fixture/Runtime/Scenarios.cs",
+      "links": [
+        {
+          "from": 0,
+          "kind": "normal",
+          "label": "",
+          "to": 1
+        },
+        {
+          "from": 1,
+          "kind": "unknown",
+          "label": "flow not expanded",
+          "to": 2
+        },
+        {
+          "from": 2,
+          "kind": "normal",
+          "label": "",
+          "to": 3
+        },
+        {
+          "from": 3,
+          "kind": "normal",
+          "label": "",
+          "to": 4
+        },
+        {
+          "from": 4,
+          "kind": "normal",
+          "label": "",
+          "to": 5
+        },
+        {
+          "from": 5,
+          "kind": "normal",
+          "label": "",
+          "to": 6
+        },
+        {
+          "from": 6,
+          "kind": "normal",
+          "label": "",
+          "to": 7
+        }
+      ],
+      "partial": true,
+      "regions": [],
+      "span": {
+        "end": 227,
+        "start": 99
+      },
+      "steps": [
+        {
+          "calls": [],
+          "id": 0,
+          "kind": "start",
+          "label": "Function entry",
+          "span": {
+            "end": 227,
+            "start": 99
+          }
+        },
+        {
+          "calls": [],
+          "id": 1,
+          "kind": "unsupported",
+          "label": "using ValueResource resource = TraceRuntime.Acquire(\"one\");",
+          "span": {
+            "end": 168,
+            "start": 109
+          }
+        },
+        {
+          "calls": [],
+          "id": 2,
+          "kind": "expression",
+          "label": "TraceRuntime",
+          "span": {
+            "end": 189,
+            "start": 177
+          }
+        },
+        {
+          "calls": [],
+          "id": 3,
+          "kind": "expression",
+          "label": "\"body\"",
+          "span": {
+            "end": 201,
+            "start": 195
+          }
+        },
+        {
+          "calls": [
+            {
+              "diagnostic": null,
+              "label": "TraceRuntime.Mark(\"body\")",
+              "span": {
+                "end": 202,
+                "start": 177
+              },
+              "targets": [
+                {
+                  "certainty": "direct",
+                  "provenance": "roslyn:call",
+                  "symbol": "[\"csharp\",\"@repo/Runtime/CleanupRuntime.csproj\",\"@repo/Trace.cs\",\"@repo/Runtime/CleanupRuntime.csproj|[CleanupRuntime]::CleanupFixture.TraceRuntime::Mark(System.String)\"]"
+                }
+              ]
+            }
+          ],
+          "id": 4,
+          "kind": "expression",
+          "label": "TraceRuntime.Mark(\"body\")",
+          "span": {
+            "end": 202,
+            "start": 177
+          }
+        },
+        {
+          "calls": [],
+          "id": 5,
+          "kind": "expression",
+          "label": "0",
+          "span": {
+            "end": 220,
+            "start": 219
+          }
+        },
+        {
+          "calls": [],
+          "id": 6,
+          "kind": "return",
+          "label": "return",
+          "span": {
+            "end": 221,
+            "start": 212
+          }
+        },
+        {
+          "calls": [],
+          "id": 7,
+          "kind": "exit",
+          "label": "Return to caller",
+          "span": {
+            "end": 227,
+            "start": 99
+          }
+        }
+      ],
+      "symbol": "[\"csharp\",\"@repo/Runtime/CleanupRuntime.csproj\",\"@repo/Runtime/Scenarios.cs\",\"@repo/Runtime/CleanupRuntime.csproj|[CleanupRuntime]::CleanupFixture.CleanupCases::UseScope()\"]"
+    },
+    "runtime_trace_path": null,
+    "skipping_cleanup_path": null,
+    "opaque_steps_present": true,
+    "source_sha256": "15bbd4f61a7ed9a4e8712329b9a8214410b93d607bfb311795aec1e5951862b0"
+  },
+  "commands": [
+    {
+      "arguments": [
+        "analyze",
+        "--project",
+        "<cleanup-work>/fixture",
+        "<cleanup-work>/fixture/Runtime/CleanupRuntime.csproj"
+      ],
+      "exit_code": 0,
+      "dotnet_on_path": true
+    },
+    {
+      "arguments": [
+        "query"
+      ],
+      "exit_code": 0,
+      "dotnet_on_path": true,
+      "stdin": {
+        "version": 1,
+        "project": "<cleanup-work>/fixture",
+        "query": {
+          "kind": "snapshot"
+        }
+      }
+    },
+    {
+      "arguments": [
+        "query"
+      ],
+      "exit_code": 0,
+      "dotnet_on_path": true,
+      "stdin": {
+        "version": 1,
+        "project": "<cleanup-work>/fixture",
+        "query": {
+          "kind": "flow",
+          "symbol": "[\"csharp\",\"@repo/Runtime/CleanupRuntime.csproj\",\"@repo/Runtime/Scenarios.cs\",\"@repo/Runtime/CleanupRuntime.csproj|[CleanupRuntime]::CleanupFixture.CleanupCases::UseScope()\"]"
+        },
+        "expected_generation": "b87313abfb5191ae0f2d597073e012e11404f95ff0e2eb728c50e3a5aa1bf88e"
+      }
+    }
+  ],
+  "trace_mapping": "Explicit source calls and source-owned compiler-lowered operations; actual outcomes constrain exception edges, not a runtime-value interpreter."
+}

@@ -753,7 +753,7 @@ index 0000000..a2b430d
 +
 +}
 diff --git a/src/CallAtlas.Core/CallGraphBuilder.cs b/src/CallAtlas.Core/CallGraphBuilder.cs
-index bf14b1d..c320da1 100644
+index bf14b1d..647d0fe 100644
 --- a/src/CallAtlas.Core/CallGraphBuilder.cs
 +++ b/src/CallAtlas.Core/CallGraphBuilder.cs
 @@ -664,7 +664,7 @@ public sealed partial class CallGraphBuilder
@@ -765,6 +765,47 @@ index bf14b1d..c320da1 100644
  
          // ── 阶段一（全部文件）：一遍句法遍历，登记节点 + 收集待绑定函数体 ──────────
          // 旧实现把整棵树走两遍：第二遍要重新 GetDeclaredSymbol 才能算出 fromId，
+@@ -683,7 +683,7 @@ public sealed partial class CallGraphBuilder
+                     case MethodDeclarationSyntax m:
+                         var ms = (IMethodSymbol)model.GetDeclaredSymbol(m)!;
+                         Register(nodes, ms, "method", root);
+-                        Site(sites, IdOf(ms), Bodies(m.Body, m.ExpressionBody));
++                        Site(sites, IdOf(ms), Bodies(m.Body, m.ExpressionBody), ms);
+                         break;
+                     case ConstructorDeclarationSyntax c:
+                         var cs = (IMethodSymbol)model.GetDeclaredSymbol(c)!;
+@@ -720,19 +720,19 @@ public sealed partial class CallGraphBuilder
+                             break;
+                         var aSym = (IMethodSymbol)model.GetDeclaredSymbol(a)!;
+                         Register(nodes, aSym, "accessor", root);
+-                        Site(sites, IdOf(aSym), Bodies(a.Body, a.ExpressionBody));
++                        Site(sites, IdOf(aSym), Bodies(a.Body, a.ExpressionBody), aSym);
+                         break;
+                     // 表达式体属性/索引器（public B Y => new B();）没有 AccessorDeclarationSyntax，
+                     // getter 由编译器合成——从属性符号上取，否则整片代码既不产节点也不产边。
+                     case PropertyDeclarationSyntax { ExpressionBody: not null } p
+                         when model.GetDeclaredSymbol(p) is IPropertySymbol { GetMethod: { } getter }:
+                         Register(nodes, getter, "accessor", root);
+-                        Site(sites, IdOf(getter), [p.ExpressionBody]);
++                        Site(sites, IdOf(getter), [p.ExpressionBody], getter);
+                         break;
+                     case IndexerDeclarationSyntax { ExpressionBody: not null } ix
+                         when model.GetDeclaredSymbol(ix) is IPropertySymbol { GetMethod: { } igetter }:
+                         Register(nodes, igetter, "accessor", root);
+-                        Site(sites, IdOf(igetter), [ix.ExpressionBody]);
++                        Site(sites, IdOf(igetter), [ix.ExpressionBody], igetter);
+                         break;
+                     // 属性初始化器（public B Y { get; set; } = new B();）：表达式由编译器搬进构造器，
+                     // 没有对应的字段声明语法——登记为属性自己的 #init 伪节点
+@@ -744,7 +744,7 @@ public sealed partial class CallGraphBuilder
+                     case LocalFunctionStatementSyntax lf:
+                         var lfs = (IMethodSymbol)model.GetDeclaredSymbol(lf)!;
+                         Register(nodes, lfs, "localfunction", root);
+-                        Site(sites, IdOf(lfs), Bodies(lf.Body, lf.ExpressionBody));
++                        Site(sites, IdOf(lfs), Bodies(lf.Body, lf.ExpressionBody), lfs);
+                         break;
+                     case VariableDeclaratorSyntax { Parent.Parent: FieldDeclarationSyntax } v
+                         when v.Initializer is not null && model.GetDeclaredSymbol(v) is IFieldSymbol f:
 @@ -752,19 +752,20 @@ public sealed partial class CallGraphBuilder
                          Site(sites, SymbolId.ForFieldInitializer(f), [v.Initializer!.Value]);
                          break;
@@ -816,7 +857,7 @@ index bf14b1d..c320da1 100644
 +            FlowFactsVersion = FlowInventory.CapabilityVersion,
 +            SourceFactsVersion = SourceFactsJson.Version,
 +            FlowInventory = FlowExport.Build(pending.SelectMany(item => item.Sites.Select(site =>
-+                new FlowInput(site.FromId, item.Tree, item.Model, site.Bodies))), nodes, flowBindings, root),
++                new FlowInput(site.FromId, item.Tree, item.Model, site.Bodies, site.Declaration))), nodes, flowBindings, root),
 +            FrameworkFactsVersion = MediatRFacts.Version,
 +            FrameworkEdges = framework.Edges,
 +            FrameworkEntries = framework.Entries,
@@ -845,6 +886,23 @@ index bf14b1d..c320da1 100644
      }
  
      /// <summary>
+@@ -1218,12 +1245,12 @@ public sealed partial class CallGraphBuilder
+ 
+     /// <summary>一个"待绑定函数体"：归属节点 id + 需要扫描的语法体。
+     /// 阶段一收集、阶段二消费，从而把每棵语法树从"走两遍"降到"走一遍"。</summary>
+-    private sealed record BodySite(string FromId, SyntaxNode[] Bodies);
++    private sealed record BodySite(string FromId, SyntaxNode[] Bodies, IMethodSymbol? Declaration);
+ 
+-    private static void Site(List<BodySite> sites, string fromId, SyntaxNode[] bodies)
++    private static void Site(List<BodySite> sites, string fromId, SyntaxNode[] bodies, IMethodSymbol? declaration = null)
+     {
+-        if (bodies.Length != 0)
+-            sites.Add(new BodySite(fromId, bodies));
++        if (bodies.Length != 0 || declaration is not null)
++            sites.Add(new BodySite(fromId, bodies, declaration));
+     }
+ 
+     private static SyntaxNode[] Bodies(BlockSyntax? block, ArrowExpressionClauseSyntax? arrow) =>
 @@ -1251,6 +1278,7 @@ public sealed partial class CallGraphBuilder
              Id = id,
              Kind = kind,
@@ -1037,6 +1095,15 @@ index bf14b1d..c320da1 100644
  
                  // 目标本身是接口/虚方法时，它和 dispatch 调用是同一个问题：
                  // 静态目标只有一个，真实实现会零入度。复用同一条解析路径。
+@@ -1925,7 +1852,7 @@ public sealed partial class CallGraphBuilder
+     private static string TierForAccessor(IMethodSymbol accessor) =>
+         EdgeTierClassifier.ForCall(accessor, receiverType: null);
+ 
+-    private static string Rel(string root, string path)
++    internal static string Rel(string root, string path)
+     {
+         var rel = Path.GetRelativePath(root, path);
+         return rel.Replace('\\', '/');
 diff --git a/src/CallAtlas.Core/CodeMap.cs b/src/CallAtlas.Core/CodeMap.cs
 index a720920..720768f 100644
 --- a/src/CallAtlas.Core/CodeMap.cs
@@ -1481,10 +1548,10 @@ index 0000000..ab25c1c
 +}
 diff --git a/src/CallAtlas.Core/FlowContracts.cs b/src/CallAtlas.Core/FlowContracts.cs
 new file mode 100644
-index 0000000..3e3981c
+index 0000000..1c7d189
 --- /dev/null
 +++ b/src/CallAtlas.Core/FlowContracts.cs
-@@ -0,0 +1,52 @@
+@@ -0,0 +1,58 @@
 +using System.Text.Json.Serialization;
 +
 +namespace CallAtlas.Core;
@@ -1518,6 +1585,10 @@ index 0000000..3e3981c
 +    public IReadOnlyList<FlowStatement>? ElseBranch { get; init; }
 +    public IReadOnlyList<FlowStatement>? Update { get; init; }
 +    public IReadOnlyList<FlowCase>? Cases { get; init; }
++    public IReadOnlyList<FlowStatement>? Resources { get; init; }
++    public IReadOnlyList<FlowCatch>? Catches { get; init; }
++    public IReadOnlyList<FlowStatement>? Finally { get; init; }
++    public IReadOnlyList<FlowStatement>? Cleanup { get; init; }
 +    public bool? TestFirst { get; init; }
 +    public string? Label { get; init; }
 +    public bool? Deferred { get; init; }
@@ -1537,18 +1608,47 @@ index 0000000..3e3981c
 +
 +public sealed record FlowCase(IReadOnlyList<string> Labels, FlowSpan Span, bool IsDefault,
 +    bool FallsThrough, IReadOnlyList<FlowStatement> Body);
++public sealed record FlowCatch([property: JsonRequired] string Parameter, [property: JsonRequired] bool CatchAll,
++    [property: JsonRequired] IReadOnlyList<FlowStatement> Body);
+diff --git a/src/CallAtlas.Core/FlowExceptions.cs b/src/CallAtlas.Core/FlowExceptions.cs
+new file mode 100644
+index 0000000..b0a82b6
+--- /dev/null
++++ b/src/CallAtlas.Core/FlowExceptions.cs
+@@ -0,0 +1,21 @@
++using Microsoft.CodeAnalysis.CSharp.Syntax;
++
++namespace CallAtlas.Core;
++
++internal sealed partial class FlowBody
++{
++    private FlowStatement Try(TryStatementSyntax statement, int depth)
++    {
++        var final = statement.Finally is null ? [] : Body(statement.Finally.Block, depth + 1);
++        if (statement.Catches.Any(clause => clause.Filter is not null))
++            return Protected(statement, [OpaqueCompletion(statement, "Filtered catch dispatch precedes unwind and remains opaque")])
++                with { Finally = final };
++        var catches = statement.Catches.Select(clause =>
++        {
++            Budget(depth + 1);
++            return new FlowCatch(clause.Declaration is null ? "all" : FlowText.Label(clause.Declaration), clause.Declaration is null,
++                Body(clause.Block, depth + 1));
++        }).ToArray();
++        return Protected(statement, Body(statement.Block, depth + 1)) with { Catches = catches, Finally = final };
++    }
++}
 diff --git a/src/CallAtlas.Core/FlowExport.cs b/src/CallAtlas.Core/FlowExport.cs
 new file mode 100644
-index 0000000..f606ebf
+index 0000000..ec67d13
 --- /dev/null
 +++ b/src/CallAtlas.Core/FlowExport.cs
-@@ -0,0 +1,100 @@
+@@ -0,0 +1,94 @@
 +using Microsoft.CodeAnalysis;
 +using Microsoft.CodeAnalysis.CSharp.Syntax;
 +
 +namespace CallAtlas.Core;
 +
-+internal sealed record FlowInput(string Symbol, SyntaxTree Tree, SemanticModel Model, IReadOnlyList<SyntaxNode> Bodies);
++internal sealed record FlowInput(string Symbol, SyntaxTree Tree, SemanticModel Model, IReadOnlyList<SyntaxNode> Bodies, IMethodSymbol? Declaration);
 +
 +internal static class FlowExport
 +{
@@ -1556,17 +1656,17 @@ index 0000000..f606ebf
 +        FlowBindings bindings, string root)
 +    {
 +        var functions = new List<FunctionFlow>();
++        var ownership = new FlowOwnership();
 +        var sources = new Dictionary<SyntaxTree, FlowSource>();
 +        foreach (var group in inputs.GroupBy(i => i.Symbol).OrderBy(g => g.Key, StringComparer.Ordinal))
 +        {
 +            if (!nodes.TryGetValue(group.Key, out var node) || node.Kind is not ("method" or "accessor" or "localfunction" or "toplevel"))
 +                continue;
-+            var entries = group.ToArray();
-+            if (entries.Select(e => e.Tree).Distinct().Count() != 1) continue; // Ambiguous source ownership is unavailable.
-+            var first = entries[0];
++            var owned = ownership.Select(group.ToArray(), node, root);
++            if (owned is null) continue;
++            var first = owned.Input;
 +            if (!sources.TryGetValue(first.Tree, out var source)) sources[first.Tree] = source = new FlowSource(first.Tree, root);
-+            var bodies = entries.SelectMany(e => e.Bodies).OrderBy(b => b.SpanStart).ToArray();
-+            if (bodies.Length == 0) continue;
++            var bodies = owned.Bodies;
 +            var span = new FlowSpan(source.Span(bodies[0]).Start, source.Span(bodies[^1]).End);
 +            var exporter = new FlowBody(group.Key, first.Model, source, bindings);
 +            var body = exporter.Export(bodies);
@@ -1605,6 +1705,8 @@ index 0000000..f606ebf
 +            if (source.Problem is not null) throw new FlowUnsupported(source.Problem, true);
 +            if (bodies.Any(IsAsyncOrIterator))
 +                throw new FlowUnsupported("Async/iterator execution and suspension are opaque", true);
++            if (bodies.All(body => body.Parent is GlobalStatementSyntax))
++                return LexicalBody(bodies.Cast<StatementSyntax>().ToArray(), 0, 0);
 +            return bodies.SelectMany(body => Body(body, 0)).ToArray();
 +        }
 +        catch (FlowUnsupported problem)
@@ -1615,14 +1717,6 @@ index 0000000..f606ebf
 +        }
 +    }
 +
-+    private static bool IsAsyncOrIterator(SyntaxNode body)
-+    {
-+        if (body.Parent is MethodDeclarationSyntax method && method.Modifiers.Any(m => m.ValueText == "async")) return true;
-+        if (body.Parent is LocalFunctionStatementSyntax local && local.Modifiers.Any(m => m.ValueText == "async")) return true;
-+        return body.DescendantNodesAndSelf(n => n == body || n is not (AnonymousFunctionExpressionSyntax or LocalFunctionStatementSyntax))
-+            .Any(n => n is AwaitExpressionSyntax or YieldStatementSyntax);
-+    }
-+
 +    private void Budget(int depth)
 +    {
 +        if (depth > 24 || ++nodes > 1500)
@@ -1631,7 +1725,7 @@ index 0000000..f606ebf
 +
 +    private IReadOnlyList<FlowStatement> Body(SyntaxNode body, int depth) => body switch
 +    {
-+        BlockSyntax block => block.Statements.Select(s => Statement(s, depth + 1)).ToArray(),
++        BlockSyntax block => LexicalBody(block.Statements, 0, depth),
 +        ArrowExpressionClauseSyntax arrow => [new("return", source.Span(arrow)) { Value = Expression(arrow.Expression, depth + 1) }],
 +        StatementSyntax statement => [Statement(statement, depth + 1)],
 +        _ => [Opaque(body, "Unsupported callable body")],
@@ -1846,6 +1940,94 @@ index 0000000..a498c8f
 +    private FlowExpression Sequence(SyntaxNode node, IReadOnlyList<FlowExpression> items) =>
 +        items.Count == 1 ? items[0] : new("sequence", source.Span(node)) { Items = items };
 +}
+diff --git a/src/CallAtlas.Core/FlowForeach.cs b/src/CallAtlas.Core/FlowForeach.cs
+new file mode 100644
+index 0000000..4886b0b
+--- /dev/null
++++ b/src/CallAtlas.Core/FlowForeach.cs
+@@ -0,0 +1,82 @@
++using Microsoft.CodeAnalysis;
++using Microsoft.CodeAnalysis.CSharp;
++using Microsoft.CodeAnalysis.CSharp.Syntax;
++
++namespace CallAtlas.Core;
++
++internal sealed partial class FlowBody
++{
++    private FlowStatement Foreach(ForEachStatementSyntax statement, int depth)
++    {
++        if (!statement.AwaitKeyword.IsKind(SyntaxKind.None))
++            return OpaqueCompletion(statement, "Await foreach execution and suspension are opaque");
++        try
++        {
++            var guard = ForeachProof(statement);
++            Budget(depth + 2); // Acquisition protection and loop are synthetic scopes.
++            var acquire = Sequence(statement, [Expression(statement.Expression, depth + 1),
++                SyntheticValue(statement, "capture foreach collection once"),
++                ImplicitCall(statement, ImplicitFlowOperation.GetEnumerator, "collection"),
++                SyntheticValue(statement, "capture foreach enumerator once")]);
++            var body = new List<FlowStatement>
++            {
++                EvaluateSynthetic(statement, ImplicitCall(statement, ImplicitFlowOperation.Current, "enumerator")),
++                EvaluateSynthetic(statement, SyntheticValue(statement, "assign iteration variable " + FlowText.Bounded(statement.Identifier.ValueText))),
++            };
++            body.AddRange(Body(statement.Statement, depth + 2));
++            var loop = new FlowStatement("loop", source.Span(statement))
++            { Condition = ImplicitCall(statement, ImplicitFlowOperation.MoveNext, "enumerator"), Body = body, Update = [], TestFirst = true };
++            return Protected(statement, [loop]) with
++            {
++                Resources = [EvaluateSynthetic(statement, acquire)],
++                Cleanup = [Dispose(statement, "enumerator", guard)],
++            };
++        }
++        catch (FlowUnsupported problem) when (!problem.Limit) { return OpaqueCompletion(statement, problem.Message); }
++    }
++
++    private CleanupGuard ForeachProof(ForEachStatementSyntax statement)
++    {
++        ProveCollection(statement);
++        var info = model.GetForEachStatementInfo(statement);
++        ProveEnumeratorOperations(info);
++        if (!info.ElementConversion.IsIdentity || !info.CurrentConversion.IsIdentity)
++            throw new FlowUnsupported("Foreach element/current conversions are opaque");
++        return EnumeratorDisposal(info.GetEnumeratorMethod!.ReturnType, info.DisposeMethod);
++    }
++
++    private void ProveCollection(ForEachStatementSyntax statement)
++    {
++        var collection = model.GetTypeInfo(statement.Expression).Type;
++        if (collection is null) throw new FlowUnsupported("Foreach collection type is unresolved");
++        if (collection.TypeKind is TypeKind.Dynamic or TypeKind.Array)
++            throw new FlowUnsupported("Dynamic/array foreach lowering is opaque");
++        if (collection.SpecialType == SpecialType.System_String)
++            throw new FlowUnsupported("String foreach lowering is opaque");
++        if (statement.Type is RefTypeSyntax) throw new FlowUnsupported("Ref iteration is opaque");
++    }
++
++    private static void ProveEnumeratorOperations(ForEachStatementInfo info)
++    {
++        if (info.IsAsynchronous) throw new FlowUnsupported("Asynchronous enumerator operations are opaque");
++        if (info.GetEnumeratorMethod is null) throw new FlowUnsupported("Foreach GetEnumerator is unresolved");
++        if (info.MoveNextMethod is null) throw new FlowUnsupported("Foreach MoveNext is unresolved");
++        if (info.CurrentProperty is null) throw new FlowUnsupported("Foreach Current is unresolved");
++    }
++
++    private CleanupGuard EnumeratorDisposal(ITypeSymbol enumerator, IMethodSymbol? dispose)
++    {
++        if (enumerator.IsRefLikeType || enumerator.TypeKind is TypeKind.Dynamic or TypeKind.TypeParameter)
++            throw new FlowUnsupported("Ref-like/dynamic/generic enumerator cleanup is opaque");
++        var disposable = model.Compilation.GetSpecialType(SpecialType.System_IDisposable);
++        var conversion = ((CSharpCompilation)model.Compilation).ClassifyConversion(enumerator, disposable);
++        if (conversion.IsImplicit && !conversion.IsUserDefined)
++        {
++            if (dispose is null) throw new FlowUnsupported("Compiler did not expose the required enumerator disposal operation");
++            return DisposableGuard(enumerator);
++        }
++        if (enumerator.IsSealed) return CleanupGuard.Never;
++        if (enumerator.IsReferenceType) return CleanupGuard.RuntimeDisposable;
++        throw new FlowUnsupported("Enumerator disposal category is unresolved");
++    }
++}
 diff --git a/src/CallAtlas.Core/FlowJson.cs b/src/CallAtlas.Core/FlowJson.cs
 new file mode 100644
 index 0000000..2f20e3f
@@ -1924,6 +2106,166 @@ index 0000000..2f20e3f
 +    private static CallAtlasException Invalid(string reason) =>
 +        new($"{reason} in flow facts; regenerate the snapshot.");
 +}
+diff --git a/src/CallAtlas.Core/FlowLexicalScopes.cs b/src/CallAtlas.Core/FlowLexicalScopes.cs
+new file mode 100644
+index 0000000..138624e
+--- /dev/null
++++ b/src/CallAtlas.Core/FlowLexicalScopes.cs
+@@ -0,0 +1,51 @@
++using Microsoft.CodeAnalysis;
++using Microsoft.CodeAnalysis.CSharp;
++using Microsoft.CodeAnalysis.CSharp.Syntax;
++
++namespace CallAtlas.Core;
++
++internal sealed partial class FlowBody
++{
++    private IReadOnlyList<FlowStatement> LexicalBody(IReadOnlyList<StatementSyntax> statements, int start, int depth)
++    {
++        var body = new List<FlowStatement>();
++        for (var index = start; index < statements.Count; index++)
++        {
++            if (statements[index] is LocalDeclarationStatementSyntax declaration && !declaration.UsingKeyword.IsKind(SyntaxKind.None))
++            {
++                body.Add(UsingDeclaration(declaration, statements, index + 1, depth + 1));
++                return body;
++            }
++            body.Add(Statement(statements[index], depth + 1));
++        }
++        return body;
++    }
++
++    private FlowStatement UsingDeclaration(LocalDeclarationStatementSyntax declaration,
++        IReadOnlyList<StatementSyntax> statements, int suffix, int depth)
++    {
++        Budget(depth);
++        if (!declaration.AwaitKeyword.IsKind(SyntaxKind.None))
++            return OpaqueContinuation(declaration, statements, "Await using declaration and its remaining lexical scope are opaque");
++        try
++        {
++            var resources = Resources(declaration.Declaration, depth);
++            Budget(depth + resources.Length);
++            var body = LexicalBody(statements, suffix, depth + resources.Length);
++            return UsingScope(declaration, resources, body, depth);
++        }
++        catch (FlowUnsupported problem) when (!problem.Limit) { return OpaqueContinuation(declaration, statements, problem.Message + "; remaining lexical scope is opaque"); }
++    }
++    private FlowStatement OpaqueContinuation(LocalDeclarationStatementSyntax declaration,
++        IReadOnlyList<StatementSyntax> statements, string reason)
++    {
++        var first = source.Span(declaration);
++        var last = source.Span(statements[^1]);
++        var span = new FlowSpan(first.Start, last.End);
++        var result = OpaqueCompletion(declaration, reason);
++        var body = result.Body!.ToArray();
++        body[0] = body[0] with { Span = span, Text = "using declaration and remaining lexical scope" };
++        return result with { Span = span, Body = body };
++    }
++
++}
+diff --git a/src/CallAtlas.Core/FlowLock.cs b/src/CallAtlas.Core/FlowLock.cs
+new file mode 100644
+index 0000000..0298653
+--- /dev/null
++++ b/src/CallAtlas.Core/FlowLock.cs
+@@ -0,0 +1,60 @@
++using Microsoft.CodeAnalysis;
++using Microsoft.CodeAnalysis.CSharp.Syntax;
++
++namespace CallAtlas.Core;
++
++internal sealed partial class FlowBody
++{
++    private FlowStatement Lock(LockStatementSyntax statement, int depth)
++    {
++        try
++        {
++            MonitorProof(statement);
++            Budget(depth + 1);
++            var capture = EvaluateSynthetic(statement, Sequence(statement, [Expression(statement.Expression, depth + 1),
++                SyntheticValue(statement, "capture lock object once")]));
++            var initialize = EvaluateSynthetic(statement, SyntheticValue(statement, "initialize lockTaken = false"));
++            var body = new List<FlowStatement> { EvaluateSynthetic(statement, ImplicitCall(statement, ImplicitFlowOperation.MonitorEnter, "lock object")) };
++            body.AddRange(Body(statement.Statement, depth + 1));
++            var exit = EvaluateSynthetic(statement, ImplicitCall(statement, ImplicitFlowOperation.MonitorExit, "lock object"));
++            var release = new FlowStatement("if", source.Span(statement))
++            { Condition = SyntheticValue(statement, "lockTaken is true"), ThenBranch = [exit], ElseBranch = [] };
++            var scope = Protected(statement, body) with { Finally = [release] };
++            return new("block", source.Span(statement)) { Body = [capture, initialize, scope] };
++        }
++        catch (FlowUnsupported problem) when (!problem.Limit) { return OpaqueCompletion(statement, problem.Message); }
++    }
++
++    private void MonitorProof(LockStatementSyntax statement)
++    {
++        var type = model.GetTypeInfo(statement.Expression).Type;
++        if (type is null) throw new FlowUnsupported("Lock receiver type is unresolved");
++        if (!type.IsReferenceType) throw new FlowUnsupported("Lock receiver is not a reference type");
++        if (type.TypeKind == TypeKind.Dynamic) throw new FlowUnsupported("Dynamic lock receiver is opaque");
++        var specialized = model.Compilation.GetTypeByMetadataName("System.Threading.Lock");
++        if (SymbolEqualityComparer.Default.Equals(type, specialized))
++            throw new FlowUnsupported("System.Threading.Lock scope lowering is opaque");
++        var monitor = model.Compilation.GetTypeByMetadataName("System.Threading.Monitor");
++        if (monitor is null) throw new FlowUnsupported("Compiler Monitor metadata is unavailable");
++        if (monitor.GetMembers("Enter").OfType<IMethodSymbol>().Count(ModernEnter) != 1)
++            throw new FlowUnsupported("Modern Monitor.Enter(object, ref bool) contract is unresolved or ambiguous");
++        if (monitor.GetMembers("Exit").OfType<IMethodSymbol>().Count(MonitorExit) != 1)
++            throw new FlowUnsupported("Monitor.Exit(object) contract is unresolved or ambiguous");
++    }
++
++    private static bool PublicStaticVoid(IMethodSymbol method) =>
++        method.IsStatic && method.DeclaredAccessibility == Accessibility.Public && method.ReturnsVoid && method.Arity == 0;
++
++    private static bool ModernEnter(IMethodSymbol method)
++    {
++        if (!PublicStaticVoid(method) || method.Parameters.Length != 2) return false;
++        return ObjectParameter(method.Parameters[0]) && method.Parameters[1] is
++            { RefKind: RefKind.Ref, Type.SpecialType: SpecialType.System_Boolean };
++    }
++
++    private static bool MonitorExit(IMethodSymbol method) => PublicStaticVoid(method) &&
++        method.Parameters.Length == 1 && ObjectParameter(method.Parameters[0]);
++
++    private static bool ObjectParameter(IParameterSymbol parameter) =>
++        parameter.RefKind == RefKind.None && parameter.Type.SpecialType == SpecialType.System_Object;
++}
+diff --git a/src/CallAtlas.Core/FlowMemberOwnership.cs b/src/CallAtlas.Core/FlowMemberOwnership.cs
+new file mode 100644
+index 0000000..8a956e1
+--- /dev/null
++++ b/src/CallAtlas.Core/FlowMemberOwnership.cs
+@@ -0,0 +1,31 @@
++using Microsoft.CodeAnalysis;
++
++namespace CallAtlas.Core;
++
++/// <summary>Include bodyless/generated compiler members without binding every skipped auto-accessor syntax.</summary>
++internal sealed class FlowMemberOwnership
++{
++    private readonly Dictionary<INamedTypeSymbol, HashSet<string>> aliases = new(SymbolEqualityComparer.Default);
++
++    internal bool Ambiguous(INamedTypeSymbol type, string symbol)
++    {
++        if (!aliases.TryGetValue(type, out var ambiguous))
++        {
++            ambiguous = type.GetMembers().SelectMany(Methods)
++                .Select(method => (method.PartialDefinitionPart ?? method).OriginalDefinition)
++                .GroupBy(SymbolId.Canonical)
++                .Where(group => group.Distinct(SymbolEqualityComparer.Default).Take(2).Count() > 1)
++                .Select(group => group.Key).ToHashSet(StringComparer.Ordinal);
++            aliases[type] = ambiguous;
++        }
++        return ambiguous.Contains(symbol);
++    }
++
++    private static IEnumerable<IMethodSymbol> Methods(ISymbol member) => member switch
++    {
++        IMethodSymbol method => [method],
++        IPropertySymbol property => new[] { property.GetMethod, property.SetMethod }.OfType<IMethodSymbol>(),
++        IEventSymbol eventSymbol => new[] { eventSymbol.AddMethod, eventSymbol.RemoveMethod, eventSymbol.RaiseMethod }.OfType<IMethodSymbol>(),
++        _ => [],
++    };
++}
 diff --git a/src/CallAtlas.Core/FlowOriginalSource.cs b/src/CallAtlas.Core/FlowOriginalSource.cs
 new file mode 100644
 index 0000000..d26f5c6
@@ -1952,6 +2294,60 @@ index 0000000..d26f5c6
 +            return original == analyzed ? null : "Analyzed source differs from original UTF-8 file bytes";
 +        }
 +        catch (DecoderFallbackException) { return "Original source is not valid UTF-8"; }
++    }
++}
+diff --git a/src/CallAtlas.Core/FlowOwnership.cs b/src/CallAtlas.Core/FlowOwnership.cs
+new file mode 100644
+index 0000000..053980b
+--- /dev/null
++++ b/src/CallAtlas.Core/FlowOwnership.cs
+@@ -0,0 +1,48 @@
++using Microsoft.CodeAnalysis;
++using Microsoft.CodeAnalysis.CSharp.Syntax;
++
++namespace CallAtlas.Core;
++
++/// <summary>Native IDs can alias compiler declarations; detached flow requires unique source ownership.</summary>
++internal sealed record OwnedFlowBody(FlowInput Input, SyntaxNode[] Bodies);
++
++internal sealed class FlowOwnership
++{
++    private readonly FlowMemberOwnership members = new();
++
++    internal OwnedFlowBody? Select(IReadOnlyList<FlowInput> entries, Node node, string root)
++    {
++        if (!UniqueDeclaration(entries)) return null;
++        var active = entries.Where(entry => entry.Bodies.Count != 0).ToArray();
++        if (active.Length == 0) return null;
++        if (active.Select(entry => entry.Tree).Distinct().Take(2).Count() != 1) return null;
++        var declaration = entries.Select(entry => entry.Declaration).FirstOrDefault(value => value is not null);
++        if (declaration is not null && members.Ambiguous(declaration.ContainingType, entries[0].Symbol)) return null;
++        var bodies = active.SelectMany(entry => entry.Bodies)
++            .DistinctBy(body => (body.SyntaxTree, body.Span, body.RawKind))
++            .OrderBy(body => body.SpanStart).ToArray();
++        if (!UniqueBodies(bodies, node.Kind)) return null;
++        if (!SameSourceFile(node, active[0].Tree, root)) return null;
++        return new(active[0], bodies);
++    }
++
++    private static bool SameSourceFile(Node node, SyntaxTree tree, string root)
++    {
++        // Location is the native structural file:line field, not a diagnostic or a symbol ID.
++        var separator = node.Location.LastIndexOf(':');
++        if (separator < 0) return false;
++        return node.Location[..separator] == CallGraphBuilder.Rel(root, tree.FilePath);
++    }
++
++    private static bool UniqueBodies(IReadOnlyList<SyntaxNode> bodies, string kind) => kind == "toplevel"
++        ? bodies.All(body => body.Parent is GlobalStatementSyntax)
++        : bodies.Count == 1;
++
++    private static bool UniqueDeclaration(IEnumerable<FlowInput> entries)
++    {
++        // A partial implementation and its definition are one callable, unlike native ID collisions.
++        return entries.Select(entry => entry.Declaration).OfType<IMethodSymbol>()
++            .Select(declaration => (declaration.PartialDefinitionPart ?? declaration).OriginalDefinition)
++            .Distinct(SymbolEqualityComparer.Default).Take(2).Count() <= 1;
 +    }
 +}
 diff --git a/src/CallAtlas.Core/FlowSource.cs b/src/CallAtlas.Core/FlowSource.cs
@@ -1984,10 +2380,10 @@ index 0000000..f71c23c
 +}
 diff --git a/src/CallAtlas.Core/FlowStatementValidation.cs b/src/CallAtlas.Core/FlowStatementValidation.cs
 new file mode 100644
-index 0000000..f04bb77
+index 0000000..0daf248
 --- /dev/null
 +++ b/src/CallAtlas.Core/FlowStatementValidation.cs
-@@ -0,0 +1,64 @@
+@@ -0,0 +1,107 @@
 +namespace CallAtlas.Core;
 +
 +internal static partial class FlowValidation
@@ -1997,29 +2393,72 @@ index 0000000..f04bb77
 +        CheckSpan(node.Span, owner);
 +        switch (node.Kind)
 +        {
-+            case "evaluate": case "throw": Push(pending, node.Value); break;
-+            case "return": if (node.Value is not null) pending.Push(node.Value); break;
++            case "evaluate": case "throw": case "return": ValueStatement(node, pending); break;
++            default: StructuredStatement(node, owner, pending); break;
++        }
++    }
++
++    private static void StructuredStatement(FlowStatement node, FlowSpan owner, Stack<object> pending)
++    {
++        switch (node.Kind)
++        {
 +            case "if": case "loop": case "switch": Control(node, owner, pending); break;
 +            case "block": case "region": Region(node, pending); break;
++            case "try": Protected(node, pending); break;
 +            default: Leaf(node); break;
 +        }
++    }
++
++    private static void ValueStatement(FlowStatement node, Stack<object> pending)
++    {
++        if (node.Kind == "return" && node.Value is null) return;
++        Push(pending, node.Value);
++    }
++
++    private static void Protected(FlowStatement node, Stack<object> pending)
++    {
++        PushAll(pending, node.Resources); PushAll(pending, node.Body);
++        PushAll(pending, node.Finally); PushAll(pending, node.Cleanup);
++        PushAll(pending, node.Catches);
++        if (node.Resources!.Count != 0) Require(node.Resources.Count == node.Cleanup!.Count);
++    }
++
++    private static void Catch(FlowCatch clause, Stack<object> pending)
++    {
++        Require(clause.Parameter is not null);
++        PushAll(pending, clause.Body);
 +    }
 +
 +    private static void Control(FlowStatement node, FlowSpan owner, Stack<object> pending)
 +    {
 +        switch (node.Kind)
 +        {
-+            case "if":
-+                Push(pending, node.Condition); PushAll(pending, node.ThenBranch); PushAll(pending, node.ElseBranch); break;
-+            case "loop":
-+                if (node.Condition is not null) pending.Push(node.Condition);
-+                PushAll(pending, node.Body); PushAll(pending, node.Update ?? []);
-+                Require(node.TestFirst.HasValue); break;
-+            case "switch":
-+                Push(pending, node.Subject); Require(node.Cases is not null);
-+                foreach (var branch in node.Cases!) Case(branch, owner, pending);
-+                break;
++            case "if": Branch(node, pending); break;
++            case "loop": Loop(node, pending); break;
++            case "switch": Dispatch(node, owner, pending); break;
 +        }
++    }
++
++    private static void Branch(FlowStatement node, Stack<object> pending)
++    {
++        Push(pending, node.Condition);
++        PushAll(pending, node.ThenBranch);
++        PushAll(pending, node.ElseBranch);
++    }
++
++    private static void Loop(FlowStatement node, Stack<object> pending)
++    {
++        if (node.Condition is not null) pending.Push(node.Condition);
++        PushAll(pending, node.Body);
++        PushAll(pending, node.Update ?? []);
++        Require(node.TestFirst.HasValue);
++    }
++
++    private static void Dispatch(FlowStatement node, FlowSpan owner, Stack<object> pending)
++    {
++        Push(pending, node.Subject);
++        Require(node.Cases is not null);
++        foreach (var branch in node.Cases!) Case(branch, owner, pending);
 +    }
 +
 +    private static void Case(FlowCase? branch, FlowSpan owner, Stack<object> pending)
@@ -2054,10 +2493,10 @@ index 0000000..f04bb77
 +}
 diff --git a/src/CallAtlas.Core/FlowStatements.cs b/src/CallAtlas.Core/FlowStatements.cs
 new file mode 100644
-index 0000000..3bc069e
+index 0000000..c989e28
 --- /dev/null
 +++ b/src/CallAtlas.Core/FlowStatements.cs
-@@ -0,0 +1,108 @@
+@@ -0,0 +1,120 @@
 +using Microsoft.CodeAnalysis;
 +using Microsoft.CodeAnalysis.CSharp;
 +using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -2119,6 +2558,18 @@ index 0000000..3bc069e
 +            { Condition = Condition(loop.Condition, depth + 1), Body = Body(loop.Statement, depth + 1), TestFirst = false },
 +            ForStatementSyntax loop => For(loop, depth),
 +            SwitchStatementSyntax dispatch => Switch(dispatch, depth),
++            _ => LifetimeStatement(statement, depth),
++        };
++    }
++
++    private FlowStatement LifetimeStatement(StatementSyntax statement, int depth)
++    {
++        return statement switch
++        {
++            TryStatementSyntax protectedStatement => Try(protectedStatement, depth),
++            UsingStatementSyntax usingStatement => Using(usingStatement, depth),
++            ForEachStatementSyntax forEach => Foreach(forEach, depth),
++            LockStatementSyntax lockStatement => Lock(lockStatement, depth),
 +            _ => Opaque(statement, $"Unsupported {statement.Kind()} control flow"),
 +        };
 +    }
@@ -2156,7 +2607,7 @@ index 0000000..3bc069e
 +            return FlowText.Label(label.Value);
 +        }).ToArray();
 +        return new(labels, source.Span(section), section.Labels.Any(l => l is DefaultSwitchLabelSyntax), false,
-+            section.Statements.Select(s => Statement(s, depth + 1)).ToArray());
++            LexicalBody(section.Statements, 0, depth));
 +    }
 +
 +    private FlowExpression Declaration(VariableDeclarationSyntax declaration, int depth)
@@ -2164,6 +2615,110 @@ index 0000000..3bc069e
 +        Budget(depth);
 +        return Sequence(declaration, declaration.Variables.Select(v => v.Initializer is null
 +            ? Value(v, v.Identifier.ValueText) : Expression(v.Initializer.Value, depth + 1)).ToArray());
++    }
++}
+diff --git a/src/CallAtlas.Core/FlowSuspension.cs b/src/CallAtlas.Core/FlowSuspension.cs
+new file mode 100644
+index 0000000..8b7a6d8
+--- /dev/null
++++ b/src/CallAtlas.Core/FlowSuspension.cs
+@@ -0,0 +1,36 @@
++using Microsoft.CodeAnalysis;
++using Microsoft.CodeAnalysis.CSharp;
++using Microsoft.CodeAnalysis.CSharp.Syntax;
++
++namespace CallAtlas.Core;
++
++internal sealed partial class FlowBody
++{
++    private static bool IsAsyncOrIterator(SyntaxNode body)
++    {
++        // A grouped top-level declaration is deferred; its separate callable owns its body.
++        if (DeferredDeclaration(body)) return false;
++        if (AsyncDeclaration(body.Parent)) return true;
++        return body.DescendantNodesAndSelf(node => node == body || !DeferredDeclaration(node))
++            .Any(Suspends);
++    }
++
++    private static bool DeferredDeclaration(SyntaxNode node) =>
++        node is AnonymousFunctionExpressionSyntax or LocalFunctionStatementSyntax;
++
++    private static bool AsyncDeclaration(SyntaxNode? node) => node switch
++    {
++        MethodDeclarationSyntax method => method.Modifiers.Any(token => token.IsKind(SyntaxKind.AsyncKeyword)),
++        LocalFunctionStatementSyntax local => local.Modifiers.Any(token => token.IsKind(SyntaxKind.AsyncKeyword)),
++        _ => false,
++    };
++
++    private static bool Suspends(SyntaxNode node) => node switch
++    {
++        AwaitExpressionSyntax or YieldStatementSyntax => true,
++        UsingStatementSyntax resource => !resource.AwaitKeyword.IsKind(SyntaxKind.None),
++        LocalDeclarationStatementSyntax resource => !resource.AwaitKeyword.IsKind(SyntaxKind.None),
++        CommonForEachStatementSyntax loop => !loop.AwaitKeyword.IsKind(SyntaxKind.None),
++        _ => false,
++    };
++}
+diff --git a/src/CallAtlas.Core/FlowSynthetic.cs b/src/CallAtlas.Core/FlowSynthetic.cs
+new file mode 100644
+index 0000000..8a90a00
+--- /dev/null
++++ b/src/CallAtlas.Core/FlowSynthetic.cs
+@@ -0,0 +1,56 @@
++using Microsoft.CodeAnalysis;
++
++namespace CallAtlas.Core;
++
++internal enum ImplicitFlowOperation { GetEnumerator, MoveNext, Current, Dispose, MonitorEnter, MonitorExit }
++
++internal sealed partial class FlowBody
++{
++    private FlowExpression SyntheticValue(SyntaxNode owner, string label)
++    {
++        Budget(0);
++        return new("value", source.Span(owner)) { Text = "synthetic C#: " + label, Calls = [] };
++    }
++
++    private FlowExpression ImplicitCall(SyntaxNode owner, ImplicitFlowOperation operation, string subject)
++    {
++        var label = operation switch
++        {
++            ImplicitFlowOperation.Dispose => "Dispose captured " + subject,
++            ImplicitFlowOperation.MonitorEnter => "Monitor.Enter(ref lockTaken)",
++            ImplicitFlowOperation.MonitorExit => "Monitor.Exit captured lock object",
++            _ => operation + " captured " + subject,
++        };
++        var value = SyntheticValue(owner, label);
++        return value with { Calls = [new(value.Span, value.Text!, [],
++            $"roslyn:implicit:{operation}; compiler-selected operation, not a native graph edge")] };
++    }
++
++    private FlowStatement EvaluateSynthetic(SyntaxNode owner, FlowExpression value)
++    {
++        Budget(0);
++        return new("evaluate", source.Span(owner)) { Value = value };
++    }
++
++    private FlowStatement Protected(SyntaxNode owner, IReadOnlyList<FlowStatement> body)
++    {
++        Budget(0);
++        return new("try", source.Span(owner)) { Resources = [], Body = body, Catches = [], Finally = [], Cleanup = [] };
++    }
++
++    private FlowStatement OpaqueCompletion(SyntaxNode owner, string reason)
++    {
++        for (var count = 0; count < 5; count++) Budget(0); // Block, choice, condition, throw and thrown value.
++        var outcome = new FlowExpression("value", new(0, 0))
++        { Text = "synthetic C#: opaque completion outcome is exceptional", Calls = [] };
++        return new("block", source.Span(owner))
++        {
++            Body = [Opaque(owner, reason), new("if", new(0, 0))
++            {
++                Condition = outcome, ElseBranch = [],
++                ThenBranch = [new("throw", new(0, 0))
++                { Value = new("value", new(0, 0)) { Text = "synthetic C#: opaque exception propagates", Calls = [] } }],
++            }],
++        };
 +    }
 +}
 diff --git a/src/CallAtlas.Core/FlowText.cs b/src/CallAtlas.Core/FlowText.cs
@@ -2187,6 +2742,109 @@ index 0000000..3a9a62f
 +        var length = Math.Min(node.Span.Length, maximum);
 +        if (length < node.Span.Length && length > 0 && char.IsHighSurrogate(text[node.SpanStart + length - 1])) length--;
 +        return text.ToString(new(node.SpanStart, length)) + (length < node.Span.Length ? "…" : "");
++    }
++}
+diff --git a/src/CallAtlas.Core/FlowUsing.cs b/src/CallAtlas.Core/FlowUsing.cs
+new file mode 100644
+index 0000000..3fffae3
+--- /dev/null
++++ b/src/CallAtlas.Core/FlowUsing.cs
+@@ -0,0 +1,97 @@
++using Microsoft.CodeAnalysis;
++using Microsoft.CodeAnalysis.CSharp;
++using Microsoft.CodeAnalysis.CSharp.Syntax;
++
++namespace CallAtlas.Core;
++
++internal enum CleanupGuard { None, NonNull, HasValue, RuntimeDisposable, Never }
++internal sealed record FlowResource(SyntaxNode Owner, ExpressionSyntax Initializer, string Name, CleanupGuard Guard);
++
++internal sealed partial class FlowBody
++{
++    private FlowStatement Using(UsingStatementSyntax statement, int depth)
++    {
++        if (!statement.AwaitKeyword.IsKind(SyntaxKind.None))
++            return OpaqueCompletion(statement, "Await using resource lifetime and suspension are opaque");
++        try
++        {
++            var resources = statement.Declaration is null
++                ? new[] { Resource(statement.Expression!, "using expression") }
++                : Resources(statement.Declaration, depth);
++            Budget(depth + resources.Length);
++            return UsingScope(statement, resources, Body(statement.Statement, depth + resources.Length + 1), depth);
++        }
++        catch (FlowUnsupported problem) when (!problem.Limit) { return OpaqueCompletion(statement, problem.Message); }
++    }
++
++    private FlowResource[] Resources(VariableDeclarationSyntax declaration, int depth)
++    {
++        Budget(depth + declaration.Variables.Count);
++        return declaration.Variables.Select(variable =>
++        {
++            if (variable.Initializer is null || model.GetDeclaredSymbol(variable) is not ILocalSymbol local)
++                throw new FlowUnsupported("Using resource has no compiler-resolved initialized local");
++            return Resource(variable.Initializer.Value, FlowText.Bounded(variable.Identifier.ValueText), local.Type, variable);
++        }).ToArray();
++    }
++
++    private FlowResource Resource(ExpressionSyntax initializer, string name, ITypeSymbol? declared = null, SyntaxNode? owner = null)
++    {
++        var type = declared ?? model.GetTypeInfo(initializer).Type ?? model.GetTypeInfo(initializer).ConvertedType;
++        if (type is null) throw new FlowUnsupported("Using expression has no compiler-resolved resource type");
++        return new(owner ?? initializer, initializer, name, DisposableGuard(type, initializer));
++    }
++
++    private CleanupGuard DisposableGuard(ITypeSymbol type, ExpressionSyntax? initializer = null)
++    {
++        if (type.TypeKind == TypeKind.Dynamic || type.IsRefLikeType)
++            throw new FlowUnsupported("Dynamic/ref-like pattern disposal is opaque");
++        ProveDisposableConversion(type);
++        if (initializer is not null && model.GetConstantValue(initializer) is { HasValue: true, Value: null }) return CleanupGuard.Never;
++        if (type is INamedTypeSymbol { OriginalDefinition.SpecialType: SpecialType.System_Nullable_T }) return CleanupGuard.HasValue;
++        if (type.IsReferenceType) return CleanupGuard.NonNull;
++        if (type.IsValueType) return CleanupGuard.None;
++        throw new FlowUnsupported("Resource value/reference cleanup category is unresolved");
++    }
++
++    private void ProveDisposableConversion(ITypeSymbol type)
++    {
++        var disposable = model.Compilation.GetSpecialType(SpecialType.System_IDisposable);
++        var conversion = ((CSharpCompilation)model.Compilation).ClassifyConversion(type, disposable);
++        if (!conversion.IsImplicit || conversion.IsUserDefined)
++            throw new FlowUnsupported("Resource has no proven standard IDisposable conversion");
++    }
++
++    private FlowStatement UsingScope(SyntaxNode owner, IReadOnlyList<FlowResource> resources,
++        IReadOnlyList<FlowStatement> body, int depth)
++    {
++        Budget(depth + resources.Count); // Shared core recursively nests each acquisition, even a flat declaration.
++        var acquire = resources.Select(resource => Acquire(resource, depth + resources.Count)).ToArray();
++        var cleanup = resources.Reverse().Select(resource => Dispose(resource.Owner, resource.Name, resource.Guard)).ToArray();
++        return Protected(owner, body) with { Resources = acquire, Cleanup = cleanup };
++    }
++
++    private FlowStatement Acquire(FlowResource resource, int depth)
++    {
++        Budget(depth);
++        var value = Sequence(resource.Owner, [Expression(resource.Initializer, depth + 1),
++            SyntheticValue(resource.Owner, "capture using resource " + resource.Name + " once")]);
++        return EvaluateSynthetic(resource.Owner, value);
++    }
++
++    private FlowStatement Dispose(SyntaxNode owner, string name, CleanupGuard guard)
++    {
++        Budget(0);
++        if (guard == CleanupGuard.Never) return new("block", source.Span(owner)) { Body = [] };
++        var dispose = EvaluateSynthetic(owner, ImplicitCall(owner, ImplicitFlowOperation.Dispose, name));
++        if (guard == CleanupGuard.None) return dispose;
++        var check = guard switch
++        {
++            CleanupGuard.HasValue => "implicit HasValue check on captured ",
++            CleanupGuard.RuntimeDisposable => "runtime IDisposable check on captured ",
++            _ => "implicit non-null check on captured ",
++        };
++        return new("if", source.Span(owner))
++        { Condition = SyntheticValue(owner, check + name), ThenBranch = [dispose], ElseBranch = [] };
 +    }
 +}
 diff --git a/src/CallAtlas.Core/FlowUtf8Offsets.cs b/src/CallAtlas.Core/FlowUtf8Offsets.cs
@@ -2224,10 +2882,10 @@ index 0000000..6f0b625
 +}
 diff --git a/src/CallAtlas.Core/FlowValidation.cs b/src/CallAtlas.Core/FlowValidation.cs
 new file mode 100644
-index 0000000..1faf7d5
+index 0000000..a779b1e
 --- /dev/null
 +++ b/src/CallAtlas.Core/FlowValidation.cs
-@@ -0,0 +1,64 @@
+@@ -0,0 +1,66 @@
 +namespace CallAtlas.Core;
 +
 +/// <summary>Validate detached facts once at the JSON boundary, before consumers trust the tagged records.</summary>
@@ -2270,6 +2928,7 @@ index 0000000..1faf7d5
 +            switch (item)
 +            {
 +                case FlowStatement statement: Statement(statement, function.Span, pending); break;
++                case FlowCatch clause: Catch(clause, pending); break;
 +                case FlowExpression expression: Expression(expression, function.Span, pending); break;
 +                default: throw Invalid("Null or invalid flow node");
 +            }
@@ -2280,6 +2939,7 @@ index 0000000..1faf7d5
 +    {
 +        Require(span is not null);
 +        Require(owner is not null);
++        if (span is { Start: 0, End: 0 }) return; // Same version-1 unlocated/synthetic sentinel as shared core.
 +        Require(span!.Start >= 0);
 +        Require(span.End >= span.Start);
 +        Require(span.Start >= owner!.Start);
@@ -2882,9 +3542,219 @@ index 0aebf13..9ad5302 100644
      <ImplicitUsings>enable</ImplicitUsings>
      <Nullable>enable</Nullable>
      <IsPackable>false</IsPackable>
+diff --git a/tests/CallAtlas.Tests/FlowCleanupTests.cs b/tests/CallAtlas.Tests/FlowCleanupTests.cs
+new file mode 100644
+index 0000000..e28c41a
+--- /dev/null
++++ b/tests/CallAtlas.Tests/FlowCleanupTests.cs
+@@ -0,0 +1,204 @@
++using System.Text.Json;
++using System.Text.Json.Nodes;
++using CallAtlas.Core;
++using Xunit;
++using static CallAtlas.Tests.FlowFactsTests;
++
++namespace CallAtlas.Tests;
++
++public class FlowCleanupTests
++{
++    private const string Resource = "using System; sealed class R:IDisposable { public void Dispose(){} } ";
++    private static JsonElement Run(string body) => Function(Snapshot(Resource + "class A { static R Make()=>new R(); static int Hit()=>1; int Run() {" + body + "} }"), "A::Run()");
++
++    [Fact]
++    public void Try_catch_finally_exports_existing_completion_contract_and_roundtrips()
++    {
++        var map=Snapshot(Resource + "class A { static int Hit()=>1; int Run() { try { return Hit(); } catch { throw; } finally { Hit(); } } }");
++        var statement=Function(map,"A::Run()").GetProperty("body")[0];
++        Assert.Equal("try",statement.GetProperty("kind").GetString());
++        Assert.True(statement.GetProperty("catches")[0].GetProperty("catch_all").GetBoolean());
++        Assert.NotEmpty(statement.GetProperty("finally").EnumerateArray());
++        var read=JsonDocument.Parse(CodeMapJson.Write(CodeMapJson.Read(map.GetRawText()))).RootElement;
++        Assert.Equal(map.GetProperty("flowInventory").GetRawText(),read.GetProperty("flowInventory").GetRawText());
++    }
++
++    [Fact]
++    public void Multiple_using_resources_acquire_in_order_and_cleanup_in_reverse()
++    {
++        var function=Run("using(R first=Make(), second=Make()) { return Hit(); }");
++        var scope=function.GetProperty("body")[0];
++        Assert.Equal("try",scope.GetProperty("kind").GetString());
++        Assert.Equal(2,scope.GetProperty("resources").GetArrayLength());
++        Assert.Equal(2,scope.GetProperty("cleanup").GetArrayLength());
++        Assert.Contains("second",scope.GetProperty("cleanup")[0].GetRawText());
++        Assert.Contains("first",scope.GetProperty("cleanup")[1].GetRawText());
++        Assert.Contains(Objects(scope.GetProperty("cleanup")),node=>node.TryGetProperty("text",out var text) && text.GetString()!.Contains("implicit non-null"));
++        Assert.All(Objects(scope.GetProperty("cleanup")).Where(node=>node.TryGetProperty("targets",out _)),call=>Assert.Empty(call.GetProperty("targets").EnumerateArray()));
++    }
++
++    [Fact]
++    public void Using_declarations_protect_the_lexical_suffix_including_top_level()
++    {
++        var function=Run("using var first=Make(); Hit(); using var second=Make(); return Hit();");
++        var scope=function.GetProperty("body")[0];
++        Assert.Equal("try",scope.GetProperty("kind").GetString());
++        Assert.Contains(Objects(scope.GetProperty("body")),node=>node.TryGetProperty("kind",out var kind) && kind.GetString()=="try");
++        var top=Snapshot("using var resource=new R(); System.Console.WriteLine(1); class R:System.IDisposable { public void Dispose(){} }");
++        var topFlow=top.GetProperty("flowInventory").GetProperty("functions").EnumerateArray().Single(f=>f.GetProperty("symbol").GetString()!.EndsWith("Program::<top-level>"));
++        Assert.Equal("try",topFlow.GetProperty("body")[0].GetProperty("kind").GetString());
++        Assert.Contains("WriteLine",topFlow.GetProperty("body")[0].GetProperty("body").GetRawText());
++    }
++
++    [Fact]
++    public void Foreach_and_monitor_lock_use_proven_implicit_operations_without_native_targets()
++    {
++        var map=Snapshot("using System; sealed class E:IDisposable { public int Current=>1; public bool MoveNext()=>false; public void Dispose(){} } sealed class S { public E GetEnumerator()=>new E(); } class A { void Run(){ foreach(var item in new S()) { if(item==0)continue; break; } } void Locked(object gate){ lock(gate){ Run(); } } }");
++        var function=Function(map,"A::Run()");
++        var labels=Objects(function.GetProperty("body")).Where(n=>n.TryGetProperty("label",out _) && n.TryGetProperty("targets",out _)).Select(n=>n.GetProperty("label").GetString()!).ToArray();
++        foreach(var operation in new[]{"GetEnumerator","MoveNext","Current","Dispose"}) Assert.Contains(labels,label=>label.Contains(operation));
++        var locked=Function(map,"A::Locked(System.Object)");
++        var scope=Objects(locked.GetProperty("body")).Single(n=>n.TryGetProperty("kind",out var kind) && kind.GetString()=="try");
++        Assert.Empty(scope.GetProperty("resources").EnumerateArray());
++        Assert.Contains("Enter",scope.GetProperty("body").GetRawText());
++        Assert.Contains("lockTaken",scope.GetProperty("finally").GetRawText());
++        Assert.Contains("Exit",scope.GetProperty("finally").GetRawText());
++    }
++
++    [Fact]
++    public void Filtered_catches_are_partial_and_preserve_explicit_exceptional_outcomes()
++    {
++        var map=Snapshot("using System; class A { static bool Filter()=>true; int Run(){ try { throw new Exception(); } catch(Exception e) when(Filter()) { return 1; } finally { System.Console.WriteLine(2); } } }");
++        var function=Function(map,"A::Run()");
++        Assert.Contains(Objects(function.GetProperty("body")),n=>n.TryGetProperty("kind",out var kind) && kind.GetString()=="if");
++        Assert.Contains(Objects(function.GetProperty("body")),n=>n.TryGetProperty("kind",out var kind) && kind.GetString()=="throw");
++        Assert.DoesNotContain(Objects(function.GetProperty("body")),n=>n.TryGetProperty("targets",out var targets) && targets.EnumerateArray().Any(t=>t.GetProperty("symbol").GetString()!.Contains("Filter()")));
++        Assert.NotEmpty(function.GetProperty("diagnostics").EnumerateArray());
++        Assert.True(function.GetProperty("span").GetProperty("start").GetInt32()>0);
++        CodeMapJson.Read(map.GetRawText()); // Nested zero spans are the same unlocated sentinel as shared core.
++    }
++
++    [Fact]
++    public void Many_flat_resources_hit_synthetic_depth_budget()
++    {
++        var resources=string.Join(",",Enumerable.Range(0,30).Select(index=>"r"+index+"=Make()"));
++        var function=Run("using(R "+resources+") { return 1; }");
++        Assert.Equal("unsupported",function.GetProperty("body")[0].GetProperty("kind").GetString());
++        Assert.Contains(function.GetProperty("diagnostics").EnumerateArray(),d=>d.GetString()!.Contains("24"));
++    }
++
++    [Fact]
++    public void Malformed_try_contracts_are_rejected_before_consumption()
++    {
++        var baseline=Snapshot("class A { void Run(){try{} finally{}} }").GetRawText();
++        Action<JsonObject>[] mutations=
++        [
++            scope=>scope.Remove("resources"),
++            scope=>scope.Remove("body"),
++            scope=>scope.Remove("catches"),
++            scope=>scope.Remove("finally"),
++            scope=>scope.Remove("cleanup"),
++            scope=>scope["resources"]=null,
++            scope=>scope["body"]=null,
++            scope=>scope["catches"]=null,
++            scope=>scope["finally"]=null,
++            scope=>scope["cleanup"]=null,
++            scope=>scope["catches"]=new JsonArray(new JsonObject{["parameter"]="all",["catch_all"]=true,["body"]=null}),
++            scope=>scope["catches"]=new JsonArray((JsonNode?)null),
++            scope=>scope["catches"]=new JsonArray(new JsonObject{["parameter"]="all",["body"]=new JsonArray()}),
++            scope=>scope["catches"]=new JsonArray(new JsonObject{["parameter"]="all",["catch_all"]=true}),
++            scope=>scope["catches"]=new JsonArray(new JsonObject{["catch_all"]=true,["body"]=new JsonArray()}),
++            scope=>scope["resources"]=new JsonArray(new JsonObject{["kind"]="action",["span"]=new JsonObject{["start"]=0,["end"]=0},["text"]="acquire"}),
++            scope=>scope["span"]!["end"]=999999,
++        ];
++        foreach(var mutation in mutations)
++        {
++            var map=JsonNode.Parse(baseline)!;
++            mutation(map["flowInventory"]!["functions"]![0]!["body"]![0]!.AsObject());
++            Assert.Throws<CallAtlasException>(()=>CodeMapJson.Read(map.ToJsonString()));
++        }
++    }
++
++    [Fact]
++    public void Captured_null_nullable_and_runtime_enumerator_guards_are_explicit()
++    {
++        var map=Snapshot("using System; using System.Collections; struct R:IDisposable {public void Dispose(){}} class A { void Nullable(R? value){using(value){}} void Runtime(IEnumerable values){foreach(var value in values){}} }");
++        Assert.Contains("HasValue",Function(map,"A::Nullable(R?)").GetRawText());
++        Assert.Contains("runtime IDisposable",Function(map,"A::Runtime(System.Collections.IEnumerable)").GetRawText());
++        var directNull=Run("using((R)null){ return 1; }");
++        Assert.DoesNotContain(Objects(directNull.GetProperty("body")),node=>node.TryGetProperty("label",out var label) && label.GetString()!.Contains("Dispose"));
++    }
++
++    [Fact]
++    public void Unsupported_foreach_conversions_and_specialized_locks_remain_partial()
++    {
++        var map=Snapshot("using System.Collections.Generic; class A { void Converted(List<int> values){foreach(double value in values){}} void Specialized(System.Threading.Lock gate){lock(gate){}} }");
++        foreach(var suffix in new[]{"A::Converted(System.Collections.Generic.List<System.Int32>)","A::Specialized(System.Threading.Lock)"})
++        {
++            var function=Function(map,suffix);
++            Assert.NotEmpty(function.GetProperty("diagnostics").EnumerateArray());
++            Assert.DoesNotContain(Objects(function.GetProperty("body")),node=>node.TryGetProperty("label",out var label) && label.GetString()!.StartsWith("synthetic C#: Monitor"));
++        }
++    }
++    [Fact]
++    public void Await_keywords_and_deconstruction_remain_non_eager_partial_regions()
++    {
++        var map=Snapshot("using System; using System.Collections.Generic; using System.Threading.Tasks; class R:IAsyncDisposable {public ValueTask DisposeAsync()=>default;} class A { async Task Using(R r){await using(r){System.Console.WriteLine(1);}} async Task Each(IAsyncEnumerable<int> items){await foreach(var item in items){System.Console.WriteLine(item);}} void Deconstruct(List<(int,int)> items){foreach(var (a,b) in items){System.Console.WriteLine(a);}} }");
++        foreach(var function in map.GetProperty("flowInventory").GetProperty("functions").EnumerateArray().Where(f=>f.GetProperty("symbol").GetString()!.Contains("A::")))
++        {
++            Assert.NotEmpty(function.GetProperty("diagnostics").EnumerateArray());
++            Assert.DoesNotContain(Objects(function.GetProperty("body")),node=>node.TryGetProperty("label",out var label) && label.GetString()!.Contains("WriteLine"));
++        }
++    }
++
++    [Fact]
++    public void Legacy_monitor_contract_does_not_claim_modern_lockTaken_lowering()
++    {
++        var map=Snapshot("namespace System.Threading { public static class Monitor { public static void Enter(object gate){} public static void Exit(object gate){} } } class A { void Run(object gate){lock(gate){}} }");
++        var function=Function(map,"A::Run(System.Object)");
++        Assert.Contains(function.GetProperty("diagnostics").EnumerateArray(),item=>item.GetString()!.Contains("Modern Monitor.Enter"));
++        Assert.DoesNotContain(Objects(function.GetProperty("body")),node=>node.TryGetProperty("label",out var label) && label.GetString()!.StartsWith("synthetic C#: Monitor"));
++    }
++
++    [Fact]
++    public void Unsupported_using_declaration_explicitly_owns_its_remaining_scope()
++    {
++        var function=Run("using dynamic resource=Make(); Hit(); return 1;");
++        var region=function.GetProperty("body")[0];
++        var opaque=region.GetProperty("body")[0];
++        Assert.Contains("remaining lexical scope",opaque.GetProperty("reason").GetString());
++        Assert.True(opaque.GetProperty("span").GetProperty("end").GetInt32()>opaque.GetProperty("span").GetProperty("start").GetInt32()+40);
++        Assert.Contains("remaining lexical scope",opaque.GetProperty("text").GetString());
++    }
++
++    [Fact]
++    public void Top_level_await_using_keyword_hides_its_entire_continuation()
++    {
++        var map=Snapshot("await using var resource=new R(); System.Console.WriteLine(1); class R:System.IAsyncDisposable {public System.Threading.Tasks.ValueTask DisposeAsync()=>default;}");
++        var function=Function(map,"Program::<top-level>");
++        Assert.NotEmpty(function.GetProperty("diagnostics").EnumerateArray());
++        Assert.Equal("unsupported",function.GetProperty("body")[0].GetProperty("kind").GetString());
++        Assert.DoesNotContain(Objects(function.GetProperty("body")),node=>node.TryGetProperty("label",out var label) && label.GetString()!.Contains("WriteLine"));
++
++    }
++
++    [Fact]
++    public void Top_level_await_foreach_makes_the_callable_opaque_without_eager_suffix()
++    {
++        var map=Snapshot("await foreach(var value in new S()){} Hit(); static void Hit(){} class S {public E GetAsyncEnumerator()=>new E();} class E:System.IAsyncDisposable {public int Current=>1; public System.Threading.Tasks.ValueTask<bool> MoveNextAsync()=>default; public System.Threading.Tasks.ValueTask DisposeAsync()=>default;}");
++        var function=Function(map,"Program::<top-level>");
++        Assert.Equal("unsupported",function.GetProperty("body")[0].GetProperty("kind").GetString());
++        Assert.DoesNotContain(Objects(function.GetProperty("body")),node=>node.TryGetProperty("targets",out var targets) && targets.EnumerateArray().Any(target=>target.GetProperty("symbol").GetString()!.EndsWith("::Hit#local")));
++    }
++
++    [Fact]
++    public void Deferred_async_declarations_do_not_infect_top_level_execution()
++    {
++        var map=Snapshot("async System.Threading.Tasks.Task Local(){await System.Threading.Tasks.Task.Delay(1);} System.Func<System.Threading.Tasks.Task> lambda=async()=>{await System.Threading.Tasks.Task.Delay(1);}; Hit(); static void Hit(){}");
++        var function=Function(map,"Program::<top-level>");
++        Assert.Contains(Objects(function.GetProperty("body")),node=>node.TryGetProperty("targets",out var targets) && targets.EnumerateArray().Any(target=>target.GetProperty("symbol").GetString()!.EndsWith("::Hit#local")));
++        var local=map.GetProperty("flowInventory").GetProperty("functions").EnumerateArray().Single(flow=>flow.GetProperty("symbol").GetString()!.EndsWith("::Local#local"));
++        Assert.Equal("unsupported",local.GetProperty("body")[0].GetProperty("kind").GetString());
++    }
++
++}
 diff --git a/tests/CallAtlas.Tests/FlowFactsTests.cs b/tests/CallAtlas.Tests/FlowFactsTests.cs
 new file mode 100644
-index 0000000..a09b71c
+index 0000000..44336b3
 --- /dev/null
 +++ b/tests/CallAtlas.Tests/FlowFactsTests.cs
 @@ -0,0 +1,281 @@
@@ -2898,13 +3768,13 @@ index 0000000..a09b71c
 +
 +public class FlowFactsTests
 +{
-+    private static JsonElement Snapshot(string source) => JsonDocument.Parse(
++    internal static JsonElement Snapshot(string source) => JsonDocument.Parse(
 +        CodeMapJson.Write(CallGraphBuilder.Build([("/proj/a.cs", source)], "/proj"))).RootElement.Clone();
 +
-+    private static JsonElement Function(JsonElement map, string suffix) => map.GetProperty("flowInventory")
++    internal static JsonElement Function(JsonElement map, string suffix) => map.GetProperty("flowInventory")
 +        .GetProperty("functions").EnumerateArray().Single(f => f.GetProperty("symbol").GetString()!.EndsWith(suffix));
 +
-+    private static IEnumerable<JsonElement> Objects(JsonElement node)
++    internal static IEnumerable<JsonElement> Objects(JsonElement node)
 +    {
 +        if (node.ValueKind == JsonValueKind.Object)
 +        {
@@ -3167,6 +4037,121 @@ index 0000000..a09b71c
 +        var invocation = Assert.Single(calls, c => c.GetProperty("label").GetString() == "@nameof(Hit())");
 +        Assert.Empty(invocation.GetProperty("targets").EnumerateArray());
 +        Assert.Contains("Native analyzer omitted", invocation.GetProperty("diagnostic").GetString());
++    }
++}
+diff --git a/tests/CallAtlas.Tests/FlowOwnershipTests.cs b/tests/CallAtlas.Tests/FlowOwnershipTests.cs
+new file mode 100644
+index 0000000..80020c9
+--- /dev/null
++++ b/tests/CallAtlas.Tests/FlowOwnershipTests.cs
+@@ -0,0 +1,109 @@
++using System.Text.Json;
++using CallAtlas.Core;
++using Microsoft.CodeAnalysis;
++using Microsoft.CodeAnalysis.CSharp;
++using Microsoft.CodeAnalysis.CSharp.Syntax;
++using Xunit;
++using static CallAtlas.Tests.FlowFactsTests;
++
++namespace CallAtlas.Tests;
++
++public class FlowOwnershipTests
++{
++    [Theory]
++    [InlineData("int Run(bool b){if(b){int F()=>1;return F();}else{int F()=>2;return F();}}", "localfunction", 2)]
++    [InlineData("int F()=>1; int F<T>()=>2; int Run()=>F()+F<int>();", "method", 2)]
++    public void Aliased_native_ids_do_not_claim_one_unambiguous_flow_body(string declaration, string kind, int existingEdgeCount)
++    {
++        var map = Snapshot("class A { " + declaration + " }");
++        var local = Assert.Single(map.GetProperty("nodes").EnumerateArray(), node =>
++            node.GetProperty("kind").GetString() == kind && node.GetProperty("name").GetString() == "F");
++        var symbol = local.GetProperty("id").GetString();
++        Assert.Contains(map.GetProperty("edges").EnumerateArray(), edge =>
++            edge.GetProperty("to").GetString() == symbol && edge.GetProperty("count").GetInt32() == existingEdgeCount);
++        Assert.DoesNotContain(map.GetProperty("flowInventory").GetProperty("functions").EnumerateArray(),
++            function => function.GetProperty("symbol").GetString() == symbol);
++        AssertValidSource(map);
++    }
++
++    [Theory]
++    [InlineData("abstract class A { public abstract int F(); public int F<T>()=>2; }", "F")]
++    [InlineData("abstract class A { public abstract int P {get;} public int get_P<T>()=>2; public int Run()=>P; }", "get_P")]
++    public void Bodyless_native_declaration_alias_does_not_claim_another_methods_body(string source, string name)
++    {
++        var map = Snapshot(source);
++        var method = Assert.Single(map.GetProperty("nodes").EnumerateArray(), node => node.GetProperty("name").GetString() == name);
++        Assert.DoesNotContain(map.GetProperty("flowInventory").GetProperty("functions").EnumerateArray(),
++            function => function.GetProperty("symbol").GetString() == method.GetProperty("id").GetString());
++        if (name == "get_P")
++            Assert.Equal("CS0082", Assert.Single(map.GetProperty("diagnostics").EnumerateArray()).GetProperty("id").GetString());
++        else AssertValidSource(map);
++    }
++
++    [Fact]
++    public void Partial_definition_and_implementation_remain_one_source_callable()
++    {
++        var map = Snapshot("partial class A { partial void F(); partial void F(){} }");
++        AssertValidSource(map);
++        var function = Function(map, "A::F()");
++        Assert.Empty(function.GetProperty("body").EnumerateArray());
++        Assert.Empty(function.GetProperty("diagnostics").EnumerateArray());
++    }
++
++    [Fact]
++    public void Cross_file_partial_definition_retains_graph_without_misattributed_flow()
++    {
++        var map = JsonDocument.Parse(CodeMapJson.Write(CallGraphBuilder.Build(
++            [("/proj/definition.cs", "partial class A { partial void F(); }"),
++             ("/proj/implementation.cs", "partial class A { partial void F(){} }")], "/proj"))).RootElement;
++        var method = Assert.Single(map.GetProperty("nodes").EnumerateArray(), node => node.GetProperty("name").GetString() == "F");
++        Assert.Equal("definition.cs:1", method.GetProperty("location").GetString());
++        Assert.DoesNotContain(map.GetProperty("flowInventory").GetProperty("functions").EnumerateArray(),
++            function => function.GetProperty("symbol").GetString() == method.GetProperty("id").GetString());
++        AssertValidSource(map);
++    }
++
++    [Fact]
++    public void Implementation_first_cross_file_partial_retains_its_matching_source_flow()
++    {
++        var map = JsonDocument.Parse(CodeMapJson.Write(CallGraphBuilder.Build(
++            [("/proj/implementation.cs", "partial class A { partial void F(){} }"),
++             ("/proj/definition.cs", "partial class A { partial void F(); }")], "/proj"))).RootElement;
++        var method = Assert.Single(map.GetProperty("nodes").EnumerateArray(), node => node.GetProperty("name").GetString() == "F");
++        Assert.Equal("implementation.cs:1", method.GetProperty("location").GetString());
++        Assert.Equal("/proj/implementation.cs", Function(map, "A::F()").GetProperty("file").GetString());
++        AssertValidSource(map);
++    }
++
++    [Fact]
++    public void Identical_body_sites_are_deduplicated_before_source_selection()
++    {
++        var tree = CSharpSyntaxTree.ParseText("class A { void F(){} }", path: "/proj/a.cs");
++        var model = CSharpCompilation.Create("sample", [tree]).GetSemanticModel(tree);
++        var declaration = tree.GetRoot().DescendantNodes().OfType<MethodDeclarationSyntax>().Single();
++        var symbol = (IMethodSymbol)model.GetDeclaredSymbol(declaration)!;
++        var input = new FlowInput(SymbolId.Canonical(symbol), tree, model, [declaration.Body!], symbol);
++        var node = new Node { Id = input.Symbol, Kind = "method", Name = symbol.Name,
++            Container = symbol.ContainingType.Name, Location = "a.cs:1" };
++        var selected = new FlowOwnership().Select([input, input], node, "/proj");
++        Assert.NotNull(selected);
++        Assert.Same(declaration.Body, Assert.Single(selected.Bodies));
++    }
++
++    [Fact]
++    public void Distinct_top_level_sites_remain_one_ordered_callable()
++    {
++        var map = Snapshot("System.Console.WriteLine(1); System.Console.WriteLine(2);");
++        var function = Function(map, "Program::<top-level>");
++        var calls = Objects(function.GetProperty("body")).Where(node => node.TryGetProperty("targets", out _)).ToArray();
++        Assert.Equal(new[] { "System.Console.WriteLine(1)", "System.Console.WriteLine(2)" },
++            calls.Select(call => call.GetProperty("label").GetString()));
++        Assert.Empty(function.GetProperty("diagnostics").EnumerateArray());
++    }
++
++    private static void AssertValidSource(JsonElement map)
++    {
++        Assert.Equal(0, map.GetProperty("bodyErrorCount").GetInt32());
++        Assert.Empty(map.GetProperty("diagnostics").EnumerateArray());
 +    }
 +}
 diff --git a/tests/CallAtlas.Tests/HttpRouteFactsTests.cs b/tests/CallAtlas.Tests/HttpRouteFactsTests.cs

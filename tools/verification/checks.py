@@ -62,6 +62,9 @@ def full_steps(root, args, output):
     return [
         Step("typescript-tests", ["node", "--test", *[str(p.relative_to(root)) for p in sorted((root / "tools/typescript").glob("*.test.js"))]], timeout),
         Step("build-release-engine", ["cargo", "build", "--locked", "--release", "-p", "codecallnavigator-engine", "--bin", "codecallnavigator-engine"], timeout),
+        Step("csharp-cleanup-acceptance", [python, "tools/csharp_cleanup_acceptance.py",
+                                          "--engine", release_engine,
+                                          "--output", str(output / "csharp-cleanup.json")], timeout),
         Step("profile-snapshot", [python, "tools/verification/profile.py", str(profile_source), str(output / "profile")]),
         Step("release-acceptance-and-benchmarks", ["cargo", "test", "--locked", "--release", "--workspace", "--all-targets", "--no-fail-fast", "--", "--include-ignored", "--test-threads=1", "--nocapture"], timeout, environment),
         Step("storage-benchmark", ["cargo", "run", "--locked", "--release", "--bin", "benchmark", "--", str(output / "scale-cache")], timeout),

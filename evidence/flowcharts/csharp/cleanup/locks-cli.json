@@ -1,0 +1,1034 @@
+{
+  "status": "passed",
+  "candidate": {
+    "engine_path": "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/target/release/codecallnavigator-engine",
+    "engine_sha256": "da7c6c02c920fd863f9cfce2bcd7a58e6426e6b24c8d2b6111da9bb98bde9637",
+    "callatlas_revision": "916c2419c0cdb91b5b86b84df4842dadb17bb6b4",
+    "combined_patch_sha256": "0e66e81d8f4a66af9c3d30976b248d0da79bca76e02e5fcdccb7df5e4d5893e1"
+  },
+  "cases": {
+    "lock-normal": {
+      "status": "passed",
+      "runtime": {
+        "scenario": "lock-normal",
+        "events": [
+          {
+            "operation": "gate",
+            "name": "lock",
+            "outcome": "normal",
+            "value": null
+          },
+          {
+            "operation": "lock-inside",
+            "name": "lock",
+            "outcome": "normal",
+            "value": "true"
+          },
+          {
+            "operation": "mark",
+            "name": "locked-body",
+            "outcome": "normal",
+            "value": null
+          },
+          {
+            "operation": "mark",
+            "name": "after-lock",
+            "outcome": "normal",
+            "value": null
+          }
+        ],
+        "result": 0,
+        "outcome": "normal",
+        "error": null,
+        "sharedValue": 7,
+        "lockProbe": {
+          "callerThread": 1,
+          "workerThread": 4,
+          "released": true
+        }
+      },
+      "chart": {
+        "diagnostics": [
+          "Calls inside protected regions may throw; exceptional paths are conservative, not runtime predictions"
+        ],
+        "entry": 0,
+        "file": "<cleanup-work>/fixture/Runtime/LockCases.cs",
+        "links": [
+          {
+            "from": 0,
+            "kind": "normal",
+            "label": "",
+            "to": 1
+          },
+          {
+            "from": 1,
+            "kind": "normal",
+            "label": "",
+            "to": 2
+          },
+          {
+            "from": 2,
+            "kind": "normal",
+            "label": "",
+            "to": 3
+          },
+          {
+            "from": 3,
+            "kind": "normal",
+            "label": "",
+            "to": 4
+          },
+          {
+            "from": 4,
+            "kind": "normal",
+            "label": "",
+            "to": 5
+          },
+          {
+            "from": 5,
+            "kind": "normal",
+            "label": "",
+            "to": 6
+          },
+          {
+            "from": 6,
+            "kind": "normal",
+            "label": "",
+            "to": 7
+          },
+          {
+            "from": 7,
+            "kind": "normal",
+            "label": "",
+            "to": 8
+          },
+          {
+            "from": 8,
+            "kind": "normal",
+            "label": "",
+            "to": 9
+          },
+          {
+            "from": 9,
+            "kind": "yes",
+            "label": "true",
+            "to": 10
+          },
+          {
+            "from": 4,
+            "kind": "exception",
+            "label": "may throw",
+            "to": 11
+          },
+          {
+            "from": 5,
+            "kind": "exception",
+            "label": "may throw",
+            "to": 11
+          },
+          {
+            "from": 8,
+            "kind": "exception",
+            "label": "may throw",
+            "to": 11
+          },
+          {
+            "from": 11,
+            "kind": "yes",
+            "label": "true",
+            "to": 12
+          },
+          {
+            "from": 10,
+            "kind": "normal",
+            "label": "",
+            "to": 13
+          },
+          {
+            "from": 9,
+            "kind": "no",
+            "label": "false",
+            "to": 13
+          },
+          {
+            "from": 13,
+            "kind": "normal",
+            "label": "",
+            "to": 14
+          },
+          {
+            "from": 14,
+            "kind": "normal",
+            "label": "",
+            "to": 15
+          },
+          {
+            "from": 15,
+            "kind": "normal",
+            "label": "",
+            "to": 16
+          },
+          {
+            "from": 16,
+            "kind": "normal",
+            "label": "",
+            "to": 17
+          },
+          {
+            "from": 17,
+            "kind": "normal",
+            "label": "",
+            "to": 18
+          },
+          {
+            "from": 10,
+            "kind": "exception",
+            "label": "may throw",
+            "to": 19
+          },
+          {
+            "from": 12,
+            "kind": "normal",
+            "label": "",
+            "to": 19
+          },
+          {
+            "from": 11,
+            "kind": "no",
+            "label": "false",
+            "to": 19
+          },
+          {
+            "from": 12,
+            "kind": "exception",
+            "label": "may throw",
+            "to": 19
+          }
+        ],
+        "partial": true,
+        "regions": [],
+        "span": {
+          "end": 717,
+          "start": 581
+        },
+        "steps": [
+          {
+            "calls": [],
+            "id": 0,
+            "kind": "start",
+            "label": "Function entry",
+            "span": {
+              "end": 717,
+              "start": 581
+            }
+          },
+          {
+            "calls": [
+              {
+                "diagnostic": null,
+                "label": "Gate()",
+                "span": {
+                  "end": 603,
+                  "start": 597
+                },
+                "targets": [
+                  {
+                    "certainty": "direct",
+                    "provenance": "roslyn:call",
+                    "symbol": "[\"csharp\",\"@repo/Runtime/CleanupRuntime.csproj\",\"@repo/Runtime/LockCases.cs\",\"@repo/Runtime/CleanupRuntime.csproj|[CleanupRuntime]::CleanupFixture.LockCases::Gate()\"]"
+                  }
+                ]
+              }
+            ],
+            "id": 1,
+            "kind": "expression",
+            "label": "Gate()",
+            "span": {
+              "end": 603,
+              "start": 597
+            }
+          },
+          {
+            "calls": [],
+            "id": 2,
+            "kind": "expression",
+            "label": "synthetic C#: capture lock object once",
+            "span": {
+              "end": 652,
+              "start": 591
+            }
+          },
+          {
+            "calls": [],
+            "id": 3,
+            "kind": "expression",
+            "label": "synthetic C#: initialize lockTaken = false",
+            "span": {
+              "end": 652,
+              "start": 591
+            }
+          },
+          {
+            "calls": [
+              {
+                "diagnostic": "roslyn:implicit:MonitorEnter; compiler-selected operation, not a native graph edge",
+                "label": "synthetic C#: Monitor.Enter(ref lockTaken)",
+                "span": {
+                  "end": 652,
+                  "start": 591
+                },
+                "targets": []
+              }
+            ],
+            "id": 4,
+            "kind": "expression",
+            "label": "synthetic C#: Monitor.Enter(ref lockTaken)",
+            "span": {
+              "end": 652,
+              "start": 591
+            }
+          },
+          {
+            "calls": [
+              {
+                "diagnostic": null,
+                "label": "Inside()",
+                "span": {
+                  "end": 615,
+                  "start": 607
+                },
+                "targets": [
+                  {
+                    "certainty": "direct",
+                    "provenance": "roslyn:call",
+                    "symbol": "[\"csharp\",\"@repo/Runtime/CleanupRuntime.csproj\",\"@repo/Runtime/LockCases.cs\",\"@repo/Runtime/CleanupRuntime.csproj|[CleanupRuntime]::CleanupFixture.LockCases::Inside()\"]"
+                  }
+                ]
+              }
+            ],
+            "id": 5,
+            "kind": "expression",
+            "label": "Inside()",
+            "span": {
+              "end": 615,
+              "start": 607
+            }
+          },
+          {
+            "calls": [],
+            "id": 6,
+            "kind": "expression",
+            "label": "TraceRuntime",
+            "span": {
+              "end": 629,
+              "start": 617
+            }
+          },
+          {
+            "calls": [],
+            "id": 7,
+            "kind": "expression",
+            "label": "\"locked-body\"",
+            "span": {
+              "end": 648,
+              "start": 635
+            }
+          },
+          {
+            "calls": [
+              {
+                "diagnostic": null,
+                "label": "TraceRuntime.Mark(\"locked-body\")",
+                "span": {
+                  "end": 649,
+                  "start": 617
+                },
+                "targets": [
+                  {
+                    "certainty": "direct",
+                    "provenance": "roslyn:call",
+                    "symbol": "[\"csharp\",\"@repo/Runtime/CleanupRuntime.csproj\",\"@repo/Trace.cs\",\"@repo/Runtime/CleanupRuntime.csproj|[CleanupRuntime]::CleanupFixture.TraceRuntime::Mark(System.String)\"]"
+                  }
+                ]
+              }
+            ],
+            "id": 8,
+            "kind": "expression",
+            "label": "TraceRuntime.Mark(\"locked-body\")",
+            "span": {
+              "end": 649,
+              "start": 617
+            }
+          },
+          {
+            "calls": [],
+            "id": 9,
+            "kind": "decision",
+            "label": "synthetic C#: lockTaken is true",
+            "span": {
+              "end": 652,
+              "start": 591
+            }
+          },
+          {
+            "calls": [
+              {
+                "diagnostic": "roslyn:implicit:MonitorExit; compiler-selected operation, not a native graph edge",
+                "label": "synthetic C#: Monitor.Exit captured lock object",
+                "span": {
+                  "end": 652,
+                  "start": 591
+                },
+                "targets": []
+              }
+            ],
+            "id": 10,
+            "kind": "expression",
+            "label": "synthetic C#: Monitor.Exit captured lock object",
+            "span": {
+              "end": 652,
+              "start": 591
+            }
+          },
+          {
+            "calls": [],
+            "id": 11,
+            "kind": "decision",
+            "label": "synthetic C#: lockTaken is true",
+            "span": {
+              "end": 652,
+              "start": 591
+            }
+          },
+          {
+            "calls": [
+              {
+                "diagnostic": "roslyn:implicit:MonitorExit; compiler-selected operation, not a native graph edge",
+                "label": "synthetic C#: Monitor.Exit captured lock object",
+                "span": {
+                  "end": 652,
+                  "start": 591
+                },
+                "targets": []
+              }
+            ],
+            "id": 12,
+            "kind": "expression",
+            "label": "synthetic C#: Monitor.Exit captured lock object",
+            "span": {
+              "end": 652,
+              "start": 591
+            }
+          },
+          {
+            "calls": [],
+            "id": 13,
+            "kind": "expression",
+            "label": "TraceRuntime",
+            "span": {
+              "end": 673,
+              "start": 661
+            }
+          },
+          {
+            "calls": [],
+            "id": 14,
+            "kind": "expression",
+            "label": "\"after-lock\"",
+            "span": {
+              "end": 691,
+              "start": 679
+            }
+          },
+          {
+            "calls": [
+              {
+                "diagnostic": null,
+                "label": "TraceRuntime.Mark(\"after-lock\")",
+                "span": {
+                  "end": 692,
+                  "start": 661
+                },
+                "targets": [
+                  {
+                    "certainty": "direct",
+                    "provenance": "roslyn:call",
+                    "symbol": "[\"csharp\",\"@repo/Runtime/CleanupRuntime.csproj\",\"@repo/Trace.cs\",\"@repo/Runtime/CleanupRuntime.csproj|[CleanupRuntime]::CleanupFixture.TraceRuntime::Mark(System.String)\"]"
+                  }
+                ]
+              }
+            ],
+            "id": 15,
+            "kind": "expression",
+            "label": "TraceRuntime.Mark(\"after-lock\")",
+            "span": {
+              "end": 692,
+              "start": 661
+            }
+          },
+          {
+            "calls": [],
+            "id": 16,
+            "kind": "expression",
+            "label": "0",
+            "span": {
+              "end": 710,
+              "start": 709
+            }
+          },
+          {
+            "calls": [],
+            "id": 17,
+            "kind": "return",
+            "label": "return",
+            "span": {
+              "end": 711,
+              "start": 702
+            }
+          },
+          {
+            "calls": [],
+            "id": 18,
+            "kind": "exit",
+            "label": "Return to caller",
+            "span": {
+              "end": 717,
+              "start": 581
+            }
+          },
+          {
+            "calls": [],
+            "id": 19,
+            "kind": "exit",
+            "label": "Exception escapes",
+            "span": {
+              "end": 717,
+              "start": 581
+            }
+          }
+        ],
+        "symbol": "[\"csharp\",\"@repo/Runtime/CleanupRuntime.csproj\",\"@repo/Runtime/LockCases.cs\",\"@repo/Runtime/CleanupRuntime.csproj|[CleanupRuntime]::CleanupFixture.LockCases::Normal()\"]"
+      },
+      "runtime_trace_path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18
+      ],
+      "forbidden_paths": {},
+      "opaque_steps_present": false,
+      "structure": {
+        "other_thread_release_observed": true,
+        "monitor_enter_steps": [
+          4
+        ],
+        "monitor_exit_steps": [
+          10,
+          12
+        ],
+        "monitor_events_inferred_from_compiler_structure_not_runtime_instrumented": true
+      },
+      "source_sha256": "4682690e8f3812548732926c2d9e8a069934c5293405ee7cd1c05d70f5574681"
+    },
+    "lock-throwing": {
+      "status": "passed",
+      "runtime": {
+        "scenario": "lock-throwing",
+        "events": [
+          {
+            "operation": "gate",
+            "name": "lock",
+            "outcome": "normal",
+            "value": null
+          },
+          {
+            "operation": "lock-inside",
+            "name": "lock",
+            "outcome": "normal",
+            "value": "true"
+          },
+          {
+            "operation": "mark",
+            "name": "locked-body",
+            "outcome": "normal",
+            "value": null
+          }
+        ],
+        "result": null,
+        "outcome": "throw",
+        "error": "ProbeException:locked-body",
+        "sharedValue": 7,
+        "lockProbe": {
+          "callerThread": 1,
+          "workerThread": 4,
+          "released": true
+        }
+      },
+      "chart": {
+        "diagnostics": [
+          "Calls inside protected regions may throw; exceptional paths are conservative, not runtime predictions"
+        ],
+        "entry": 0,
+        "file": "<cleanup-work>/fixture/Runtime/LockCases.cs",
+        "links": [
+          {
+            "from": 0,
+            "kind": "normal",
+            "label": "",
+            "to": 1
+          },
+          {
+            "from": 1,
+            "kind": "normal",
+            "label": "",
+            "to": 2
+          },
+          {
+            "from": 2,
+            "kind": "normal",
+            "label": "",
+            "to": 3
+          },
+          {
+            "from": 3,
+            "kind": "normal",
+            "label": "",
+            "to": 4
+          },
+          {
+            "from": 4,
+            "kind": "normal",
+            "label": "",
+            "to": 5
+          },
+          {
+            "from": 5,
+            "kind": "normal",
+            "label": "",
+            "to": 6
+          },
+          {
+            "from": 6,
+            "kind": "normal",
+            "label": "",
+            "to": 7
+          },
+          {
+            "from": 7,
+            "kind": "normal",
+            "label": "",
+            "to": 8
+          },
+          {
+            "from": 8,
+            "kind": "normal",
+            "label": "",
+            "to": 9
+          },
+          {
+            "from": 9,
+            "kind": "normal",
+            "label": "",
+            "to": 10
+          },
+          {
+            "from": 10,
+            "kind": "normal",
+            "label": "",
+            "to": 11
+          },
+          {
+            "from": 11,
+            "kind": "normal",
+            "label": "",
+            "to": 12
+          },
+          {
+            "from": 4,
+            "kind": "exception",
+            "label": "may throw",
+            "to": 12
+          },
+          {
+            "from": 5,
+            "kind": "exception",
+            "label": "may throw",
+            "to": 12
+          },
+          {
+            "from": 8,
+            "kind": "exception",
+            "label": "may throw",
+            "to": 12
+          },
+          {
+            "from": 10,
+            "kind": "exception",
+            "label": "may throw",
+            "to": 12
+          },
+          {
+            "from": 12,
+            "kind": "yes",
+            "label": "true",
+            "to": 13
+          },
+          {
+            "from": 13,
+            "kind": "normal",
+            "label": "",
+            "to": 14
+          },
+          {
+            "from": 12,
+            "kind": "no",
+            "label": "false",
+            "to": 14
+          },
+          {
+            "from": 13,
+            "kind": "exception",
+            "label": "may throw",
+            "to": 14
+          }
+        ],
+        "partial": true,
+        "regions": [],
+        "span": {
+          "end": 874,
+          "start": 756
+        },
+        "steps": [
+          {
+            "calls": [],
+            "id": 0,
+            "kind": "start",
+            "label": "Function entry",
+            "span": {
+              "end": 874,
+              "start": 756
+            }
+          },
+          {
+            "calls": [
+              {
+                "diagnostic": null,
+                "label": "Gate()",
+                "span": {
+                  "end": 778,
+                  "start": 772
+                },
+                "targets": [
+                  {
+                    "certainty": "direct",
+                    "provenance": "roslyn:call",
+                    "symbol": "[\"csharp\",\"@repo/Runtime/CleanupRuntime.csproj\",\"@repo/Runtime/LockCases.cs\",\"@repo/Runtime/CleanupRuntime.csproj|[CleanupRuntime]::CleanupFixture.LockCases::Gate()\"]"
+                  }
+                ]
+              }
+            ],
+            "id": 1,
+            "kind": "expression",
+            "label": "Gate()",
+            "span": {
+              "end": 778,
+              "start": 772
+            }
+          },
+          {
+            "calls": [],
+            "id": 2,
+            "kind": "expression",
+            "label": "synthetic C#: capture lock object once",
+            "span": {
+              "end": 868,
+              "start": 766
+            }
+          },
+          {
+            "calls": [],
+            "id": 3,
+            "kind": "expression",
+            "label": "synthetic C#: initialize lockTaken = false",
+            "span": {
+              "end": 868,
+              "start": 766
+            }
+          },
+          {
+            "calls": [
+              {
+                "diagnostic": "roslyn:implicit:MonitorEnter; compiler-selected operation, not a native graph edge",
+                "label": "synthetic C#: Monitor.Enter(ref lockTaken)",
+                "span": {
+                  "end": 868,
+                  "start": 766
+                },
+                "targets": []
+              }
+            ],
+            "id": 4,
+            "kind": "expression",
+            "label": "synthetic C#: Monitor.Enter(ref lockTaken)",
+            "span": {
+              "end": 868,
+              "start": 766
+            }
+          },
+          {
+            "calls": [
+              {
+                "diagnostic": null,
+                "label": "Inside()",
+                "span": {
+                  "end": 790,
+                  "start": 782
+                },
+                "targets": [
+                  {
+                    "certainty": "direct",
+                    "provenance": "roslyn:call",
+                    "symbol": "[\"csharp\",\"@repo/Runtime/CleanupRuntime.csproj\",\"@repo/Runtime/LockCases.cs\",\"@repo/Runtime/CleanupRuntime.csproj|[CleanupRuntime]::CleanupFixture.LockCases::Inside()\"]"
+                  }
+                ]
+              }
+            ],
+            "id": 5,
+            "kind": "expression",
+            "label": "Inside()",
+            "span": {
+              "end": 790,
+              "start": 782
+            }
+          },
+          {
+            "calls": [],
+            "id": 6,
+            "kind": "expression",
+            "label": "TraceRuntime",
+            "span": {
+              "end": 804,
+              "start": 792
+            }
+          },
+          {
+            "calls": [],
+            "id": 7,
+            "kind": "expression",
+            "label": "\"locked-body\"",
+            "span": {
+              "end": 823,
+              "start": 810
+            }
+          },
+          {
+            "calls": [
+              {
+                "diagnostic": null,
+                "label": "TraceRuntime.Mark(\"locked-body\")",
+                "span": {
+                  "end": 824,
+                  "start": 792
+                },
+                "targets": [
+                  {
+                    "certainty": "direct",
+                    "provenance": "roslyn:call",
+                    "symbol": "[\"csharp\",\"@repo/Runtime/CleanupRuntime.csproj\",\"@repo/Trace.cs\",\"@repo/Runtime/CleanupRuntime.csproj|[CleanupRuntime]::CleanupFixture.TraceRuntime::Mark(System.String)\"]"
+                  }
+                ]
+              }
+            ],
+            "id": 8,
+            "kind": "expression",
+            "label": "TraceRuntime.Mark(\"locked-body\")",
+            "span": {
+              "end": 824,
+              "start": 792
+            }
+          },
+          {
+            "calls": [],
+            "id": 9,
+            "kind": "expression",
+            "label": "\"locked-body\"",
+            "span": {
+              "end": 864,
+              "start": 851
+            }
+          },
+          {
+            "calls": [
+              {
+                "diagnostic": "Some call targets are excluded from the indexed graph",
+                "label": "new ProbeException(\"locked-body\")",
+                "span": {
+                  "end": 865,
+                  "start": 832
+                },
+                "targets": []
+              }
+            ],
+            "id": 10,
+            "kind": "expression",
+            "label": "new ProbeException(\"locked-body\")",
+            "span": {
+              "end": 865,
+              "start": 832
+            }
+          },
+          {
+            "calls": [],
+            "id": 11,
+            "kind": "throw",
+            "label": "throw",
+            "span": {
+              "end": 866,
+              "start": 826
+            }
+          },
+          {
+            "calls": [],
+            "id": 12,
+            "kind": "decision",
+            "label": "synthetic C#: lockTaken is true",
+            "span": {
+              "end": 868,
+              "start": 766
+            }
+          },
+          {
+            "calls": [
+              {
+                "diagnostic": "roslyn:implicit:MonitorExit; compiler-selected operation, not a native graph edge",
+                "label": "synthetic C#: Monitor.Exit captured lock object",
+                "span": {
+                  "end": 868,
+                  "start": 766
+                },
+                "targets": []
+              }
+            ],
+            "id": 13,
+            "kind": "expression",
+            "label": "synthetic C#: Monitor.Exit captured lock object",
+            "span": {
+              "end": 868,
+              "start": 766
+            }
+          },
+          {
+            "calls": [],
+            "id": 14,
+            "kind": "exit",
+            "label": "Exception escapes",
+            "span": {
+              "end": 874,
+              "start": 756
+            }
+          }
+        ],
+        "symbol": "[\"csharp\",\"@repo/Runtime/CleanupRuntime.csproj\",\"@repo/Runtime/LockCases.cs\",\"@repo/Runtime/CleanupRuntime.csproj|[CleanupRuntime]::CleanupFixture.LockCases::Throwing()\"]"
+      },
+      "runtime_trace_path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        12,
+        14
+      ],
+      "forbidden_paths": {},
+      "opaque_steps_present": false,
+      "structure": {
+        "other_thread_release_observed": true,
+        "monitor_enter_steps": [
+          4
+        ],
+        "monitor_exit_steps": [
+          13
+        ],
+        "monitor_events_inferred_from_compiler_structure_not_runtime_instrumented": true
+      },
+      "source_sha256": "4682690e8f3812548732926c2d9e8a069934c5293405ee7cd1c05d70f5574681"
+    }
+  },
+  "commands": [
+    {
+      "arguments": [
+        "analyze",
+        "--project",
+        "<cleanup-work>/fixture",
+        "<cleanup-work>/fixture/Runtime/CleanupRuntime.csproj"
+      ],
+      "exit_code": 0,
+      "dotnet_on_path": true
+    },
+    {
+      "arguments": [
+        "query"
+      ],
+      "exit_code": 0,
+      "dotnet_on_path": true,
+      "stdin": {
+        "version": 1,
+        "project": "<cleanup-work>/fixture",
+        "query": {
+          "kind": "snapshot"
+        }
+      }
+    },
+    {
+      "arguments": [
+        "query"
+      ],
+      "exit_code": 0,
+      "dotnet_on_path": true,
+      "stdin": {
+        "version": 1,
+        "project": "<cleanup-work>/fixture",
+        "query": {
+          "kind": "flow",
+          "symbol": "[\"csharp\",\"@repo/Runtime/CleanupRuntime.csproj\",\"@repo/Runtime/LockCases.cs\",\"@repo/Runtime/CleanupRuntime.csproj|[CleanupRuntime]::CleanupFixture.LockCases::Normal()\"]"
+        },
+        "expected_generation": "efcb55963355731549679394802eb81ee2aa5ca5d69aa8b1b0702cb778ee5141"
+      }
+    },
+    {
+      "arguments": [
+        "query"
+      ],
+      "exit_code": 0,
+      "dotnet_on_path": true,
+      "stdin": {
+        "version": 1,
+        "project": "<cleanup-work>/fixture",
+        "query": {
+          "kind": "flow",
+          "symbol": "[\"csharp\",\"@repo/Runtime/CleanupRuntime.csproj\",\"@repo/Runtime/LockCases.cs\",\"@repo/Runtime/CleanupRuntime.csproj|[CleanupRuntime]::CleanupFixture.LockCases::Throwing()\"]"
+        },
+        "expected_generation": "efcb55963355731549679394802eb81ee2aa5ca5d69aa8b1b0702cb778ee5141"
+      }
+    }
+  ],
+  "trace_mapping": "Explicit source calls and source-owned compiler-lowered operations; actual outcomes constrain exception edges, not a runtime-value interpreter."
+}
