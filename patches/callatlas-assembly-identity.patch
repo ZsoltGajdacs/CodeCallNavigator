@@ -617,8 +617,143 @@ index 3a44265..4e30796 100644
      <ImplicitUsings>enable</ImplicitUsings>
      <Nullable>enable</Nullable>
      <LangVersion>latest</LangVersion>
+diff --git a/src/CallAtlas.Core/CallGraphBindings.cs b/src/CallAtlas.Core/CallGraphBindings.cs
+new file mode 100644
+index 0000000..a2b430d
+--- /dev/null
++++ b/src/CallAtlas.Core/CallGraphBindings.cs
+@@ -0,0 +1,129 @@
++using Microsoft.CodeAnalysis;
++using Microsoft.CodeAnalysis.CSharp.Syntax;
++
++namespace CallAtlas.Core;
++
++// Native invocation binding and its worker-local state share the same source-site facts.
++public sealed partial class CallGraphBuilder
++{
++    private static void RecordCall(
++        SemanticModel model,
++        IReadOnlySet<IAssemblySymbol> ourAssemblies,
++        InvocationExpressionSyntax invoke,
++        string fromId,
++        ExtractionShard shard,
++        string root)
++    {
++        var info = model.GetSymbolInfo(invoke);
++        if (info.Symbol is IMethodSymbol target)
++        {
++            // 委托调用要在 external 过滤<b>之前</b>判：符号是 Func/Action 上的 Invoke，
++            // 它在 BCL 里，照原逻辑会变成一条 "System.Action::Invoke" 外部计数——
++            // 于是"3 次去不掉的委托调用"与"3 次普通的 BCL 调用"在产物里长得一样。
++            // 委托的类型是用户自己的（这里的 Action 是 System 的，但签名是我们声明的），
++            // 真实去向静态不可知，必须显式记成一条 delegate 级的边挂到委托类型上。
++            var receiverType = ReceiverType(model, invoke);
++            if (receiverType is { TypeKind: TypeKind.Delegate } delegateType)
++            {
++                var delegateId = DelegateTargetId(shard.Implicit, delegateType);
++                AddOrCount(shard.Edges, fromId, delegateId, "call", EdgeTier.Delegate);
++                shard.FlowBindings.Add(fromId, invoke, new(delegateId, EdgeTier.Delegate, "roslyn:delegate")
++                    { Diagnostic = "Delegate invocation does not identify the runtime callable" });
++                return;
++            }
++
++            if (IsExternal(ourAssemblies, target))
++            {
++                // 外部（BCL/第三方）调用：只聚合计数，不展开成节点
++                var od = target.OriginalDefinition;
++                NoteExternal(shard.External,
++                    $"{DisplayOf(od.ContainingType)}::{od.Name}");
++                shard.FlowBindings.Add(fromId, invoke, new(null, "", "roslyn:call")
++                    { Diagnostic = "External compiler target: " + SymbolId.Canonical(od) });
++                return;
++            }
++
++            var tier = EdgeTierClassifier.ForCall(target, receiverType);
++            AddOrCount(shard.Edges, fromId, IdOf(target), "call", tier);
++
++            // D2：dispatch 边的目标静态上只有一个（接口契约 / 虚方法声明），
++            // 于是真实实现全部入度为 0、在图上表现为死代码。把本次编译内
++            // **可发现的**实现挂到这条边的 virtualTargets 上——
++            // 属性级规模，不是 N 条边的规模，图不会膨胀。
++            if (tier == EdgeTier.Dispatch)
++                RecordVirtualTargets(model.Compilation, ourAssemblies, target, IdOf(target), shard);
++
++            shard.FlowBindings.Add(fromId, invoke, new(IdOf(target), tier, "roslyn:call")
++                { Candidates = shard.VirtualTargets.GetValueOrDefault(IdOf(target)) });
++
++            EnsureNode(shard.Implicit, target, "method");
++            return;
++        }
++
++        // 绑定失败：按**失败原因**细分，而不是把所有"有候选符号"的情况一律叫 ambiguous。
++        // 实测：`AddProject(project, units, compilations)`（同类内 private 调用，完全合法）
++        // 只因形参类型里含未解析的包类型就被记成 ambiguous——那既不是歧义，也误导了使用者。
++        var reason = ClassifyFailure(model, invoke, info);
++        Unresolve(shard.Unresolved, reason, invoke.ToString(), invoke.GetLocation(), root);
++        shard.FlowBindings.Add(fromId, invoke, new(null, "", "roslyn:call") { Diagnostic = reason });
++    }
++
++    /// <summary>
++    /// 绑定失败的原因分级。顺序即优先级：**错误类型导致的失败**要先判——它会让所有重载
++    /// 候选都"存在但不可用"，若先看 CandidateSymbols 就会把缺引用的连锁反应误报成歧义
++    /// （自举实测 53 条 ambiguous 里绝大多数是这个成因）。
++    /// </summary>
++    private static string ClassifyFailure(SemanticModel model, InvocationExpressionSyntax invoke, SymbolInfo info)
++    {
++        // 1. 实参/接收者里含 error type → 这是"引用缺失"的连锁反应，不是调用本身有问题
++        if (info.CandidateSymbols.Length == 0 && model.GetTypeInfo(invoke).Type is IErrorTypeSymbol)
++            return "error-type";
++        if (invoke.ArgumentList.Arguments.Any(a => model.GetTypeInfo(a.Expression).Type is IErrorTypeSymbol))
++            return "error-type";
++        if (IsErrorTypeReceiver(model, invoke))
++            return "error-type";
++
++        // 2. 有候选却绑不上：区分"可访问性"与"真歧义"——诊断码是唯一可靠依据
++        if (info.CandidateSymbols.Length > 0)
++        {
++            var inaccessible = model.GetDiagnostics(invoke.Span)
++                .Any(d => d.Severity == DiagnosticSeverity.Error && AccessibilityCodes.Contains(d.Id));
++            return inaccessible ? "inaccessible" : "ambiguous";
++        }
++
++        return "unresolved";
++    }
++
++    /// <summary>接收者（<c>x.M()</c> 里的 <c>x</c>）是 error type 时，整条调用都不可信。
++    /// 接收者形态由 <see cref="ReceiverExpression"/> 统一给出——条件访问曾在这里也取不到接收者，
++    /// 于是"接收者坏了"被判成 <c>unresolved</c> 而不是 <c>error-type</c>，把成因说错了。</summary>
++    private static bool IsErrorTypeReceiver(SemanticModel model, InvocationExpressionSyntax invoke)
++    {
++        var receiver = ReceiverExpression(invoke);
++        return receiver is not null && model.GetTypeInfo(receiver).Type is IErrorTypeSymbol;
++    }
++
++    /// <summary>可访问性相关的 CS 码：CS0122 不可访问、CS0271/CS0272 属性无 get/set、
++    /// CS1061 不包含定义、CS0117 成员不存在。</summary>
++    private static readonly HashSet<string> AccessibilityCodes = new(StringComparer.Ordinal)
++    {
++        "CS0122", "CS0271", "CS0272", "CS1061", "CS0117",
++    };
++
++    /// <summary>
++    /// 阶段二的按线程累加器。边 / 外部计数 / 未解析计数都只是"计数"，
++    /// 隐式补节点的内容也只由符号本身决定（与谁先算到无关），因此分片之间互不干扰，
++    /// 合并顺序不影响最终产物（写出前全排序）——并行化不破坏字节级确定性。
++    /// </summary>
++    private sealed class ExtractionShard
++    {
++        public readonly Dictionary<EdgeIdentity, int> Edges = new();
++        public readonly Dictionary<string, int> External = new();
++        public readonly Dictionary<(string Reason, string Expr, string Loc), int> Unresolved = new();
++        public readonly Dictionary<string, Node> Implicit = new();
++        /// <summary>dispatch 边的静态目标 id → 本次编译内可发现的实现 id 集合（D2）。</summary>
++        public readonly Dictionary<string, HashSet<string>> VirtualTargets = new();
++        public readonly FlowBindings FlowBindings = new();
++    }
++
++}
 diff --git a/src/CallAtlas.Core/CallGraphBuilder.cs b/src/CallAtlas.Core/CallGraphBuilder.cs
-index bf14b1d..32474a3 100644
+index bf14b1d..32ce032 100644
 --- a/src/CallAtlas.Core/CallGraphBuilder.cs
 +++ b/src/CallAtlas.Core/CallGraphBuilder.cs
 @@ -664,7 +664,7 @@ public sealed partial class CallGraphBuilder
@@ -656,7 +791,18 @@ index bf14b1d..32474a3 100644
                          break;
                  }
              }
-@@ -942,9 +943,21 @@ public sealed partial class CallGraphBuilder
+@@ -904,8 +905,10 @@ public sealed partial class CallGraphBuilder
+         // 合并：全是计数求和 + 隐式补节点（内容只由符号决定），
+         // 与分片顺序无关 → 排序后的产物仍逐字节确定。
+         var virtualTargets = new Dictionary<string, HashSet<string>>(StringComparer.Ordinal);
++        var flowBindings = new FlowBindings();
+         foreach (var shard in shards)
+         {
++            flowBindings.Merge(shard.FlowBindings);
+             foreach (var (key, count) in shard.Edges)
+                 edges[key] = edges.TryGetValue(key, out var e) ? e + count : count;
+             foreach (var (key, count) in shard.External)
+@@ -942,9 +945,24 @@ public sealed partial class CallGraphBuilder
              Ms(PhaseTicks.CollectDiag), Ms(PhaseTicks.BodyScan),
              Ms(PhaseTicks.BodySpan), Ms(PhaseTicks.BodyGetDiag), Ms(PhaseTicks.BodyScanLoop)));
  
@@ -667,6 +813,9 @@ index bf14b1d..32474a3 100644
          var map = new CodeMap
          {
              Schema = CodeMap.SchemaVersion,
++            FlowFactsVersion = FlowInventory.CapabilityVersion,
++            FlowInventory = FlowExport.Build(pending.SelectMany(item => item.Sites.Select(site =>
++                new FlowInput(site.FromId, item.Tree, item.Model, site.Bodies))), nodes, flowBindings, root),
 +            FrameworkFactsVersion = MediatRFacts.Version,
 +            FrameworkEdges = framework.Edges,
 +            FrameworkEntries = framework.Entries,
@@ -678,7 +827,7 @@ index bf14b1d..32474a3 100644
              Root = root.Replace('\\', '/'),
              Nodes = [.. nodes.Values.OrderBy(n => n.Id, StringComparer.Ordinal)],
              Edges = [.. edges.Select(kv => new Edge
-@@ -999,7 +1012,15 @@ public sealed partial class CallGraphBuilder
+@@ -999,7 +1017,15 @@ public sealed partial class CallGraphBuilder
                  $"[callatlas] {"symbol cache",-22} hits {h,8}  misses {m,8}  ({rate,5:F1}% hit)");
          }
  
@@ -695,7 +844,7 @@ index bf14b1d..32474a3 100644
      }
  
      /// <summary>
-@@ -1251,6 +1272,7 @@ public sealed partial class CallGraphBuilder
+@@ -1251,6 +1277,7 @@ public sealed partial class CallGraphBuilder
              Id = id,
              Kind = kind,
              Container = DisplayOf(symbol.ContainingType),
@@ -703,7 +852,7 @@ index bf14b1d..32474a3 100644
              Name = symbol.Name,
              Location = string.IsNullOrEmpty(path) ? "(no location)" : $"{Rel(root, path)}:{line}",
          };
-@@ -1279,6 +1301,7 @@ public sealed partial class CallGraphBuilder
+@@ -1279,6 +1306,7 @@ public sealed partial class CallGraphBuilder
          {
              Id = id,
              Kind = "accessor",
@@ -711,7 +860,7 @@ index bf14b1d..32474a3 100644
              Container = DisplayOf(accessor.ContainingType),
              // 显示成属性名（get_Value 的 Name 是 "get_Value"，用属性名 "Value" 更好读）
              Name = accessor.AssociatedSymbol?.Name ?? accessor.Name,
-@@ -1331,6 +1354,7 @@ public sealed partial class CallGraphBuilder
+@@ -1331,6 +1359,7 @@ public sealed partial class CallGraphBuilder
              Id = id,
              Kind = kind,
              Container = DisplayOf(target.OriginalDefinition.ContainingType),
@@ -719,7 +868,136 @@ index bf14b1d..32474a3 100644
              Name = target.OriginalDefinition.Name,
              Location = "(implicit)",
          };
-@@ -1755,7 +1779,7 @@ public sealed partial class CallGraphBuilder
+@@ -1430,115 +1459,6 @@ public sealed partial class CallGraphBuilder
+         return cur.OriginalDefinition;
+     }
+ 
+-    private static void RecordCall(
+-        SemanticModel model,
+-        IReadOnlySet<IAssemblySymbol> ourAssemblies,
+-        InvocationExpressionSyntax invoke,
+-        string fromId,
+-        ExtractionShard shard,
+-        string root)
+-    {
+-        var info = model.GetSymbolInfo(invoke);
+-        if (info.Symbol is IMethodSymbol target)
+-        {
+-            // 委托调用要在 external 过滤<b>之前</b>判：符号是 Func/Action 上的 Invoke，
+-            // 它在 BCL 里，照原逻辑会变成一条 "System.Action::Invoke" 外部计数——
+-            // 于是"3 次去不掉的委托调用"与"3 次普通的 BCL 调用"在产物里长得一样。
+-            // 委托的类型是用户自己的（这里的 Action 是 System 的，但签名是我们声明的），
+-            // 真实去向静态不可知，必须显式记成一条 delegate 级的边挂到委托类型上。
+-            var receiverType = ReceiverType(model, invoke);
+-            if (receiverType is { TypeKind: TypeKind.Delegate } delegateType)
+-            {
+-                AddOrCount(shard.Edges, fromId, DelegateTargetId(shard.Implicit, delegateType), "call", EdgeTier.Delegate);
+-                return;
+-            }
+-
+-            if (IsExternal(ourAssemblies, target))
+-            {
+-                // 外部（BCL/第三方）调用：只聚合计数，不展开成节点
+-                var od = target.OriginalDefinition;
+-                NoteExternal(shard.External,
+-                    $"{DisplayOf(od.ContainingType)}::{od.Name}");
+-                return;
+-            }
+-
+-            var tier = EdgeTierClassifier.ForCall(target, receiverType);
+-            AddOrCount(shard.Edges, fromId, IdOf(target), "call", tier);
+-
+-            // D2：dispatch 边的目标静态上只有一个（接口契约 / 虚方法声明），
+-            // 于是真实实现全部入度为 0、在图上表现为死代码。把本次编译内
+-            // **可发现的**实现挂到这条边的 virtualTargets 上——
+-            // 属性级规模，不是 N 条边的规模，图不会膨胀。
+-            if (tier == EdgeTier.Dispatch)
+-                RecordVirtualTargets(model.Compilation, ourAssemblies, target, IdOf(target), shard);
+-
+-            EnsureNode(shard.Implicit, target, "method");
+-            return;
+-        }
+-
+-        // 绑定失败：按**失败原因**细分，而不是把所有"有候选符号"的情况一律叫 ambiguous。
+-        // 实测：`AddProject(project, units, compilations)`（同类内 private 调用，完全合法）
+-        // 只因形参类型里含未解析的包类型就被记成 ambiguous——那既不是歧义，也误导了使用者。
+-        Unresolve(shard.Unresolved, ClassifyFailure(model, invoke, info), invoke.ToString(), invoke.GetLocation(), root);
+-    }
+-
+-    /// <summary>
+-    /// 绑定失败的原因分级。顺序即优先级：**错误类型导致的失败**要先判——它会让所有重载
+-    /// 候选都"存在但不可用"，若先看 CandidateSymbols 就会把缺引用的连锁反应误报成歧义
+-    /// （自举实测 53 条 ambiguous 里绝大多数是这个成因）。
+-    /// </summary>
+-    private static string ClassifyFailure(SemanticModel model, InvocationExpressionSyntax invoke, SymbolInfo info)
+-    {
+-        // 1. 实参/接收者里含 error type → 这是"引用缺失"的连锁反应，不是调用本身有问题
+-        if (info.CandidateSymbols.Length == 0 && model.GetTypeInfo(invoke).Type is IErrorTypeSymbol)
+-            return "error-type";
+-        if (invoke.ArgumentList.Arguments.Any(a => model.GetTypeInfo(a.Expression).Type is IErrorTypeSymbol))
+-            return "error-type";
+-        if (IsErrorTypeReceiver(model, invoke))
+-            return "error-type";
+-
+-        // 2. 有候选却绑不上：区分"可访问性"与"真歧义"——诊断码是唯一可靠依据
+-        if (info.CandidateSymbols.Length > 0)
+-        {
+-            var inaccessible = model.GetDiagnostics(invoke.Span)
+-                .Any(d => d.Severity == DiagnosticSeverity.Error && AccessibilityCodes.Contains(d.Id));
+-            return inaccessible ? "inaccessible" : "ambiguous";
+-        }
+-
+-        return "unresolved";
+-    }
+-
+-    /// <summary>接收者（<c>x.M()</c> 里的 <c>x</c>）是 error type 时，整条调用都不可信。
+-    /// 接收者形态由 <see cref="ReceiverExpression"/> 统一给出——条件访问曾在这里也取不到接收者，
+-    /// 于是"接收者坏了"被判成 <c>unresolved</c> 而不是 <c>error-type</c>，把成因说错了。</summary>
+-    private static bool IsErrorTypeReceiver(SemanticModel model, InvocationExpressionSyntax invoke)
+-    {
+-        var receiver = ReceiverExpression(invoke);
+-        return receiver is not null && model.GetTypeInfo(receiver).Type is IErrorTypeSymbol;
+-    }
+-
+-    /// <summary>可访问性相关的 CS 码：CS0122 不可访问、CS0271/CS0272 属性无 get/set、
+-    /// CS1061 不包含定义、CS0117 成员不存在。</summary>
+-    private static readonly HashSet<string> AccessibilityCodes = new(StringComparer.Ordinal)
+-    {
+-        "CS0122", "CS0271", "CS0272", "CS1061", "CS0117",
+-    };
+-
+-    /// <summary>
+-    /// 阶段二的按线程累加器。边 / 外部计数 / 未解析计数都只是"计数"，
+-    /// 隐式补节点的内容也只由符号本身决定（与谁先算到无关），因此分片之间互不干扰，
+-    /// 合并顺序不影响最终产物（写出前全排序）——并行化不破坏字节级确定性。
+-    /// </summary>
+-    private sealed class ExtractionShard
+-    {
+-        public readonly Dictionary<EdgeIdentity, int> Edges = new();
+-        public readonly Dictionary<string, int> External = new();
+-        public readonly Dictionary<(string Reason, string Expr, string Loc), int> Unresolved = new();
+-        public readonly Dictionary<string, Node> Implicit = new();
+-        /// <summary>dispatch 边的静态目标 id → 本次编译内可发现的实现 id 集合（D2）。</summary>
+-        public readonly Dictionary<string, HashSet<string>> VirtualTargets = new();
+-    }
+-
+     private static void RecordCreation(
+         SemanticModel model,
+         IReadOnlySet<IAssemblySymbol> ourAssemblies,
+@@ -1552,10 +1472,12 @@ public sealed partial class CallGraphBuilder
+         if (IsExternal(ourAssemblies, ctor))
+         {
+             NoteExternal(shard.External, $"new {DisplayOf(ctor.OriginalDefinition.ContainingType)}");
++            shard.FlowBindings.Add(fromId, creation, new(null, "", "roslyn:new") { Diagnostic = "External constructor target" });
+             return;
+         }
+ 
+         AddOrCount(shard.Edges, fromId, IdOf(ctor), "new");
++        shard.FlowBindings.Add(fromId, creation, new(IdOf(ctor), EdgeTier.Direct, "roslyn:new"));
+         // 编译器生成的默认构造：被证明的事实，登记为 (implicit) 位置——不是幽灵 external
+         EnsureNode(shard.Implicit, ctor, "constructor");
+     }
+@@ -1755,7 +1677,7 @@ public sealed partial class CallGraphBuilder
      /// 但"谁读了这个字段"是架构事实，值得有个落点。</summary>
      private static string FieldNodeId(Dictionary<string, Node> sink, IFieldSymbol field)
      {
@@ -728,8 +1006,38 @@ index bf14b1d..32474a3 100644
          sink.TryAdd(id, new Node
          {
              Id = id,
+@@ -1798,11 +1720,13 @@ public sealed partial class CallGraphBuilder
+                 if (reads && prop.GetMethod is { } g && !IsExternal(ourAssemblies, g))
+                 {
+                     AddOrCount(shard.Edges, fromId, IdOf(g), EdgeKind.Get, TierForAccessor(g));
++                    shard.FlowBindings.Add(fromId, node, new(IdOf(g), TierForAccessor(g), "roslyn:get"));
+                     EnsureAccessorNode(shard.Implicit, g, root);
+                 }
+                 if (writes && prop.SetMethod is { } s && !IsExternal(ourAssemblies, s))
+                 {
+                     AddOrCount(shard.Edges, fromId, IdOf(s), EdgeKind.Set, TierForAccessor(s));
++                    shard.FlowBindings.Add(fromId, node, new(IdOf(s), TierForAccessor(s), "roslyn:set"));
+                     EnsureAccessorNode(shard.Implicit, s, root);
+                 }
+                 break;
+@@ -1812,6 +1736,7 @@ public sealed partial class CallGraphBuilder
+                 if (accessor is not null && !IsExternal(ourAssemblies, accessor))
+                 {
+                     AddOrCount(shard.Edges, fromId, IdOf(accessor), EdgeKind.Event, TierForAccessor(accessor));
++                    shard.FlowBindings.Add(fromId, node, new(IdOf(accessor), "reference", "roslyn:event-registration"));
+                     EnsureAccessorNode(shard.Implicit, accessor, root);
+                 }
+                 break;
+@@ -1835,6 +1760,7 @@ public sealed partial class CallGraphBuilder
+                 var tier = EdgeTierClassifier.ForCall(target, receiverType: null);
+                 var targetId = IdOf(target);
+                 AddOrCount(shard.Edges, fromId, targetId, EdgeKind.MethodGroup, tier);
++                shard.FlowBindings.Add(fromId, node, new(targetId, "reference", "roslyn:methodgroup"));
+ 
+                 // 目标本身是接口/虚方法时，它和 dispatch 调用是同一个问题：
+                 // 静态目标只有一个，真实实现会零入度。复用同一条解析路径。
 diff --git a/src/CallAtlas.Core/CodeMap.cs b/src/CallAtlas.Core/CodeMap.cs
-index a720920..a934720 100644
+index a720920..3ccad66 100644
 --- a/src/CallAtlas.Core/CodeMap.cs
 +++ b/src/CallAtlas.Core/CodeMap.cs
 @@ -1,4 +1,5 @@
@@ -738,7 +1046,7 @@ index a720920..a934720 100644
  
  namespace CallAtlas.Core;
  
-@@ -10,6 +11,15 @@ public sealed record CodeMap
+@@ -10,6 +11,17 @@ public sealed record CodeMap
  
      public required string Schema { get; init; }
      public required string Root { get; init; }
@@ -751,10 +1059,12 @@ index a720920..a934720 100644
 +    public IReadOnlyList<string> FrameworkDiagnostics { get; init; } = [];
 +    public string HttpFactsVersion { get; init; } = "";
 +    public IReadOnlyList<HttpRouteFact> HttpRoutes { get; init; } = [];
++    public string FlowFactsVersion { get; init; } = "";
++    public FlowInventory? FlowInventory { get; init; }
      public required IReadOnlyList<Node> Nodes { get; init; }
      public required IReadOnlyList<Edge> Edges { get; init; }
      public required IReadOnlyList<ExternalCall> External { get; init; }
-@@ -45,6 +55,68 @@ public sealed record Node
+@@ -45,6 +57,68 @@ public sealed record Node
      public required string Container { get; init; }
      public required string Name { get; init; }
      public required string Location { get; init; }
@@ -823,7 +1133,7 @@ index a720920..a934720 100644
  }
  
  /// <summary>边的种类常量。</summary>
-@@ -306,27 +378,38 @@ public static class SymbolId
+@@ -306,27 +380,38 @@ public static class SymbolId
      public static string Canonical(IMethodSymbol method)
      {
          var s = (method.ReducedFrom ?? method).OriginalDefinition;
@@ -869,7 +1179,7 @@ index a720920..a934720 100644
  
      /// <summary>
      /// 委托调用的落点 id：<c>Action#delegate</c>（用委托类型本身命名）。
-@@ -337,7 +420,7 @@ public static class SymbolId
+@@ -337,7 +422,7 @@ public static class SymbolId
      /// 后缀 <c>#delegate</c> 与字段初始化器的 <c>#init</c> 同族，一眼可辨其为伪节点。
      /// </summary>
      public static string ForDelegate(ITypeSymbol delegateType) =>
@@ -878,7 +1188,7 @@ index a720920..a934720 100644
  
      private static string Params(IMethodSymbol method) =>
          string.Join(",", method.Parameters.Select(p => p.Type.ToDisplayString(QualifiedFormat)));
-@@ -385,3 +468,59 @@ internal static class EdgeTierClassifier
+@@ -385,3 +470,59 @@ internal static class EdgeTierClassifier
          return EdgeTier.Direct;
      }
  }
@@ -939,10 +1249,10 @@ index a720920..a934720 100644
 +        .Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToArray();
 +}
 diff --git a/src/CallAtlas.Core/CodeMapJson.cs b/src/CallAtlas.Core/CodeMapJson.cs
-index 9555cb4..3fa6d8d 100644
+index 9555cb4..3a7ae17 100644
 --- a/src/CallAtlas.Core/CodeMapJson.cs
 +++ b/src/CallAtlas.Core/CodeMapJson.cs
-@@ -5,6 +5,65 @@ namespace CallAtlas.Core;
+@@ -5,6 +5,66 @@ namespace CallAtlas.Core;
  /// <summary>确定性 JSON 写出：字段顺序固定、排序在模型构建时完成、不含时间戳。</summary>
  public static class CodeMapJson
  {
@@ -951,6 +1261,7 @@ index 9555cb4..3fa6d8d 100644
 +            writer.WriteString("declarationFactsVersion", "2");
 +            MediatRJson.Write(writer, map);
 +            HttpRouteJson.Write(writer, map);
++            FlowJson.Write(writer, map);
 +            writer.WriteStartObject("entryPoints");
 +            writer.WriteStartArray("candidates");
 +            foreach (var entry in CodeMapQuery.EntryPoints(map))
@@ -1008,7 +1319,7 @@ index 9555cb4..3fa6d8d 100644
      /// <summary>写出供人读 / diff 的 JSON：缩进、字段顺序固定、排序已在模型侧完成、无时间戳。</summary>
      public static string Write(CodeMap map) => Write(map, indented: true);
  
-@@ -24,18 +83,10 @@ public static class CodeMapJson
+@@ -24,18 +84,10 @@ public static class CodeMapJson
              writer.WriteString("schema", map.Schema);
              writer.WriteString("root", map.Root);
  
@@ -1031,16 +1342,17 @@ index 9555cb4..3fa6d8d 100644
  
              writer.WriteStartArray("edges");
              foreach (var e in map.Edges)
-@@ -162,6 +213,8 @@ public static class CodeMapJson
+@@ -162,6 +214,9 @@ public static class CodeMapJson
                      $"unsupported schema \"{schema}\" — known: {string.Join(", ", KnownSchemas)}. "
                      + "Regenerate the snapshot, or add a migration if this is an older callatlas.");
  
 +            var framework = MediatRJson.Read(root);
 +            var http = HttpRouteJson.Read(root);
++            var flow = FlowJson.Read(root);
              string Str(JsonElement e, string name) =>
                  e.TryGetProperty(name, out var v) ? v.GetString() ?? "" : "";
  
-@@ -175,6 +228,7 @@ public static class CodeMapJson
+@@ -175,6 +230,7 @@ public static class CodeMapJson
                          Container = Str(n, "container"),
                          Name = Str(n, "name"),
                          Location = Str(n, "location"),
@@ -1048,7 +1360,7 @@ index 9555cb4..3fa6d8d 100644
                      });
  
              var edges = new List<Edge>();
-@@ -236,6 +290,16 @@ public static class CodeMapJson
+@@ -236,6 +292,18 @@ public static class CodeMapJson
              {
                  Schema = CodeMap.SchemaVersion,
                  Root = Str(root, "root"),
@@ -1058,6 +1370,8 @@ index 9555cb4..3fa6d8d 100644
 +                FrameworkDiagnostics = framework.Diagnostics,
 +                HttpFactsVersion = http.Version,
 +                HttpRoutes = http.Routes,
++                FlowFactsVersion = flow.Version,
++                FlowInventory = flow.Inventory,
 +                ArchitectureFiles = root.TryGetProperty("architectureFiles", out var architecture)
 +                    ? JsonSerializer.Deserialize<ArchitectureFileFacts[]>(architecture.GetRawText(),
 +                        new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase }) ?? []
@@ -1065,12 +1379,916 @@ index 9555cb4..3fa6d8d 100644
                  Nodes = nodes,
                  Edges = edges,
                  // 读取路径**不裁剪字段**。这些曾经被硬编码成空值，因为最初的唯一消费者是
-@@ -282,4 +346,4 @@ public static class CodeMapJson
+@@ -282,4 +350,4 @@ public static class CodeMapJson
      {
          "callatlas.ir.v3",
      };
 -}
 \ No newline at end of file
++}
+diff --git a/src/CallAtlas.Core/FlowBinding.cs b/src/CallAtlas.Core/FlowBinding.cs
+new file mode 100644
+index 0000000..cd96a10
+--- /dev/null
++++ b/src/CallAtlas.Core/FlowBinding.cs
+@@ -0,0 +1,8 @@
++namespace CallAtlas.Core;
++
++/// <summary>A resolver's decision for one source site; no graph-count reconstruction is involved.</summary>
++internal sealed record FlowBinding(string? Target, string Certainty, string Provenance)
++{
++    internal string? Diagnostic { get; init; }
++    internal IEnumerable<string>? Candidates { get; init; }
++}
+diff --git a/src/CallAtlas.Core/FlowBindings.cs b/src/CallAtlas.Core/FlowBindings.cs
+new file mode 100644
+index 0000000..ab25c1c
+--- /dev/null
++++ b/src/CallAtlas.Core/FlowBindings.cs
+@@ -0,0 +1,71 @@
++using Microsoft.CodeAnalysis;
++using Microsoft.CodeAnalysis.Text;
++
++namespace CallAtlas.Core;
++
++/// <summary>Worker-local binding events, recorded at the resolver decision rather than reconstructed from counts.</summary>
++internal sealed class FlowBindings
++{
++    private readonly Dictionary<(string Caller, SyntaxTree Tree, TextSpan Span), BoundFlowCall> calls = new();
++    private readonly Dictionary<string, int> counts = new(StringComparer.Ordinal);
++    private readonly HashSet<string> exceeded = new(StringComparer.Ordinal);
++
++    internal bool Exceeded(string caller) => exceeded.Contains(caller);
++
++    internal void Add(string caller, SyntaxNode node, FlowBinding binding)
++    {
++        if (Exceeded(caller)) return;
++        var call = Site(caller, node, binding.Diagnostic);
++        if (call is null) return;
++        if (binding.Target is not null)
++        {
++            if (call.Targets.Count >= 1500) { exceeded.Add(caller); return; }
++            call.Targets.Add(new(binding.Target, binding.Certainty, binding.Provenance));
++        }
++        foreach (var candidate in binding.Candidates ?? [])
++        {
++            if (candidate == binding.Target) continue;
++            if (call.Targets.Count >= 1500) { exceeded.Add(caller); return; }
++            call.Targets.Add(new(candidate, "possible", binding.Provenance));
++        }
++    }
++
++    private BoundFlowCall? Site(string caller, SyntaxNode node, string? diagnostic)
++    {
++        var key = (caller, node.SyntaxTree, node.Span);
++        if (calls.TryGetValue(key, out var call)) return call;
++        if (!Allocate(caller)) return null;
++        calls[key] = call = new([], diagnostic);
++        return call;
++    }
++
++    private bool Allocate(string caller)
++    {
++        if (counts.GetValueOrDefault(caller) >= 1500)
++        {
++            exceeded.Add(caller);
++            return false;
++        }
++        counts[caller] = counts.GetValueOrDefault(caller) + 1;
++        return true;
++    }
++
++    internal IReadOnlyList<FlowCall> At(string caller, SyntaxNode node, FlowSource source) =>
++        calls.TryGetValue((caller, node.SyntaxTree, node.Span), out var call)
++            ? [new(source.Span(node), FlowText.Label(node), call.Targets.Distinct().OrderBy(t => t.Symbol, StringComparer.Ordinal)
++                .ThenBy(t => t.Certainty, StringComparer.Ordinal).ToArray(), call.Diagnostic)]
++            : [];
++
++    internal void Merge(FlowBindings other)
++    {
++        exceeded.UnionWith(other.exceeded);
++        foreach (var (key, value) in other.calls)
++        {
++            if (Exceeded(key.Caller)) continue;
++            if (!Allocate(key.Caller)) continue;
++            calls.Add(key, value);
++        }
++    }
++
++    private sealed record BoundFlowCall(List<FlowTarget> Targets, string? Diagnostic);
++}
+diff --git a/src/CallAtlas.Core/FlowContracts.cs b/src/CallAtlas.Core/FlowContracts.cs
+new file mode 100644
+index 0000000..3e3981c
+--- /dev/null
++++ b/src/CallAtlas.Core/FlowContracts.cs
+@@ -0,0 +1,52 @@
++using System.Text.Json.Serialization;
++
++namespace CallAtlas.Core;
++
++/// <summary>Detached source flow. Field names deliberately match the consumer's version-1 IR.</summary>
++public sealed record FlowInventory([property: JsonRequired] int Version,
++    [property: JsonRequired] IReadOnlyList<FunctionFlow> Functions)
++{
++    public const string CapabilityVersion = "1";
++}
++
++public sealed record FunctionFlow([property: JsonRequired] string Symbol, [property: JsonRequired] string File,
++    [property: JsonRequired] string Build, [property: JsonRequired] string Project, [property: JsonRequired] string Language,
++    [property: JsonRequired] FlowSpan Span, [property: JsonRequired] IReadOnlyList<FlowStatement> Body,
++    [property: JsonRequired] IReadOnlyList<string> Diagnostics);
++public sealed record FlowSpan([property: JsonRequired] int Start, [property: JsonRequired] int End);
++public sealed record FlowTarget([property: JsonRequired] string Symbol, [property: JsonRequired] string Certainty,
++    [property: JsonRequired] string Provenance, string Kind = "call");
++public sealed record FlowCall([property: JsonRequired] FlowSpan Span, [property: JsonRequired] string Label,
++    [property: JsonRequired] IReadOnlyList<FlowTarget> Targets, string? Diagnostic);
++
++public sealed record FlowStatement([property: JsonRequired] string Kind, [property: JsonRequired] FlowSpan Span)
++{
++    public string? Text { get; init; }
++    public string? Reason { get; init; }
++    public FlowExpression? Value { get; init; }
++    public FlowExpression? Condition { get; init; }
++    public FlowExpression? Subject { get; init; }
++    public IReadOnlyList<FlowStatement>? Body { get; init; }
++    public IReadOnlyList<FlowStatement>? ThenBranch { get; init; }
++    public IReadOnlyList<FlowStatement>? ElseBranch { get; init; }
++    public IReadOnlyList<FlowStatement>? Update { get; init; }
++    public IReadOnlyList<FlowCase>? Cases { get; init; }
++    public bool? TestFirst { get; init; }
++    public string? Label { get; init; }
++    public bool? Deferred { get; init; }
++}
++
++public sealed record FlowExpression([property: JsonRequired] string Kind, [property: JsonRequired] FlowSpan Span)
++{
++    public string? Text { get; init; }
++    public IReadOnlyList<FlowCall>? Calls { get; init; }
++    public IReadOnlyList<FlowExpression>? Items { get; init; }
++    public FlowExpression? Left { get; init; }
++    public FlowExpression? Right { get; init; }
++    public FlowExpression? Condition { get; init; }
++    public FlowExpression? WhenTrue { get; init; }
++    public FlowExpression? WhenFalse { get; init; }
++}
++
++public sealed record FlowCase(IReadOnlyList<string> Labels, FlowSpan Span, bool IsDefault,
++    bool FallsThrough, IReadOnlyList<FlowStatement> Body);
+diff --git a/src/CallAtlas.Core/FlowExport.cs b/src/CallAtlas.Core/FlowExport.cs
+new file mode 100644
+index 0000000..f606ebf
+--- /dev/null
++++ b/src/CallAtlas.Core/FlowExport.cs
+@@ -0,0 +1,100 @@
++using Microsoft.CodeAnalysis;
++using Microsoft.CodeAnalysis.CSharp.Syntax;
++
++namespace CallAtlas.Core;
++
++internal sealed record FlowInput(string Symbol, SyntaxTree Tree, SemanticModel Model, IReadOnlyList<SyntaxNode> Bodies);
++
++internal static class FlowExport
++{
++    internal static FlowInventory Build(IEnumerable<FlowInput> inputs, IReadOnlyDictionary<string, Node> nodes,
++        FlowBindings bindings, string root)
++    {
++        var functions = new List<FunctionFlow>();
++        var sources = new Dictionary<SyntaxTree, FlowSource>();
++        foreach (var group in inputs.GroupBy(i => i.Symbol).OrderBy(g => g.Key, StringComparer.Ordinal))
++        {
++            if (!nodes.TryGetValue(group.Key, out var node) || node.Kind is not ("method" or "accessor" or "localfunction" or "toplevel"))
++                continue;
++            var entries = group.ToArray();
++            if (entries.Select(e => e.Tree).Distinct().Count() != 1) continue; // Ambiguous source ownership is unavailable.
++            var first = entries[0];
++            if (!sources.TryGetValue(first.Tree, out var source)) sources[first.Tree] = source = new FlowSource(first.Tree, root);
++            var bodies = entries.SelectMany(e => e.Bodies).OrderBy(b => b.SpanStart).ToArray();
++            if (bodies.Length == 0) continue;
++            var span = new FlowSpan(source.Span(bodies[0]).Start, source.Span(bodies[^1]).End);
++            var exporter = new FlowBody(group.Key, first.Model, source, bindings);
++            var body = exporter.Export(bodies);
++            var function = new FunctionFlow(group.Key, first.Tree.FilePath, "", first.Model.Compilation.AssemblyName ?? "",
++                "csharp", span, body, exporter.Diagnostics.ToArray());
++            try { FlowValidation.ValidateBody(function); }
++            catch (FlowUnsupported)
++            {
++                function = function with
++                {
++                    Body = [new("unsupported", span) { Text = "Callable exceeds flow export budget", Reason = "Flow export exceeds 1500 IR nodes" }],
++                    Diagnostics = [.. function.Diagnostics, "Flow export exceeds 1500 IR nodes"],
++                };
++            }
++            functions.Add(function);
++        }
++        return new(1, functions);
++    }
++}
++
++internal sealed class FlowUnsupported(string reason, bool limit = false) : Exception(reason)
++{
++    internal bool Limit { get; } = limit;
++}
++
++internal sealed partial class FlowBody(string symbol, SemanticModel model, FlowSource source, FlowBindings bindings)
++{
++    private int nodes;
++    internal List<string> Diagnostics { get; } = [];
++
++    internal IReadOnlyList<FlowStatement> Export(IReadOnlyList<SyntaxNode> bodies)
++    {
++        try
++        {
++            if (bindings.Exceeded(symbol)) throw new FlowUnsupported("Flow binding exceeds 1500 sites or targets per callable", true);
++            if (source.Problem is not null) throw new FlowUnsupported(source.Problem, true);
++            if (bodies.Any(IsAsyncOrIterator))
++                throw new FlowUnsupported("Async/iterator execution and suspension are opaque", true);
++            return bodies.SelectMany(body => Body(body, 0)).ToArray();
++        }
++        catch (FlowUnsupported problem)
++        {
++            Diagnostics.Add(problem.Message);
++            var span = new FlowSpan(source.Span(bodies[0]).Start, source.Span(bodies[^1]).End);
++            return [new("unsupported", span) { Text = "Callable source flow unavailable", Reason = problem.Message }];
++        }
++    }
++
++    private static bool IsAsyncOrIterator(SyntaxNode body)
++    {
++        if (body.Parent is MethodDeclarationSyntax method && method.Modifiers.Any(m => m.ValueText == "async")) return true;
++        if (body.Parent is LocalFunctionStatementSyntax local && local.Modifiers.Any(m => m.ValueText == "async")) return true;
++        return body.DescendantNodesAndSelf(n => n == body || n is not (AnonymousFunctionExpressionSyntax or LocalFunctionStatementSyntax))
++            .Any(n => n is AwaitExpressionSyntax or YieldStatementSyntax);
++    }
++
++    private void Budget(int depth)
++    {
++        if (depth > 24 || ++nodes > 1500)
++            throw new FlowUnsupported("Flow export exceeds 24 nested levels or 1500 IR nodes", true);
++    }
++
++    private IReadOnlyList<FlowStatement> Body(SyntaxNode body, int depth) => body switch
++    {
++        BlockSyntax block => block.Statements.Select(s => Statement(s, depth + 1)).ToArray(),
++        ArrowExpressionClauseSyntax arrow => [new("return", source.Span(arrow)) { Value = Expression(arrow.Expression, depth + 1) }],
++        StatementSyntax statement => [Statement(statement, depth + 1)],
++        _ => [Opaque(body, "Unsupported callable body")],
++    };
++
++    private FlowStatement Opaque(SyntaxNode node, string reason)
++    {
++        if (!Diagnostics.Contains(reason)) Diagnostics.Add(reason);
++        return new("unsupported", source.Span(node)) { Text = FlowText.Label(node), Reason = reason };
++    }
++}
+diff --git a/src/CallAtlas.Core/FlowExpressionValidation.cs b/src/CallAtlas.Core/FlowExpressionValidation.cs
+new file mode 100644
+index 0000000..8443946
+--- /dev/null
++++ b/src/CallAtlas.Core/FlowExpressionValidation.cs
+@@ -0,0 +1,42 @@
++namespace CallAtlas.Core;
++
++internal static partial class FlowValidation
++{
++    private static void Expression(FlowExpression node, FlowSpan owner, Stack<object> pending)
++    {
++        CheckSpan(node.Span, owner);
++        switch (node.Kind)
++        {
++            case "sequence": PushAll(pending, node.Items); break;
++            case "and": case "or": Push(pending, node.Left); Push(pending, node.Right); break;
++            case "conditional": Push(pending, node.Condition); Push(pending, node.WhenTrue); Push(pending, node.WhenFalse); break;
++            case "value": ValueCalls(node, owner); break;
++            default: throw Invalid("Unknown expression kind");
++        }
++    }
++
++    private static void ValueCalls(FlowExpression node, FlowSpan owner)
++    {
++        Require(node.Text is not null);
++        Require(node.Calls is not null);
++        foreach (var call in node.Calls!) Call(call, owner);
++    }
++
++    private static void Call(FlowCall? call, FlowSpan owner)
++    {
++        Require(call is not null);
++        Require(call!.Label is not null);
++        Require(call.Targets is not null);
++        CheckSpan(call.Span, owner);
++        foreach (var target in call.Targets!) Target(target);
++    }
++
++    private static void Target(FlowTarget? target)
++    {
++        Require(target is not null);
++        Require(!string.IsNullOrEmpty(target!.Symbol));
++        Require(!string.IsNullOrEmpty(target.Certainty));
++        Require(!string.IsNullOrEmpty(target.Provenance));
++        Require(target.Kind == "call");
++    }
++}
+diff --git a/src/CallAtlas.Core/FlowExpressions.cs b/src/CallAtlas.Core/FlowExpressions.cs
+new file mode 100644
+index 0000000..a498c8f
+--- /dev/null
++++ b/src/CallAtlas.Core/FlowExpressions.cs
+@@ -0,0 +1,149 @@
++using Microsoft.CodeAnalysis;
++using Microsoft.CodeAnalysis.CSharp;
++using Microsoft.CodeAnalysis.CSharp.Syntax;
++using Microsoft.CodeAnalysis.Operations;
++
++namespace CallAtlas.Core;
++
++internal sealed partial class FlowBody
++{
++    private FlowExpression Expression(ExpressionSyntax expression, int depth)
++    {
++        Budget(depth);
++        var conversion = model.GetConversion(expression);
++        if (conversion.IsUserDefined || conversion.IsDynamic)
++            throw new FlowUnsupported("User-defined or dynamic conversion evaluation is opaque");
++        return expression switch
++        {
++            ConditionalExpressionSyntax conditional => new("conditional", source.Span(expression))
++            {
++                Condition = Condition(conditional.Condition, depth + 1), WhenTrue = Expression(conditional.WhenTrue, depth + 1),
++                WhenFalse = Expression(conditional.WhenFalse, depth + 1),
++            },
++            BinaryExpressionSyntax binary => Binary(binary, depth),
++            AssignmentExpressionSyntax assignment => Assignment(assignment, depth),
++            _ => OrderedExpression(expression, depth),
++        };
++    }
++
++    private FlowExpression OrderedExpression(ExpressionSyntax expression, int depth) => expression switch
++    {
++            ParenthesizedExpressionSyntax parenthesized => Expression(parenthesized.Expression, depth + 1),
++            InvocationExpressionSyntax invocation => Invocation(invocation, depth),
++            MemberAccessExpressionSyntax member => Member(member, depth),
++            ElementAccessExpressionSyntax element => Element(element, depth),
++            BaseObjectCreationExpressionSyntax creation when creation.Initializer is null => Sequence(creation,
++                (creation.ArgumentList?.Arguments.Select(a => Expression(a.Expression, depth + 1)) ?? []).Append(Value(creation)).ToArray()),
++            _ => AtomicExpression(expression, depth),
++    };
++
++    private FlowExpression AtomicExpression(ExpressionSyntax expression, int depth) => expression switch
++    {
++            LiteralExpressionSyntax or IdentifierNameSyntax or ThisExpressionSyntax or BaseExpressionSyntax
++                or TypeOfExpressionSyntax or DefaultExpressionSyntax => Value(expression),
++            PrefixUnaryExpressionSyntax prefix => Unary(prefix, prefix.Operand, depth),
++            PostfixUnaryExpressionSyntax postfix => postfix.IsKind(SyntaxKind.SuppressNullableWarningExpression)
++                ? Expression(postfix.Operand, depth + 1) : Unary(postfix, postfix.Operand, depth),
++            CastExpressionSyntax cast when model.GetSymbolInfo(cast).Symbol is not IMethodSymbol =>
++                Sequence(cast, [Expression(cast.Expression, depth + 1), Value(cast)]),
++            _ => throw new FlowUnsupported($"Unsupported {expression.Kind()} expression evaluation"),
++    };
++
++    private FlowExpression Condition(ExpressionSyntax expression, int depth)
++    {
++        if (model.GetTypeInfo(expression).Type?.SpecialType != SpecialType.System_Boolean)
++            throw new FlowUnsupported("User-defined truth conversion/operator is opaque");
++        return Expression(expression, depth);
++    }
++
++    private void StaticReceiver(ExpressionSyntax expression)
++    {
++        if (model.GetTypeInfo(expression).Type?.TypeKind == TypeKind.Dynamic)
++            throw new FlowUnsupported("Dynamic member/indexer/operator evaluation is opaque");
++    }
++
++    private FlowExpression Member(MemberAccessExpressionSyntax member, int depth)
++    {
++        StaticReceiver(member.Expression);
++        return Sequence(member, [Expression(member.Expression, depth + 1), Value(member)]);
++    }
++
++    private FlowExpression Element(ElementAccessExpressionSyntax element, int depth)
++    {
++        StaticReceiver(element.Expression);
++        return Sequence(element,
++            new[] { Expression(element.Expression, depth + 1) }.Concat(element.ArgumentList.Arguments.Select(a => Expression(a.Expression, depth + 1)))
++                .Append(Value(element)).ToArray());
++    }
++
++    private FlowExpression Invocation(InvocationExpressionSyntax invocation, int depth)
++    {
++        var operation = model.GetOperation(invocation);
++        if (operation is INameOfOperation) return Value(invocation) with { Calls = [] };
++        if (operation is IDynamicInvocationOperation)
++            throw new FlowUnsupported("Dynamic invocation is opaque");
++        var values = new List<FlowExpression>();
++        if (invocation.Expression is MemberAccessExpressionSyntax member)
++            values.Add(Expression(member.Expression, depth + 1));
++        else if (invocation.Expression is not (IdentifierNameSyntax or GenericNameSyntax))
++            throw new FlowUnsupported("Conditional/dynamic invocation receiver is opaque");
++        values.AddRange(invocation.ArgumentList.Arguments.Select(a => Expression(a.Expression, depth + 1)));
++        values.Add(InvocationValue(invocation, operation));
++        return Sequence(invocation, values);
++    }
++
++    private FlowExpression InvocationValue(InvocationExpressionSyntax invocation, IOperation? operation)
++    {
++        var value = Value(invocation);
++        if (operation is not IInvocationOperation) return value;
++        if (value.Calls is { Count: > 0 }) return value;
++        // Preserve native graph limitations without silently hiding a compiler-proven invocation.
++        return value with
++        {
++            Calls = [new(source.Span(invocation), FlowText.Label(invocation), [],
++                "Native analyzer omitted binding for this compiler-resolved invocation")],
++        };
++    }
++
++    private FlowExpression Binary(BinaryExpressionSyntax binary, int depth)
++    {
++        if (binary.IsKind(SyntaxKind.CoalesceExpression)) throw new FlowUnsupported("Null-coalescing evaluation is opaque");
++        if (model.GetOperation(binary) is IBinaryOperation { OperatorMethod: not null })
++            throw new FlowUnsupported("Overloaded operator evaluation is opaque");
++        if (model.GetTypeInfo(binary.Left).Type?.TypeKind == TypeKind.Dynamic
++            || model.GetTypeInfo(binary.Right).Type?.TypeKind == TypeKind.Dynamic)
++            throw new FlowUnsupported("Dynamic operator evaluation is opaque");
++        var left = Expression(binary.Left, depth + 1);
++        var right = Expression(binary.Right, depth + 1);
++        if (binary.IsKind(SyntaxKind.LogicalAndExpression) || binary.IsKind(SyntaxKind.LogicalOrExpression))
++            return new(binary.IsKind(SyntaxKind.LogicalAndExpression) ? "and" : "or", source.Span(binary)) { Left = left, Right = right };
++        return Sequence(binary, [left, right, Value(binary)]);
++    }
++
++    private FlowExpression Assignment(AssignmentExpressionSyntax assignment, int depth)
++    {
++        if (!assignment.IsKind(SyntaxKind.SimpleAssignmentExpression)
++            || model.GetSymbolInfo(assignment.Left).Symbol is not (ILocalSymbol or IParameterSymbol or IFieldSymbol))
++            throw new FlowUnsupported("Accessor/compound assignment order is opaque");
++        return Sequence(assignment, [Expression(assignment.Left, depth + 1), Expression(assignment.Right, depth + 1), Value(assignment)]);
++    }
++
++    private FlowExpression Unary(ExpressionSyntax expression, ExpressionSyntax operand, int depth)
++    {
++        StaticReceiver(operand);
++        if (model.GetSymbolInfo(expression).Symbol is IMethodSymbol { MethodKind: not MethodKind.BuiltinOperator }
++            || model.GetSymbolInfo(operand).Symbol is IPropertySymbol)
++            throw new FlowUnsupported("Overloaded/accessor unary evaluation is opaque");
++        return Sequence(expression, [Expression(operand, depth + 1), Value(expression)]);
++    }
++
++    private FlowExpression Value(SyntaxNode node, string? text = null)
++    {
++        Budget(0);
++        return new("value", source.Span(node))
++        { Text = text is null ? FlowText.Label(node) : FlowText.Bounded(text), Calls = bindings.At(symbol, node, source) };
++    }
++
++    private FlowExpression Sequence(SyntaxNode node, IReadOnlyList<FlowExpression> items) =>
++        items.Count == 1 ? items[0] : new("sequence", source.Span(node)) { Items = items };
++}
+diff --git a/src/CallAtlas.Core/FlowJson.cs b/src/CallAtlas.Core/FlowJson.cs
+new file mode 100644
+index 0000000..2f20e3f
+--- /dev/null
++++ b/src/CallAtlas.Core/FlowJson.cs
+@@ -0,0 +1,72 @@
++using System.Text.Json;
++using System.Text.Json.Serialization;
++
++namespace CallAtlas.Core;
++
++internal static class FlowJson
++{
++    internal static readonly JsonSerializerOptions Options = new()
++    {
++        PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower,
++        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
++        MaxDepth = 128,
++        UnmappedMemberHandling = JsonUnmappedMemberHandling.Disallow,
++    };
++
++    internal static void Write(Utf8JsonWriter writer, CodeMap map)
++    {
++        if (map.FlowFactsVersion.Length == 0) return;
++        writer.WriteString("flowFactsVersion", map.FlowFactsVersion);
++        writer.WritePropertyName("flowInventory");
++        JsonSerializer.Serialize(writer, map.FlowInventory, Options);
++    }
++
++    internal static (string Version, FlowInventory? Inventory) Read(JsonElement root)
++    {
++        var version = Capability(root);
++        if (version.Length == 0) return Historical(root);
++        var inventory = Required(root, "flowInventory", JsonValueKind.Object);
++        var ir = Required(inventory, "version", JsonValueKind.Number);
++        if (!ir.TryGetInt32(out var number) || number != 1) throw Invalid("Unsupported inventory version");
++        Required(inventory, "functions", JsonValueKind.Array);
++        return (version, Decode(inventory));
++    }
++
++    private static string Capability(JsonElement root)
++    {
++        var present = root.TryGetProperty("flowFactsVersion", out var value);
++        if (present && value.ValueKind != JsonValueKind.String) throw Invalid("Invalid capability version");
++        var version = present ? value.GetString()! : "";
++        if (version.Length != 0 && version != FlowInventory.CapabilityVersion) throw Invalid("Unsupported capability version");
++        return version;
++    }
++
++    private static (string, FlowInventory?) Historical(JsonElement root)
++    {
++        if (root.TryGetProperty("flowInventory", out _)) throw Invalid("Inventory has no capability version");
++        return ("", null);
++    }
++
++    private static JsonElement Required(JsonElement owner, string name, JsonValueKind kind)
++    {
++        if (!owner.TryGetProperty(name, out var value) || value.ValueKind != kind)
++            throw Invalid($"Missing or invalid {name}");
++        return value;
++    }
++
++    private static FlowInventory Decode(JsonElement inventory)
++    {
++        try
++        {
++            var result = JsonSerializer.Deserialize<FlowInventory>(inventory.GetRawText(), Options)
++                ?? throw Invalid("Incomplete inventory");
++            FlowValidation.Validate(result);
++            return result;
++        }
++        catch (JsonException) { throw Invalid("Malformed inventory"); }
++        catch (FlowUnsupported) { throw Invalid("Inventory exceeds export budget"); }
++    }
++
++    private static CallAtlasException Invalid(string reason) =>
++        new($"{reason} in flow facts; regenerate the snapshot.");
++}
+diff --git a/src/CallAtlas.Core/FlowOriginalSource.cs b/src/CallAtlas.Core/FlowOriginalSource.cs
+new file mode 100644
+index 0000000..d26f5c6
+--- /dev/null
++++ b/src/CallAtlas.Core/FlowOriginalSource.cs
+@@ -0,0 +1,24 @@
++using System.Text;
++
++namespace CallAtlas.Core;
++
++internal sealed record FlowOriginalSource(int Prefix, string? Problem)
++{
++    internal static FlowOriginalSource Check(string file, string analyzed)
++    {
++        if (!File.Exists(file)) return new(0, null); // In-memory extraction has no disk snapshot.
++        var bytes = File.ReadAllBytes(file);
++        var prefix = bytes.AsSpan().StartsWith(new byte[] { 0xef, 0xbb, 0xbf }) ? 3 : 0;
++        return new(prefix, Compare(bytes.AsSpan(prefix), analyzed));
++    }
++
++    private static string? Compare(ReadOnlySpan<byte> bytes, string analyzed)
++    {
++        try
++        {
++            var original = new UTF8Encoding(false, true).GetString(bytes);
++            return original == analyzed ? null : "Analyzed source differs from original UTF-8 file bytes";
++        }
++        catch (DecoderFallbackException) { return "Original source is not valid UTF-8"; }
++    }
++}
+diff --git a/src/CallAtlas.Core/FlowSource.cs b/src/CallAtlas.Core/FlowSource.cs
+new file mode 100644
+index 0000000..f71c23c
+--- /dev/null
++++ b/src/CallAtlas.Core/FlowSource.cs
+@@ -0,0 +1,22 @@
++using Microsoft.CodeAnalysis;
++
++namespace CallAtlas.Core;
++
++/// <summary>One conversion table per tree; offsets refer to the original UTF-8 bytes, including its BOM.</summary>
++internal sealed class FlowSource
++{
++    private readonly int[] offsets;
++    internal string? Problem { get; }
++
++    internal FlowSource(SyntaxTree tree, string root)
++    {
++        var text = tree.GetText().ToString();
++        var file = Path.IsPathRooted(tree.FilePath) ? tree.FilePath : Path.Combine(root, tree.FilePath);
++        var original = FlowOriginalSource.Check(file, text);
++        Problem = original.Problem;
++        offsets = FlowUtf8Offsets.Convert(text, original.Prefix);
++    }
++
++    internal FlowSpan Span(SyntaxNode node) => Problem is null
++        ? new(offsets[node.SpanStart], offsets[node.Span.End]) : new(0, 0);
++}
+diff --git a/src/CallAtlas.Core/FlowStatementValidation.cs b/src/CallAtlas.Core/FlowStatementValidation.cs
+new file mode 100644
+index 0000000..f04bb77
+--- /dev/null
++++ b/src/CallAtlas.Core/FlowStatementValidation.cs
+@@ -0,0 +1,64 @@
++namespace CallAtlas.Core;
++
++internal static partial class FlowValidation
++{
++    private static void Statement(FlowStatement node, FlowSpan owner, Stack<object> pending)
++    {
++        CheckSpan(node.Span, owner);
++        switch (node.Kind)
++        {
++            case "evaluate": case "throw": Push(pending, node.Value); break;
++            case "return": if (node.Value is not null) pending.Push(node.Value); break;
++            case "if": case "loop": case "switch": Control(node, owner, pending); break;
++            case "block": case "region": Region(node, pending); break;
++            default: Leaf(node); break;
++        }
++    }
++
++    private static void Control(FlowStatement node, FlowSpan owner, Stack<object> pending)
++    {
++        switch (node.Kind)
++        {
++            case "if":
++                Push(pending, node.Condition); PushAll(pending, node.ThenBranch); PushAll(pending, node.ElseBranch); break;
++            case "loop":
++                if (node.Condition is not null) pending.Push(node.Condition);
++                PushAll(pending, node.Body); PushAll(pending, node.Update ?? []);
++                Require(node.TestFirst.HasValue); break;
++            case "switch":
++                Push(pending, node.Subject); Require(node.Cases is not null);
++                foreach (var branch in node.Cases!) Case(branch, owner, pending);
++                break;
++        }
++    }
++
++    private static void Case(FlowCase? branch, FlowSpan owner, Stack<object> pending)
++    {
++        Require(branch is not null);
++        Require(branch!.Labels is not null);
++        Require(branch.Labels!.All(l => l is not null));
++        CheckSpan(branch.Span, owner);
++        PushAll(pending, branch.Body);
++    }
++
++    private static void Region(FlowStatement node, Stack<object> pending)
++    {
++        if (node.Kind == "region")
++        {
++            Require(node.Label is not null);
++            Require(node.Deferred.HasValue);
++        }
++        PushAll(pending, node.Body);
++    }
++
++    private static void Leaf(FlowStatement node)
++    {
++        switch (node.Kind)
++        {
++            case "action": Require(node.Text is not null); break;
++            case "break": case "continue": break;
++            case "unsupported": Require(node.Text is not null); Require(!string.IsNullOrWhiteSpace(node.Reason)); break;
++            default: throw Invalid("Unknown statement kind");
++        }
++    }
++}
+diff --git a/src/CallAtlas.Core/FlowStatements.cs b/src/CallAtlas.Core/FlowStatements.cs
+new file mode 100644
+index 0000000..3bc069e
+--- /dev/null
++++ b/src/CallAtlas.Core/FlowStatements.cs
+@@ -0,0 +1,108 @@
++using Microsoft.CodeAnalysis;
++using Microsoft.CodeAnalysis.CSharp;
++using Microsoft.CodeAnalysis.CSharp.Syntax;
++
++namespace CallAtlas.Core;
++
++internal sealed partial class FlowBody
++{
++    private FlowStatement Statement(StatementSyntax statement, int depth)
++    {
++        Budget(depth);
++        try { return Structured(statement, depth); }
++        catch (FlowUnsupported problem) when (!problem.Limit) { return Opaque(statement, problem.Message); }
++    }
++
++    private FlowStatement Structured(StatementSyntax statement, int depth)
++    {
++        var span = source.Span(statement);
++        return statement switch
++        {
++            BlockSyntax block => new("block", span) { Body = Body(block, depth) },
++            EmptyStatementSyntax => new("action", span) { Text = ";" },
++            ExpressionStatementSyntax expression => new("evaluate", span) { Value = Expression(expression.Expression, depth + 1) },
++            LocalDeclarationStatementSyntax declaration when declaration.UsingKeyword.IsKind(SyntaxKind.None) =>
++                new("evaluate", span) { Value = Declaration(declaration.Declaration, depth + 1) },
++            LocalFunctionStatementSyntax local => new("region", span)
++            { Label = $"Local function {FlowText.Bounded(local.Identifier.ValueText)} (separate callable)", Deferred = true, Body = [] },
++            _ => TransferOrControl(statement, depth),
++        };
++    }
++
++    private FlowStatement TransferOrControl(StatementSyntax statement, int depth)
++    {
++        var span = source.Span(statement);
++        return statement switch
++        {
++            ReturnStatementSyntax ret => new("return", span) { Value = ret.Expression is null ? null : Expression(ret.Expression, depth + 1) },
++            ThrowStatementSyntax thrown => new("throw", span)
++            { Value = thrown.Expression is null ? Value(thrown, "rethrow") : Expression(thrown.Expression, depth + 1) },
++            BreakStatementSyntax => new("break", span),
++            ContinueStatementSyntax => new("continue", span),
++            _ => ControlStatement(statement, depth),
++        };
++    }
++
++    private FlowStatement ControlStatement(StatementSyntax statement, int depth)
++    {
++        var span = source.Span(statement);
++        return statement switch
++        {
++            IfStatementSyntax branch => new("if", span)
++            {
++                Condition = Condition(branch.Condition, depth + 1), ThenBranch = Body(branch.Statement, depth + 1),
++                ElseBranch = branch.Else is null ? [] : Body(branch.Else.Statement, depth + 1),
++            },
++            WhileStatementSyntax loop => new("loop", span)
++            { Condition = Condition(loop.Condition, depth + 1), Body = Body(loop.Statement, depth + 1), TestFirst = true },
++            DoStatementSyntax loop => new("loop", span)
++            { Condition = Condition(loop.Condition, depth + 1), Body = Body(loop.Statement, depth + 1), TestFirst = false },
++            ForStatementSyntax loop => For(loop, depth),
++            SwitchStatementSyntax dispatch => Switch(dispatch, depth),
++            _ => Opaque(statement, $"Unsupported {statement.Kind()} control flow"),
++        };
++    }
++
++    private FlowStatement For(ForStatementSyntax loop, int depth)
++    {
++        Budget(depth); // The lowered loop is an additional node inside the initialization block.
++        var initialization = new List<FlowStatement>();
++        if (loop.Declaration is not null)
++            initialization.Add(new("evaluate", source.Span(loop.Declaration)) { Value = Declaration(loop.Declaration, depth + 1) });
++        initialization.AddRange(loop.Initializers.Select(e => new FlowStatement("evaluate", source.Span(e)) { Value = Expression(e, depth + 1) }));
++        initialization.Add(new("loop", source.Span(loop))
++        {
++            Condition = loop.Condition is null ? null : Condition(loop.Condition, depth + 1),
++            Body = Body(loop.Statement, depth + 1), TestFirst = true,
++            Update = loop.Incrementors.Select(e => new FlowStatement("evaluate", source.Span(e)) { Value = Expression(e, depth + 1) }).ToArray(),
++        });
++        return new("block", source.Span(loop)) { Body = initialization };
++    }
++
++    private FlowStatement Switch(SwitchStatementSyntax dispatch, int depth)
++    {
++        if (dispatch.Sections.SelectMany(s => s.Labels).Any(l => l is not (CaseSwitchLabelSyntax or DefaultSwitchLabelSyntax)))
++            throw new FlowUnsupported("Pattern/guard switch dispatch is opaque");
++        var cases = dispatch.Sections.Select(section => Case(section, depth + 1)).ToArray();
++        return new("switch", source.Span(dispatch)) { Subject = Expression(dispatch.Expression, depth + 1), Cases = cases };
++    }
++
++    private FlowCase Case(SwitchSectionSyntax section, int depth)
++    {
++        Budget(depth);
++        var labels = section.Labels.OfType<CaseSwitchLabelSyntax>().Select(label =>
++        {
++            Budget(depth);
++            return FlowText.Label(label.Value);
++        }).ToArray();
++        return new(labels, source.Span(section), section.Labels.Any(l => l is DefaultSwitchLabelSyntax), false,
++            section.Statements.Select(s => Statement(s, depth + 1)).ToArray());
++    }
++
++    private FlowExpression Declaration(VariableDeclarationSyntax declaration, int depth)
++    {
++        Budget(depth);
++        return Sequence(declaration, declaration.Variables.Select(v => v.Initializer is null
++            ? Value(v, v.Identifier.ValueText) : Expression(v.Initializer.Value, depth + 1)).ToArray());
++    }
++}
+diff --git a/src/CallAtlas.Core/FlowText.cs b/src/CallAtlas.Core/FlowText.cs
+new file mode 100644
+index 0000000..3a9a62f
+--- /dev/null
++++ b/src/CallAtlas.Core/FlowText.cs
+@@ -0,0 +1,17 @@
++using Microsoft.CodeAnalysis;
++
++namespace CallAtlas.Core;
++
++internal static class FlowText
++{
++    internal static string Bounded(string text) => text.Length <= 512 ? text : text[..512] + "…";
++    /// <summary>Labels stay bounded; full source is addressed through the immutable byte span.</summary>
++    internal static string Label(SyntaxNode node)
++    {
++        const int maximum = 512;
++        var text = node.SyntaxTree.GetText();
++        var length = Math.Min(node.Span.Length, maximum);
++        if (length < node.Span.Length && length > 0 && char.IsHighSurrogate(text[node.SpanStart + length - 1])) length--;
++        return text.ToString(new(node.SpanStart, length)) + (length < node.Span.Length ? "…" : "");
++    }
++}
+diff --git a/src/CallAtlas.Core/FlowUtf8Offsets.cs b/src/CallAtlas.Core/FlowUtf8Offsets.cs
+new file mode 100644
+index 0000000..6f0b625
+--- /dev/null
++++ b/src/CallAtlas.Core/FlowUtf8Offsets.cs
+@@ -0,0 +1,27 @@
++using System.Text;
++
++namespace CallAtlas.Core;
++
++internal static class FlowUtf8Offsets
++{
++    internal static int[] Convert(string text, int prefix)
++    {
++        var offsets = new int[text.Length + 1];
++        var count = prefix;
++        for (var index = 0; index < text.Length; index++)
++        {
++            offsets[index] = count;
++            if (IsPair(text, index))
++            {
++                offsets[++index] = count;
++                count += 4;
++            }
++            else count += Encoding.UTF8.GetByteCount(text.AsSpan(index, 1));
++        }
++        offsets[^1] = count;
++        return offsets;
++    }
++
++    private static bool IsPair(string text, int index) => index + 1 < text.Length
++        && char.IsHighSurrogate(text[index]) && char.IsLowSurrogate(text[index + 1]);
++}
+diff --git a/src/CallAtlas.Core/FlowValidation.cs b/src/CallAtlas.Core/FlowValidation.cs
+new file mode 100644
+index 0000000..1faf7d5
+--- /dev/null
++++ b/src/CallAtlas.Core/FlowValidation.cs
+@@ -0,0 +1,64 @@
++namespace CallAtlas.Core;
++
++/// <summary>Validate detached facts once at the JSON boundary, before consumers trust the tagged records.</summary>
++internal static partial class FlowValidation
++{
++    internal static void Validate(FlowInventory inventory)
++    {
++        Require(inventory.Version == 1);
++        Require(inventory.Functions is not null);
++        var symbols = new HashSet<string>(StringComparer.Ordinal);
++        foreach (var function in inventory.Functions!)
++        {
++            Identity(function, symbols);
++            Require(function.Body is not null);
++            Require(function.Diagnostics is not null);
++            Require(function.Diagnostics!.All(d => d is not null));
++            ValidateBody(function);
++        }
++    }
++
++    private static void Identity(FunctionFlow? function, HashSet<string> symbols)
++    {
++        Require(function is not null);
++        Require(!string.IsNullOrWhiteSpace(function!.Symbol));
++        Require(symbols.Add(function.Symbol));
++        Require(function.File is not null);
++        Require(function.Build is not null);
++        Require(function.Project is not null);
++        Require(function.Language == "csharp");
++    }
++
++    internal static void ValidateBody(FunctionFlow function)
++    {
++        CheckSpan(function.Span, function.Span);
++        var pending = new Stack<object>(function.Body.Cast<object>());
++        var count = 0;
++        while (pending.TryPop(out var item))
++        {
++            if (++count > 1500) throw new FlowUnsupported("Flow inventory exceeds 1500 IR nodes", true);
++            switch (item)
++            {
++                case FlowStatement statement: Statement(statement, function.Span, pending); break;
++                case FlowExpression expression: Expression(expression, function.Span, pending); break;
++                default: throw Invalid("Null or invalid flow node");
++            }
++        }
++    }
++
++    private static void CheckSpan(FlowSpan? span, FlowSpan? owner)
++    {
++        Require(span is not null);
++        Require(owner is not null);
++        Require(span!.Start >= 0);
++        Require(span.End >= span.Start);
++        Require(span.Start >= owner!.Start);
++        Require(span.End <= owner.End);
++    }
++
++    private static void Push(Stack<object> pending, object? node) { Require(node is not null); pending.Push(node!); }
++    private static void PushAll<T>(Stack<object> pending, IReadOnlyList<T>? items)
++    { Require(items is not null); foreach (var item in items!) Push(pending, item); }
++    private static void Require(bool valid) { if (!valid) throw Invalid("Incomplete or invalid flow node"); }
++    private static CallAtlasException Invalid(string message) => new(message + "; regenerate flow facts.");
 +}
 diff --git a/src/CallAtlas.Core/HttpRouteFacts.cs b/src/CallAtlas.Core/HttpRouteFacts.cs
 new file mode 100644
@@ -1603,6 +2821,293 @@ index 0aebf13..9ad5302 100644
      <ImplicitUsings>enable</ImplicitUsings>
      <Nullable>enable</Nullable>
      <IsPackable>false</IsPackable>
+diff --git a/tests/CallAtlas.Tests/FlowFactsTests.cs b/tests/CallAtlas.Tests/FlowFactsTests.cs
+new file mode 100644
+index 0000000..a09b71c
+--- /dev/null
++++ b/tests/CallAtlas.Tests/FlowFactsTests.cs
+@@ -0,0 +1,281 @@
++using System.Text;
++using System.Text.Json;
++using System.Text.Json.Nodes;
++using CallAtlas.Core;
++using Xunit;
++
++namespace CallAtlas.Tests;
++
++public class FlowFactsTests
++{
++    private static JsonElement Snapshot(string source) => JsonDocument.Parse(
++        CodeMapJson.Write(CallGraphBuilder.Build([("/proj/a.cs", source)], "/proj"))).RootElement.Clone();
++
++    private static JsonElement Function(JsonElement map, string suffix) => map.GetProperty("flowInventory")
++        .GetProperty("functions").EnumerateArray().Single(f => f.GetProperty("symbol").GetString()!.EndsWith(suffix));
++
++    private static IEnumerable<JsonElement> Objects(JsonElement node)
++    {
++        if (node.ValueKind == JsonValueKind.Object)
++        {
++            yield return node;
++            foreach (var property in node.EnumerateObject())
++                foreach (var child in Objects(property.Value)) yield return child;
++        }
++        if (node.ValueKind == JsonValueKind.Array)
++            foreach (var item in node.EnumerateArray())
++                foreach (var child in Objects(item)) yield return child;
++    }
++
++    [Fact]
++    public void Current_flow_capability_roundtrips_and_historical_maps_stay_absent()
++    {
++        var map = Snapshot("class A { static int Leaf(int x) => x; int Run() => Leaf(1); }");
++        Assert.Equal("1", map.GetProperty("flowFactsVersion").GetString());
++        Assert.Equal(1, map.GetProperty("flowInventory").GetProperty("version").GetInt32());
++        var roundtrip = JsonDocument.Parse(CodeMapJson.Write(CodeMapJson.Read(map.GetRawText()))).RootElement;
++        Assert.Equal(map.GetProperty("flowInventory").GetRawText(), roundtrip.GetProperty("flowInventory").GetRawText());
++        var historical = CodeMapJson.Write(CodeMapJson.Read("""{"schema":"callatlas.ir.v3","nodes":[],"edges":[]}"""));
++        Assert.False(JsonDocument.Parse(historical).RootElement.TryGetProperty("flowInventory", out _));
++    }
++
++    [Theory]
++    [InlineData("""{"schema":"callatlas.ir.v3","flowFactsVersion":"2","flowInventory":{"version":1,"functions":[]}}""")]
++    [InlineData("""{"schema":"callatlas.ir.v3","flowFactsVersion":"1"}""")]
++    [InlineData("""{"schema":"callatlas.ir.v3","flowFactsVersion":"1","flowInventory":null}""")]
++    [InlineData("""{"schema":"callatlas.ir.v3","flowFactsVersion":"1","flowInventory":{"version":2,"functions":[]}}""")]
++    [InlineData("""{"schema":"callatlas.ir.v3","flowFactsVersion":"1","flowInventory":{"version":"1","functions":[]}}""")]
++    [InlineData("""{"schema":"callatlas.ir.v3","flowFactsVersion":1}""")]
++    [InlineData("""{"schema":"callatlas.ir.v3","flowFactsVersion":null}""")]
++    [InlineData("""{"schema":"callatlas.ir.v3","flowFactsVersion":"1","flowInventory":{"version":1}}""")]
++    [InlineData("""{"schema":"callatlas.ir.v3","flowFactsVersion":"1","flowInventory":{"version":1,"functions":null}}""")]
++    [InlineData("""{"schema":"callatlas.ir.v3","flowInventory":{"version":1,"functions":[]}}""")]
++    public void Unsupported_or_incomplete_flow_capability_is_rejected(string json) =>
++        Assert.Throws<CallAtlasException>(() => CodeMapJson.Read(json));
++
++    [Fact]
++    public void Same_line_calls_keep_overload_targets_and_evaluation_order()
++    {
++        var map = Snapshot("class A { static int Leaf(int x) => x; static int Leaf(string s) => s.Length; int Run() { return Leaf(Leaf(1)) + Leaf(\"s\"); } }");
++        var function = Function(map, "A::Run()");
++        var calls = Objects(function.GetProperty("body")).Where(o => o.TryGetProperty("targets", out _)).ToArray();
++        Assert.Equal(3, calls.Length);
++        var targets = calls.Select(c => c.GetProperty("targets")[0].GetProperty("symbol").GetString()!).ToArray();
++        Assert.EndsWith("A::Leaf(System.Int32)", targets[0]);
++        Assert.EndsWith("A::Leaf(System.Int32)", targets[1]);
++        Assert.EndsWith("A::Leaf(System.String)", targets[2]);
++        var ids = map.GetProperty("nodes").EnumerateArray().Select(n => n.GetProperty("id").GetString()).ToHashSet();
++        Assert.All(targets, target => Assert.Contains(target, ids));
++        Assert.True(calls[0].GetProperty("span").GetProperty("start").GetInt32() > calls[1].GetProperty("span").GetProperty("start").GetInt32());
++    }
++
++    [Fact]
++    public void Structured_control_and_detached_local_functions_preserve_shape()
++    {
++        var map = Snapshot("class A { static bool Hit() => true; int P { get { return 1; } } int Run(bool flag) { int Local() => 2; if(flag && Hit()) return Local(); for(int i=0;i<2;i++) { if(flag) continue; break; } switch(P) { case 1: return 1; default: return 0; } } }");
++        var run = Function(map, "A::Run(System.Boolean)");
++        var kinds = Objects(run.GetProperty("body")).Where(o => o.TryGetProperty("kind", out _)).Select(o => o.GetProperty("kind").GetString()).ToArray();
++        Assert.Contains("if", kinds);
++        Assert.Contains("and", kinds);
++        Assert.Contains("loop", kinds);
++        Assert.Contains("switch", kinds);
++        Assert.Contains("continue", kinds);
++        Assert.Contains("break", kinds);
++        Assert.Single(map.GetProperty("flowInventory").GetProperty("functions").EnumerateArray(), f => f.GetProperty("symbol").GetString()!.Contains("Local"));
++        Assert.NotEmpty(Function(map, "A::get_P()").GetProperty("body").EnumerateArray());
++    }
++
++    [Fact]
++    public void Top_level_statements_are_one_ordered_callable()
++    {
++        var map = Snapshot("System.Console.WriteLine(1); System.Console.WriteLine(2);");
++        var top = Assert.Single(map.GetProperty("flowInventory").GetProperty("functions").EnumerateArray());
++        Assert.Equal(2, top.GetProperty("body").GetArrayLength());
++    }
++
++    [Fact]
++    public void Unsupported_conditional_and_deferred_bodies_do_not_export_eager_nested_calls()
++    {
++        var map = Snapshot("class A { static int Hit() => 1; object Run(A a) { System.Func<int> f = () => Hit(); return a?.Run(a); } }");
++        var body = Function(map, "A::Run(A)").GetProperty("body");
++        Assert.Contains(Objects(body), o => o.TryGetProperty("kind", out var k) && k.GetString() == "unsupported");
++        Assert.DoesNotContain(Objects(body), o => o.TryGetProperty("targets", out var targets) && targets.EnumerateArray().Any(t => t.GetProperty("symbol").GetString()!.Contains("Hit")));
++    }
++
++    [Fact]
++    public void Utf8_offsets_include_actual_bom_unicode_and_crlf()
++    {
++        var directory = Path.Combine(Path.GetTempPath(), "callatlas-flow-" + Guid.NewGuid());
++        Directory.CreateDirectory(directory);
++        try
++        {
++            var path = Path.Combine(directory, "A.cs");
++            var source = "class A {\r\n string Run() { string s = \"é😀\"; return s.Trim(); }\r\n}";
++            File.WriteAllText(path, source, new UTF8Encoding(true));
++            var map = JsonDocument.Parse(CodeMapJson.Write(CallGraphBuilder.Build([(path, source)], directory))).RootElement;
++            var call = Objects(Function(map, "A::Run()").GetProperty("body")).Single(o => o.TryGetProperty("targets", out _));
++            var span = call.GetProperty("span");
++            var bytes = File.ReadAllBytes(path);
++            var text = Encoding.UTF8.GetString(bytes[span.GetProperty("start").GetInt32()..span.GetProperty("end").GetInt32()]);
++            Assert.Equal("s.Trim()", text);
++        }
++        finally { Directory.Delete(directory, true); }
++    }
++
++    [Fact]
++    public void Oversized_bodies_produce_bounded_explicit_unsupported_flow()
++    {
++        var source = "class A { void Run() {" + string.Concat(Enumerable.Repeat("System.Console.WriteLine(1);", 1600)) + "} }";
++        var run = Function(Snapshot(source), "A::Run()");
++        Assert.Single(run.GetProperty("body").EnumerateArray());
++        Assert.Equal("unsupported", run.GetProperty("body")[0].GetProperty("kind").GetString());
++        Assert.NotEmpty(run.GetProperty("diagnostics").EnumerateArray());
++    }
++
++    [Fact]
++    public void Malformed_nested_flow_facts_are_rejected_at_the_json_boundary()
++    {
++        var baseline = Snapshot("class A { int Run() => 1; }").GetRawText();
++        Action<JsonObject>[] changes =
++        [
++            f => f.Remove("symbol"),
++            f => f["span"]!.AsObject().Remove("end"),
++            f => f["span"]!["start"] = -1,
++            f => f["body"]![0]!["value"]!["span"]!["end"] = 1000000,
++            f => f["body"] = new JsonObject(),
++            f => f["body"]![0]!["kind"] = "guessed_future_statement",
++            f => { f["body"]![0]!["kind"] = "evaluate"; f["body"]![0]!["value"] = null; },
++            f => f["body"]![0]!["value"]!["calls"] = new JsonObject(),
++            f => f["body"]![0]!["value"]!["calls"] = new JsonArray(new JsonObject
++                { ["span"] = f["span"]!.DeepClone(), ["label"] = "bad", ["targets"] = new JsonArray(new JsonObject()) }),
++        ];
++        for (var index = 0; index < changes.Length; index++)
++        {
++            var map = JsonNode.Parse(baseline)!;
++            changes[index](map["flowInventory"]!["functions"]![0]!.AsObject());
++            var error = Record.Exception(() => CodeMapJson.Read(map.ToJsonString()));
++            Assert.True(error is CallAtlasException, $"Mutation {index} returned {error?.GetType().Name ?? "no error"}");
++        }
++    }
++
++    [Fact]
++    public void Dispatch_candidates_references_and_delegate_calls_remain_distinct()
++    {
++        var map = Snapshot("interface I { int M(); } class A:I { public int M()=>1; } class B:I { public int M()=>2; } class Caller { int Run(I x) { System.Func<int> f=x.M; return x.M()+f(); } }");
++        var calls = Objects(Function(map, "Caller::Run(I)").GetProperty("body")).Where(o => o.TryGetProperty("targets", out _)).ToArray();
++        Assert.Contains(calls, c => c.GetProperty("targets").EnumerateArray().Any(t => t.GetProperty("certainty").GetString() == "reference"));
++        var dispatch = Assert.Single(calls, c => c.GetProperty("targets").EnumerateArray().Any(t => t.GetProperty("certainty").GetString() == "dispatch"));
++        Assert.Equal(2, dispatch.GetProperty("targets").EnumerateArray().Count(t => t.GetProperty("certainty").GetString() == "possible"));
++        Assert.Contains(calls, c => c.GetProperty("targets").EnumerateArray().Any(t => t.GetProperty("certainty").GetString() == "delegate"));
++    }
++
++    [Fact]
++    public void Depth_budget_and_top_level_size_budget_have_whole_callable_spans()
++    {
++        var deep = "class A { int Run() => " + new string('(', 80) + "1" + new string(')', 80) + "; }";
++        var function = Function(Snapshot(deep), "A::Run()");
++        Assert.Equal("unsupported", function.GetProperty("body")[0].GetProperty("kind").GetString());
++        var topSource = string.Concat(Enumerable.Repeat("System.Console.WriteLine(1);", 1600));
++        var top = Assert.Single(Snapshot(topSource).GetProperty("flowInventory").GetProperty("functions").EnumerateArray());
++        var opaque = Assert.Single(top.GetProperty("body").EnumerateArray());
++        Assert.Equal(topSource.Length, opaque.GetProperty("span").GetProperty("end").GetInt32());
++        Assert.True(opaque.GetProperty("text").GetString()!.Length < 100);
++    }
++
++    [Fact]
++    public void Mismatched_disk_source_has_no_guessed_byte_location()
++    {
++        var path = Path.GetTempFileName();
++        try
++        {
++            File.WriteAllText(path, "class A { int Run() => 2; }");
++            var map = JsonDocument.Parse(CodeMapJson.Write(CallGraphBuilder.Build([(path, "class A { int Run() => 1; }")], Path.GetDirectoryName(path)!))).RootElement;
++            var function = Function(map, "A::Run()");
++            Assert.Equal(0, function.GetProperty("span").GetProperty("end").GetInt32());
++            Assert.Contains(function.GetProperty("diagnostics").EnumerateArray(), d => d.GetString()!.Contains("differs"));
++        }
++        finally { File.Delete(path); }
++    }
++
++    [Fact]
++    public void Overloaded_short_circuit_and_property_assignments_are_opaque()
++    {
++        var map = Snapshot("struct Flag { public static bool operator true(Flag f)=>true; public static bool operator false(Flag f)=>false; public static Flag operator &(Flag a,Flag b)=>a; } class A { static Flag Hit()=>new Flag(); Flag Run(Flag a)=>a && Hit(); int P {get;set;} void Set()=>P=HitInt(); static int HitInt()=>1; }");
++        foreach (var suffix in new[] { "A::Run(Flag)", "A::Set()" })
++        {
++            var body = Function(map, suffix).GetProperty("body");
++            Assert.Equal("unsupported", body[0].GetProperty("kind").GetString());
++            Assert.DoesNotContain(Objects(body), o => o.TryGetProperty("targets", out _));
++        }
++    }
++
++    [Fact]
++    public void User_defined_truth_and_contextual_conversions_are_opaque()
++    {
++        var map = Snapshot("struct Flag { public static bool operator true(Flag f)=>true; public static bool operator false(Flag f)=>false; public static implicit operator int(Flag f)=>1; } class A { int Branch(Flag f) { if(f) return 1; return 0; } int Return(Flag f)=>f; int Argument(Flag f)=>Take(f); static int Take(int x)=>x; }");
++        foreach (var suffix in new[] { "A::Branch(Flag)", "A::Return(Flag)", "A::Argument(Flag)" })
++        {
++            var function = Function(map, suffix);
++            Assert.Equal("unsupported", function.GetProperty("body")[0].GetProperty("kind").GetString());
++            Assert.NotEmpty(function.GetProperty("diagnostics").EnumerateArray());
++        }
++    }
++
++    [Fact]
++    public void Large_declaration_and_switch_label_lists_are_bounded_before_materialization()
++    {
++        var declarations = "class A { void Run() { int " + string.Join(",", Enumerable.Range(0, 1600).Select(i => "x" + i)) + "; } }";
++        var cases = "class A { void Run(int x) { switch(x) {" + string.Concat(Enumerable.Range(0, 1600).Select(i => "case " + i + ":")) + "return; } } }";
++        foreach (var (source, suffix) in new[] { (declarations, "A::Run()"), (cases, "A::Run(System.Int32)") })
++        {
++            var function = Function(Snapshot(source), suffix);
++            Assert.Single(function.GetProperty("body").EnumerateArray());
++            Assert.Equal("unsupported", function.GetProperty("body")[0].GetProperty("kind").GetString());
++            Assert.NotEmpty(function.GetProperty("diagnostics").EnumerateArray());
++        }
++    }
++
++    [Fact]
++    public void Excessive_dispatch_candidates_make_callable_explicitly_unsupported()
++    {
++        var source = "interface I { int M(); } " + string.Concat(Enumerable.Range(0, 1501)
++            .Select(i => "class C" + i + ":I { public int M()=>1; }")) + "class Caller { int Run(I x)=>x.M(); }";
++        var function = Function(Snapshot(source), "Caller::Run(I)");
++        Assert.Equal("unsupported", function.GetProperty("body")[0].GetProperty("kind").GetString());
++        Assert.Contains(function.GetProperty("diagnostics").EnumerateArray(), d => d.GetString()!.Contains("binding exceeds"));
++    }
++
++    [Fact]
++    public void Dynamic_operations_are_opaque_but_dynamic_local_values_are_not()
++    {
++        var map = Snapshot("class A { dynamic Unary(dynamic x)=>-x; dynamic Member(dynamic x)=>x.Prop; dynamic Index(dynamic x)=>x[0]; int Convert(dynamic x)=>x; dynamic Value(dynamic x)=>x; }");
++        foreach (var name in new[] { "Unary", "Member", "Index", "Convert" })
++        {
++            var function = Function(map, "A::" + name + "(dynamic)");
++            Assert.Equal("unsupported", function.GetProperty("body")[0].GetProperty("kind").GetString());
++        }
++        Assert.Empty(Function(map, "A::Value(dynamic)").GetProperty("diagnostics").EnumerateArray());
++    }
++
++    [Fact]
++    public void Nameof_intrinsic_does_not_evaluate_its_operand()
++    {
++        var map = Snapshot("class A { A Child=>this; int Value=>1; string Run()=>nameof(Child.Value); }");
++        var body = Function(map, "A::Run()").GetProperty("body");
++        var value = Assert.Single(Objects(body), o => o.TryGetProperty("kind", out var kind) && kind.GetString() == "value");
++        Assert.Equal("nameof(Child.Value)", value.GetProperty("text").GetString());
++        Assert.Empty(value.GetProperty("calls").EnumerateArray());
++    }
++
++    [Fact]
++    public void User_method_named_nameof_retains_argument_evaluation_and_reports_missing_native_binding()
++    {
++        var map = Snapshot("class A { static int Hit()=>1; static int @nameof(int value)=>value; int Run()=>@nameof(Hit()); }");
++        var calls = Objects(Function(map, "A::Run()").GetProperty("body")).Where(o => o.TryGetProperty("targets", out _)).ToArray();
++        var argument = Assert.Single(calls, c => c.GetProperty("label").GetString() == "Hit()");
++        Assert.EndsWith("A::Hit()", argument.GetProperty("targets")[0].GetProperty("symbol").GetString());
++        var invocation = Assert.Single(calls, c => c.GetProperty("label").GetString() == "@nameof(Hit())");
++        Assert.Empty(invocation.GetProperty("targets").EnumerateArray());
++        Assert.Contains("Native analyzer omitted", invocation.GetProperty("diagnostic").GetString());
++    }
++}
 diff --git a/tests/CallAtlas.Tests/HttpRouteFactsTests.cs b/tests/CallAtlas.Tests/HttpRouteFactsTests.cs
 new file mode 100644
 index 0000000..fe979d5

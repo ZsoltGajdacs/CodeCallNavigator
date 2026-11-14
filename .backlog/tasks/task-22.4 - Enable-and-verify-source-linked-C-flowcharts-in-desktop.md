@@ -4,6 +4,7 @@ title: Enable and verify source-linked C# flowcharts in desktop
 status: To Do
 assignee: []
 created_date: '2026-11-14T11:49:00Z'
+updated_date: '2026-11-14T13:59:00Z'
 labels: []
 dependencies:
   - TASK-22.3
@@ -41,3 +42,9 @@ The desktop already consumes CLI-built charts and owns layout, navigation and so
 - [ ] #1 Record focused regression evidence and ./verify-full.sh results outside the macOS sandbox with isolated profiling inputs; report missing gates and baseline failures precisely.
 - [ ] #2 Review AI-modified source with CodeScene; run safeguard before commit and change-set analysis before PR, reporting unavailable checks.
 <!-- DOD:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Implementation timing clarification from current-code audit: production desktop already consumes CLI flow_languages capabilities generically. When TASK-22.2 truthfully adds C#, the inspector action becomes available without a separate desktop source gate. This task therefore verifies and refines the native C# workflow, unavailable states, labels and packaged resources after semantic validation; do not invent a redundant language switch merely to claim an enablement code change. Keep this task as the user-visible C# acceptance milestone and leave parent AC1 open until its evidence is complete.
+<!-- SECTION:NOTES:END -->
