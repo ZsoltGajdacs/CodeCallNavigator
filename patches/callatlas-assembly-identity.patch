@@ -753,7 +753,7 @@ index 0000000..a2b430d
 +
 +}
 diff --git a/src/CallAtlas.Core/CallGraphBuilder.cs b/src/CallAtlas.Core/CallGraphBuilder.cs
-index bf14b1d..32ce032 100644
+index bf14b1d..c320da1 100644
 --- a/src/CallAtlas.Core/CallGraphBuilder.cs
 +++ b/src/CallAtlas.Core/CallGraphBuilder.cs
 @@ -664,7 +664,7 @@ public sealed partial class CallGraphBuilder
@@ -802,7 +802,7 @@ index bf14b1d..32ce032 100644
              foreach (var (key, count) in shard.Edges)
                  edges[key] = edges.TryGetValue(key, out var e) ? e + count : count;
              foreach (var (key, count) in shard.External)
-@@ -942,9 +945,24 @@ public sealed partial class CallGraphBuilder
+@@ -942,9 +945,25 @@ public sealed partial class CallGraphBuilder
              Ms(PhaseTicks.CollectDiag), Ms(PhaseTicks.BodyScan),
              Ms(PhaseTicks.BodySpan), Ms(PhaseTicks.BodyGetDiag), Ms(PhaseTicks.BodyScanLoop)));
  
@@ -814,6 +814,7 @@ index bf14b1d..32ce032 100644
          {
              Schema = CodeMap.SchemaVersion,
 +            FlowFactsVersion = FlowInventory.CapabilityVersion,
++            SourceFactsVersion = SourceFactsJson.Version,
 +            FlowInventory = FlowExport.Build(pending.SelectMany(item => item.Sites.Select(site =>
 +                new FlowInput(site.FromId, item.Tree, item.Model, site.Bodies))), nodes, flowBindings, root),
 +            FrameworkFactsVersion = MediatRFacts.Version,
@@ -827,7 +828,7 @@ index bf14b1d..32ce032 100644
              Root = root.Replace('\\', '/'),
              Nodes = [.. nodes.Values.OrderBy(n => n.Id, StringComparer.Ordinal)],
              Edges = [.. edges.Select(kv => new Edge
-@@ -999,7 +1017,15 @@ public sealed partial class CallGraphBuilder
+@@ -999,7 +1018,15 @@ public sealed partial class CallGraphBuilder
                  $"[callatlas] {"symbol cache",-22} hits {h,8}  misses {m,8}  ({rate,5:F1}% hit)");
          }
  
@@ -844,7 +845,7 @@ index bf14b1d..32ce032 100644
      }
  
      /// <summary>
-@@ -1251,6 +1277,7 @@ public sealed partial class CallGraphBuilder
+@@ -1251,6 +1278,7 @@ public sealed partial class CallGraphBuilder
              Id = id,
              Kind = kind,
              Container = DisplayOf(symbol.ContainingType),
@@ -852,7 +853,7 @@ index bf14b1d..32ce032 100644
              Name = symbol.Name,
              Location = string.IsNullOrEmpty(path) ? "(no location)" : $"{Rel(root, path)}:{line}",
          };
-@@ -1279,6 +1306,7 @@ public sealed partial class CallGraphBuilder
+@@ -1279,6 +1307,7 @@ public sealed partial class CallGraphBuilder
          {
              Id = id,
              Kind = "accessor",
@@ -860,7 +861,7 @@ index bf14b1d..32ce032 100644
              Container = DisplayOf(accessor.ContainingType),
              // 显示成属性名（get_Value 的 Name 是 "get_Value"，用属性名 "Value" 更好读）
              Name = accessor.AssociatedSymbol?.Name ?? accessor.Name,
-@@ -1331,6 +1359,7 @@ public sealed partial class CallGraphBuilder
+@@ -1331,6 +1360,7 @@ public sealed partial class CallGraphBuilder
              Id = id,
              Kind = kind,
              Container = DisplayOf(target.OriginalDefinition.ContainingType),
@@ -868,7 +869,7 @@ index bf14b1d..32ce032 100644
              Name = target.OriginalDefinition.Name,
              Location = "(implicit)",
          };
-@@ -1430,115 +1459,6 @@ public sealed partial class CallGraphBuilder
+@@ -1430,115 +1460,6 @@ public sealed partial class CallGraphBuilder
          return cur.OriginalDefinition;
      }
  
@@ -984,7 +985,7 @@ index bf14b1d..32ce032 100644
      private static void RecordCreation(
          SemanticModel model,
          IReadOnlySet<IAssemblySymbol> ourAssemblies,
-@@ -1552,10 +1472,12 @@ public sealed partial class CallGraphBuilder
+@@ -1552,10 +1473,12 @@ public sealed partial class CallGraphBuilder
          if (IsExternal(ourAssemblies, ctor))
          {
              NoteExternal(shard.External, $"new {DisplayOf(ctor.OriginalDefinition.ContainingType)}");
@@ -997,7 +998,7 @@ index bf14b1d..32ce032 100644
          // 编译器生成的默认构造：被证明的事实，登记为 (implicit) 位置——不是幽灵 external
          EnsureNode(shard.Implicit, ctor, "constructor");
      }
-@@ -1755,7 +1677,7 @@ public sealed partial class CallGraphBuilder
+@@ -1755,7 +1678,7 @@ public sealed partial class CallGraphBuilder
      /// 但"谁读了这个字段"是架构事实，值得有个落点。</summary>
      private static string FieldNodeId(Dictionary<string, Node> sink, IFieldSymbol field)
      {
@@ -1006,7 +1007,7 @@ index bf14b1d..32ce032 100644
          sink.TryAdd(id, new Node
          {
              Id = id,
-@@ -1798,11 +1720,13 @@ public sealed partial class CallGraphBuilder
+@@ -1798,11 +1721,13 @@ public sealed partial class CallGraphBuilder
                  if (reads && prop.GetMethod is { } g && !IsExternal(ourAssemblies, g))
                  {
                      AddOrCount(shard.Edges, fromId, IdOf(g), EdgeKind.Get, TierForAccessor(g));
@@ -1020,7 +1021,7 @@ index bf14b1d..32ce032 100644
                      EnsureAccessorNode(shard.Implicit, s, root);
                  }
                  break;
-@@ -1812,6 +1736,7 @@ public sealed partial class CallGraphBuilder
+@@ -1812,6 +1737,7 @@ public sealed partial class CallGraphBuilder
                  if (accessor is not null && !IsExternal(ourAssemblies, accessor))
                  {
                      AddOrCount(shard.Edges, fromId, IdOf(accessor), EdgeKind.Event, TierForAccessor(accessor));
@@ -1028,7 +1029,7 @@ index bf14b1d..32ce032 100644
                      EnsureAccessorNode(shard.Implicit, accessor, root);
                  }
                  break;
-@@ -1835,6 +1760,7 @@ public sealed partial class CallGraphBuilder
+@@ -1835,6 +1761,7 @@ public sealed partial class CallGraphBuilder
                  var tier = EdgeTierClassifier.ForCall(target, receiverType: null);
                  var targetId = IdOf(target);
                  AddOrCount(shard.Edges, fromId, targetId, EdgeKind.MethodGroup, tier);
@@ -1037,7 +1038,7 @@ index bf14b1d..32ce032 100644
                  // 目标本身是接口/虚方法时，它和 dispatch 调用是同一个问题：
                  // 静态目标只有一个，真实实现会零入度。复用同一条解析路径。
 diff --git a/src/CallAtlas.Core/CodeMap.cs b/src/CallAtlas.Core/CodeMap.cs
-index a720920..3ccad66 100644
+index a720920..720768f 100644
 --- a/src/CallAtlas.Core/CodeMap.cs
 +++ b/src/CallAtlas.Core/CodeMap.cs
 @@ -1,4 +1,5 @@
@@ -1046,13 +1047,14 @@ index a720920..3ccad66 100644
  
  namespace CallAtlas.Core;
  
-@@ -10,6 +11,17 @@ public sealed record CodeMap
+@@ -10,6 +11,18 @@ public sealed record CodeMap
  
      public required string Schema { get; init; }
      public required string Root { get; init; }
 +    /// <summary>Compiler-selected executable starts, using the existing graph identities.</summary>
 +    public IReadOnlyList<string> ApplicationStarts { get; init; } = [];
 +    public IReadOnlyList<ArchitectureFileFacts> ArchitectureFiles { get; init; } = [];
++    public string SourceFactsVersion { get; init; } = "";
 +    public string FrameworkFactsVersion { get; init; } = "";
 +    public IReadOnlyList<MediatRDispatchFact> FrameworkEdges { get; init; } = [];
 +    public IReadOnlyList<string> FrameworkEntries { get; init; } = [];
@@ -1064,7 +1066,7 @@ index a720920..3ccad66 100644
      public required IReadOnlyList<Node> Nodes { get; init; }
      public required IReadOnlyList<Edge> Edges { get; init; }
      public required IReadOnlyList<ExternalCall> External { get; init; }
-@@ -45,6 +57,68 @@ public sealed record Node
+@@ -45,6 +58,68 @@ public sealed record Node
      public required string Container { get; init; }
      public required string Name { get; init; }
      public required string Location { get; init; }
@@ -1133,7 +1135,7 @@ index a720920..3ccad66 100644
  }
  
  /// <summary>边的种类常量。</summary>
-@@ -306,27 +380,38 @@ public static class SymbolId
+@@ -306,27 +381,38 @@ public static class SymbolId
      public static string Canonical(IMethodSymbol method)
      {
          var s = (method.ReducedFrom ?? method).OriginalDefinition;
@@ -1179,7 +1181,7 @@ index a720920..3ccad66 100644
  
      /// <summary>
      /// 委托调用的落点 id：<c>Action#delegate</c>（用委托类型本身命名）。
-@@ -337,7 +422,7 @@ public static class SymbolId
+@@ -337,7 +423,7 @@ public static class SymbolId
      /// 后缀 <c>#delegate</c> 与字段初始化器的 <c>#init</c> 同族，一眼可辨其为伪节点。
      /// </summary>
      public static string ForDelegate(ITypeSymbol delegateType) =>
@@ -1188,7 +1190,7 @@ index a720920..3ccad66 100644
  
      private static string Params(IMethodSymbol method) =>
          string.Join(",", method.Parameters.Select(p => p.Type.ToDisplayString(QualifiedFormat)));
-@@ -385,3 +470,59 @@ internal static class EdgeTierClassifier
+@@ -385,3 +471,62 @@ internal static class EdgeTierClassifier
          return EdgeTier.Direct;
      }
  }
@@ -1199,6 +1201,8 @@ index a720920..3ccad66 100644
 +    public string Assembly { get; init; } = "";
 +    public string File { get; init; } = "";
 +    public string Content { get; init; } = "";
++    [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
++    public int? SourceCodePage { get; init; }
 +    public IReadOnlyList<string> Namespaces { get; init; } = [];
 +    public IReadOnlyList<string> Names { get; init; } = [];
 +    public IReadOnlyList<string> Kinds { get; init; } = [];
@@ -1221,6 +1225,7 @@ index a720920..3ccad66 100644
 +            Assembly = model.Compilation.AssemblyName ?? "",
 +            File = tree.FilePath.Replace('\\', '/'),
 +            Content = tree.GetText().ToString(),
++            SourceCodePage = tree.GetText().Encoding?.CodePage,
 +            Namespaces = Sorted(types.Select(type => type.ContainingNamespace.ToDisplayString())),
 +            Names = Sorted(types.SelectMany(NamesOf)),
 +            Kinds = Sorted(types.Select(type => type.IsRecord ? "record" : type.TypeKind.ToString().ToLowerInvariant())),
@@ -1249,7 +1254,7 @@ index a720920..3ccad66 100644
 +        .Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToArray();
 +}
 diff --git a/src/CallAtlas.Core/CodeMapJson.cs b/src/CallAtlas.Core/CodeMapJson.cs
-index 9555cb4..3a7ae17 100644
+index 9555cb4..439ccb8 100644
 --- a/src/CallAtlas.Core/CodeMapJson.cs
 +++ b/src/CallAtlas.Core/CodeMapJson.cs
 @@ -5,6 +5,66 @@ namespace CallAtlas.Core;
@@ -1319,7 +1324,7 @@ index 9555cb4..3a7ae17 100644
      /// <summary>写出供人读 / diff 的 JSON：缩进、字段顺序固定、排序已在模型侧完成、无时间戳。</summary>
      public static string Write(CodeMap map) => Write(map, indented: true);
  
-@@ -24,18 +84,10 @@ public static class CodeMapJson
+@@ -24,18 +84,8 @@ public static class CodeMapJson
              writer.WriteString("schema", map.Schema);
              writer.WriteString("root", map.Root);
  
@@ -1335,24 +1340,23 @@ index 9555cb4..3a7ae17 100644
 -                writer.WriteEndObject();
 -            }
 -            writer.WriteEndArray();
-+            writer.WritePropertyName("architectureFiles");
-+            JsonSerializer.Serialize(writer, map.ArchitectureFiles, new JsonSerializerOptions
-+                { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
++            SourceFactsJson.Write(writer, map);
 +            WriteDeclarations(writer, map);
  
              writer.WriteStartArray("edges");
              foreach (var e in map.Edges)
-@@ -162,6 +214,9 @@ public static class CodeMapJson
+@@ -162,6 +212,10 @@ public static class CodeMapJson
                      $"unsupported schema \"{schema}\" — known: {string.Join(", ", KnownSchemas)}. "
                      + "Regenerate the snapshot, or add a migration if this is an older callatlas.");
  
 +            var framework = MediatRJson.Read(root);
 +            var http = HttpRouteJson.Read(root);
 +            var flow = FlowJson.Read(root);
++            var source = SourceFactsJson.Read(root);
              string Str(JsonElement e, string name) =>
                  e.TryGetProperty(name, out var v) ? v.GetString() ?? "" : "";
  
-@@ -175,6 +230,7 @@ public static class CodeMapJson
+@@ -175,6 +229,7 @@ public static class CodeMapJson
                          Container = Str(n, "container"),
                          Name = Str(n, "name"),
                          Location = Str(n, "location"),
@@ -1360,7 +1364,7 @@ index 9555cb4..3a7ae17 100644
                      });
  
              var edges = new List<Edge>();
-@@ -236,6 +292,18 @@ public static class CodeMapJson
+@@ -236,6 +291,16 @@ public static class CodeMapJson
              {
                  Schema = CodeMap.SchemaVersion,
                  Root = Str(root, "root"),
@@ -1372,14 +1376,12 @@ index 9555cb4..3a7ae17 100644
 +                HttpRoutes = http.Routes,
 +                FlowFactsVersion = flow.Version,
 +                FlowInventory = flow.Inventory,
-+                ArchitectureFiles = root.TryGetProperty("architectureFiles", out var architecture)
-+                    ? JsonSerializer.Deserialize<ArchitectureFileFacts[]>(architecture.GetRawText(),
-+                        new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase }) ?? []
-+                    : [],
++                ArchitectureFiles = source.Files,
++                SourceFactsVersion = source.Version,
                  Nodes = nodes,
                  Edges = edges,
                  // 读取路径**不裁剪字段**。这些曾经被硬编码成空值，因为最初的唯一消费者是
-@@ -282,4 +350,4 @@ public static class CodeMapJson
+@@ -282,4 +347,4 @@ public static class CodeMapJson
      {
          "callatlas.ir.v3",
      };
@@ -2808,6 +2810,65 @@ index 0000000..02f75df
 +        public bool? SzArray { get; init; }
 +    }
 +}
+diff --git a/src/CallAtlas.Core/SourceFactsJson.cs b/src/CallAtlas.Core/SourceFactsJson.cs
+new file mode 100644
+index 0000000..16d7508
+--- /dev/null
++++ b/src/CallAtlas.Core/SourceFactsJson.cs
+@@ -0,0 +1,53 @@
++using System.Text.Json;
++
++namespace CallAtlas.Core;
++
++/// <summary>Compiler source decoding is explicit metadata, separate from flow semantics and original bytes.</summary>
++internal static class SourceFactsJson
++{
++    internal const string Version = "1";
++    private static readonly JsonSerializerOptions Options = new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
++
++    internal static void Write(Utf8JsonWriter writer, CodeMap map)
++    {
++        if (map.SourceFactsVersion.Length != 0) writer.WriteString("sourceFactsVersion", map.SourceFactsVersion);
++        writer.WritePropertyName("architectureFiles");
++        JsonSerializer.Serialize(writer, map.ArchitectureFiles, Options);
++    }
++
++    internal static SourceFactsSnapshot Read(JsonElement root)
++    {
++        var version = Capability(root);
++        var files = Files(root, version);
++        if (files.Any(file => file is null || file.SourceCodePage is <= 0)) throw Invalid("Invalid compiler source code page");
++        return new(version, files);
++    }
++
++    private static string Capability(JsonElement root)
++    {
++        if (!root.TryGetProperty("sourceFactsVersion", out var value)) return "";
++        if (value.ValueKind != JsonValueKind.String) throw Invalid("Invalid source capability version");
++        var version = value.GetString()!;
++        if (version.Length != 0 && version != Version) throw Invalid("Unsupported source capability version");
++        return version;
++    }
++
++    private static ArchitectureFileFacts[] Files(JsonElement root, string version)
++    {
++        if (!root.TryGetProperty("architectureFiles", out var files)) return Historical(version);
++        if (files.ValueKind == JsonValueKind.Null) return Historical(version);
++        if (files.ValueKind != JsonValueKind.Array) throw Invalid("Invalid source file facts");
++        try { return JsonSerializer.Deserialize<ArchitectureFileFacts[]>(files.GetRawText(), Options) ?? []; }
++        catch (JsonException) { throw Invalid("Malformed source file facts"); }
++    }
++
++    private static ArchitectureFileFacts[] Historical(string version)
++    {
++        if (version.Length != 0) throw Invalid("Missing source file facts");
++        return [];
++    }
++
++    private static CallAtlasException Invalid(string reason) => new(reason + "; regenerate source facts.");
++}
++
++internal sealed record SourceFactsSnapshot(string Version, ArchitectureFileFacts[] Files);
 diff --git a/tests/CallAtlas.Tests/CallAtlas.Tests.csproj b/tests/CallAtlas.Tests/CallAtlas.Tests.csproj
 index 0aebf13..9ad5302 100644
 --- a/tests/CallAtlas.Tests/CallAtlas.Tests.csproj
@@ -3215,4 +3276,66 @@ index 0000000..042c324
 +        var json = "{\"schema\":\"callatlas.ir.v3\",\"frameworkFactsVersion\":\"" + version + "\"}";
 +        Assert.Throws<CallAtlasException>(() => CodeMapJson.Read(json));
 +    }
++}
+diff --git a/tests/CallAtlas.Tests/SourceFactsTests.cs b/tests/CallAtlas.Tests/SourceFactsTests.cs
+new file mode 100644
+index 0000000..035618c
+--- /dev/null
++++ b/tests/CallAtlas.Tests/SourceFactsTests.cs
+@@ -0,0 +1,56 @@
++using System.Text;
++using System.Text.Json;
++using CallAtlas.Core;
++using Microsoft.CodeAnalysis;
++using Microsoft.CodeAnalysis.CSharp;
++using Microsoft.CodeAnalysis.Text;
++using Xunit;
++
++namespace CallAtlas.Tests;
++
++public class SourceFactsTests
++{
++    [Fact]
++    public void Current_source_capability_roundtrips_without_claiming_historical_support()
++    {
++        var map = CallGraphBuilder.Build([("a.cs", "class A {}")], "/proj");
++        var current = JsonDocument.Parse(CodeMapJson.Write(map)).RootElement;
++        Assert.Equal("1", current.GetProperty("sourceFactsVersion").GetString());
++        var roundtrip = JsonDocument.Parse(CodeMapJson.Write(CodeMapJson.Read(current.GetRawText()))).RootElement;
++        Assert.Equal("1", roundtrip.GetProperty("sourceFactsVersion").GetString());
++        var historical = JsonDocument.Parse(CodeMapJson.Write(CodeMapJson.Read("""{"schema":"callatlas.ir.v3","nodes":[],"edges":[]}"""))).RootElement;
++        Assert.False(historical.TryGetProperty("sourceFactsVersion", out _));
++    }
++
++    [Theory]
++    [InlineData(65001)]
++    [InlineData(1200)]
++    [InlineData(28591)]
++    public void Source_code_page_comes_from_the_compiler_text(int codePage)
++    {
++        var tree = CSharpSyntaxTree.ParseText(SourceText.From("class A {}", Encoding.GetEncoding(codePage)), path: "a.cs");
++        var compilation = CSharpCompilation.Create("Facts", [tree], [MetadataReference.CreateFromFile(typeof(object).Assembly.Location)]);
++        var facts = ArchitectureFileFacts.From(tree, compilation.GetSemanticModel(tree));
++        var json = JsonDocument.Parse(JsonSerializer.Serialize(facts, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase })).RootElement;
++        Assert.Equal(codePage, json.GetProperty("sourceCodePage").GetInt32());
++    }
++
++    [Fact]
++    public void Unknown_in_memory_encoding_is_omitted()
++    {
++        var map = CallGraphBuilder.Build([("a.cs", "class A {}")], "/proj");
++        var file = Assert.Single(JsonDocument.Parse(CodeMapJson.Write(map)).RootElement.GetProperty("architectureFiles").EnumerateArray());
++        Assert.False(file.TryGetProperty("sourceCodePage", out _));
++    }
++
++    [Theory]
++    [InlineData("""{"schema":"callatlas.ir.v3","sourceFactsVersion":"2","architectureFiles":[]}""")]
++    [InlineData("""{"schema":"callatlas.ir.v3","sourceFactsVersion":1,"architectureFiles":[]}""")]
++    [InlineData("""{"schema":"callatlas.ir.v3","sourceFactsVersion":null,"architectureFiles":[]}""")]
++    [InlineData("""{"schema":"callatlas.ir.v3","sourceFactsVersion":"1"}""")]
++    [InlineData("""{"schema":"callatlas.ir.v3","sourceFactsVersion":"1","architectureFiles":null}""")]
++    [InlineData("""{"schema":"callatlas.ir.v3","sourceFactsVersion":"1","architectureFiles":[{"sourceCodePage":0}]}""")]
++    [InlineData("""{"schema":"callatlas.ir.v3","sourceFactsVersion":"1","architectureFiles":[null]}""")]
++    public void Unsupported_or_incomplete_source_capability_is_rejected(string json) =>
++        Assert.Throws<CallAtlasException>(() => CodeMapJson.Read(json));
 +}

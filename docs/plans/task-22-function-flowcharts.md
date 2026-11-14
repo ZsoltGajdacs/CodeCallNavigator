@@ -6,6 +6,15 @@ unchanged. Child tasks contain durable scope, outcomes, dependencies and complet
 checks; their worker must recheck current code and record an execution plan when
 starting them.
 
+Implementation is now authorized on `feature/task-22-function-flowcharts` in the
+listed sequence. The investigation below records the starting state, not the
+current support matrix. TASK-22.1 is complete; TASK-22.2 binds its compiler flow
+facts to canonical source snapshots and CLI queries. Fresh analysis additionally
+requires typed source-encoding facts so non-UTF-8 projects retain graph support
+without claiming exact UTF-8 flow spans. Per-task evidence and Backlog status
+record verification and completion; the AI provider/data decision remains a
+separate checkpoint before generation is enabled.
+
 ## Current implementation
 
 - [Function flowcharts](../function-flowcharts.md) and

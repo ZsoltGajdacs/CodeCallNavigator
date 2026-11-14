@@ -6,7 +6,8 @@ TypeScript repositories.
 Select a repository, choose its projects, and generate a graph. Browse by project,
 namespace, folder, architectural layer or method; follow callers and callees,
 search classes and methods, and inspect source and relationship provenance.
-Java and TypeScript methods also support function flowcharts.
+Java and TypeScript methods also support function flowcharts. Initial C# flow
+support is available with [documented limits](docs/function-flowcharts.md).
 
 ## Requirements
 

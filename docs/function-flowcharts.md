@@ -1,6 +1,7 @@
 # Function flowcharts
 
-Select a Java or TypeScript method and choose **Open flowchart** in the inspector.
+Select a Java, TypeScript or supported C# method and choose **Open flowchart** in
+the inspector.
 The workspace shows the method's source-derived control flow beside its analyzed
 source snapshot. Select a step to highlight its source lines and inspect call
 targets. Known project targets open their own charts; overload signatures,
@@ -18,8 +19,23 @@ The source panel reads the immutable generation's cached source, not current dis
 contents. A stale graph notice means a refresh is needed to show source changes.
 Opening or following charts does not compile the project. Older graph caches remain
 usable for graph exploration; refresh them to collect function-flow metadata.
-C# support, AI explanations, PR comparisons and recursive call inlining are
-tracked separately in TASK-22.
+AI explanations, PR comparisons, recursive call inlining and the remaining C#
+semantic/workflow milestones are tracked separately in TASK-22.
+
+## Initial C# support
+
+Refreshing with the current analyzer collects C# flows for a bounded synchronous
+subset: ordinary evaluation, branches, loops, simple switches and transfers.
+Explicit accessors, local functions and top-level bodies retain their compiler
+identities. Queries use exact analyzed UTF-8 source, including a BOM; accepted
+non-UTF-8 contexts retain graph/source access with an explicit flow-unavailability
+diagnostic. Compiler-reported encoding facts govern each linked compile context.
+
+Cleanup constructs, suspension and other unsupported evaluation/control forms
+currently remain diagnosed opaque regions. TASK-22.3 owns cleanup semantics and
+TASK-22.4 owns native/package workflow acceptance. This initial CLI delivery does
+not complete those milestones. See the [CLI contract](cli-queries.md) and
+[ingestion evidence](../evidence/flowcharts/csharp/ingestion/README.md).
 
 ## What the paths mean
 
@@ -74,7 +90,7 @@ that exceeds those limits reports the limit instead of silently truncating paths
 
 ## Implementation boundaries
 
-The existing javac inventory and TypeScript compiler worker export detached,
+The Roslyn adapter, javac inventory and TypeScript compiler worker export detached,
 versioned statement trees during refresh. They reuse compiler contexts and call
 binding. The shared flow library owns completion semantics, binding cleanup and
 Graphviz geometry. Source spans are half-open UTF-8 byte ranges over the exact

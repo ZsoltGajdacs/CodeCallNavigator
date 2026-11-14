@@ -283,9 +283,21 @@ Recognized closed handlers remain framework entries without dispatch calls.
 Object/interface-erased payloads, open types, anonymous callables, ambiguous
 requests and handlers outside compiler-visible scope remain unresolved. Concrete
 `Mediator` method declarations and custom wrappers are outside the initial
-contract-only subset. C# flow inventories remain unavailable. The matching
+contract-only subset. The matching
 CallAtlas adapter must provide framework-facts capability v1, including snapshot
 round trips; stale/incomplete facts fail explicitly.
+
+### C# source flows
+
+Fresh C# analysis additionally requires `flowFactsVersion: "1"`, a version-1
+`flowInventory`, and `sourceFactsVersion: "1"`. Compiler source facts include a
+nullable `sourceCodePage`. Existing node identities and evaluated compile owners
+bind functions and targets; exact UTF-8 originals bind source spans. Explicit
+non-UTF-8 contexts remain graph/source-only. Missing, incompatible or corrupt
+required facts reject publication and preserve the prior artifact generation.
+Historical graphs remain readable and explain when a refresh is needed for flows.
+See [function flowcharts](function-flowcharts.md) for the supported subset and
+current semantic limits.
 
 
 ## Navigation and HTTP

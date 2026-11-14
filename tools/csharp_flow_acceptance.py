@@ -44,7 +44,24 @@ def map_project(cli, project, output):
     graph = json.loads(output.read_text())
     require(graph.get("flowFactsVersion") == "1", "CLI has no current flow capability; rebuild Release CLI")
     require(graph.get("flowInventory", {}).get("version") == 1, "Unsupported flow inventory")
+    source_metadata(graph)
     return graph
+
+
+def source_metadata(graph):
+    require(graph.get("sourceFactsVersion") == "1", "Unsupported compiler source-facts capability")
+    pages = [facts.get("sourceCodePage") for facts in graph["architectureFiles"]]
+    require(all(page is None or type(page) is int and page > 0 for page in pages),
+            "Compiler source code page must be a nullable positive integer")
+    return pages
+
+
+def historical_projection(graph):
+    pages = source_metadata(graph)
+    graph.pop("sourceFactsVersion")
+    for facts in graph["architectureFiles"]:
+        facts.pop("sourceCodePage", None)
+    return pages
 
 
 def baseline_parity(cli, baseline, work):
@@ -67,6 +84,7 @@ def baseline_parity(cli, baseline, work):
     inventory = graph.pop("flowInventory")
     graph.pop("flowFactsVersion")
     graph.pop("root")
+    source_pages = historical_projection(graph)
     changed = sorted(key for key in graph.keys() | fixture["graph"].keys()
                      if graph.get(key) != fixture["graph"].get(key))
     require(not changed, f"Existing graph projection changed: {changed}")
@@ -75,7 +93,8 @@ def baseline_parity(cli, baseline, work):
     require(repeated["flowInventory"] == inventory, "Flow export is not deterministic")
     return {"nodes": len(graph["nodes"]), "edges": len(graph["edges"]),
             "functions": len(inventory["functions"]), "existing_graph_equal": True,
-            "flow_inventory_repeat_equal": True}
+            "flow_inventory_repeat_equal": True, "source_facts_version": "1",
+            "source_code_pages": source_pages}
 
 
 def collision_ownership(cli, work):
@@ -85,6 +104,7 @@ def collision_ownership(cli, work):
     command(["dotnet", "restore", str(fixture / "Collisions.sln"), "--nologo"],
             "Restore disposable collision fixture")
     graph = map_project(cli, fixture / "Collisions.sln", work / "collisions.json")
+    require(set(source_metadata(graph)) == {65001}, "UTF-8 solution sources lost compiler encoding metadata")
     functions = graph["flowInventory"]["functions"]
     node_ids = {node["id"] for node in graph["nodes"]}
     work_functions = [f for f in functions if f["symbol"].endswith("::Worker::Work()")]

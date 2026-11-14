@@ -96,15 +96,8 @@ fn function_flow(graph: &GraphIndex, symbol: &str) -> Result<Value> {
 }
 
 fn validate_flow_source(function: &flow::FunctionFlowIR, content: &str) -> Result<()> {
-    if content
-        .get(function.span.start..function.span.end)
-        .is_none()
-    {
-        return Err(Error::new(
-            "flow_unavailable",
-            "The flow source range does not match its cached snapshot",
-        ));
-    }
+    flow::validate_source(function, content)
+        .map_err(|error| Error::new("flow_unavailable", error.to_string()))?;
     if content.len() as u64 > super::MAX_SOURCE_BYTES {
         return Err(Error::new(
             "flow_unavailable",

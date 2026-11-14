@@ -19,7 +19,7 @@ pub fn capabilities() -> serde_json::Value {
         "automatic_refresh": {"version":crate::refresh::VERSION,"activity_version":crate::refresh::VERSION,"observe_flag":"--auto-refresh","debounce_milliseconds":crate::refresh::DEBOUNCE_MILLISECONDS,"cancel_command":"cancel_refresh"},
         "comparison": {"version":1,"default_limit":100,"maximum_limit":500,"maximum_response_bytes":24*1024*1024,"snapshot_binding":true},
         "freshness": {"version":crate::freshness::VERSION,"streaming":true,"mode":"verified_polling","limited":true,"reconcile_milliseconds":crate::freshness::RECONCILE_MILLISECONDS,"heartbeat_milliseconds":crate::freshness::HEARTBEAT_MILLISECONDS},
-        "flow_languages": ["java", "typescript"],
+        "flow_languages": ["java", "typescript", "csharp"],
         "source_origins": ["analyzed", "live"],
         "generation_binding": true,
         "generation_required": ["render_selection", "inspect"],

@@ -230,7 +230,7 @@ fn explorer_includes_hidden_entries_and_does_not_follow_symlinks() {
 }
 
 #[test]
-fn invalid_requests_and_unsupported_flow_remain_explicit() {
+fn invalid_requests_and_legacy_csharp_flow_unavailability_remain_explicit() {
     let root = tempfile::tempdir().unwrap();
     let root = root.path().canonicalize().unwrap();
     let bytes = saved_graph(&root);
@@ -238,6 +238,11 @@ fn invalid_requests_and_unsupported_flow_remain_explicit() {
     for node in artifact.graph["nodes"].as_array_mut().unwrap() {
         node["language"] = "csharp".into();
     }
+    artifact
+        .graph
+        .as_object_mut()
+        .unwrap()
+        .remove("flow_inventory");
     fs::write(
         root.join(codecallnavigator_core::artifact::GRAPH_PATH),
         artifact.bytes().unwrap(),
@@ -253,7 +258,7 @@ fn invalid_requests_and_unsupported_flow_remain_explicit() {
         response["error"]["message"]
             .as_str()
             .unwrap()
-            .contains("TASK-22")
+            .contains("Refresh")
     );
     let (code, response) = query(json!({"version":2,"project":root,"query":{"kind":"status"}}));
     assert_eq!(code, 2);

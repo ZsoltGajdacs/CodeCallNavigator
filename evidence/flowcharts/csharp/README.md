@@ -25,6 +25,14 @@ without explicit path rebasing would introduce differences unrelated to flow
 export. Verify the existing fixture contents before reusing that temporary root;
 keep analyzer output outside the scanned fixture.
 
+TASK-22.2 additionally supplies versioned compiler encoding metadata:
+`sourceFactsVersion: "1"` and nullable `architectureFiles[].sourceCodePage`.
+The raw acceptance helper validates that capability and code-page types, then
+removes only those named additive metadata fields before comparing the original
+graph projection. It verifies code page 65001 for the real UTF-8 solution fixture.
+Existing architecture source text, paths and semantic facts remain compared;
+the historical baseline JSON is unchanged.
+
 ## Reproducible patch installation
 
 The previous exact combined patch is preserved as
