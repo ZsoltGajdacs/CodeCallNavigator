@@ -1,0 +1,51 @@
+{
+  "version": 1,
+  "status": "passed",
+  "project": "/private/tmp/csharp-desktop-zocle9fu/project",
+  "root_symbol": "[\"csharp\",\"@repo/DesktopFlow.csproj\",\"@repo/Example.cs\",\"@repo/DesktopFlow.csproj|[DesktopFlow]::DesktopFlow.Example::Run(System.Boolean,DesktopFlow.IWorker)\"]",
+  "target_symbol": "[\"csharp\",\"@repo/DesktopFlow.csproj\",\"@repo/Example.cs\",\"@repo/DesktopFlow.csproj|[DesktopFlow]::DesktopFlow.Example::Leaf(System.Int32)\"]",
+  "target_signature": "[DesktopFlow]::DesktopFlow.Example::Leaf(System.Int32)",
+  "target_certainty": "direct",
+  "target_provenance": "roslyn:call",
+  "generation": "a33835b6a09dd7742d4c6c56a2fe84deacbd202c6652df378c3f3ca526a957a5",
+  "source_hash": "72fdbff0275325c7832b775e5208d5783b52d805c26bc391816ecdbbc072207a",
+  "source_bytes": 5737,
+  "runtime": {
+    "engine": "/private/tmp/csharp-desktop-zocle9fu/Relocated CodeCallNavigator.app/Contents/MacOS/codecallnavigator-engine",
+    "resources": "/private/tmp/csharp-desktop-zocle9fu/Relocated CodeCallNavigator.app/Contents/Resources",
+    "dot": "/private/tmp/csharp-desktop-zocle9fu/Relocated CodeCallNavigator.app/Contents/Resources/analyzers/graphviz/bin/dot"
+  },
+  "window_id": 21278,
+  "viewport": [
+    1147.0,
+    1344.0
+  ],
+  "backing_scale": 1.0,
+  "input_model": "Synthetic pointer input through production Runtime handlers in an actual native window; OS mouse delivery is not measured",
+  "checks": {
+    "root_opened": true,
+    "source_exact": true,
+    "source_highlighted": true,
+    "camera_dragged": true,
+    "source_scrolled": true,
+    "source_scroll_preserved_camera": true,
+    "zero_span_checked": null,
+    "target_followed": true,
+    "back_restored": true,
+    "graph_restored": true
+  },
+  "timings": {
+    "root_click_to_ready_drawn_ms": 136.549084,
+    "target_click_to_ready_drawn_ms": 114.248791
+  },
+  "frames": {
+    "drawn": 141,
+    "skipped": 7,
+    "unchanged": 0,
+    "first_drawn_ms": 112.992458,
+    "last_drawn_ms": 1620.753208,
+    "last_update_ms": 0.513375,
+    "last_encode_ms": 0.12345799999999996,
+    "refresh_hz": 119.99100547422964
+  }
+}

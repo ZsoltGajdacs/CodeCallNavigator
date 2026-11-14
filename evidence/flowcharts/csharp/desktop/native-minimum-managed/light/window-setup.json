@@ -1,0 +1,47 @@
+{
+  "process_id": 2997,
+  "window_id": 21372,
+  "commands": [
+    [
+      "/opt/homebrew/bin/aerospace",
+      "list-windows",
+      "--monitor",
+      "all",
+      "--pid",
+      "2997",
+      "--format",
+      "%{window-id} %{app-pid} %{window-layout}",
+      "--json"
+    ],
+    [
+      "/opt/homebrew/bin/aerospace",
+      "layout",
+      "--window-id",
+      "21372",
+      "floating"
+    ],
+    [
+      "/opt/homebrew/bin/aerospace",
+      "list-windows",
+      "--monitor",
+      "all",
+      "--pid",
+      "2997",
+      "--format",
+      "%{window-id} %{app-pid} %{window-layout}",
+      "--json"
+    ]
+  ],
+  "before": {
+    "app-pid": 2997,
+    "window-id": 21372,
+    "window-layout": "h_tiles"
+  },
+  "after": {
+    "app-pid": 2997,
+    "window-id": 21372,
+    "window-layout": "floating"
+  },
+  "status": "owned_window_floated",
+  "cleanup": "owned_process_exited"
+}

@@ -1,0 +1,129 @@
+{
+  "version": 1,
+  "recorded_at_utc": "2026-11-14T19:16:34.188876+00:00",
+  "scope": "Read-only native acceptance prerequisite diagnosis; no window/process enumeration, session identifiers, unlock attempts or display mutations.",
+  "query_execution": "Each query ran outside the macOS sandbox through exec_command(require_escalated).",
+  "timestamp_policy": "Earlier observations did not record a query timestamp. Their UTC timestamps are null; observed_order preserves actual query sequence without inventing times.",
+  "observations": [
+    {
+      "observed_order": 1,
+      "label": "native-first-active-displays",
+      "timestamp_utc": null,
+      "result": {
+        "CGGetActiveDisplayList_status": 0,
+        "active_display_count": 0,
+        "active_display_ids": [],
+        "main_display_id": 3
+      },
+      "command": "python3 - <<'PY'\nimport ctypes,json\ncg=ctypes.CDLL('/System/Library/Frameworks/CoreGraphics.framework/CoreGraphics')\nids=(ctypes.c_uint32*32)();count=ctypes.c_uint32()\nstatus=cg.CGGetActiveDisplayList(32,ids,ctypes.byref(count))\ncg.CGMainDisplayID.restype=ctypes.c_uint32\nprint(json.dumps({'CGGetActiveDisplayList_status':status,'active_display_count':count.value,'active_display_ids':list(ids)[:count.value],'main_display_id':cg.CGMainDisplayID()}))\nPY"
+    },
+    {
+      "observed_order": 2,
+      "label": "native-first-online-displays",
+      "timestamp_utc": null,
+      "result": {
+        "CGGetOnlineDisplayList_status": 0,
+        "online_display_count": 2,
+        "displays": [
+          {
+            "id": 3,
+            "active": 0,
+            "online": 1,
+            "asleep": 1,
+            "builtin": 0
+          },
+          {
+            "id": 1,
+            "active": 0,
+            "online": 1,
+            "asleep": 1,
+            "builtin": 1
+          }
+        ]
+      },
+      "command": "python3 - <<'PY'\nimport ctypes,json\ncg=ctypes.CDLL('/System/Library/Frameworks/CoreGraphics.framework/CoreGraphics')\nids=(ctypes.c_uint32*32)();count=ctypes.c_uint32()\nstatus=cg.CGGetOnlineDisplayList(32,ids,ctypes.byref(count))\nrows=[]\nfor display in list(ids)[:count.value]:\n rows.append({'id':display,'active':cg.CGDisplayIsActive(display),'online':cg.CGDisplayIsOnline(display),'asleep':cg.CGDisplayIsAsleep(display),'builtin':cg.CGDisplayIsBuiltin(display)})\nprint(json.dumps({'CGGetOnlineDisplayList_status':status,'online_display_count':count.value,'displays':rows}))\nPY"
+    },
+    {
+      "observed_order": 3,
+      "label": "native-awake-session",
+      "timestamp_utc": null,
+      "result": {
+        "display_status": 0,
+        "displays": [
+          {
+            "id": 3,
+            "active": 1,
+            "online": 1,
+            "asleep": 0
+          },
+          {
+            "id": 1,
+            "active": 1,
+            "online": 1,
+            "asleep": 0
+          }
+        ],
+        "session_flags": {
+          "kCGSessionOnConsoleKey": null,
+          "kCGSessionLoginDoneKey": true,
+          "CGSSessionScreenIsLocked": true
+        }
+      },
+      "command": "python3 - <<'PY'\nimport ctypes,json\ncg=ctypes.CDLL('/System/Library/Frameworks/CoreGraphics.framework/CoreGraphics')\ncf=ctypes.CDLL('/System/Library/Frameworks/CoreFoundation.framework/CoreFoundation')\nids=(ctypes.c_uint32*32)();count=ctypes.c_uint32()\nstatus=cg.CGGetOnlineDisplayList(32,ids,ctypes.byref(count))\nrows=[{'id':d,'active':cg.CGDisplayIsActive(d),'online':cg.CGDisplayIsOnline(d),'asleep':cg.CGDisplayIsAsleep(d)} for d in list(ids)[:count.value]]\nresult={'display_status':status,'displays':rows}\ncg.CGSessionCopyCurrentDictionary.restype=ctypes.c_void_p\ncf.CFStringCreateWithCString.argtypes=[ctypes.c_void_p,ctypes.c_char_p,ctypes.c_uint32];cf.CFStringCreateWithCString.restype=ctypes.c_void_p\ncf.CFDictionaryGetValue.argtypes=[ctypes.c_void_p,ctypes.c_void_p];cf.CFDictionaryGetValue.restype=ctypes.c_void_p\ncf.CFGetTypeID.argtypes=[ctypes.c_void_p];cf.CFGetTypeID.restype=ctypes.c_ulong\ncf.CFBooleanGetTypeID.restype=ctypes.c_ulong\ncf.CFBooleanGetValue.argtypes=[ctypes.c_void_p];cf.CFBooleanGetValue.restype=ctypes.c_bool\ncf.CFRelease.argtypes=[ctypes.c_void_p]\nsession=cg.CGSessionCopyCurrentDictionary()\nflags={}\nif session:\n for name in ['kCGSessionOnConsoleKey','kCGSessionLoginDoneKey','CGSSessionScreenIsLocked']:\n  key=cf.CFStringCreateWithCString(None,name.encode(),0x08000100)\n  value=cf.CFDictionaryGetValue(session,key)\n  flags[name]=bool(cf.CFBooleanGetValue(value)) if value and cf.CFGetTypeID(value)==cf.CFBooleanGetTypeID() else None\n  cf.CFRelease(key)\n cf.CFRelease(session)\nresult['session_flags']=flags\nprint(json.dumps(result))\nPY"
+    },
+    {
+      "observed_order": 4,
+      "label": "current-recheck",
+      "timestamp_utc": "2026-11-14T19:16:34.188876+00:00",
+      "active_display_status": 0,
+      "active_display_count": 0,
+      "active_display_ids": [],
+      "online_display_status": 0,
+      "online_display_count": 2,
+      "online_display_ids": [
+        3,
+        1
+      ],
+      "displays": [
+        {
+          "id": 3,
+          "active": false,
+          "online": true,
+          "asleep": true,
+          "builtin": false
+        },
+        {
+          "id": 1,
+          "active": false,
+          "online": true,
+          "asleep": true,
+          "builtin": true
+        }
+      ],
+      "session_dictionary_available": true,
+      "session_flags": {
+        "kCGSessionOnConsoleKey": null,
+        "kCGSessionLoginDoneKey": true,
+        "CGSSessionScreenIsLocked": true
+      },
+      "command": "python3 - <<'PY'\nimport ctypes, datetime, json\ncg = ctypes.CDLL('/System/Library/Frameworks/CoreGraphics.framework/CoreGraphics')\ncf = ctypes.CDLL('/System/Library/Frameworks/CoreFoundation.framework/CoreFoundation')\nids = (ctypes.c_uint32 * 32)()\nactive_count = ctypes.c_uint32()\nactive_status = cg.CGGetActiveDisplayList(32, ids, ctypes.byref(active_count))\nactive_ids = list(ids)[:active_count.value]\nonline_count = ctypes.c_uint32()\nonline_status = cg.CGGetOnlineDisplayList(32, ids, ctypes.byref(online_count))\nonline_ids = list(ids)[:online_count.value]\ndisplays = [{'id': display, 'active': bool(cg.CGDisplayIsActive(display)),\n             'online': bool(cg.CGDisplayIsOnline(display)),\n             'asleep': bool(cg.CGDisplayIsAsleep(display)),\n             'builtin': bool(cg.CGDisplayIsBuiltin(display))}\n            for display in online_ids]\ncg.CGSessionCopyCurrentDictionary.restype = ctypes.c_void_p\ncf.CFStringCreateWithCString.argtypes = [ctypes.c_void_p, ctypes.c_char_p, ctypes.c_uint32]\ncf.CFStringCreateWithCString.restype = ctypes.c_void_p\ncf.CFDictionaryGetValue.argtypes = [ctypes.c_void_p, ctypes.c_void_p]\ncf.CFDictionaryGetValue.restype = ctypes.c_void_p\ncf.CFGetTypeID.argtypes = [ctypes.c_void_p]\ncf.CFGetTypeID.restype = ctypes.c_ulong\ncf.CFBooleanGetTypeID.restype = ctypes.c_ulong\ncf.CFBooleanGetValue.argtypes = [ctypes.c_void_p]\ncf.CFBooleanGetValue.restype = ctypes.c_bool\ncf.CFRelease.argtypes = [ctypes.c_void_p]\nsession = cg.CGSessionCopyCurrentDictionary()\nflags = {}\nif session:\n    for name in ['kCGSessionOnConsoleKey', 'kCGSessionLoginDoneKey', 'CGSSessionScreenIsLocked']:\n        key = cf.CFStringCreateWithCString(None, name.encode(), 0x08000100)\n        value = cf.CFDictionaryGetValue(session, key)\n        flags[name] = bool(cf.CFBooleanGetValue(value)) if value and cf.CFGetTypeID(value) == cf.CFBooleanGetTypeID() else None\n        cf.CFRelease(key)\n    cf.CFRelease(session)\nprint(json.dumps({\n    'timestamp_utc': datetime.datetime.now(datetime.timezone.utc).isoformat(),\n    'active_display_status': active_status, 'active_display_count': active_count.value,\n    'active_display_ids': active_ids, 'online_display_status': online_status,\n    'online_display_count': online_count.value, 'online_display_ids': online_ids,\n    'displays': displays, 'session_dictionary_available': bool(session), 'session_flags': flags\n}))\nPY"
+    }
+  ],
+  "interpretation": {
+    "latest_state": "Native prerequisite remains unavailable: no active display and the queried screen-lock flag is true.",
+    "earlier_awake_retry": "The awake retry made both displays active, but the queried screen-lock flag remained true. Two startup trace rows did not establish a progressing displayed workflow.",
+    "session_flag_limit": "CGSessionCopyCurrentDictionary is read-only. CGSSessionScreenIsLocked is reported exactly as returned by the session dictionary. A null on-console value means the queried key was absent or not a CFBoolean, not false.",
+    "acceptance_status": "Pending. No native workflow or native screenshot pass is claimed.",
+    "native_evidence_paths": [
+      "evidence/flowcharts/csharp/desktop/native-first/dark/app.log",
+      "evidence/flowcharts/csharp/desktop/native-first/dark/native.jsonl",
+      "evidence/flowcharts/csharp/desktop/native-awake/dark/app.log",
+      "evidence/flowcharts/csharp/desktop/native-awake/dark/native.jsonl"
+    ],
+    "code_evidence": [
+      "vendor/rune/crates/rune/src/platform/display_link.rs:DisplayLink::new",
+      "vendor/rune/crates/rune/src/window/draw.rs:covered_frame",
+      "vendor/rune/crates/rune/src/window/draw.rs:Compositor::animating scheduling"
+    ]
+  }
+}

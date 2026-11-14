@@ -7,6 +7,9 @@ use crate::{
 use rune::{El, ScrollSpec, col, row, text};
 use rune_kit::{Button, ButtonVariant, Collapsible, Kit, List, ListItem};
 
+const BODY_UNAVAILABLE: &str =
+    "The analyzer reports this target but no project method body is available.";
+
 pub fn view(state: &State, k: &Kit) -> El {
     let content = col()
         .w(state.ui.inspector.width() - 32.0)
@@ -45,7 +48,10 @@ fn selection(state: &State, k: &Kit) -> El {
     };
     let mut content = method_summary(node, k);
     if state.flow_supported(&node.language) {
-        content = content.child(flow_action(k));
+        content = content.child(flow_action(node.body_unavailable, k));
+    }
+    if node.body_unavailable {
+        content = content.child(detail(BODY_UNAVAILABLE, k));
     }
     let mut content = content
         .child(
@@ -80,12 +86,6 @@ fn selection(state: &State, k: &Kit) -> El {
         .is_some_and(|entries| entries.framework_entries.contains(&node.id))
     {
         content = content.child(detail("Framework entry · statically recognized", k));
-    }
-    if node.body_unavailable {
-        content = content.child(detail(
-            "The analyzer reports this target but no project method body is available.",
-            k,
-        ));
     }
     content
 }
@@ -356,9 +356,14 @@ fn neighbor_pager(state: &State, incoming: bool, count: usize, k: &Kit) -> El {
         )
 }
 
-fn flow_action(k: &Kit) -> El {
+fn flow_action(body_unavailable: bool, k: &Kit) -> El {
     Button::new("Open flowchart")
-        .help("Open this method's analyzed source and function flow")
+        .disabled(body_unavailable)
+        .help(if body_unavailable {
+            BODY_UNAVAILABLE
+        } else {
+            "Open this method's analyzed source and function flow"
+        })
         .variant(ButtonVariant::Outline)
         .on_press(State::open_selected_flow)
         .build(k)

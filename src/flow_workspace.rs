@@ -7,6 +7,9 @@ use codecallnavigator::{
 use rune::{Latest, Tx};
 use std::{cell::Cell, collections::HashMap, path::Path, rc::Rc, sync::Arc};
 
+#[cfg(test)]
+mod tests;
+
 pub struct Ready {
     pub chart: FlowChart,
     pub source: source::SourceFile,
@@ -22,6 +25,11 @@ pub struct Session {
     pub message: String,
 }
 impl Session {
+    pub(crate) fn selected_source_span(&self) -> Option<flow::SourceSpan> {
+        let step = self.ready.as_ref()?.chart.steps.get(self.selected?)?;
+        (step.span != flow::SourceSpan::default()).then_some(step.span)
+    }
+
     fn new(symbol: String, epoch: u64, visit: u64) -> Self {
         let scroll_key = format!(
             "flow-source-scroll-{}",
@@ -199,14 +207,17 @@ impl State {
         let Some(ready) = &session.ready else {
             return;
         };
-        let Some(step) = ready.chart.steps.get(index) else {
+        if ready.chart.steps.get(index).is_none() {
+            return;
+        }
+        session.selected = Some(index);
+        let Some(span) = session.selected_source_span() else {
             return;
         };
-        session.selected = Some(index);
         let target = ready
             .source
             .lines
-            .partition_point(|line| line.range.end < step.span.start)
+            .partition_point(|line| line.range.end < span.start)
             .min(ready.source.lines.len().saturating_sub(1));
         tx.scroll_center_in_instant(
             session.scroll_key.clone(),

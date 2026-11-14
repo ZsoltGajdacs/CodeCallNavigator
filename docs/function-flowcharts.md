@@ -7,6 +7,10 @@ source snapshot. Select a step to highlight its source lines and inspect call
 targets. Known project targets open their own charts; overload signatures,
 certainty and analyzer provenance distinguish candidates. External or unresolved
 calls explain why a project target cannot be followed.
+Compiler-derived steps without a source location keep the source panel in place
+and explain why no line is highlighted. Targets known to have no available body
+show a disabled flowchart action and a reason; other unavailable or older saved
+flows explain their limitation when opened.
 
 Use **Previous function** (or Alt-Left) to return through flow history. **Back to
 call graph** (or Escape) restores the call graph with its selection, filters,
@@ -19,8 +23,8 @@ The source panel reads the immutable generation's cached source, not current dis
 contents. A stale graph notice means a refresh is needed to show source changes.
 Opening or following charts does not compile the project. Older graph caches remain
 usable for graph exploration; refresh them to collect function-flow metadata.
-AI explanations, PR comparisons, recursive call inlining and the remaining C#
-semantic/workflow milestones are tracked separately in TASK-22.
+AI explanations, PR comparisons and recursive call inlining are tracked
+separately in TASK-22.
 
 ## C# support
 
@@ -50,7 +54,8 @@ inter-method graph nodes, relationships or resolved targets. Their possible
 exceptional paths remain conservative. Unsupported regions are partial and do not
 claim a complete simulation of arbitrary effects or transfers.
 
-TASK-22.4 owns native/package workflow acceptance. See the
+C# desktop/native/package workflow acceptance is recorded in the
+[desktop evidence](../evidence/flowcharts/csharp/desktop/README.md). See the
 [CLI contract](cli-queries.md),
 [ingestion evidence](../evidence/flowcharts/csharp/ingestion/README.md) and
 [cleanup evidence](../evidence/flowcharts/csharp/cleanup/README.md).

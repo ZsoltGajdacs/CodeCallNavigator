@@ -1,0 +1,7 @@
+{
+  "version": 1,
+  "checkpoint": "restored-root",
+  "window_id": 21261,
+  "symbol": "[\"csharp\",\"@repo/DesktopFlow.csproj\",\"@repo/Example.cs\",\"@repo/DesktopFlow.csproj|[DesktopFlow]::DesktopFlow.Example::Run(System.Boolean,DesktopFlow.IWorker)\"]",
+  "generation": "a33835b6a09dd7742d4c6c56a2fe84deacbd202c6652df378c3f3ca526a957a5"
+}

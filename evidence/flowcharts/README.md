@@ -85,3 +85,14 @@ rendered with PATH restricted to system tools, exercising bundled Graphviz.
 and dark appearance at 1420×900 and 1050×680, plus a restricted-PATH packaged capture.
 The scene is explicitly synthetic; real compiler and Reactor acceptance are separate.
 Physical trackpad and VoiceOver validation were not performed.
+
+## C# delivery (2026-11-14)
+
+The [C# desktop evidence](csharp/desktop/README.md) records real compiler/CLI
+workflows, owned native light/dark windows at exactly 1050×680, relocated
+analyzer/Graphviz resources, source highlighting and target/Back restoration.
+Headless compatibility and controlled late-result tests are identified separately.
+All 46 full-verification stages pass; all 20 touched source files score 10.
+The [cleanup evidence](csharp/cleanup/README.md) and
+[support matrix](../../docs/function-flowcharts.md#c-support) retain the precise
+synchronous subset and opaque/conservative boundaries.

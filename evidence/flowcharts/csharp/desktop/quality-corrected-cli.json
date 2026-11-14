@@ -1,0 +1,137 @@
+{
+  "status": "passed",
+  "reviews": [
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "fixtures/flow/csharp-desktop/Example.cs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "src/flow_acceptance.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "src/flow_acceptance/config.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "src/flow_acceptance/driver.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "src/flow_acceptance/input.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "src/flow_acceptance/io.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "src/flow_acceptance/observation.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "src/flow_acceptance/report.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "src/flow_view/details.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "src/flow_workspace.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "src/flow_workspace/tests.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "src/inspector.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "src/main.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "src/ui_tests.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "src/ui_tests/csharp_flows.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "src/ui_tests/function_flows.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "tools/csharp_desktop_acceptance.py"
+    }
+  ],
+  "safeguard": {
+    "results": [],
+    "quality_gates": "passed",
+    "metadata": {
+      "checked-file-count": 17,
+      "code-health-eligible-file-count": 17,
+      "status": "no-issues-found",
+      "total-modified-file-count": 37
+    }
+  },
+  "errors": [],
+  "skipped_files": [
+    ".backlog/tasks/task-22.4 - Enable-and-verify-source-linked-C-flowcharts-in-desktop.md",
+    ".gitattributes",
+    "docs/function-flowcharts.md",
+    "evidence/flowcharts/csharp/desktop/README.md",
+    "evidence/flowcharts/csharp/desktop/code-health.json",
+    "evidence/flowcharts/csharp/desktop/native-awake/dark/app.log",
+    "evidence/flowcharts/csharp/desktop/native-awake/dark/config.json",
+    "evidence/flowcharts/csharp/desktop/native-awake/dark/native.jsonl",
+    "evidence/flowcharts/csharp/desktop/native-awake/result.json",
+    "evidence/flowcharts/csharp/desktop/native-first/dark/app.log",
+    "evidence/flowcharts/csharp/desktop/native-first/dark/config.json",
+    "evidence/flowcharts/csharp/desktop/native-first/dark/native.jsonl",
+    "evidence/flowcharts/csharp/desktop/native-first/result.json",
+    "evidence/flowcharts/csharp/desktop/native-prerequisites.json",
+    "evidence/flowcharts/csharp/desktop/refresh-overhead.json",
+    "evidence/flowcharts/csharp/desktop/verification.json",
+    "fixtures/flow/csharp-desktop/DesktopFlow.csproj"
+  ]
+}

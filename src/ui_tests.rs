@@ -8,6 +8,7 @@ mod canvas_gpu_performance;
 mod canvas_performance;
 mod cli_backend;
 mod cli_freshness;
+mod csharp_flows;
 mod function_flows;
 mod graph_fit;
 mod graph_studio;

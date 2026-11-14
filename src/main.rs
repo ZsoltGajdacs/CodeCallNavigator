@@ -12,6 +12,7 @@ mod edges;
 mod engine_client;
 mod explorer;
 mod fixture_queries;
+mod flow_acceptance;
 mod flow_scenes;
 mod flow_view;
 mod flow_workspace;
@@ -92,7 +93,7 @@ fn main() {
         .standard_menus()
         .keep_running()
         .on_close(jobs::close);
-    match pan_profile::attach(app) {
+    match pan_profile::attach(app).and_then(flow_acceptance::attach) {
         Ok(app) => app.run(),
         Err(error) => {
             eprintln!("{error:#}");
