@@ -1,6 +1,10 @@
 //! Read-only saved graph snapshots from immutable Git blobs or the working tree.
+mod inspection;
 use super::{Artifact, GRAPH_PATH};
 use anyhow::{Context, Result};
+pub use inspection::{
+    ArtifactFailure, ArtifactResult, InspectedEndpoint, Inspection, ObservedSchema, inspect,
+};
 use serde::Serialize;
 use std::{
     fmt, fs,
@@ -64,6 +68,17 @@ pub fn error_code(error: &anyhow::Error) -> &'static str {
 
 /// Reads a saved artifact exactly once. No checkout, analysis, fetch or cache writes.
 pub fn load(project: &Path, revision: &str) -> Result<Snapshot> {
+    inspect(project, revision)?.into_snapshot()
+}
+
+struct ReadSnapshot {
+    bytes: Vec<u8>,
+    commit: Option<String>,
+    kind: EndpointKind,
+    path: String,
+}
+
+fn read_snapshot(project: &Path, revision: &str) -> Result<ReadSnapshot> {
     let (bytes, commit, kind, path) = if revision == "WORKTREE" {
         let bytes = fs::read(project.join(GRAPH_PATH)).map_err(|error| {
             failure(
@@ -81,17 +96,12 @@ pub fn load(project: &Path, revision: &str) -> Result<Snapshot> {
         let (bytes, commit, path) = committed(project, revision)?;
         (bytes, Some(commit), EndpointKind::Commit, path)
     };
-    let artifact = Artifact::from_bytes(&bytes)
-        .map_err(|error| failure("invalid_graph", format!("{error:#}")))?;
-    let endpoint = Endpoint {
-        kind,
-        requested_ref: revision.into(),
+    Ok(ReadSnapshot {
+        bytes,
         commit,
+        kind,
         path,
-        schema: artifact.schema.clone(),
-        digest: blake3::hash(&bytes).to_hex().to_string(),
-    };
-    Ok(Snapshot { artifact, endpoint })
+    })
 }
 
 fn committed(project: &Path, revision: &str) -> Result<(Vec<u8>, String, String)> {

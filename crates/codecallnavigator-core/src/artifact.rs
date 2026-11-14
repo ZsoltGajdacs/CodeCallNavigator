@@ -2,6 +2,7 @@
 mod canonicalization;
 mod compare;
 pub mod difference;
+pub mod flow;
 mod identity;
 mod paths;
 mod portable;

@@ -1,0 +1,32 @@
+   Compiling libsqlite3-sys v0.39.1
+   Compiling blake3 v1.8.7
+   Compiling rusqlite v0.41.1
+   Compiling codecallnavigator-core v0.1.0 (/private/tmp/codecallnavigator-task22.5/crates/codecallnavigator-core)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 5.16s
+     Running tests/flow_comparison_contract.rs (target/debug/build/codecallnavigator-core/80fab381b3d91070/out/flow_comparison_contract-80fab381b3d91070)
+
+running 2 tests
+test flow_comparison_defaults_and_capability_are_additive ... FAILED
+test flow_detail_selection_retains_explicit_counterpart_and_rejects_unknown_fields ... FAILED
+
+failures:
+
+---- flow_comparison_defaults_and_capability_are_additive stdout ----
+
+thread 'flow_comparison_defaults_and_capability_are_additive' (48434501) panicked at crates/codecallnavigator-core/tests/flow_comparison_contract.rs:6:171:
+called `Result::unwrap()` on an `Err` value: Error("unknown variant `flow_comparison`, expected one of `status`, `freshness`, `compare`, `snapshot`, `search`, `symbol`, `source`, `live_source`, `architecture`, `explorer`, `selection`, `render_selection`, `inspect`, `neighbors`, `flow`", line: 0, column: 0)
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- flow_detail_selection_retains_explicit_counterpart_and_rejects_unknown_fields stdout ----
+
+thread 'flow_detail_selection_retains_explicit_counterpart_and_rejects_unknown_fields' (48434502) panicked at crates/codecallnavigator-core/tests/flow_comparison_contract.rs:29:86:
+called `Result::unwrap()` on an `Err` value: Error("unknown variant `flow_comparison`, expected one of `status`, `freshness`, `compare`, `snapshot`, `search`, `symbol`, `source`, `live_source`, `architecture`, `explorer`, `selection`, `render_selection`, `inspect`, `neighbors`, `flow`", line: 0, column: 0)
+
+
+failures:
+    flow_comparison_defaults_and_capability_are_additive
+    flow_detail_selection_retains_explicit_counterpart_and_rejects_unknown_fields
+
+test result: FAILED. 0 passed; 2 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p codecallnavigator-core --test flow_comparison_contract`

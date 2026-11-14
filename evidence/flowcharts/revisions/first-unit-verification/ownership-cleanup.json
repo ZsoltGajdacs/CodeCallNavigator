@@ -1,0 +1,46 @@
+{
+  "status": "passed",
+  "scope": "Temporary TASK22.5 first-unit constant ownership cleanup only",
+  "change": "MAX_SOURCE_BYTES remains public u64 through flow re-export; arithmetic value now belongs to flow/checked.rs",
+  "focused_tests": 14,
+  "core_all_targets_check": "passed",
+  "test_file_sha256": "0aa42779543352d52da949ea8ae249a32d04df9b08e17f658f613764a8144a31",
+  "quality_binary": "/Users/zsolt.gajdacs/.local/bin/cs-mcp",
+  "quality_version": "1.5.6",
+  "quality_report": "quality-owner-cleanup.json",
+  "quality": {
+    "status": "passed",
+    "reviews": [
+      {
+        "score": null,
+        "review": [],
+        "applicability": "declarations_only",
+        "path": "crates/codecallnavigator-core/src/flow.rs"
+      },
+      {
+        "score": 10.0,
+        "review": [],
+        "applicability": "reviewed",
+        "path": "crates/codecallnavigator-core/src/flow/checked.rs"
+      }
+    ],
+    "safeguard": {
+      "results": [],
+      "quality_gates": "passed",
+      "metadata": {
+        "checked-file-count": 29,
+        "code-health-eligible-file-count": 29,
+        "status": "no-issues-found",
+        "total-modified-file-count": 31
+      }
+    },
+    "errors": [],
+    "skipped_files": []
+  },
+  "parser_or_gate_changes": false,
+  "git_add_commit_reset": false,
+  "logs": [
+    "/private/tmp/task22-5-owner-cleanup-tests.log",
+    "/private/tmp/task22-5-owner-cleanup-check.log"
+  ]
+}

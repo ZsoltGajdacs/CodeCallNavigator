@@ -72,6 +72,70 @@ not compile, refresh, publish or write graph caches. Refresh is an explicit
 `analyze` command. Failed or cancelled analysis preserves the last successful
 artifact. The existing `serve-once` analysis protocol remains available.
 
+## Saved-revision function flows
+
+Check the optional `capabilities.flow_comparison.version` (currently 1) before
+using `flow_comparison`. It reads the same saved endpoints as `compare`, without
+requiring a loaded desktop graph or a current working artifact when both refs
+are commits. It does not analyze historical source. Start with a catalog:
+
+```json
+{"version":1,"project":"/checkout","query":{"kind":"flow_comparison","base":"main","head":"WORKTREE","selection":{"kind":"catalog","text":"Service","offset":0,"limit":50}}}
+```
+
+The result has `kind: "catalog"`, `version: 1`, `base`, `head`,
+`comparison_id`, endpoint availability, `complete`, and the usual paging fields.
+Endpoint metadata retains the requested ref, resolved commit, artifact path,
+exact-byte digest and observed schema (null when it cannot be identified).
+Each record identifies an exact saved symbol and its `membership`: `both`,
+`added`, `removed`, or `unknown`. Its sides are `present`, `missing`, or
+`unknown`; present sides contain declaration metadata and flow availability.
+`flow.status: "recorded"` means owned source/IR facts are available, not that a
+chart has already been built. The catalog includes saved nodes even when their
+flow is unavailable. Text matches symbol, label, signature, project or file,
+using ASCII case-insensitive substring matching. Ordering is by exact symbol ID.
+
+Catalog pages default to 50 records and accept 1–500. Pass the returned
+`comparison_id` as `expected_comparison` on subsequent searches, pages and detail
+requests; it is mandatory for nonzero offsets. Every request rechecks both
+endpoints. A moved ref or changed saved bytes returns `comparison_mismatch`,
+including a moved ref whose new commit contains identical artifact bytes.
+
+```json
+{"version":1,"project":"/checkout","query":{"kind":"flow_comparison","base":"main","expected_comparison":"<64-character comparison_id>","selection":{"kind":"detail","symbol":"<exact symbol ID>"}}}
+```
+
+The detail result contains `before` and `after`, each tagged `ready`, `missing`,
+or `unavailable`. A ready side contains its node, source IR, semantic chart,
+analyzed source and endpoint-local target summaries. Source is the exact cached
+UTF-8 snapshot, including BOM and line endings; live files and linked checkouts
+are not used to reconstruct charts or locations. Call targets retain certainty
+and provenance; endpoint-local target summaries include body availability.
+A known declaration with absent,
+ambiguous or unsupported flow/source remains unavailable with an explicit reason.
+An incompatible artifact makes its membership unknown rather than establishing
+an addition or removal; the other endpoint can still be available. An unreadable
+or missing revision/blob instead fails the request. Strict whole-artifact
+validation still applies, including to unselected metadata.
+
+Automatic correspondence uses the exact symbol ID on both sides. Renames, moves
+and signature changes remain separate removal/addition records. To compare a
+chosen counterpart explicitly, supply `selection.head_symbol`; differing IDs
+produce `correspondence.kind: "manual"`, with both requested IDs retained. There
+is no heuristic rename matching.
+
+The normal envelope generation identifies the head artifact digest. Committed
+heads have null freshness; WORKTREE uses the existing read-only input freshness
+observation. This observation may read live paths, but never replaces cached
+source in the result. Old artifacts remain graph-readable and explicitly report
+missing flow/source metadata rather than compiling or refreshing automatically.
+
+Refs and symbol IDs are limited to 16,384 bytes, catalog text to 1,024 bytes,
+and each analyzed source to 16 MiB. The complete response envelope, including
+escaped JSON and its newline, is limited to 24 MiB. Catalogs page whole records;
+details return the complete pair or `response_too_large`. Source and sides are
+never silently truncated. Cancellation and Git deadlines follow `compare`.
+
 ## Commands and lifecycle
 
 `codecallnavigator-engine capabilities` returns JSON describing the supported
@@ -160,6 +224,7 @@ Errors include `invalid_request`, `unsupported_version`, `project_unavailable`,
 | `neighbors` | `symbol`, optional `filter`, `limits` | Both incoming and outgoing depth-one selection. |
 | `inspect` | `symbol`, optional `filter` | Complete incoming/outgoing IDs and root-incident relationships; requires generation binding. |
 | `flow` | `symbol` | Source IR, semantic chart without layout geometry, analyzed source and diagnostics. |
+| `flow_comparison` | `base`, optional `head`, `expected_comparison`; `selection: catalog` or `detail` | Bound saved-revision catalog or paired flows and cached source; see above. |
 
 Search categories are `all`, `classes`, `methods`. Search defaults to 50 results
 and accepts 1–200. Class hits carry their build/project/container identity and

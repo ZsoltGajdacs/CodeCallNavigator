@@ -12,6 +12,9 @@ impl Executor {
         if let Err(error) = query::validate(request) {
             return query::envelope(None, Err(error));
         }
+        if let Some(response) = super::flow_comparison::respond(request) {
+            return response;
+        }
         if let Some(response) = super::comparison::respond(request) {
             return response;
         }

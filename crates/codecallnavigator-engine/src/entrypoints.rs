@@ -3,6 +3,7 @@ mod analysis;
 mod arguments;
 mod cancellation;
 mod comparison;
+mod flow_comparison;
 mod inference;
 mod linked_roots;
 mod machine;

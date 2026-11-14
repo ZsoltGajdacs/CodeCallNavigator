@@ -20,6 +20,11 @@ See the [external consumer contract](graph-contract.md) and its
 [JSON Schema](graph.schema.json) for compatibility and input verification.
 The [public CLI query interface](cli-queries.md) provides bounded graph queries,
 source/flow data and generation-bound snapshots without running analysis.
+Its optional `flow_comparison` operation reads selected before/after charts and
+cached source directly from saved Git artifacts, retaining exact endpoint
+digests and explicit per-side availability. It uses the same comparison binding
+as `compare`, with exact stable-ID correspondence and an explicit manual
+counterpart option; see the [saved-revision contract](cli-queries.md#saved-revision-function-flows).
 
 ## Project artifact and Git history
 

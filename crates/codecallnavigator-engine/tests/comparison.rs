@@ -216,3 +216,52 @@ fn byte_budget_shortens_pages_and_rejects_an_oversized_record() {
         "response_too_large"
     );
 }
+
+#[test]
+fn comparison_identity_keeps_the_original_endpoint_tuple_and_field_serialization() {
+    use artifact::{difference, revision};
+    let directory = tempfile::tempdir().unwrap();
+    let root = directory.path().canonicalize().unwrap();
+    repository(&root);
+    let before = revision::load(&root, "HEAD").unwrap();
+    let after = revision::load(&root, "WORKTREE").unwrap();
+    let expected = blake3::hash(
+        &serde_json::to_vec(&(difference::VERSION, &before.endpoint, &after.endpoint)).unwrap(),
+    )
+    .to_hex()
+    .to_string();
+    let response = query(&root, json!({"kind":"compare","base":"HEAD"}));
+    assert!(response["error"].is_null(), "{response}");
+    let expected_binding =
+        json!({"comparison_id":expected,"base":before.endpoint,"head":after.endpoint});
+    let actual_binding = json!({
+        "comparison_id":response["result"]["comparison_id"],
+        "base":response["result"]["base"],
+        "head":response["result"]["head"],
+    });
+    assert_eq!(actual_binding, expected_binding);
+}
+
+#[test]
+fn strict_comparison_reports_invalid_base_before_reading_unavailable_head() {
+    let directory = tempfile::tempdir().unwrap();
+    let root = directory.path().canonicalize().unwrap();
+    let mut graph = repository(&root);
+    graph.schema = "incompatible.graph.v99".into();
+    fs::write(
+        root.join(artifact::GRAPH_PATH),
+        serde_json::to_vec(&graph).unwrap(),
+    )
+    .unwrap();
+    git(&root, &["add", artifact::GRAPH_PATH]);
+    git(&root, &["commit", "-qm", "incompatible saved graph"]);
+    let response = query(
+        &root,
+        json!({"kind":"compare","base":"HEAD","head":"missing-ref"}),
+    );
+    assert_eq!(response["error"]["code"], "invalid_graph");
+    assert_eq!(
+        response["error"]["message"],
+        "Unsupported graph artifact schema: incompatible.graph.v99"
+    );
+}

@@ -1,0 +1,42 @@
+{
+  "status": "passed",
+  "scope": "Independent temporary-checkout TASK22.5 second unit; original workspace untouched",
+  "tests": {
+    "core_library": 108,
+    "portable_flows": 14,
+    "completion_contracts": 3,
+    "revision_inspection": 7,
+    "public_compare": 7,
+    "total_passed": 139
+  },
+  "added_coverage": "One real-Git WORKTREE test covers missing/non-string/future schema and invalid UTF-8 bytes; binds exact raw digest/path/commitNone, preserves graph/index/status, and leaves valid committed snapshot available.",
+  "compatibility_verified": [
+    "Legacy known-schema endpoint serialized-byte equality",
+    "Strict unsupported/malformed artifact errors retained",
+    "Read failure codes remain errors without fabricated digest",
+    "Moved refs with identical artifact bytes change binding",
+    "Compare IDs retain original version/ordered endpoint tuple",
+    "Public Compare strict base-before-head error precedence",
+    "Public query-session nested-ref binding and pagination mismatch",
+    "WORKTREE freshness and committed no-worktree behavior",
+    "No checkout/fetch/analysis-lock/index/graph mutation by inspection"
+  ],
+  "checks": {
+    "core_engine_all_targets_check": "passed",
+    "core_engine_all_targets_clippy_D_warnings": "passed",
+    "format_and_diff": "passed"
+  },
+  "quality": {
+    "mcp_modified_test_score": 10,
+    "exact_cli_binary": "/Users/zsolt.gajdacs/.local/bin/cs-mcp",
+    "exact_cli_version": "1.5.6",
+    "modified_test_score": 10
+  },
+  "test_sha256": "bca844d3cdf923784b39a79a1f943769380e77082bf3a1af18683866956e809d",
+  "production_changes_by_tester": false,
+  "limits": [
+    "No full/workspace/analyzer/native run",
+    "No new Query operation tested or added",
+    "Artifact validation remains strict; relaxed schema observation never becomes usable artifact"
+  ]
+}

@@ -69,6 +69,7 @@ pub fn execute(graph: &GraphIndex, query: &Query) -> Result<Value> {
         | Query::Architecture { .. }
         | Query::Freshness { .. }
         | Query::Compare { .. }
+        | Query::FlowComparison { .. }
         | Query::RenderSelection { layer: Some(_), .. } => Err(Error::new(
             "invalid_request",
             "Live filesystem queries require engine handling",
@@ -87,24 +88,11 @@ fn function_flow(graph: &GraphIndex, symbol: &str) -> Result<Value> {
             project: &function.project,
         },
     )?;
-    validate_flow_source(function, content)?;
-    let chart =
-        flow::build(function).map_err(|e| Error::new("flow_unavailable", format!("{e:#}")))?;
+    let chart = flow::checked_chart(function, content)
+        .map_err(|e| Error::new("flow_unavailable", format!("{e:#}")))?;
     let line = graph.data.nodes[node(graph, symbol)? as usize].line;
     let source = json!({"origin":"analyzed","file":function.file,"symbol":symbol,"line":line,"content":content});
     Ok(json!({"function":function,"chart":chart,"source":source}))
-}
-
-fn validate_flow_source(function: &flow::FunctionFlowIR, content: &str) -> Result<()> {
-    flow::validate_source(function, content)
-        .map_err(|error| Error::new("flow_unavailable", error.to_string()))?;
-    if content.len() as u64 > super::MAX_SOURCE_BYTES {
-        return Err(Error::new(
-            "flow_unavailable",
-            "The analyzed source exceeds the 16 MiB flow source limit",
-        ));
-    }
-    Ok(())
 }
 
 fn status(graph: &GraphIndex) -> Value {
