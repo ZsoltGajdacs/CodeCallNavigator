@@ -1,0 +1,1501 @@
+{
+  "status": "passed",
+  "candidate": {
+    "engine_path": "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/target/release/codecallnavigator-engine",
+    "engine_sha256": "da7c6c02c920fd863f9cfce2bcd7a58e6426e6b24c8d2b6111da9bb98bde9637",
+    "callatlas_revision": "916c2419c0cdb91b5b86b84df4842dadb17bb6b4",
+    "combined_patch_sha256": "c937ed67e92cc45783ad57289e8bfc15a4d55e3548bfe173ee7eacbe12f3990d"
+  },
+  "cases": {
+    "using-scope": {
+      "status": "passed",
+      "runtime": {
+        "scenario": "using-scope",
+        "events": [
+          {
+            "operation": "acquire",
+            "name": "one",
+            "outcome": "normal",
+            "value": null
+          },
+          {
+            "operation": "mark",
+            "name": "body",
+            "outcome": "normal",
+            "value": null
+          },
+          {
+            "operation": "dispose",
+            "name": "one",
+            "outcome": "normal",
+            "value": null
+          }
+        ],
+        "result": 0,
+        "outcome": "normal",
+        "error": null
+      },
+      "chart": {
+        "diagnostics": [
+          "Calls inside protected regions may throw; exceptional paths are conservative, not runtime predictions"
+        ],
+        "entry": 0,
+        "file": "<cleanup-work>/fixture/Runtime/Scenarios.cs",
+        "links": [
+          {
+            "from": 0,
+            "kind": "normal",
+            "label": "",
+            "to": 1
+          },
+          {
+            "from": 1,
+            "kind": "normal",
+            "label": "",
+            "to": 2
+          },
+          {
+            "from": 2,
+            "kind": "normal",
+            "label": "",
+            "to": 3
+          },
+          {
+            "from": 3,
+            "kind": "normal",
+            "label": "",
+            "to": 4
+          },
+          {
+            "from": 4,
+            "kind": "normal",
+            "label": "",
+            "to": 5
+          },
+          {
+            "from": 5,
+            "kind": "normal",
+            "label": "",
+            "to": 6
+          },
+          {
+            "from": 6,
+            "kind": "normal",
+            "label": "",
+            "to": 7
+          },
+          {
+            "from": 7,
+            "kind": "normal",
+            "label": "",
+            "to": 8
+          },
+          {
+            "from": 8,
+            "kind": "normal",
+            "label": "",
+            "to": 9
+          },
+          {
+            "from": 9,
+            "kind": "normal",
+            "label": "",
+            "to": 10
+          },
+          {
+            "from": 7,
+            "kind": "exception",
+            "label": "may throw",
+            "to": 11
+          },
+          {
+            "from": 10,
+            "kind": "normal",
+            "label": "",
+            "to": 12
+          },
+          {
+            "from": 3,
+            "kind": "exception",
+            "label": "may throw",
+            "to": 13
+          },
+          {
+            "from": 10,
+            "kind": "exception",
+            "label": "may throw",
+            "to": 13
+          },
+          {
+            "from": 11,
+            "kind": "normal",
+            "label": "",
+            "to": 13
+          },
+          {
+            "from": 11,
+            "kind": "exception",
+            "label": "may throw",
+            "to": 13
+          }
+        ],
+        "partial": true,
+        "regions": [],
+        "span": {
+          "end": 227,
+          "start": 99
+        },
+        "steps": [
+          {
+            "calls": [],
+            "id": 0,
+            "kind": "start",
+            "label": "Function entry",
+            "span": {
+              "end": 227,
+              "start": 99
+            }
+          },
+          {
+            "calls": [],
+            "id": 1,
+            "kind": "expression",
+            "label": "TraceRuntime",
+            "span": {
+              "end": 152,
+              "start": 140
+            }
+          },
+          {
+            "calls": [],
+            "id": 2,
+            "kind": "expression",
+            "label": "\"one\"",
+            "span": {
+              "end": 166,
+              "start": 161
+            }
+          },
+          {
+            "calls": [
+              {
+                "diagnostic": null,
+                "label": "TraceRuntime.Acquire(\"one\")",
+                "span": {
+                  "end": 167,
+                  "start": 140
+                },
+                "targets": [
+                  {
+                    "certainty": "direct",
+                    "provenance": "roslyn:call",
+                    "symbol": "[\"csharp\",\"@repo/Runtime/CleanupRuntime.csproj\",\"@repo/Trace.cs\",\"@repo/Runtime/CleanupRuntime.csproj|[CleanupRuntime]::CleanupFixture.TraceRuntime::Acquire(System.String,System.Boolean,System.Boolean)\"]"
+                  }
+                ]
+              }
+            ],
+            "id": 3,
+            "kind": "expression",
+            "label": "TraceRuntime.Acquire(\"one\")",
+            "span": {
+              "end": 167,
+              "start": 140
+            }
+          },
+          {
+            "calls": [],
+            "id": 4,
+            "kind": "expression",
+            "label": "synthetic C#: capture using resource resource once",
+            "span": {
+              "end": 167,
+              "start": 129
+            }
+          },
+          {
+            "calls": [],
+            "id": 5,
+            "kind": "expression",
+            "label": "TraceRuntime",
+            "span": {
+              "end": 189,
+              "start": 177
+            }
+          },
+          {
+            "calls": [],
+            "id": 6,
+            "kind": "expression",
+            "label": "\"body\"",
+            "span": {
+              "end": 201,
+              "start": 195
+            }
+          },
+          {
+            "calls": [
+              {
+                "diagnostic": null,
+                "label": "TraceRuntime.Mark(\"body\")",
+                "span": {
+                  "end": 202,
+                  "start": 177
+                },
+                "targets": [
+                  {
+                    "certainty": "direct",
+                    "provenance": "roslyn:call",
+                    "symbol": "[\"csharp\",\"@repo/Runtime/CleanupRuntime.csproj\",\"@repo/Trace.cs\",\"@repo/Runtime/CleanupRuntime.csproj|[CleanupRuntime]::CleanupFixture.TraceRuntime::Mark(System.String)\"]"
+                  }
+                ]
+              }
+            ],
+            "id": 7,
+            "kind": "expression",
+            "label": "TraceRuntime.Mark(\"body\")",
+            "span": {
+              "end": 202,
+              "start": 177
+            }
+          },
+          {
+            "calls": [],
+            "id": 8,
+            "kind": "expression",
+            "label": "0",
+            "span": {
+              "end": 220,
+              "start": 219
+            }
+          },
+          {
+            "calls": [],
+            "id": 9,
+            "kind": "return",
+            "label": "return",
+            "span": {
+              "end": 221,
+              "start": 212
+            }
+          },
+          {
+            "calls": [
+              {
+                "diagnostic": "roslyn:implicit:Dispose; compiler-selected operation, not a native graph edge",
+                "label": "synthetic C#: Dispose captured resource",
+                "span": {
+                  "end": 167,
+                  "start": 129
+                },
+                "targets": []
+              }
+            ],
+            "id": 10,
+            "kind": "expression",
+            "label": "synthetic C#: Dispose captured resource",
+            "span": {
+              "end": 167,
+              "start": 129
+            }
+          },
+          {
+            "calls": [
+              {
+                "diagnostic": "roslyn:implicit:Dispose; compiler-selected operation, not a native graph edge",
+                "label": "synthetic C#: Dispose captured resource",
+                "span": {
+                  "end": 167,
+                  "start": 129
+                },
+                "targets": []
+              }
+            ],
+            "id": 11,
+            "kind": "expression",
+            "label": "synthetic C#: Dispose captured resource",
+            "span": {
+              "end": 167,
+              "start": 129
+            }
+          },
+          {
+            "calls": [],
+            "id": 12,
+            "kind": "exit",
+            "label": "Return to caller",
+            "span": {
+              "end": 227,
+              "start": 99
+            }
+          },
+          {
+            "calls": [],
+            "id": 13,
+            "kind": "exit",
+            "label": "Exception escapes",
+            "span": {
+              "end": 227,
+              "start": 99
+            }
+          }
+        ],
+        "symbol": "[\"csharp\",\"@repo/Runtime/CleanupRuntime.csproj\",\"@repo/Runtime/Scenarios.cs\",\"@repo/Runtime/CleanupRuntime.csproj|[CleanupRuntime]::CleanupFixture.CleanupCases::UseScope()\"]"
+      },
+      "runtime_trace_path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        12
+      ],
+      "forbidden_paths": {
+        "skip-mandatory-dispose": null
+      },
+      "opaque_steps_present": false,
+      "source_sha256": "9d486a3aa6227503dddefb26dd5438dd6d3bf8ace937d98bebc74f877c6124db"
+    },
+    "acquisition-failure": {
+      "status": "passed",
+      "runtime": {
+        "scenario": "acquisition-failure",
+        "events": [
+          {
+            "operation": "acquire",
+            "name": "first",
+            "outcome": "normal",
+            "value": null
+          },
+          {
+            "operation": "acquire",
+            "name": "second",
+            "outcome": "throw",
+            "value": null
+          },
+          {
+            "operation": "dispose",
+            "name": "first",
+            "outcome": "normal",
+            "value": null
+          }
+        ],
+        "result": null,
+        "outcome": "throw",
+        "error": "ProbeException:acquire:second"
+      },
+      "chart": {
+        "diagnostics": [
+          "Calls inside protected regions may throw; exceptional paths are conservative, not runtime predictions"
+        ],
+        "entry": 0,
+        "file": "<cleanup-work>/fixture/Runtime/Scenarios.cs",
+        "links": [
+          {
+            "from": 0,
+            "kind": "normal",
+            "label": "",
+            "to": 1
+          },
+          {
+            "from": 1,
+            "kind": "normal",
+            "label": "",
+            "to": 2
+          },
+          {
+            "from": 2,
+            "kind": "normal",
+            "label": "",
+            "to": 3
+          },
+          {
+            "from": 3,
+            "kind": "normal",
+            "label": "",
+            "to": 4
+          },
+          {
+            "from": 4,
+            "kind": "normal",
+            "label": "",
+            "to": 5
+          },
+          {
+            "from": 5,
+            "kind": "normal",
+            "label": "",
+            "to": 6
+          },
+          {
+            "from": 6,
+            "kind": "normal",
+            "label": "",
+            "to": 7
+          },
+          {
+            "from": 7,
+            "kind": "normal",
+            "label": "",
+            "to": 8
+          },
+          {
+            "from": 8,
+            "kind": "normal",
+            "label": "",
+            "to": 9
+          },
+          {
+            "from": 9,
+            "kind": "normal",
+            "label": "",
+            "to": 10
+          },
+          {
+            "from": 10,
+            "kind": "normal",
+            "label": "",
+            "to": 11
+          },
+          {
+            "from": 11,
+            "kind": "normal",
+            "label": "",
+            "to": 12
+          },
+          {
+            "from": 12,
+            "kind": "normal",
+            "label": "",
+            "to": 13
+          },
+          {
+            "from": 12,
+            "kind": "exception",
+            "label": "may throw",
+            "to": 14
+          },
+          {
+            "from": 13,
+            "kind": "normal",
+            "label": "",
+            "to": 15
+          },
+          {
+            "from": 8,
+            "kind": "exception",
+            "label": "may throw",
+            "to": 16
+          },
+          {
+            "from": 13,
+            "kind": "exception",
+            "label": "may throw",
+            "to": 16
+          },
+          {
+            "from": 14,
+            "kind": "normal",
+            "label": "",
+            "to": 16
+          },
+          {
+            "from": 14,
+            "kind": "exception",
+            "label": "may throw",
+            "to": 16
+          },
+          {
+            "from": 15,
+            "kind": "normal",
+            "label": "",
+            "to": 17
+          },
+          {
+            "from": 17,
+            "kind": "normal",
+            "label": "",
+            "to": 18
+          },
+          {
+            "from": 18,
+            "kind": "normal",
+            "label": "",
+            "to": 19
+          },
+          {
+            "from": 3,
+            "kind": "exception",
+            "label": "may throw",
+            "to": 20
+          },
+          {
+            "from": 15,
+            "kind": "exception",
+            "label": "may throw",
+            "to": 20
+          },
+          {
+            "from": 16,
+            "kind": "normal",
+            "label": "",
+            "to": 20
+          },
+          {
+            "from": 16,
+            "kind": "exception",
+            "label": "may throw",
+            "to": 20
+          }
+        ],
+        "partial": true,
+        "regions": [],
+        "span": {
+          "end": 507,
+          "start": 276
+        },
+        "steps": [
+          {
+            "calls": [],
+            "id": 0,
+            "kind": "start",
+            "label": "Function entry",
+            "span": {
+              "end": 507,
+              "start": 276
+            }
+          },
+          {
+            "calls": [],
+            "id": 1,
+            "kind": "expression",
+            "label": "TraceRuntime",
+            "span": {
+              "end": 327,
+              "start": 315
+            }
+          },
+          {
+            "calls": [],
+            "id": 2,
+            "kind": "expression",
+            "label": "\"first\"",
+            "span": {
+              "end": 343,
+              "start": 336
+            }
+          },
+          {
+            "calls": [
+              {
+                "diagnostic": null,
+                "label": "TraceRuntime.Acquire(\"first\")",
+                "span": {
+                  "end": 344,
+                  "start": 315
+                },
+                "targets": [
+                  {
+                    "certainty": "direct",
+                    "provenance": "roslyn:call",
+                    "symbol": "[\"csharp\",\"@repo/Runtime/CleanupRuntime.csproj\",\"@repo/Trace.cs\",\"@repo/Runtime/CleanupRuntime.csproj|[CleanupRuntime]::CleanupFixture.TraceRuntime::Acquire(System.String,System.Boolean,System.Boolean)\"]"
+                  }
+                ]
+              }
+            ],
+            "id": 3,
+            "kind": "expression",
+            "label": "TraceRuntime.Acquire(\"first\")",
+            "span": {
+              "end": 344,
+              "start": 315
+            }
+          },
+          {
+            "calls": [],
+            "id": 4,
+            "kind": "expression",
+            "label": "synthetic C#: capture using resource first once",
+            "span": {
+              "end": 344,
+              "start": 307
+            }
+          },
+          {
+            "calls": [],
+            "id": 5,
+            "kind": "expression",
+            "label": "TraceRuntime",
+            "span": {
+              "end": 382,
+              "start": 370
+            }
+          },
+          {
+            "calls": [],
+            "id": 6,
+            "kind": "expression",
+            "label": "\"second\"",
+            "span": {
+              "end": 399,
+              "start": 391
+            }
+          },
+          {
+            "calls": [],
+            "id": 7,
+            "kind": "expression",
+            "label": "true",
+            "span": {
+              "end": 411,
+              "start": 407
+            }
+          },
+          {
+            "calls": [
+              {
+                "diagnostic": null,
+                "label": "TraceRuntime.Acquire(\"second\", fail: true)",
+                "span": {
+                  "end": 412,
+                  "start": 370
+                },
+                "targets": [
+                  {
+                    "certainty": "direct",
+                    "provenance": "roslyn:call",
+                    "symbol": "[\"csharp\",\"@repo/Runtime/CleanupRuntime.csproj\",\"@repo/Trace.cs\",\"@repo/Runtime/CleanupRuntime.csproj|[CleanupRuntime]::CleanupFixture.TraceRuntime::Acquire(System.String,System.Boolean,System.Boolean)\"]"
+                  }
+                ]
+              }
+            ],
+            "id": 8,
+            "kind": "expression",
+            "label": "TraceRuntime.Acquire(\"second\", fail: true)",
+            "span": {
+              "end": 412,
+              "start": 370
+            }
+          },
+          {
+            "calls": [],
+            "id": 9,
+            "kind": "expression",
+            "label": "synthetic C#: capture using resource second once",
+            "span": {
+              "end": 412,
+              "start": 361
+            }
+          },
+          {
+            "calls": [],
+            "id": 10,
+            "kind": "expression",
+            "label": "TraceRuntime",
+            "span": {
+              "end": 448,
+              "start": 436
+            }
+          },
+          {
+            "calls": [],
+            "id": 11,
+            "kind": "expression",
+            "label": "\"impossible-body\"",
+            "span": {
+              "end": 471,
+              "start": 454
+            }
+          },
+          {
+            "calls": [
+              {
+                "diagnostic": null,
+                "label": "TraceRuntime.Mark(\"impossible-body\")",
+                "span": {
+                  "end": 472,
+                  "start": 436
+                },
+                "targets": [
+                  {
+                    "certainty": "direct",
+                    "provenance": "roslyn:call",
+                    "symbol": "[\"csharp\",\"@repo/Runtime/CleanupRuntime.csproj\",\"@repo/Trace.cs\",\"@repo/Runtime/CleanupRuntime.csproj|[CleanupRuntime]::CleanupFixture.TraceRuntime::Mark(System.String)\"]"
+                  }
+                ]
+              }
+            ],
+            "id": 12,
+            "kind": "expression",
+            "label": "TraceRuntime.Mark(\"impossible-body\")",
+            "span": {
+              "end": 472,
+              "start": 436
+            }
+          },
+          {
+            "calls": [
+              {
+                "diagnostic": "roslyn:implicit:Dispose; compiler-selected operation, not a native graph edge",
+                "label": "synthetic C#: Dispose captured second",
+                "span": {
+                  "end": 412,
+                  "start": 361
+                },
+                "targets": []
+              }
+            ],
+            "id": 13,
+            "kind": "expression",
+            "label": "synthetic C#: Dispose captured second",
+            "span": {
+              "end": 412,
+              "start": 361
+            }
+          },
+          {
+            "calls": [
+              {
+                "diagnostic": "roslyn:implicit:Dispose; compiler-selected operation, not a native graph edge",
+                "label": "synthetic C#: Dispose captured second",
+                "span": {
+                  "end": 412,
+                  "start": 361
+                },
+                "targets": []
+              }
+            ],
+            "id": 14,
+            "kind": "expression",
+            "label": "synthetic C#: Dispose captured second",
+            "span": {
+              "end": 412,
+              "start": 361
+            }
+          },
+          {
+            "calls": [
+              {
+                "diagnostic": "roslyn:implicit:Dispose; compiler-selected operation, not a native graph edge",
+                "label": "synthetic C#: Dispose captured first",
+                "span": {
+                  "end": 344,
+                  "start": 307
+                },
+                "targets": []
+              }
+            ],
+            "id": 15,
+            "kind": "expression",
+            "label": "synthetic C#: Dispose captured first",
+            "span": {
+              "end": 344,
+              "start": 307
+            }
+          },
+          {
+            "calls": [
+              {
+                "diagnostic": "roslyn:implicit:Dispose; compiler-selected operation, not a native graph edge",
+                "label": "synthetic C#: Dispose captured first",
+                "span": {
+                  "end": 344,
+                  "start": 307
+                },
+                "targets": []
+              }
+            ],
+            "id": 16,
+            "kind": "expression",
+            "label": "synthetic C#: Dispose captured first",
+            "span": {
+              "end": 344,
+              "start": 307
+            }
+          },
+          {
+            "calls": [],
+            "id": 17,
+            "kind": "expression",
+            "label": "0",
+            "span": {
+              "end": 500,
+              "start": 499
+            }
+          },
+          {
+            "calls": [],
+            "id": 18,
+            "kind": "return",
+            "label": "return",
+            "span": {
+              "end": 501,
+              "start": 492
+            }
+          },
+          {
+            "calls": [],
+            "id": 19,
+            "kind": "exit",
+            "label": "Return to caller",
+            "span": {
+              "end": 507,
+              "start": 276
+            }
+          },
+          {
+            "calls": [],
+            "id": 20,
+            "kind": "exit",
+            "label": "Exception escapes",
+            "span": {
+              "end": 507,
+              "start": 276
+            }
+          }
+        ],
+        "symbol": "[\"csharp\",\"@repo/Runtime/CleanupRuntime.csproj\",\"@repo/Runtime/Scenarios.cs\",\"@repo/Runtime/CleanupRuntime.csproj|[CleanupRuntime]::CleanupFixture.CleanupCases::AcquisitionFailure()\"]"
+      },
+      "runtime_trace_path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        16,
+        20
+      ],
+      "forbidden_paths": {
+        "skip-mandatory-dispose": null,
+        "dispose-unacquired-second": null,
+        "body-after-failed-acquisition": null,
+        "throw-resumes-normal-completion": null
+      },
+      "opaque_steps_present": false,
+      "source_sha256": "9d486a3aa6227503dddefb26dd5438dd6d3bf8ace937d98bebc74f877c6124db"
+    },
+    "dispose-throws-outer": {
+      "status": "passed",
+      "runtime": {
+        "scenario": "dispose-throws-outer",
+        "events": [
+          {
+            "operation": "acquire",
+            "name": "outer",
+            "outcome": "normal",
+            "value": null
+          },
+          {
+            "operation": "acquire",
+            "name": "inner",
+            "outcome": "normal",
+            "value": null
+          },
+          {
+            "operation": "mark",
+            "name": "body",
+            "outcome": "normal",
+            "value": null
+          },
+          {
+            "operation": "dispose",
+            "name": "inner",
+            "outcome": "throw",
+            "value": null
+          },
+          {
+            "operation": "dispose",
+            "name": "outer",
+            "outcome": "normal",
+            "value": null
+          }
+        ],
+        "result": null,
+        "outcome": "throw",
+        "error": "ProbeException:dispose:inner"
+      },
+      "chart": {
+        "diagnostics": [
+          "Calls inside protected regions may throw; exceptional paths are conservative, not runtime predictions"
+        ],
+        "entry": 0,
+        "file": "<cleanup-work>/fixture/Runtime/Scenarios.cs",
+        "links": [
+          {
+            "from": 0,
+            "kind": "normal",
+            "label": "",
+            "to": 1
+          },
+          {
+            "from": 1,
+            "kind": "normal",
+            "label": "",
+            "to": 2
+          },
+          {
+            "from": 2,
+            "kind": "normal",
+            "label": "",
+            "to": 3
+          },
+          {
+            "from": 3,
+            "kind": "normal",
+            "label": "",
+            "to": 4
+          },
+          {
+            "from": 4,
+            "kind": "normal",
+            "label": "",
+            "to": 5
+          },
+          {
+            "from": 5,
+            "kind": "normal",
+            "label": "",
+            "to": 6
+          },
+          {
+            "from": 6,
+            "kind": "normal",
+            "label": "",
+            "to": 7
+          },
+          {
+            "from": 7,
+            "kind": "normal",
+            "label": "",
+            "to": 8
+          },
+          {
+            "from": 8,
+            "kind": "normal",
+            "label": "",
+            "to": 9
+          },
+          {
+            "from": 9,
+            "kind": "normal",
+            "label": "",
+            "to": 10
+          },
+          {
+            "from": 10,
+            "kind": "normal",
+            "label": "",
+            "to": 11
+          },
+          {
+            "from": 11,
+            "kind": "normal",
+            "label": "",
+            "to": 12
+          },
+          {
+            "from": 12,
+            "kind": "normal",
+            "label": "",
+            "to": 13
+          },
+          {
+            "from": 13,
+            "kind": "normal",
+            "label": "",
+            "to": 14
+          },
+          {
+            "from": 14,
+            "kind": "normal",
+            "label": "",
+            "to": 15
+          },
+          {
+            "from": 12,
+            "kind": "exception",
+            "label": "may throw",
+            "to": 16
+          },
+          {
+            "from": 15,
+            "kind": "normal",
+            "label": "",
+            "to": 17
+          },
+          {
+            "from": 8,
+            "kind": "exception",
+            "label": "may throw",
+            "to": 18
+          },
+          {
+            "from": 15,
+            "kind": "exception",
+            "label": "may throw",
+            "to": 18
+          },
+          {
+            "from": 16,
+            "kind": "normal",
+            "label": "",
+            "to": 18
+          },
+          {
+            "from": 16,
+            "kind": "exception",
+            "label": "may throw",
+            "to": 18
+          },
+          {
+            "from": 17,
+            "kind": "normal",
+            "label": "",
+            "to": 19
+          },
+          {
+            "from": 3,
+            "kind": "exception",
+            "label": "may throw",
+            "to": 20
+          },
+          {
+            "from": 17,
+            "kind": "exception",
+            "label": "may throw",
+            "to": 20
+          },
+          {
+            "from": 18,
+            "kind": "normal",
+            "label": "",
+            "to": 20
+          },
+          {
+            "from": 18,
+            "kind": "exception",
+            "label": "may throw",
+            "to": 20
+          }
+        ],
+        "partial": true,
+        "regions": [],
+        "span": {
+          "end": 769,
+          "start": 556
+        },
+        "steps": [
+          {
+            "calls": [],
+            "id": 0,
+            "kind": "start",
+            "label": "Function entry",
+            "span": {
+              "end": 769,
+              "start": 556
+            }
+          },
+          {
+            "calls": [],
+            "id": 1,
+            "kind": "expression",
+            "label": "TraceRuntime",
+            "span": {
+              "end": 606,
+              "start": 594
+            }
+          },
+          {
+            "calls": [],
+            "id": 2,
+            "kind": "expression",
+            "label": "\"outer\"",
+            "span": {
+              "end": 622,
+              "start": 615
+            }
+          },
+          {
+            "calls": [
+              {
+                "diagnostic": null,
+                "label": "TraceRuntime.Acquire(\"outer\")",
+                "span": {
+                  "end": 623,
+                  "start": 594
+                },
+                "targets": [
+                  {
+                    "certainty": "direct",
+                    "provenance": "roslyn:call",
+                    "symbol": "[\"csharp\",\"@repo/Runtime/CleanupRuntime.csproj\",\"@repo/Trace.cs\",\"@repo/Runtime/CleanupRuntime.csproj|[CleanupRuntime]::CleanupFixture.TraceRuntime::Acquire(System.String,System.Boolean,System.Boolean)\"]"
+                  }
+                ]
+              }
+            ],
+            "id": 3,
+            "kind": "expression",
+            "label": "TraceRuntime.Acquire(\"outer\")",
+            "span": {
+              "end": 623,
+              "start": 594
+            }
+          },
+          {
+            "calls": [],
+            "id": 4,
+            "kind": "expression",
+            "label": "synthetic C#: capture using resource outer once",
+            "span": {
+              "end": 623,
+              "start": 586
+            }
+          },
+          {
+            "calls": [],
+            "id": 5,
+            "kind": "expression",
+            "label": "TraceRuntime",
+            "span": {
+              "end": 673,
+              "start": 661
+            }
+          },
+          {
+            "calls": [],
+            "id": 6,
+            "kind": "expression",
+            "label": "\"inner\"",
+            "span": {
+              "end": 689,
+              "start": 682
+            }
+          },
+          {
+            "calls": [],
+            "id": 7,
+            "kind": "expression",
+            "label": "true",
+            "span": {
+              "end": 708,
+              "start": 704
+            }
+          },
+          {
+            "calls": [
+              {
+                "diagnostic": null,
+                "label": "TraceRuntime.Acquire(\"inner\", disposeFail: true)",
+                "span": {
+                  "end": 709,
+                  "start": 661
+                },
+                "targets": [
+                  {
+                    "certainty": "direct",
+                    "provenance": "roslyn:call",
+                    "symbol": "[\"csharp\",\"@repo/Runtime/CleanupRuntime.csproj\",\"@repo/Trace.cs\",\"@repo/Runtime/CleanupRuntime.csproj|[CleanupRuntime]::CleanupFixture.TraceRuntime::Acquire(System.String,System.Boolean,System.Boolean)\"]"
+                  }
+                ]
+              }
+            ],
+            "id": 8,
+            "kind": "expression",
+            "label": "TraceRuntime.Acquire(\"inner\", disposeFail: true)",
+            "span": {
+              "end": 709,
+              "start": 661
+            }
+          },
+          {
+            "calls": [],
+            "id": 9,
+            "kind": "expression",
+            "label": "synthetic C#: capture using resource inner once",
+            "span": {
+              "end": 709,
+              "start": 653
+            }
+          },
+          {
+            "calls": [],
+            "id": 10,
+            "kind": "expression",
+            "label": "TraceRuntime",
+            "span": {
+              "end": 731,
+              "start": 719
+            }
+          },
+          {
+            "calls": [],
+            "id": 11,
+            "kind": "expression",
+            "label": "\"body\"",
+            "span": {
+              "end": 743,
+              "start": 737
+            }
+          },
+          {
+            "calls": [
+              {
+                "diagnostic": null,
+                "label": "TraceRuntime.Mark(\"body\")",
+                "span": {
+                  "end": 744,
+                  "start": 719
+                },
+                "targets": [
+                  {
+                    "certainty": "direct",
+                    "provenance": "roslyn:call",
+                    "symbol": "[\"csharp\",\"@repo/Runtime/CleanupRuntime.csproj\",\"@repo/Trace.cs\",\"@repo/Runtime/CleanupRuntime.csproj|[CleanupRuntime]::CleanupFixture.TraceRuntime::Mark(System.String)\"]"
+                  }
+                ]
+              }
+            ],
+            "id": 12,
+            "kind": "expression",
+            "label": "TraceRuntime.Mark(\"body\")",
+            "span": {
+              "end": 744,
+              "start": 719
+            }
+          },
+          {
+            "calls": [],
+            "id": 13,
+            "kind": "expression",
+            "label": "0",
+            "span": {
+              "end": 762,
+              "start": 761
+            }
+          },
+          {
+            "calls": [],
+            "id": 14,
+            "kind": "return",
+            "label": "return",
+            "span": {
+              "end": 763,
+              "start": 754
+            }
+          },
+          {
+            "calls": [
+              {
+                "diagnostic": "roslyn:implicit:Dispose; compiler-selected operation, not a native graph edge",
+                "label": "synthetic C#: Dispose captured inner",
+                "span": {
+                  "end": 709,
+                  "start": 653
+                },
+                "targets": []
+              }
+            ],
+            "id": 15,
+            "kind": "expression",
+            "label": "synthetic C#: Dispose captured inner",
+            "span": {
+              "end": 709,
+              "start": 653
+            }
+          },
+          {
+            "calls": [
+              {
+                "diagnostic": "roslyn:implicit:Dispose; compiler-selected operation, not a native graph edge",
+                "label": "synthetic C#: Dispose captured inner",
+                "span": {
+                  "end": 709,
+                  "start": 653
+                },
+                "targets": []
+              }
+            ],
+            "id": 16,
+            "kind": "expression",
+            "label": "synthetic C#: Dispose captured inner",
+            "span": {
+              "end": 709,
+              "start": 653
+            }
+          },
+          {
+            "calls": [
+              {
+                "diagnostic": "roslyn:implicit:Dispose; compiler-selected operation, not a native graph edge",
+                "label": "synthetic C#: Dispose captured outer",
+                "span": {
+                  "end": 623,
+                  "start": 586
+                },
+                "targets": []
+              }
+            ],
+            "id": 17,
+            "kind": "expression",
+            "label": "synthetic C#: Dispose captured outer",
+            "span": {
+              "end": 623,
+              "start": 586
+            }
+          },
+          {
+            "calls": [
+              {
+                "diagnostic": "roslyn:implicit:Dispose; compiler-selected operation, not a native graph edge",
+                "label": "synthetic C#: Dispose captured outer",
+                "span": {
+                  "end": 623,
+                  "start": 586
+                },
+                "targets": []
+              }
+            ],
+            "id": 18,
+            "kind": "expression",
+            "label": "synthetic C#: Dispose captured outer",
+            "span": {
+              "end": 623,
+              "start": 586
+            }
+          },
+          {
+            "calls": [],
+            "id": 19,
+            "kind": "exit",
+            "label": "Return to caller",
+            "span": {
+              "end": 769,
+              "start": 556
+            }
+          },
+          {
+            "calls": [],
+            "id": 20,
+            "kind": "exit",
+            "label": "Exception escapes",
+            "span": {
+              "end": 769,
+              "start": 556
+            }
+          }
+        ],
+        "symbol": "[\"csharp\",\"@repo/Runtime/CleanupRuntime.csproj\",\"@repo/Runtime/Scenarios.cs\",\"@repo/Runtime/CleanupRuntime.csproj|[CleanupRuntime]::CleanupFixture.CleanupCases::DisposeThrowsOuter()\"]"
+      },
+      "runtime_trace_path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        18,
+        20
+      ],
+      "forbidden_paths": {
+        "skip-mandatory-dispose": null,
+        "throw-resumes-normal-completion": null
+      },
+      "opaque_steps_present": false,
+      "source_sha256": "9d486a3aa6227503dddefb26dd5438dd6d3bf8ace937d98bebc74f877c6124db"
+    }
+  },
+  "commands": [
+    {
+      "arguments": [
+        "analyze",
+        "--project",
+        "<cleanup-work>/fixture",
+        "<cleanup-work>/fixture/Runtime/CleanupRuntime.csproj"
+      ],
+      "exit_code": 0,
+      "dotnet_on_path": true
+    },
+    {
+      "arguments": [
+        "query"
+      ],
+      "exit_code": 0,
+      "dotnet_on_path": true,
+      "stdin": {
+        "version": 1,
+        "project": "<cleanup-work>/fixture",
+        "query": {
+          "kind": "snapshot"
+        }
+      }
+    },
+    {
+      "arguments": [
+        "query"
+      ],
+      "exit_code": 0,
+      "dotnet_on_path": true,
+      "stdin": {
+        "version": 1,
+        "project": "<cleanup-work>/fixture",
+        "query": {
+          "kind": "flow",
+          "symbol": "[\"csharp\",\"@repo/Runtime/CleanupRuntime.csproj\",\"@repo/Runtime/Scenarios.cs\",\"@repo/Runtime/CleanupRuntime.csproj|[CleanupRuntime]::CleanupFixture.CleanupCases::UseScope()\"]"
+        },
+        "expected_generation": "f2ae3ec06d5cc9c3e5f127106daebc321dc6417dd3a190ebac5489500c071c4e"
+      }
+    },
+    {
+      "arguments": [
+        "query"
+      ],
+      "exit_code": 0,
+      "dotnet_on_path": true,
+      "stdin": {
+        "version": 1,
+        "project": "<cleanup-work>/fixture",
+        "query": {
+          "kind": "flow",
+          "symbol": "[\"csharp\",\"@repo/Runtime/CleanupRuntime.csproj\",\"@repo/Runtime/Scenarios.cs\",\"@repo/Runtime/CleanupRuntime.csproj|[CleanupRuntime]::CleanupFixture.CleanupCases::AcquisitionFailure()\"]"
+        },
+        "expected_generation": "f2ae3ec06d5cc9c3e5f127106daebc321dc6417dd3a190ebac5489500c071c4e"
+      }
+    },
+    {
+      "arguments": [
+        "query"
+      ],
+      "exit_code": 0,
+      "dotnet_on_path": true,
+      "stdin": {
+        "version": 1,
+        "project": "<cleanup-work>/fixture",
+        "query": {
+          "kind": "flow",
+          "symbol": "[\"csharp\",\"@repo/Runtime/CleanupRuntime.csproj\",\"@repo/Runtime/Scenarios.cs\",\"@repo/Runtime/CleanupRuntime.csproj|[CleanupRuntime]::CleanupFixture.CleanupCases::DisposeThrowsOuter()\"]"
+        },
+        "expected_generation": "f2ae3ec06d5cc9c3e5f127106daebc321dc6417dd3a190ebac5489500c071c4e"
+      }
+    }
+  ],
+  "trace_mapping": "Explicit source calls and source-owned compiler-lowered operations; actual outcomes constrain exception edges, not a runtime-value interpreter."
+}

@@ -1,0 +1,151 @@
+{
+  "status": "passed",
+  "reviews": [
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "crates/codecallnavigator-core/tests/flow_completion.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "crates/codecallnavigator-engine/tests/csharp_flows.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "fixtures/flow/csharp-cleanup/Runtime/BoundaryCases.cs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "fixtures/flow/csharp-cleanup/Runtime/BudgetCase.cs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "fixtures/flow/csharp-cleanup/Runtime/Enumeration.cs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "fixtures/flow/csharp-cleanup/Runtime/ExceptionCases.cs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "fixtures/flow/csharp-cleanup/Runtime/ForeachCases.cs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "fixtures/flow/csharp-cleanup/Runtime/LockCases.cs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "fixtures/flow/csharp-cleanup/Runtime/Program.cs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "fixtures/flow/csharp-cleanup/Runtime/ReferenceResource.cs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "fixtures/flow/csharp-cleanup/Runtime/Scenarios.cs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "fixtures/flow/csharp-cleanup/TopLevel/Program.cs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "fixtures/flow/csharp-cleanup/Trace.cs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "tests/test_verification.py"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "tools/csharp_cleanup_acceptance.py"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "tools/csharp_cleanup_boundaries.py"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "tools/test_dependency_patches.py"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "tools/verification/checks.py"
+    }
+  ],
+  "safeguard": {
+    "results": [],
+    "quality_gates": "passed",
+    "metadata": {
+      "checked-file-count": 18,
+      "code-health-eligible-file-count": 18,
+      "status": "no-issues-found",
+      "total-modified-file-count": 46
+    }
+  },
+  "errors": [],
+  "skipped_files": [
+    ".backlog/tasks/task-22.3 - Validate-C-cleanup-and-conservative-control-flow-boundaries.md",
+    "analyzers.lock.json",
+    "docs/function-flowcharts.md",
+    "evidence/flowcharts/csharp/cleanup/README.md",
+    "evidence/flowcharts/csharp/cleanup/boundaries-first-cli.json",
+    "evidence/flowcharts/csharp/cleanup/catch-matcher-red-cli.json",
+    "evidence/flowcharts/csharp/cleanup/cli-acceptance.json",
+    "evidence/flowcharts/csharp/cleanup/code-health.json",
+    "evidence/flowcharts/csharp/cleanup/first-green-cli.json",
+    "evidence/flowcharts/csharp/cleanup/foreach-resources-cli.json",
+    "evidence/flowcharts/csharp/cleanup/locks-cli.json",
+    "evidence/flowcharts/csharp/cleanup/provenance-red.json",
+    "evidence/flowcharts/csharp/cleanup/raw-cli-acceptance.json",
+    "evidence/flowcharts/csharp/cleanup/red-cli.json",
+    "evidence/flowcharts/csharp/cleanup/resource-completions-cli.json",
+    "evidence/flowcharts/csharp/cleanup/resources-control-cli.json",
+    "evidence/flowcharts/csharp/cleanup/typed-constructor-negative-red.json",
+    "evidence/flowcharts/csharp/cleanup/typed-filter-matcher-red.json",
+    "evidence/flowcharts/csharp/cleanup/typed-first-cli.json",
+    "evidence/flowcharts/csharp/cleanup/verification.json",
+    "fixtures/flow/csharp-cleanup/Runtime/CleanupRuntime.csproj",
+    "fixtures/flow/csharp-cleanup/TopLevel/TopLevel.csproj",
+    "patches/README.md",
+    "patches/callatlas-assembly-identity-pre-cleanup.patch",
+    "patches/callatlas-assembly-identity.patch"
+  ]
+}

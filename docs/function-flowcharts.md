@@ -22,20 +22,38 @@ usable for graph exploration; refresh them to collect function-flow metadata.
 AI explanations, PR comparisons, recursive call inlining and the remaining C#
 semantic/workflow milestones are tracked separately in TASK-22.
 
-## Initial C# support
+## C# support
 
 Refreshing with the current analyzer collects C# flows for a bounded synchronous
-subset: ordinary evaluation, branches, loops, simple switches and transfers.
+subset: ordinary evaluation, branches, loops, simple switches, transfers and the
+structured cleanup cases below.
 Explicit accessors, local functions and top-level bodies retain their compiler
 identities. Queries use exact analyzed UTF-8 source, including a BOM; accepted
 non-UTF-8 contexts retain graph/source access with an explicit flow-unavailability
 diagnostic. Compiler-reported encoding facts govern each linked compile context.
 
-Cleanup constructs, suspension and other unsupported evaluation/control forms
-currently remain diagnosed opaque regions. TASK-22.3 owns cleanup semantics and
-TASK-22.4 owns native/package workflow acceptance. This initial CLI delivery does
-not complete those milestones. See the [CLI contract](cli-queries.md) and
-[ingestion evidence](../evidence/flowcharts/csharp/ingestion/README.md).
+| Construct | Supported structure | Conservative or opaque boundary |
+| --- | --- | --- |
+| `try` / `catch` / `finally` | Pending return, throw and loop exits pass through applicable cleanup; a throwing finally replaces pending completion | Typed catches are candidate handlers with possible uncaught paths; bare catches are catch-all |
+| `using` statements and declarations | Capture once, acquire left to right, dispose acquired resources in reverse order; declarations protect their remaining lexical scope, including top-level statements | Standard implicit `IDisposable` conversion and a proven reference/value/nullable category are required; dynamic, ref-like and pattern-only disposal remain opaque |
+| Null and nullable resources | Implicit non-null or `HasValue` guards; a compiler-proven constant null has no disposal operation | Charts show guards, not general value/dataflow simulation; synthetic checks do not invoke overloaded source operators |
+| Synchronous `foreach` | Evaluate collection and acquire enumerator once; protect `MoveNext`, `Current`, body and disposal on abrupt exits | Both compiler conversions must be identity conversions; proven disposable, sealed non-disposable and runtime-`IDisposable` cases remain distinct. Arrays, strings, ref/deconstruction, dynamic, ref-like and type-parameter enumerator routes remain opaque |
+| Ordinary object `lock` | Capture once; modern `Monitor.Enter(object, ref bool)` is inside try, with guarded `Exit` in finally | The modern member contract must resolve; legacy/ambiguous members and `System.Threading.Lock` scope lowering remain opaque |
+| Catch filters | Opaque dispatch region with explicitly synthetic normal/exceptional outcomes, propagation and applicable finally | No eager filter calls or invented unconditional handler; filter-before-unwind evaluation is not expanded |
+| Guarded patterns and `goto` | Visible partial/opaque control regions | No guessed exact transfer destinations |
+| Async and iterators | Whole-callable opacity for suspension syntax, including top-level await keywords | No scheduling or Java switch-yield interpretation; deferred local/lambda declarations do not make an ordinary outer body async |
+| Deferred callbacks | Local functions retain separate callable identity; declaration is not eager execution | Anonymous callback invocation timing remains unexpanded |
+
+Implicit disposal, enumeration and Monitor operations are visibly synthetic,
+source-owned facts. They carry compiler-lowering diagnostics without inventing
+inter-method graph nodes, relationships or resolved targets. Their possible
+exceptional paths remain conservative. Unsupported regions are partial and do not
+claim a complete simulation of arbitrary effects or transfers.
+
+TASK-22.4 owns native/package workflow acceptance. See the
+[CLI contract](cli-queries.md),
+[ingestion evidence](../evidence/flowcharts/csharp/ingestion/README.md) and
+[cleanup evidence](../evidence/flowcharts/csharp/cleanup/README.md).
 
 ## What the paths mean
 
@@ -81,6 +99,9 @@ sequence through a pipeline.
 Unavailable bodies, excluded symbols and ambiguous Java lambda attribution do not
 produce guessed charts or guessed links. Source and call targets retain build and
 project ownership, including duplicate type names in different compile contexts.
+C# flow is unavailable when one native graph ID aliases distinct compiler
+declarations, or when the body file differs from the retained declaration file,
+as can happen with cross-file partial methods. The method graph remains available.
 
 Export is bounded to 24 nested source levels and 1,500 IR nodes per callable.
 Exceeding export limits produces partial metadata with explicit unsupported steps

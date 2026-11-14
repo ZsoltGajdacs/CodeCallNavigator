@@ -258,11 +258,23 @@ The exact combined patch before this encoding metadata was added is preserved in
 `callatlas.pre_source_encoding_patch` and its checksum. Like the other checkpoints,
 it is replaced by the current combined patch, never stacked with it.
 
-The initial exporter covers a bounded synchronous structured subset. Unsupported
-evaluation, cleanup, suspension and transfer semantics have explicit opaque
+The exporter covers a bounded synchronous structured subset. Unsupported
+evaluation, suspension and transfer semantics have explicit opaque
 boundaries, rather than fabricated eager calls. Labels and per-callable
-construction are bounded. Raw export is the first TASK-22 milestone; Rust
-ingestion and C# desktop availability follow in subsequent subtasks.
+construction are bounded. Rust ingestion preserves exact analyzed sources and
+existing identities; native desktop workflow acceptance remains a separate
+TASK-22 milestone.
+
+The combined patch also lowers proven synchronous C# cleanup through the existing
+version-1 flow primitives: ordered resource acquisition, reverse disposal,
+lexically scoped using declarations, supported foreach and modern Monitor locks.
+Filtered dispatch keeps explicit opaque completion outcomes. Implicit operations
+are targetless source-owned call facts; native graph binding stays unchanged.
+See the [support matrix](../docs/function-flowcharts.md#c-support) for limits.
+The exact preceding ingestion patch is retained in
+`callatlas-assembly-identity-pre-cleanup.patch`, pinned by
+`callatlas.pre_cleanup_patch` and its checksum. Bootstrap replaces this checkpoint
+with the current combined patch; it must never be stacked on it.
 
 Compiler-only `nameof` expressions remain atomic values. Ordinary methods named
 `nameof` retain argument evaluation; when the native analyzer omits their binding,

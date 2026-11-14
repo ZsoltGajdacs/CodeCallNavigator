@@ -323,3 +323,67 @@ fn assert_bodyless_declarations(root: &Path, snapshot: &Value) {
         );
     }
 }
+
+#[test]
+#[ignore = "requires pinned CallAtlas and installed .NET 11 SDK"]
+fn cross_file_partial_method_keeps_graph_when_flow_source_cannot_match_native_owner() {
+    let directory = tempfile::tempdir().unwrap();
+    let root = directory.path();
+    let project = PROJECT
+        .replace("</PropertyGroup>", "<EnableDefaultCompileItems>false</EnableDefaultCompileItems></PropertyGroup>")
+        .replace("</Project>", "<ItemGroup><Compile Include=\"ADefinition.cs\"/><Compile Include=\"ZImplementation.cs\"/></ItemGroup></Project>");
+    fs::write(root.join("Fixture.csproj"), project).unwrap();
+    fs::write(
+        root.join("ADefinition.cs"),
+        "public partial class App { public partial int F(); public int Run()=>F(); }",
+    )
+    .unwrap();
+    fs::write(
+        root.join("ZImplementation.cs"),
+        "public partial class App { public partial int F()=>1; }",
+    )
+    .unwrap();
+    let output = engine()
+        .args(["analyze", "--project"])
+        .arg(root)
+        .arg("Fixture.csproj")
+        .output()
+        .unwrap();
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let snapshot = query(root, json!({"kind":"snapshot"}));
+    let graph = &snapshot["result"];
+    let nodes = graph["nodes"].as_array().unwrap();
+    let target = nodes.iter().position(|node| node["label"] == "F").unwrap();
+    let caller = nodes
+        .iter()
+        .position(|node| node["label"] == "Run")
+        .unwrap();
+    assert!(
+        graph["edges"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|edge| edge["from"] == caller && edge["to"] == target)
+    );
+    assert!(
+        nodes[target]["file"]
+            .as_str()
+            .unwrap()
+            .ends_with("ADefinition.cs")
+    );
+    let reply = query_reply(
+        root,
+        json!({"kind":"flow","symbol":nodes[target]["id"]}),
+        snapshot["generation"].as_str(),
+    );
+    assert_eq!(reply.code, 2);
+    assert_eq!(reply.body["error"]["code"], "flow_unavailable");
+    assert_eq!(
+        query(root, json!({"kind":"snapshot"}))["generation"],
+        snapshot["generation"]
+    );
+}

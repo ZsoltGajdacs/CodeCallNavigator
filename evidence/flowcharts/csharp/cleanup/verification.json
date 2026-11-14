@@ -1,0 +1,609 @@
+{
+  "task": "TASK-22.3",
+  "status": "passed",
+  "preceding_commit": "1e0465b",
+  "pre_cleanup_patch_sha256": "c937ed67e92cc45783ad57289e8bfc15a4d55e3548bfe173ee7eacbe12f3990d",
+  "tests_first": {
+    "native": {
+      "total": 6,
+      "failed": 6,
+      "passed": 0,
+      "expected_failure": "Current exporter lacks structured try/using/foreach/lock and per-resource lowering-depth facts.",
+      "trx": "/private/tmp/task22-cleanup-red/task22-cleanup-red.trx"
+    },
+    "existing_core_ir": {
+      "passed": 2,
+      "purpose": "Synthetic normal/exceptional outcomes route through cleanup without fake call sites; legacy Unsupported remains unchanged."
+    },
+    "async_boundaries": {
+      "failed": 3,
+      "trx": "/private/tmp/task22-async-boundary-red/task22-async-boundary-red.trx",
+      "observed": "Top-level await-keyword constructs remained statement-local while a deferred async local declaration infected the outer callable."
+    },
+    "full_gate": {
+      "observed_red": true,
+      "failure": "Required csharp-cleanup-acceptance stage absent",
+      "retained_log": false
+    }
+  },
+  "checkpoint_migration_tests": {
+    "passed": 12
+  },
+  "full_runs": [
+    {
+      "directory": "target/verification/full-ez6cs1ud",
+      "status": "failed",
+      "stages": 34,
+      "outside_sandbox": true,
+      "isolated_profile": true,
+      "timeout": 3600,
+      "cleanup_acceptance": "passed",
+      "failed_stages": [
+        "codescene"
+      ],
+      "cause": "CodeScene returned no numeric score for the top-level-only C# fixture",
+      "all_runtime_packaging_clients_passed": true,
+      "cleanup": "passed",
+      "results": [
+        {
+          "name": "prerequisites",
+          "status": "passed",
+          "exit_code": 0,
+          "seconds": 1.243,
+          "log": "01-prerequisites.log"
+        },
+        {
+          "name": "whitespace",
+          "status": "passed",
+          "exit_code": 0,
+          "seconds": 0.046,
+          "log": "02-whitespace.log"
+        },
+        {
+          "name": "syntax-format-002",
+          "status": "passed",
+          "exit_code": 0,
+          "seconds": 0.197,
+          "log": "03-syntax-format-002.log"
+        },
+        {
+          "name": "syntax-format-003",
+          "status": "passed",
+          "exit_code": 0,
+          "seconds": 0.051,
+          "log": "04-syntax-format-003.log"
+        },
+        {
+          "name": "syntax-format-038",
+          "status": "passed",
+          "exit_code": 0,
+          "seconds": 0.045,
+          "log": "05-syntax-format-038.log"
+        },
+        {
+          "name": "syntax-format-039",
+          "status": "passed",
+          "exit_code": 0,
+          "seconds": 0.043,
+          "log": "06-syntax-format-039.log"
+        },
+        {
+          "name": "syntax-format-040",
+          "status": "passed",
+          "exit_code": 0,
+          "seconds": 0.024,
+          "log": "07-syntax-format-040.log"
+        },
+        {
+          "name": "syntax-format-041",
+          "status": "passed",
+          "exit_code": 0,
+          "seconds": 0.042,
+          "log": "08-syntax-format-041.log"
+        },
+        {
+          "name": "syntax-format-042",
+          "status": "passed",
+          "exit_code": 0,
+          "seconds": 0.042,
+          "log": "09-syntax-format-042.log"
+        },
+        {
+          "name": "bootstrap",
+          "status": "passed",
+          "exit_code": 0,
+          "seconds": 3.755,
+          "log": "10-bootstrap.log"
+        },
+        {
+          "name": "build-debug-engine",
+          "status": "passed",
+          "exit_code": 0,
+          "seconds": 8.561,
+          "log": "11-build-debug-engine.log"
+        },
+        {
+          "name": "cargo-check",
+          "status": "passed",
+          "exit_code": 0,
+          "seconds": 23.049,
+          "log": "12-cargo-check.log"
+        },
+        {
+          "name": "mcp-dependency-boundary",
+          "status": "passed",
+          "exit_code": 0,
+          "seconds": 0.481,
+          "log": "13-mcp-dependency-boundary.log"
+        },
+        {
+          "name": "clippy",
+          "status": "passed",
+          "exit_code": 0,
+          "seconds": 4.471,
+          "log": "14-clippy.log"
+        },
+        {
+          "name": "rust-tests",
+          "status": "passed",
+          "exit_code": 0,
+          "seconds": 182.417,
+          "log": "15-rust-tests.log"
+        },
+        {
+          "name": "python-tests",
+          "status": "passed",
+          "exit_code": 0,
+          "seconds": 36.187,
+          "log": "16-python-tests.log"
+        },
+        {
+          "name": "python-tool-tests",
+          "status": "passed",
+          "exit_code": 0,
+          "seconds": 8.989,
+          "log": "17-python-tool-tests.log"
+        },
+        {
+          "name": "typescript-tests",
+          "status": "passed",
+          "exit_code": 0,
+          "seconds": 26.205,
+          "log": "18-typescript-tests.log"
+        },
+        {
+          "name": "build-release-engine",
+          "status": "passed",
+          "exit_code": 0,
+          "seconds": 6.279,
+          "log": "19-build-release-engine.log"
+        },
+        {
+          "name": "csharp-cleanup-acceptance",
+          "status": "passed",
+          "exit_code": 0,
+          "seconds": 18.09,
+          "log": "20-csharp-cleanup-acceptance.log"
+        },
+        {
+          "name": "profile-snapshot",
+          "status": "passed",
+          "exit_code": 0,
+          "seconds": 0.149,
+          "log": "21-profile-snapshot.log"
+        },
+        {
+          "name": "release-acceptance-and-benchmarks",
+          "status": "passed",
+          "exit_code": 0,
+          "seconds": 1737.665,
+          "log": "22-release-acceptance-and-benchmarks.log"
+        },
+        {
+          "name": "storage-benchmark",
+          "status": "passed",
+          "exit_code": 0,
+          "seconds": 42.894,
+          "log": "23-storage-benchmark.log"
+        },
+        {
+          "name": "package",
+          "status": "passed",
+          "exit_code": 0,
+          "seconds": 23.724,
+          "log": "24-package.log"
+        },
+        {
+          "name": "package-signature",
+          "status": "passed",
+          "exit_code": 0,
+          "seconds": 0.137,
+          "log": "25-package-signature.log"
+        },
+        {
+          "name": "packaged-engine",
+          "status": "passed",
+          "exit_code": 0,
+          "seconds": 0.256,
+          "log": "26-packaged-engine.log"
+        },
+        {
+          "name": "installed-cli",
+          "status": "passed",
+          "exit_code": 0,
+          "seconds": 2.793,
+          "log": "27-installed-cli.log"
+        },
+        {
+          "name": "agent-integrations-check",
+          "status": "passed",
+          "exit_code": 0,
+          "seconds": 0.049,
+          "log": "28-agent-integrations-check.log"
+        },
+        {
+          "name": "agent-integrations-package",
+          "status": "passed",
+          "exit_code": 0,
+          "seconds": 0.048,
+          "log": "29-agent-integrations-package.log"
+        },
+        {
+          "name": "agent-cli-journeys",
+          "status": "passed",
+          "exit_code": 0,
+          "seconds": 1.747,
+          "log": "30-agent-cli-journeys.log"
+        },
+        {
+          "name": "mcp-independent-install",
+          "status": "passed",
+          "exit_code": 0,
+          "seconds": 18.552,
+          "log": "31-mcp-independent-install.log"
+        },
+        {
+          "name": "agent-mcp-journeys",
+          "status": "passed",
+          "exit_code": 0,
+          "seconds": 1.659,
+          "log": "32-agent-mcp-journeys.log"
+        },
+        {
+          "name": "codescene",
+          "status": "failed",
+          "exit_code": 1,
+          "seconds": 2.77,
+          "log": "33-codescene.log"
+        },
+        {
+          "name": "cleanup",
+          "status": "passed",
+          "exit_code": 0,
+          "seconds": 10.648,
+          "log": "34-cleanup.log"
+        }
+      ]
+    },
+    {
+      "directory": "target/verification/full-bkd4h8bc",
+      "status": "passed",
+      "stages": 34,
+      "outside_sandbox": true,
+      "isolated_profile": true,
+      "timeout": 3600,
+      "purpose": "Final rerun after scored top-level fixture correction; production adapter unchanged",
+      "results": [
+        {
+          "name": "prerequisites",
+          "status": "passed",
+          "exit_code": 0,
+          "seconds": 0.726,
+          "log": "01-prerequisites.log"
+        },
+        {
+          "name": "whitespace",
+          "status": "passed",
+          "exit_code": 0,
+          "seconds": 0.049,
+          "log": "02-whitespace.log"
+        },
+        {
+          "name": "syntax-format-003",
+          "status": "passed",
+          "exit_code": 0,
+          "seconds": 0.202,
+          "log": "03-syntax-format-003.log"
+        },
+        {
+          "name": "syntax-format-004",
+          "status": "passed",
+          "exit_code": 0,
+          "seconds": 0.046,
+          "log": "04-syntax-format-004.log"
+        },
+        {
+          "name": "syntax-format-041",
+          "status": "passed",
+          "exit_code": 0,
+          "seconds": 0.048,
+          "log": "05-syntax-format-041.log"
+        },
+        {
+          "name": "syntax-format-042",
+          "status": "passed",
+          "exit_code": 0,
+          "seconds": 0.048,
+          "log": "06-syntax-format-042.log"
+        },
+        {
+          "name": "syntax-format-043",
+          "status": "passed",
+          "exit_code": 0,
+          "seconds": 0.024,
+          "log": "07-syntax-format-043.log"
+        },
+        {
+          "name": "syntax-format-044",
+          "status": "passed",
+          "exit_code": 0,
+          "seconds": 0.024,
+          "log": "08-syntax-format-044.log"
+        },
+        {
+          "name": "syntax-format-045",
+          "status": "passed",
+          "exit_code": 0,
+          "seconds": 0.042,
+          "log": "09-syntax-format-045.log"
+        },
+        {
+          "name": "bootstrap",
+          "status": "passed",
+          "exit_code": 0,
+          "seconds": 3.612,
+          "log": "10-bootstrap.log"
+        },
+        {
+          "name": "build-debug-engine",
+          "status": "passed",
+          "exit_code": 0,
+          "seconds": 8.521,
+          "log": "11-build-debug-engine.log"
+        },
+        {
+          "name": "cargo-check",
+          "status": "passed",
+          "exit_code": 0,
+          "seconds": 24.545,
+          "log": "12-cargo-check.log"
+        },
+        {
+          "name": "mcp-dependency-boundary",
+          "status": "passed",
+          "exit_code": 0,
+          "seconds": 0.481,
+          "log": "13-mcp-dependency-boundary.log"
+        },
+        {
+          "name": "clippy",
+          "status": "passed",
+          "exit_code": 0,
+          "seconds": 4.639,
+          "log": "14-clippy.log"
+        },
+        {
+          "name": "rust-tests",
+          "status": "passed",
+          "exit_code": 0,
+          "seconds": 157.052,
+          "log": "15-rust-tests.log"
+        },
+        {
+          "name": "python-tests",
+          "status": "passed",
+          "exit_code": 0,
+          "seconds": 37.1,
+          "log": "16-python-tests.log"
+        },
+        {
+          "name": "python-tool-tests",
+          "status": "passed",
+          "exit_code": 0,
+          "seconds": 9.188,
+          "log": "17-python-tool-tests.log"
+        },
+        {
+          "name": "typescript-tests",
+          "status": "passed",
+          "exit_code": 0,
+          "seconds": 26.54,
+          "log": "18-typescript-tests.log"
+        },
+        {
+          "name": "build-release-engine",
+          "status": "passed",
+          "exit_code": 0,
+          "seconds": 24.747,
+          "log": "19-build-release-engine.log"
+        },
+        {
+          "name": "csharp-cleanup-acceptance",
+          "status": "passed",
+          "exit_code": 0,
+          "seconds": 18.46,
+          "log": "20-csharp-cleanup-acceptance.log"
+        },
+        {
+          "name": "profile-snapshot",
+          "status": "passed",
+          "exit_code": 0,
+          "seconds": 0.146,
+          "log": "21-profile-snapshot.log"
+        },
+        {
+          "name": "release-acceptance-and-benchmarks",
+          "status": "passed",
+          "exit_code": 0,
+          "seconds": 1730.977,
+          "log": "22-release-acceptance-and-benchmarks.log"
+        },
+        {
+          "name": "storage-benchmark",
+          "status": "passed",
+          "exit_code": 0,
+          "seconds": 43.441,
+          "log": "23-storage-benchmark.log"
+        },
+        {
+          "name": "package",
+          "status": "passed",
+          "exit_code": 0,
+          "seconds": 23.241,
+          "log": "24-package.log"
+        },
+        {
+          "name": "package-signature",
+          "status": "passed",
+          "exit_code": 0,
+          "seconds": 0.088,
+          "log": "25-package-signature.log"
+        },
+        {
+          "name": "packaged-engine",
+          "status": "passed",
+          "exit_code": 0,
+          "seconds": 0.279,
+          "log": "26-packaged-engine.log"
+        },
+        {
+          "name": "installed-cli",
+          "status": "passed",
+          "exit_code": 0,
+          "seconds": 3.981,
+          "log": "27-installed-cli.log"
+        },
+        {
+          "name": "agent-integrations-check",
+          "status": "passed",
+          "exit_code": 0,
+          "seconds": 0.047,
+          "log": "28-agent-integrations-check.log"
+        },
+        {
+          "name": "agent-integrations-package",
+          "status": "passed",
+          "exit_code": 0,
+          "seconds": 0.048,
+          "log": "29-agent-integrations-package.log"
+        },
+        {
+          "name": "agent-cli-journeys",
+          "status": "passed",
+          "exit_code": 0,
+          "seconds": 1.989,
+          "log": "30-agent-cli-journeys.log"
+        },
+        {
+          "name": "mcp-independent-install",
+          "status": "passed",
+          "exit_code": 0,
+          "seconds": 18.312,
+          "log": "31-mcp-independent-install.log"
+        },
+        {
+          "name": "agent-mcp-journeys",
+          "status": "passed",
+          "exit_code": 0,
+          "seconds": 1.673,
+          "log": "32-agent-mcp-journeys.log"
+        },
+        {
+          "name": "codescene",
+          "status": "passed",
+          "exit_code": 0,
+          "seconds": 16.205,
+          "log": "33-codescene.log"
+        },
+        {
+          "name": "cleanup",
+          "status": "passed",
+          "exit_code": 0,
+          "seconds": 10.019,
+          "log": "34-cleanup.log"
+        }
+      ],
+      "seconds": 2166.54
+    }
+  ],
+  "native_checkpoints": [
+    {
+      "total": 344,
+      "passed": 315,
+      "failed": 29,
+      "failed_names_equal_baseline": true,
+      "trx": "/private/tmp/task22-cleanup-full-final/task22-cleanup-full-final.trx",
+      "final_source": false
+    },
+    {
+      "total": 355,
+      "passed": 326,
+      "failed": 29,
+      "failed_names_equal_baseline": true,
+      "valid_source_cases": 6,
+      "trx": "/private/tmp/task22-valid-ownership-full/task22-valid-ownership-full.trx",
+      "final_source": true
+    }
+  ],
+  "runtime_checkpoints": {
+    "initial_red": "red-cli.json",
+    "first_green": "first-green-cli.json",
+    "resource_completion_cases": 3,
+    "forbidden_resource_traces_rejected": 7,
+    "report": "resource-completions-cli.json",
+    "foreach_resources": {
+      "cases": 12,
+      "observed_events": 60,
+      "forbidden_paths_rejected": 25,
+      "report": "foreach-resources-cli.json"
+    },
+    "catch_matcher_red": "catch-matcher-red-cli.json (test matcher only; no production defect)"
+  },
+  "full_gate": "tools/verification/checks.py now runs the self-contained cleanup helper after release engine build and before packaging",
+  "patch_sha256": "c36315a4e60f2a0a547483bb4c253add2ed3dad9b9581329384004400bbaf572",
+  "focused": {
+    "compiler_owner_cases": 9,
+    "core_completion_proofs": 3,
+    "public_csharp_cli_ignored_tests": 4,
+    "cli_log": "/private/tmp/task22-provenance-cli-green.log",
+    "partial_cli_observed_red": "/private/tmp/task22-partial-cli-red.log",
+    "verification_runner_tests": 23,
+    "patch_migration_tests": 12,
+    "raw_cli_report": "raw-cli-acceptance.json"
+  },
+  "independent_acceptance": {
+    "cases": 32,
+    "runtime_events": 202,
+    "supported_observable_projections": 23,
+    "explicit_partial_probes": 9,
+    "ordinary_forbidden_paths_rejected": 40,
+    "filtered_missing_finally_rejected": 2,
+    "report": "cli-acceptance.json",
+    "source_production_hashes_still_match_after_test_only_audit": true,
+    "manual_report_patch_precedes_test_only_validity_audit": true,
+    "final_integrated_report": "full-cli-acceptance.json"
+  },
+  "review": {
+    "production_and_provenance": "approved",
+    "helper_and_fixtures": "approved",
+    "code_health": "code-health.json"
+  },
+  "fixture_quality_correction": {
+    "change": "Move genuine ProcessExit registration into its owning top-level executable as a static local function",
+    "code_health": 10,
+    "packaged_runtime_acceptance": "top-level-scored-cli.json",
+    "cases_passed": 32,
+    "exact_corrected_quality_gate": "code-health-corrected-gate.json",
+    "review": "approved"
+  }
+}

@@ -371,6 +371,22 @@ class VerificationPlans(unittest.TestCase):
         regular = steps[names.index("rust-tests")]
         self.assertEqual(regular.environment["CODECALLNAVIGATOR_ENGINE"], str(ROOT / "target/debug/codecallnavigator-engine"))
 
+    def test_full_cleanup_acceptance_uses_built_engine_and_run_evidence(self):
+        output = ROOT / "target/test-evidence"
+        steps = verify.plan(self.args("full", Path("/profile-source")), ["README.md"], output)
+        names = [step.name for step in steps]
+        self.assertIn("csharp-cleanup-acceptance", names)
+        position = names.index("csharp-cleanup-acceptance")
+        self.assertLess(names.index("build-release-engine"), position)
+        self.assertLess(position, names.index("package"))
+        acceptance = steps[position]
+        self.assertEqual(acceptance.command[:2], [sys.executable, "tools/csharp_cleanup_acceptance.py"])
+        self.assertEqual(acceptance.command[acceptance.command.index("--engine") + 1],
+                         str(ROOT / "target/release/codecallnavigator-engine"))
+        self.assertEqual(acceptance.command[acceptance.command.index("--output") + 1],
+                         str(output / "csharp-cleanup.json"))
+        self.assertEqual(acceptance.timeout, self.args("full").timeout)
+
     def test_full_dependency_preflight_accepts_complete_inputs_and_rejects_wrong_versions(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
