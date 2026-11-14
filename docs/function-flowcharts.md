@@ -23,8 +23,11 @@ The source panel reads the immutable generation's cached source, not current dis
 contents. A stale graph notice means a refresh is needed to show source changes.
 Opening or following charts does not compile the project. Older graph caches remain
 usable for graph exploration; refresh them to collect function-flow metadata.
-AI explanations, PR comparisons and recursive call inlining are tracked
+AI explanations, desktop PR comparisons and recursive call inlining are tracked
 separately in TASK-22.
+
+The CLI can already retrieve before/after charts and cached source from saved
+Git artifact revisions. See the [saved-revision query contract](cli-queries.md#saved-revision-function-flows).
 
 ## C# support
 

@@ -1,0 +1,31 @@
+{
+  "status": "behavior_verified_quality_declaration_blocker",
+  "scope": "Temporary checkout first TASK22.5 unit only; unrelated staged TASK22.4 snapshot untouched.",
+  "tests": {
+    "existing_artifact_flows": 12,
+    "extended_artifact_flows": 14,
+    "core_library": 108,
+    "completion_contracts": 3,
+    "total": 125,
+    "passed": 125
+  },
+  "check": "cargo check --locked -p codecallnavigator-core --all-targets passed",
+  "test_changes": [
+    "Unicode/BOM/CRLF borrowed source and complete chart serialization parity after explicit portable/local owner file rebasing for Java/C#/TypeScript",
+    "Exact ordinary language/body/missing-function availability messages"
+  ],
+  "test_file_sha256": "0aa42779543352d52da949ea8ae249a32d04df9b08e17f658f613764a8144a31",
+  "quality": {
+    "exact_binary": "/Users/zsolt.gajdacs/.local/bin/cs-mcp",
+    "version": "1.5.6",
+    "numeric_10_reviews": 11,
+    "unscored": "crates/codecallnavigator-core/src/flow.rs",
+    "gate_probe": "validate_review(None) fails: numeric score missing; arithmetic MAX_SOURCE_BYTES constant not recognized by conservative declarations-only grammar",
+    "test_file_mcp_score": 10
+  },
+  "limits": [
+    "No full workspace, analyzer, native or full verification run",
+    "Selected-only borrowing applies to View after caller artifact validation, not a claim of lazy CLI validation"
+  ],
+  "production_edits_by_tester": false
+}

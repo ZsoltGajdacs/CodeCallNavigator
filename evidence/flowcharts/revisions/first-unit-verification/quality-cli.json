@@ -1,0 +1,66 @@
+{
+  "binary": "/Users/zsolt.gajdacs/.local/bin/cs-mcp",
+  "version": "1.5.6",
+  "reviews": [
+    {
+      "path": "crates/codecallnavigator-core/src/artifact.rs",
+      "score": 10.0,
+      "review": []
+    },
+    {
+      "path": "crates/codecallnavigator-core/src/artifact/flow.rs",
+      "score": 10.0,
+      "review": []
+    },
+    {
+      "path": "crates/codecallnavigator-core/src/artifact/flow/model.rs",
+      "score": 10.0,
+      "review": []
+    },
+    {
+      "path": "crates/codecallnavigator-core/src/artifact/flow/ownership.rs",
+      "score": 10.0,
+      "review": []
+    },
+    {
+      "path": "crates/codecallnavigator-core/src/artifact/flow/saved.rs",
+      "score": 10.0,
+      "review": []
+    },
+    {
+      "path": "crates/codecallnavigator-core/src/flow.rs",
+      "score": null,
+      "review": []
+    },
+    {
+      "path": "crates/codecallnavigator-core/src/flow/availability.rs",
+      "score": 10.0,
+      "review": []
+    },
+    {
+      "path": "crates/codecallnavigator-core/src/flow/checked.rs",
+      "score": 10.0,
+      "review": []
+    },
+    {
+      "path": "crates/codecallnavigator-core/src/flow/lookup.rs",
+      "score": 10.0,
+      "review": []
+    },
+    {
+      "path": "crates/codecallnavigator-core/src/query.rs",
+      "score": 10.0,
+      "review": []
+    },
+    {
+      "path": "crates/codecallnavigator-core/src/query/operations.rs",
+      "score": 10.0,
+      "review": []
+    },
+    {
+      "path": "crates/codecallnavigator-core/tests/artifact_flows.rs",
+      "score": 10.0,
+      "review": []
+    }
+  ]
+}

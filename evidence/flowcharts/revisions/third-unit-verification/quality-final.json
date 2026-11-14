@@ -1,0 +1,155 @@
+{
+  "status": "passed",
+  "reviews": [
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "crates/codecallnavigator-core/src/artifact/flow.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "crates/codecallnavigator-core/src/artifact/flow/model.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "crates/codecallnavigator-core/src/artifact/flow/ownership.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "crates/codecallnavigator-core/src/query.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "crates/codecallnavigator-core/src/query/contract.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "crates/codecallnavigator-core/src/query/operations.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "crates/codecallnavigator-core/tests/artifact_flows.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "crates/codecallnavigator-core/tests/flow_comparison_contract.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "crates/codecallnavigator-engine/src/entrypoints.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "crates/codecallnavigator-engine/src/entrypoints/comparison/endpoints.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "crates/codecallnavigator-engine/src/entrypoints/flow_comparison.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "crates/codecallnavigator-engine/src/entrypoints/flow_comparison/catalog.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "crates/codecallnavigator-engine/src/entrypoints/flow_comparison/encoding.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "crates/codecallnavigator-engine/src/entrypoints/flow_comparison/endpoint.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "crates/codecallnavigator-engine/src/entrypoints/flow_comparison/model.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "crates/codecallnavigator-engine/src/entrypoints/flow_comparison/validation.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "crates/codecallnavigator-engine/src/entrypoints/query_executor.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "crates/codecallnavigator-engine/tests/flow_comparison.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "crates/codecallnavigator-engine/tests/flow_comparison/cancellation.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "crates/codecallnavigator-engine/tests/flow_comparison/limits.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "crates/codecallnavigator-engine/tests/flow_comparison/session.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "crates/codecallnavigator-engine/tests/flow_comparison/snapshot.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "crates/codecallnavigator-engine/tests/flow_comparison/support.rs"
+    }
+  ],
+  "safeguard": {
+    "results": [],
+    "quality_gates": "passed",
+    "metadata": {
+      "checked-file-count": 54,
+      "code-health-eligible-file-count": 54,
+      "status": "no-issues-found",
+      "total-modified-file-count": 56
+    }
+  },
+  "errors": [],
+  "skipped_files": []
+}

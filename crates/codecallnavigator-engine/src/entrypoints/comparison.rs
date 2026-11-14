@@ -1,7 +1,8 @@
 //! Comparison orchestration loads portable snapshots, never a runtime graph index.
-use super::query::{self, freshness};
+pub(super) mod endpoints;
+use super::query;
 use codecallnavigator_core::{
-    artifact::{difference, revision, verification},
+    artifact::difference,
     query::{Error, Query, Request, Response},
 };
 use serde_json::{Value, json};
@@ -18,22 +19,22 @@ pub(super) fn respond(request: &Request) -> Option<Response> {
         return None;
     };
     let options = Options {
-        base,
-        head,
+        endpoints: endpoints::EndpointRequest {
+            base,
+            head,
+            expected: expected_comparison.as_deref(),
+        },
         offset: *offset,
         limit: *limit,
-        expected: expected_comparison.as_deref(),
     };
     let result = execute(request, options);
     Some(result.unwrap_or_else(|error| query::envelope(None, Err(error))))
 }
 
 struct Options<'a> {
-    base: &'a str,
-    head: &'a str,
+    endpoints: endpoints::EndpointRequest<'a>,
     offset: usize,
     limit: usize,
-    expected: Option<&'a str>,
 }
 
 fn execute(
@@ -42,37 +43,16 @@ fn execute(
 ) -> codecallnavigator_core::query::Result<Response> {
     validate(&options)?;
     let Options {
-        base,
-        head,
+        endpoints,
         offset,
         limit,
-        expected,
     } = options;
-    let project = request
-        .project
-        .canonicalize()
-        .map_err(|e| Error::new("project_unavailable", e.to_string()))?;
-    let before = revision::load(&project, base).map_err(revision_error)?;
-    let after = revision::load(&project, head).map_err(revision_error)?;
-    query::check_generation(request, &after.endpoint.digest)?;
-    let binding = serde_json::to_vec(&(difference::VERSION, &before.endpoint, &after.endpoint))
-        .map_err(encoding_error)?;
-    let comparison_id = blake3::hash(&binding).to_hex().to_string();
-    if expected.is_some_and(|expected| expected != comparison_id) {
-        return Err(Error::new(
-            "comparison_mismatch",
-            "Comparison endpoints changed; restart pagination",
-        ));
-    }
-    let freshness = if head == "WORKTREE" {
-        let roots = query::roots(request)?;
-        Some(freshness::summary(
-            verification::verify_artifact(&after.artifact, &after.endpoint.digest, &roots)
-                .map_err(|e| Error::new("verification_failed", format!("{e:#}")))?,
-        )?)
-    } else {
-        None
-    };
+    let endpoints::Pair {
+        before,
+        after,
+        comparison_id,
+    } = endpoints.load(request)?;
+    let freshness = endpoints.freshness(request, &after.artifact, &after.endpoint.digest)?;
     // Binding and freshness describe the exact loaded bytes. Once recorded,
     // comparison owns the artifacts and can canonicalize without full copies.
     let diff = difference::compare_owned(before.artifact, after.artifact)
@@ -100,48 +80,21 @@ fn execute(
 }
 
 fn validate(options: &Options<'_>) -> codecallnavigator_core::query::Result<()> {
-    if options.base == "WORKTREE" {
-        return Err(Error::new(
-            "invalid_request",
-            "Comparison base must resolve to a commit",
-        ));
-    }
+    options.endpoints.validate_base()?;
     if !(1..=500).contains(&options.limit) {
         return Err(Error::new(
             "invalid_request",
             "Comparison limit must be 1..500",
         ));
     }
-    if options.offset > 0 && options.expected.is_none() {
+    if options.offset > 0 && options.endpoints.expected.is_none() {
         return Err(Error::new(
             "invalid_request",
             "Paged comparisons require expected_comparison",
         ));
     }
-    validate_reference_lengths(options)?;
-    if options.expected.is_some_and(|id| !valid_digest(id)) {
-        return Err(Error::new(
-            "invalid_request",
-            "expected_comparison must be a 64-character hexadecimal digest",
-        ));
-    }
-    Ok(())
-}
-
-fn validate_reference_lengths(options: &Options<'_>) -> codecallnavigator_core::query::Result<()> {
-    for reference in [options.base, options.head] {
-        if reference.trim().is_empty() || reference.len() > 16384 {
-            return Err(Error::new(
-                "invalid_request",
-                "Comparison references must contain 1..16384 bytes",
-            ));
-        }
-    }
-    Ok(())
-}
-
-fn valid_digest(id: &str) -> bool {
-    id.len() == 64 && id.bytes().all(|byte| byte.is_ascii_hexdigit())
+    options.endpoints.validate_references()?;
+    options.endpoints.validate_expected()
 }
 
 fn page<'a>(
@@ -188,9 +141,6 @@ fn page<'a>(
     Ok(response)
 }
 
-fn revision_error(error: anyhow::Error) -> Error {
-    Error::new(revision::error_code(&error), format!("{error:#}"))
-}
 fn encoding_error(error: serde_json::Error) -> Error {
     Error::new("serialization_failed", error.to_string())
 }

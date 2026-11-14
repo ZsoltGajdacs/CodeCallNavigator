@@ -33,6 +33,14 @@ pub enum Query {
         #[serde(default)]
         expected_comparison: Option<String>,
     },
+    FlowComparison {
+        base: String,
+        #[serde(default = "comparison_head")]
+        head: String,
+        #[serde(default)]
+        expected_comparison: Option<String>,
+        selection: FlowComparisonSelection,
+    },
     /// Explicit full render snapshot; index-based edges are local to this generation only.
     Snapshot,
     Search {
@@ -102,6 +110,24 @@ pub enum Query {
     },
     Flow {
         symbol: String,
+    },
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(tag = "kind", rename_all = "snake_case", deny_unknown_fields)]
+pub enum FlowComparisonSelection {
+    Catalog {
+        #[serde(default)]
+        text: String,
+        #[serde(default)]
+        offset: usize,
+        #[serde(default = "flow_catalog_limit")]
+        limit: usize,
+    },
+    Detail {
+        symbol: String,
+        #[serde(default)]
+        head_symbol: Option<String>,
     },
 }
 
@@ -227,4 +253,8 @@ fn filter<'de, D: serde::Deserializer<'de>>(
         ));
     }
     serde_json::from_value(value).map_err(serde::de::Error::custom)
+}
+
+fn flow_catalog_limit() -> usize {
+    50
 }

@@ -8,15 +8,16 @@ pub use operations::{execute, render_section};
 pub use selection::{Selection, select, select_render};
 
 pub const VERSION: u32 = 1;
-pub const MAX_SOURCE_BYTES: u64 = 16 * 1024 * 1024;
+pub const MAX_SOURCE_BYTES: u64 = crate::flow::MAX_SOURCE_BYTES;
 pub const MAX_FRESHNESS_REASONS: usize = 50;
 pub const MAX_FRESHNESS_REASON_BYTES: usize = 8192;
 
 pub fn capabilities() -> serde_json::Value {
     serde_json::json!({
         "query_version": VERSION,
-        "operations": ["status", "freshness", "snapshot", "inspect", "live_source", "architecture", "search", "symbol", "source", "explorer", "selection", "render_selection", "neighbors", "flow", "compare"],
+        "operations": ["status", "freshness", "snapshot", "inspect", "live_source", "architecture", "search", "symbol", "source", "explorer", "selection", "render_selection", "neighbors", "flow", "compare", "flow_comparison"],
         "automatic_refresh": {"version":crate::refresh::VERSION,"activity_version":crate::refresh::VERSION,"observe_flag":"--auto-refresh","debounce_milliseconds":crate::refresh::DEBOUNCE_MILLISECONDS,"cancel_command":"cancel_refresh"},
+        "flow_comparison": {"version":1,"selections":["catalog","detail"],"default_limit":50,"maximum_limit":500,"maximum_text_bytes":1024,"maximum_symbol_bytes":16384,"maximum_response_bytes":crate::artifact::difference::MAX_RESPONSE_BYTES,"maximum_source_bytes":MAX_SOURCE_BYTES,"snapshot_binding":true,"correspondence":"exact_identity","manual_counterpart":true},
         "comparison": {"version":1,"default_limit":100,"maximum_limit":500,"maximum_response_bytes":24*1024*1024,"snapshot_binding":true},
         "freshness": {"version":crate::freshness::VERSION,"streaming":true,"mode":"verified_polling","limited":true,"reconcile_milliseconds":crate::freshness::RECONCILE_MILLISECONDS,"heartbeat_milliseconds":crate::freshness::HEARTBEAT_MILLISECONDS},
         "flow_languages": ["java", "typescript", "csharp"],

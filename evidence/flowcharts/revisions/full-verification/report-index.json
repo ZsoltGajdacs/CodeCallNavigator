@@ -1,0 +1,29 @@
+{
+  "scope": "Detailed generated reports retained locally; stage results are checked in as results.json",
+  "reports": {
+    "csharp-cleanup.json": {
+      "local_path": "target/verification/full-k7cvs5hs/csharp-cleanup.json",
+      "bytes": 445620,
+      "sha256": "791c6307d4fab2203f9759c4e4ba093cf9e6593777c1b33c60e3b4270a07f987",
+      "stage": "passed"
+    },
+    "installed-cli.json": {
+      "local_path": "target/verification/full-k7cvs5hs/installed-cli.json",
+      "bytes": 39773,
+      "sha256": "019f1baba4e292a2d008a12ed2b850d38dad637f1afee11958d60a3b33d4ce5f",
+      "stage": "passed"
+    },
+    "agent-journeys.json": {
+      "local_path": "target/verification/full-k7cvs5hs/agent-journeys.json",
+      "bytes": 39082,
+      "sha256": "c7e09e6735ba71b978e8a9386ae36c55b5eb903b0f038b1b68eaa96734085fa4",
+      "stage": "passed"
+    },
+    "agent-mcp-journeys.json": {
+      "local_path": "target/verification/full-k7cvs5hs/agent-mcp-journeys.json",
+      "bytes": 127091,
+      "sha256": "bf9d166fa7ae4e7e1a146dd48366b8c9bd42d7bb281b35b0ea2404e398bb986b",
+      "stage": "passed"
+    }
+  }
+}
