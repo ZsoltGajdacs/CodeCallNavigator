@@ -119,10 +119,14 @@ struct ObserverProcess {
 
 impl ObserverProcess {
     fn start(request: Value) -> Self {
+        Self::with_output(request, Stdio::piped())
+    }
+
+    fn with_output(request: Value, output: Stdio) -> Self {
         let mut child = Command::new(env!("CARGO_BIN_EXE_codecallnavigator-engine"))
             .arg("observe")
             .stdin(Stdio::piped())
-            .stdout(Stdio::piped())
+            .stdout(output)
             .stderr(Stdio::piped())
             .spawn()
             .unwrap();
@@ -202,9 +206,39 @@ fn observer_stream_emits_initial_and_stale_repairs_then_exits_on_eof() {
 }
 
 #[cfg(unix)]
-fn fill_pipe(process: &ObserverProcess, paths: &[std::path::PathBuf]) -> bool {
+fn observer_output() -> (
+    std::os::unix::net::UnixStream,
+    std::os::unix::net::UnixStream,
+) {
+    use std::os::{fd::AsRawFd, unix::net::UnixStream};
+    let (reader, writer) = UnixStream::pair().unwrap();
+    let capacity: libc::c_int = 4096;
+    // A socket supplies bounded stdout backpressure with reliable write readiness.
+    // On macOS a pipe can block at 512 bytes while POLLOUT still reports writable.
+    assert_eq!(
+        unsafe {
+            libc::setsockopt(
+                writer.as_raw_fd(),
+                libc::SOL_SOCKET,
+                libc::SO_SNDBUF,
+                (&capacity as *const libc::c_int).cast(),
+                std::mem::size_of_val(&capacity) as libc::socklen_t,
+            )
+        },
+        0
+    );
+    (reader, writer)
+}
+
+#[cfg(unix)]
+fn fill_output(
+    process: &mut ObserverProcess,
+    paths: &[std::path::PathBuf],
+    reader: &std::os::unix::net::UnixStream,
+    writer: &std::os::unix::net::UnixStream,
+) -> bool {
     use std::{os::fd::AsRawFd, time::Duration};
-    let stdout = process.child.stdout.as_ref().unwrap().as_raw_fd();
+    let stdout = reader.as_raw_fd();
     let (mut previous, mut stable) = (0, 0);
     for edit in 0..30 {
         for path in paths {
@@ -216,7 +250,22 @@ fn fill_pipe(process: &ObserverProcess, paths: &[std::path::PathBuf]) -> bool {
             unsafe { libc::ioctl(stdout, libc::FIONREAD, &mut available) },
             0
         );
-        stable = if available >= 8192 && available == previous {
+        let mut ready = libc::pollfd {
+            fd: writer.as_raw_fd(),
+            events: libc::POLLOUT,
+            revents: 0,
+        };
+        assert!(unsafe { libc::poll(&mut ready, 1, 0) } >= 0);
+        assert_eq!(
+            ready.revents & (libc::POLLERR | libc::POLLHUP | libc::POLLNVAL),
+            0
+        );
+        assert!(process.child.try_wait().unwrap().is_none());
+        // Queue length is not output capacity: an atomic write can block before
+        // filling a numeric threshold. Ask the kernel whether a write can proceed.
+        let stalled_output = available > 0 && available == previous;
+        let waiting_for_drain = ready.revents & libc::POLLOUT == 0;
+        stable = if stalled_output && waiting_for_drain {
             stable + 1
         } else {
             0
@@ -231,7 +280,7 @@ fn fill_pipe(process: &ObserverProcess, paths: &[std::path::PathBuf]) -> bool {
 
 #[cfg(unix)]
 #[test]
-fn observer_eof_remains_bounded_when_stdout_pipe_is_full() {
+fn observer_eof_remains_bounded_when_stdout_is_backpressured() {
     let root = tempfile::tempdir().unwrap();
     let paths = (0..80)
         .map(|index| {
@@ -255,10 +304,14 @@ fn observer_eof_remains_bounded_when_stdout_pipe_is_full() {
         graph.bytes().unwrap(),
     )
     .unwrap();
-    let mut process = ObserverProcess::start(observer_request(root.path()));
+    let (reader, writer) = observer_output();
+    let mut process = ObserverProcess::with_output(
+        observer_request(root.path()),
+        Stdio::from(std::os::fd::OwnedFd::from(writer.try_clone().unwrap())),
+    );
     assert!(
-        fill_pipe(&process, &paths),
-        "Repeated large observations must fill the undrained pipe"
+        fill_output(&mut process, &paths, &reader, &writer),
+        "Repeated observations must produce sustained stdout backpressure"
     );
     assert!(
         process.eof(),
