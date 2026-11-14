@@ -1,9 +1,11 @@
 mod architecture;
+mod flow_inventory;
 mod framework;
 mod http;
 mod inputs;
 mod ownership;
 mod policy;
+mod source;
 use super::process::run_process;
 use super::{AnalysisJob, ensure_unchanged, find_tool, source_snapshot};
 use crate::{
@@ -39,6 +41,12 @@ struct AtlasMap {
     http_routes: Option<Vec<http::RawRoute>>,
     #[serde(default, rename = "architectureFiles")]
     architecture_files: Option<Vec<architecture::AtlasFileFacts>>,
+    #[serde(default, rename = "flowFactsVersion")]
+    flow_facts_version: String,
+    #[serde(default, rename = "flowInventory")]
+    flow_inventory: Option<crate::flow::FlowInventory>,
+    #[serde(default, rename = "sourceFactsVersion")]
+    source_facts_version: String,
     nodes: Vec<AtlasNode>,
     edges: Vec<AtlasEdge>,
     #[serde(default)]
@@ -75,6 +83,20 @@ struct AtlasEntries {
     candidates: Vec<String>,
     #[serde(rename = "applicationStarts")]
     application_starts: Vec<String>,
+}
+impl AtlasEntries {
+    fn normalize(self, build: &BuildTarget) -> EntryPoints {
+        let qualify = |ids: Vec<String>| {
+            ids.into_iter()
+                .map(|id| format!("{}|{id}", build.path.display()))
+                .collect()
+        };
+        EntryPoints {
+            framework_entries: Vec::new(),
+            candidates: qualify(self.candidates),
+            application_starts: qualify(self.application_starts),
+        }
+    }
 }
 #[derive(Deserialize)]
 struct AtlasNode {
@@ -176,6 +198,8 @@ pub(super) fn analyze_csharp(build: &BuildTarget, context: &AnalysisJob<'_>) -> 
         normalize_atlas(build, root, map, sources.owners.resolved())?
     };
     graph.fingerprints = before_engine;
+    ensure_unchanged(&graph.fingerprints)?;
+    sources.verify_imports(&preprocessor)?;
     Ok(graph)
 }
 
@@ -402,22 +426,76 @@ fn normalize_atlas(
         roots: vec![build.path.to_string_lossy().into_owned()],
         ..GraphData::default()
     };
-    graph.architecture = architecture::normalize(build, root, map.architecture_files, owners);
-    graph.entry_points = map.entry_points.map(|entries| {
-        let qualify = |ids: Vec<String>| {
-            ids.into_iter()
-                .map(|id| format!("{}|{id}", build.path.display()))
-                .collect()
-        };
-        EntryPoints {
-            framework_entries: Vec::new(),
-            candidates: qualify(entries.candidates),
-            application_starts: qualify(entries.application_starts),
-        }
-    });
+    let mut snapshots = source::Snapshots::default();
+    graph.architecture = architecture::normalize(
+        map.architecture_files,
+        architecture::Context {
+            build,
+            root,
+            owners,
+            snapshots: &mut snapshots,
+        },
+    )?;
+    let flow = map
+        .flow_inventory
+        .take()
+        .context("C# function flow inventory is missing")?;
+    graph.entry_points = map.entry_points.map(|entries| entries.normalize(build));
+    let bindings = append_nodes(
+        DeclarationContext {
+            build,
+            root,
+            owners,
+        },
+        &mut graph,
+        map.nodes,
+    )?;
+    for edge in map.edges {
+        append_atlas_edge(&mut graph, &bindings.indices, edge)?;
+    }
+    framework::append(root, &mut graph, &bindings.indices, framework)?;
+    http::append(build, root, &mut graph, http)?;
+    flow_inventory::append(
+        &mut graph,
+        flow,
+        flow_inventory::BindingContext {
+            root,
+            indices: &bindings.indices,
+            snapshots: &snapshots,
+            owners,
+        },
+    )?;
+    graph.diagnostics.push("CallAtlas omits most source-generator output; cross-assembly interface implementation candidates are limited; operator invocations are not fully reported. Reflection, dynamic calls, unsupported framework callbacks and unsupported DI wiring are not inferred. MediatR targets are compiler-visible possibilities, not proof of dependency-injection registration.".into());
+    if !map.unresolved.is_empty() {
+        graph.diagnostics.push(format!(
+            "CallAtlas reported {} unresolved call sites",
+            map.unresolved.len()
+        ));
+    }
+    graph.validate()?;
+    crate::method_policy::prune(&mut graph, &bindings.excluded)?;
+    policy::finalize_entries(&mut graph);
+    graph.validate()?;
+    Ok(graph)
+}
+
+struct DeclarationContext<'a> {
+    build: &'a BuildTarget,
+    root: &'a Path,
+    owners: &'a SourceOwners,
+}
+struct NodeBindings {
+    indices: HashMap<String, u32>,
+    excluded: HashSet<String>,
+}
+fn append_nodes(
+    context: DeclarationContext<'_>,
+    graph: &mut GraphData,
+    nodes: Vec<AtlasNode>,
+) -> Result<NodeBindings> {
     let mut indices = HashMap::new();
     let mut excluded = HashSet::new();
-    for node in map.nodes {
+    for node in nodes {
         ensure!(
             qualified_identity(&node.id),
             "CallAtlas is missing the pinned assembly identity patch; run tools/bootstrap.py before analyzing solutions"
@@ -435,27 +513,16 @@ fn normalize_atlas(
             node.id
         );
         if policy::excluded(&node) {
-            excluded.insert(format!("{}|{}", build.path.display(), node.id));
+            excluded.insert(format!("{}|{}", context.build.path.display(), node.id));
         }
-        graph.nodes.push(atlas_node(build, root, node, owners));
-    }
-    for edge in map.edges {
-        append_atlas_edge(&mut graph, &indices, edge)?;
-    }
-    framework::append(root, &mut graph, &indices, framework)?;
-    http::append(build, root, &mut graph, http)?;
-    graph.diagnostics.push("CallAtlas omits most source-generator output; cross-assembly interface implementation candidates are limited; operator invocations are not fully reported. Reflection, dynamic calls, unsupported framework callbacks and unsupported DI wiring are not inferred. MediatR targets are compiler-visible possibilities, not proof of dependency-injection registration.".into());
-    if !map.unresolved.is_empty() {
-        graph.diagnostics.push(format!(
-            "CallAtlas reported {} unresolved call sites",
-            map.unresolved.len()
+        graph.nodes.push(atlas_node(
+            context.build,
+            context.root,
+            node,
+            context.owners,
         ));
     }
-    graph.validate()?;
-    crate::method_policy::prune(&mut graph, &excluded)?;
-    policy::finalize_entries(&mut graph);
-    graph.validate()?;
-    Ok(graph)
+    Ok(NodeBindings { indices, excluded })
 }
 
 fn validate_atlas(map: &AtlasMap) -> Result<()> {
@@ -482,6 +549,18 @@ fn validate_atlas(map: &AtlasMap) -> Result<()> {
     ensure!(
         map.body_errors == 0 && map.diagnostics.is_empty(),
         "CallAtlas reported incomplete compilation"
+    );
+    ensure!(
+        map.flow_facts_version == "1"
+            && map
+                .flow_inventory
+                .as_ref()
+                .is_some_and(|inventory| inventory.version == crate::flow::INVENTORY_VERSION),
+        "CallAtlas function flow facts are missing or unsupported; run tools/bootstrap.py and refresh the analysis"
+    );
+    ensure!(
+        map.source_facts_version == "1" && map.architecture_files.is_some(),
+        "CallAtlas source facts are missing or unsupported; run tools/bootstrap.py and refresh the analysis"
     );
     Ok(())
 }
@@ -537,14 +616,8 @@ fn location(value: &str, root: &Path) -> (String, u32) {
     let Ok(line) = line.parse() else {
         return (String::new(), 0);
     };
-    let path = root.join(file);
-    (
-        path.canonicalize()
-            .unwrap_or(path)
-            .to_string_lossy()
-            .into_owned(),
-        line,
-    )
+    let path = source::path(root, file);
+    (path.to_string_lossy().into_owned(), line)
 }
 
 fn append_atlas_edge(
@@ -595,7 +668,8 @@ mod tests {
     fn stale_or_incomplete_framework_capabilities_require_refresh() {
         let mut value = serde_json::json!({
             "schema":"callatlas.ir.v3", "declarationFactsVersion":"2", "nodes":[], "edges":[],
-            "httpFactsVersion":"1", "httpRoutes":[]
+            "httpFactsVersion":"1", "httpRoutes":[],
+            "flowFactsVersion":"1", "flowInventory":{"version":1,"functions":[]}, "sourceFactsVersion":"1", "architectureFiles":[]
         });
         let stale: AtlasMap = serde_json::from_value(value.clone()).unwrap();
         assert!(
@@ -621,7 +695,8 @@ mod tests {
     fn http_capability_must_be_current_and_complete() {
         let mut value = serde_json::json!({
             "schema":"callatlas.ir.v3", "declarationFactsVersion":"2", "nodes":[], "edges":[],
-            "frameworkFactsVersion":"1", "frameworkEdges":[], "frameworkEntries":[], "frameworkDiagnostics":[]
+            "frameworkFactsVersion":"1", "frameworkEdges":[], "frameworkEntries":[], "frameworkDiagnostics":[],
+            "flowFactsVersion":"1", "flowInventory":{"version":1,"functions":[]}, "sourceFactsVersion":"1", "architectureFiles":[]
         });
         let missing: AtlasMap = serde_json::from_value(value.clone()).unwrap();
         assert!(
@@ -643,6 +718,52 @@ mod tests {
     fn unpatched_symbol_identities_are_rejected() {
         assert!(!qualified_identity("Program::<top-level>"));
         assert!(qualified_identity("[Application]::Program::<top-level>"));
+    }
+    #[test]
+    fn missing_or_incompatible_flow_capabilities_require_analyzer_refresh() {
+        let mut value = serde_json::json!({"schema":"callatlas.ir.v3","declarationFactsVersion":"2","nodes":[],"edges":[],
+            "frameworkFactsVersion":"1","frameworkEdges":[],"frameworkEntries":[],"frameworkDiagnostics":[],
+            "httpFactsVersion":"1","httpRoutes":[],"sourceFactsVersion":"1","architectureFiles":[]});
+        let missing: AtlasMap = serde_json::from_value(value.clone()).unwrap();
+        assert!(
+            validate_atlas(&missing)
+                .unwrap_err()
+                .to_string()
+                .contains("flow")
+        );
+        value["flowFactsVersion"] = "1".into();
+        value["flowInventory"] = serde_json::json!({"version":1,"functions":[]});
+        validate_atlas(&serde_json::from_value(value.clone()).unwrap()).unwrap();
+        for invalid in [
+            serde_json::Value::Null,
+            serde_json::json!({"version":2,"functions":[]}),
+        ] {
+            value["flowInventory"] = invalid;
+            assert!(validate_atlas(&serde_json::from_value(value.clone()).unwrap()).is_err());
+        }
+        value["flowInventory"] = serde_json::json!({"version":1,"functions":[]});
+        value["flowFactsVersion"] = "2".into();
+        assert!(validate_atlas(&serde_json::from_value(value).unwrap()).is_err());
+    }
+    #[test]
+    fn fresh_source_capability_requires_current_version_and_file_inventory() {
+        let mut value = serde_json::json!({"schema":"callatlas.ir.v3","declarationFactsVersion":"2","nodes":[],"edges":[],
+            "frameworkFactsVersion":"1","frameworkEdges":[],"frameworkEntries":[],"frameworkDiagnostics":[],
+            "httpFactsVersion":"1","httpRoutes":[],"flowFactsVersion":"1","flowInventory":{"version":1,"functions":[]},
+            "sourceFactsVersion":"1","architectureFiles":[]});
+        validate_atlas(&serde_json::from_value(value.clone()).unwrap()).unwrap();
+        for version in ["", "2"] {
+            value["sourceFactsVersion"] = version.into();
+            assert!(
+                validate_atlas(&serde_json::from_value(value.clone()).unwrap())
+                    .unwrap_err()
+                    .to_string()
+                    .contains("source facts")
+            );
+        }
+        value["sourceFactsVersion"] = "1".into();
+        value["architectureFiles"] = serde_json::Value::Null;
+        assert!(validate_atlas(&serde_json::from_value(value).unwrap()).is_err());
     }
     #[test]
     fn linked_glob_root_detects_new_files_outside_the_project_directory() {

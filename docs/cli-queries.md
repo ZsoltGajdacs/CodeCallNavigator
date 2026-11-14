@@ -93,7 +93,14 @@ the same query operations and generation contract.
 The CLI accepts configured project roots, independently of any MCP implementation.
 Clients must check contract compatibility before querying. All normal graph
 queries, including C# callers/callees, are supported independently of the desktop.
-C# internal function flow remains unsupported and returns `flow_unavailable`.
+C# internal function flow is available after refreshing with the current analyzer.
+Flow queries return compiler-bound source structure, overload-aware targets and the
+exact analyzed UTF-8 snapshot, including a UTF-8 BOM. Existing artifacts without
+flow metadata stay graph-readable and return `flow_unavailable` with refresh
+guidance. Accepted non-UTF-8 C# files retain their graph and compiler-decoded source
+facts; exact-byte flow remains unavailable with an explicit analysis diagnostic.
+Unsupported C# control/evaluation constructs appear as diagnosed opaque regions,
+rather than guessed execution. Opening a flow never compiles the project.
 
 ## Request and response
 

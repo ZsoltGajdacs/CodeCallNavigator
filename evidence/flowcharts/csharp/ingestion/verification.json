@@ -1,0 +1,384 @@
+{
+  "task": "TASK-22.2",
+  "branch": "feature/task-22-function-flowcharts",
+  "status": "passed",
+  "patch_sha256": "c937ed67e92cc45783ad57289e8bfc15a4d55e3548bfe173ee7eacbe12f3990d",
+  "tests_first": {
+    "rust": {
+      "command": "cargo test --locked --release -p codecallnavigator-engine --test csharp_flows -- --include-ignored --test-threads=1",
+      "exit_code": 101,
+      "passed": 0,
+      "failed": 2,
+      "observed_failures": [
+        "C# flow query returned old Java/TypeScript-only flow_unavailable guidance",
+        "csharp absent from flow_languages"
+      ],
+      "retained_log": false,
+      "evidence": "Observed tool output; no redirected log file was retained."
+    },
+    "source_metadata": {
+      "trx": "/private/tmp/task22-source-red/task22-source-red.trx",
+      "expected_failed": 10,
+      "existing_passed": 1
+    },
+    "helper": {
+      "engine": "frozen pre-ingestion packaged engine",
+      "observed_failure": "CLI does not advertise C# flow support"
+    }
+  },
+  "focused": {
+    "core": {
+      "passed": 108
+    },
+    "engine_units": {
+      "passed": 65,
+      "ignored_toolchain_tests": 15
+    },
+    "unit_log": "/private/tmp/task22-ingestion-unit.log",
+    "csharp_cli": {
+      "passed": 4,
+      "log": "/private/tmp/task22-generated-bodyless-final.log"
+    },
+    "query": {
+      "passed": 7,
+      "includes_actual_typescript": true
+    },
+    "query_session": {
+      "passed": 2
+    },
+    "query_log": "/private/tmp/task22-ingestion-cli.log",
+    "dependency_patch_tests": {
+      "passed": 11
+    },
+    "upstream": {
+      "total": 331,
+      "passed": 302,
+      "failed": 29,
+      "new_source_cases_passed": 12,
+      "failed_names_equal_baseline": true,
+      "trx": "/private/tmp/task22-source-suite/task22-source-suite.trx"
+    },
+    "raw_cli_acceptance": "raw-source-acceptance.json",
+    "independent_cli_acceptance": {
+      "report": "cli-acceptance.json",
+      "operations": 35,
+      "status": "passed",
+      "candidate_sha256": "bf0809d34ddabd7444957a27a92a6554041e32a79484c2dae4feb98dfe7229bf"
+    }
+  },
+  "review": {
+    "upstream": "approved",
+    "rust": "approved",
+    "generated_bodyless_cli_test": "approved",
+    "code_health": "code-health.json"
+  },
+  "limitations": [
+    "Upstream suite retains 29 exact recorded baseline failures; it is not reported green.",
+    "An exploratory mixed linked-file test incorrectly assumed configured CodePage equals actual SourceText encoding. Same-analysis compiler facts are the authoritative boundary; this observed upstream loading nuance is recorded separately."
+  ],
+  "full_runs": [
+    {
+      "directory": "target/verification/full-9dgrhuyk",
+      "status": "passed",
+      "stages": 41,
+      "command": "CODECALLNAVIGATOR_RECURRING_BILLING=/Users/zsolt.gajdacs/Projects/Recurring-billing CODECALLNAVIGATOR_TS_NODE_MODULES=/Users/zsolt.gajdacs/Zs/Programming/PacificFateMapEditor/node_modules ./verify-full.sh --timeout 3600 --profile-source '/Users/zsolt.gajdacs/Library/Application Support/CodeCallNavigator'",
+      "outside_sandbox": true,
+      "isolated_profile": true,
+      "results": [
+        {
+          "name": "prerequisites",
+          "status": "passed",
+          "exit_code": 0,
+          "seconds": 0.95,
+          "log": "01-prerequisites.log"
+        },
+        {
+          "name": "whitespace",
+          "status": "passed",
+          "exit_code": 0,
+          "seconds": 0.049,
+          "log": "02-whitespace.log"
+        },
+        {
+          "name": "syntax-format-002",
+          "status": "passed",
+          "exit_code": 0,
+          "seconds": 0.201,
+          "log": "03-syntax-format-002.log"
+        },
+        {
+          "name": "syntax-format-003",
+          "status": "passed",
+          "exit_code": 0,
+          "seconds": 0.048,
+          "log": "04-syntax-format-003.log"
+        },
+        {
+          "name": "syntax-format-004",
+          "status": "passed",
+          "exit_code": 0,
+          "seconds": 0.048,
+          "log": "05-syntax-format-004.log"
+        },
+        {
+          "name": "syntax-format-005",
+          "status": "passed",
+          "exit_code": 0,
+          "seconds": 0.049,
+          "log": "06-syntax-format-005.log"
+        },
+        {
+          "name": "syntax-format-006",
+          "status": "passed",
+          "exit_code": 0,
+          "seconds": 0.048,
+          "log": "07-syntax-format-006.log"
+        },
+        {
+          "name": "syntax-format-007",
+          "status": "passed",
+          "exit_code": 0,
+          "seconds": 0.044,
+          "log": "08-syntax-format-007.log"
+        },
+        {
+          "name": "syntax-format-008",
+          "status": "passed",
+          "exit_code": 0,
+          "seconds": 0.049,
+          "log": "09-syntax-format-008.log"
+        },
+        {
+          "name": "syntax-format-009",
+          "status": "passed",
+          "exit_code": 0,
+          "seconds": 0.049,
+          "log": "10-syntax-format-009.log"
+        },
+        {
+          "name": "syntax-format-010",
+          "status": "passed",
+          "exit_code": 0,
+          "seconds": 0.049,
+          "log": "11-syntax-format-010.log"
+        },
+        {
+          "name": "syntax-format-011",
+          "status": "passed",
+          "exit_code": 0,
+          "seconds": 0.045,
+          "log": "12-syntax-format-011.log"
+        },
+        {
+          "name": "syntax-format-012",
+          "status": "passed",
+          "exit_code": 0,
+          "seconds": 0.045,
+          "log": "13-syntax-format-012.log"
+        },
+        {
+          "name": "syntax-format-013",
+          "status": "passed",
+          "exit_code": 0,
+          "seconds": 0.049,
+          "log": "14-syntax-format-013.log"
+        },
+        {
+          "name": "syntax-format-027",
+          "status": "passed",
+          "exit_code": 0,
+          "seconds": 0.039,
+          "log": "15-syntax-format-027.log"
+        },
+        {
+          "name": "syntax-format-028",
+          "status": "passed",
+          "exit_code": 0,
+          "seconds": 0.047,
+          "log": "16-syntax-format-028.log"
+        },
+        {
+          "name": "syntax-format-029",
+          "status": "passed",
+          "exit_code": 0,
+          "seconds": 0.048,
+          "log": "17-syntax-format-029.log"
+        },
+        {
+          "name": "bootstrap",
+          "status": "passed",
+          "exit_code": 0,
+          "seconds": 3.786,
+          "log": "18-bootstrap.log"
+        },
+        {
+          "name": "build-debug-engine",
+          "status": "passed",
+          "exit_code": 0,
+          "seconds": 8.757,
+          "log": "19-build-debug-engine.log"
+        },
+        {
+          "name": "cargo-check",
+          "status": "passed",
+          "exit_code": 0,
+          "seconds": 23.113,
+          "log": "20-cargo-check.log"
+        },
+        {
+          "name": "mcp-dependency-boundary",
+          "status": "passed",
+          "exit_code": 0,
+          "seconds": 0.487,
+          "log": "21-mcp-dependency-boundary.log"
+        },
+        {
+          "name": "clippy",
+          "status": "passed",
+          "exit_code": 0,
+          "seconds": 4.62,
+          "log": "22-clippy.log"
+        },
+        {
+          "name": "rust-tests",
+          "status": "passed",
+          "exit_code": 0,
+          "seconds": 174.537,
+          "log": "23-rust-tests.log"
+        },
+        {
+          "name": "python-tests",
+          "status": "passed",
+          "exit_code": 0,
+          "seconds": 36.79,
+          "log": "24-python-tests.log"
+        },
+        {
+          "name": "python-tool-tests",
+          "status": "passed",
+          "exit_code": 0,
+          "seconds": 8.816,
+          "log": "25-python-tool-tests.log"
+        },
+        {
+          "name": "typescript-tests",
+          "status": "passed",
+          "exit_code": 0,
+          "seconds": 26.016,
+          "log": "26-typescript-tests.log"
+        },
+        {
+          "name": "build-release-engine",
+          "status": "passed",
+          "exit_code": 0,
+          "seconds": 0.298,
+          "log": "27-build-release-engine.log"
+        },
+        {
+          "name": "profile-snapshot",
+          "status": "passed",
+          "exit_code": 0,
+          "seconds": 0.088,
+          "log": "28-profile-snapshot.log"
+        },
+        {
+          "name": "release-acceptance-and-benchmarks",
+          "status": "passed",
+          "exit_code": 0,
+          "seconds": 1735.647,
+          "log": "29-release-acceptance-and-benchmarks.log"
+        },
+        {
+          "name": "storage-benchmark",
+          "status": "passed",
+          "exit_code": 0,
+          "seconds": 44.871,
+          "log": "30-storage-benchmark.log"
+        },
+        {
+          "name": "package",
+          "status": "passed",
+          "exit_code": 0,
+          "seconds": 22.013,
+          "log": "31-package.log"
+        },
+        {
+          "name": "package-signature",
+          "status": "passed",
+          "exit_code": 0,
+          "seconds": 0.091,
+          "log": "32-package-signature.log"
+        },
+        {
+          "name": "packaged-engine",
+          "status": "passed",
+          "exit_code": 0,
+          "seconds": 0.252,
+          "log": "33-packaged-engine.log"
+        },
+        {
+          "name": "installed-cli",
+          "status": "passed",
+          "exit_code": 0,
+          "seconds": 3.021,
+          "log": "34-installed-cli.log"
+        },
+        {
+          "name": "agent-integrations-check",
+          "status": "passed",
+          "exit_code": 0,
+          "seconds": 0.048,
+          "log": "35-agent-integrations-check.log"
+        },
+        {
+          "name": "agent-integrations-package",
+          "status": "passed",
+          "exit_code": 0,
+          "seconds": 0.048,
+          "log": "36-agent-integrations-package.log"
+        },
+        {
+          "name": "agent-cli-journeys",
+          "status": "passed",
+          "exit_code": 0,
+          "seconds": 1.737,
+          "log": "37-agent-cli-journeys.log"
+        },
+        {
+          "name": "mcp-independent-install",
+          "status": "passed",
+          "exit_code": 0,
+          "seconds": 19.309,
+          "log": "38-mcp-independent-install.log"
+        },
+        {
+          "name": "agent-mcp-journeys",
+          "status": "passed",
+          "exit_code": 0,
+          "seconds": 1.605,
+          "log": "39-agent-mcp-journeys.log"
+        },
+        {
+          "name": "codescene",
+          "status": "passed",
+          "exit_code": 0,
+          "seconds": 9.854,
+          "log": "40-codescene.log"
+        },
+        {
+          "name": "cleanup",
+          "status": "passed",
+          "exit_code": 0,
+          "seconds": 10.235,
+          "log": "41-cleanup.log"
+        }
+      ],
+      "total_seconds": 2137.9
+    }
+  ],
+  "static_documentation": {
+    "modified_json_and_evidence_parse": true,
+    "relative_links_resolved": 38,
+    "diff_whitespace": "passed"
+  }
+}

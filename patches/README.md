@@ -246,6 +246,18 @@ reasons. Source spans address exact original UTF-8 bytes, including a BOM.
 Snapshots without this capability retain its absence through JSON round trips;
 malformed or incompatible advertised facts fail explicitly.
 
+Fresh C# ingestion also requires `sourceFactsVersion: "1"`. Architecture-file
+facts carry a nullable `sourceCodePage` from Roslyn's analyzed source text;
+unknown encodings omit the field. The consumer binds UTF-8 flows to the exact
+original bytes and keeps explicitly non-UTF-8 contexts available for graph/source
+queries without claiming byte-accurate flow spans. Historical saved artifacts do
+not acquire a new capability requirement.
+
+The exact combined patch before this encoding metadata was added is preserved in
+`callatlas-assembly-identity-pre-source-encoding.patch`, pinned by
+`callatlas.pre_source_encoding_patch` and its checksum. Like the other checkpoints,
+it is replaced by the current combined patch, never stacked with it.
+
 The initial exporter covers a bounded synchronous structured subset. Unsupported
 evaluation, cleanup, suspension and transfer semantics have explicit opaque
 boundaries, rather than fabricated eager calls. Labels and per-callable

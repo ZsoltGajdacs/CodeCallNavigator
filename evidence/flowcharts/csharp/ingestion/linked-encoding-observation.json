@@ -1,0 +1,31 @@
+{
+  "recorded_on": "2026-11-14",
+  "purpose": "Preserve failed configured-code-page assumption and a subsequent raw compiler-metadata observation; not an ingestion-defect claim.",
+  "failed_checkpoint": {
+    "expectation": "A project configured CodePage28591 over shared ASCII source would always be flow-unavailable.",
+    "observed": "The original helper received a complete C flow with exit0; the expectation was not justified by configured CodePage alone."
+  },
+  "diagnostic_probe": {
+    "fixture_root": "/private/tmp/task22-linked-encoding-diagnostic-s5ajyjit",
+    "raw_map_path": "/private/tmp/task22-linked-encoding-diagnostic-s5ajyjit.raw.json",
+    "same_process_as_failed_checkpoint": false,
+    "source": "namespace Linked; public static class Shared { public static int Leaf(int n)=>n; public static int Leaf(string s)=>s.Length; public static int Run(){\n#if FIRST\nreturn Leaf(1);\n#else\nreturn Leaf(\"s\");\n#endif\n}}\n",
+    "project_files": {
+      "A": "<Project Sdk=\"Microsoft.NET.Sdk\"><PropertyGroup><TargetFramework>net11.0</TargetFramework><DefineConstants>FIRST</DefineConstants><CodePage>65001</CodePage></PropertyGroup><ItemGroup><Compile Include=\"../Shared.cs\" Link=\"Shared.cs\" /></ItemGroup></Project>\n",
+      "B": "<Project Sdk=\"Microsoft.NET.Sdk\"><PropertyGroup><TargetFramework>net11.0</TargetFramework><DefineConstants>SECOND</DefineConstants><CodePage>65001</CodePage></PropertyGroup><ItemGroup><Compile Include=\"../Shared.cs\" Link=\"Shared.cs\" /></ItemGroup></Project>\n",
+      "C": "<Project Sdk=\"Microsoft.NET.Sdk\"><PropertyGroup><TargetFramework>net11.0</TargetFramework><DefineConstants>THIRD</DefineConstants><CodePage>28591</CodePage></PropertyGroup><ItemGroup><Compile Include=\"../Shared.cs\" Link=\"Shared.cs\" /></ItemGroup></Project>\n"
+    },
+    "configured_code_pages": {
+      "A": 65001,
+      "B": 65001,
+      "C": 28591
+    },
+    "actual_source_code_pages": {
+      "A": 28591,
+      "B": 28591,
+      "C": 65001
+    },
+    "source_facts_version": "1"
+  },
+  "interpretation": "Configured code pages and the analyzed Roslyn SourceText encoding differ in this observed linked-workspace case. Shared-workspace reuse may affect actual encoding; subsequent checks capture unchanged raw facts from the same successful engine analysis and validate availability against those actual facts. No retry forces actual mixed encoding groups."
+}

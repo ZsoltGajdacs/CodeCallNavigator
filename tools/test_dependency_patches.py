@@ -92,6 +92,11 @@ class CallAtlasPatchMigration(PatchMigrationCases, unittest.TestCase):
         self.assertEqual(hashlib.sha256(checkpoint.read_bytes()).hexdigest(),
                          baseline["patch_sha256"])
 
+    def test_pre_source_encoding_checkpoint_preserves_the_flow_exporter(self):
+        checkpoint = ROOT / self.spec["pre_source_encoding_patch"]
+        self.assertEqual(hashlib.sha256(checkpoint.read_bytes()).hexdigest(),
+                         "173f6ea6a771f5d2dded30f68319c3b7aa8dd4384a61fa43ad2f0bd71b5f3a7f")
+
 
 if __name__ == "__main__":
     unittest.main()
