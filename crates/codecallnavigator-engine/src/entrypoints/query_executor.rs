@@ -54,6 +54,9 @@ impl Executor {
                 Err(error) => query::envelope(None, Err(error)),
             };
         }
+        if let Some(response) = super::flow_expansion::respond(loaded, request) {
+            return response;
+        }
         // Legacy queries verify inputs and hydration before attaching generation
         // context. Freshness alone deliberately avoids graph hydration/indexing.
         if let Err(error) = loaded.refresh_freshness() {

@@ -1,0 +1,82 @@
+{
+  "seconds": {
+    "compile": 28.353,
+    "setup": 5.461,
+    "test": 0.0,
+    "cleanup": 1.963,
+    "other": 3.547
+  },
+  "recorded_stage_seconds": 39.324,
+  "stage_statuses": {
+    "passed": 77,
+    "failed": 1,
+    "not-run": 40
+  },
+  "categories": {},
+  "timing_goal": "Approximately one minute of warm unit execution is aspirational, never a pass/fail gate.",
+  "execution_note": "Selection counts are registrations, not passing-test counts; failed/interrupted stages may execute only part of a selection.",
+  "comparison_note": "Build/setup, execution and cleanup are separate. Cold/warm cache conditions are not inferred.",
+  "version": 1,
+  "generated_at": "2026-11-15T22:28:40.152441+00:00",
+  "repository": "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph",
+  "machine": {
+    "os": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+    "architecture": "arm64",
+    "logical_cpus": 12,
+    "python": {
+      "version": "3.13.13",
+      "executable": "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/.venv-verification/bin/python"
+    },
+    "tools": {
+      "cargo": {
+        "status": "available",
+        "executable": "/opt/homebrew/bin/cargo",
+        "version": [
+          "cargo 1.100.0 (3acc79c0c 2026-11-05) (Homebrew)"
+        ],
+        "exit_code": 0
+      },
+      "rustc": {
+        "status": "available",
+        "executable": "/opt/homebrew/bin/rustc",
+        "version": [
+          "rustc 1.100.0 (0ef1bc386 2026-11-09) (Homebrew)"
+        ],
+        "exit_code": 0
+      },
+      "node": {
+        "status": "available",
+        "executable": "/Users/zsolt.gajdacs/.nvm/versions/node/v24.15.0/bin/node",
+        "version": [
+          "v24.15.0"
+        ],
+        "exit_code": 0
+      },
+      "java": {
+        "status": "available",
+        "executable": "/usr/bin/java",
+        "version": [
+          "openjdk version \"25.0.2\" 2026-01-20",
+          "OpenJDK Runtime Environment JBR-25.0.2+10-300.57-jcef (build 25.0.2+10-b300.57)"
+        ],
+        "exit_code": 0
+      },
+      "dotnet": {
+        "status": "available",
+        "executable": "/opt/homebrew/bin/dotnet",
+        "version": [
+          "11.0.100"
+        ],
+        "exit_code": 0
+      },
+      "graphviz": {
+        "status": "available",
+        "executable": "/opt/homebrew/bin/dot",
+        "version": [
+          "dot - graphviz version 16.1.1 (20261108.1752)"
+        ],
+        "exit_code": 0
+      }
+    }
+  }
+}

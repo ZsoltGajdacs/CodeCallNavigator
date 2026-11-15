@@ -1,0 +1,110 @@
+{
+  "version": 3,
+  "status": "passed",
+  "error": null,
+  "project": "/private/tmp/ccn-verify-a4ca85f2236dd186/flow-expansion-native-ozfytopz/project",
+  "root_symbol": "[\"csharp\",\"@repo/ExpansionDesktop.csproj\",\"@repo/Root.cs\",\"@repo/ExpansionDesktop.csproj|[ExpansionDesktop]::ExpansionDesktop.Root::Run(System.Int32)\"]",
+  "generation": "c3ea759e139d369272e979f2c9d76b469292b361e8c57db9d64ecfc34a26e4bd",
+  "expected_viewport": [
+    1050,
+    680
+  ],
+  "initial_viewport": [
+    1050.0,
+    680.0
+  ],
+  "viewport": [
+    1050.0,
+    680.0
+  ],
+  "process_id": 47779,
+  "window_id": 23283,
+  "window_key": "main",
+  "runtime": {
+    "engine": "/private/tmp/ccn-verify-a4ca85f2236dd186/flow-expansion-native-ozfytopz/Relocated CodeCallNavigator.app/Contents/MacOS/codecallnavigator-engine",
+    "resources": "/private/tmp/ccn-verify-a4ca85f2236dd186/flow-expansion-native-ozfytopz/Relocated CodeCallNavigator.app/Contents/Resources",
+    "dot": "/private/tmp/ccn-verify-a4ca85f2236dd186/flow-expansion-native-ozfytopz/Relocated CodeCallNavigator.app/Contents/Resources/analyzers/graphviz/bin/dot"
+  },
+  "frames": {
+    "drawn": 323,
+    "skipped": 0,
+    "unchanged": 0,
+    "first_drawn_ms": 118.841292,
+    "last_drawn_ms": 3138.9515420000002,
+    "last_update_ms": 0.333083,
+    "last_encode_ms": 0.10404199999999997,
+    "refresh_hz": 120.0005952029522
+  },
+  "checks": {
+    "back_restores_expansion_camera_scroll": true,
+    "callee_followed": true,
+    "collapse_all_restores_ordinary": true,
+    "collapse_retains_other_child": true,
+    "first_child_expanded": true,
+    "generation_unchanged": true,
+    "graph_restored": true,
+    "minimum_viewport_drawn": true,
+    "owned_window_setup_acknowledged": true,
+    "recursive_cycle_stop_visible": true,
+    "root_drawn": true,
+    "second_child_expanded": true,
+    "source_owner_switched": true,
+    "source_snapshot_exact": true,
+    "two_distinct_call_slots": true
+  },
+  "captures": [
+    "restored-expanded-root"
+  ],
+  "input_model": "Synthetic pointer input through production Runtime handlers in an actual native window; OS delivery is not measured",
+  "readiness_definition": "Synthetic pointer-down to first Drawn frame containing the replacement chart; gesture settling is excluded. No latency pass threshold.",
+  "ready_drawn": [
+    {
+      "operation": "flow-expand-mode",
+      "milliseconds": 96.923,
+      "steps": 14,
+      "links": 13,
+      "query_milliseconds": 43.031666,
+      "layout_milliseconds": 26.859542
+    },
+    {
+      "operation": "expand-call",
+      "milliseconds": 106.45675,
+      "steps": 28,
+      "links": 29,
+      "query_milliseconds": 47.667833,
+      "layout_milliseconds": 27.993791
+    },
+    {
+      "operation": "expand-call",
+      "milliseconds": 100.724333,
+      "steps": 28,
+      "links": 29,
+      "query_milliseconds": 56.714416,
+      "layout_milliseconds": 23.201125
+    },
+    {
+      "operation": "expand-call",
+      "milliseconds": 114.375125,
+      "steps": 41,
+      "links": 45,
+      "query_milliseconds": 56.668625,
+      "layout_milliseconds": 27.578208
+    },
+    {
+      "operation": "flow-collapse-occurrence",
+      "milliseconds": 109.33645899999999,
+      "steps": 28,
+      "links": 29,
+      "query_milliseconds": 58.090583,
+      "layout_milliseconds": 31.802790999999996
+    },
+    {
+      "operation": "flow-collapse-all",
+      "milliseconds": 17.816917,
+      "steps": 14,
+      "links": 13,
+      "query_milliseconds": null,
+      "layout_milliseconds": null
+    }
+  ]
+}

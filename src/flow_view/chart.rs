@@ -115,6 +115,10 @@ fn step_card(session: &Session, card: Card<'_>, address: Address, k: &Kit) -> El
     let p = session.camera.screen(step.position);
     let scale = session.camera.zoom;
     let selected = session.selected == Some(index);
+    let badge = session.marker_badge(index);
+    let kind = badge.map_or(std::borrow::Cow::Borrowed(step.kind.as_str()), |badge| {
+        std::borrow::Cow::Owned(format!("{} · {badge}", step.kind))
+    });
     let semantic = matches!(step.kind.as_str(), "decision" | "switch" | "loop");
     let border = if selected {
         k.c.text_accent
@@ -137,9 +141,10 @@ fn step_card(session: &Session, card: Card<'_>, address: Address, k: &Kit) -> El
         .padding(7.0 * scale)
         .clip_rounded(5.0)
         .child(
-            text(&step.kind)
+            text(kind.as_ref())
+                .key(address.key(&format!("step-kind-{index}")))
                 .font(theme::mono((10.0 * scale).max(7.0), 500.0))
-                .color(k.c.text_muted)
+                .color(badge.map_or(k.c.text_muted, |_| k.c.warning.fg))
                 .truncate(),
         )
         .child(

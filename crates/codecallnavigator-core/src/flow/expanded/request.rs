@@ -1,4 +1,5 @@
 //! Explicit occurrence-path selections over immutable analyzed function/source inputs.
+mod validation;
 use super::{CallChoice, ExpansionLimits, OccurrencePath};
 use crate::flow::FunctionFlowIR;
 #[derive(Clone, Copy)]
@@ -39,6 +40,11 @@ impl ExpansionRequest {
     pub fn with_limits(mut self, limits: ExpansionLimits) -> Self {
         self.limits = limits;
         self
+    }
+    /// Validate execution limits and the bounded structural-selection envelope
+    /// before adapters perform source lookup or decode selected compiler facts.
+    pub fn validate(&self) -> anyhow::Result<()> {
+        validation::validate(self)
     }
     pub(crate) fn limits(&self) -> ExpansionLimits {
         self.limits

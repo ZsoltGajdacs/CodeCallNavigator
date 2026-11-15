@@ -32,8 +32,11 @@ impl Reply<'_> {
         count(&envelope, MAX_RESPONSE_BYTES, 1)
     }
     pub fn finish(&self, result: &impl Serialize) -> Result<Response> {
+        self.finish_with(result, too_large())
+    }
+    pub fn finish_with(&self, result: &impl Serialize, oversized: Error) -> Result<Response> {
         if self.size(result)?.is_none() {
-            return Err(too_large());
+            return Err(oversized);
         }
         Ok(Response {
             version: query::VERSION,

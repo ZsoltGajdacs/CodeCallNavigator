@@ -1,0 +1,205 @@
+{
+  "scope": "Focused native expansion gate only; full not started",
+  "outside_sandbox": true,
+  "source_paths": 70,
+  "source_before_after_equal": true,
+  "parser_correction": "Initial helper incorrectly treated intentional deleted encoding.rs/null as a mismatch. Missing path normalized to None confirms unchanged source; no test rerun or source change.",
+  "stages": [
+    {
+      "name": "native-prerequisites",
+      "status": "passed",
+      "seconds": 1.25
+    },
+    {
+      "name": "prepare",
+      "status": "passed",
+      "seconds": 1.112
+    },
+    {
+      "name": "bootstrap",
+      "status": "passed",
+      "seconds": 8.491
+    },
+    {
+      "name": "package",
+      "status": "passed",
+      "seconds": 90.566
+    },
+    {
+      "name": "package-signature",
+      "status": "passed",
+      "seconds": 0.146
+    },
+    {
+      "name": "packaged-engine",
+      "status": "passed",
+      "seconds": 0.297
+    },
+    {
+      "name": "gate-flow_expansion_desktop_acceptance",
+      "status": "passed",
+      "seconds": 26.244
+    },
+    {
+      "name": "category-cleanup",
+      "status": "passed",
+      "seconds": 2.075
+    }
+  ],
+  "cleanup": {
+    "status": "passed",
+    "reclaimed_bytes": 1363498077,
+    "retained_package_policy_bytes": 179054421,
+    "removed_paths_absent": true
+  },
+  "themes": {
+    "dark": {
+      "status": "passed",
+      "checks": {
+        "back_restores_expansion_camera_scroll": true,
+        "callee_followed": true,
+        "collapse_all_restores_ordinary": true,
+        "collapse_retains_other_child": true,
+        "first_child_expanded": true,
+        "generation_unchanged": true,
+        "graph_restored": true,
+        "minimum_viewport_drawn": true,
+        "owned_window_setup_acknowledged": true,
+        "recursive_cycle_stop_visible": true,
+        "root_drawn": true,
+        "second_child_expanded": true,
+        "source_owner_switched": true,
+        "source_snapshot_exact": true,
+        "two_distinct_call_slots": true
+      },
+      "drawn_frames": 312,
+      "ready_drawn": [
+        {
+          "operation": "flow-expand-mode",
+          "milliseconds": 100.708542,
+          "steps": 14,
+          "links": 13,
+          "query_milliseconds": 43.3525,
+          "layout_milliseconds": 28.478959000000003
+        },
+        {
+          "operation": "expand-call",
+          "milliseconds": 108.30591700000001,
+          "steps": 28,
+          "links": 29,
+          "query_milliseconds": 53.437125,
+          "layout_milliseconds": 26.949
+        },
+        {
+          "operation": "expand-call",
+          "milliseconds": 75.146083,
+          "steps": 28,
+          "links": 29,
+          "query_milliseconds": 30.627042,
+          "layout_milliseconds": 22.966542
+        },
+        {
+          "operation": "expand-call",
+          "milliseconds": 109.563083,
+          "steps": 41,
+          "links": 45,
+          "query_milliseconds": 43.654208,
+          "layout_milliseconds": 47.936040999999996
+        },
+        {
+          "operation": "flow-collapse-occurrence",
+          "milliseconds": 99.950333,
+          "steps": 28,
+          "links": 29,
+          "query_milliseconds": 50.115375,
+          "layout_milliseconds": 25.730249999999998
+        },
+        {
+          "operation": "flow-collapse-all",
+          "milliseconds": 17.72675,
+          "steps": 14,
+          "links": 13,
+          "query_milliseconds": null,
+          "layout_milliseconds": null
+        }
+      ],
+      "query_cleanup": "cleared",
+      "capture": "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/target/verification/task22-8-native-focused/acceptance/gate-flow_expansion_desktop_acceptance/dark/native.png",
+      "capture_sha256": "66a16c42e451326478134722254b1089297f5fba38d6519e0edd098e8177279e"
+    },
+    "light": {
+      "status": "passed",
+      "checks": {
+        "back_restores_expansion_camera_scroll": true,
+        "callee_followed": true,
+        "collapse_all_restores_ordinary": true,
+        "collapse_retains_other_child": true,
+        "first_child_expanded": true,
+        "generation_unchanged": true,
+        "graph_restored": true,
+        "minimum_viewport_drawn": true,
+        "owned_window_setup_acknowledged": true,
+        "recursive_cycle_stop_visible": true,
+        "root_drawn": true,
+        "second_child_expanded": true,
+        "source_owner_switched": true,
+        "source_snapshot_exact": true,
+        "two_distinct_call_slots": true
+      },
+      "drawn_frames": 321,
+      "ready_drawn": [
+        {
+          "operation": "flow-expand-mode",
+          "milliseconds": 109.181375,
+          "steps": 14,
+          "links": 13,
+          "query_milliseconds": 41.579875,
+          "layout_milliseconds": 35.472917
+        },
+        {
+          "operation": "expand-call",
+          "milliseconds": 109.822708,
+          "steps": 28,
+          "links": 29,
+          "query_milliseconds": 50.075208,
+          "layout_milliseconds": 31.544875
+        },
+        {
+          "operation": "expand-call",
+          "milliseconds": 106.065291,
+          "steps": 28,
+          "links": 29,
+          "query_milliseconds": 50.292083,
+          "layout_milliseconds": 28.339375
+        },
+        {
+          "operation": "expand-call",
+          "milliseconds": 100.61675000000001,
+          "steps": 41,
+          "links": 45,
+          "query_milliseconds": 44.076291,
+          "layout_milliseconds": 31.319542
+        },
+        {
+          "operation": "flow-collapse-occurrence",
+          "milliseconds": 101.183458,
+          "steps": 28,
+          "links": 29,
+          "query_milliseconds": 50.64575000000001,
+          "layout_milliseconds": 31.012042
+        },
+        {
+          "operation": "flow-collapse-all",
+          "milliseconds": 17.653292,
+          "steps": 14,
+          "links": 13,
+          "query_milliseconds": null,
+          "layout_milliseconds": null
+        }
+      ],
+      "query_cleanup": "cleared",
+      "capture": "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/target/verification/task22-8-native-focused/acceptance/gate-flow_expansion_desktop_acceptance/light/native.png",
+      "capture_sha256": "bf84eb9b8e19eb020625e0190dd01ddc64ebde57236de8fa9d962aa17cedcc11"
+    }
+  }
+}

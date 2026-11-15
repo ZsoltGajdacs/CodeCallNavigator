@@ -3352,6 +3352,62 @@
       "requirements": []
     },
     {
+      "id": "codecallnavigator-core/test:flow_expansion_query::expansion_capability_advertises_explicit_binding_and_hard_bounds",
+      "runner": "rust",
+      "file": "crates/codecallnavigator-core/tests/flow_expansion_query.rs",
+      "test_name": "expansion_capability_advertises_explicit_binding_and_hard_bounds",
+      "ignored": false,
+      "package": "codecallnavigator-core",
+      "target_kind": "test",
+      "target": "flow_expansion_query",
+      "component": "core",
+      "category": "unit",
+      "purpose": "Validate additive versioned expansion wire defaults and capability binding while preserving legacy Flow serialization",
+      "requirements": []
+    },
+    {
+      "id": "codecallnavigator-core/test:flow_expansion_query::expansion_wire_is_explicit_versioned_and_preserves_default_flow",
+      "runner": "rust",
+      "file": "crates/codecallnavigator-core/tests/flow_expansion_query.rs",
+      "test_name": "expansion_wire_is_explicit_versioned_and_preserves_default_flow",
+      "ignored": false,
+      "package": "codecallnavigator-core",
+      "target_kind": "test",
+      "target": "flow_expansion_query",
+      "component": "core",
+      "category": "unit",
+      "purpose": "Validate additive versioned expansion wire defaults and capability binding while preserving legacy Flow serialization",
+      "requirements": []
+    },
+    {
+      "id": "codecallnavigator-core/test:flow_expansion_query::inputs::cached_expansion_keeps_exact_owned_sources_and_full_target_without_live_files",
+      "runner": "rust",
+      "file": "crates/codecallnavigator-core/tests/flow_expansion_query/inputs.rs",
+      "test_name": "inputs::cached_expansion_keeps_exact_owned_sources_and_full_target_without_live_files",
+      "ignored": false,
+      "package": "codecallnavigator-core",
+      "target_kind": "test",
+      "target": "flow_expansion_query",
+      "component": "core",
+      "category": "unit",
+      "purpose": "Exercise production cached artifact expansion ownership, full targets, conservative missing bodies, stale choices and cancellation with explicit in-memory inputs",
+      "requirements": []
+    },
+    {
+      "id": "codecallnavigator-core/test:flow_expansion_query::inputs::missing_callee_stops_but_wrong_owned_source_and_stale_choices_fail_explicitly",
+      "runner": "rust",
+      "file": "crates/codecallnavigator-core/tests/flow_expansion_query/inputs.rs",
+      "test_name": "inputs::missing_callee_stops_but_wrong_owned_source_and_stale_choices_fail_explicitly",
+      "ignored": false,
+      "package": "codecallnavigator-core",
+      "target_kind": "test",
+      "target": "flow_expansion_query",
+      "component": "core",
+      "category": "unit",
+      "purpose": "Exercise production cached artifact expansion ownership, full targets, conservative missing bodies, stale choices and cancellation with explicit in-memory inputs",
+      "requirements": []
+    },
+    {
       "id": "codecallnavigator-core/test:flow_inventory::oversized_function_has_a_visible_limit_error_instead_of_a_truncated_control_flow",
       "runner": "rust",
       "file": "crates/codecallnavigator-core/tests/flow_inventory.rs",
@@ -3616,6 +3672,38 @@
       "category": "unit",
       "purpose": "Typed invocation facts preserve uncertainty and legacy bytes through real shared transformations.",
       "requirements": []
+    },
+    {
+      "id": "codecallnavigator-core/test:graphviz_cancellation::cancelling_a_blocked_graphviz_reaps_the_owned_process",
+      "runner": "rust",
+      "file": "crates/codecallnavigator-core/tests/graphviz_cancellation.rs",
+      "test_name": "cancelling_a_blocked_graphviz_reaps_the_owned_process",
+      "ignored": false,
+      "package": "codecallnavigator-core",
+      "target_kind": "test",
+      "target": "graphviz_cancellation",
+      "component": "core",
+      "category": "integration",
+      "purpose": "Real blocked-process fault probe proves pre-cancellation prevents launch and in-flight cancellation reaps Graphviz without depending on timeout; cannot be proved by pure policies",
+      "requirements": [
+        "process-table"
+      ]
+    },
+    {
+      "id": "codecallnavigator-core/test:graphviz_cancellation::pre_cancelled_graphviz_never_starts_a_child",
+      "runner": "rust",
+      "file": "crates/codecallnavigator-core/tests/graphviz_cancellation.rs",
+      "test_name": "pre_cancelled_graphviz_never_starts_a_child",
+      "ignored": false,
+      "package": "codecallnavigator-core",
+      "target_kind": "test",
+      "target": "graphviz_cancellation",
+      "component": "core",
+      "category": "integration",
+      "purpose": "Real blocked-process fault probe proves pre-cancellation prevents launch and in-flight cancellation reaps Graphviz without depending on timeout; cannot be proved by pure policies",
+      "requirements": [
+        "process-table"
+      ]
     },
     {
       "id": "codecallnavigator-core/test:method_policy::fully_pruned_graph_can_be_published_and_searched",
@@ -6530,6 +6618,38 @@
       "purpose": "session and oneshot match without using or mutating current graph"
     },
     {
+      "id": "codecallnavigator-engine/test:flow_expansion_query::expansion_cli_is_generation_bound_and_keeps_ordinary_flow_unchanged",
+      "runner": "rust",
+      "file": "crates/codecallnavigator-engine/tests/flow_expansion_query.rs",
+      "test_name": "expansion_cli_is_generation_bound_and_keeps_ordinary_flow_unchanged",
+      "ignored": false,
+      "package": "codecallnavigator-engine",
+      "target_kind": "test",
+      "target": "flow_expansion_query",
+      "component": "engine",
+      "category": "acceptance",
+      "purpose": "Public CLI one-shot/session queries prove generation binding, immutable cached multi-file expansion, repeated/cycle/limit and stale-selection outcomes plus full escaped response bounds; pure core tests cannot prove transport",
+      "requirements": [
+        "cli"
+      ]
+    },
+    {
+      "id": "codecallnavigator-engine/test:flow_expansion_query::expansion_cli_reports_stale_choices_limits_and_escaped_transport_bounds",
+      "runner": "rust",
+      "file": "crates/codecallnavigator-engine/tests/flow_expansion_query.rs",
+      "test_name": "expansion_cli_reports_stale_choices_limits_and_escaped_transport_bounds",
+      "ignored": false,
+      "package": "codecallnavigator-engine",
+      "target_kind": "test",
+      "target": "flow_expansion_query",
+      "component": "engine",
+      "category": "acceptance",
+      "purpose": "Public CLI one-shot/session queries prove generation binding, immutable cached multi-file expansion, repeated/cycle/limit and stale-selection outcomes plus full escaped response bounds; pure core tests cannot prove transport",
+      "requirements": [
+        "cli"
+      ]
+    },
+    {
       "id": "codecallnavigator-engine/test:freshness::bound_observer_rejects_generation_replacement_without_mixed_observation",
       "runner": "rust",
       "file": "crates/codecallnavigator-engine/tests/freshness.rs",
@@ -7991,6 +8111,20 @@
       "purpose": "flow comparison is optional but requires its complete v1 contract"
     },
     {
+      "id": "codecallnavigator/bin:codecallnavigator::engine_client::capabilities::flow_expansion_tests::optional_expansion_advertisement_preserves_ordinary_flow_compatibility",
+      "runner": "rust",
+      "file": "src/engine_client/capabilities/flow_expansion_tests.rs",
+      "test_name": "engine_client::capabilities::flow_expansion_tests::optional_expansion_advertisement_preserves_ordinary_flow_compatibility",
+      "ignored": false,
+      "package": "codecallnavigator",
+      "target_kind": "bin",
+      "target": "codecallnavigator",
+      "component": "ui",
+      "category": "unit",
+      "purpose": "Pure advertised operation/version/generation-binding validation disables optional expansion only while retaining legacy flow language support",
+      "requirements": []
+    },
+    {
       "id": "codecallnavigator/bin:codecallnavigator::engine_client::capabilities::tests::automatic_refresh_requires_its_complete_optional_contract",
       "runner": "rust",
       "file": "src/engine_client/capabilities.rs",
@@ -8891,6 +9025,48 @@
       "purpose": "window setup waits for acknowledgment and rejects wrong viewports"
     },
     {
+      "id": "codecallnavigator/bin:codecallnavigator::flow_acceptance::expansion::config::tests::minimum_viewport_tolerance_rejects_nonfinite_and_restored_large_windows",
+      "runner": "rust",
+      "file": "src/flow_acceptance/expansion/config.rs",
+      "test_name": "flow_acceptance::expansion::config::tests::minimum_viewport_tolerance_rejects_nonfinite_and_restored_large_windows",
+      "ignored": false,
+      "package": "codecallnavigator",
+      "target_kind": "bin",
+      "target": "codecallnavigator",
+      "component": "ui",
+      "category": "unit",
+      "purpose": "Validate explicit native fixture ownership, recursive target identity and bounded finite minimum-window configuration without filesystem or window execution",
+      "requirements": []
+    },
+    {
+      "id": "codecallnavigator/bin:codecallnavigator::flow_acceptance::expansion::config::tests::rejects_unowned_source_paths_and_unbounded_native_setup",
+      "runner": "rust",
+      "file": "src/flow_acceptance/expansion/config.rs",
+      "test_name": "flow_acceptance::expansion::config::tests::rejects_unowned_source_paths_and_unbounded_native_setup",
+      "ignored": false,
+      "package": "codecallnavigator",
+      "target_kind": "bin",
+      "target": "codecallnavigator",
+      "component": "ui",
+      "category": "unit",
+      "purpose": "Validate explicit native fixture ownership, recursive target identity and bounded finite minimum-window configuration without filesystem or window execution",
+      "requirements": []
+    },
+    {
+      "id": "codecallnavigator/bin:codecallnavigator::flow_acceptance::expansion::config::tests::requires_distinct_source_owners_and_exact_recursive_target",
+      "runner": "rust",
+      "file": "src/flow_acceptance/expansion/config.rs",
+      "test_name": "flow_acceptance::expansion::config::tests::requires_distinct_source_owners_and_exact_recursive_target",
+      "ignored": false,
+      "package": "codecallnavigator",
+      "target_kind": "bin",
+      "target": "codecallnavigator",
+      "component": "ui",
+      "category": "unit",
+      "purpose": "Validate explicit native fixture ownership, recursive target identity and bounded finite minimum-window configuration without filesystem or window execution",
+      "requirements": []
+    },
+    {
       "id": "codecallnavigator/bin:codecallnavigator::flow_acceptance::input::tests::clicks_are_dispatched_through_runtime_controls_across_frames",
       "runner": "rust",
       "file": "src/flow_acceptance/input.rs",
@@ -9271,6 +9447,230 @@
       "category": "unit",
       "requirements": [],
       "purpose": "a queued request releases its shutdown lease when dropped before start"
+    },
+    {
+      "id": "codecallnavigator/bin:codecallnavigator::flow_workspace::expansion::policy_tests::a_shared_stopped_marker_requires_a_specific_call_choice_instead_of_guessing",
+      "runner": "rust",
+      "file": "src/flow_workspace/expansion/policy_tests.rs",
+      "test_name": "flow_workspace::expansion::policy_tests::a_shared_stopped_marker_requires_a_specific_call_choice_instead_of_guessing",
+      "ignored": false,
+      "package": "codecallnavigator",
+      "target_kind": "bin",
+      "target": "codecallnavigator",
+      "component": "ui",
+      "category": "unit",
+      "purpose": "Core-built flows prove exact nested-marker and explicit candidate subtree collapse while preserving independent siblings; shared stopped markers require an explicit choice",
+      "requirements": []
+    },
+    {
+      "id": "codecallnavigator/bin:codecallnavigator::flow_workspace::expansion::policy_tests::cancelling_an_unpublished_mode_restores_the_exact_ordinary_session",
+      "runner": "rust",
+      "file": "src/flow_workspace/expansion/policy_tests.rs",
+      "test_name": "flow_workspace::expansion::policy_tests::cancelling_an_unpublished_mode_restores_the_exact_ordinary_session",
+      "ignored": false,
+      "package": "codecallnavigator",
+      "target_kind": "bin",
+      "target": "codecallnavigator",
+      "component": "ui",
+      "category": "unit",
+      "purpose": "Actual first-load Cancel restores the saved ordinary Ready, selection, camera and source scroll, clears empty expansion mode and cancels auto-fit without external dependencies",
+      "requirements": []
+    },
+    {
+      "id": "codecallnavigator/bin:codecallnavigator::flow_workspace::expansion::policy_tests::collapsing_a_recursive_marker_removes_only_its_exact_nested_selection",
+      "runner": "rust",
+      "file": "src/flow_workspace/expansion/policy_tests.rs",
+      "test_name": "flow_workspace::expansion::policy_tests::collapsing_a_recursive_marker_removes_only_its_exact_nested_selection",
+      "ignored": false,
+      "package": "codecallnavigator",
+      "target_kind": "bin",
+      "target": "codecallnavigator",
+      "component": "ui",
+      "category": "unit",
+      "purpose": "Core-built flows prove exact nested-marker and explicit candidate subtree collapse while preserving independent siblings; shared stopped markers require an explicit choice",
+      "requirements": []
+    },
+    {
+      "id": "codecallnavigator/bin:codecallnavigator::flow_workspace::expansion::policy_tests::leaving_a_pending_edit_keeps_the_last_published_view_and_clears_only_pending_status",
+      "runner": "rust",
+      "file": "src/flow_workspace/expansion/policy_tests.rs",
+      "test_name": "flow_workspace::expansion::policy_tests::leaving_a_pending_edit_keeps_the_last_published_view_and_clears_only_pending_status",
+      "ignored": false,
+      "package": "codecallnavigator",
+      "target_kind": "bin",
+      "target": "codecallnavigator",
+      "component": "ui",
+      "category": "unit",
+      "purpose": "Real in-memory open_flow and Back policies normalize canceled unpublished expansion to ordinary history and retain the last published presentation after a pending edit",
+      "requirements": []
+    },
+    {
+      "id": "codecallnavigator/bin:codecallnavigator::flow_workspace::expansion::policy_tests::leaving_an_unpublished_expansion_restores_ordinary_history_instead_of_a_ghost_mode",
+      "runner": "rust",
+      "file": "src/flow_workspace/expansion/policy_tests.rs",
+      "test_name": "flow_workspace::expansion::policy_tests::leaving_an_unpublished_expansion_restores_ordinary_history_instead_of_a_ghost_mode",
+      "ignored": false,
+      "package": "codecallnavigator",
+      "target_kind": "bin",
+      "target": "codecallnavigator",
+      "component": "ui",
+      "category": "unit",
+      "purpose": "Real in-memory open_flow and Back policies normalize canceled unpublished expansion to ordinary history and retain the last published presentation after a pending edit",
+      "requirements": []
+    },
+    {
+      "id": "codecallnavigator/bin:codecallnavigator::flow_workspace::expansion::policy_tests::presented_expansion_actions_require_the_exact_ready_step_result_and_request_binding",
+      "runner": "rust",
+      "file": "src/flow_workspace/expansion/policy_tests.rs",
+      "test_name": "flow_workspace::expansion::policy_tests::presented_expansion_actions_require_the_exact_ready_step_result_and_request_binding",
+      "ignored": false,
+      "package": "codecallnavigator",
+      "target_kind": "bin",
+      "target": "codecallnavigator",
+      "component": "ui",
+      "category": "unit",
+      "purpose": "Presented expand/collapse actions keep exact full call/subtree identity and reject changed selection, Ready/result, serial, epoch or pending request without reinterpreting mutable indices",
+      "requirements": []
+    },
+    {
+      "id": "codecallnavigator/bin:codecallnavigator::flow_workspace::expansion::policy_tests::replacing_an_explicit_candidate_retains_siblings_and_removes_old_descendants",
+      "runner": "rust",
+      "file": "src/flow_workspace/expansion/policy_tests.rs",
+      "test_name": "flow_workspace::expansion::policy_tests::replacing_an_explicit_candidate_retains_siblings_and_removes_old_descendants",
+      "ignored": false,
+      "package": "codecallnavigator",
+      "target_kind": "bin",
+      "target": "codecallnavigator",
+      "component": "ui",
+      "category": "unit",
+      "purpose": "Core-built flows prove exact nested-marker and explicit candidate subtree collapse while preserving independent siblings; shared stopped markers require an explicit choice",
+      "requirements": []
+    },
+    {
+      "id": "codecallnavigator/bin:codecallnavigator::flow_workspace::expansion::policy_tests::resized_expansion_toolbar_keeps_drawn_and_target_controls_inside_viewport",
+      "runner": "rust",
+      "file": "src/flow_workspace/expansion/policy_tests.rs",
+      "test_name": "flow_workspace::expansion::policy_tests::resized_expansion_toolbar_keeps_drawn_and_target_controls_inside_viewport",
+      "ignored": false,
+      "package": "codecallnavigator",
+      "target_kind": "bin",
+      "target": "codecallnavigator",
+      "component": "ui",
+      "category": "integration",
+      "purpose": "Headless production Rune view with actual core expansion input measures both drawn and target toolbar bounds after minimum-size resize; pure state policies cannot prove layout ownership",
+      "requirements": []
+    },
+    {
+      "id": "codecallnavigator/bin:codecallnavigator::flow_workspace::expansion::policy_tests::same_source_selection_centers_an_unrealized_row_after_publication",
+      "runner": "rust",
+      "file": "src/flow_workspace/expansion/policy_tests.rs",
+      "test_name": "flow_workspace::expansion::policy_tests::same_source_selection_centers_an_unrealized_row_after_publication",
+      "ignored": false,
+      "package": "codecallnavigator",
+      "target_kind": "bin",
+      "target": "codecallnavigator",
+      "component": "ui",
+      "category": "integration",
+      "purpose": "Production Rune source view must center and highlight an unrealized row after same-owner publication; actual scrolling and row visibility require the rendering boundary, with core-produced explicit inputs and no SDK",
+      "requirements": []
+    },
+    {
+      "id": "codecallnavigator/bin:codecallnavigator::flow_workspace::expansion::policy_tests::switching_source_centers_the_new_owned_row_without_replaying_saved_offset",
+      "runner": "rust",
+      "file": "src/flow_workspace/expansion/policy_tests.rs",
+      "test_name": "flow_workspace::expansion::policy_tests::switching_source_centers_the_new_owned_row_without_replaying_saved_offset",
+      "ignored": false,
+      "package": "codecallnavigator",
+      "target_kind": "bin",
+      "target": "codecallnavigator",
+      "component": "ui",
+      "category": "integration",
+      "purpose": "Actual Rune transaction ordering must center the selected row in a newly owned source without later absolute restore overwriting it; equal-geometry two-source core fixtures prove visible highlight and mount consumption without SDK",
+      "requirements": []
+    },
+    {
+      "id": "codecallnavigator/bin:codecallnavigator::flow_workspace::expansion::tests::child_source_selection_and_unlocated_step_keep_owner_and_scroll",
+      "runner": "rust",
+      "file": "src/flow_workspace/expansion/tests.rs",
+      "test_name": "flow_workspace::expansion::tests::child_source_selection_and_unlocated_step_keep_owner_and_scroll",
+      "ignored": false,
+      "package": "codecallnavigator",
+      "target_kind": "bin",
+      "target": "codecallnavigator",
+      "component": "ui",
+      "category": "unit",
+      "purpose": "Drive real synchronous expansion publication and source/session policies with core-produced in-memory flows; reject stale success/error, preserve last result on cancellation, ordinary cache and exact restoration without SDK or process substitutes",
+      "requirements": []
+    },
+    {
+      "id": "codecallnavigator/bin:codecallnavigator::flow_workspace::expansion::tests::collapse_all_restores_the_original_ordinary_session",
+      "runner": "rust",
+      "file": "src/flow_workspace/expansion/tests.rs",
+      "test_name": "flow_workspace::expansion::tests::collapse_all_restores_the_original_ordinary_session",
+      "ignored": false,
+      "package": "codecallnavigator",
+      "target_kind": "bin",
+      "target": "codecallnavigator",
+      "component": "ui",
+      "category": "unit",
+      "purpose": "Drive real synchronous expansion publication and source/session policies with core-produced in-memory flows; reject stale success/error, preserve last result on cancellation, ordinary cache and exact restoration without SDK or process substitutes",
+      "requirements": []
+    },
+    {
+      "id": "codecallnavigator/bin:codecallnavigator::flow_workspace::expansion::tests::current_error_and_cancel_retain_the_last_published_chart",
+      "runner": "rust",
+      "file": "src/flow_workspace/expansion/tests.rs",
+      "test_name": "flow_workspace::expansion::tests::current_error_and_cancel_retain_the_last_published_chart",
+      "ignored": false,
+      "package": "codecallnavigator",
+      "target_kind": "bin",
+      "target": "codecallnavigator",
+      "component": "ui",
+      "category": "unit",
+      "purpose": "Drive real synchronous expansion publication and source/session policies with core-produced in-memory flows; reject stale success/error, preserve last result on cancellation, ordinary cache and exact restoration without SDK or process substitutes",
+      "requirements": []
+    },
+    {
+      "id": "codecallnavigator/bin:codecallnavigator::flow_workspace::expansion::tests::stale_errors_cannot_replace_current_status_or_choices",
+      "runner": "rust",
+      "file": "src/flow_workspace/expansion/tests.rs",
+      "test_name": "flow_workspace::expansion::tests::stale_errors_cannot_replace_current_status_or_choices",
+      "ignored": false,
+      "package": "codecallnavigator",
+      "target_kind": "bin",
+      "target": "codecallnavigator",
+      "component": "ui",
+      "category": "unit",
+      "purpose": "Drive real synchronous expansion publication and source/session policies with core-produced in-memory flows; reject stale success/error, preserve last result on cancellation, ordinary cache and exact restoration without SDK or process substitutes",
+      "requirements": []
+    },
+    {
+      "id": "codecallnavigator/bin:codecallnavigator::flow_workspace::expansion::tests::stale_ready_publications_preserve_valid_session_choices_and_cache",
+      "runner": "rust",
+      "file": "src/flow_workspace/expansion/tests.rs",
+      "test_name": "flow_workspace::expansion::tests::stale_ready_publications_preserve_valid_session_choices_and_cache",
+      "ignored": false,
+      "package": "codecallnavigator",
+      "target_kind": "bin",
+      "target": "codecallnavigator",
+      "component": "ui",
+      "category": "unit",
+      "purpose": "Drive real synchronous expansion publication and source/session policies with core-produced in-memory flows; reject stale success/error, preserve last result on cancellation, ordinary cache and exact restoration without SDK or process substitutes",
+      "requirements": []
+    },
+    {
+      "id": "codecallnavigator/bin:codecallnavigator::flow_workspace::expansion::tests::successful_publication_keeps_ordinary_cache_and_resets_transient_selection",
+      "runner": "rust",
+      "file": "src/flow_workspace/expansion/tests.rs",
+      "test_name": "flow_workspace::expansion::tests::successful_publication_keeps_ordinary_cache_and_resets_transient_selection",
+      "ignored": false,
+      "package": "codecallnavigator",
+      "target_kind": "bin",
+      "target": "codecallnavigator",
+      "component": "ui",
+      "category": "unit",
+      "purpose": "Drive real synchronous expansion publication and source/session policies with core-produced in-memory flows; reject stale success/error, preserve last result on cancellation, ordinary cache and exact restoration without SDK or process substitutes",
+      "requirements": []
     },
     {
       "id": "codecallnavigator/bin:codecallnavigator::flow_workspace::tests::late_error_results_cannot_replace_newer_serial_epoch_or_symbol",
@@ -11181,6 +11581,24 @@
         "graphviz"
       ],
       "purpose": "revision controls submit refs and editing does not retarget the loaded pair"
+    },
+    {
+      "id": "codecallnavigator/bin:codecallnavigator::ui_tests::flow_expansion::expansion_mode_is_explicit_and_collapse_all_restores_the_ordinary_session",
+      "runner": "rust",
+      "file": "src/ui_tests/flow_expansion.rs",
+      "test_name": "ui_tests::flow_expansion::expansion_mode_is_explicit_and_collapse_all_restores_the_ordinary_session",
+      "ignored": true,
+      "package": "codecallnavigator",
+      "target_kind": "bin",
+      "target": "codecallnavigator",
+      "component": "ui",
+      "category": "integration",
+      "purpose": "Real C# compiler/CLI/Graphviz and Rune controls prove explicit mode, repeated multi-file expansion, visible occurrence-owned highlighting, recursion stops, minimum-window bounds and exact collapse restoration; pure policies cannot prove these assembled boundaries",
+      "requirements": [
+        "cli",
+        "dotnet",
+        "graphviz"
+      ]
     },
     {
       "id": "codecallnavigator/bin:codecallnavigator::ui_tests::function_flows::flow_header_respects_native_titlebar_controls_at_minimum_size",
@@ -20501,6 +20919,30 @@
       ],
       "purpose": "Measure real SQLite publication and scaled graph/query latency in a category-owned synthetic database; this does not analyze source code or require a saved application profile",
       "arguments": []
+    },
+    {
+      "id": "gate::tools/flow_expansion_desktop_acceptance.py",
+      "runner": "harness",
+      "file": "tools/flow_expansion_desktop_acceptance.py",
+      "test_name": "flow_expansion_desktop_acceptance",
+      "component": "ui",
+      "category": "acceptance",
+      "requirements": [
+        "dotnet",
+        "cli",
+        "sqlite",
+        "graphviz",
+        "native",
+        "packaged",
+        "process-table"
+      ],
+      "purpose": "Prove actual expansion controls, occurrence-owned source highlights, recursive stops and collapse/history restoration in a relocated native minimum-size window; headless tests cannot prove native presentation",
+      "arguments": [
+        "--app",
+        "{app}",
+        "--output",
+        "{output}"
+      ]
     }
   ]
 }

@@ -1,4 +1,5 @@
 //! Generation-bound flow sessions, background construction and independent navigation.
+mod expansion;
 mod keys;
 use crate::{app::State, camera::Camera, source};
 use codecallnavigator::{
@@ -25,6 +26,7 @@ pub struct Session {
     pub selected: Option<usize>,
     pub scroll: Rc<Cell<[f32; 2]>>,
     pub message: String,
+    expansion: Option<Box<expansion::Mode>>,
 }
 impl Session {
     pub(crate) fn selected_source_span(&self) -> Option<flow::SourceSpan> {
@@ -48,6 +50,7 @@ impl Session {
             selected: None,
             scroll: Rc::new(Cell::new([0.0, 0.0])),
             message: "Preparing function flowchart…".into(),
+            expansion: None,
         }
     }
 }
@@ -66,6 +69,13 @@ pub struct Workspace {
     serial: u64,
     epoch: u64,
     restore_scroll: Option<[f32; 2]>,
+    expansion: expansion::Work,
+    presentation: u64,
+    mount_restore: Option<SourceRestore>,
+}
+struct SourceRestore {
+    key: String,
+    offset: [f32; 2],
 }
 pub struct Output {
     serial: u64,
@@ -76,8 +86,14 @@ pub struct Output {
 impl Workspace {
     pub(crate) fn preserve_current_scroll(&mut self) {
         self.restore_scroll = self.current.as_ref().map(|session| session.scroll.get());
+        self.mount_restore = self.current.as_ref().map(|session| SourceRestore {
+            key: session.scroll_key.clone(),
+            offset: session.scroll.get(),
+        });
     }
     pub fn invalidate(&mut self) {
+        self.expansion.cancel();
+        self.presentation += 1;
         self.cancelled
             .store(true, std::sync::atomic::Ordering::Release);
         self.cancelled = Arc::new(std::sync::atomic::AtomicBool::new(false));
@@ -87,6 +103,7 @@ impl Workspace {
         self.back.clear();
         self.cache.clear();
         self.restore_scroll = None;
+        self.mount_restore = None;
     }
 }
 
@@ -110,12 +127,14 @@ impl State {
             return;
         }
         if let Some(previous) = workspace.current.take() {
-            workspace.back.push(previous);
+            workspace.back.push(previous.finish_expansion_history());
             if workspace.back.len() > 100 {
                 workspace.back.remove(0);
             }
         }
         workspace.serial += 1;
+        workspace.presentation += 1;
+        workspace.expansion.cancel();
         workspace.job.cancel();
         workspace.epoch = self.epoch;
         let mut session = Session::new(symbol.clone(), self.epoch, workspace.serial);
@@ -124,10 +143,7 @@ impl State {
         }
         workspace.current = Some(session);
         workspace.fit_pending = true;
-        workspace.restore_scroll = workspace
-            .current
-            .as_ref()
-            .map(|session| session.scroll.get());
+        workspace.preserve_current_scroll();
         if workspace.current.as_ref().unwrap().ready.is_none() {
             self.request_flow(graph, symbol);
         }
@@ -157,7 +173,7 @@ impl State {
                 .flow(&symbol, &cancel)
                 .and_then(|(chart, content, file)| {
                     Ok(Ready {
-                        chart: flow::layout(chart, &dot)?,
+                        chart: flow::layout_cancellable(chart, &dot, &cancel)?,
                         source: source::from_snapshot(content, Path::new(&file)),
                     })
                 })
@@ -171,6 +187,8 @@ impl State {
         });
     }
     pub fn close_flow(&mut self) {
+        self.flow_workspace.expansion.cancel();
+        self.flow_workspace.presentation += 1;
         self.flow_workspace
             .cancelled
             .store(true, std::sync::atomic::Ordering::Release);
@@ -179,8 +197,11 @@ impl State {
         self.flow_workspace.current = None;
         self.flow_workspace.back.clear();
         self.flow_workspace.restore_scroll = None;
+        self.flow_workspace.mount_restore = None;
     }
     pub fn flow_back(&mut self) {
+        self.flow_workspace.expansion.cancel();
+        self.flow_workspace.presentation += 1;
         let Some(previous) = self.flow_workspace.back.pop() else {
             self.close_flow();
             return;
@@ -191,11 +212,7 @@ impl State {
         let needs_load = previous.ready.is_none();
         self.flow_workspace.current = Some(previous);
         self.flow_workspace.fit_pending = false;
-        self.flow_workspace.restore_scroll = self
-            .flow_workspace
-            .current
-            .as_ref()
-            .map(|session| session.scroll.get());
+        self.flow_workspace.preserve_current_scroll();
         if needs_load && let Some(graph) = self.graph.clone() {
             self.request_flow(graph, symbol);
         }
@@ -209,8 +226,14 @@ impl State {
         }
     }
     pub fn select_flow_step(&mut self, index: usize, tx: &mut Tx) {
+        self.flow_workspace.mount_restore = None;
+        self.flow_workspace.restore_scroll = None;
         if let Some(session) = &mut self.flow_workspace.current {
-            session.select_step(index, &SourceKeys::Single, tx);
+            match session.select_expanded_step(index, tx) {
+                Some(true) => self.flow_workspace.presentation += 1,
+                Some(false) => {}
+                None => session.select_step(index, &SourceKeys::Single, tx),
+            }
         }
     }
 }
@@ -220,10 +243,11 @@ pub fn poll(state: &mut State, tx: &mut Tx) -> bool {
         state.flow_workspace.invalidate();
         return true;
     }
+    let expanded = expansion::poll(state);
     let loaded = take_output(state);
     let scrolled =
         !state.flow_comparison.controls.visible && restore_scroll(&mut state.flow_workspace, tx);
-    loaded | scrolled
+    loaded | expanded | scrolled
 }
 
 fn take_output(state: &mut State) -> bool {
@@ -245,6 +269,7 @@ fn take_output(state: &mut State) -> bool {
             let ready = Arc::new(ready);
             session.install(ready.clone(), workspace.viewport);
             workspace.fit_pending = true;
+            workspace.presentation += 1;
             if workspace.cache.len() >= 32 {
                 workspace.cache.clear();
             }
@@ -252,10 +277,7 @@ fn take_output(state: &mut State) -> bool {
         }
         Err(error) => session.message = error,
     }
-    workspace.restore_scroll = workspace
-        .current
-        .as_ref()
-        .map(|session| session.scroll.get());
+    workspace.preserve_current_scroll();
     true
 }
 
@@ -277,7 +299,7 @@ fn restore_scroll(workspace: &mut Workspace, tx: &mut Tx) -> bool {
 
 impl State {
     pub fn flow_workspace_revision(&self) -> u64 {
-        self.flow_workspace.serial
+        self.flow_workspace.presentation
     }
 }
 
@@ -306,14 +328,13 @@ impl Session {
         let Some(span) = self.selected_source_span() else {
             return;
         };
-        let Some(ready) = &self.ready else {
+        let Some(source) = self.displayed_source() else {
             return;
         };
-        let target = ready
-            .source
+        let target = source
             .lines
             .partition_point(|line| line.range.end < span.start)
-            .min(ready.source.lines.len().saturating_sub(1));
+            .min(source.lines.len().saturating_sub(1));
         tx.scroll_center_in_instant(self.scroll_key.clone(), keys.line(target));
     }
     pub(crate) fn install(&mut self, ready: Arc<Ready>, viewport: [f32; 2]) {

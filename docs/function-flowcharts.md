@@ -23,10 +23,51 @@ The source panel reads the immutable generation's cached source, not current dis
 contents. A stale graph notice means a refresh is needed to show source changes.
 Opening or following charts does not compile the project. Older graph caches remain
 usable for graph exploration; refresh them to collect function-flow metadata.
-AI explanations and recursive call inlining are tracked separately in TASK-22.
-The shared expansion model and algorithm are implemented under TASK-22.7;
-CLI and desktop expand/collapse controls are the separate TASK-22.8 delivery.
-Following a target currently opens its own function chart.
+AI explanations remain separate planned work in TASK-22.9–22.11. Following a
+target opens its own function chart; optional expansion keeps selected callees
+inside the current chart.
+
+## Expand calls inside a chart
+
+Choose **Expand calls…** to enter expansion mode. This first loads the unchanged
+root body with structural call addresses; it clears the step selection rather
+than guessing a correspondence with an old chart index. Select a call step and
+choose **Expand here** beside its explicit target in the details. Each target keeps its
+compiler certainty and provenance. Repeated calls to one method remain distinct
+occurrences. Function entry, call, return and throw boundaries remain visible.
+
+Select a step inside an expanded occurrence to inspect its exact cached source
+file. Source highlighting follows that occurrence, with separate scroll positions
+for owned snapshots. A cycle, unsupported call, missing body or exhausted budget
+has an explicit stop explanation. Choosing a candidate does not prove which
+virtual target executes at runtime.
+
+**Collapse here** removes that exact selected call and its descendants.
+**Collapse this occurrence** removes the selected method occurrence or a uniquely
+identified stopped request. When a step represents multiple stopped calls, choose
+the specific call control. Other expanded calls remain intact. **Collapse all**
+leaves expansion mode and restores the saved
+ordinary chart, camera, source scroll and selection. **Cancel expansion** stops
+pending CLI/layout work and keeps the last successful result; canceling initial
+mode entry restores the ordinary chart. Following targets
+and **Previous function** retain the independent expansion state and navigation.
+Replies for an obsolete request, function or artifact generation cannot replace
+the current view. Saved-revision comparison panes retain their ordinary flows.
+
+Expansion is deliberately bounded: defaults are depth 8, 64 reached requests,
+1,500 steps, 6,000 links and 16 MiB of unique owned source. Hard ceilings are
+32/128/1,500/6,000/16 MiB respectively. The CLI permits smaller budgets; the
+desktop uses defaults. Requests have at most 128 explicit selections and 1 MiB
+of encoded structural identities. When a graft cannot fit, core demotes it to
+an explained stop; it does not silently cut caller or cleanup paths or promise
+the largest possible expanded subset.
+
+Only compiler-supported synchronous, isolated and ordered calls can expand.
+Deferred/async execution, references, HTTP/navigation relationships and unknown
+timing remain conservative boundaries. Recursive active paths stop, while sibling
+calls may expand independently. This feature neither executes the application
+nor changes its saved graph. See the [versioned CLI contract](cli-queries.md#bounded-call-expansion).
+Verification is recorded in the [expansion desktop evidence](../evidence/flowcharts/expansion/desktop/README.md).
 
 ## Compare saved function flows
 

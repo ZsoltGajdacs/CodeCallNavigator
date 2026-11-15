@@ -92,6 +92,8 @@ impl Address {
         if let Some(side) = self.side() {
             state.flow_comparison.source_mounted(side, key);
             state.flow_comparison.restore_scroll(tx);
+        } else {
+            state.expansion_source_mounted(key, tx);
         }
     }
     pub fn target(self, state: &State, symbol: &str) -> Target {

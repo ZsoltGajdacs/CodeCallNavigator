@@ -1,5 +1,6 @@
 //! Detect an incompatible configured CLI before sending desktop query requests.
 mod flow_comparison;
+mod flow_expansion;
 use super::query_process::{active, stop_child};
 use crate::runtime::Runtime;
 use anyhow::{Context, Result, ensure};
@@ -15,6 +16,7 @@ use std::{
 pub(super) struct Capabilities {
     pub flow_languages: Vec<String>,
     pub flow_comparison: bool,
+    pub flow_expansion: bool,
     pub observation: bool,
     pub automatic_refresh: bool,
 }
@@ -103,6 +105,7 @@ fn validate(bytes: &[u8]) -> Result<Capabilities> {
     Ok(Capabilities {
         flow_languages,
         flow_comparison: flow_comparison::supported(&capabilities, operations),
+        flow_expansion: flow_expansion::supported(&capabilities, operations),
         observation,
         automatic_refresh,
     })
@@ -196,3 +199,6 @@ mod tests {
         );
     }
 }
+
+#[cfg(test)]
+mod flow_expansion_tests;

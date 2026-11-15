@@ -2,6 +2,7 @@
 mod comparison;
 mod config;
 mod driver;
+mod expansion;
 mod input;
 mod io;
 mod mode;

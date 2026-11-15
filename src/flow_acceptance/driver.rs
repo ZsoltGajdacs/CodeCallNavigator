@@ -726,15 +726,11 @@ mod tests {
             source: crate::source::from_snapshot("source".into(), std::path::Path::new("flow.ts")),
         };
         let mut state = State::fixture();
-        state.flow_workspace.current = Some(Session {
-            symbol: "Run".into(),
-            scroll_key: "test-scroll".into(),
-            ready: Some(std::sync::Arc::new(ready)),
-            camera: Camera::default(),
-            selected: None,
-            scroll: Rc::new(std::cell::Cell::new([0.0; 2])),
-            message: String::new(),
-        });
+        let mut session = Session::namespaced("Run".into(), "native-driver-unit");
+        session.scroll_key = "test-scroll".into();
+        session.ready = Some(std::sync::Arc::new(ready));
+        session.message.clear();
+        state.flow_workspace.current = Some(session);
         let mut runtime = Runtime::new(
             state,
             |_, _| rune::el().key("action").size(100.0, 100.0),

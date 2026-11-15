@@ -136,11 +136,16 @@ class OwnedRun:
     directory: object
     lease: object = None
 
+    def disarm(self):
+        # Expansion has no injected Git gate; query ownership is identical.
+        if self.gate is not None:
+            self.gate.disarm()
+
     def prepare_parent_close(self, audit):
         if self.app.poll() is None:
-            cleanup_queries(self.app, self.engine, self.gate.disarm, audit)
+            cleanup_queries(self.app, self.engine, self.disarm, audit)
         else:
-            self.gate.disarm()
+            self.disarm()
             audit.update(status="parent-exited", leases=[], snapshots=[], signals=[])
 
     def require_released(self, audit):
@@ -151,7 +156,7 @@ class OwnedRun:
         members = group_members(leases)
         audit["post_parent"]["members"] = members
         require(not members, "Leased group membership changed during final inspection")
-        if self.gate.observed is not None:
+        if self.gate is not None and self.gate.observed is not None:
             require(not group_alive(self.gate.observed["group"]), "Previously owned gate/query group remains after parent cleanup")
         require(not any(session_command(row.command, self.engine) for row in processes()),
                 "A private relocated query session remains; ownership cleanup cannot be certified")
@@ -162,7 +167,7 @@ class OwnedRun:
         audit.setdefault("errors", []).append({"stage": stage, "message": str(error)})
         audit["error"] = str(error)
         try:
-            self.gate.disarm()
+            self.disarm()
         except Exception as disarm_error:
             audit["disarm_error"] = str(disarm_error)
 
@@ -189,5 +194,6 @@ class OwnedRun:
             audit["status"] = "cleared"
         write_json(self.directory / "query-cleanup.json", audit)
         if failures:
-            raise RuntimeError(f"Owned comparison cleanup incomplete; preserve fixture {self.gate.project}: {audit['error']}") from failures[0]
+            fixture = self.gate.project if self.gate is not None else self.directory
+            raise RuntimeError(f"Owned native cleanup incomplete; preserve fixture {fixture}: {audit['error']}") from failures[0]
         return audit

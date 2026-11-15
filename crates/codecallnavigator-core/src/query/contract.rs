@@ -111,6 +111,26 @@ pub enum Query {
     Flow {
         symbol: String,
     },
+    /// Explicit addressed expansion over exact saved source; generation binding is mandatory.
+    FlowExpansion(FlowExpansionRequest),
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct FlowExpansionRequest {
+    pub expansion_version: u32,
+    pub symbol: String,
+    #[serde(default)]
+    pub selections: Vec<FlowExpansionSelection>,
+    #[serde(default)]
+    pub limits: crate::flow::ExpansionLimits,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct FlowExpansionSelection {
+    pub caller: crate::flow::OccurrencePath,
+    pub choice: crate::flow::CallChoice,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]

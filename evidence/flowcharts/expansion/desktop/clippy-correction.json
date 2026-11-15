@@ -1,0 +1,206 @@
+{
+  "status": "passed",
+  "source_frozen": true,
+  "manifest": "target/task22-8-clippy-fix/source-sha256.json",
+  "source_paths": 71,
+  "reviewed_source_files": 68,
+  "modified_since_previous_freeze": [
+    "crates/codecallnavigator-core/tests/flow_expansion_query/inputs.rs",
+    "src/flow_workspace.rs",
+    "src/flow_workspace/expansion.rs",
+    "src/flow_workspace/expansion/policy_tests.rs",
+    "src/flow_workspace/expansion/tests.rs"
+  ],
+  "review_only_unchanged": [
+    "src/flow_comparison/pair.rs"
+  ],
+  "cause": "Session stored optional expansion Mode inline, growing every ordinary/comparison Session and triggering Side large_enum_variant. Box optional state at its owner instead of changing unrelated Side ownership.",
+  "changes": [
+    "Session.expansion is Option<Box<Mode>>; exactly three constructors wrap Mode with Box::new.",
+    "Four test temporary clone arrays use std::slice::from_ref; request ownership and all assertions remain unchanged."
+  ],
+  "checks": {
+    "task22-8-clippy-core-inputs": [
+      {
+        "name": "prepare",
+        "command": [
+          "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/.venv-verification/bin/python",
+          "/private/tmp/task22-8-clippy-core.py",
+          "prepare"
+        ],
+        "timeout": 600,
+        "status": "passed",
+        "log": "01-prepare.log",
+        "exit_code": 0,
+        "seconds": 1.125
+      },
+      {
+        "name": "compile-rust",
+        "command": [
+          "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/.venv-verification/bin/python",
+          "/private/tmp/task22-8-clippy-core.py",
+          "build"
+        ],
+        "timeout": 600,
+        "status": "passed",
+        "log": "02-compile-rust.log",
+        "exit_code": 0,
+        "seconds": 8.779
+      },
+      {
+        "name": "test-rust",
+        "command": [
+          "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/.venv-verification/bin/python",
+          "/private/tmp/task22-8-clippy-core.py",
+          "run"
+        ],
+        "timeout": 600,
+        "status": "passed",
+        "log": "03-test-rust.log",
+        "exit_code": 0,
+        "seconds": 1.485
+      },
+      {
+        "name": "category-cleanup",
+        "command": [
+          "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/.venv-verification/bin/python",
+          "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/tools/verification/category_cleanup.py",
+          "--root",
+          "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph",
+          "--output",
+          "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/target/verification/task22-8-clippy-core-inputs/unit",
+          "--if-unprepared"
+        ],
+        "timeout": 600,
+        "status": "passed",
+        "log": "04-category-cleanup.log",
+        "exit_code": 0,
+        "seconds": 1.0
+      }
+    ],
+    "task22-8-clippy-ui-policies": [
+      {
+        "name": "prepare",
+        "command": [
+          "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/.venv-verification/bin/python",
+          "/private/tmp/task22-8-clippy-ui.py",
+          "prepare"
+        ],
+        "timeout": 600,
+        "status": "passed",
+        "log": "01-prepare.log",
+        "exit_code": 0,
+        "seconds": 1.067
+      },
+      {
+        "name": "compile-rust",
+        "command": [
+          "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/.venv-verification/bin/python",
+          "/private/tmp/task22-8-clippy-ui.py",
+          "build"
+        ],
+        "timeout": 600,
+        "status": "passed",
+        "log": "02-compile-rust.log",
+        "exit_code": 0,
+        "seconds": 41.398
+      },
+      {
+        "name": "test-rust",
+        "command": [
+          "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/.venv-verification/bin/python",
+          "/private/tmp/task22-8-clippy-ui.py",
+          "run"
+        ],
+        "timeout": 600,
+        "status": "passed",
+        "log": "03-test-rust.log",
+        "exit_code": 0,
+        "seconds": 2.314
+      },
+      {
+        "name": "clippy",
+        "command": [
+          "cargo",
+          "clippy",
+          "--locked",
+          "--workspace",
+          "--all-targets",
+          "--no-deps",
+          "--",
+          "-D",
+          "warnings"
+        ],
+        "timeout": 1800,
+        "status": "passed",
+        "log": "04-clippy.log",
+        "exit_code": 0,
+        "seconds": 23.682
+      },
+      {
+        "name": "category-cleanup",
+        "command": [
+          "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/.venv-verification/bin/python",
+          "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/tools/verification/category_cleanup.py",
+          "--root",
+          "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph",
+          "--output",
+          "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/target/verification/task22-8-clippy-ui-policies/unit",
+          "--if-unprepared"
+        ],
+        "timeout": 600,
+        "status": "passed",
+        "log": "05-category-cleanup.log",
+        "exit_code": 0,
+        "seconds": 1.873
+      }
+    ]
+  },
+  "test_counts": {
+    "core_input_wire_unit": 4,
+    "ui_pure_comparison_expansion_unit": 16
+  },
+  "clippy_environment": {
+    "DOTNET_CLI_USE_MSBUILD_SERVER": "0",
+    "MSBUILDDISABLENODEREUSE": "1",
+    "UseSharedCompilation": "false",
+    "CARGO_TARGET_DIR": "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/target/verification/task22-8-clippy-ui-policies/unit/build",
+    "CARGO_BUILD_BUILD_DIR": "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/target/verification/task22-8-clippy-ui-policies/unit/build",
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_CACHE_AUTO_CLEAN_FREQUENCY": "never",
+    "TMPDIR": "/private/tmp/ccn-verify-bdfd49b2457121be",
+    "PYTHONPATH": "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/tools:",
+    "CODECALLNAVIGATOR_DATA_DIR": "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/target/verification/task22-8-clippy-ui-policies/unit/test-store",
+    "CODECALLNAVIGATOR_ENGINE": "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/target/verification/task22-8-clippy-ui-policies/unit/build/debug/codecallnavigator-engine",
+    "CODECALLNAVIGATOR_TEST_ENGINE": "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/target/verification/task22-8-clippy-ui-policies/unit/build/debug/codecallnavigator-engine",
+    "CODECALLNAVIGATOR_FRESHNESS_EXECUTABLE": "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/target/verification/task22-8-clippy-ui-policies/unit/build/debug/codecallnavigator-engine"
+  },
+  "clippy_profile_note": "The exact workspace all-target static lint gate uses the unit-owned debug build. This does not repeat ordinary release test execution.",
+  "quality": {
+    "old": {
+      "report": "target/task22-8-clippy-fix/quality-old.json",
+      "status": "passed",
+      "reviews": 68,
+      "score_10": 66,
+      "declarations_only": [
+        "crates/codecallnavigator-core/src/flow.rs",
+        "src/flow_acceptance/expansion.rs"
+      ],
+      "safeguard": "passed"
+    },
+    "modern": {
+      "report": "target/task22-8-clippy-fix/quality-modern.json",
+      "status": "passed",
+      "reviews": 68,
+      "score_10": 66,
+      "declarations_only": [
+        "crates/codecallnavigator-core/src/flow.rs",
+        "src/flow_acceptance/expansion.rs"
+      ],
+      "safeguard": "passed"
+    }
+  },
+  "failure_evidence": "target/verification/task22-8-full/72-clippy.log",
+  "superseded_manifest_retained": "target/task22-8-final-verified/source-sha256.json",
+  "remaining": "Root-owned mandatory full-r2, including final compiler/native checks against boxed Mode. No Task22.9 work started."
+}

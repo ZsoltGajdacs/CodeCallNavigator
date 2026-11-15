@@ -3,6 +3,7 @@
 use codecallnavigator::model::GraphData;
 mod capabilities;
 pub mod flow_comparison;
+mod flow_expansion;
 mod observation_process;
 pub(crate) use observation_process::{CleanupFailure, Notice, ObservationOptions};
 mod process;

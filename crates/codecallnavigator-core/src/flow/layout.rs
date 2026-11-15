@@ -4,13 +4,27 @@ use crate::graphviz::{coordinates, spline_points};
 use anyhow::{Context, Result, ensure};
 use serde_json::Value;
 use std::path::Path;
+use std::sync::atomic::{AtomicBool, Ordering};
 
-pub fn layout(mut chart: FlowChart, dot: &Path) -> Result<FlowChart> {
+pub fn layout(chart: FlowChart, dot: &Path) -> Result<FlowChart> {
+    layout_cancellable(chart, dot, &AtomicBool::new(false))
+}
+
+pub fn layout_cancellable(
+    mut chart: FlowChart,
+    dot: &Path,
+    cancel: &AtomicBool,
+) -> Result<FlowChart> {
+    ensure!(!cancel.load(Ordering::Acquire), "Graphviz layout cancelled");
     if chart.steps.is_empty() {
         chart.size = [400.0, 300.0];
         return Ok(chart);
     }
-    let output: Value = serde_json::from_slice(&crate::graphviz::run(dot, &dot_input(&chart))?)?;
+    let output: Value = serde_json::from_slice(&crate::graphviz::run_cancellable(
+        dot,
+        &dot_input(&chart),
+        cancel,
+    )?)?;
     let bounds = coordinates(
         output["bb"]
             .as_str()
@@ -20,6 +34,7 @@ pub fn layout(mut chart: FlowChart, dot: &Path) -> Result<FlowChart> {
     chart.size = [bounds[2] + 32.0, bounds[3] + 32.0];
     read_steps(&mut chart, &output, bounds[3])?;
     read_links(&mut chart, &output, bounds[3])?;
+    ensure!(!cancel.load(Ordering::Acquire), "Graphviz layout cancelled");
     Ok(chart)
 }
 fn dot_input(chart: &FlowChart) -> String {
