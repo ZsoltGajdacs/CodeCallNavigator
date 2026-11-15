@@ -1,4 +1,4 @@
-use codecallnavigator::flow::{self, FlowChart, FunctionFlowIR};
+use codecallnavigator_core::flow::{self, FlowChart, FunctionFlowIR};
 use serde_json::{Value, json};
 use std::collections::HashSet;
 

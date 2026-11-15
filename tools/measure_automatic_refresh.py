@@ -16,7 +16,7 @@ import tempfile
 import time
 
 from freshness_measurement import distribution, response, run
-from freshness_observer_measurement import Observer, request
+from freshness_observer_measurement import Observer, ObserverOptions, request
 from freshness_scenarios import Project
 from measure_freshness import Session, metadata
 from measure_freshness_observer import assert_clean_shutdown, hardware, project_size
@@ -157,7 +157,7 @@ def measure_language(session, arguments, output):
     with trace_path.open("w") as trace:
         observer = Observer([str(session.executable), "observe", "--auto-refresh"],
                             request(session.project), arguments.timeout,
-                            on_event=lambda received, event: trace_event(trace, received, event))
+                            ObserverOptions(on_event=lambda received, event: trace_event(trace, received, event)))
         try:
             _, initial = observer.wait(lambda observation: observation["generation"] == baseline["generation"])
             binding = PublicationBinding(references, generations, initial["sequence"])

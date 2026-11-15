@@ -1,4 +1,4 @@
-use codecallnavigator::{
+use codecallnavigator_core::{
     artifact::{canonical, compare},
     flow::SourceSpan,
     method_policy,

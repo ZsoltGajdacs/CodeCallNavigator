@@ -263,7 +263,10 @@ class CleanupTests(unittest.TestCase):
                                      (0, '', ''), (1, 'partial result', '')]:
             with self.subTest(code=code, stdout=stdout, stderr=stderr):
                 result = subprocess.CompletedProcess([], code, stdout, stderr)
-                self.assertEqual(lsof_usage(result).status, 'unavailable')
+                usage = lsof_usage(result)
+                self.assertEqual(usage.status, 'unavailable')
+                self.assertIn(f'exit={code}', usage.reason)
+                self.assertIn(stderr or stdout, usage.reason)
         self.assertEqual(lsof_usage(subprocess.CompletedProcess([], 1, '', '')).status, 'idle')
         self.assertEqual(lsof_usage(subprocess.CompletedProcess([], 0, 'p123\n', '')).status, 'active')
 

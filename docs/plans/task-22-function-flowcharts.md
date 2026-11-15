@@ -136,8 +136,9 @@ explicit unavailable state. No external provider choice is approved by this plan
   documentation against the current CallAtlas base in `analyzers.lock.json`.
   Test bootstrap installation, repeat use and migration from the exact previous
   patch. Baseline existing upstream failures before attributing regressions.
-- Follow `tests/java_flows.rs`, `tests/flow_typescript.rs`, `tests/flow_core.rs`
-  and `tests/flow_inventory.rs` for observable semantics, attribution and
+- Follow `tests/java_flows.rs`, `tests/flow_typescript.rs`,
+  `crates/codecallnavigator-core/tests/flow_core.rs` and
+  `crates/codecallnavigator-core/tests/flow_inventory.rs` for observable semantics, attribution and
   persistence checks. New .NET fixtures must exercise actual analysis and
   executable traces, not only deserialize hand-written IR. Trace membership alone
   is insufficient: assert absence of impossible fallthrough/cleanup paths too.

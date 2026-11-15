@@ -1,4 +1,4 @@
-use codecallnavigator::{
+use codecallnavigator_core::{
     architecture::{self, ArchitectureFacts, FileFacts, Selection},
     model::GraphData,
 };

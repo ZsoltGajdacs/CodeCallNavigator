@@ -8,7 +8,7 @@ import subprocess
 import tempfile
 import time
 
-from freshness_observer_measurement import Observer, request
+from freshness_observer_measurement import Observer, ObserverOptions, request
 from freshness_scenarios import Project
 from measure_automatic_refresh import analysis_resources, trace_event
 from measure_freshness import Session, metadata
@@ -90,7 +90,7 @@ def measure_mode(session, arguments, mode, generation):
     path = arguments.output / f"{session.project.language}-{mode}-stream.jsonl"
     with path.open("w") as output:
         observer = Observer(command, request(session.project), arguments.timeout,
-                            on_event=lambda received, event: trace_event(output, received, event))
+                            ObserverOptions(on_event=lambda received, event: trace_event(output, received, event)))
         try:
             ready(observer, mode, generation)
             result = idle_window(observer, arguments.seconds, generation)

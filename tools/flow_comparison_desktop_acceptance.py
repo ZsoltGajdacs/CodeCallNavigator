@@ -7,7 +7,6 @@ from pathlib import Path
 import shutil
 import sqlite3
 import subprocess
-import tempfile
 import uuid
 
 from csharp_flow_acceptance import require
@@ -17,6 +16,7 @@ from comparison_desktop_fixture import prepare, git, HEAD_REF
 from comparison_desktop_gate import Gate
 from comparison_desktop_cleanup import OwnedRun
 from comparison_desktop_protocol import NativeOperations
+from native_fixture import NativeFixture
 
 
 def seed_session(store, project):
@@ -84,9 +84,7 @@ def acceptance(app, output, timeout):
     output.mkdir(parents=True, exist_ok=True)
     require(not any((output / theme).exists() for theme in ("dark", "light")),
             "Use a new output directory; native evidence cannot be overwritten")
-    root = Path(tempfile.mkdtemp(prefix="flow-comparison-native-", dir="/private/tmp")).resolve()
-    completed = False
-    try:
+    with NativeFixture(output, 'flow-comparison-native-') as root:
         relocated = root / "Relocated CodeCallNavigator.app"
         shutil.copytree(app, relocated, symlinks=True)
         fixture = prepare(relocated / "Contents/MacOS/codecallnavigator-engine", root / "project", timeout)
@@ -97,13 +95,7 @@ def acceptance(app, output, timeout):
             store = root / f"store-{theme}"
             seed_session(store, fixture.project)
             results.append(run_native(NativeRun(relocated, fixture, store, output / theme, theme, timeout)))
-        completed = True
         return {"version": 2, "status": "passed", "metrics": fixture.metrics, "native": results}
-    finally:
-        if completed:
-            shutil.rmtree(root)
-        else:
-            write_json(output / "retained-fixture.json", {"path": str(root), "reason": "Failed or inconclusive native acceptance; owned diagnostics retained"})
 
 
 def main():

@@ -5,7 +5,7 @@ import sys
 import time
 import unittest
 
-from freshness_observer_measurement import Boundary, Observer
+from freshness_observer_measurement import Boundary, BoundedOutput, Observer, ObserverOptions
 from freshness_measurement import kill_owned, process_inventory
 
 
@@ -14,8 +14,9 @@ EMIT = 'print(json.dumps({"sequence":0,"observation":{"input_revision":"ready"}}
 
 
 class StreamOwnershipTests(unittest.TestCase):
-    def observer(self, body, timeout=2, on_event=None):
-        observer = Observer([sys.executable, "-c", PRELUDE + body], {}, timeout, on_event=on_event)
+    def observer(self, body, timeout=2, options=ObserverOptions()):
+        observer = Observer([sys.executable, "-c", PRELUDE + body], {}, timeout,
+                            options)
         self.addCleanup(self.close_remaining, observer)
         return observer
 
@@ -25,13 +26,16 @@ class StreamOwnershipTests(unittest.TestCase):
             observer.close()
 
     def test_closed_stdin_still_reaps_and_stops_reader(self):
-        observer = self.observer('os.close(0)\n' + EMIT)
-        observer.wait(lambda item: item["input_revision"] == "ready")
-        observer.measurement.process.stdin.write(b"unflushed late input")
-        report = observer.close()
-        self.assertEqual(report["exit_code"], 0)
-        self.assertTrue(report["reader_stopped"])
-        self.assertTrue(report["output_eof"])
+        for output in (None, BoundedOutput()):
+            with self.subTest(bounded=output is not None):
+                observer = self.observer('os.close(0)\n' + EMIT,
+                                         options=ObserverOptions(output=output))
+                observer.wait(lambda item: item["input_revision"] == "ready")
+                observer.measurement.process.stdin.write(b"unflushed late input")
+                report = observer.close()
+                self.assertEqual(report["exit_code"], 0)
+                self.assertTrue(report["reader_stopped"])
+                self.assertTrue(report["output_eof"])
 
     def test_reused_revision_requires_later_sequence(self):
         body = 'for seq in range(4):\n print(json.dumps({"sequence":seq,"observation":{"input_revision":"same"}}),flush=True)\nsys.stdin.read()\n'
@@ -42,7 +46,8 @@ class StreamOwnershipTests(unittest.TestCase):
     def test_trace_retains_events_filtered_by_the_measurement(self):
         recorded = []
         body = 'for seq in (1,2):\n print(json.dumps({"sequence":seq,"observation":{"input_revision":str(seq)}}),flush=True)\nsys.stdin.read()\n'
-        observer = self.observer(body, on_event=lambda received, event: recorded.append((received, event)))
+        observer = self.observer(body, options=ObserverOptions(
+            on_event=lambda received, event: recorded.append((received, event))))
         observer.wait(lambda item: item["input_revision"] == "2")
         self.assertEqual([event["sequence"] for _, event in recorded], [1, 2])
         self.assertTrue(all(received > 0 for received, _ in recorded))
@@ -71,6 +76,25 @@ class StreamOwnershipTests(unittest.TestCase):
         self.assertTrue(report["output_eof"])
         status = subprocess.run(["/bin/ps", "-p", str(child), "-o", "stat="], capture_output=True, text=True).stdout.strip()
         self.assertTrue(not status or status.startswith("Z"), status)
+
+    def test_bounded_output_proves_real_backpressure_and_releases_both_descriptors(self):
+        output = BoundedOutput()
+        descriptors = [output.reader.fileno(), output.writer.fileno()]
+        try:
+            self.assertTrue(output.writable())
+            queued = output.fill()
+            self.assertTrue(os.get_blocking(output.writer.fileno()))
+            self.assertGreater(queued, 0)
+            self.assertFalse(output.writable())
+            self.assertEqual(output.pending_bytes(), queued)
+            self.assertEqual(len(output.reader.recv(queued)), queued)
+            self.assertEqual(output.pending_bytes(), 0)
+            self.assertTrue(output.writable())
+        finally:
+            output.close()
+        for descriptor in descriptors:
+            with self.assertRaises(OSError):
+                os.fstat(descriptor)
 
 if __name__ == "__main__":
     unittest.main()

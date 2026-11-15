@@ -102,12 +102,12 @@ def check_usage(path):
 
 def lsof_usage(result):
     if result.stderr.strip():
-        return Usage('unavailable', 'Native lsof reported an inspection error')
+        return Usage('unavailable', f'Native lsof reported an inspection error (exit={result.returncode}, stderr={result.stderr.strip()[:512]!r})')
     if result.returncode == 1 and not result.stdout.strip():
         return Usage('idle')
     if result.returncode == 0 and result.stdout.strip():
         return Usage('active', 'An active process has files open in this directory')
-    return Usage('unavailable', 'Native lsof did not return a conclusive process result')
+    return Usage('unavailable', f'Native lsof did not return a conclusive process result (exit={result.returncode}, stdout={result.stdout.strip()[:512]!r})')
 
 
 def tree_bytes(path):

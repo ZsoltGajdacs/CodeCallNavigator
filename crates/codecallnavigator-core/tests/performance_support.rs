@@ -1,5 +1,5 @@
 //! Observable equivalence checks for job-local traversal and generation-local summaries.
-use codecallnavigator::{
+use codecallnavigator_core::{
     fingerprint,
     graph::{Filter, GraphIndex},
     model::{Edge, GraphData, Node},
@@ -51,7 +51,7 @@ fn graph() -> GraphData {
 }
 
 fn filter(bits: u8) -> Filter {
-    use codecallnavigator::model::{RelationshipKind, TargetResolution};
+    use codecallnavigator_core::model::{RelationshipKind, TargetResolution};
     let mut filter = Filter {
         include_tests: bits & 1 != 0,
         include_generated: bits & 2 != 0,

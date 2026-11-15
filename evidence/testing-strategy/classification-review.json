@@ -1,0 +1,200 @@
+{
+  "review": "Read-only source/helper audit; no inventory edits during active full verification",
+  "findings": [
+    {
+      "id": "codecallnavigator/bin:codecallnavigator::flow_acceptance::driver::tests::first_ready_drawn_timing_is_sampled_while_input_is_busy_and_retained",
+      "file": "src/flow_acceptance/driver.rs",
+      "current_category": "unit",
+      "proposed_category": "integration",
+      "component": "ui",
+      "kind": "real_headless_and_filesystem_integration",
+      "actual_boundary_or_risk": "driver() creates a temporary directory and starts the real file-I/O Worker; ready_runtime() assembles Rune Runtime and dispatches production input.",
+      "assessment": "Reclassify as UI integration; it is more than an isolated timer/state rule, despite no native window or compiler."
+    },
+    {
+      "id": "tools/test_comparison_desktop_cleanup.py::ComparisonFailureCleanupTests.test_stopped_processes_are_not_quiescent_and_state_changes_do_not_change_identity",
+      "file": "tools/test_comparison_desktop_cleanup.py",
+      "current_category": "unit",
+      "proposed_category": "integration",
+      "component": "tooling",
+      "kind": "narrow_os_fault_probe",
+      "actual_boundary_or_risk": "Mocks process inspection, group liveness and killpg; exercises stopped-state cleanup and identity invariance.",
+      "assessment": "Keep real ownership/cleanup implementation exercised. These simulate otherwise unreliable OS states and belong to integration under the approved exception; they do not establish successful native cleanup."
+    },
+    {
+      "id": "tools/test_comparison_desktop_cleanup.py::ComparisonFailureCleanupTests.test_numeric_group_membership_needs_no_signal_zero_and_keeps_zombie_members",
+      "file": "tools/test_comparison_desktop_cleanup.py",
+      "current_category": "unit",
+      "proposed_category": "integration",
+      "component": "tooling",
+      "kind": "narrow_os_fault_probe",
+      "actual_boundary_or_risk": "Mocks ps output and denied process inspection; verifies malformed/denied OS snapshots are not accepted as dead groups.",
+      "assessment": "Keep real ownership/cleanup implementation exercised. These simulate otherwise unreliable OS states and belong to integration under the approved exception; they do not establish successful native cleanup."
+    },
+    {
+      "id": "tools/test_comparison_desktop_cleanup.py::ComparisonFailureCleanupTests.test_reused_or_mismatched_group_identity_never_receives_a_signal",
+      "file": "tools/test_comparison_desktop_cleanup.py",
+      "current_category": "unit",
+      "proposed_category": "integration",
+      "component": "tooling",
+      "kind": "narrow_os_fault_probe",
+      "actual_boundary_or_risk": "Mocks process snapshots with a reused PID and ensures no signal can target an unrelated process.",
+      "assessment": "Keep real ownership/cleanup implementation exercised. These simulate otherwise unreliable OS states and belong to integration under the approved exception; they do not establish successful native cleanup."
+    },
+    {
+      "id": "tests/test_verification_cleanup.py::CleanupTests.test_native_lsof_timeout_or_launch_error_is_unavailable",
+      "file": "tests/test_verification_cleanup.py",
+      "current_category": "unit",
+      "proposed_category": "integration",
+      "component": "tooling",
+      "kind": "narrow_os_fault_probe",
+      "actual_boundary_or_risk": "Mocks lsof launch OSError/TimeoutExpired and platform to verify cleanup returns unavailable rather than permitting deletion.",
+      "assessment": "Reclassify as integration fault coverage; no real lsof or filesystem deletion is established by this case."
+    },
+    {
+      "id": "tools/test_native_window_setup.py::WindowSetupTests.test_wrong_owner_never_receives_a_layout_command",
+      "file": "tools/test_native_window_setup.py",
+      "current_category": "unit",
+      "proposed_category": "integration",
+      "component": "tooling",
+      "kind": "narrow_os_fault_probe",
+      "actual_boundary_or_risk": "The real WindowLease implementation receives a simulated AeroSpace reply for a window owned by another process; subprocess.run is intercepted.",
+      "assessment": "No ownership/business predicate is replaced. Reclassify as integration protocol/fault coverage; actual native-window behavior is proved only by native acceptance."
+    },
+    {
+      "id": "tools/test_native_window_setup.py::WindowSetupTests.test_restore_never_mutates_a_foreign_window",
+      "file": "tools/test_native_window_setup.py",
+      "current_category": "unit",
+      "proposed_category": "integration",
+      "component": "tooling",
+      "kind": "narrow_os_fault_probe",
+      "actual_boundary_or_risk": "The real WindowLease implementation receives a simulated AeroSpace reply for a window owned by another process; subprocess.run is intercepted.",
+      "assessment": "No ownership/business predicate is replaced. Reclassify as integration protocol/fault coverage; actual native-window behavior is proved only by native acceptance."
+    },
+    {
+      "id": "tools/test_native_window_setup.py::WindowSetupTests.test_valid_owner_is_floated_only_by_explicit_window_id",
+      "file": "tools/test_native_window_setup.py",
+      "current_category": "unit",
+      "proposed_category": "integration",
+      "component": "tooling",
+      "kind": "inherited_success_os_protocol_fixture",
+      "actual_boundary_or_risk": "subprocess.run supplies canned tiled/success/floating replies; real WindowLease ownership checks and command construction run unchanged.",
+      "assessment": "This is an external OS-protocol fixture, not a copied or mocked ownership decision, but it is successful protocol simulation rather than a permitted failure probe. Reclassify integration and assess replacement by pure command/state rules plus real native acceptance; do not claim it proves a real window changed."
+    },
+    {
+      "id": "tools/test_comparison_desktop_protocol.py::ComparisonProtocolTests.test_ordinary_version_one_capture_keeps_its_existing_request_and_output_path",
+      "file": "tools/test_comparison_desktop_protocol.py",
+      "current_category": "unit",
+      "proposed_category": "integration",
+      "component": "tooling",
+      "kind": "inherited_success_adapter_double",
+      "actual_boundary_or_risk": "Patches the local capture_image operation to return a successful window-id object; no screenshot is produced.",
+      "assessment": "Real legacy request validation/routing still runs, but this cannot establish successful capture. Reclassify integration and assess pure routing/path-selection coverage plus retained real capture acceptance before removal."
+    },
+    {
+      "id": "tests/test_ci_macos.py::MacOSProvisioningTests.test_installation_replaces_only_reviewed_native_packages_in_dependency_order",
+      "file": "tests/test_ci_macos.py",
+      "current_category": "unit",
+      "proposed_category": "integration",
+      "component": "tooling",
+      "kind": "inherited_success_os_orchestration_doubles",
+      "actual_boundary_or_risk": "Mocks require_ci_runner and verified_archive as successful and fabricates successful brew version/install replies. verified_archive returns an unverified path rather than exercising production asset validation.",
+      "assessment": "No analyzer/graph business behavior is replaced. Mocked local host/archive prerequisites narrow this legacy test to OS command orchestration; it does not verify actual archive validation, brew installation or successful external service behavior. Reclassify integration protocol simulation, retain real archive/packaging/native acceptance, and assess a pure command-plan replacement before removing assertions. Never run destructive brew installation on a developer host."
+    },
+    {
+      "id": "tests/test_ci_macos.py::MacOSProvisioningTests.test_old_homebrew_is_rejected_before_removing_packages",
+      "file": "tests/test_ci_macos.py",
+      "current_category": "unit",
+      "proposed_category": "integration",
+      "component": "tooling",
+      "kind": "inherited_os_version_fault_probe",
+      "actual_boundary_or_risk": "Mocks brew to report an old unsupported version; local host/archive prerequisites are bypassed, although archive validation should not be reached before rejection.",
+      "assessment": "Reclassify integration failure coverage. Real old-version rejection runs; remove unnecessary successful local prerequisite doubles when extracting a pure version/command-planning boundary."
+    },
+    {
+      "id": "tools/test_native_window_setup.py::WindowSetupTests.test_closed_process_needs_no_restore_command",
+      "file": "tools/test_native_window_setup.py",
+      "current_category": "unit",
+      "proposed_category": "integration",
+      "component": "tooling",
+      "kind": "narrow_os_protocol_guard",
+      "actual_boundary_or_risk": "Exercises WindowLease lifecycle against a process fixture that already exited and asserts the manager subprocess remains unused.",
+      "assessment": "No native request occurs and no ownership predicate is mocked. Classify with the WindowLease process/protocol guard probes under the explicit integration policy; the four direct select_owned predicate cases remain unit."
+    },
+    {
+      "id": "tools/test_native_window_setup.py::WindowSetupTests.test_restore_rejects_different_process_before_query",
+      "file": "tools/test_native_window_setup.py",
+      "current_category": "unit",
+      "proposed_category": "integration",
+      "component": "tooling",
+      "kind": "narrow_os_protocol_guard",
+      "actual_boundary_or_risk": "Exercises WindowLease lifecycle with a different process identity and asserts no manager subprocess runs.",
+      "assessment": "No native request occurs and no ownership predicate is mocked. Classify with the WindowLease process/protocol guard probes under the explicit integration policy; the four direct select_owned predicate cases remain unit."
+    }
+  ],
+  "retained_unit_notes": [
+    "C# Command::new context tests only inspect argument vectors and never spawn a process.",
+    "Core canonicalization, graph/flow algorithms and source snapshots use in-memory inputs; retained compiler-output fixture loading alone is not integration.",
+    "Rune shape-emission cases use an isolated in-memory canvas runtime without GPU/native windows and remain geometry-renderer unit coverage by the owning agent decision.",
+    "No unit registration was found actually launching a compiler/application process, opening SQLite, or creating a native window in this source/helper audit. The timer case does start a real file worker.",
+    "The four direct native_window_setup.select_owned predicate cases stay unit; five WindowLease orchestration/guard cases are proposed integration, without claiming real native behavior."
+  ],
+  "checks": [
+    {
+      "check": "Inventory source validation",
+      "result": "passed",
+      "detail": "validate_inventory passed after the read-only audit; no compiler run or inventory edit was performed during this audit",
+      "registrations": 1353,
+      "gates": 11
+    },
+    {
+      "check": "All wrapper dry runs",
+      "result": "passed",
+      "detail": "11 entry points unit/integration/acceptance/performance/ui/core/engine/mcp/tooling/light/full returned valid unique stage lists with always cleanup; no requested output directory was created",
+      "stage_counts": {
+        "unit": 7,
+        "integration": 10,
+        "acceptance": 21,
+        "performance": 10,
+        "ui": 12,
+        "core": 10,
+        "engine": 15,
+        "mcp": 12,
+        "tooling": 9,
+        "light": 61,
+        "full": 90
+      }
+    },
+    {
+      "check": "Inventory regression suite",
+      "result": "passed",
+      "tests": 15,
+      "seconds": 0.026
+    },
+    {
+      "check": "Node isolated observation selection",
+      "result": "passed",
+      "tests": 2,
+      "skipped": 0,
+      "seconds": 0.053412917
+    },
+    {
+      "check": "Observer measurement lifecycle, sandbox",
+      "result": "partial",
+      "tests": 6,
+      "passed": 5,
+      "skipped": 1,
+      "detail": "Inherited-stdout cleanup case skipped because process inventory unavailable"
+    },
+    {
+      "check": "Observer measurement lifecycle, native process access",
+      "result": "passed",
+      "tests": 6,
+      "skipped": 0,
+      "seconds": 1.081,
+      "detail": "Rerun outside sandbox exercised inherited-stdout cleanup; all six cases passed"
+    }
+  ],
+  "registrations_at_review_start": 1353,
+  "application": "All 13 proposals applied after original unit/integration execution completed; bodies and assertions retained. Subsequent affected suites verify the new placement."
+}

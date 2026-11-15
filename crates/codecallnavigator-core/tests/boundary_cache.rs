@@ -1,5 +1,5 @@
 //! Cache acceptance uses real SQLite and the same canonical graph contract as the CLI.
-use codecallnavigator::{
+use codecallnavigator_core::{
     artifact,
     boundary::{self, BoundaryInventory, BoundaryUse, Configuration, DecisionCache, RouteFact},
     model::{GraphData, Node, SourceSite},
@@ -76,7 +76,10 @@ fn cache_reads_real_sqlite_and_reuses_decisions_without_changing_canonical_graph
     let mut first = DecisionCache::open(project.path());
     boundary::resolve_cached(&mut cached, &config, &mut first).unwrap();
     assert!(
-        !project.path().join(".codecallnavigator/inference.sqlite3").exists(),
+        !project
+            .path()
+            .join(".codecallnavigator/inference.sqlite3")
+            .exists(),
         "No publication before explicit post-graph commit"
     );
     first.commit();
@@ -378,7 +381,7 @@ fn immutable_readonly_cache_handles_project_paths_with_uri_characters() {
 }
 
 fn flow_graph() -> GraphData {
-    use codecallnavigator::flow::{
+    use codecallnavigator_core::flow::{
         CallSite, FlowInventory, FunctionFlowIR, SourceSpan, Statement, StatementKind,
     };
     let mut graph = graph();
@@ -423,7 +426,7 @@ fn reused_routing_decision_still_checks_fresh_flow_and_reconstructs_native_diagn
     let mut result = checked(&native, &mut cache);
     assert_eq!(result.edges.len(), 1);
     assert_eq!(cache.stats().hits, 1);
-    codecallnavigator::flow::visit_calls_mut(
+    codecallnavigator_core::flow::visit_calls_mut(
         &mut result.flow_inventory.as_mut().unwrap().functions[0],
         &mut |call| {
             assert_eq!(call.targets[0].kind, "http");

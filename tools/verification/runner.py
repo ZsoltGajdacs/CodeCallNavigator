@@ -46,24 +46,40 @@ class Runner:
         self.save()
         failed = False
         for index, step in enumerate(self.steps):
-            if failed and not step.always:
-                continue
-            result = self.results[index]
-            result["status"] = "running"
-            result["log"] = f"{index + 1:02d}-{step.name}.log"
-            self.save()
-            print(f"[{index + 1}/{len(self.steps)}] {step.name}", flush=True)
-            began = time.monotonic()
-            with (self.output / result["log"]).open("w") as log:
-                status, code = execute(step, self.root, log)
-            result.update(status=status, exit_code=code,
-                          seconds=round(time.monotonic() - began, 3))
-            self.save()
-            if status != "passed":
-                print(f"{step.name}: {status}; inspect {self.output / result['log']}", flush=True)
-                print((self.output / result["log"]).read_text(errors="replace")[-6000:])
+            try:
+                if failed and not step.always:
+                    continue
+                failed = self.run_step(index, step) or failed
+            except KeyboardInterrupt:
+                self.record_interruption(index)
                 failed = True
         return int(failed)
+
+    def run_step(self, index, step):
+        result = self.results[index]
+        result["status"] = "running"
+        result["log"] = f"{index + 1:02d}-{step.name}.log"
+        self.save()
+        print(f"[{index + 1}/{len(self.steps)}] {step.name}", flush=True)
+        began = time.monotonic()
+        with (self.output / result["log"]).open("w") as log:
+            status, code = execute(step, self.root, log)
+        result.update(status=status, exit_code=code,
+                      seconds=round(time.monotonic() - began, 3))
+        self.save()
+        if status != "passed":
+            print(f"{step.name}: {status}; inspect {self.output / result['log']}", flush=True)
+            print((self.output / result["log"]).read_text(errors="replace")[-6000:])
+        return status != "passed"
+
+    def record_interruption(self, index):
+        result = self.results[index]
+        result['interrupted'] = True
+        if result['status'] in ('running', 'not-run'):
+            result.update(status='interrupted', exit_code=None)
+        # A signal after a completed stage must not erase that stage's actual
+        # outcome. The interrupted run still fails and skips later ordinary work.
+        self.save()
 
 
 def stop_group(process, log):

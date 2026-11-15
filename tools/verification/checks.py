@@ -40,47 +40,6 @@ def static_steps(root, paths, base, python):
     return steps
 
 
-def runtime_steps(root, python, timeout):
-    return [
-        Step("build-debug-engine", ["cargo", "build", "--locked", "-p", "codecallnavigator-engine", "--bin", "codecallnavigator-engine"], timeout),
-        Step("cargo-check", ["cargo", "check", "--locked", "--workspace", "--all-targets"], timeout),
-        Step("mcp-dependency-boundary", [python, "tools/mcp_boundary.py", "--root", str(root)], timeout),
-        Step("clippy", ["cargo", "clippy", "--locked", "--workspace", "--all-targets", "--no-deps", "--", "-D", "warnings"], timeout),
-        Step("rust-tests", ["cargo", "test", "--locked", "--workspace", "--all-targets", "--", "--test-threads=1"], timeout),
-        Step("python-tests", [python, "-m", "unittest", "discover", "-s", "tests", "-v"], timeout),
-        Step("python-tool-tests", [python, "-m", "unittest", "discover", "-s", "tools", "-p", "test_*.py", "-v"], timeout),
-    ]
-
-
-def full_steps(root, args, output):
-    python, timeout = sys.executable, args.timeout
-    profile_source = args.profile_source or output / "MISSING_PROFILE_SOURCE"
-    release_engine = str(root / "target/release/codecallnavigator-engine")
-    environment = {"CODECALLNAVIGATOR_ENGINE": release_engine,
-                   "CODECALLNAVIGATOR_TEST_ENGINE": release_engine,
-                   "CODECALLNAVIGATOR_DATA_DIR": str(output / "profile")}
-    return [
-        Step("typescript-tests", ["node", "--test", *[str(p.relative_to(root)) for p in sorted((root / "tools/typescript").glob("*.test.js"))]], timeout),
-        Step("build-release-engine", ["cargo", "build", "--locked", "--release", "-p", "codecallnavigator-engine", "--bin", "codecallnavigator-engine"], timeout),
-        Step("csharp-cleanup-acceptance", [python, "tools/csharp_cleanup_acceptance.py",
-                                          "--engine", release_engine,
-                                          "--output", str(output / "csharp-cleanup.json")], timeout),
-        Step("profile-snapshot", [python, "tools/verification/profile.py", str(profile_source), str(output / "profile")]),
-        Step("release-acceptance-and-benchmarks", ["cargo", "test", "--locked", "--release", "--workspace", "--all-targets", "--no-fail-fast", "--", "--include-ignored", "--test-threads=1", "--nocapture"], timeout, environment),
-        Step("storage-benchmark", ["cargo", "run", "--locked", "--release", "--bin", "benchmark", "--", str(output / "scale-cache")], timeout),
-        Step("package", [python, "tools/package.py"], timeout),
-        Step("package-signature", ["codesign", "--verify", "--deep", "--strict", "dist/CodeCallNavigator.app"]),
-        Step("packaged-engine", [str(root / "dist/CodeCallNavigatorEngine/bin/codecallnavigator-engine"), "--help"]),
-        Step("installed-cli", [python, "tools/installed_cli_acceptance.py",
-                               "--package", str(root / "dist/CodeCallNavigatorEngine"),
-                               "--node-modules", os.environ.get("CODECALLNAVIGATOR_TS_NODE_MODULES", "MISSING_NODE_MODULES"),
-                               "--output", str(output / "installed-cli.json")], timeout),
-        *agent_integration_steps(root, args, output),
-        Step("mcp-independent-install", [python, "tools/package_mcp.py", "--engine", str(root / "dist/CodeCallNavigatorEngine/bin/codecallnavigator-engine")], timeout),
-        agent_mcp_journey_step(root, args, output),
-    ]
-
-
 def agent_integration_steps(root, args, output):
     python = sys.executable
     package = [python, 'tools/package_agent_integrations.py', '--host', 'all']
@@ -93,12 +52,3 @@ def agent_integration_steps(root, args, output):
                                   '--output', str(output / 'agent-journeys.json')], args.timeout,
              {'PATH': path}),
     ]
-
-
-def agent_mcp_journey_step(root, args, output):
-    modules = os.environ.get('CODECALLNAVIGATOR_TS_NODE_MODULES', 'MISSING_NODE_MODULES')
-    bins = [root / 'dist/CodeCallNavigatorEngine/bin', root / 'dist/CodeCallNavigatorMcp/bin']
-    path = os.pathsep.join([*[str(directory) for directory in bins], os.environ.get('PATH', '')])
-    command = [sys.executable, 'tools/agent_mcp_journeys.py', '--node-modules', modules,
-               '--output', str(output / 'agent-mcp-journeys.json')]
-    return Step('agent-mcp-journeys', command, args.timeout, {'PATH': path})

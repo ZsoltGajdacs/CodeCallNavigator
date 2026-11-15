@@ -10,12 +10,12 @@ import shutil
 import sqlite3
 import struct
 import subprocess
-import tempfile
 import time
 
 from csharp_flow_acceptance import require
 from csharp_flow_ingestion_acceptance import Client
 from native_window_setup import WindowIdentity, WindowLease
+from native_fixture import NativeFixture
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -239,8 +239,7 @@ def acceptance(app, output, timeout):
     output.mkdir(parents=True, exist_ok=True)
     require(not any((output / theme).exists() for theme in ("dark", "light")),
             "Use a new output directory; existing native evidence is preserved")
-    with tempfile.TemporaryDirectory(prefix="csharp-desktop-", dir="/private/tmp") as temporary:
-        root = Path(temporary)
+    with NativeFixture(output, 'csharp-desktop-') as root:
         relocated = root / "Relocated CodeCallNavigator.app"
         shutil.copytree(app, relocated, symlinks=True)
         fixture = prepare_fixture(relocated / "Contents/MacOS/codecallnavigator-engine", root / "project")
