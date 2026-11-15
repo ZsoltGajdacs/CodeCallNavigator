@@ -120,6 +120,7 @@ fn validate_flows(inventory: &mut FlowInventory, ids: &HashMap<String, u32>) -> 
 }
 
 fn validate_function(function: &mut FunctionFlowIR, ids: &HashMap<String, u32>) -> Result<()> {
+    flow::validate_metadata(function)?;
     symbol(&function.symbol, ids)?;
     path(&function.file)?;
     path(&function.build)?;

@@ -14,7 +14,7 @@ struct Dispatch {
     unmatched: Vec<Exit>,
     abrupt: Vec<Exit>,
 }
-impl Builder {
+impl Builder<'_> {
     pub(super) fn branch(
         &mut self,
         statement: &Statement,

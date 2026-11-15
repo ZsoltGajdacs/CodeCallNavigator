@@ -120,6 +120,9 @@ active path so repeated nonrecursive callees still work. Preserve completion and
 exception behavior when splicing is supported, and expose unavailable/opaque
 invocations where it is not. References, HTTP/navigation targets and callbacks
 do not become synchronous calls. Depth and total size limits are visible outcomes.
+The implemented library contract, compiler fact requirements and budget policy
+are described in [shared call-site expansion](../standalone-engine.md#shared-call-site-expansion-library).
+CLI and desktop controls remain the separate TASK-22.8 boundary.
 
 Explanation anchors need artifact/function/chart identity and a step/source
 reference, including duplicated cleanup steps. Provider text cannot change the
@@ -146,7 +149,7 @@ explicit unavailable state. No external provider choice is approved by this plan
   compatibility. Git fixtures verify no fetch/checkout/source/artifact mutation;
   expansion fixtures verify per-occurrence source identity and hard budgets.
   Provider fixtures are deterministic, with real-provider acceptance reported
-  separately from mocked success.
+  separately from schema-validation fixtures and narrow protocol fault probes.
 - Desktop deliveries require real native workflows, source highlighting, Back,
   camera/scroll ownership, stale-result rejection, minimum-window light/dark
   captures and package/relocation evidence where resources change.

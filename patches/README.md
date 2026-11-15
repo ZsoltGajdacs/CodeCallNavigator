@@ -287,3 +287,30 @@ whole existing-graph parity, real assembly-collision ownership and source/limit
 probes. Dependency tests cover clean/repeated installation and every recorded
 checkpoint migration. Baseline and current verification evidence are tracked in
 [`evidence/flowcharts/csharp`](../evidence/flowcharts/csharp/README.md).
+
+# CallAtlas compiler execution facts
+
+The combined patch now advertises `flowFactsVersion: "2"`; the persisted
+`flowInventory.version` remains 1. Apply the combined patch once to pinned base
+`916c2419c0cdb91b5b86b84df4842dadb17bb6b4`. The exact preceding cleanup exporter is
+retained as `callatlas-assembly-identity-pre-execution.patch`, recorded by
+`callatlas.pre_execution_patch` and its checksum in `analyzers.lock.json`.
+Bootstrap recognizes that exact checkpoint and replaces it through its verified
+reverse-and-apply migration. Checkpoints are alternatives, never patches to stack.
+
+Optional `execution` and call-site `invocation` facts use compiler symbols and
+operations, with unknown defaults omitted. Whole-body execution and invocation
+activation are independent: a non-async method returning Task can be synchronous,
+a non-async iterator is deferred, and activating an async or iterator method can
+be synchronous. Nested local/lambda suspension does not classify its enclosing
+body. Async and mixed suspension remain unknown.
+
+Only an explicit ordinary/local invocation's final Value after receiver and
+arguments receives synchronous, isolated ordered proof. Dispatch is classified
+before target pruning from compiler virtual/interface facts; external calls may
+retain proof with no native target. Delegate, extension, by-reference, implicit,
+constructor, accessor, reference and synthetic paths receive no such proof.
+No target identities, native graph edges or relationship certainty are changed.
+The strict reader rejects malformed facts and structural proof claims. Fresh
+analysis requires capability 2 and tells older resources to bootstrap and refresh;
+old canonical inventories remain readable with unknown facts in shared core.

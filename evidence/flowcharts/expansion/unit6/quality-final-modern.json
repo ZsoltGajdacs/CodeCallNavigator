@@ -1,0 +1,41 @@
+{
+  "status": "passed",
+  "reviews": [
+    {
+      "score": 10.0,
+      "review": [],
+      "path": "crates/codecallnavigator-engine/src/analyzers/java/execution_tests.rs",
+      "applicability": "reviewed"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "path": "crates/codecallnavigator-engine/tests/csharp_flows.rs",
+      "applicability": "reviewed"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "path": "crates/codecallnavigator-engine/tests/support/compiler_expansion.rs",
+      "applicability": "reviewed"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "path": "crates/codecallnavigator-engine/tests/typescript_facts.rs",
+      "applicability": "reviewed"
+    }
+  ],
+  "safeguard": {
+    "results": [],
+    "quality_gates": "passed",
+    "metadata": {
+      "checked-file-count": 90,
+      "code-health-eligible-file-count": 90,
+      "status": "no-issues-found",
+      "total-modified-file-count": 196
+    }
+  },
+  "errors": [],
+  "skipped_files": []
+}

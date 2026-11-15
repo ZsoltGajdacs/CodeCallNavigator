@@ -20,9 +20,10 @@ final class SourceFlow {
     private final BufferedWriter writer;
     private final Trees trees;
     private final LambdaSourceIdentity identities;
+    private final FlowAttribution attribution;
     private final Map<CompilationUnitTree, FlowSource> sources = new IdentityHashMap<>();
-    SourceFlow(JavacTask task, CompiledTypes compiled, BufferedWriter writer) {
-        this.task = task; this.compiled = compiled; this.writer = writer; trees = Trees.instance(task);
+    SourceFlow(JavacTask task, CompiledTypes compiled, BufferedWriter writer, FlowAttribution attribution) {
+        this.task = task; this.compiled = compiled; this.attribution = attribution; this.writer = writer; trees = Trees.instance(task);
         identities = new LambdaSourceIdentity(task, compiled);
     }
     void write(List<TreePath> methods, List<TreePath> lambdas) throws IOException {
@@ -31,7 +32,7 @@ final class SourceFlow {
     }
     private FlowSource source(TreePath path) throws IOException {
         var unit = path.getCompilationUnit();
-        if (!sources.containsKey(unit)) sources.put(unit, new FlowSource(unit, task, compiled));
+        if (!sources.containsKey(unit)) sources.put(unit, new FlowSource(unit, task, compiled, attribution));
         var source = sources.get(unit);
         source.diagnostics.clear();
         return source;
@@ -45,6 +46,8 @@ final class SourceFlow {
         var body = new FlowStatements(source).list(tree.getBody());
         var function = FlowJson.object("symbol", signature.key(), "file", source.file, "language", "java",
                 "span", source.span(tree), "body", body, "diagnostics", source.diagnostics);
+        var execution = FlowCompilerFacts.execution(source, method, tree.getBody());
+        if (execution != null) function.put("execution", execution);
         ContextTsv.write(writer, "flow", signature.signature(), signature.returns(), FlowJson.encode(function), "", "", "", "", "");
     }
     private void lambda(TreePath path) throws IOException {

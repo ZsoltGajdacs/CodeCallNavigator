@@ -1,0 +1,177 @@
+{
+  "status": "failed",
+  "reviews": [
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "crates/codecallnavigator-core/src/flow/builder.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "crates/codecallnavigator-core/src/flow/builder/expansion.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "crates/codecallnavigator-core/src/flow/builder/expansion/child.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "crates/codecallnavigator-core/src/flow/builder/expansion/eligibility.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "crates/codecallnavigator-core/src/flow/builder/expansion/pending.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "crates/codecallnavigator-core/src/flow/builder/expansion/prepared.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "crates/codecallnavigator-core/src/flow/builder/expansion/run.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "crates/codecallnavigator-core/src/flow/builder/expressions.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "crates/codecallnavigator-core/src/flow/builder/recording.rs"
+    },
+    {
+      "score": null,
+      "review": [],
+      "applicability": "declarations_only",
+      "path": "crates/codecallnavigator-core/src/flow/expanded.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "crates/codecallnavigator-core/src/flow/expanded/address.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "crates/codecallnavigator-core/src/flow/expanded/blocked.rs"
+    },
+    {
+      "score": 9.38,
+      "review": [
+        {
+          "category": "Overall Code Complexity",
+          "description": "Overall Code Complexity is measured by the mean cyclomatic complexity across all functions in the file. The lower the number, the better.\n\nCyclomatic complexity is a function level metric that measures the number of logical branches (if-else, loops, etc.). Cyclomatic complexity is a rough complexity measure, but useful as a way of estimating the minimum number of unit tests you would need. As such, prefer functions with low cyclomatic complexity (2-3 branches).",
+          "indication": 2
+        }
+      ],
+      "applicability": "reviewed",
+      "path": "crates/codecallnavigator-core/src/flow/expanded/chart_validation.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "crates/codecallnavigator-core/src/flow/expanded/request.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "crates/codecallnavigator-core/src/flow/expanded/result.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "crates/codecallnavigator-core/src/flow/expanded/sources.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "crates/codecallnavigator-core/src/flow/expanded/validation.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "crates/codecallnavigator-core/tests/flow_expanded_contract.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "crates/codecallnavigator-core/tests/flow_expanded_contract/validation.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "crates/codecallnavigator-core/tests/flow_expansion.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "crates/codecallnavigator-core/tests/flow_expansion/nested.rs"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "crates/codecallnavigator-core/tests/flow_expansion/selection.rs"
+    }
+  ],
+  "safeguard": {
+    "results": [
+      {
+        "name": "crates/codecallnavigator-core/src/flow/expanded/chart_validation.rs",
+        "verdict": "degraded",
+        "findings": [
+          {
+            "category": "Overall Code Complexity",
+            "change-details": [
+              {
+                "change-type": "introduced",
+                "description": "This module has a mean cyclomatic complexity of 4.75 across 8 functions. The mean complexity threshold is 4",
+                "value": 4.75
+              }
+            ],
+            "change-type": "introduced",
+            "new-pp": 2.0,
+            "threshold": 4
+          }
+        ]
+      }
+    ],
+    "quality_gates": "failed",
+    "metadata": {
+      "checked-file-count": 82,
+      "code-health-eligible-file-count": 82,
+      "status": "issues-found",
+      "total-modified-file-count": 165
+    }
+  },
+  "errors": [
+    "CodeScene safeguard quality gate failed"
+  ],
+  "skipped_files": []
+}

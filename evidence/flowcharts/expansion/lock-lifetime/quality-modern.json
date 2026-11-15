@@ -1,0 +1,23 @@
+{
+  "status": "passed",
+  "reviews": [
+    {
+      "score": 10.0,
+      "review": [],
+      "path": "crates/codecallnavigator-core/src/artifact/publish.rs",
+      "applicability": "reviewed"
+    }
+  ],
+  "safeguard": {
+    "results": [],
+    "quality_gates": "passed",
+    "metadata": {
+      "checked-file-count": 91,
+      "code-health-eligible-file-count": 91,
+      "status": "no-issues-found",
+      "total-modified-file-count": 211
+    }
+  },
+  "errors": [],
+  "skipped_files": []
+}

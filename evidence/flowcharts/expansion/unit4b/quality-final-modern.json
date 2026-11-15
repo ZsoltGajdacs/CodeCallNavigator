@@ -1,0 +1,125 @@
+{
+  "status": "passed",
+  "reviews": [
+    {
+      "score": 10.0,
+      "review": [],
+      "path": "crates/codecallnavigator-core/src/flow/builder.rs",
+      "applicability": "reviewed"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "path": "crates/codecallnavigator-core/src/flow/builder/branches.rs",
+      "applicability": "reviewed"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "path": "crates/codecallnavigator-core/src/flow/builder/calls.rs",
+      "applicability": "reviewed"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "path": "crates/codecallnavigator-core/src/flow/builder/completion.rs",
+      "applicability": "reviewed"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "path": "crates/codecallnavigator-core/src/flow/builder/exceptions.rs",
+      "applicability": "reviewed"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "path": "crates/codecallnavigator-core/src/flow/builder/expansion.rs",
+      "applicability": "reviewed"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "path": "crates/codecallnavigator-core/src/flow/builder/expansion/child.rs",
+      "applicability": "reviewed"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "path": "crates/codecallnavigator-core/src/flow/builder/expansion/eligibility.rs",
+      "applicability": "reviewed"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "path": "crates/codecallnavigator-core/src/flow/builder/expressions.rs",
+      "applicability": "reviewed"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "path": "crates/codecallnavigator-core/src/flow/builder/function.rs",
+      "applicability": "reviewed"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "path": "crates/codecallnavigator-core/src/flow/builder/loops.rs",
+      "applicability": "reviewed"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "path": "crates/codecallnavigator-core/src/flow/builder/recording.rs",
+      "applicability": "reviewed"
+    },
+    {
+      "score": null,
+      "review": [],
+      "path": "crates/codecallnavigator-core/src/flow/expanded.rs",
+      "applicability": "declarations_only"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "path": "crates/codecallnavigator-core/src/flow/expanded/request.rs",
+      "applicability": "reviewed"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "path": "crates/codecallnavigator-core/src/flow/prune.rs",
+      "applicability": "reviewed"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "path": "crates/codecallnavigator-core/tests/flow_expansion.rs",
+      "applicability": "reviewed"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "path": "crates/codecallnavigator-core/tests/flow_expansion/completion.rs",
+      "applicability": "reviewed"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "path": "crates/codecallnavigator-core/tests/flow_expansion/selection.rs",
+      "applicability": "reviewed"
+    }
+  ],
+  "safeguard": {
+    "results": [],
+    "quality_gates": "passed",
+    "metadata": {
+      "checked-file-count": 76,
+      "code-health-eligible-file-count": 76,
+      "status": "no-issues-found",
+      "total-modified-file-count": 146
+    }
+  },
+  "errors": [],
+  "skipped_files": []
+}

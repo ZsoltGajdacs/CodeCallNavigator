@@ -26,6 +26,7 @@ fn graph() -> GraphData {
         flow_inventory: Some(FlowInventory {
             version: 1,
             functions: vec![FunctionFlowIR {
+                execution: Default::default(),
                 symbol: "f".into(),
                 file: FILE.into(),
                 build: BUILD.into(),
@@ -40,6 +41,7 @@ fn graph() -> GraphData {
                             span,
                             regions: vec![],
                             calls: vec![CallSite {
+                                invocation: Default::default(),
                                 span,
                                 label: "target()".into(),
                                 targets: vec![CallTarget {

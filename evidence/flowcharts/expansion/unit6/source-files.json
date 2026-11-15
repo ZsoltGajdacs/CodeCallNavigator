@@ -1,0 +1,6 @@
+[
+  "crates/codecallnavigator-engine/src/analyzers/java/execution_tests.rs",
+  "crates/codecallnavigator-engine/tests/csharp_flows.rs",
+  "crates/codecallnavigator-engine/tests/typescript_facts.rs",
+  "crates/codecallnavigator-engine/tests/support/compiler_expansion.rs"
+]

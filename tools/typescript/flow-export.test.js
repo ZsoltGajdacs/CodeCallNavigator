@@ -6,18 +6,27 @@ const os=require('node:os');
 const path=require('node:path');
 const cp=require('node:child_process');
 const modules=process.env.CODECALLNAVIGATOR_TS_NODE_MODULES || (process.env.CODECALLNAVIGATOR_TEST_TYPESCRIPT_ROOT && path.dirname(process.env.CODECALLNAVIGATOR_TEST_TYPESCRIPT_ROOT)) || path.resolve(__dirname,'../../../PacificFateMapEditor/node_modules');
-function analyze(t,source) {
+function analyze(t,source,extra={}) {
   const root=fs.mkdtempSync(path.join(os.tmpdir(),'codecallnavigator-flow-ts-'));
   t.after(()=>fs.rmSync(root,{recursive:true,force:true}));
   fs.symlinkSync(modules,path.join(root,'node_modules'),'dir');
-  fs.writeFileSync(path.join(root,'tsconfig.json'),JSON.stringify({compilerOptions:{target:'ES2023',module:'esnext',moduleResolution:'bundler',strict:true,types:[],noEmit:true},files:['main.ts']}));
+  fs.writeFileSync(path.join(root,'tsconfig.json'),JSON.stringify({compilerOptions:{target:'ES2023',module:'esnext',moduleResolution:'bundler',strict:true,types:[],noEmit:true},files:['main.ts',...Object.keys(extra)]}));
   fs.writeFileSync(path.join(root,'main.ts'),source);
+  for(const [file,content] of Object.entries(extra)) fs.writeFileSync(path.join(root,file),content);
   const output=path.join(root,'flow.json');
   cp.execFileSync(process.execPath,[path.join(__dirname,'analyze.js'),'analyze',path.join(root,'tsconfig.json'),output],{stdio:'pipe'});
   return JSON.parse(fs.readFileSync(output,'utf8'));
 }
 function functions(graph) {assert.equal(graph.flow_inventory.version,1);return graph.flow_inventory.functions;}
 function named(graph,name) {const id=graph.nodes.find(n=>n.label===name).id;return functions(graph).find(f=>f.symbol===id);}
+function* objects(root) {
+  const pending=[root];
+  while(pending.length) {
+    const value=pending.pop();
+    if(!Array.isArray(value)) yield value;
+    pending.push(...Object.values(value).filter(child=>child!==null&&typeof child==='object'));
+  }
+}
 test('flow export preserves compiler identities, original byte spans and callback ownership',t=>{
   const source='// 猫 😀\r\nfunction leaf(x:number){return x+1}\r\nexport function run(x:boolean){if(x) return leaf(1);return [1].map(()=>leaf(2));}\r\n';
   const graph=analyze(t,source);
@@ -149,4 +158,67 @@ test('opaque nullish and optional chains do not expand skipped nested arguments'
   assert.ok(flow.diagnostics.some(message=>message.includes('Nullish')));
   assert.ok(flow.diagnostics.some(message=>message.includes('Optional')));
   assert.ok(flow.diagnostics.some(message=>message.includes('Logical-assignment')));
+});
+
+test('compiler flags classify ordinary, Promise, generator and nested function execution',t=>{
+  const graph=analyze(t,'function plain(){return 1} function promised(){return Promise.resolve(1)} async function scheduled(){return 1} function* generator(){yield 1} async function* mixed(){yield 1} function outer(){async function nested(){await Promise.resolve(1)} return 1} class Box { method(){return 1} get value(){return 1} constructor(){} } const callback=()=>1; export {plain,promised,scheduled,generator,mixed,outer,Box,callback};');
+  for(const name of ['plain','promised','outer','method']) assert.equal(named(graph,name).execution,'synchronous');
+  assert.equal(named(graph,'generator').execution,'deferred');
+  assert.equal(named(graph,'value').execution,undefined);
+  for(const name of ['scheduled','mixed','nested','callback']) assert.equal(named(graph,name).execution,undefined);
+  for(const flow of functions(graph)) {
+    const kind=graph.nodes.find(node=>node.id===flow.symbol).kind;
+    if(['constructor','get','set','accessor','callback'].includes(kind)) assert.equal(flow.execution,undefined);
+  }
+});
+test('simple ordinary function calls prove only their isolated final invocation',t=>{
+  const graph=analyze(t,'function leaf(x=0){return x} export function run(parameter:number){leaf();leaf(1);return leaf(parameter);}');
+  const body=named(graph,'run').body;
+  for(const statement of body) {
+    assert.equal(statement.value.kind,'value');
+    assert.equal(statement.value.calls.length,1);
+    const site=statement.value.calls[0];
+    assert.deepEqual(site.invocation,{timing:'synchronous',dispatch:'direct',isolated_ordered:true});
+    assert.deepEqual(site.span,statement.value.span);
+  }
+});
+test('flattened nested calls remain unproven but existing ordered conditional finalizers can prove',t=>{
+  const graph=analyze(t,'function leaf(x=0){return x} export function run(flag:boolean){leaf(leaf(1));return leaf(flag?leaf(1):leaf(2));}');
+  const body=named(graph,'run').body;
+  assert.equal(body[0].value.kind,'value');
+  assert.ok(body[0].value.calls.every(site=>!site.invocation));
+  const value=body[1].value;
+  assert.equal(value.kind,'sequence');
+  assert.equal(value.items.at(-1).calls[0].invocation?.isolated_ordered,true);
+});
+
+test('runtime import aliases resolve one authored overload implementation',t=>{
+  const graph=analyze(t,'import {leaf as alias} from "./leaf"; export function run(parameter:number){return alias(parameter);}',
+    {'leaf.ts':'export function leaf(x:number):number; export function leaf(x:number){return x;}'});
+  assert.equal(named(graph,'run').body[0].value.calls[0].invocation?.isolated_ordered,true);
+});
+test('declaration-only callees remain unknown and type-only calls fail compiler validation',t=>{
+  const declaration={'ambient.d.ts':'export declare function leaf(x:number):number;'};
+  const graph=analyze(t,'import {leaf} from "./ambient"; export function run(){return leaf(1);}',declaration);
+  assert.equal(named(graph,'run').body[0].value.calls[0].invocation,undefined);
+  assert.throws(()=>analyze(t,'import type {leaf} from "./ambient"; export function run(){return leaf(1);}',declaration));
+});
+test('allocations, optional, property, getter, computed, spread and callback forms stay unproven',t=>{
+  const graph=analyze(t,'function leaf(value:any){return value} function tag(parts:TemplateStringsArray){return ""} class Box { get f(){return leaf} method(x:any){return x} } export function run(box:Box,callback:(x:number)=>number){box.method(1);box.f(1);box["method"](1);callback(1);leaf?.(1);leaf(...[1] as const);leaf(/x/);leaf({});leaf([]);leaf(new Box());leaf(()=>1);new Box();tag`x`;}');
+  const sites=[...objects(named(graph,'run').body)].filter(value=>value.targets);
+  assert.ok(sites.length);
+  for(const site of sites) assert.equal(site.invocation,undefined);
+});
+test('reassigned function bindings reuse shared write uncertainty instead of claiming direct proof',t=>{
+  const graph=analyze(t,'function leaf(x:number){return x} function other(x:number){return x+1}\n// @ts-ignore JavaScript function binding reassignment\nleaf=other;export function run(){return leaf(1);}');
+  assert.equal(named(graph,'run').body[0].value.calls[0].invocation,undefined);
+});
+
+test('generator parameter defaults are a synchronous prefix before a deferred body',t=>{
+  const runtime=cp.execFileSync(process.execPath,['-e',`const events=[];function* sample(v=events.push('default')){events.push('body');yield v;}const it=sample();const afterCall=[...events];it.next();console.log(JSON.stringify({afterCall,afterNext:events}));`],{encoding:'utf8'});
+  assert.deepEqual(JSON.parse(runtime),{afterCall:['default'],afterNext:['default','body']});
+  const graph=analyze(t,'const events:string[]=[];export function* sample(v=events.push("default")){events.push("body");yield v;}');
+  const flow=named(graph,'sample');
+  assert.equal(flow.body[0].kind,'if');
+  assert.equal(flow.execution,undefined);
 });

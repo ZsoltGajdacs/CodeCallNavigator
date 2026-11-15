@@ -162,3 +162,7 @@ fn target_index(graph: &GraphData) -> HashMap<String, &str> {
     }
     targets
 }
+
+#[cfg(test)]
+#[path = "flow_inventory_tests.rs"]
+mod tests;

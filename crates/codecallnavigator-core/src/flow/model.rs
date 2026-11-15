@@ -1,3 +1,5 @@
+mod facts;
+pub use facts::{ExecutionTiming, InvocationDispatch, InvocationFacts};
 use serde::{Deserialize, Serialize};
 
 /// Half-open UTF-8 byte offsets into the immutable analyzed source snapshot.
@@ -18,6 +20,8 @@ pub struct FlowInventory {
 #[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(default)]
 pub struct FunctionFlowIR {
+    #[serde(skip_serializing_if = "ExecutionTiming::is_unknown")]
+    pub execution: ExecutionTiming,
     pub symbol: String,
     pub file: String,
     pub build: String,
@@ -28,7 +32,7 @@ pub struct FunctionFlowIR {
     pub diagnostics: Vec<String>,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(default)]
 pub struct CallTarget {
     #[serde(
@@ -70,6 +74,8 @@ impl Default for CallTarget {
 #[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(default)]
 pub struct CallSite {
+    #[serde(skip_serializing_if = "InvocationFacts::is_empty")]
+    pub invocation: InvocationFacts,
     pub span: SourceSpan,
     pub label: String,
     pub targets: Vec<CallTarget>,

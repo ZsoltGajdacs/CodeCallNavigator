@@ -124,8 +124,8 @@ class JavaAdapterCapabilityTests(unittest.TestCase):
             (distribution / "lib").mkdir()
             jar = distribution / "lib/codecallnavigator-bytecode.jar"
             with zipfile.ZipFile(jar, "w") as archive:
-                archive.writestr("codecallnavigator/bytecode/SourceInventory.class", b"kind_v8")
-            with self.assertRaisesRegex(RuntimeError, "lacks kind_v8"):
+                archive.writestr("codecallnavigator/bytecode/SourceInventory.class", b"kind_v9")
+            with self.assertRaisesRegex(RuntimeError, "lacks kind_v9"):
                 PACKAGE.verify_java_adapter(distribution)
 
     def test_complete_adapter_with_legacy_inventory_marker_is_rejected(self):
@@ -139,10 +139,22 @@ class JavaAdapterCapabilityTests(unittest.TestCase):
                 for name in original.namelist():
                     contents = original.read(name)
                     if name == "codecallnavigator/bytecode/SourceInventory.class":
-                        self.assertIn(b"kind_v8", contents)
-                        contents = contents.replace(b"kind_v8", b"kind_v7")
+                        self.assertIn(b"kind_v9", contents)
+                        contents = contents.replace(b"kind_v9", b"kind_v8")
                     legacy.writestr(name, contents)
-            with self.assertRaisesRegex(RuntimeError, "lacks kind_v8"):
+            with self.assertRaisesRegex(RuntimeError, "lacks kind_v9"):
+                PACKAGE.verify_java_adapter(distribution)
+
+    def test_complete_v8_adapter_requires_compiler_fact_upgrade(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            distribution = Path(temporary)
+            (distribution / "lib").mkdir()
+            names = ("SourceInventory", "LambdaCorrelation", "LambdaCompilation", "LambdaLowering",
+                     "LambdaSourceSite", "CompiledClassModel", "FlowCompilerFacts", "FlowAttribution")
+            with zipfile.ZipFile(distribution / "lib/codecallnavigator-bytecode.jar", "w") as archive:
+                for name in names:
+                    archive.writestr("codecallnavigator/bytecode/" + name + ".class", b"kind_v8")
+            with self.assertRaisesRegex(RuntimeError, "kind_v9"):
                 PACKAGE.verify_java_adapter(distribution)
 
     def test_invalid_adapter_archive_has_actionable_error(self):

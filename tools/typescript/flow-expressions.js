@@ -1,6 +1,7 @@
 'use strict';
 const {isCallable}=require('./syntax.js');
 const {opaqueExpression}=require('./flow-operators.js');
+const {finalInvocation}=require('./flow-invocation.js');
 class FlowExpressions {
   constructor(source,body) {this.source=source;this.ts=source.ts;this.body=body;}
   value(node) {
@@ -19,7 +20,8 @@ class FlowExpressions {
     const kind=this.binaryKind(node);
     if(kind) return {kind,span,left:this.read(node.left),right:this.read(node.right)};
     if(this.hasNestedBranch(node)) return this.sequence(node);
-    return this.value(node);
+    const value=this.value(node);
+    return ts.isCallExpression(node)?finalInvocation(this.source,node,value):value;
   }
   binaryKind(node) {
     if(!this.ts.isBinaryExpression(node)) return undefined;
@@ -65,7 +67,7 @@ class FlowExpressions {
   }
   sequence(node) {
     const final={kind:'value',text:this.source.text(node),span:this.source.span(node),calls:this.source.ownCalls(node),regions:[]};
-    return {kind:'sequence',span:this.source.span(node),items:[...this.operands(node).map(child=>this.read(child)),final]};
+    return {kind:'sequence',span:this.source.span(node),items:[...this.operands(node).map(child=>this.read(child)),this.ts.isCallExpression(node)?finalInvocation(this.source,node,final,true):final]};
   }
   regions(node) {
     const regions=[];

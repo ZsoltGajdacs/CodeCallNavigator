@@ -239,7 +239,7 @@ result=subprocess.run([{real_dotnet!r},*arguments])
 if result.returncode==0 and len(arguments)>1 and arguments[1]=="map" and "-o" in arguments:
     output=Path(arguments[arguments.index("-o")+1])
     value=json.loads(output.read_text())
-    assert value["flowFactsVersion"]=="1" and value["flowInventory"]["functions"]
+    assert value["flowFactsVersion"]=="2" and value["flowInventory"]["functions"]
     original=output.read_bytes()
     if os.environ.get("TASK22_FLOW_RAW_CAPTURE"):
         Path(os.environ["TASK22_FLOW_RAW_CAPTURE"]).write_bytes(original)

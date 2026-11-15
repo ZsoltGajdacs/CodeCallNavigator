@@ -85,7 +85,10 @@ final class FlowExpressions {
         }
         var regions = new ArrayList<Map<String, Object>>();
         if (operation != null) regions.add(reactorStage(tree, operation));
-        return sequence(tree, parts, value(tree, List.of(call(tree, false)), regions));
+        var site = call(tree, false);
+        // This final Value has exactly one own call; Reactor regions block isolated proof.
+        if (regions.isEmpty()) FlowCompilerFacts.invocation(source, tree, site);
+        return sequence(tree, parts, value(tree, List.of(site), regions));
     }
     private Map<String, Object> creation(NewClassTree tree) {
         var parts = new ArrayList<Map<String, Object>>();

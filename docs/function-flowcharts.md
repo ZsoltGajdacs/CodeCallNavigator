@@ -24,6 +24,9 @@ contents. A stale graph notice means a refresh is needed to show source changes.
 Opening or following charts does not compile the project. Older graph caches remain
 usable for graph exploration; refresh them to collect function-flow metadata.
 AI explanations and recursive call inlining are tracked separately in TASK-22.
+The shared expansion model and algorithm are implemented under TASK-22.7;
+CLI and desktop expand/collapse controls are the separate TASK-22.8 delivery.
+Following a target currently opens its own function chart.
 
 ## Compare saved function flows
 

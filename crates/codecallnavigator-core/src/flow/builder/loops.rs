@@ -2,7 +2,7 @@ use super::{Builder, Completion, Exit, StepSpec};
 use crate::flow::*;
 use anyhow::Result;
 
-impl Builder {
+impl Builder<'_> {
     pub(super) fn loop_statement(
         &mut self,
         statement: &Statement,

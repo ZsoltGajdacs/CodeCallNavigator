@@ -103,6 +103,11 @@ class CallAtlasPatchMigration(PatchMigrationCases, unittest.TestCase):
         self.assertEqual(hashlib.sha256(checkpoint.read_bytes()).hexdigest(),
                          baseline["patch_sha256"])
 
+    def test_pre_execution_checkpoint_preserves_the_cleanup_baseline(self):
+        checkpoint = ROOT / self.spec["pre_execution_patch"]
+        self.assertEqual(hashlib.sha256(checkpoint.read_bytes()).hexdigest(),
+                         "c36315a4e60f2a0a547483bb4c253add2ed3dad9b9581329384004400bbaf572")
+
 
 if __name__ == "__main__":
     unittest.main()

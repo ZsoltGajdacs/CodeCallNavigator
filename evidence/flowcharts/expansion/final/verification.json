@@ -1,0 +1,151 @@
+{
+  "scope": "Independent terminal evidence audit; no repeated tests or source changes",
+  "final_run": "target/verification/task22-final-full-r4",
+  "stages_passed": 133,
+  "stages_failed": 0,
+  "selection": {
+    "unit": {
+      "selected_registrations": 476,
+      "selected_gates": 0,
+      "by_runner": {
+        "node": 2,
+        "python": 58,
+        "rust": 416
+      },
+      "not_run_registrations": 0
+    },
+    "integration": {
+      "selected_registrations": 882,
+      "selected_gates": 1,
+      "by_runner": {
+        "node": 118,
+        "python": 266,
+        "rust": 498
+      },
+      "not_run_registrations": 0
+    },
+    "acceptance": {
+      "selected_registrations": 86,
+      "selected_gates": 8,
+      "by_runner": {
+        "rust": 86
+      },
+      "not_run_registrations": 0
+    },
+    "performance": {
+      "selected_registrations": 3,
+      "selected_gates": 2,
+      "by_runner": {
+        "rust": 3
+      },
+      "not_run_registrations": 0
+    }
+  },
+  "unique_registration_union": 1447,
+  "unique_gate_union": 11,
+  "all_selected_gate_stages_present_and_passed": true,
+  "counting_limit": "1447 are unique inventory registrations, not an asserted passing-test count. Raw integration Rust summaries include nested/self-test output (499 passed summary entries versus498 selected Rust registrations); duplicate names across target artifacts and child probes must not be inflated into distinct tests. All selected category execution stages passed.",
+  "source_hashes": {
+    "count": 108,
+    "before_equals_after": true,
+    "current_files_match": true
+  },
+  "timing_seconds": {
+    "compile": 352.132,
+    "setup": 9.944,
+    "test": 1325.84,
+    "cleanup": 45.049,
+    "other": 146.141
+  },
+  "recorded_stage_seconds": 1879.106,
+  "cleanup": [
+    {
+      "category": "acceptance",
+      "reclaimed_bytes": 1733556662,
+      "retained_bytes": 178727250,
+      "removed_paths_currently_absent": true,
+      "retention": [
+        {
+          "path": "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/dist/CodeCallNavigator.previous-20261115-192729.app",
+          "operation": "retain",
+          "status": "retained",
+          "estimated_bytes_before": 93218084,
+          "estimated_bytes_after": 93218084,
+          "reason": "Keep newest previous package"
+        },
+        {
+          "path": "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/dist/CodeGraph.previous-20261111-092521.app",
+          "operation": "retain",
+          "status": "retained",
+          "estimated_bytes_before": 85509166,
+          "estimated_bytes_after": 85509166,
+          "reason": "Keep newest previous package"
+        }
+      ]
+    },
+    {
+      "category": "checks",
+      "reclaimed_bytes": 459676841,
+      "retained_bytes": 0,
+      "removed_paths_currently_absent": true,
+      "retention": []
+    },
+    {
+      "category": "integration",
+      "reclaimed_bytes": 1607849218,
+      "retained_bytes": 0,
+      "removed_paths_currently_absent": true,
+      "retention": []
+    },
+    {
+      "category": "performance",
+      "reclaimed_bytes": 1515042015,
+      "retained_bytes": 0,
+      "removed_paths_currently_absent": true,
+      "retention": []
+    },
+    {
+      "category": "unit",
+      "reclaimed_bytes": 4201729814,
+      "retained_bytes": 0,
+      "removed_paths_currently_absent": true,
+      "retention": []
+    }
+  ],
+  "full_cleanup_status": "passed",
+  "private_input": {
+    "original_unchanged": true,
+    "owned_copy_absent": true,
+    "reclaimed_bytes": 270438581,
+    "cleanup_status": "passed"
+  },
+  "prior_full_attempts": [
+    {
+      "run": "task22-final-full",
+      "failed_stages": [
+        "clippy"
+      ],
+      "not_run_stages": 39,
+      "passed_stages": 92
+    },
+    {
+      "run": "task22-final-full-r2",
+      "failed_stages": [
+        "clippy"
+      ],
+      "not_run_stages": 39,
+      "passed_stages": 92
+    },
+    {
+      "run": "task22-final-full-r3",
+      "failed_stages": [
+        "integration-test-rust"
+      ],
+      "not_run_stages": 30,
+      "passed_stages": 101
+    }
+  ],
+  "native_scope": "Final native C# desktop and comparison desktop result.json reports passed, both themes; public-fixture reports are archived. Root performed visual inspection. This audit does not claim a second native execution or independent screenshot inspection.",
+  "limitations": "No new behavioral gap found in this terminal evidence audit. Final pre-commit safeguard, Backlog closure and commit remain Root-owned. Historical failed runs remain failed and later stages remain not run.",
+  "archive_policy": "Raw JSON/log/stderr reports only; no private graph/artifact/profile/data payloads, binaries, packages or screenshots."
+}

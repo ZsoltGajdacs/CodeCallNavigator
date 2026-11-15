@@ -2,6 +2,7 @@
 const {FlowSource}=require('./flow-source.js');
 const {FlowStatements}=require('./flow-statements.js');
 const {diagnostics}=require('./flow-diagnostics.js');
+const {execution}=require('./flow-execution.js');
 function flowInventory(bindings) {
   const functions=[];
   for(const file of bindings.files) {
@@ -14,8 +15,11 @@ function flowInventory(bindings) {
       source.limits.reset();
       const body=statements.functionBody(declaration);
       const messages=[...diagnostics(bindings.ts,declaration),...source.limits.messages];
-      functions.push({symbol:node.id,file:node.file,build:node.build,project:node.project,language:'typescript',span:source.span(declaration),
-        body,diagnostics:messages});
+      const functionFlow={symbol:node.id,file:node.file,build:node.build,project:node.project,language:'typescript',span:source.span(declaration),
+        body,diagnostics:messages};
+      const timing=execution(bindings.ts,declaration);
+      if(timing) functionFlow.execution=timing;
+      functions.push(functionFlow);
     }
   }
   return {version:1,functions};

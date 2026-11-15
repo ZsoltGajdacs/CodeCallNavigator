@@ -274,15 +274,15 @@ def verify_java_adapter(distribution):
     package = "codecallnavigator/bytecode/"
     required = {package + name + ".class" for name in
                 ("SourceInventory", "LambdaCorrelation", "LambdaCompilation",
-                 "LambdaLowering", "LambdaSourceSite", "CompiledClassModel")}
+                 "LambdaLowering", "LambdaSourceSite", "CompiledClassModel", "FlowCompilerFacts", "FlowAttribution")}
     try:
         with zipfile.ZipFile(jar) as archive:
             complete = required.issubset(archive.namelist())
-            current = complete and b"kind_v8" in archive.read(package + "SourceInventory.class")
+            current = complete and b"kind_v9" in archive.read(package + "SourceInventory.class")
     except (OSError, zipfile.BadZipFile) as error:
         raise RuntimeError("Java adapter is missing or invalid; rebuild matching analyzer resources") from error
     if not current:
-        raise RuntimeError("Java adapter lacks kind_v8 compiled/source lambda correlation; rebuild matching analyzer resources")
+        raise RuntimeError("Java adapter lacks kind_v9 compiler execution/invocation facts; rebuild matching analyzer resources")
 
 
 def make_engine(destination):

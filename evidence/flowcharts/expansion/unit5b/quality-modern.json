@@ -1,0 +1,101 @@
+{
+  "status": "passed",
+  "reviews": [
+    {
+      "score": 10.0,
+      "review": [],
+      "path": "crates/codecallnavigator-core/src/flow/builder.rs",
+      "applicability": "reviewed"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "path": "crates/codecallnavigator-core/src/flow/builder/expansion.rs",
+      "applicability": "reviewed"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "path": "crates/codecallnavigator-core/src/flow/builder/expansion/attempt.rs",
+      "applicability": "reviewed"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "path": "crates/codecallnavigator-core/src/flow/builder/expansion/budget.rs",
+      "applicability": "reviewed"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "path": "crates/codecallnavigator-core/src/flow/builder/expansion/child.rs",
+      "applicability": "reviewed"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "path": "crates/codecallnavigator-core/src/flow/builder/expansion/pending.rs",
+      "applicability": "reviewed"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "path": "crates/codecallnavigator-core/src/flow/builder/expansion/prepared.rs",
+      "applicability": "reviewed"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "path": "crates/codecallnavigator-core/src/flow/builder/expansion/retry.rs",
+      "applicability": "reviewed"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "path": "crates/codecallnavigator-core/src/flow/builder/expansion/run.rs",
+      "applicability": "reviewed"
+    },
+    {
+      "score": null,
+      "review": [],
+      "path": "crates/codecallnavigator-core/src/flow/expanded.rs",
+      "applicability": "declarations_only"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "path": "crates/codecallnavigator-core/src/flow/expanded/limits.rs",
+      "applicability": "reviewed"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "path": "crates/codecallnavigator-core/src/flow/expanded/request.rs",
+      "applicability": "reviewed"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "path": "crates/codecallnavigator-core/tests/flow_expansion.rs",
+      "applicability": "reviewed"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "path": "crates/codecallnavigator-core/tests/flow_expansion/budgets.rs",
+      "applicability": "reviewed"
+    }
+  ],
+  "safeguard": {
+    "results": [],
+    "quality_gates": "passed",
+    "metadata": {
+      "checked-file-count": 88,
+      "code-health-eligible-file-count": 88,
+      "status": "no-issues-found",
+      "total-modified-file-count": 182
+    }
+  },
+  "errors": [],
+  "skipped_files": []
+}

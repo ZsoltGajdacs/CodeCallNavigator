@@ -399,6 +399,7 @@ fn flow_graph() -> GraphData {
                 kind: StatementKind::Action {
                     text: "fetch".into(),
                     calls: vec![CallSite {
+                        invocation: Default::default(),
                         span: SourceSpan { start: 1, end: 5 },
                         label: "fetch".into(),
                         targets: vec![],

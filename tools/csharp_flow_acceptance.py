@@ -42,7 +42,7 @@ def command(arguments, operation):
 def map_project(cli, project, output):
     command(["dotnet", str(cli), "map", str(project), "-o", str(output)], f"CallAtlas map for {project}")
     graph = json.loads(output.read_text())
-    require(graph.get("flowFactsVersion") == "1", "CLI has no current flow capability; rebuild Release CLI")
+    require(graph.get("flowFactsVersion") == "2", "CLI has no current flow capability; rebuild Release CLI")
     require(graph.get("flowInventory", {}).get("version") == 1, "Unsupported flow inventory")
     source_metadata(graph)
     return graph

@@ -1,0 +1,11 @@
+{
+  "native_projection_equal": true,
+  "flow_equal_excluding_optional_facts": true,
+  "nodes": 12,
+  "edges": 5,
+  "functions": 11,
+  "top_level_execution": "synchronous",
+  "before_dll_sha256": "a05006a62445a6ec25ddb5f6b3619001f000fb20ad3cb39da87a8192e5ffe5d1",
+  "after_dll_sha256": "6e803a8fe8ecc87936d97d3e3ca98a69f67cf841df8f5a9032c47a98ad343f79",
+  "old_binary_unchanged": true
+}
