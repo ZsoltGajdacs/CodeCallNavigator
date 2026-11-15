@@ -73,6 +73,28 @@ impl<'a> View<'a> {
         }))
     }
 
+    /// Decode only the selected compiler facts; expansion owns source-range and budget checks.
+    pub fn input(&self, symbol: &str) -> Result<Option<Input<'a>>, Unavailable> {
+        let Some(facts) = self.facts(symbol)? else {
+            return Ok(None);
+        };
+        let mut function = self.decode(facts.function)?;
+        self.targets(&mut function)?;
+        Ok(Some(Input {
+            function,
+            content: facts.content,
+        }))
+    }
+
+    fn decode(&self, raw: &Value) -> Result<FunctionFlowIR, Unavailable> {
+        FunctionFlowIR::deserialize(raw).map_err(|error| {
+            Unavailable::new(
+                Reason::InvalidFlow,
+                format!("Malformed saved flow: {error}"),
+            )
+        })
+    }
+
     fn prepare(&self, symbol: &str) -> Result<Option<Ready<'a>>, Unavailable> {
         let Some(Facts {
             node,
@@ -82,12 +104,7 @@ impl<'a> View<'a> {
         else {
             return Ok(None);
         };
-        let mut function = FunctionFlowIR::deserialize(raw).map_err(|error| {
-            Unavailable::new(
-                Reason::InvalidFlow,
-                format!("Malformed saved flow: {error}"),
-            )
-        })?;
+        let mut function = self.decode(raw)?;
         let targets = self.targets(&mut function)?;
         let chart = flow::checked_chart(&function, content)
             .map_err(|error| Unavailable::new(Reason::InvalidFlow, format!("{error:#}")))?;

@@ -137,6 +137,7 @@ pub(super) fn validate(request: &Request) -> query::Result<()> {
             "Unsupported freshness observation version",
         ));
     }
+    super::flow_expansion::validate(request)?;
     if matches!(
         request.query,
         query::Query::RenderSelection { .. } | query::Query::Inspect { .. }

@@ -2,6 +2,7 @@
 pub(crate) mod address;
 pub(crate) mod chart;
 pub(crate) mod details;
+mod expansion;
 pub(crate) mod source;
 use crate::{app::State, flow_workspace::Session, theme};
 use rune::{Cx, El, Phase, col, el, row, text};
@@ -37,17 +38,46 @@ pub fn view(state: &State, cx: &mut Cx<State>) -> El {
         .child(notice(state, session, &k))
         .child(body)
         .child(details::view(state, session, address::Address::Single, &k));
-    crate::view::with_overlays(state, &k, content, Vec::new())
+    crate::view::with_overlays(state, &k, content, Vec::new()).motion(rune::Spring::NONE)
 }
 fn header(state: &State, name: &str, k: &Kit, titlebar_inset: f32) -> El {
-    row()
+    col()
         .key("flow-toolbar")
         .w_full()
-        .padding(10.0)
-        .pl(10.0 + titlebar_inset)
-        .gap(10.0)
+        .px(10.0)
+        .py(8.0)
+        .gap(6.0)
+        .child(navigation(state, k, titlebar_inset))
+        .child(
+            row()
+                .w_full()
+                .gap(8.0)
+                .center_y()
+                .child(
+                    text(name)
+                        .font(k.ty.ui_medium)
+                        .color(k.c.text_base)
+                        .w(0.0)
+                        .grow(1.0)
+                        .min_w(0.0)
+                        .truncate()
+                        .help(name),
+                )
+                .child(expansion::controls(state, k))
+                .child(
+                    Button::new("Fit")
+                        .on_press(State::fit_flow)
+                        .build(k)
+                        .key("flow-fit"),
+                ),
+        )
+}
+fn navigation(state: &State, k: &Kit, titlebar_inset: f32) -> El {
+    row()
+        .w_full()
+        .pl(titlebar_inset)
+        .gap(8.0)
         .center_y()
-        .flex_wrap()
         .child(crate::view::search_button(k))
         .child(crate::view::comparison_button(k))
         .child(
@@ -64,22 +94,8 @@ fn header(state: &State, name: &str, k: &Kit, titlebar_inset: f32) -> El {
                 .build(k)
                 .key("flow-back"),
         )
-        .child(
-            text(name)
-                .font(k.ty.ui_medium)
-                .color(k.c.text_base)
-                .grow(1.0)
-                .min_w(0.0)
-                .truncate()
-                .help(name),
-        )
-        .child(
-            Button::new("Fit")
-                .on_press(State::fit_flow)
-                .build(k)
-                .key("flow-fit"),
-        )
 }
+
 fn notice(state: &State, session: &Session, k: &Kit) -> El {
     let mut content = col().w_full().px(12.0).gap(3.0);
     let explanation = "Analyzed source snapshot · source-derived paths; callbacks and exceptions may be conditional";
@@ -95,12 +111,12 @@ fn notice(state: &State, session: &Session, k: &Kit) -> El {
     );
     if let Some(ready) = &session.ready {
         content = content.child(
-            text(&ready.chart.file)
+            text(session.displayed_file().unwrap_or(&ready.chart.file))
                 .font(k.ty.small)
                 .color(k.c.text_muted)
                 .w_full()
                 .truncate()
-                .help(&ready.chart.file),
+                .help(session.displayed_file().unwrap_or(&ready.chart.file)),
         );
         if ready.chart.partial {
             content = content.child(
@@ -110,7 +126,11 @@ fn notice(state: &State, session: &Session, k: &Kit) -> El {
             );
         }
     }
-    content
+    if session.expansion_mode() {
+        content.child(expansion::notice(session, k))
+    } else {
+        content
+    }
 }
 fn divider(k: &Kit) -> El {
     el().key("flow-divider")

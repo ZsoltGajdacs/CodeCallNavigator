@@ -20,6 +20,7 @@ enum Command {
     Finish(Box<Report>),
     External(super::comparison::protocol::Request),
     FinishComparison(Box<super::comparison::report::Report>),
+    FinishExpansion(Box<super::expansion::report::Report>),
 }
 
 pub(super) enum Reply {
@@ -121,6 +122,12 @@ impl Worker {
         self.receiver.try_recv().ok()
     }
 
+    pub fn finish_expansion(&self, report: super::expansion::report::Report) -> Result<()> {
+        self.sender
+            .send(Command::FinishExpansion(Box::new(report)))
+            .context("Expansion file worker stopped")
+    }
+
     pub fn cancel_wait(&self) {
         self.stopped.store(true, Ordering::Release);
     }
@@ -130,7 +137,10 @@ impl FileWorker {
     fn work(self, commands: mpsc::Receiver<Command>, replies: mpsc::Sender<Reply>) {
         let mut sequence = 0;
         while let Ok(command) = commands.recv() {
-            let terminal = matches!(command, Command::Finish(_) | Command::FinishComparison(_));
+            let terminal = matches!(
+                command,
+                Command::Finish(_) | Command::FinishComparison(_) | Command::FinishExpansion(_)
+            );
             let reply = match command {
                 Command::WindowSetup(request) => Reply::WindowSetup(self.exchange(
                     "window-request.json",
@@ -160,6 +170,9 @@ impl FileWorker {
                     Reply::Finished(write_json(&self.directory, "report.json", &report))
                 }
                 Command::Finish(report) => {
+                    Reply::Finished(write_json(&self.directory, "report.json", &report))
+                }
+                Command::FinishExpansion(report) => {
                     Reply::Finished(write_json(&self.directory, "report.json", &report))
                 }
             };

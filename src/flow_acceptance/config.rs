@@ -23,12 +23,14 @@ pub(super) struct Ordinary {
 pub(super) enum Configuration {
     Single(Ordinary),
     Comparison(Box<super::comparison::config::Configuration>),
+    Expansion(Box<super::expansion::config::Configuration>),
 }
 impl Configuration {
     pub fn timeout(&self) -> Duration {
         match self {
             Self::Single(config) => config.timeout(),
             Self::Comparison(config) => config.timeout(),
+            Self::Expansion(config) => config.timeout(),
         }
     }
     pub fn load(directory: &Path) -> Result<Self> {
@@ -48,6 +50,9 @@ impl Configuration {
             Some(2) => super::comparison::config::Configuration::decode(&bytes)
                 .map(Box::new)
                 .map(Self::Comparison),
+            Some(3) => super::expansion::config::Configuration::decode(&bytes)
+                .map(Box::new)
+                .map(Self::Expansion),
             _ => anyhow::bail!("Unsupported flow acceptance configuration version"),
         }
     }

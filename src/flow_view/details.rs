@@ -45,6 +45,23 @@ pub(crate) fn view(state: &State, session: &Session, address: Address, k: &Kit) 
                 .color(k.c.text_muted),
         );
     };
+    content = content.child(selected_label(session, step, address, k));
+    if address == Address::Single && session.expanded_flow().is_some() {
+        content = content.child(super::expansion::details(state, session, k));
+    }
+    for (index, call) in step.calls.iter().enumerate() {
+        content = content.child(call_details(state, Call { site: call, index }, address, k));
+    }
+    content
+}
+
+fn selected_label(
+    session: &Session,
+    step: &codecallnavigator::flow::FlowStep,
+    address: Address,
+    k: &Kit,
+) -> El {
+    let mut content = col().w_full().gap(4.0);
     content = content.child(
         text(&step.label)
             .font(k.ty.small_medium)
@@ -61,9 +78,6 @@ pub(crate) fn view(state: &State, session: &Session, address: Address, k: &Kit) 
                 .w_full()
                 .wrap(),
         );
-    }
-    for (index, call) in step.calls.iter().enumerate() {
-        content = content.child(call_details(state, Call { site: call, index }, address, k));
     }
     content
 }
@@ -95,41 +109,71 @@ fn call_details(state: &State, selected: Call<'_>, address: Address, k: &Kit) ->
         );
     }
     for (target_index, target) in call.targets.iter().enumerate() {
-        let symbol = target.symbol.clone();
-        let summary = address.target(state, &symbol);
-        let mut help = format!("{}\n{}", target.symbol, target.provenance);
-        let explanation = address.target_help(&summary);
-        if !explanation.is_empty() {
-            help.push('\n');
-            help.push_str(explanation);
+        content = content.child(target_button(
+            state,
+            Target {
+                call_index,
+                target_index,
+                target,
+            },
+            address,
+            k,
+        ));
+        if address == Address::Single
+            && state
+                .flow_workspace
+                .current
+                .as_ref()
+                .is_some_and(|session| session.expanded_flow().is_some())
+        {
+            content = content.child(super::expansion::target(state, call_index, target_index, k));
         }
-        let label = format!(
-            "{} · {}",
-            summary.name,
-            if target.kind == "call" {
-                target.certainty.clone()
-            } else {
-                format!("{} · {}", target.certainty, target.kind)
-            }
-        );
-        content = content.child(
-            Button::new(label.clone())
-                .label_with(move |font, ink| {
-                    text(label)
-                        .key("label")
-                        .font(font)
-                        .color(ink)
-                        .w_full()
-                        .truncate_middle()
-                })
-                .variant(ButtonVariant::Outline)
-                .help(help)
-                .disabled(address.target_disabled(&summary))
-                .on_press(move |s: &mut State| address.follow(s, symbol.clone()))
-                .build(k)
-                .w_full()
-                .key(address.key(&format!("target-{call_index}-{target_index}"))),
-        );
     }
     content
+}
+
+struct Target<'a> {
+    call_index: usize,
+    target_index: usize,
+    target: &'a codecallnavigator::flow::CallTarget,
+}
+fn target_button(state: &State, selected: Target<'_>, address: Address, k: &Kit) -> El {
+    let Target {
+        call_index,
+        target_index,
+        target,
+    } = selected;
+    let symbol = target.symbol.clone();
+    let summary = address.target(state, &symbol);
+    let mut help = format!("{}\n{}", target.symbol, target.provenance);
+    let explanation = address.target_help(&summary);
+    if !explanation.is_empty() {
+        help.push('\n');
+        help.push_str(explanation);
+    }
+    let label = format!(
+        "{} · {}",
+        summary.name,
+        if target.kind == "call" {
+            target.certainty.clone()
+        } else {
+            format!("{} · {}", target.certainty, target.kind)
+        }
+    );
+    Button::new(label.clone())
+        .label_with(move |font, ink| {
+            text(label)
+                .key("label")
+                .font(font)
+                .color(ink)
+                .w_full()
+                .truncate_middle()
+        })
+        .variant(ButtonVariant::Outline)
+        .help(help)
+        .disabled(address.target_disabled(&summary))
+        .on_press(move |state: &mut State| address.follow(state, symbol.clone()))
+        .build(k)
+        .w_full()
+        .key(address.key(&format!("target-{call_index}-{target_index}")))
 }

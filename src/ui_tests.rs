@@ -748,3 +748,5 @@ mod flow_comparison_catalog;
 mod flow_comparison_layout;
 
 mod flow_comparison_outcomes;
+
+mod flow_expansion;

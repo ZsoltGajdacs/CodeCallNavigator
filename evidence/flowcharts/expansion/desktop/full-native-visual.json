@@ -1,0 +1,50 @@
+{
+  "status": "passed",
+  "inspector": "Root",
+  "scope": "Six actual owned-window captures on corrected boxed-Mode source; comparison review covers restored-pair captures. Other comparison checkpoints are asserted by the native gate.",
+  "input_model": "Synthetic production Runtime handlers, actual native Metal Drawn frames; no claim about OS mouse delivery.",
+  "captures": [
+    {
+      "gate": "csharp_desktop",
+      "theme": "dark",
+      "capture": "target/verification/task22-8-full-r2/acceptance/gate-csharp_desktop_acceptance/dark/native.png",
+      "sha256": "cd9bf1a5d97d0ab9d9663217baeeb4bf9f23c213a7335a8b696606a9bb3feb23",
+      "observation": "Ordinary toolbar fits; visible cached source highlight at line116 and target details remain available."
+    },
+    {
+      "gate": "csharp_desktop",
+      "theme": "light",
+      "capture": "target/verification/task22-8-full-r2/acceptance/gate-csharp_desktop_acceptance/light/native.png",
+      "sha256": "acdd74bee00adc4aba12409baba7bb40757e118bffdeb9966842c287e86137e6",
+      "observation": "Ordinary toolbar fits; visible cached source highlight at line116 and target details remain available."
+    },
+    {
+      "gate": "flow_expansion_desktop",
+      "theme": "dark",
+      "capture": "target/verification/task22-8-full-r2/acceptance/gate-flow_expansion_desktop_acceptance/dark/native.png",
+      "sha256": "66a16c42e451326478134722254b1089297f5fba38d6519e0edd098e8177279e",
+      "observation": "Expanded toolbar fits; visible cached Helpers.cs line55 highlight and explicit Expand here/Collapse this occurrence controls."
+    },
+    {
+      "gate": "flow_expansion_desktop",
+      "theme": "light",
+      "capture": "target/verification/task22-8-full-r2/acceptance/gate-flow_expansion_desktop_acceptance/light/native.png",
+      "sha256": "bf84eb9b8e19eb020625e0190dd01ddc64ebde57236de8fa9d962aa17cedcc11",
+      "observation": "Expanded toolbar fits; visible cached Helpers.cs line55 highlight and explicit Expand here/Collapse this occurrence controls."
+    },
+    {
+      "gate": "flow_comparison_desktop",
+      "theme": "dark",
+      "capture": "target/verification/task22-8-full-r2/acceptance/gate-flow_comparison_desktop_acceptance/dark/native-restored-pair.png",
+      "sha256": "09863d688afbd3d95df3dc3b192336ce2d9e2d5109c1fbe9d4d3b3c2745c705c",
+      "observation": "Restored comparison shows both revision charts, active After source with line224 highlight and bounded target details."
+    },
+    {
+      "gate": "flow_comparison_desktop",
+      "theme": "light",
+      "capture": "target/verification/task22-8-full-r2/acceptance/gate-flow_comparison_desktop_acceptance/light/native-restored-pair.png",
+      "sha256": "d76fef189453a4402b04d4ec7d437daedd1b7f876a7ee14508fe668f26186889",
+      "observation": "Restored comparison shows both revision charts, active After source with line224 highlight and bounded target details."
+    }
+  ]
+}

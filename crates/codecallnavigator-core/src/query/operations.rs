@@ -1,10 +1,11 @@
 //! Pure operations over one immutable graph generation.
 use super::{
-    Category, Error, Query, Result, Selection, SourceOrigin, select, select_render, selection::node,
+    Category, Error, Limits, Query, Result, Selection, SourceOrigin, select, select_render,
+    selection::node,
 };
 use crate::{
     flow,
-    graph::{Direction, GraphIndex},
+    graph::{Direction, Filter, GraphIndex},
     search::{NameSearchIndex, NameSearchQuery, SearchCategory, SearchTarget},
 };
 use serde_json::{Value, json};
@@ -13,7 +14,6 @@ pub fn execute(graph: &GraphIndex, query: &Query) -> Result<Value> {
     match query {
         Query::Status => Ok(status(graph)),
         Query::Snapshot => encode(&*graph.data),
-        Query::Symbol { symbol } => encode(&graph.data.nodes[node(graph, symbol)? as usize]),
         Query::Search {
             text,
             category,
@@ -47,19 +47,17 @@ pub fn execute(graph: &GraphIndex, query: &Query) -> Result<Value> {
             symbol,
             filter,
             limits,
-        } => {
-            let selection = super::SelectionKind::Neighborhood {
-                symbols: vec![symbol.clone()],
-                direction: Direction::Both,
-                depth: 1,
-            };
-            section(graph, &select(graph, &selection, filter, *limits)?)
-        }
-        Query::Source {
-            symbol,
+        } => neighborhood(graph, symbol, filter, *limits),
+        Query::Symbol { .. }
+        | Query::Source {
             origin: SourceOrigin::Analyzed,
-        } => source(graph, symbol),
-        Query::Flow { symbol } => function_flow(graph, symbol),
+            ..
+        }
+        | Query::Flow { .. } => symbol_query(graph, query),
+        Query::FlowExpansion(_) => Err(Error::new(
+            "invalid_request",
+            "Flow expansion requires a generation-bound saved artifact",
+        )),
         Query::Source {
             origin: SourceOrigin::Live,
             ..
@@ -73,6 +71,35 @@ pub fn execute(graph: &GraphIndex, query: &Query) -> Result<Value> {
         | Query::RenderSelection { layer: Some(_), .. } => Err(Error::new(
             "invalid_request",
             "Live filesystem queries require engine handling",
+        )),
+    }
+}
+
+fn neighborhood(
+    graph: &GraphIndex,
+    symbol: &str,
+    filter: &Filter,
+    limits: Limits,
+) -> Result<Value> {
+    let selection = super::SelectionKind::Neighborhood {
+        symbols: vec![symbol.into()],
+        direction: Direction::Both,
+        depth: 1,
+    };
+    section(graph, &select(graph, &selection, filter, limits)?)
+}
+
+fn symbol_query(graph: &GraphIndex, query: &Query) -> Result<Value> {
+    match query {
+        Query::Symbol { symbol } => encode(&graph.data.nodes[node(graph, symbol)? as usize]),
+        Query::Source {
+            symbol,
+            origin: SourceOrigin::Analyzed,
+        } => source(graph, symbol),
+        Query::Flow { symbol } => function_flow(graph, symbol),
+        _ => Err(Error::new(
+            "invalid_request",
+            "Expected a saved symbol operation",
         )),
     }
 }

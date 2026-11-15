@@ -136,6 +136,64 @@ escaped JSON and its newline, is limited to 24 MiB. Catalogs page whole records;
 details return the complete pair or `response_too_large`. Source and sides are
 never silently truncated. Cancellation and Git deadlines follow `compare`.
 
+## Bounded call expansion
+
+`flow_expansion` is an opt-in version-1 operation. Ordinary `flow` requests retain
+their existing response and single-function behavior. Use the generation from a
+saved snapshot; expansion requires nonempty `expected_generation` and fails with
+`generation_mismatch` if its artifact changed.
+
+```json
+{
+  "version": 1,
+  "project": "/path/to/project",
+  "expected_generation": "GENERATION_FROM_SNAPSHOT",
+  "query": {
+    "kind": "flow_expansion",
+    "expansion_version": 1,
+    "symbol": "EXACT_SYMBOL_FROM_SNAPSHOT",
+    "selections": []
+  }
+}
+```
+
+The result is the core `ExpandedFlow`: `version`, `root_symbol`, `chart`,
+`occurrences`, `step_origins`, deduplicated `sources` and optional
+`blocked_selections`. Zero selections returns the ordinary root body plus its
+ownership/address metadata. Geometry and result-local step indices are not
+structural identities.
+
+For a selected step/call, take its address from `step_origins[step].calls[call]`,
+its caller path from that origin's occurrence, and the complete chosen target
+record from the chart call. Append a selection
+`{"caller": CALLER_OCCURRENCE_PATH, "choice": {"site": SITE_ADDRESS, "target": FULL_TARGET}}`.
+Include every selected ancestor explicitly. Send the full target record unchanged,
+including certainty, provenance and relationship kind; stale or invalid choices
+fail with `invalid_request`. Collapse an occurrence by removing its selection and
+all selected descendants. Unsupported but valid choices produce explicit core
+stop markers; requests below a stopped ancestor are reported as blocked.
+
+Source owners use portable logical paths such as `@repo/Helpers.cs`, unlike the
+hydrated paths in ordinary working-generation `flow` answers. Read the exact
+source table and its digest; never substitute a current disk file. Expansion
+reads only retained artifact facts and does not hydrate a graph index, refresh,
+compile or write the artifact. The desktop shares these semantics through the CLI.
+
+Optional `limits` contains `depth`, `requests`, `steps`, `links` and `source_bytes`.
+Defaults/hard ceilings are 8/32 depth, 64/128 reached requests, 1,500 steps,
+6,000 links and 16 MiB of unique owned source. Depth and reached requests may be
+zero; graph/source allowances must be positive. The independent request envelope
+permits 128 selections, occurrence depth 32 and 1 MiB of encoded identities;
+limits and envelope are validated before decoding selected function facts.
+Both query transports retain their 4 MiB request limit. A complete response,
+including escaped JSON, envelope and newline, must fit 24 MiB; otherwise it fails
+with `response_too_large`, without a partial successful result.
+
+Check `capabilities.flow_expansion` and the advertised operation/version before
+using it. Older engines still support ordinary flows. In-progress expansion and
+owned Graphviz layout support cancellation; no partial expanded chart is published.
+See [desktop controls and semantic limits](function-flowcharts.md#expand-calls-inside-a-chart).
+
 ## Commands and lifecycle
 
 `codecallnavigator-engine capabilities` returns JSON describing the supported
@@ -224,6 +282,7 @@ Errors include `invalid_request`, `unsupported_version`, `project_unavailable`,
 | `neighbors` | `symbol`, optional `filter`, `limits` | Both incoming and outgoing depth-one selection. |
 | `inspect` | `symbol`, optional `filter` | Complete incoming/outgoing IDs and root-incident relationships; requires generation binding. |
 | `flow` | `symbol` | Source IR, semantic chart without layout geometry, analyzed source and diagnostics. |
+| `flow_expansion` | `expansion_version: 1`, `symbol`, optional `selections`, `limits` | Generation-bound expanded chart, structural call addresses, occurrences and exact owned source snapshots; see above. |
 | `flow_comparison` | `base`, optional `head`, `expected_comparison`; `selection: catalog` or `detail` | Bound saved-revision catalog or paired flows and cached source; see above. |
 
 Search categories are `all`, `classes`, `methods`. Search defaults to 50 results

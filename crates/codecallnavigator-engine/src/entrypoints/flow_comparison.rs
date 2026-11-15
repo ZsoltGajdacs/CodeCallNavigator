@@ -1,6 +1,6 @@
 //! Read-only source flows bound to saved Git endpoints before current-graph preparation.
 mod catalog;
-mod encoding;
+use super::response_encoding as encoding;
 mod endpoint;
 mod model;
 mod validation;

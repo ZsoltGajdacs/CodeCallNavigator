@@ -10,14 +10,14 @@ pub(crate) fn view(state: &State, session: &Session, address: Address, k: &Kit) 
         .h_full()
         .min_h(0.0)
         .fill(k.c.bg_base);
-    let Some(ready) = &session.ready else {
+    let Some(source) = session.displayed_source() else {
         return pane;
     };
     let kit = k.clone();
     let keys = address.keys(session);
     let offset = session.scroll.clone();
     let mounted_key = session.scroll_key.clone();
-    let width = (ready.source.max_columns as f32 * 8.0 + 90.0).max(300.0);
+    let width = (source.max_columns as f32 * 8.0 + 90.0).max(300.0);
     pane.child(
         col()
             .key(session.scroll_key.clone())
@@ -34,7 +34,7 @@ pub(crate) fn view(state: &State, session: &Session, address: Address, k: &Kit) 
                     .growth(GrowthSpec::default())
                     .virtual_rows_version(address.revision(state))
                     .virtual_rows(
-                        ready.source.lines.len(),
+                        source.lines.len(),
                         20.0,
                         move |_: &State, i| keys.line(i).into(),
                         move |s: &State, i| source_line(s, i, address, &kit),
@@ -49,11 +49,13 @@ fn source_line(state: &State, index: usize, address: Address, k: &Kit) -> El {
     let Some(ready) = &session.ready else {
         return rune::el().h(20.0);
     };
-    let Some(line) = ready.source.lines.get(index) else {
+    let Some(source) = session.displayed_source() else {
         return rune::el().h(20.0);
     };
-    let line_end = ready
-        .source
+    let Some(line) = source.lines.get(index) else {
+        return rune::el().h(20.0);
+    };
+    let line_end = source
         .lines
         .get(index + 1)
         .map(|next| next.range.start)
@@ -63,7 +65,7 @@ fn source_line(state: &State, index: usize, address: Address, k: &Kit) -> El {
         .and_then(|i| ready.chart.steps.get(i))
         .is_some_and(|step| line.range.start < step.span.end && line_end > step.span.start);
     crate::source_view::line(
-        &ready.source,
+        source,
         crate::source_view::SourceRow {
             index,
             selected,

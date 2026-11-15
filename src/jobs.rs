@@ -70,6 +70,7 @@ pub fn setup(state: &mut State, waker: Waker) {
     state.jobs.boot.set_waker(waker.clone());
     state.jobs.source.set_waker(waker.clone());
     state.flow_workspace.job.set_waker(waker.clone());
+    state.flow_workspace.set_expansion_waker(waker.clone());
     state.flow_comparison.set_waker(waker.clone());
     state.architecture_workspace.job.set_waker(waker.clone());
     state.jobs.discovery.set_waker(waker.clone());
@@ -190,14 +191,19 @@ fn poll_persistence(state: &mut State) -> bool {
 }
 
 fn ready_to_quit(state: &State) -> bool {
-    state.closing
-        && !state.jobs.analysis.is_pending()
+    state.closing && foreground_finished(state) && background_stopped(state)
+}
+fn foreground_finished(state: &State) -> bool {
+    !state.jobs.analysis.is_pending()
         && !state.jobs.cache_clear.is_pending()
         && !state.reload.job.is_pending()
         && !state.jobs.persistence.is_pending()
-        && state.freshness.stopped()
+}
+fn background_stopped(state: &State) -> bool {
+    state.freshness.stopped()
         && state.cache_retention.stopped()
         && state.flow_comparison.stopped()
+        && state.flow_workspace.expansion_stopped()
 }
 
 fn poll_boot(state: &mut State) -> bool {

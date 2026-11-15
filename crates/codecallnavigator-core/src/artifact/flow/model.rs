@@ -25,6 +25,11 @@ pub struct Ready<'a> {
     pub content: &'a str,
     pub targets: Vec<Symbol<'a>>,
 }
+/// Validated ownership and decoded IR, without building an ordinary chart or copying source.
+pub struct Input<'a> {
+    pub function: FunctionFlowIR,
+    pub content: &'a str,
+}
 /// Metadata and owned source are recorded; chart/source-range limits are checked by select.
 #[derive(Debug)]
 pub enum Recording<'a> {

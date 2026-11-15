@@ -87,6 +87,14 @@ impl Client {
         &self.runtime
     }
 
+    pub(super) fn expansion_supported(&self, cancel: &AtomicBool) -> Result<bool> {
+        Ok(self.capabilities(cancel, Instant::now())?.flow_expansion)
+    }
+    pub fn flow_expansion_supported(&self) -> bool {
+        self.capabilities
+            .get()
+            .is_some_and(|capabilities| capabilities.flow_expansion)
+    }
     pub fn flow_supported(&self, language: &str) -> bool {
         self.capabilities.get().is_some_and(|capabilities| {
             capabilities

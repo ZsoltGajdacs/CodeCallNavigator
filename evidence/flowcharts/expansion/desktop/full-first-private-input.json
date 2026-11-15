@@ -1,0 +1,33 @@
+{
+  "source": "/Users/zsolt.gajdacs/Projects/Recurring-billing",
+  "purpose": "Real private Maven integration input; original checkout never built",
+  "status": "full_terminal",
+  "source_links": 7,
+  "owned_root": "/private/tmp/ccn-task22-8-private-0q8pgjr4",
+  "copy_seconds": 1.45,
+  "copy_links": 7,
+  "copy_logical_bytes": 254216495,
+  "input_fingerprint_sha256": "89834864ebf5721bbc055bf4c9bfb0ac9c92fa77858d70a47a6160605f8e5483",
+  "command": [
+    "/usr/bin/caffeinate",
+    "-dims",
+    "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/verify-full.sh",
+    "--base",
+    "HEAD",
+    "--output",
+    "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/target/verification/task22-8-full",
+    "--profile-source",
+    "/Users/zsolt.gajdacs/Library/Application Support/CodeCallNavigator"
+  ],
+  "source_hashes_match": true,
+  "full_exit_code": 1,
+  "original_unchanged": true,
+  "cleanup_probe": {
+    "exit_code": 1,
+    "stdout": "",
+    "stderr": ""
+  },
+  "reclaimed_bytes": 254216495,
+  "cleanup_status": "passed",
+  "cleanup_seconds": 0.922
+}

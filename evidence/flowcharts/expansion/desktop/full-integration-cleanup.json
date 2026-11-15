@@ -1,0 +1,54 @@
+{
+  "status": "passed",
+  "actions": [
+    {
+      "path": "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/target/verification/task22-8-full-r2/integration/build",
+      "operation": "remove",
+      "status": "removed",
+      "estimated_bytes_before": 1613106671,
+      "estimated_bytes_after": 0
+    },
+    {
+      "path": "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/target/verification/task22-8-full-r2/integration/profile",
+      "operation": "remove",
+      "status": "absent",
+      "estimated_bytes_before": 0,
+      "estimated_bytes_after": 0
+    },
+    {
+      "path": "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/target/verification/task22-8-full-r2/integration/test-store",
+      "operation": "remove",
+      "status": "absent",
+      "estimated_bytes_before": 0,
+      "estimated_bytes_after": 0
+    },
+    {
+      "path": "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/target/verification/task22-8-full-r2/integration/scale-cache",
+      "operation": "remove",
+      "status": "absent",
+      "estimated_bytes_before": 0,
+      "estimated_bytes_after": 0
+    },
+    {
+      "path": "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/target/verification/task22-8-full-r2/integration/tmp",
+      "operation": "remove",
+      "status": "removed",
+      "estimated_bytes_before": 64,
+      "estimated_bytes_after": 0
+    },
+    {
+      "path": "/private/tmp/ccn-verify-4701527ff4e70b2c",
+      "operation": "remove",
+      "status": "removed",
+      "estimated_bytes_before": 150709,
+      "estimated_bytes_after": 0
+    }
+  ],
+  "errors": [],
+  "bytes_reclaimed": 1613257444,
+  "bytes_retained": 0,
+  "keep_artifacts": false,
+  "category": "integration",
+  "output": "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/target/verification/task22-8-full-r2/integration",
+  "unmeasured_paths": []
+}

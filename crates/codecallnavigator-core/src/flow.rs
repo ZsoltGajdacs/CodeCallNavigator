@@ -19,7 +19,7 @@ pub use builder::build;
 pub use checked::{MAX_SOURCE_BYTES, checked_chart};
 pub use expanded::*;
 pub use inventory::{merge_inventory, visit_calls_mut};
-pub use layout::layout;
+pub use layout::{layout, layout_cancellable};
 pub use lookup::lookup;
 pub use model::*;
 pub use source::validate_source;
