@@ -20,6 +20,9 @@ use rune_kit::{
 };
 
 pub fn view(state: &State, cx: &mut Cx<State>) -> El {
+    if state.flow_comparison.controls.visible {
+        return crate::flow_comparison_view::view(state, cx);
+    }
     if state.flow_workspace.current.is_some() {
         return crate::flow_view::view(state, cx);
     }
@@ -87,6 +90,7 @@ fn workspace_toolbar(state: &State, k: &Kit) -> Toolbar {
                 .color(k.c.text_base),
         )
         .leading(workspace_identity(state, k))
+        .trailing(comparison_button(k))
         .trailing(search_modal::button(k))
         .trailing(clear_cache_action(state, k))
         .trailing(analysis_action(state, k))
@@ -100,6 +104,14 @@ fn workspace_toolbar(state: &State, k: &Kit) -> Toolbar {
                 .build(k)
                 .key("toggle-inspector"),
         )
+}
+
+pub(crate) fn comparison_button(k: &Kit) -> El {
+    Button::new("Compare flows")
+        .variant(ButtonVariant::Outline)
+        .on_press(State::show_flow_comparison)
+        .build(k)
+        .key("compare-flows")
 }
 
 pub(crate) fn search_button(k: &Kit) -> El {
@@ -358,6 +370,9 @@ pub fn key(state: &mut State, event: &KeyEvent, tx: &mut Tx) -> bool {
     }
     if state.search.open {
         return false;
+    }
+    if state.flow_comparison.controls.visible {
+        return crate::flow_comparison_view::key(state, event);
     }
     if state.flow_workspace.current.is_some() {
         return crate::flow_view::key(state, event);

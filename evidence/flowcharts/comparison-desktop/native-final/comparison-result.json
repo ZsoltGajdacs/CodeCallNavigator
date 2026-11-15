@@ -1,0 +1,885 @@
+{
+  "version": 2,
+  "status": "passed",
+  "metrics": {
+    "fixture": "fixtures/flow/csharp-comparison",
+    "commands": [
+      {
+        "arguments": [
+          "analyze",
+          "--project",
+          "/private/tmp/flow-comparison-native-aw0nlw53/project",
+          "/private/tmp/flow-comparison-native-aw0nlw53/project/Comparison.csproj"
+        ],
+        "exit_code": 0,
+        "dotnet_on_path": true
+      },
+      {
+        "arguments": [
+          "analyze",
+          "--project",
+          "/private/tmp/flow-comparison-native-aw0nlw53/project",
+          "/private/tmp/flow-comparison-native-aw0nlw53/project/Comparison.csproj"
+        ],
+        "exit_code": 0,
+        "dotnet_on_path": true
+      },
+      {
+        "arguments": [
+          "query"
+        ],
+        "exit_code": 0,
+        "dotnet_on_path": true,
+        "stdin": {
+          "version": 1,
+          "project": "/private/tmp/flow-comparison-native-aw0nlw53/project",
+          "query": {
+            "kind": "flow_comparison",
+            "base": "refs/tags/fixture-before",
+            "head": "refs/tags/fixture-after",
+            "selection": {
+              "kind": "catalog",
+              "limit": 100
+            }
+          }
+        }
+      },
+      {
+        "arguments": [
+          "query"
+        ],
+        "exit_code": 0,
+        "dotnet_on_path": true,
+        "stdin": {
+          "version": 1,
+          "project": "/private/tmp/flow-comparison-native-aw0nlw53/project",
+          "query": {
+            "kind": "flow_comparison",
+            "base": "refs/tags/fixture-before",
+            "head": "refs/tags/fixture-after",
+            "selection": {
+              "kind": "detail",
+              "symbol": "[\"csharp\",\"@repo/Comparison.csproj\",\"@repo/Changed.cs\",\"@repo/Comparison.csproj|[Comparison]::RevisionFixture.Cases::Changed(System.Boolean)\"]",
+              "head_symbol": null
+            },
+            "expected_comparison": "4a1dc5ee37e1baf0c04ec0805fba6206f152c6864e49cb7030b7871b71320fb2"
+          }
+        }
+      },
+      {
+        "arguments": [
+          "query"
+        ],
+        "exit_code": 0,
+        "dotnet_on_path": true,
+        "stdin": {
+          "version": 1,
+          "project": "/private/tmp/flow-comparison-native-aw0nlw53/project",
+          "query": {
+            "kind": "flow_comparison",
+            "base": "refs/tags/fixture-before",
+            "head": "refs/tags/fixture-after",
+            "selection": {
+              "kind": "detail",
+              "symbol": "[\"csharp\",\"@repo/Comparison.csproj\",\"@repo/Unchanged.cs\",\"@repo/Comparison.csproj|[Comparison]::RevisionFixture.Stable::Unchanged()\"]",
+              "head_symbol": null
+            },
+            "expected_comparison": "4a1dc5ee37e1baf0c04ec0805fba6206f152c6864e49cb7030b7871b71320fb2"
+          }
+        }
+      },
+      {
+        "arguments": [
+          "query"
+        ],
+        "exit_code": 0,
+        "dotnet_on_path": true,
+        "stdin": {
+          "version": 1,
+          "project": "/private/tmp/flow-comparison-native-aw0nlw53/project",
+          "query": {
+            "kind": "flow_comparison",
+            "base": "refs/tags/fixture-before",
+            "head": "refs/tags/fixture-after",
+            "selection": {
+              "kind": "detail",
+              "symbol": "[\"csharp\",\"@repo/Comparison.csproj\",\"@repo/Changed.cs\",\"@repo/Comparison.csproj|[Comparison]::RevisionFixture.Cases::Added()\"]",
+              "head_symbol": null
+            },
+            "expected_comparison": "4a1dc5ee37e1baf0c04ec0805fba6206f152c6864e49cb7030b7871b71320fb2"
+          }
+        }
+      },
+      {
+        "arguments": [
+          "query"
+        ],
+        "exit_code": 0,
+        "dotnet_on_path": true,
+        "stdin": {
+          "version": 1,
+          "project": "/private/tmp/flow-comparison-native-aw0nlw53/project",
+          "query": {
+            "kind": "flow_comparison",
+            "base": "refs/tags/fixture-before",
+            "head": "refs/tags/fixture-after",
+            "selection": {
+              "kind": "detail",
+              "symbol": "[\"csharp\",\"@repo/Comparison.csproj\",\"@repo/Changed.cs\",\"@repo/Comparison.csproj|[Comparison]::RevisionFixture.Cases::Removed()\"]",
+              "head_symbol": null
+            },
+            "expected_comparison": "4a1dc5ee37e1baf0c04ec0805fba6206f152c6864e49cb7030b7871b71320fb2"
+          }
+        }
+      },
+      {
+        "arguments": [
+          "query"
+        ],
+        "exit_code": 0,
+        "dotnet_on_path": true,
+        "stdin": {
+          "version": 1,
+          "project": "/private/tmp/flow-comparison-native-aw0nlw53/project",
+          "query": {
+            "kind": "flow_comparison",
+            "base": "refs/tags/fixture-before",
+            "head": "refs/tags/fixture-after",
+            "selection": {
+              "kind": "detail",
+              "symbol": "[\"csharp\",\"@repo/Comparison.csproj\",\"@repo/Legacy.cs\",\"@repo/Comparison.csproj|[Comparison]::RevisionFixture.Historical::Legacy()\"]",
+              "head_symbol": null
+            },
+            "expected_comparison": "4a1dc5ee37e1baf0c04ec0805fba6206f152c6864e49cb7030b7871b71320fb2"
+          }
+        }
+      },
+      {
+        "arguments": [
+          "query"
+        ],
+        "exit_code": 0,
+        "dotnet_on_path": true,
+        "stdin": {
+          "version": 1,
+          "project": "/private/tmp/flow-comparison-native-aw0nlw53/project",
+          "query": {
+            "kind": "flow_comparison",
+            "base": "refs/tags/fixture-before",
+            "head": "refs/tags/fixture-after",
+            "selection": {
+              "kind": "detail",
+              "symbol": "[\"csharp\",\"@repo/Comparison.csproj\",\"@repo/Changed.cs\",\"@repo/Comparison.csproj|[Comparison]::RevisionFixture.Cases::Changed(System.Boolean)\"]",
+              "head_symbol": "[\"csharp\",\"@repo/Comparison.csproj\",\"@repo/Changed.cs\",\"@repo/Comparison.csproj|[Comparison]::RevisionFixture.Cases::Manual(System.Boolean)\"]"
+            },
+            "expected_comparison": "4a1dc5ee37e1baf0c04ec0805fba6206f152c6864e49cb7030b7871b71320fb2"
+          }
+        }
+      },
+      {
+        "arguments": [
+          "query"
+        ],
+        "exit_code": 0,
+        "dotnet_on_path": true,
+        "stdin": {
+          "version": 1,
+          "project": "/private/tmp/flow-comparison-native-aw0nlw53/project",
+          "query": {
+            "kind": "flow_comparison",
+            "base": "refs/tags/fixture-before",
+            "head": "refs/tags/fixture-after",
+            "selection": {
+              "kind": "detail",
+              "symbol": "[\"csharp\",\"@repo/Comparison.csproj\",\"@repo/Changed.cs\",\"@repo/Comparison.csproj|[Comparison]::RevisionFixture.Cases::Leaf(System.Int32)\"]",
+              "head_symbol": null
+            },
+            "expected_comparison": "4a1dc5ee37e1baf0c04ec0805fba6206f152c6864e49cb7030b7871b71320fb2"
+          }
+        }
+      },
+      {
+        "arguments": [
+          "query"
+        ],
+        "exit_code": 0,
+        "dotnet_on_path": true,
+        "stdin": {
+          "version": 1,
+          "project": "/private/tmp/flow-comparison-native-aw0nlw53/project",
+          "query": {
+            "kind": "flow_comparison",
+            "base": "refs/tags/fixture-before",
+            "head": "refs/tags/fixture-after",
+            "selection": {
+              "kind": "catalog",
+              "limit": 100
+            }
+          }
+        }
+      }
+    ],
+    "unchanged_source_hashes": {
+      "Before": "a8fea50ea2125f8c2c7ae56ac4e00cc36ea5604309a8bb961cfc6dd7c16dffb1",
+      "After": "a8fea50ea2125f8c2c7ae56ac4e00cc36ea5604309a8bb961cfc6dd7c16dffb1"
+    },
+    "artifacts": {
+      "fixture-before": {
+        "compiler_sha256": "28a03575690cf91837a17aeb746766f3b122d4f13f271d84a077770ccd2652b0",
+        "mutation": {
+          "path": "/graph/architecture/files",
+          "removed_file": "Legacy.cs",
+          "removed_source_sha256": "a0f0699068823a57b4cec7420f563670e51a00f81a15c91825bc5d693a6efbf0",
+          "removed_rows": 1,
+          "nodes_and_ir_unchanged": true
+        },
+        "committed_sha256": "736f0259ea7b4f5ef91139d550d5fd85f6c06d1a587333dbeee3c58f7390cbff",
+        "committed_bytes": 26059
+      },
+      "fixture-after": {
+        "compiler_sha256": "2a755184acee357b32502950c4ce7104f200297d741c13fe9e7ab5d08afaa73e",
+        "committed_sha256": "2a755184acee357b32502950c4ce7104f200297d741c13fe9e7ab5d08afaa73e",
+        "committed_bytes": 23493
+      }
+    },
+    "compiler_inputs": {
+      "Before": {
+        "Changed.cs": {
+          "sha256": "740eb305804b133b5d15dccf25e340b30725763555a7e9a94818019e2fab5e78",
+          "bytes": 6926
+        },
+        "Unchanged.cs": {
+          "sha256": "a8fea50ea2125f8c2c7ae56ac4e00cc36ea5604309a8bb961cfc6dd7c16dffb1",
+          "bytes": 99
+        },
+        "Legacy.cs": {
+          "sha256": "a0f0699068823a57b4cec7420f563670e51a00f81a15c91825bc5d693a6efbf0",
+          "bytes": 99
+        }
+      },
+      "After": {
+        "Changed.cs": {
+          "sha256": "d1be1646d1cc3b790c5b0c39689b37adc58e7df69594ff017c25571ddb20e681",
+          "bytes": 6930
+        },
+        "Unchanged.cs": {
+          "sha256": "a8fea50ea2125f8c2c7ae56ac4e00cc36ea5604309a8bb961cfc6dd7c16dffb1",
+          "bytes": 99
+        },
+        "Legacy.cs": {
+          "sha256": "a0f0699068823a57b4cec7420f563670e51a00f81a15c91825bc5d693a6efbf0",
+          "bytes": 99
+        }
+      }
+    },
+    "source_bytes_verified_against_inputs": true,
+    "same_bytes_later_commit_rebinds": true,
+    "live_sources_removed": true,
+    "working_artifact_removed": true,
+    "legacy_mutation": "one architecture.files row only"
+  },
+  "native": [
+    {
+      "theme": "dark",
+      "command": [
+        "/private/tmp/flow-comparison-native-aw0nlw53/Relocated CodeCallNavigator.app/Contents/MacOS/CodeCallNavigator",
+        "--native",
+        "--trace",
+        "/private/tmp/task22-comparison-native-final-r2/dark/native.jsonl",
+        "--size",
+        "1050x680",
+        "--theme",
+        "dark"
+      ],
+      "observations": {
+        "version": 2,
+        "status": "passed",
+        "error": null,
+        "project": "/private/tmp/flow-comparison-native-aw0nlw53/project",
+        "expected_viewport": [
+          1050,
+          680
+        ],
+        "viewport": [
+          1050.0,
+          680.0
+        ],
+        "process_id": 32958,
+        "window_id": 22258,
+        "runtime": {
+          "engine": "/private/tmp/flow-comparison-native-aw0nlw53/Relocated CodeCallNavigator.app/Contents/MacOS/codecallnavigator-engine",
+          "resources": "/private/tmp/flow-comparison-native-aw0nlw53/Relocated CodeCallNavigator.app/Contents/Resources",
+          "dot": "/private/tmp/flow-comparison-native-aw0nlw53/Relocated CodeCallNavigator.app/Contents/Resources/analyzers/graphviz/bin/dot"
+        },
+        "frames": {
+          "drawn": 2134,
+          "skipped": 2,
+          "unchanged": 0,
+          "first_drawn_ms": 148.290541,
+          "last_drawn_ms": 18268.558416,
+          "last_update_ms": 0.36225,
+          "last_encode_ms": 0.11104099999999995,
+          "refresh_hz": 119.99100547422964
+        },
+        "input_model": "Synthetic pointer and focus/key/paste input through production Runtime handlers in an actual native window; OS delivery is not measured",
+        "timing_definition": "Queued selection press to first native Drawn frame with the exact requested pair; gesture settling does not delay the readiness sample",
+        "checks": {
+          "Added_pair_exact": true,
+          "After_camera_independent": true,
+          "After_hidden_scroll_restored": true,
+          "After_highlight_drawn": true,
+          "After_scroll_independent": true,
+          "Before_camera_independent": true,
+          "Before_hidden_scroll_restored": true,
+          "Before_highlight_drawn": true,
+          "Before_scroll_independent": true,
+          "Changed_pair_exact": true,
+          "Legacy_pair_exact": true,
+          "Manual_pair_exact": true,
+          "Removed_pair_exact": true,
+          "Unchanged_pair_exact": true,
+          "back_pair_restored": true,
+          "cancel_waited_for_owned_query_cleanup": true,
+          "endpoint_target_followed": true,
+          "explicit_reload_rebound": true,
+          "fresh_request_after_cancel": true,
+          "minimum_viewport_drawn": true,
+          "mismatch_cleared_actionable_content": true,
+          "no_graph_returned": true,
+          "normal_no_graph_boot": true,
+          "owned_window_setup_acknowledged": true,
+          "provenance_drawn": true,
+          "refs_entered_by_controls": true
+        },
+        "observations": [
+          {
+            "case": "Changed",
+            "comparison_id": "4a1dc5ee37e1baf0c04ec0805fba6206f152c6864e49cb7030b7871b71320fb2",
+            "head_symbol": null,
+            "symbol": "[\"csharp\",\"@repo/Comparison.csproj\",\"@repo/Changed.cs\",\"@repo/Comparison.csproj|[Comparison]::RevisionFixture.Cases::Changed(System.Boolean)\"]"
+          },
+          {
+            "case": "Unchanged",
+            "comparison_id": "4a1dc5ee37e1baf0c04ec0805fba6206f152c6864e49cb7030b7871b71320fb2",
+            "head_symbol": null,
+            "symbol": "[\"csharp\",\"@repo/Comparison.csproj\",\"@repo/Unchanged.cs\",\"@repo/Comparison.csproj|[Comparison]::RevisionFixture.Stable::Unchanged()\"]"
+          },
+          {
+            "case": "Added",
+            "comparison_id": "4a1dc5ee37e1baf0c04ec0805fba6206f152c6864e49cb7030b7871b71320fb2",
+            "head_symbol": null,
+            "symbol": "[\"csharp\",\"@repo/Comparison.csproj\",\"@repo/Changed.cs\",\"@repo/Comparison.csproj|[Comparison]::RevisionFixture.Cases::Added()\"]"
+          },
+          {
+            "case": "Removed",
+            "comparison_id": "4a1dc5ee37e1baf0c04ec0805fba6206f152c6864e49cb7030b7871b71320fb2",
+            "head_symbol": null,
+            "symbol": "[\"csharp\",\"@repo/Comparison.csproj\",\"@repo/Changed.cs\",\"@repo/Comparison.csproj|[Comparison]::RevisionFixture.Cases::Removed()\"]"
+          },
+          {
+            "case": "Legacy",
+            "comparison_id": "4a1dc5ee37e1baf0c04ec0805fba6206f152c6864e49cb7030b7871b71320fb2",
+            "head_symbol": null,
+            "symbol": "[\"csharp\",\"@repo/Comparison.csproj\",\"@repo/Legacy.cs\",\"@repo/Comparison.csproj|[Comparison]::RevisionFixture.Historical::Legacy()\"]"
+          },
+          {
+            "case": "Changed",
+            "comparison_id": "4a1dc5ee37e1baf0c04ec0805fba6206f152c6864e49cb7030b7871b71320fb2",
+            "head_symbol": null,
+            "symbol": "[\"csharp\",\"@repo/Comparison.csproj\",\"@repo/Changed.cs\",\"@repo/Comparison.csproj|[Comparison]::RevisionFixture.Cases::Changed(System.Boolean)\"]"
+          },
+          {
+            "case": "Manual",
+            "comparison_id": "4a1dc5ee37e1baf0c04ec0805fba6206f152c6864e49cb7030b7871b71320fb2",
+            "head_symbol": "[\"csharp\",\"@repo/Comparison.csproj\",\"@repo/Changed.cs\",\"@repo/Comparison.csproj|[Comparison]::RevisionFixture.Cases::Manual(System.Boolean)\"]",
+            "symbol": "[\"csharp\",\"@repo/Comparison.csproj\",\"@repo/Changed.cs\",\"@repo/Comparison.csproj|[Comparison]::RevisionFixture.Cases::Changed(System.Boolean)\"]"
+          },
+          {
+            "case": "Changed",
+            "comparison_id": "4a1dc5ee37e1baf0c04ec0805fba6206f152c6864e49cb7030b7871b71320fb2",
+            "head_symbol": null,
+            "symbol": "[\"csharp\",\"@repo/Comparison.csproj\",\"@repo/Changed.cs\",\"@repo/Comparison.csproj|[Comparison]::RevisionFixture.Cases::Changed(System.Boolean)\"]"
+          },
+          {
+            "case": "Changed",
+            "comparison_id": "53149490db62d4d1fe6d916d79791f2a314960c827db6aaa775218f8ea858a5c",
+            "head_symbol": null,
+            "symbol": "[\"csharp\",\"@repo/Comparison.csproj\",\"@repo/Changed.cs\",\"@repo/Comparison.csproj|[Comparison]::RevisionFixture.Cases::Changed(System.Boolean)\"]"
+          },
+          {
+            "case": "Changed",
+            "comparison_id": "53149490db62d4d1fe6d916d79791f2a314960c827db6aaa775218f8ea858a5c",
+            "head_symbol": null,
+            "symbol": "[\"csharp\",\"@repo/Comparison.csproj\",\"@repo/Changed.cs\",\"@repo/Comparison.csproj|[Comparison]::RevisionFixture.Cases::Changed(System.Boolean)\"]"
+          }
+        ],
+        "ready_drawn_ms": {
+          "Added-Cases": 450.53325,
+          "Changed-Cases": 593.112459,
+          "Changed-Fresh": 533.822792,
+          "Changed-ManualBase": 534.456959,
+          "Changed-Reloaded": 500.622958,
+          "Changed-Reset": 533.927583,
+          "Legacy-Cases": 474.697,
+          "Manual-Manual": 541.8228750000001,
+          "Removed-Cases": 458.98625,
+          "Target": 528.974666,
+          "Unchanged-Cases": 499.920084
+        },
+        "captures": [
+          "missing-source",
+          "manual-pair",
+          "restored-pair"
+        ]
+      },
+      "operations": [
+        {
+          "sequence": 1,
+          "operation": "capture",
+          "checkpoint": "missing-source",
+          "proof": {
+            "path": "/private/tmp/task22-comparison-native-final-r2/dark/native-missing-source.png",
+            "dimensions": [
+              1162,
+              792
+            ],
+            "sha256": "636c69b7f483cdc056ada3b3607f86275eacbf6150bdf617ff0e75dfc176cbfa",
+            "window_id": 22258
+          }
+        },
+        {
+          "sequence": 2,
+          "operation": "capture",
+          "checkpoint": "manual-pair",
+          "proof": {
+            "path": "/private/tmp/task22-comparison-native-final-r2/dark/native-manual-pair.png",
+            "dimensions": [
+              1162,
+              792
+            ],
+            "sha256": "5933a070a2318db754be99b7050de4c5e9fd8e342c1ce24331bb6fd2c4988803",
+            "window_id": 22258
+          }
+        },
+        {
+          "sequence": 3,
+          "operation": "capture",
+          "checkpoint": "restored-pair",
+          "proof": {
+            "path": "/private/tmp/task22-comparison-native-final-r2/dark/native-restored-pair.png",
+            "dimensions": [
+              1162,
+              792
+            ],
+            "sha256": "aa0a616c796f488f909ca8f7daaf591e2b308f1f2ee9f100d8a0031b24cf1114",
+            "window_id": 22258
+          }
+        },
+        {
+          "sequence": 4,
+          "operation": "move_after_ref",
+          "checkpoint": "after-ref-moved",
+          "proof": {
+            "old": "339ccdd60e640b75d2dbb568f0c8672c2ce0c342",
+            "new": "fbe6c819a60a58db8484fcdf046468df70230dfc",
+            "reference": "refs/tags/fixture-after"
+          }
+        },
+        {
+          "sequence": 5,
+          "operation": "arm_git_gate",
+          "checkpoint": "gate-armed",
+          "proof": {
+            "armed": true
+          }
+        },
+        {
+          "sequence": 6,
+          "operation": "wait_git_gate",
+          "checkpoint": "gate-held",
+          "proof": {
+            "pid": 33348,
+            "parent": 33304,
+            "group": 33304,
+            "arguments": [
+              "--no-pager",
+              "-C",
+              "/private/tmp/flow-comparison-native-aw0nlw53/project",
+              "cat-file",
+              "blob",
+              "30560a10afe15db29c561614462570cbe2e08ddf:.codecallnavigator/graph.json"
+            ],
+            "token": "5966514ffb144247a733407c8358b0c6"
+          }
+        },
+        {
+          "sequence": 7,
+          "operation": "release_git_gate",
+          "checkpoint": "gate-released",
+          "proof": {
+            "pid": 33348,
+            "parent": 33304,
+            "group": 33304,
+            "arguments": [
+              "--no-pager",
+              "-C",
+              "/private/tmp/flow-comparison-native-aw0nlw53/project",
+              "cat-file",
+              "blob",
+              "30560a10afe15db29c561614462570cbe2e08ddf:.codecallnavigator/graph.json"
+            ],
+            "token": "5966514ffb144247a733407c8358b0c6"
+          }
+        }
+      ],
+      "window_setup": {
+        "process_id": 32958,
+        "window_id": 22258,
+        "commands": [
+          [
+            "/opt/homebrew/bin/aerospace",
+            "list-windows",
+            "--monitor",
+            "all",
+            "--pid",
+            "32958",
+            "--format",
+            "%{window-id} %{app-pid} %{window-layout}",
+            "--json"
+          ],
+          [
+            "/opt/homebrew/bin/aerospace",
+            "layout",
+            "--window-id",
+            "22258",
+            "floating"
+          ],
+          [
+            "/opt/homebrew/bin/aerospace",
+            "list-windows",
+            "--monitor",
+            "all",
+            "--pid",
+            "32958",
+            "--format",
+            "%{window-id} %{app-pid} %{window-layout}",
+            "--json"
+          ]
+        ],
+        "before": {
+          "app-pid": 32958,
+          "window-id": 22258,
+          "window-layout": "h_tiles"
+        },
+        "after": {
+          "app-pid": 32958,
+          "window-id": 22258,
+          "window-layout": "floating"
+        },
+        "status": "owned_window_floated",
+        "cleanup": "owned_process_exited"
+      }
+    },
+    {
+      "theme": "light",
+      "command": [
+        "/private/tmp/flow-comparison-native-aw0nlw53/Relocated CodeCallNavigator.app/Contents/MacOS/CodeCallNavigator",
+        "--native",
+        "--trace",
+        "/private/tmp/task22-comparison-native-final-r2/light/native.jsonl",
+        "--size",
+        "1050x680",
+        "--theme",
+        "light"
+      ],
+      "observations": {
+        "version": 2,
+        "status": "passed",
+        "error": null,
+        "project": "/private/tmp/flow-comparison-native-aw0nlw53/project",
+        "expected_viewport": [
+          1050,
+          680
+        ],
+        "viewport": [
+          1050.0,
+          680.0
+        ],
+        "process_id": 33416,
+        "window_id": 22278,
+        "runtime": {
+          "engine": "/private/tmp/flow-comparison-native-aw0nlw53/Relocated CodeCallNavigator.app/Contents/MacOS/codecallnavigator-engine",
+          "resources": "/private/tmp/flow-comparison-native-aw0nlw53/Relocated CodeCallNavigator.app/Contents/Resources",
+          "dot": "/private/tmp/flow-comparison-native-aw0nlw53/Relocated CodeCallNavigator.app/Contents/Resources/analyzers/graphviz/bin/dot"
+        },
+        "frames": {
+          "drawn": 2104,
+          "skipped": 0,
+          "unchanged": 0,
+          "first_drawn_ms": 130.60108300000002,
+          "last_drawn_ms": 17991.842708,
+          "last_update_ms": 0.395916,
+          "last_encode_ms": 0.153125,
+          "refresh_hz": 119.99100547422964
+        },
+        "input_model": "Synthetic pointer and focus/key/paste input through production Runtime handlers in an actual native window; OS delivery is not measured",
+        "timing_definition": "Queued selection press to first native Drawn frame with the exact requested pair; gesture settling does not delay the readiness sample",
+        "checks": {
+          "Added_pair_exact": true,
+          "After_camera_independent": true,
+          "After_hidden_scroll_restored": true,
+          "After_highlight_drawn": true,
+          "After_scroll_independent": true,
+          "Before_camera_independent": true,
+          "Before_hidden_scroll_restored": true,
+          "Before_highlight_drawn": true,
+          "Before_scroll_independent": true,
+          "Changed_pair_exact": true,
+          "Legacy_pair_exact": true,
+          "Manual_pair_exact": true,
+          "Removed_pair_exact": true,
+          "Unchanged_pair_exact": true,
+          "back_pair_restored": true,
+          "cancel_waited_for_owned_query_cleanup": true,
+          "endpoint_target_followed": true,
+          "explicit_reload_rebound": true,
+          "fresh_request_after_cancel": true,
+          "minimum_viewport_drawn": true,
+          "mismatch_cleared_actionable_content": true,
+          "no_graph_returned": true,
+          "normal_no_graph_boot": true,
+          "owned_window_setup_acknowledged": true,
+          "provenance_drawn": true,
+          "refs_entered_by_controls": true
+        },
+        "observations": [
+          {
+            "case": "Changed",
+            "comparison_id": "4a1dc5ee37e1baf0c04ec0805fba6206f152c6864e49cb7030b7871b71320fb2",
+            "head_symbol": null,
+            "symbol": "[\"csharp\",\"@repo/Comparison.csproj\",\"@repo/Changed.cs\",\"@repo/Comparison.csproj|[Comparison]::RevisionFixture.Cases::Changed(System.Boolean)\"]"
+          },
+          {
+            "case": "Unchanged",
+            "comparison_id": "4a1dc5ee37e1baf0c04ec0805fba6206f152c6864e49cb7030b7871b71320fb2",
+            "head_symbol": null,
+            "symbol": "[\"csharp\",\"@repo/Comparison.csproj\",\"@repo/Unchanged.cs\",\"@repo/Comparison.csproj|[Comparison]::RevisionFixture.Stable::Unchanged()\"]"
+          },
+          {
+            "case": "Added",
+            "comparison_id": "4a1dc5ee37e1baf0c04ec0805fba6206f152c6864e49cb7030b7871b71320fb2",
+            "head_symbol": null,
+            "symbol": "[\"csharp\",\"@repo/Comparison.csproj\",\"@repo/Changed.cs\",\"@repo/Comparison.csproj|[Comparison]::RevisionFixture.Cases::Added()\"]"
+          },
+          {
+            "case": "Removed",
+            "comparison_id": "4a1dc5ee37e1baf0c04ec0805fba6206f152c6864e49cb7030b7871b71320fb2",
+            "head_symbol": null,
+            "symbol": "[\"csharp\",\"@repo/Comparison.csproj\",\"@repo/Changed.cs\",\"@repo/Comparison.csproj|[Comparison]::RevisionFixture.Cases::Removed()\"]"
+          },
+          {
+            "case": "Legacy",
+            "comparison_id": "4a1dc5ee37e1baf0c04ec0805fba6206f152c6864e49cb7030b7871b71320fb2",
+            "head_symbol": null,
+            "symbol": "[\"csharp\",\"@repo/Comparison.csproj\",\"@repo/Legacy.cs\",\"@repo/Comparison.csproj|[Comparison]::RevisionFixture.Historical::Legacy()\"]"
+          },
+          {
+            "case": "Changed",
+            "comparison_id": "4a1dc5ee37e1baf0c04ec0805fba6206f152c6864e49cb7030b7871b71320fb2",
+            "head_symbol": null,
+            "symbol": "[\"csharp\",\"@repo/Comparison.csproj\",\"@repo/Changed.cs\",\"@repo/Comparison.csproj|[Comparison]::RevisionFixture.Cases::Changed(System.Boolean)\"]"
+          },
+          {
+            "case": "Manual",
+            "comparison_id": "4a1dc5ee37e1baf0c04ec0805fba6206f152c6864e49cb7030b7871b71320fb2",
+            "head_symbol": "[\"csharp\",\"@repo/Comparison.csproj\",\"@repo/Changed.cs\",\"@repo/Comparison.csproj|[Comparison]::RevisionFixture.Cases::Manual(System.Boolean)\"]",
+            "symbol": "[\"csharp\",\"@repo/Comparison.csproj\",\"@repo/Changed.cs\",\"@repo/Comparison.csproj|[Comparison]::RevisionFixture.Cases::Changed(System.Boolean)\"]"
+          },
+          {
+            "case": "Changed",
+            "comparison_id": "4a1dc5ee37e1baf0c04ec0805fba6206f152c6864e49cb7030b7871b71320fb2",
+            "head_symbol": null,
+            "symbol": "[\"csharp\",\"@repo/Comparison.csproj\",\"@repo/Changed.cs\",\"@repo/Comparison.csproj|[Comparison]::RevisionFixture.Cases::Changed(System.Boolean)\"]"
+          },
+          {
+            "case": "Changed",
+            "comparison_id": "53149490db62d4d1fe6d916d79791f2a314960c827db6aaa775218f8ea858a5c",
+            "head_symbol": null,
+            "symbol": "[\"csharp\",\"@repo/Comparison.csproj\",\"@repo/Changed.cs\",\"@repo/Comparison.csproj|[Comparison]::RevisionFixture.Cases::Changed(System.Boolean)\"]"
+          },
+          {
+            "case": "Changed",
+            "comparison_id": "53149490db62d4d1fe6d916d79791f2a314960c827db6aaa775218f8ea858a5c",
+            "head_symbol": null,
+            "symbol": "[\"csharp\",\"@repo/Comparison.csproj\",\"@repo/Changed.cs\",\"@repo/Comparison.csproj|[Comparison]::RevisionFixture.Cases::Changed(System.Boolean)\"]"
+          }
+        ],
+        "ready_drawn_ms": {
+          "Added-Cases": 492.176334,
+          "Changed-Cases": 511.197417,
+          "Changed-Fresh": 517.246583,
+          "Changed-ManualBase": 525.7356669999999,
+          "Changed-Reloaded": 467.37479199999996,
+          "Changed-Reset": 517.563084,
+          "Legacy-Cases": 467.172916,
+          "Manual-Manual": 534.178708,
+          "Removed-Cases": 484.15125,
+          "Target": 588.171667,
+          "Unchanged-Cases": 518.1372090000001
+        },
+        "captures": [
+          "missing-source",
+          "manual-pair",
+          "restored-pair"
+        ]
+      },
+      "operations": [
+        {
+          "sequence": 1,
+          "operation": "capture",
+          "checkpoint": "missing-source",
+          "proof": {
+            "path": "/private/tmp/task22-comparison-native-final-r2/light/native-missing-source.png",
+            "dimensions": [
+              1162,
+              792
+            ],
+            "sha256": "6ef18db1fdeff163d7ee34502c6bb0e985293ea967e69c6e4a8ed741f9ea8329",
+            "window_id": 22278
+          }
+        },
+        {
+          "sequence": 2,
+          "operation": "capture",
+          "checkpoint": "manual-pair",
+          "proof": {
+            "path": "/private/tmp/task22-comparison-native-final-r2/light/native-manual-pair.png",
+            "dimensions": [
+              1162,
+              792
+            ],
+            "sha256": "8c0440c2f205fb677ca49c64b1a73b623d506a209f753a3a1850fd1334e76023",
+            "window_id": 22278
+          }
+        },
+        {
+          "sequence": 3,
+          "operation": "capture",
+          "checkpoint": "restored-pair",
+          "proof": {
+            "path": "/private/tmp/task22-comparison-native-final-r2/light/native-restored-pair.png",
+            "dimensions": [
+              1162,
+              792
+            ],
+            "sha256": "830f9d11a790ae9a27b7af8840793916d10634b85d230e9bff1c394531c180ce",
+            "window_id": 22278
+          }
+        },
+        {
+          "sequence": 4,
+          "operation": "move_after_ref",
+          "checkpoint": "after-ref-moved",
+          "proof": {
+            "old": "339ccdd60e640b75d2dbb568f0c8672c2ce0c342",
+            "new": "fbe6c819a60a58db8484fcdf046468df70230dfc",
+            "reference": "refs/tags/fixture-after"
+          }
+        },
+        {
+          "sequence": 5,
+          "operation": "arm_git_gate",
+          "checkpoint": "gate-armed",
+          "proof": {
+            "armed": true
+          }
+        },
+        {
+          "sequence": 6,
+          "operation": "wait_git_gate",
+          "checkpoint": "gate-held",
+          "proof": {
+            "pid": 33758,
+            "parent": 33696,
+            "group": 33696,
+            "arguments": [
+              "--no-pager",
+              "-C",
+              "/private/tmp/flow-comparison-native-aw0nlw53/project",
+              "cat-file",
+              "blob",
+              "30560a10afe15db29c561614462570cbe2e08ddf:.codecallnavigator/graph.json"
+            ],
+            "token": "3f2eb035e367407f8ab96f8addec8cea"
+          }
+        },
+        {
+          "sequence": 7,
+          "operation": "release_git_gate",
+          "checkpoint": "gate-released",
+          "proof": {
+            "pid": 33758,
+            "parent": 33696,
+            "group": 33696,
+            "arguments": [
+              "--no-pager",
+              "-C",
+              "/private/tmp/flow-comparison-native-aw0nlw53/project",
+              "cat-file",
+              "blob",
+              "30560a10afe15db29c561614462570cbe2e08ddf:.codecallnavigator/graph.json"
+            ],
+            "token": "3f2eb035e367407f8ab96f8addec8cea"
+          }
+        }
+      ],
+      "window_setup": {
+        "process_id": 33416,
+        "window_id": 22278,
+        "commands": [
+          [
+            "/opt/homebrew/bin/aerospace",
+            "list-windows",
+            "--monitor",
+            "all",
+            "--pid",
+            "33416",
+            "--format",
+            "%{window-id} %{app-pid} %{window-layout}",
+            "--json"
+          ],
+          [
+            "/opt/homebrew/bin/aerospace",
+            "layout",
+            "--window-id",
+            "22278",
+            "floating"
+          ],
+          [
+            "/opt/homebrew/bin/aerospace",
+            "list-windows",
+            "--monitor",
+            "all",
+            "--pid",
+            "33416",
+            "--format",
+            "%{window-id} %{app-pid} %{window-layout}",
+            "--json"
+          ]
+        ],
+        "before": {
+          "app-pid": 33416,
+          "window-id": 22278,
+          "window-layout": "h_tiles"
+        },
+        "after": {
+          "app-pid": 33416,
+          "window-id": 22278,
+          "window-layout": "floating"
+        },
+        "status": "owned_window_floated",
+        "cleanup": "owned_process_exited"
+      }
+    }
+  ]
+}

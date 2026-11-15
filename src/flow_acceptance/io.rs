@@ -18,12 +18,15 @@ enum Command {
     WindowSetup(WindowRequest),
     Capture(CaptureRequest),
     Finish(Box<Report>),
+    External(super::comparison::protocol::Request),
+    FinishComparison(Box<super::comparison::report::Report>),
 }
 
 pub(super) enum Reply {
     WindowSetup(Result<()>),
     Capture(Result<()>),
     Finished(Result<()>),
+    External { sequence: u32, result: Result<()> },
 }
 
 pub(super) struct Worker {
@@ -50,6 +53,13 @@ impl Worker {
             ensure!(
                 !directory.join(name).exists(),
                 "Acceptance output already exists: {name}"
+            );
+        }
+        for entry in fs::read_dir(&directory)? {
+            let name = entry?.file_name();
+            ensure!(
+                !name.to_string_lossy().starts_with("external-"),
+                "Stale comparison protocol file exists"
             );
         }
         let (sender, commands) = mpsc::channel();
@@ -96,6 +106,17 @@ impl Worker {
             .context("Acceptance file worker stopped")
     }
 
+    pub fn external(&self, request: super::comparison::protocol::Request) -> Result<()> {
+        request.validate()?;
+        self.sender
+            .send(Command::External(request))
+            .context("Comparison file worker stopped")
+    }
+    pub fn finish_comparison(&self, report: super::comparison::report::Report) -> Result<()> {
+        self.sender
+            .send(Command::FinishComparison(Box::new(report)))
+            .context("Comparison file worker stopped")
+    }
     pub fn reply(&self) -> Option<Reply> {
         self.receiver.try_recv().ok()
     }
@@ -107,8 +128,9 @@ impl Worker {
 
 impl FileWorker {
     fn work(self, commands: mpsc::Receiver<Command>, replies: mpsc::Sender<Reply>) {
+        let mut sequence = 0;
         while let Ok(command) = commands.recv() {
-            let terminal = matches!(command, Command::Finish(_));
+            let terminal = matches!(command, Command::Finish(_) | Command::FinishComparison(_));
             let reply = match command {
                 Command::WindowSetup(request) => Reply::WindowSetup(self.exchange(
                     "window-request.json",
@@ -120,6 +142,23 @@ impl FileWorker {
                     "capture-ack.json",
                     &request,
                 )),
+                Command::External(request) => {
+                    let result = if request.sequence == sequence + 1 {
+                        sequence = request.sequence;
+                        self.exchange_comparison(&request)
+                    } else {
+                        Err(anyhow::anyhow!(
+                            "External request sequence must increase by one"
+                        ))
+                    };
+                    Reply::External {
+                        sequence: request.sequence,
+                        result,
+                    }
+                }
+                Command::FinishComparison(report) => {
+                    Reply::Finished(write_json(&self.directory, "report.json", &report))
+                }
                 Command::Finish(report) => {
                     Reply::Finished(write_json(&self.directory, "report.json", &report))
                 }
@@ -130,6 +169,11 @@ impl FileWorker {
         }
     }
 
+    fn exchange_comparison(&self, request: &super::comparison::protocol::Request) -> Result<()> {
+        request.validate()?;
+        write_json(&self.directory, &request.filename("request"), request)?;
+        super::comparison::protocol::wait(&self.directory, request, self.timeout, &self.stopped)
+    }
     fn exchange(
         &self,
         request_name: &str,
@@ -224,6 +268,11 @@ mod tests {
     use super::*;
 
     #[test]
+    fn comparison_acknowledgment_has_its_own_versioned_sequence_and_checkpoint() {
+        assert!(super::super::comparison::protocol::sample().acknowledge(br#"{"version":2,"sequence":1,"operation":"arm_git_gate","checkpoint":"gate-armed","success":true}"#).is_ok(),"The comparison protocol needs an independent version two acknowledgment");
+    }
+
+    #[test]
     fn stale_window_setup_acknowledgments_cannot_be_reused() {
         let directory = tempfile::tempdir().unwrap();
         fs::write(
@@ -238,7 +287,11 @@ mod tests {
     fn failed_or_unknown_capture_acknowledgments_cannot_pass() {
         assert!(acknowledge(br#"{"version":1,"success":true}"#).is_ok());
         assert!(acknowledge(br#"{"version":1,"success":false,"error":"capture denied"}"#).is_err());
-        assert!(acknowledge(br#"{"version":2,"success":true}"#).is_err());
+        assert!(
+            super::super::comparison::protocol::sample()
+                .acknowledge(br#"{"version":2,"success":true}"#)
+                .is_err()
+        );
         assert!(acknowledge(br#"{"version":1}"#).is_err());
     }
 

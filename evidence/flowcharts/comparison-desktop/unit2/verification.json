@@ -1,0 +1,145 @@
+{
+  "scope": "TASK22.6 Unit2 separate historical comparison controller; temporary checkout only",
+  "status": "focused_unit_ready_for_independent_review",
+  "tests_first": [
+    {
+      "log": "lease-red.log",
+      "failed": 1,
+      "reason": "dropped queued closure retained shutdown ownership before Lease::drop"
+    },
+    {
+      "log": "independent-symlink-red.log",
+      "failed": 1,
+      "reason": "same physical project installed canonically closed a comparison captured through a symlink"
+    },
+    {
+      "log": "publication-race-red.log",
+      "failed": 1,
+      "reason": "Opened published when identity arrived between first identity drain and catalog acceptance"
+    },
+    {
+      "log": "independent-error-outcome-red.log",
+      "failed": 1,
+      "reason": "Catalog error outcome bypassed pending different-project identity after first drain"
+    },
+    {
+      "log": "unavailable-identity-red.log",
+      "failed": 1,
+      "reason": "Completed unavailable identity remained pending after later installation"
+    }
+  ],
+  "tests": {
+    "comparison": [
+      "test result: ok. 32 passed; 0 failed; 0 ignored; 0 measured; 283 filtered out; finished in 11.01s"
+    ],
+    "clients": [
+      "test result: ok. 36 passed; 0 failed; 3 ignored; 0 measured; 271 filtered out; finished in 23.39s"
+    ],
+    "ordinary_flow_ui": [
+      "test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 297 filtered out; finished in 1.56s"
+    ],
+    "ordinary_flow_workspace": [
+      "test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 307 filtered out; finished in 0.00s"
+    ],
+    "jobs_adoption_shutdown": [
+      "test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 305 filtered out; finished in 0.01s"
+    ]
+  },
+  "test_logs": {
+    "comparison": "expanded-green.log",
+    "clients": "client-final.log",
+    "ordinary_flow_ui": "ordinary-flow-ui.log",
+    "ordinary_flow_workspace": "ordinary-workspace.log",
+    "jobs_adoption_shutdown": "jobs-final.log"
+  },
+  "source": {
+    "new_controller_tests": 18,
+    "comparison_group_passed": 32,
+    "ordinary_flow_ui_passed": 12,
+    "ordinary_flow_workspace_passed": 3,
+    "jobs_group_passed": 5,
+    "client_group_passed": 36,
+    "client_existing_ignored": 3,
+    "groups_overlap": true
+  },
+  "compiler": {
+    "clippy_command": "cargo clippy --locked -p codecallnavigator --bin codecallnavigator --tests",
+    "exit": 0,
+    "project_warning_summaries": [
+      "warning: `codecallnavigator` (bin \"codecallnavigator\") generated 68 warnings (run `cargo clippy --fix --bin \"codecallnavigator\" -p codecallnavigator -- ` to apply 1 suggestion)",
+      "warning: `codecallnavigator` (bin \"codecallnavigator\" test) generated 15 warnings (8 duplicates)"
+    ],
+    "limitation": "Remaining project warnings are unused API/DTO members awaiting the Unit3 view. No suppression or fake production consumer. Full clean -D warnings gate remains for actual consumers. Existing vendor warnings are separate.",
+    "log": "clippy-final.log"
+  },
+  "quality": {
+    "installed_cli": "1.5.6",
+    "modern_mcp": "1.5.20",
+    "reviewed_files": 21,
+    "all_scores": 10,
+    "safeguard": "passed 32 modified eligible files across Units1+2",
+    "reports": [
+      "quality-final.json",
+      "quality-clippy-refactor.json",
+      "quality-identity.json",
+      "quality-modern.json",
+      "quality-modern-clippy-refactor.json",
+      "quality-modern-identity.json",
+      "quality-publication-race.json",
+      "quality-modern-publication-race.json",
+      "quality-test-imports.json",
+      "quality-catalog-outcomes.json",
+      "quality-modern-catalog-outcomes.json"
+    ]
+  },
+  "format": {
+    "exit": 0,
+    "checked_files": 32,
+    "log": "format.log"
+  },
+  "invariants": [
+    "Dedicated fresh transport from captured descriptor, or runtime/root fallback without a graph",
+    "Worker-only physical project normalization; raw edited root cannot retarget an open workspace",
+    "Bound detail and Reload stay anchored after an alias is retargeted",
+    "Serial-tagged identity arrives before CLI read, preserving/cancelling loading adoption races appropriately",
+    "Separate catalog/detail cancellation serials and immutable endpoint binding",
+    "Per-side namespaced Session camera/scroll/selection and cached analyzed source",
+    "Bounded 100-pair history; manual counterpart/reset and target-follow navigation remain explicit",
+    "Moved refs clear catalog, current pair, history and binding; explicit Reload required",
+    "Owned cleanup tracked from queue through cancelled result destruction",
+    "Final idle-client owner retired off UI for running, settled and published requests",
+    "jobs ready_to_quit waits for owned cleanup, with final completion wake",
+    "Ordinary source widget IDs and source-selection behavior preserved",
+    "Opened carries canonical identity and validates it atomically; rejected binding drops while Project still pins the client, before retirement",
+    "Every catalog completion carries its physical identity, including errors; reconciliation precedes every phase/result transition",
+    "Identity owner distinguishes pending/resolved/unavailable; unavailable completion does not await a never-arriving fact"
+  ],
+  "not_run": [
+    "No full workspace verification",
+    "No native visual acceptance or analyzer builds",
+    "Unit3 comparison controls/pane view not implemented"
+  ],
+  "files": {
+    "src/app.rs": "403cbc81be21ba68e33e13f8a17da340efe26078121cf937f0ea0e9c4fcf85f1",
+    "src/jobs.rs": "7ecc003d2c86aa107d0dd85e800122e87c379e3de925ce474f9dfbae65618650",
+    "src/graph_install.rs": "358f712abd5a092d0ff7f9539c3537ec5dbc3036f2d836c09541b80b3f8a6890",
+    "src/main.rs": "9a15635ad3930f701cbc374f76a0a8485ee8e3174bf192b9322901967563bdcc",
+    "src/flow_workspace.rs": "d697a94fd2d4ca972cbc58261a0de9c0b99a9a57412a377d95fa45f52bbabd16",
+    "src/flow_comparison.rs": "c86ad6736314ee7d794a87520ae6913c3befa9c2915fb8fdede3d71df49a6226",
+    "src/jobs/comparison_tests.rs": "db058600f0d4cd3d33727ff27b41740f12d78a45fb6b24cea93ab4fed4e3d6c9",
+    "src/engine_client/flow_comparison/validation/catalog.rs": "40c339662cdccea72001d0dd58a09dbbe9893545e7be8759ff4b8e34440a2f00",
+    "src/flow_comparison/publication_tests.rs": "823aafac6c841d8b1bdb09499f09c9daa84bbdf1866a6d54975d29f832902782",
+    "src/flow_comparison/cleanup_tests.rs": "2ca2c537bdac9318588ef057e04d7f7ac2350e5a92b60119b928cb2f504519f9",
+    "src/flow_comparison/context_tests.rs": "11cb76500f0d26f0b451e567a4b9ac98ec6024da967c05d0f45963a1db9e248d",
+    "src/flow_comparison/pair.rs": "bf8d8386ccd0645a214b5514cf0a4a4d04211e38c6d0c9a0ddd03c77198757a7",
+    "src/flow_comparison/identity.rs": "794eb063b77b7b253485e83d284fe1647088f9e629faf35a9c882924f0be76c2",
+    "src/flow_comparison/navigation.rs": "cec939539b1ede91e278557a7c894eb68f5e7fcc60b1ef40c7d24cda212a123b",
+    "src/flow_comparison/identity_tests.rs": "9f79d8ad2b78a69365e521fd19e85c5e5052609a6d7ed1aa087dec883ca7f877",
+    "src/flow_comparison/tests.rs": "6462165564847b073a771e985693c6c4a1ac1b147bd174e6bcbbb50602e6fc0c",
+    "src/flow_comparison/requests.rs": "56584eaddf34fd81631a38832520b5d119628aa58b94974c62f41f9c1c398192",
+    "src/flow_comparison/publication.rs": "9ba7344fe3fae1f6f7fbbae2bb05a6e12a560065ff95d646c3416442719a88c4",
+    "src/flow_comparison/lifecycle.rs": "52068b93558393384d67b601853395d43e1e6ea75418f32c42a01bc3bac67614",
+    "src/flow_comparison/work.rs": "3f74c204b80834ddb0edee0975bcd1fd793797af300d20d7ba2a570d15325039",
+    "src/flow_comparison/publication_race_tests.rs": "e11b6be1ee4a25f50e09d15659776c2e3f09b8582837cde2bb133fd2dc77bc70"
+  }
+}

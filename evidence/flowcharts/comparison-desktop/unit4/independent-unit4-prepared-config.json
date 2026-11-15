@@ -1,0 +1,1360 @@
+{
+  "version": 2,
+  "project": "/private/tmp/task22-unit4-independent-zzkvu66i/project",
+  "base_ref": "refs/tags/fixture-before",
+  "head_ref": "refs/tags/fixture-after",
+  "initial": {
+    "comparison_id": "b117249e2250fc9e65fee6df0d04fff6ec9949550b51e043d382b836244c03a1",
+    "base_commit": "9a2ecc86889003b8b59f495dd36c6092b512bd7f",
+    "head_commit": "9ad416a5576a1cd180180d9d82628c6e6aa5b10b",
+    "base_digest": "7d4c75263ffa9bfe6560667f75f1eb83b781153edff98bae001125bef1ae0fbe",
+    "head_digest": "88341f198a9a8e381b40df3f7551339a2229901d939e11132ce8f0da989d8392"
+  },
+  "reloaded": {
+    "comparison_id": "84518fdfbc79711f450b3d6ca011419e51c0d9aa9e0dd8dc7d073370e167b3c9",
+    "base_commit": "9a2ecc86889003b8b59f495dd36c6092b512bd7f",
+    "head_commit": "ff4d33c47769e877c364398c76703da7a43b18fa",
+    "base_digest": "7d4c75263ffa9bfe6560667f75f1eb83b781153edff98bae001125bef1ae0fbe",
+    "head_digest": "88341f198a9a8e381b40df3f7551339a2229901d939e11132ce8f0da989d8392"
+  },
+  "cases": [
+    {
+      "kind": "changed",
+      "symbol": "[\"csharp\",\"@repo/Comparison.csproj\",\"@repo/Changed.cs\",\"@repo/Comparison.csproj|[Comparison]::RevisionFixture.Cases::Changed(System.Boolean)\"]",
+      "head_symbol": null,
+      "before": {
+        "status": "ready",
+        "symbol": "[\"csharp\",\"@repo/Comparison.csproj\",\"@repo/Changed.cs\",\"@repo/Comparison.csproj|[Comparison]::RevisionFixture.Cases::Changed(System.Boolean)\"]",
+        "source": "\ufeff// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\nnamespace RevisionFixture;\r\npublic static class Cases {\r\n    public static int Changed(bool flag) {\r\n        if (flag) return Leaf(1);\r\n        return 0;\r\n    }\r\n    public static int Leaf(int value) => value;\r\n    public static int Manual(bool flag) => flag ? Leaf(3) : 2;\r\n    public static int Removed() => Leaf(7);\r\n}\r\n",
+        "chart": {
+          "diagnostics": [],
+          "entry": 0,
+          "file": "@repo/Changed.cs",
+          "links": [
+            {
+              "from": 0,
+              "kind": "normal",
+              "label": "",
+              "to": 1
+            },
+            {
+              "from": 1,
+              "kind": "yes",
+              "label": "true",
+              "to": 2
+            },
+            {
+              "from": 2,
+              "kind": "normal",
+              "label": "",
+              "to": 3
+            },
+            {
+              "from": 3,
+              "kind": "normal",
+              "label": "",
+              "to": 4
+            },
+            {
+              "from": 1,
+              "kind": "no",
+              "label": "false",
+              "to": 5
+            },
+            {
+              "from": 5,
+              "kind": "normal",
+              "label": "",
+              "to": 6
+            },
+            {
+              "from": 4,
+              "kind": "normal",
+              "label": "",
+              "to": 7
+            },
+            {
+              "from": 6,
+              "kind": "normal",
+              "label": "",
+              "to": 7
+            }
+          ],
+          "partial": false,
+          "regions": [],
+          "span": {
+            "end": 6763,
+            "start": 6701
+          },
+          "steps": [
+            {
+              "calls": [],
+              "id": 0,
+              "kind": "start",
+              "label": "Function entry",
+              "span": {
+                "end": 6763,
+                "start": 6701
+              }
+            },
+            {
+              "calls": [],
+              "id": 1,
+              "kind": "decision",
+              "label": "flag",
+              "span": {
+                "end": 6720,
+                "start": 6716
+              }
+            },
+            {
+              "calls": [],
+              "id": 2,
+              "kind": "expression",
+              "label": "1",
+              "span": {
+                "end": 6735,
+                "start": 6734
+              }
+            },
+            {
+              "calls": [
+                {
+                  "diagnostic": null,
+                  "label": "Leaf(1)",
+                  "span": {
+                    "end": 6736,
+                    "start": 6729
+                  },
+                  "targets": [
+                    {
+                      "certainty": "direct",
+                      "provenance": "roslyn:call",
+                      "symbol": "[\"csharp\",\"@repo/Comparison.csproj\",\"@repo/Changed.cs\",\"@repo/Comparison.csproj|[Comparison]::RevisionFixture.Cases::Leaf(System.Int32)\"]"
+                    }
+                  ]
+                }
+              ],
+              "id": 3,
+              "kind": "expression",
+              "label": "Leaf(1)",
+              "span": {
+                "end": 6736,
+                "start": 6729
+              }
+            },
+            {
+              "calls": [],
+              "id": 4,
+              "kind": "return",
+              "label": "return",
+              "span": {
+                "end": 6737,
+                "start": 6722
+              }
+            },
+            {
+              "calls": [],
+              "id": 5,
+              "kind": "expression",
+              "label": "0",
+              "span": {
+                "end": 6755,
+                "start": 6754
+              }
+            },
+            {
+              "calls": [],
+              "id": 6,
+              "kind": "return",
+              "label": "return",
+              "span": {
+                "end": 6756,
+                "start": 6747
+              }
+            },
+            {
+              "calls": [],
+              "id": 7,
+              "kind": "exit",
+              "label": "Return to caller",
+              "span": {
+                "end": 6763,
+                "start": 6701
+              }
+            }
+          ],
+          "symbol": "[\"csharp\",\"@repo/Comparison.csproj\",\"@repo/Changed.cs\",\"@repo/Comparison.csproj|[Comparison]::RevisionFixture.Cases::Changed(System.Boolean)\"]"
+        }
+      },
+      "after": {
+        "status": "ready",
+        "symbol": "[\"csharp\",\"@repo/Comparison.csproj\",\"@repo/Changed.cs\",\"@repo/Comparison.csproj|[Comparison]::RevisionFixture.Cases::Changed(System.Boolean)\"]",
+        "source": "\ufeff// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\nnamespace RevisionFixture;\r\npublic static class Cases {\r\n    public static int Changed(bool flag) {\r\n        if (flag) return Leaf(2);\r\n        return Leaf(4);\r\n    }\r\n    public static int Leaf(int value) => value;\r\n    public static int Manual(bool flag) => flag ? Leaf(3) : 2;\r\n    public static int Added() => Leaf(9);\r\n}\r\n",
+        "chart": {
+          "diagnostics": [],
+          "entry": 0,
+          "file": "@repo/Changed.cs",
+          "links": [
+            {
+              "from": 0,
+              "kind": "normal",
+              "label": "",
+              "to": 1
+            },
+            {
+              "from": 1,
+              "kind": "yes",
+              "label": "true",
+              "to": 2
+            },
+            {
+              "from": 2,
+              "kind": "normal",
+              "label": "",
+              "to": 3
+            },
+            {
+              "from": 3,
+              "kind": "normal",
+              "label": "",
+              "to": 4
+            },
+            {
+              "from": 1,
+              "kind": "no",
+              "label": "false",
+              "to": 5
+            },
+            {
+              "from": 5,
+              "kind": "normal",
+              "label": "",
+              "to": 6
+            },
+            {
+              "from": 6,
+              "kind": "normal",
+              "label": "",
+              "to": 7
+            },
+            {
+              "from": 4,
+              "kind": "normal",
+              "label": "",
+              "to": 8
+            },
+            {
+              "from": 7,
+              "kind": "normal",
+              "label": "",
+              "to": 8
+            }
+          ],
+          "partial": false,
+          "regions": [],
+          "span": {
+            "end": 6769,
+            "start": 6701
+          },
+          "steps": [
+            {
+              "calls": [],
+              "id": 0,
+              "kind": "start",
+              "label": "Function entry",
+              "span": {
+                "end": 6769,
+                "start": 6701
+              }
+            },
+            {
+              "calls": [],
+              "id": 1,
+              "kind": "decision",
+              "label": "flag",
+              "span": {
+                "end": 6720,
+                "start": 6716
+              }
+            },
+            {
+              "calls": [],
+              "id": 2,
+              "kind": "expression",
+              "label": "2",
+              "span": {
+                "end": 6735,
+                "start": 6734
+              }
+            },
+            {
+              "calls": [
+                {
+                  "diagnostic": null,
+                  "label": "Leaf(2)",
+                  "span": {
+                    "end": 6736,
+                    "start": 6729
+                  },
+                  "targets": [
+                    {
+                      "certainty": "direct",
+                      "provenance": "roslyn:call",
+                      "symbol": "[\"csharp\",\"@repo/Comparison.csproj\",\"@repo/Changed.cs\",\"@repo/Comparison.csproj|[Comparison]::RevisionFixture.Cases::Leaf(System.Int32)\"]"
+                    }
+                  ]
+                }
+              ],
+              "id": 3,
+              "kind": "expression",
+              "label": "Leaf(2)",
+              "span": {
+                "end": 6736,
+                "start": 6729
+              }
+            },
+            {
+              "calls": [],
+              "id": 4,
+              "kind": "return",
+              "label": "return",
+              "span": {
+                "end": 6737,
+                "start": 6722
+              }
+            },
+            {
+              "calls": [],
+              "id": 5,
+              "kind": "expression",
+              "label": "4",
+              "span": {
+                "end": 6760,
+                "start": 6759
+              }
+            },
+            {
+              "calls": [
+                {
+                  "diagnostic": null,
+                  "label": "Leaf(4)",
+                  "span": {
+                    "end": 6761,
+                    "start": 6754
+                  },
+                  "targets": [
+                    {
+                      "certainty": "direct",
+                      "provenance": "roslyn:call",
+                      "symbol": "[\"csharp\",\"@repo/Comparison.csproj\",\"@repo/Changed.cs\",\"@repo/Comparison.csproj|[Comparison]::RevisionFixture.Cases::Leaf(System.Int32)\"]"
+                    }
+                  ]
+                }
+              ],
+              "id": 6,
+              "kind": "expression",
+              "label": "Leaf(4)",
+              "span": {
+                "end": 6761,
+                "start": 6754
+              }
+            },
+            {
+              "calls": [],
+              "id": 7,
+              "kind": "return",
+              "label": "return",
+              "span": {
+                "end": 6762,
+                "start": 6747
+              }
+            },
+            {
+              "calls": [],
+              "id": 8,
+              "kind": "exit",
+              "label": "Return to caller",
+              "span": {
+                "end": 6769,
+                "start": 6701
+              }
+            }
+          ],
+          "symbol": "[\"csharp\",\"@repo/Comparison.csproj\",\"@repo/Changed.cs\",\"@repo/Comparison.csproj|[Comparison]::RevisionFixture.Cases::Changed(System.Boolean)\"]"
+        }
+      }
+    },
+    {
+      "kind": "unchanged",
+      "symbol": "[\"csharp\",\"@repo/Comparison.csproj\",\"@repo/Unchanged.cs\",\"@repo/Comparison.csproj|[Comparison]::RevisionFixture.Stable::Unchanged()\"]",
+      "head_symbol": null,
+      "before": {
+        "status": "ready",
+        "symbol": "[\"csharp\",\"@repo/Comparison.csproj\",\"@repo/Unchanged.cs\",\"@repo/Comparison.csproj|[Comparison]::RevisionFixture.Stable::Unchanged()\"]",
+        "source": "namespace RevisionFixture;\npublic static class Stable {\n    public static int Unchanged() => 42;\n}\n",
+        "chart": {
+          "diagnostics": [],
+          "entry": 0,
+          "file": "@repo/Unchanged.cs",
+          "links": [
+            {
+              "from": 0,
+              "kind": "normal",
+              "label": "",
+              "to": 1
+            },
+            {
+              "from": 1,
+              "kind": "normal",
+              "label": "",
+              "to": 2
+            },
+            {
+              "from": 2,
+              "kind": "normal",
+              "label": "",
+              "to": 3
+            }
+          ],
+          "partial": false,
+          "regions": [],
+          "span": {
+            "end": 95,
+            "start": 90
+          },
+          "steps": [
+            {
+              "calls": [],
+              "id": 0,
+              "kind": "start",
+              "label": "Function entry",
+              "span": {
+                "end": 95,
+                "start": 90
+              }
+            },
+            {
+              "calls": [],
+              "id": 1,
+              "kind": "expression",
+              "label": "42",
+              "span": {
+                "end": 95,
+                "start": 93
+              }
+            },
+            {
+              "calls": [],
+              "id": 2,
+              "kind": "return",
+              "label": "return",
+              "span": {
+                "end": 95,
+                "start": 90
+              }
+            },
+            {
+              "calls": [],
+              "id": 3,
+              "kind": "exit",
+              "label": "Return to caller",
+              "span": {
+                "end": 95,
+                "start": 90
+              }
+            }
+          ],
+          "symbol": "[\"csharp\",\"@repo/Comparison.csproj\",\"@repo/Unchanged.cs\",\"@repo/Comparison.csproj|[Comparison]::RevisionFixture.Stable::Unchanged()\"]"
+        }
+      },
+      "after": {
+        "status": "ready",
+        "symbol": "[\"csharp\",\"@repo/Comparison.csproj\",\"@repo/Unchanged.cs\",\"@repo/Comparison.csproj|[Comparison]::RevisionFixture.Stable::Unchanged()\"]",
+        "source": "namespace RevisionFixture;\npublic static class Stable {\n    public static int Unchanged() => 42;\n}\n",
+        "chart": {
+          "diagnostics": [],
+          "entry": 0,
+          "file": "@repo/Unchanged.cs",
+          "links": [
+            {
+              "from": 0,
+              "kind": "normal",
+              "label": "",
+              "to": 1
+            },
+            {
+              "from": 1,
+              "kind": "normal",
+              "label": "",
+              "to": 2
+            },
+            {
+              "from": 2,
+              "kind": "normal",
+              "label": "",
+              "to": 3
+            }
+          ],
+          "partial": false,
+          "regions": [],
+          "span": {
+            "end": 95,
+            "start": 90
+          },
+          "steps": [
+            {
+              "calls": [],
+              "id": 0,
+              "kind": "start",
+              "label": "Function entry",
+              "span": {
+                "end": 95,
+                "start": 90
+              }
+            },
+            {
+              "calls": [],
+              "id": 1,
+              "kind": "expression",
+              "label": "42",
+              "span": {
+                "end": 95,
+                "start": 93
+              }
+            },
+            {
+              "calls": [],
+              "id": 2,
+              "kind": "return",
+              "label": "return",
+              "span": {
+                "end": 95,
+                "start": 90
+              }
+            },
+            {
+              "calls": [],
+              "id": 3,
+              "kind": "exit",
+              "label": "Return to caller",
+              "span": {
+                "end": 95,
+                "start": 90
+              }
+            }
+          ],
+          "symbol": "[\"csharp\",\"@repo/Comparison.csproj\",\"@repo/Unchanged.cs\",\"@repo/Comparison.csproj|[Comparison]::RevisionFixture.Stable::Unchanged()\"]"
+        }
+      }
+    },
+    {
+      "kind": "added",
+      "symbol": "[\"csharp\",\"@repo/Comparison.csproj\",\"@repo/Changed.cs\",\"@repo/Comparison.csproj|[Comparison]::RevisionFixture.Cases::Added()\"]",
+      "head_symbol": null,
+      "before": {
+        "status": "missing"
+      },
+      "after": {
+        "status": "ready",
+        "symbol": "[\"csharp\",\"@repo/Comparison.csproj\",\"@repo/Changed.cs\",\"@repo/Comparison.csproj|[Comparison]::RevisionFixture.Cases::Added()\"]",
+        "source": "\ufeff// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\nnamespace RevisionFixture;\r\npublic static class Cases {\r\n    public static int Changed(bool flag) {\r\n        if (flag) return Leaf(2);\r\n        return Leaf(4);\r\n    }\r\n    public static int Leaf(int value) => value;\r\n    public static int Manual(bool flag) => flag ? Leaf(3) : 2;\r\n    public static int Added() => Leaf(9);\r\n}\r\n",
+        "chart": {
+          "diagnostics": [],
+          "entry": 0,
+          "file": "@repo/Changed.cs",
+          "links": [
+            {
+              "from": 0,
+              "kind": "normal",
+              "label": "",
+              "to": 1
+            },
+            {
+              "from": 1,
+              "kind": "normal",
+              "label": "",
+              "to": 2
+            },
+            {
+              "from": 2,
+              "kind": "normal",
+              "label": "",
+              "to": 3
+            },
+            {
+              "from": 3,
+              "kind": "normal",
+              "label": "",
+              "to": 4
+            }
+          ],
+          "partial": false,
+          "regions": [],
+          "span": {
+            "end": 6924,
+            "start": 6914
+          },
+          "steps": [
+            {
+              "calls": [],
+              "id": 0,
+              "kind": "start",
+              "label": "Function entry",
+              "span": {
+                "end": 6924,
+                "start": 6914
+              }
+            },
+            {
+              "calls": [],
+              "id": 1,
+              "kind": "expression",
+              "label": "9",
+              "span": {
+                "end": 6923,
+                "start": 6922
+              }
+            },
+            {
+              "calls": [
+                {
+                  "diagnostic": null,
+                  "label": "Leaf(9)",
+                  "span": {
+                    "end": 6924,
+                    "start": 6917
+                  },
+                  "targets": [
+                    {
+                      "certainty": "direct",
+                      "provenance": "roslyn:call",
+                      "symbol": "[\"csharp\",\"@repo/Comparison.csproj\",\"@repo/Changed.cs\",\"@repo/Comparison.csproj|[Comparison]::RevisionFixture.Cases::Leaf(System.Int32)\"]"
+                    }
+                  ]
+                }
+              ],
+              "id": 2,
+              "kind": "expression",
+              "label": "Leaf(9)",
+              "span": {
+                "end": 6924,
+                "start": 6917
+              }
+            },
+            {
+              "calls": [],
+              "id": 3,
+              "kind": "return",
+              "label": "return",
+              "span": {
+                "end": 6924,
+                "start": 6914
+              }
+            },
+            {
+              "calls": [],
+              "id": 4,
+              "kind": "exit",
+              "label": "Return to caller",
+              "span": {
+                "end": 6924,
+                "start": 6914
+              }
+            }
+          ],
+          "symbol": "[\"csharp\",\"@repo/Comparison.csproj\",\"@repo/Changed.cs\",\"@repo/Comparison.csproj|[Comparison]::RevisionFixture.Cases::Added()\"]"
+        }
+      }
+    },
+    {
+      "kind": "removed",
+      "symbol": "[\"csharp\",\"@repo/Comparison.csproj\",\"@repo/Changed.cs\",\"@repo/Comparison.csproj|[Comparison]::RevisionFixture.Cases::Removed()\"]",
+      "head_symbol": null,
+      "before": {
+        "status": "ready",
+        "symbol": "[\"csharp\",\"@repo/Comparison.csproj\",\"@repo/Changed.cs\",\"@repo/Comparison.csproj|[Comparison]::RevisionFixture.Cases::Removed()\"]",
+        "source": "\ufeff// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\nnamespace RevisionFixture;\r\npublic static class Cases {\r\n    public static int Changed(bool flag) {\r\n        if (flag) return Leaf(1);\r\n        return 0;\r\n    }\r\n    public static int Leaf(int value) => value;\r\n    public static int Manual(bool flag) => flag ? Leaf(3) : 2;\r\n    public static int Removed() => Leaf(7);\r\n}\r\n",
+        "chart": {
+          "diagnostics": [],
+          "entry": 0,
+          "file": "@repo/Changed.cs",
+          "links": [
+            {
+              "from": 0,
+              "kind": "normal",
+              "label": "",
+              "to": 1
+            },
+            {
+              "from": 1,
+              "kind": "normal",
+              "label": "",
+              "to": 2
+            },
+            {
+              "from": 2,
+              "kind": "normal",
+              "label": "",
+              "to": 3
+            },
+            {
+              "from": 3,
+              "kind": "normal",
+              "label": "",
+              "to": 4
+            }
+          ],
+          "partial": false,
+          "regions": [],
+          "span": {
+            "end": 6920,
+            "start": 6910
+          },
+          "steps": [
+            {
+              "calls": [],
+              "id": 0,
+              "kind": "start",
+              "label": "Function entry",
+              "span": {
+                "end": 6920,
+                "start": 6910
+              }
+            },
+            {
+              "calls": [],
+              "id": 1,
+              "kind": "expression",
+              "label": "7",
+              "span": {
+                "end": 6919,
+                "start": 6918
+              }
+            },
+            {
+              "calls": [
+                {
+                  "diagnostic": null,
+                  "label": "Leaf(7)",
+                  "span": {
+                    "end": 6920,
+                    "start": 6913
+                  },
+                  "targets": [
+                    {
+                      "certainty": "direct",
+                      "provenance": "roslyn:call",
+                      "symbol": "[\"csharp\",\"@repo/Comparison.csproj\",\"@repo/Changed.cs\",\"@repo/Comparison.csproj|[Comparison]::RevisionFixture.Cases::Leaf(System.Int32)\"]"
+                    }
+                  ]
+                }
+              ],
+              "id": 2,
+              "kind": "expression",
+              "label": "Leaf(7)",
+              "span": {
+                "end": 6920,
+                "start": 6913
+              }
+            },
+            {
+              "calls": [],
+              "id": 3,
+              "kind": "return",
+              "label": "return",
+              "span": {
+                "end": 6920,
+                "start": 6910
+              }
+            },
+            {
+              "calls": [],
+              "id": 4,
+              "kind": "exit",
+              "label": "Return to caller",
+              "span": {
+                "end": 6920,
+                "start": 6910
+              }
+            }
+          ],
+          "symbol": "[\"csharp\",\"@repo/Comparison.csproj\",\"@repo/Changed.cs\",\"@repo/Comparison.csproj|[Comparison]::RevisionFixture.Cases::Removed()\"]"
+        }
+      },
+      "after": {
+        "status": "missing"
+      }
+    },
+    {
+      "kind": "legacy",
+      "symbol": "[\"csharp\",\"@repo/Comparison.csproj\",\"@repo/Legacy.cs\",\"@repo/Comparison.csproj|[Comparison]::RevisionFixture.Historical::Legacy()\"]",
+      "head_symbol": null,
+      "before": {
+        "status": "unavailable",
+        "reason": "missing_source"
+      },
+      "after": {
+        "status": "ready",
+        "symbol": "[\"csharp\",\"@repo/Comparison.csproj\",\"@repo/Legacy.cs\",\"@repo/Comparison.csproj|[Comparison]::RevisionFixture.Historical::Legacy()\"]",
+        "source": "namespace RevisionFixture;\npublic static class Historical {\n    public static int Legacy() => 8;\n}\n",
+        "chart": {
+          "diagnostics": [],
+          "entry": 0,
+          "file": "@repo/Legacy.cs",
+          "links": [
+            {
+              "from": 0,
+              "kind": "normal",
+              "label": "",
+              "to": 1
+            },
+            {
+              "from": 1,
+              "kind": "normal",
+              "label": "",
+              "to": 2
+            },
+            {
+              "from": 2,
+              "kind": "normal",
+              "label": "",
+              "to": 3
+            }
+          ],
+          "partial": false,
+          "regions": [],
+          "span": {
+            "end": 95,
+            "start": 91
+          },
+          "steps": [
+            {
+              "calls": [],
+              "id": 0,
+              "kind": "start",
+              "label": "Function entry",
+              "span": {
+                "end": 95,
+                "start": 91
+              }
+            },
+            {
+              "calls": [],
+              "id": 1,
+              "kind": "expression",
+              "label": "8",
+              "span": {
+                "end": 95,
+                "start": 94
+              }
+            },
+            {
+              "calls": [],
+              "id": 2,
+              "kind": "return",
+              "label": "return",
+              "span": {
+                "end": 95,
+                "start": 91
+              }
+            },
+            {
+              "calls": [],
+              "id": 3,
+              "kind": "exit",
+              "label": "Return to caller",
+              "span": {
+                "end": 95,
+                "start": 91
+              }
+            }
+          ],
+          "symbol": "[\"csharp\",\"@repo/Comparison.csproj\",\"@repo/Legacy.cs\",\"@repo/Comparison.csproj|[Comparison]::RevisionFixture.Historical::Legacy()\"]"
+        }
+      }
+    },
+    {
+      "kind": "manual",
+      "symbol": "[\"csharp\",\"@repo/Comparison.csproj\",\"@repo/Changed.cs\",\"@repo/Comparison.csproj|[Comparison]::RevisionFixture.Cases::Changed(System.Boolean)\"]",
+      "head_symbol": "[\"csharp\",\"@repo/Comparison.csproj\",\"@repo/Changed.cs\",\"@repo/Comparison.csproj|[Comparison]::RevisionFixture.Cases::Manual(System.Boolean)\"]",
+      "before": {
+        "status": "ready",
+        "symbol": "[\"csharp\",\"@repo/Comparison.csproj\",\"@repo/Changed.cs\",\"@repo/Comparison.csproj|[Comparison]::RevisionFixture.Cases::Changed(System.Boolean)\"]",
+        "source": "\ufeff// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\nnamespace RevisionFixture;\r\npublic static class Cases {\r\n    public static int Changed(bool flag) {\r\n        if (flag) return Leaf(1);\r\n        return 0;\r\n    }\r\n    public static int Leaf(int value) => value;\r\n    public static int Manual(bool flag) => flag ? Leaf(3) : 2;\r\n    public static int Removed() => Leaf(7);\r\n}\r\n",
+        "chart": {
+          "diagnostics": [],
+          "entry": 0,
+          "file": "@repo/Changed.cs",
+          "links": [
+            {
+              "from": 0,
+              "kind": "normal",
+              "label": "",
+              "to": 1
+            },
+            {
+              "from": 1,
+              "kind": "yes",
+              "label": "true",
+              "to": 2
+            },
+            {
+              "from": 2,
+              "kind": "normal",
+              "label": "",
+              "to": 3
+            },
+            {
+              "from": 3,
+              "kind": "normal",
+              "label": "",
+              "to": 4
+            },
+            {
+              "from": 1,
+              "kind": "no",
+              "label": "false",
+              "to": 5
+            },
+            {
+              "from": 5,
+              "kind": "normal",
+              "label": "",
+              "to": 6
+            },
+            {
+              "from": 4,
+              "kind": "normal",
+              "label": "",
+              "to": 7
+            },
+            {
+              "from": 6,
+              "kind": "normal",
+              "label": "",
+              "to": 7
+            }
+          ],
+          "partial": false,
+          "regions": [],
+          "span": {
+            "end": 6763,
+            "start": 6701
+          },
+          "steps": [
+            {
+              "calls": [],
+              "id": 0,
+              "kind": "start",
+              "label": "Function entry",
+              "span": {
+                "end": 6763,
+                "start": 6701
+              }
+            },
+            {
+              "calls": [],
+              "id": 1,
+              "kind": "decision",
+              "label": "flag",
+              "span": {
+                "end": 6720,
+                "start": 6716
+              }
+            },
+            {
+              "calls": [],
+              "id": 2,
+              "kind": "expression",
+              "label": "1",
+              "span": {
+                "end": 6735,
+                "start": 6734
+              }
+            },
+            {
+              "calls": [
+                {
+                  "diagnostic": null,
+                  "label": "Leaf(1)",
+                  "span": {
+                    "end": 6736,
+                    "start": 6729
+                  },
+                  "targets": [
+                    {
+                      "certainty": "direct",
+                      "provenance": "roslyn:call",
+                      "symbol": "[\"csharp\",\"@repo/Comparison.csproj\",\"@repo/Changed.cs\",\"@repo/Comparison.csproj|[Comparison]::RevisionFixture.Cases::Leaf(System.Int32)\"]"
+                    }
+                  ]
+                }
+              ],
+              "id": 3,
+              "kind": "expression",
+              "label": "Leaf(1)",
+              "span": {
+                "end": 6736,
+                "start": 6729
+              }
+            },
+            {
+              "calls": [],
+              "id": 4,
+              "kind": "return",
+              "label": "return",
+              "span": {
+                "end": 6737,
+                "start": 6722
+              }
+            },
+            {
+              "calls": [],
+              "id": 5,
+              "kind": "expression",
+              "label": "0",
+              "span": {
+                "end": 6755,
+                "start": 6754
+              }
+            },
+            {
+              "calls": [],
+              "id": 6,
+              "kind": "return",
+              "label": "return",
+              "span": {
+                "end": 6756,
+                "start": 6747
+              }
+            },
+            {
+              "calls": [],
+              "id": 7,
+              "kind": "exit",
+              "label": "Return to caller",
+              "span": {
+                "end": 6763,
+                "start": 6701
+              }
+            }
+          ],
+          "symbol": "[\"csharp\",\"@repo/Comparison.csproj\",\"@repo/Changed.cs\",\"@repo/Comparison.csproj|[Comparison]::RevisionFixture.Cases::Changed(System.Boolean)\"]"
+        }
+      },
+      "after": {
+        "status": "ready",
+        "symbol": "[\"csharp\",\"@repo/Comparison.csproj\",\"@repo/Changed.cs\",\"@repo/Comparison.csproj|[Comparison]::RevisionFixture.Cases::Manual(System.Boolean)\"]",
+        "source": "\ufeff// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\nnamespace RevisionFixture;\r\npublic static class Cases {\r\n    public static int Changed(bool flag) {\r\n        if (flag) return Leaf(2);\r\n        return Leaf(4);\r\n    }\r\n    public static int Leaf(int value) => value;\r\n    public static int Manual(bool flag) => flag ? Leaf(3) : 2;\r\n    public static int Added() => Leaf(9);\r\n}\r\n",
+        "chart": {
+          "diagnostics": [],
+          "entry": 0,
+          "file": "@repo/Changed.cs",
+          "links": [
+            {
+              "from": 0,
+              "kind": "normal",
+              "label": "",
+              "to": 1
+            },
+            {
+              "from": 1,
+              "kind": "yes",
+              "label": "true",
+              "to": 2
+            },
+            {
+              "from": 2,
+              "kind": "normal",
+              "label": "",
+              "to": 3
+            },
+            {
+              "from": 1,
+              "kind": "no",
+              "label": "false",
+              "to": 4
+            },
+            {
+              "from": 3,
+              "kind": "normal",
+              "label": "",
+              "to": 5
+            },
+            {
+              "from": 4,
+              "kind": "normal",
+              "label": "",
+              "to": 5
+            },
+            {
+              "from": 5,
+              "kind": "normal",
+              "label": "",
+              "to": 6
+            }
+          ],
+          "partial": false,
+          "regions": [],
+          "span": {
+            "end": 6881,
+            "start": 6860
+          },
+          "steps": [
+            {
+              "calls": [],
+              "id": 0,
+              "kind": "start",
+              "label": "Function entry",
+              "span": {
+                "end": 6881,
+                "start": 6860
+              }
+            },
+            {
+              "calls": [],
+              "id": 1,
+              "kind": "decision",
+              "label": "flag",
+              "span": {
+                "end": 6867,
+                "start": 6863
+              }
+            },
+            {
+              "calls": [],
+              "id": 2,
+              "kind": "expression",
+              "label": "3",
+              "span": {
+                "end": 6876,
+                "start": 6875
+              }
+            },
+            {
+              "calls": [
+                {
+                  "diagnostic": null,
+                  "label": "Leaf(3)",
+                  "span": {
+                    "end": 6877,
+                    "start": 6870
+                  },
+                  "targets": [
+                    {
+                      "certainty": "direct",
+                      "provenance": "roslyn:call",
+                      "symbol": "[\"csharp\",\"@repo/Comparison.csproj\",\"@repo/Changed.cs\",\"@repo/Comparison.csproj|[Comparison]::RevisionFixture.Cases::Leaf(System.Int32)\"]"
+                    }
+                  ]
+                }
+              ],
+              "id": 3,
+              "kind": "expression",
+              "label": "Leaf(3)",
+              "span": {
+                "end": 6877,
+                "start": 6870
+              }
+            },
+            {
+              "calls": [],
+              "id": 4,
+              "kind": "expression",
+              "label": "2",
+              "span": {
+                "end": 6881,
+                "start": 6880
+              }
+            },
+            {
+              "calls": [],
+              "id": 5,
+              "kind": "return",
+              "label": "return",
+              "span": {
+                "end": 6881,
+                "start": 6860
+              }
+            },
+            {
+              "calls": [],
+              "id": 6,
+              "kind": "exit",
+              "label": "Return to caller",
+              "span": {
+                "end": 6881,
+                "start": 6860
+              }
+            }
+          ],
+          "symbol": "[\"csharp\",\"@repo/Comparison.csproj\",\"@repo/Changed.cs\",\"@repo/Comparison.csproj|[Comparison]::RevisionFixture.Cases::Manual(System.Boolean)\"]"
+        }
+      }
+    },
+    {
+      "kind": "target",
+      "symbol": "[\"csharp\",\"@repo/Comparison.csproj\",\"@repo/Changed.cs\",\"@repo/Comparison.csproj|[Comparison]::RevisionFixture.Cases::Leaf(System.Int32)\"]",
+      "head_symbol": null,
+      "before": {
+        "status": "ready",
+        "symbol": "[\"csharp\",\"@repo/Comparison.csproj\",\"@repo/Changed.cs\",\"@repo/Comparison.csproj|[Comparison]::RevisionFixture.Cases::Leaf(System.Int32)\"]",
+        "source": "\ufeff// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\nnamespace RevisionFixture;\r\npublic static class Cases {\r\n    public static int Changed(bool flag) {\r\n        if (flag) return Leaf(1);\r\n        return 0;\r\n    }\r\n    public static int Leaf(int value) => value;\r\n    public static int Manual(bool flag) => flag ? Leaf(3) : 2;\r\n    public static int Removed() => Leaf(7);\r\n}\r\n",
+        "chart": {
+          "diagnostics": [],
+          "entry": 0,
+          "file": "@repo/Changed.cs",
+          "links": [
+            {
+              "from": 0,
+              "kind": "normal",
+              "label": "",
+              "to": 1
+            },
+            {
+              "from": 1,
+              "kind": "normal",
+              "label": "",
+              "to": 2
+            },
+            {
+              "from": 2,
+              "kind": "normal",
+              "label": "",
+              "to": 3
+            }
+          ],
+          "partial": false,
+          "regions": [],
+          "span": {
+            "end": 6811,
+            "start": 6803
+          },
+          "steps": [
+            {
+              "calls": [],
+              "id": 0,
+              "kind": "start",
+              "label": "Function entry",
+              "span": {
+                "end": 6811,
+                "start": 6803
+              }
+            },
+            {
+              "calls": [],
+              "id": 1,
+              "kind": "expression",
+              "label": "value",
+              "span": {
+                "end": 6811,
+                "start": 6806
+              }
+            },
+            {
+              "calls": [],
+              "id": 2,
+              "kind": "return",
+              "label": "return",
+              "span": {
+                "end": 6811,
+                "start": 6803
+              }
+            },
+            {
+              "calls": [],
+              "id": 3,
+              "kind": "exit",
+              "label": "Return to caller",
+              "span": {
+                "end": 6811,
+                "start": 6803
+              }
+            }
+          ],
+          "symbol": "[\"csharp\",\"@repo/Comparison.csproj\",\"@repo/Changed.cs\",\"@repo/Comparison.csproj|[Comparison]::RevisionFixture.Cases::Leaf(System.Int32)\"]"
+        }
+      },
+      "after": {
+        "status": "ready",
+        "symbol": "[\"csharp\",\"@repo/Comparison.csproj\",\"@repo/Changed.cs\",\"@repo/Comparison.csproj|[Comparison]::RevisionFixture.Cases::Leaf(System.Int32)\"]",
+        "source": "\ufeff// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\n// Saved revision caf\u00e9 \ud83e\udded\r\nnamespace RevisionFixture;\r\npublic static class Cases {\r\n    public static int Changed(bool flag) {\r\n        if (flag) return Leaf(2);\r\n        return Leaf(4);\r\n    }\r\n    public static int Leaf(int value) => value;\r\n    public static int Manual(bool flag) => flag ? Leaf(3) : 2;\r\n    public static int Added() => Leaf(9);\r\n}\r\n",
+        "chart": {
+          "diagnostics": [],
+          "entry": 0,
+          "file": "@repo/Changed.cs",
+          "links": [
+            {
+              "from": 0,
+              "kind": "normal",
+              "label": "",
+              "to": 1
+            },
+            {
+              "from": 1,
+              "kind": "normal",
+              "label": "",
+              "to": 2
+            },
+            {
+              "from": 2,
+              "kind": "normal",
+              "label": "",
+              "to": 3
+            }
+          ],
+          "partial": false,
+          "regions": [],
+          "span": {
+            "end": 6817,
+            "start": 6809
+          },
+          "steps": [
+            {
+              "calls": [],
+              "id": 0,
+              "kind": "start",
+              "label": "Function entry",
+              "span": {
+                "end": 6817,
+                "start": 6809
+              }
+            },
+            {
+              "calls": [],
+              "id": 1,
+              "kind": "expression",
+              "label": "value",
+              "span": {
+                "end": 6817,
+                "start": 6812
+              }
+            },
+            {
+              "calls": [],
+              "id": 2,
+              "kind": "return",
+              "label": "return",
+              "span": {
+                "end": 6817,
+                "start": 6809
+              }
+            },
+            {
+              "calls": [],
+              "id": 3,
+              "kind": "exit",
+              "label": "Return to caller",
+              "span": {
+                "end": 6817,
+                "start": 6809
+              }
+            }
+          ],
+          "symbol": "[\"csharp\",\"@repo/Comparison.csproj\",\"@repo/Changed.cs\",\"@repo/Comparison.csproj|[Comparison]::RevisionFixture.Cases::Leaf(System.Int32)\"]"
+        }
+      }
+    }
+  ]
+}

@@ -144,7 +144,10 @@ def capture_window(request, directory, fixture):
     require_viewport(request["viewport"])
     window = request["window_id"]
     require(isinstance(window, int) and window > 0, "Native checkpoint has no owned window ID")
-    image = directory / "native.png"
+    return capture_image(window, directory / "native.png")
+
+
+def capture_image(window, image):
     result = subprocess.run(["/usr/sbin/screencapture", "-x", "-l", str(window), str(image)],
                             capture_output=True, text=True, timeout=15)
     require(result.returncode == 0 and image.is_file(),

@@ -1,5 +1,5 @@
 //! Native observations are recorded separately from queued acceptance input.
-use super::config::Configuration;
+use super::config::Ordinary as Configuration;
 use crate::app::State;
 use rune::{FrameEncoded, FrameOutcome, Runtime};
 use serde::Serialize;
@@ -122,19 +122,24 @@ impl Report {
     }
 
     pub fn encoded(&mut self, frame: &FrameEncoded, origin: Instant) {
+        self.frames.encoded(frame, origin);
+    }
+}
+impl Frames {
+    pub fn encoded(&mut self, frame: &FrameEncoded, origin: Instant) {
         match frame.outcome() {
             FrameOutcome::Drawn => {
                 let milliseconds =
                     frame.at().saturating_duration_since(origin).as_secs_f64() * 1000.0;
-                self.frames.drawn += 1;
-                self.frames.first_drawn_ms.get_or_insert(milliseconds);
-                self.frames.last_drawn_ms = Some(milliseconds);
-                self.frames.last_update_ms = frame.update_ms();
-                self.frames.last_encode_ms = frame.encode_ms();
-                self.frames.refresh_hz = frame.refresh_hz();
+                self.drawn += 1;
+                self.first_drawn_ms.get_or_insert(milliseconds);
+                self.last_drawn_ms = Some(milliseconds);
+                self.last_update_ms = frame.update_ms();
+                self.last_encode_ms = frame.encode_ms();
+                self.refresh_hz = frame.refresh_hz();
             }
-            FrameOutcome::Skipped => self.frames.skipped += 1,
-            FrameOutcome::Unchanged => self.frames.unchanged += 1,
+            FrameOutcome::Skipped => self.skipped += 1,
+            FrameOutcome::Unchanged => self.unchanged += 1,
             _ => (),
         }
     }

@@ -23,11 +23,68 @@ The source panel reads the immutable generation's cached source, not current dis
 contents. A stale graph notice means a refresh is needed to show source changes.
 Opening or following charts does not compile the project. Older graph caches remain
 usable for graph exploration; refresh them to collect function-flow metadata.
-AI explanations, desktop PR comparisons and recursive call inlining are tracked
-separately in TASK-22.
+AI explanations and recursive call inlining are tracked separately in TASK-22.
 
-The CLI can already retrieve before/after charts and cached source from saved
-Git artifact revisions. See the [saved-revision query contract](cli-queries.md#saved-revision-function-flows).
+## Compare saved function flows
+
+Choose **Compare flows**, enter local Git revisions in **Base** and **After**,
+then choose **Load**. The comparison also works without a currently loaded graph.
+**Functions** opens a searchable, paged catalog of exact saved identities, including
+added, removed and unavailable functions. Select an identity to display both charts.
+The headers show requested refs, resolved commits and artifact provenance; partial
+or unavailable results retain their explanations.
+
+Each chart has its own selection and camera. The **Before source** and **After
+source** tabs show that endpoint's analyzed snapshot and call details. Following a
+target compares that exact target identity across the same revisions. **Previous
+function** restores the prior pair, including source positions and cameras. Returning
+to the call graph or ordinary function flow preserves its existing navigation state.
+
+Correspondence uses exact saved identities. For a rename or signature change, select
+the original identity, choose **Choose after counterpart**, then select its after
+identity. The pair stays visibly **Manual**. **Reset counterpart** restores exact
+identity correspondence. Choosing a target starts another exact-identity comparison.
+Missing flow/source facts remain unavailable; an incompatible artifact makes
+membership unknown, so it cannot establish an addition or removal.
+
+Editing refs leaves the displayed pair bound to its original revisions until
+**Load** is pressed. **Reload** rereads the last submitted refs. On the next catalog
+or detail request, changed refs or saved artifact bytes clear actionable results
+and require Reload. **Cancel** stops pending work and leaves the revision editor
+available.
+`WORKTREE` in After means the current saved `.codecallnavigator/graph.json`; refresh
+explicitly to include newer source edits. Queries read cached source and never build
+historical code automatically.
+
+PR reviews use base/head refs available in the local repository. Hosted PR discovery,
+authentication and fetching are outside this workflow. Both revisions need a saved
+artifact containing the desired flow and source metadata. An old commit with no
+artifact needs preparation; its source tree alone cannot supply a historical chart.
+
+For example, from the repository, prepare two separate worktrees and local snapshot
+tags. Replace `BASE_REF`, `HEAD_REF`, the worktree paths, tag names and project
+target with your own values. Analysis requires the usual language toolchains and
+dependencies.
+
+```sh
+git worktree add --detach /tmp/ccn-flow-base BASE_REF
+ccnavigator analyze --project /tmp/ccn-flow-base path/to/App.csproj
+git -C /tmp/ccn-flow-base add -f .codecallnavigator/graph.json
+git -C /tmp/ccn-flow-base commit -m "Record base flow snapshot"
+git -C /tmp/ccn-flow-base tag ccn-flow-base
+
+git worktree add --detach /tmp/ccn-flow-head HEAD_REF
+ccnavigator analyze --project /tmp/ccn-flow-head path/to/App.csproj
+git -C /tmp/ccn-flow-head add -f .codecallnavigator/graph.json
+git -C /tmp/ccn-flow-head commit -m "Record head flow snapshot"
+git -C /tmp/ccn-flow-head tag ccn-flow-head
+```
+
+Use `refs/tags/ccn-flow-base` and `refs/tags/ccn-flow-head` in the comparison. These
+local snapshot commits include analyzed source in the artifact. Use matching build
+selections and logical `--root NAME=PATH` names for linked sources across worktrees;
+see [artifact preparation](standalone-engine.md#project-artifact-and-git-history)
+and the [saved-revision query contract](cli-queries.md#saved-revision-function-flows).
 
 ## C# support
 

@@ -1,0 +1,114 @@
+{
+  "status": "cleared",
+  "pre_parent": {
+    "status": "awaiting_parent_reap",
+    "leases": [
+      {
+        "pid": 98727,
+        "parent": 98726,
+        "group": 98727,
+        "started": "Sun Nov 15 03:53:48 2026",
+        "command": "/private/tmp/flow-comparison-native-ofmwr47a/Relocated CodeCallNavigator.app/Contents/MacOS/codecallnavigator-engine query-session",
+        "state": "S"
+      }
+    ],
+    "snapshots": [
+      {
+        "status": "running",
+        "members": [
+          {
+            "pid": 98727,
+            "ppid": 98726,
+            "pgid": 98727,
+            "state": "S"
+          }
+        ]
+      },
+      {
+        "status": "running",
+        "members": [
+          {
+            "pid": 98727,
+            "ppid": 98726,
+            "pgid": 98727,
+            "state": "S"
+          }
+        ]
+      },
+      {
+        "status": "running",
+        "members": [
+          {
+            "pid": 98727,
+            "ppid": 98726,
+            "pgid": 98727,
+            "state": "S"
+          }
+        ]
+      },
+      {
+        "status": "running",
+        "members": [
+          {
+            "pid": 98727,
+            "ppid": 98726,
+            "pgid": 98727,
+            "state": "S"
+          }
+        ]
+      },
+      {
+        "status": "running",
+        "members": [
+          {
+            "pid": 98727,
+            "ppid": 98726,
+            "pgid": 98727,
+            "state": "S"
+          }
+        ]
+      },
+      {
+        "status": "running",
+        "members": [
+          {
+            "pid": 98727,
+            "ppid": 98726,
+            "pgid": 98727,
+            "state": "S"
+          }
+        ]
+      },
+      {
+        "status": "running",
+        "members": [
+          {
+            "pid": 98727,
+            "ppid": 98726,
+            "pgid": 98727,
+            "state": "S"
+          }
+        ]
+      },
+      {
+        "status": "awaiting_parent_reap",
+        "members": [
+          {
+            "pid": 98727,
+            "ppid": 98726,
+            "pgid": 98727,
+            "state": "Z"
+          }
+        ]
+      }
+    ],
+    "signals": [
+      98727
+    ]
+  },
+  "post_parent": {
+    "status": "cleared",
+    "before": [],
+    "members": []
+  }
+}

@@ -70,6 +70,7 @@ pub fn setup(state: &mut State, waker: Waker) {
     state.jobs.boot.set_waker(waker.clone());
     state.jobs.source.set_waker(waker.clone());
     state.flow_workspace.job.set_waker(waker.clone());
+    state.flow_comparison.set_waker(waker.clone());
     state.architecture_workspace.job.set_waker(waker.clone());
     state.jobs.discovery.set_waker(waker.clone());
     state.jobs.analysis.set_waker(waker.clone());
@@ -148,7 +149,9 @@ pub fn poll(state: &mut State, time: f64, tx: &mut Tx) -> bool {
         | poll_persistence(state)
         | crate::freshness_workspace::poll(state)
         | crate::architecture_workspace::poll(state, time, tx)
-        | crate::flow_workspace::poll(state, tx);
+        | crate::flow_workspace::poll(state, tx)
+        | state.flow_comparison.poll()
+        | state.flow_comparison.restore_scroll(tx);
     changed |= crate::explorer::poll(state, time, tx);
     changed |= state.constrain_panes(state.ui.window_width);
     if state.needs_layout {
@@ -194,6 +197,7 @@ fn ready_to_quit(state: &State) -> bool {
         && !state.jobs.persistence.is_pending()
         && state.freshness.stopped()
         && state.cache_retention.stopped()
+        && state.flow_comparison.stopped()
 }
 
 fn poll_boot(state: &mut State) -> bool {
@@ -265,9 +269,13 @@ pub fn close(state: &mut State, _: &mut Tx) {
     state.close_source();
     state.close_search();
     state.close_flow();
+    state.flow_comparison.close();
     state.save_session();
 }
 
 #[cfg(test)]
 #[path = "jobs/adoption_tests.rs"]
 mod adoption_tests;
+#[cfg(test)]
+#[path = "jobs/comparison_tests.rs"]
+mod comparison_tests;

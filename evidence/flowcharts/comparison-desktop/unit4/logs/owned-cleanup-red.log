@@ -1,0 +1,16 @@
+F
+======================================================================
+FAIL: test_failure_disarms_the_owned_gate_and_reaps_the_query_before_parent_cleanup (tools.test_comparison_desktop_cleanup.ComparisonFailureCleanupTests.test_failure_disarms_the_owned_gate_and_reaps_the_query_before_parent_cleanup)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/private/tmp/codecallnavigator-task22.6/tools/test_comparison_desktop_cleanup.py", line 42, in test_failure_disarms_the_owned_gate_and_reaps_the_query_before_parent_cleanup
+    self.assertFalse(group_alive(leases[0].group),
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                     "Stopping only the app leaves the owned gated query group alive")
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: True is not false : Stopping only the app leaves the owned gated query group alive
+
+----------------------------------------------------------------------
+Ran 1 test in 0.871s
+
+FAILED (failures=1)

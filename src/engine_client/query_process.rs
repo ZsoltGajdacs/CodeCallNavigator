@@ -58,6 +58,10 @@ impl Client {
         result
     }
 
+    pub(super) fn comparison_supported(&self, cancel: &AtomicBool) -> Result<bool> {
+        Ok(self.capabilities(cancel, Instant::now())?.flow_comparison)
+    }
+
     pub(super) fn observation_supported(&self, cancel: &AtomicBool) -> Result<bool> {
         // A monitor start/retry must notice an installed CLI upgraded in place.
         Ok(super::capabilities::check(&self.runtime, cancel, Instant::now())?.observation)

@@ -1,0 +1,220 @@
+warning: unreachable expression
+   --> vendor/rune/vendor/parley_engine/src/shape/shaped_text.rs:108:9
+    |
+106 |             return metrics;
+    |             -------------- any code following this expression is unreachable
+107 |         }
+108 |         Self::compute_from_font_instance(font, font_size, variations)
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ unreachable expression
+    |
+    = note: `#[warn(unreachable_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: `parley_engine` (lib) generated 1 warning
+warning: rune@0.0.1: The precompiled DX12 uber shader (uber.vs.dxbc, uber.fs.dxbc) was built from other WGSL (blake3 4566c05378d954a5c28dba3dedd4571c732f0b0b0107fdab0ef54631be4751a1, the sources now hash 1bb8151c9dc8977ceba6de7ce6df6dac6480d75941eb24657aab9a0ffce097fc), so it isn't used: run `cargo run -p rune --example regen_dxbc` on Windows; until then every Windows launch compiles it with FXC, which takes seconds
+warning: rune@0.0.1: The precompiled Metal uber shader (uber.metallib) was built from other WGSL (blake3 f65915c6c9eb3eb73d776445fe1dbc19ae6079bc5a55c71f1604cf0462b25dca, the sources now hash aed778372fc2e7119495cbcc1c454069b236f849f8418dcc2b6c3cd3722c624a), so it isn't used: run scripts/precompile-metal-shaders.sh on a Mac
+warning: rune@0.0.1: The precompiled Metal Windfoil shader (uber_windfoil.metallib) was built from other WGSL (blake3 4566c05378d954a5c28dba3dedd4571c732f0b0b0107fdab0ef54631be4751a1, the sources now hash 1bb8151c9dc8977ceba6de7ce6df6dac6480d75941eb24657aab9a0ffce097fc), so it isn't used: run scripts/precompile-metal-shaders.sh on a Mac
+warning: hiding a lifetime that's elided elsewhere is confusing
+   --> vendor/rune/vendor/tiny-skia-path/src/path.rs:152:21
+    |
+152 |     pub fn segments(&self) -> PathSegmentsIter {
+    |                     ^^^^^     ^^^^^^^^^^^^^^^^ the same lifetime is hidden here
+    |                     |
+    |                     the lifetime is elided here
+    |
+    = help: the same lifetime is referred to in inconsistent ways, making the signature confusing
+    = note: `#[warn(mismatched_lifetime_syntaxes)]` on by default
+help: use `'_` for type paths
+    |
+152 |     pub fn segments(&self) -> PathSegmentsIter<'_> {
+    |                                               ++++
+
+warning: missing documentation for a method
+   --> vendor/rune/vendor/tiny-skia-path/src/path_builder.rs:208:5
+    |
+208 |     pub fn conic_to(&mut self, x1: f32, y1: f32, x: f32, y: f32, weight: f32) {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+note: the lint level is defined here
+   --> vendor/rune/vendor/tiny-skia-path/src/lib.rs:16:9
+    |
+ 16 | #![warn(missing_docs)]
+    |         ^^^^^^^^^^^^
+
+warning: type does not implement `Debug`; consider adding `#[derive(Debug)]` or a manual implementation
+   --> vendor/rune/vendor/tiny-skia-path/src/path_geometry.rs:867:1
+    |
+867 | / pub struct AutoConicToQuads {
+868 | |     pub points: [Point; 64],
+869 | |     pub len: u8, // the number of quads
+870 | | }
+    | |_^
+    |
+note: the lint level is defined here
+   --> vendor/rune/vendor/tiny-skia-path/src/lib.rs:18:9
+    |
+ 18 | #![warn(missing_debug_implementations)]
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: hiding a lifetime that's elided elsewhere is confusing
+   --> vendor/rune/vendor/tiny-skia-path/src/stroker.rs:449:17
+    |
+449 |     fn builders(&mut self) -> SwappableBuilders {
+    |                 ^^^^^^^^^     ^^^^^^^^^^^^^^^^^ the same lifetime is hidden here
+    |                 |
+    |                 the lifetime is elided here
+    |
+    = help: the same lifetime is referred to in inconsistent ways, making the signature confusing
+help: use `'_` for type paths
+    |
+449 |     fn builders(&mut self) -> SwappableBuilders<'_> {
+    |                                                ++++
+
+warning: `tiny-skia-path` (lib) generated 4 warnings (run `cargo fix --lib -p tiny-skia-path` to apply 2 suggestions)
+warning: unreachable pattern
+  --> vendor/rune/crates/rune/src/window/minimize.rs:77:21
+   |
+66 |         (M::None, _) => Effects::none(),
+   |          ------- matches all the relevant values
+...
+77 |         (M::Asked | M::None, E::Returned) => Effects::none(),
+   |                     ^^^^^^^ no value can reach this
+   |
+   = note: `#[warn(unreachable_patterns)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused variable: `field`
+  --> vendor/rune/crates/rune/src/window/minimize.rs:72:20
+   |
+72 |         (M::Held { field }, E::Asked) => { *state = M::Held { field: true }; Effects::none() }
+   |                    ^^^^^ help: try ignoring the field: `field: _`
+   |
+   = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+warning: unnecessary `unsafe` block
+   --> vendor/rune/crates/rune/src/window/mac.rs:111:13
+    |
+111 |     let r = unsafe { close.convertRect_toView(close.bounds(), None) };
+    |             ^^^^^^ unnecessary `unsafe` block
+    |
+    = note: `#[warn(unused_unsafe)]` (part of `#[warn(unused)]`) on by default
+
+warning: method `notify_structure` is never used
+   --> vendor/rune/crates/rune/src/a11y/mod.rs:270:19
+    |
+197 | impl Adapter {
+    | ------------ method in this implementation
+...
+270 |     pub(crate) fn notify_structure(&self) {
+    |                   ^^^^^^^^^^^^^^^^
+    |
+    = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: function `display_vendor` is never used
+   --> vendor/rune/crates/rune/src/gpu/pick.rs:247:15
+    |
+247 | pub(crate) fn display_vendor() -> Option<u32> {
+    |               ^^^^^^^^^^^^^^
+
+warning: static `DISPLAY_VENDOR` is never used
+   --> vendor/rune/crates/rune/src/gpu/pick.rs:251:8
+    |
+251 | static DISPLAY_VENDOR: std::sync::OnceLock<Option<u32>> = std::sync::OnceLock::new();
+    |        ^^^^^^^^^^^^^^
+
+warning: method `latched` is never used
+  --> vendor/rune/crates/rune/src/window/minimize.rs:44:19
+   |
+42 | impl Minimize {
+   | ------------- method in this implementation
+43 |     /// Whether an ask waits at all, held or not.
+44 |     pub(crate) fn latched(self) -> bool { !matches!(self, Minimize::None) }
+   |                   ^^^^^^^
+
+warning: associated function `borrowed_within` is never used
+  --> vendor/rune/crates/rune/src/render/pass.rs:47:19
+   |
+41 | impl<'a, 'p> ActivePass<'a, 'p> {
+   | ------------------------------- associated function in this implementation
+...
+47 |     pub(super) fn borrowed_within(pass: &'a mut wgpu::RenderPass<'p>, bound: [u32; 4]) -> Self {
+   |                   ^^^^^^^^^^^^^^^
+
+warning: method `running` is never used
+   --> vendor/rune/crates/rune/src/runtime/selection/edge_scroll.rs:200:31
+    |
+187 | impl EdgeScroll {
+    | --------------- method in this implementation
+...
+200 |     pub(in crate::runtime) fn running(&self) -> bool { matches!(self.state, State::Running { .. } | State::Laying { .. }) }
+    |                               ^^^^^^^
+
+warning: method `publish` is never used
+   --> vendor/rune/crates/rune/src/runtime/motion/live_latch.rs:130:19
+    |
+ 95 | impl LiveLane {
+    | ------------- method in this implementation
+...
+130 |     pub(crate) fn publish(&self) { self.wake.notify(); }
+    |                   ^^^^^^^
+
+warning: function `natural` is never used
+  --> vendor/rune/crates/rune/src/text/collate.rs:87:4
+   |
+87 | fn natural(a: &str, b: &str) -> Ordering {
+   |    ^^^^^^^
+
+warning: `rune` (lib) generated 11 warnings (run `cargo fix --lib -p rune` to apply 1 suggestion)
+   Compiling codecallnavigator v0.1.0 (/private/tmp/codecallnavigator-task22.6)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 3.41s
+     Running unittests src/main.rs (target/debug/build/codecallnavigator/68caccc8ef025d0b/out/codecallnavigator-68caccc8ef025d0b)
+
+running 48 tests
+test engine_client::capabilities::flow_comparison::tests::flow_comparison_is_optional_but_requires_its_complete_v1_contract ... ok
+test engine_client::flow_comparison::client::real_tests::packaged_cli_decodes_bound_saved_catalog_and_detail_without_current_graph ... ok
+test engine_client::flow_comparison::client::tests::bound_client_rejects_changed_binding_before_publishing_a_page ... ok
+test engine_client::flow_comparison::client::tests::bound_detail_sends_explicit_counterpart_and_keeps_unavailable_states ... ok
+test engine_client::flow_comparison::client::tests::bound_page_rejects_an_actual_cli_reply_from_another_comparison ... ok
+test engine_client::flow_comparison::client::tests::cancelling_a_comparison_uses_the_existing_owned_query_process ... ok
+test engine_client::flow_comparison::client::tests::comparison_client_clears_current_generation_and_binds_every_followup ... ok
+test engine_client::flow_comparison::client::tests::comparison_mismatch_retains_machine_readable_error_for_reload ... ok
+test engine_client::flow_comparison::client::tests::detail_states_keep_manual_correspondence_and_unknown_reasons ... ok
+test engine_client::flow_comparison::client::tests::endpoint_kinds_must_match_the_requested_reference_roles ... ok
+test engine_client::flow_comparison::client::tests::malformed_v1_catalogs_are_rejected_before_publishing_records ... ok
+test engine_client::flow_comparison::client::tests::mixed_envelope_generation_is_rejected_before_exposing_catalog ... ok
+test engine_client::flow_comparison::client::tests::ready_source_and_target_metadata_are_owned_by_the_requested_side ... ok
+test engine_client::flow_comparison::client::tests::valid_membership_and_empty_pages_beyond_total_remain_accepted ... ok
+test flow_comparison::cleanup_tests::close_reaps_running_settled_and_published_clients_off_the_ui_thread ... ok
+test flow_comparison::context_tests::following_a_target_from_a_manual_pair_restores_exact_correspondence ... ok
+test flow_comparison::context_tests::loaded_context_wins_over_edited_root_and_only_an_actual_project_change_closes_history ... ok
+test flow_comparison::context_tests::manual_pairing_can_reset_and_target_navigation_is_endpoint_bound ... ok
+test flow_comparison::context_tests::retargeting_a_project_alias_cannot_redirect_bound_detail_or_explicit_reload ... ok
+test flow_comparison::context_tests::symlink_capture_survives_adoption_of_the_same_canonical_project ... ok
+test flow_comparison::controls::tests::paging_keeps_prior_offsets_and_resets_for_search_reload_and_new_comparison ... ok
+test flow_comparison::identity::tests::an_unresolved_completion_cannot_wait_for_identity_after_a_later_installation ... ok
+test flow_comparison::identity_tests::graph_installation_waits_for_worker_identity_during_loading_then_keeps_only_the_same_project ... ok
+test flow_comparison::publication::race_tests::a_completed_catalog_reply_reconciles_identity_before_publication ... ok
+test flow_comparison::publication_tests::detail_outputs_need_both_the_current_serial_and_comparison_binding ... ok
+test flow_comparison::publication_tests::superseded_success_and_error_catalog_outputs_cannot_change_the_current_workspace ... ok
+test flow_comparison::tests::historical_workspace_loads_without_graph_and_keeps_captured_project_and_side_state ... ok
+test flow_comparison::tests::moved_reference_requires_reload_and_clears_every_actionable_result ... ok
+test flow_comparison::work::ownership_tests::a_completed_payload_is_destroyed_before_the_final_shutdown_wake ... ok
+test flow_comparison::work::ownership_tests::dropping_a_queued_latest_request_releases_ownership_without_running_it ... ok
+test flow_comparison::work::ownership_tests::latest_cancellation_does_not_release_a_running_request_before_cleanup ... ok
+test flow_comparison::work::tests::a_queued_request_releases_its_shutdown_lease_when_dropped_before_start ... ok
+test ui_tests::flow_comparison_catalog::catalog_paging_and_search_reset_use_returned_cursors ... ok
+test ui_tests::flow_comparison_catalog::explicit_counterpart_reset_and_search_keep_exact_identity_actions ... ok
+test ui_tests::flow_comparison_catalog::missing_and_unavailable_sides_stay_explicit ... ok
+test ui_tests::flow_comparison_catalog::moved_ref_blocks_actions_until_explicit_reload ... ok
+test ui_tests::flow_comparison_editor::entry_cleanup_preserves_the_single_flow_session_history_and_actual_scroll ... ok
+test ui_tests::flow_comparison_editor::entry_cleanup_submitting_different_refs_keeps_the_captured_project_and_roots ... ok
+test ui_tests::flow_comparison_layout::minimum_light_and_dark_layouts_keep_full_controls_and_local_panes ... ok
+test ui_tests::flow_comparison_outcomes::cancel_control_reaps_the_owned_pending_query_and_does_not_publish_its_pair ... ok
+test ui_tests::flow_comparison_outcomes::incompatible_endpoint_membership_and_missing_cached_source_are_not_guessed ... ok
+test ui_tests::flow_comparison_panes::back_keeps_saved_camera_when_the_restored_pane_is_measured_again ... ok
+test ui_tests::flow_comparison_panes::pane_steps_tabs_scroll_and_zoom_are_independent_and_use_local_coordinates ... ok
+test ui_tests::flow_comparison_panes::target_and_back_restore_active_source_tab_scroll_selection_and_cameras ... ok
+test ui_tests::flow_comparison_panes::unlocated_comparison_step_keeps_source_position_and_target_metadata_is_endpoint_owned ... ok
+test ui_tests::flow_comparisons::global_comparison_entry_opens_revision_controls_without_a_loaded_graph ... ok
+test ui_tests::flow_comparisons::real_revision_controls_load_catalog_select_a_function_and_show_both_charts ... ok
+test ui_tests::flow_comparisons::revision_controls_submit_refs_and_editing_does_not_retarget_the_loaded_pair ... ok
+
+test result: ok. 48 passed; 0 failed; 0 ignored; 0 measured; 284 filtered out; finished in 26.66s

@@ -1,0 +1,29 @@
+{
+  "status": "passed",
+  "reviews": [
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "tools/comparison_desktop_cleanup.py"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "applicability": "reviewed",
+      "path": "tools/test_comparison_desktop_cleanup.py"
+    }
+  ],
+  "safeguard": {
+    "results": [],
+    "quality_gates": "passed",
+    "metadata": {
+      "checked-file-count": 90,
+      "code-health-eligible-file-count": 90,
+      "status": "no-issues-found",
+      "total-modified-file-count": 205
+    }
+  },
+  "errors": [],
+  "skipped_files": []
+}

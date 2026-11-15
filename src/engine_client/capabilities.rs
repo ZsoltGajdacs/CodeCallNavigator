@@ -1,4 +1,5 @@
 //! Detect an incompatible configured CLI before sending desktop query requests.
+mod flow_comparison;
 use super::query_process::{active, stop_child};
 use crate::runtime::Runtime;
 use anyhow::{Context, Result, ensure};
@@ -13,6 +14,7 @@ use std::{
 #[derive(Clone)]
 pub(super) struct Capabilities {
     pub flow_languages: Vec<String>,
+    pub flow_comparison: bool,
     pub observation: bool,
     pub automatic_refresh: bool,
 }
@@ -100,6 +102,7 @@ fn validate(bytes: &[u8]) -> Result<Capabilities> {
     let automatic_refresh = observation && supports_automatic(&capabilities["automatic_refresh"]);
     Ok(Capabilities {
         flow_languages,
+        flow_comparison: flow_comparison::supported(&capabilities, operations),
         observation,
         automatic_refresh,
     })

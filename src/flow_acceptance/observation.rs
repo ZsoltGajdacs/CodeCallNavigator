@@ -1,5 +1,5 @@
 //! Assertions over a frame that the native window actually drew.
-use super::config::Configuration;
+use super::config::Ordinary as Configuration;
 use crate::{app::State, flow_workspace::Session, source::SourceFile};
 use anyhow::{Result, ensure};
 use codecallnavigator::flow::SourceSpan;

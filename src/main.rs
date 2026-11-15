@@ -13,6 +13,8 @@ mod engine_client;
 mod explorer;
 mod fixture_queries;
 mod flow_acceptance;
+mod flow_comparison;
+mod flow_comparison_view;
 mod flow_scenes;
 mod flow_view;
 mod flow_workspace;

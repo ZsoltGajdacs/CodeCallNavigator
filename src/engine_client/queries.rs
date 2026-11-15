@@ -23,7 +23,7 @@ pub struct Descriptor {
 #[derive(Clone)]
 pub struct QueryContext {
     pub descriptor: Descriptor,
-    client: Arc<Client>,
+    pub(super) client: Arc<Client>,
 }
 
 impl QueryContext {
@@ -48,20 +48,7 @@ impl QueryContext {
     }
 
     pub fn response(&self, query: Query, cancel: &AtomicBool) -> Result<Response> {
-        let roots = self
-            .descriptor
-            .roots
-            .iter()
-            .filter(|(name, _)| name != "repo")
-            .cloned()
-            .collect();
-        let request = query::Request {
-            version: query::VERSION,
-            project: self.descriptor.project.clone(),
-            roots,
-            expected_generation: self.descriptor.generation.clone(),
-            query,
-        };
+        let request = self.wire_request(query);
         let response = self.client.query(&request, cancel)?;
         if let Some(error) = &response.error {
             bail!("{}: {}", error.code, error.message);
@@ -73,6 +60,30 @@ impl QueryContext {
             );
         }
         Ok(response)
+    }
+
+    pub(super) fn wire_request(&self, query: Query) -> query::Request {
+        let roots = self
+            .descriptor
+            .roots
+            .iter()
+            .filter(|(name, _)| name != "repo")
+            .cloned()
+            .collect();
+        query::Request {
+            version: query::VERSION,
+            project: self.descriptor.project.clone(),
+            roots,
+            expected_generation: self.descriptor.generation.clone(),
+            query,
+        }
+    }
+    pub(super) fn comparison_supported(&self, cancel: &AtomicBool) -> Result<()> {
+        ensure!(
+            self.client.comparison_supported(cancel)?,
+            "Configured CLI does not support revision flow comparisons; update the CLI"
+        );
+        Ok(())
     }
 
     pub fn request<T: DeserializeOwned>(&self, query: Query, cancel: &AtomicBool) -> Result<T> {

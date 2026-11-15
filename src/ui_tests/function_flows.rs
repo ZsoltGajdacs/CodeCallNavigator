@@ -13,7 +13,7 @@ fn runtime() -> Runtime<State> {
     ready(&mut runtime);
     runtime
 }
-fn ready(runtime: &mut Runtime<State>) {
+pub(super) fn ready(runtime: &mut Runtime<State>) {
     for _ in 0..400 {
         runtime.frame(1.0 / 60.0);
         if runtime
@@ -60,6 +60,12 @@ fn flow_step_highlights_snapshot_and_back_preserves_call_graph() {
             .as_deref()
             .is_some_and(|t| t.contains("save() · direct"))
     }));
+    let target = runtime
+        .elements()
+        .into_iter()
+        .find(|el| el.key.as_deref() == Some("flow-target-0-0"))
+        .unwrap();
+    assert_eq!(target.help.as_deref(), Some("flow/save\nexplicit fixture"));
     assert_source_highlight(&mut runtime, 1, 0);
     runtime.update(|state, _| {
         state.flow_workspace.current.as_mut().unwrap().camera.pan = [17.0, 23.0]
@@ -327,17 +333,17 @@ fn previous_function_restores_the_actual_source_scroll_offset() {
     assert_eq!(source_scroll(&runtime), before);
 }
 
-fn source_scroll(runtime: &Runtime<State>) -> [f32; 2] {
+pub(super) fn source_scroll(runtime: &Runtime<State>) -> [f32; 2] {
     session(runtime).scroll.get()
 }
-fn scroll_source(runtime: &mut Runtime<State>, y: f32) {
+pub(super) fn scroll_source(runtime: &mut Runtime<State>, y: f32) {
     let key = session(runtime).scroll_key.clone();
     runtime.update(move |_, tx| tx.scroll_to_instant(key, 0.0, y));
     runtime.frame(1.0 / 60.0);
     runtime.frame(1.0 / 60.0);
 }
 
-fn prefixed_runtime() -> Runtime<State> {
+pub(super) fn prefixed_runtime() -> Runtime<State> {
     let mut state = State::fixture();
     flow_scenes::install(&mut state);
     state.flow_workspace.invalidate();
@@ -486,4 +492,49 @@ fn inspector_runtime(graph: codecallnavigator::model::GraphData) -> Runtime<Stat
     runtime.poll = Some(jobs::poll);
     runtime.frame(0.0);
     runtime
+}
+
+#[test]
+fn qualified_target_label_stays_visible_inside_minimum_single_flow_inspector() {
+    for dark in [false, true] {
+        let mut ui = runtime();
+        ui.env = rune::Env::new(dark, 1.0);
+        ui.set_viewport((1050.0, 680.0), 1.0);
+        ui.set_titlebar_inset(rune::tooling::Chrome::DEFAULT.titlebar_inset());
+        ui.update(|state, _| {
+            state.graph = Some(std::sync::Arc::new(
+                codecallnavigator::graph::GraphIndex::new(std::sync::Arc::new(
+                    super::flow_comparison_layout::qualified_fixture(),
+                ))
+                .unwrap(),
+            ));
+        });
+        let index = session(&ui)
+            .ready
+            .as_ref()
+            .unwrap()
+            .chart
+            .steps
+            .iter()
+            .position(|step| !step.calls.is_empty())
+            .unwrap();
+        click(&mut ui, &format!("flow-step-{index}"));
+        for _ in 0..4 {
+            ui.frame(1.0 / 60.0);
+        }
+        super::flow_comparison_layout::target_label_contained(
+            &ui,
+            "flow-target-0-0",
+            "flow-details",
+        );
+        let target = ui
+            .elements()
+            .into_iter()
+            .find(|el| el.key.as_deref() == Some("flow-target-0-0"))
+            .unwrap();
+        assert_eq!(target.help.as_deref(), Some("flow/save\nexplicit fixture"));
+        click(&mut ui, "flow-target-0-0");
+        ready(&mut ui);
+        assert_eq!(session(&ui).symbol, "flow/save");
+    }
 }
