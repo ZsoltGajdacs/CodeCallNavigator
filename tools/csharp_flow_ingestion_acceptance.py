@@ -10,7 +10,7 @@ import shutil
 import subprocess
 import tempfile
 
-from csharp_flow_acceptance import objects, require, source_metadata
+from csharp_flow_acceptance import objects, require, source_metadata, rebase_expected
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -86,13 +86,16 @@ class Client:
                             succeeds=succeeds)
 
 
-def prepare_fixture(fixture):
-    root = Path(fixture["root"])
-    require(root.parent == Path("/private/tmp/task22-ingestion-baseline"), "Unexpected baseline fixture root")
+def prepare_fixture(fixture, work):
+    recorded = Path(fixture["root"])
+    require(recorded.parent == Path("/private/tmp/task22-ingestion-baseline"), "Unexpected baseline fixture root")
+    root = work.resolve() / recorded.name
     require(not root.is_symlink(), "Refuse symlinked baseline fixture")
     root.mkdir(parents=True, exist_ok=True)
     source = root / fixture["source_file"]
     project = root / fixture["project_file"]
+    require(source.parent == root and project.parent == root,
+            "Baseline filenames must stay inside the owned fixture")
     raw = fixture["source"].encode(fixture["source_encoding"])
     write_fixture_file(source, raw)
     write_fixture_file(project, fixture["project"].encode("utf-8"))
@@ -111,10 +114,11 @@ def projection(graph):
     return {key: graph.get(key) for key in ["nodes", "edges", "entry_points"]}
 
 
-def graph_parity(client, fixture):
-    paths = prepare_fixture(fixture)
+def graph_parity(client, fixture, work):
+    paths = prepare_fixture(fixture, work)
     native = json.loads(client.command(["analyze-native", paths.project], paths.root).stdout)
-    require(projection(native) == fixture["native_projection"], f"Native graph changed for {fixture['name']}")
+    expected_native = rebase_expected(fixture["native_projection"], Path(fixture["root"]), paths.root)
+    require(projection(native) == expected_native, f"Native graph changed for {fixture['name']}")
     client.analyze(paths.root, paths.project)
     artifact = json.loads((paths.root / GRAPH).read_text())
     require(projection(artifact["graph"]) == fixture["canonical_projection"],
@@ -280,7 +284,7 @@ def malformed_refreshes(client, root, project, work):
 
 
 def utf8_acceptance(client, fixture, work):
-    state = graph_parity(client, fixture)
+    state = graph_parity(client, fixture, work)
     paths, snapshot = state.fixture, state.snapshot
     node = run_node(snapshot)
     restricted = client.in_environment(no_dotnet_environment(client))
@@ -307,8 +311,8 @@ def validate_overloads(calls, nodes):
     return len(expected)
 
 
-def graph_only_encoding(client, fixture):
-    state = graph_parity(client, fixture)
+def graph_only_encoding(client, fixture, work):
+    state = graph_parity(client, fixture, work)
     root, snapshot = state.fixture.root, state.snapshot
     node = run_node(snapshot)
     source = client.query(root, {"kind": "source", "symbol": node["id"]}, snapshot["generation"])
@@ -453,8 +457,8 @@ def main():
         work = Path(directory).resolve()
         report = {"status": "passed", "candidate": identity,
                   "utf8": utf8_acceptance(client, fixtures["utf8-bom"], work),
-                  "utf16": graph_only_encoding(client, fixtures["utf16"]),
-                  "latin1_ascii": graph_only_encoding(client, fixtures["latin1-ascii"]),
+                  "utf16": graph_only_encoding(client, fixtures["utf16"], work),
+                  "latin1_ascii": graph_only_encoding(client, fixtures["latin1-ascii"], work),
                   "linked": linked_contexts(client, work),
                   "mixed_encoding_contexts": mixed_encoding_contexts(client, work), "commands": client.records}
         require(hashlib.sha256(client.engine.read_bytes()).hexdigest() == identity["engine_sha256"],

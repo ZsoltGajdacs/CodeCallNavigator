@@ -290,7 +290,10 @@ class VerificationPlans(unittest.TestCase):
         names = [step.name for step in runtime]
         self.assertEqual(names[0], "prerequisites")
         self.assertIn("--light", runtime[0].command)
-        self.assertIn("rust-tests", names)
+        self.assertIn("unit-test-rust", names)
+        self.assertIn("integration-test-rust", names)
+        self.assertNotIn("acceptance-prepare", names)
+        self.assertNotIn("performance-prepare", names)
         self.assertIn("codescene", names)
         self.assertNotIn("package", names)
         self.assertFalse(any("--include-ignored" in step.command for step in runtime))
@@ -334,57 +337,76 @@ class VerificationPlans(unittest.TestCase):
         self.assertEqual(names[0], "prerequisites")
         preflight = steps[0].command
         self.assertEqual(preflight[preflight.index("--profile-source") + 1], str(source))
-        self.assertLess(names.index("build-release-engine"), names.index("release-acceptance-and-benchmarks"))
-        self.assertLess(names.index("profile-snapshot"), names.index("release-acceptance-and-benchmarks"))
-        self.assertLess(names.index("release-acceptance-and-benchmarks"), names.index("package"))
+        self.assertEqual(len(names), len(set(names)), "Composite stages must not execute twice")
+        from verification.inventory import load_gates
+        for gate in load_gates(ROOT):
+            self.assertEqual(names.count(gate['category'] + '-gate-' + gate['test_name']), 1)
         self.assertLess(names.index("cargo-check"), names.index("mcp-dependency-boundary"))
-        self.assertLess(names.index("packaged-engine"), names.index("mcp-independent-install"))
-        self.assertLess(names.index("packaged-engine"), names.index("installed-cli"))
-        installed = steps[names.index("installed-cli")]
+        for category in ("unit", "integration", "acceptance", "performance"):
+            cleanup = steps[names.index(f"{category}-category-cleanup")]
+            self.assertTrue(cleanup.always)
+            self.assertLess(names.index(f"{category}-prepare"), names.index(cleanup.name))
+        for step in [step for step in steps if step.name.endswith('test-rust')]:
+            category = step.name.split('-')[0]
+            build = output / category / 'build'
+            self.assertEqual(step.environment['CARGO_TARGET_DIR'], str(build))
+            self.assertEqual(step.environment['CARGO_BUILD_BUILD_DIR'], str(build))
+            self.assertEqual(step.environment['DOTNET_CLI_USE_MSBUILD_SERVER'], '0')
+            self.assertEqual(step.environment['MSBUILDDISABLENODEREUSE'], '1')
+            self.assertEqual(step.environment['UseSharedCompilation'], 'false')
+            self.assertEqual(step.environment['CARGO_CACHE_AUTO_CLEAN_FREQUENCY'], 'never')
+            self.assertEqual(step.environment['CODECALLNAVIGATOR_FRESHNESS_EXECUTABLE'],
+                             step.environment['CODECALLNAVIGATOR_TEST_ENGINE'])
+            store = 'profile' if category == 'performance' else 'test-store'
+            self.assertEqual(step.environment['CODECALLNAVIGATOR_DATA_DIR'], str(output / category / store))
+        self.assertFalse(any("--include-ignored" in step.command for step in steps))
+        self.assertNotIn("release-acceptance-and-benchmarks", names)
+        snapshot = steps[names.index("performance-profile-snapshot")]
+        self.assertEqual(snapshot.command[-2], str(source))
+        self.assertLess(names.index(snapshot.name), names.index('performance-test-rust'))
+        self.assertLess(names.index(snapshot.name), names.index("performance-gate-benchmark"))
+        self.assertLess(names.index("acceptance-package"), names.index("acceptance-packaged-engine"))
+        self.assertLess(names.index("acceptance-packaged-engine"), names.index("acceptance-mcp-independent-install"))
+        installed = steps[names.index("acceptance-gate-installed_cli_acceptance")]
         self.assertIn(str(ROOT / "dist/CodeCallNavigatorEngine"), installed.command)
-        self.assertIn(str(output / "installed-cli.json"), installed.command)
-        mcp = steps[names.index("mcp-independent-install")]
+        self.assertIn(str(output / "acceptance/gate-installed_cli_acceptance"), installed.command)
+        mcp = steps[names.index("acceptance-mcp-independent-install")]
         self.assertEqual(mcp.command[-1], str(ROOT / "dist/CodeCallNavigatorEngine/bin/codecallnavigator-engine"))
-        self.assertLess(names.index('packaged-engine'), names.index('agent-cli-journeys'))
-        journey = steps[names.index('agent-cli-journeys')]
-        self.assertEqual(journey.environment['PATH'].split(os.pathsep)[0],
-                         str(ROOT / 'dist/CodeCallNavigatorEngine/bin'))
-        self.assertNotIn('--engine', journey.command)
-        packaged = steps[names.index('agent-integrations-package')]
-        self.assertEqual(packaged.command[-1], str(output / 'agent-integrations'))
-        self.assertEqual(packaged.command[packaged.command.index('--host') + 1], 'all')
-        native = steps[names.index('agent-mcp-journeys')]
-        self.assertLess(names.index('mcp-independent-install'), names.index('agent-mcp-journeys'))
-        self.assertEqual(native.environment['PATH'].split(os.pathsep)[:2], [
-            str(ROOT / 'dist/CodeCallNavigatorEngine/bin'),
-            str(ROOT / 'dist/CodeCallNavigatorMcp/bin'),
-        ])
-        self.assertNotIn('--engine', native.command)
-        self.assertNotIn('--mcp', native.command)
-        self.assertEqual(native.command[-1], str(output / 'agent-mcp-journeys.json'))
-        acceptance = steps[names.index("release-acceptance-and-benchmarks")]
-        for flag in ["--release", "--include-ignored", "--test-threads=1"]:
-            self.assertIn(flag, acceptance.command)
-        self.assertEqual(acceptance.environment["CODECALLNAVIGATOR_ENGINE"], str(ROOT / "target/release/codecallnavigator-engine"))
+        journey = steps[names.index("acceptance-gate-agent_journeys")]
+        self.assertLess(names.index("acceptance-packaged-engine"), names.index(journey.name))
+        self.assertEqual(journey.environment["PATH"].split(os.pathsep)[0], str(ROOT / "dist/CodeCallNavigatorEngine/bin"))
+        self.assertNotIn("--engine", journey.command)
+        packaged = steps[names.index("acceptance-agent-integrations-package")]
+        self.assertEqual(packaged.command[-1], str(output / "acceptance/agent-integrations"))
+        self.assertEqual(packaged.command[packaged.command.index("--host") + 1], "all")
+        native = steps[names.index("acceptance-gate-agent_mcp_journeys")]
+        self.assertLess(names.index("acceptance-mcp-independent-install"), names.index(native.name))
+        self.assertEqual(native.environment["PATH"].split(os.pathsep)[:2], [
+            str(ROOT / "dist/CodeCallNavigatorEngine/bin"), str(ROOT / "dist/CodeCallNavigatorMcp/bin")])
+        self.assertNotIn("--engine", native.command)
+        self.assertNotIn("--mcp", native.command)
+        self.assertEqual(native.command[-1], str(output / "acceptance/gate-agent_mcp_journeys"))
+        acceptance = steps[names.index("acceptance-test-rust")]
+        self.assertEqual(acceptance.environment["CODECALLNAVIGATOR_ENGINE"],
+                         str(output / "acceptance/build/release/codecallnavigator-engine"))
         self.assertEqual(acceptance.environment["CODECALLNAVIGATOR_TEST_ENGINE"], acceptance.environment["CODECALLNAVIGATOR_ENGINE"])
-        self.assertEqual(acceptance.environment["CODECALLNAVIGATOR_DATA_DIR"], str(output / "profile"))
-        regular = steps[names.index("rust-tests")]
-        self.assertEqual(regular.environment["CODECALLNAVIGATOR_ENGINE"], str(ROOT / "target/debug/codecallnavigator-engine"))
+        regular = steps[names.index("unit-test-rust")]
+        self.assertEqual(regular.environment["CODECALLNAVIGATOR_ENGINE"],
+                         str(output / "unit/build/debug/codecallnavigator-engine"))
 
     def test_full_cleanup_acceptance_uses_built_engine_and_run_evidence(self):
         output = ROOT / "target/test-evidence"
         steps = verify.plan(self.args("full", Path("/profile-source")), ["README.md"], output)
         names = [step.name for step in steps]
-        self.assertIn("csharp-cleanup-acceptance", names)
-        position = names.index("csharp-cleanup-acceptance")
-        self.assertLess(names.index("build-release-engine"), position)
-        self.assertLess(position, names.index("package"))
+        position = names.index("acceptance-gate-csharp_cleanup_acceptance")
+        self.assertLess(names.index("acceptance-compile-cli"), position)
+        self.assertLess(position, names.index("acceptance-category-cleanup"))
         acceptance = steps[position]
-        self.assertEqual(acceptance.command[:2], [sys.executable, "tools/csharp_cleanup_acceptance.py"])
+        self.assertEqual(acceptance.command[:2], [sys.executable, str(ROOT / "tools/csharp_cleanup_acceptance.py")])
         self.assertEqual(acceptance.command[acceptance.command.index("--engine") + 1],
-                         str(ROOT / "target/release/codecallnavigator-engine"))
+                         str(output / "acceptance/build/release/codecallnavigator-engine"))
         self.assertEqual(acceptance.command[acceptance.command.index("--output") + 1],
-                         str(output / "csharp-cleanup.json"))
+                         str(output / "acceptance/gate-csharp_cleanup_acceptance"))
         self.assertEqual(acceptance.timeout, self.args("full").timeout)
 
     def test_full_dependency_preflight_accepts_complete_inputs_and_rejects_wrong_versions(self):
@@ -414,10 +436,44 @@ class VerificationPlans(unittest.TestCase):
 
     def test_wrappers_help_and_external_cwd_dry_run(self):
         with tempfile.TemporaryDirectory() as directory:
-            for mode in ["full", "light"]:
+            for mode in ["full", "light", "unit", "integration", "acceptance", "performance",
+                         "ui", "core", "engine", "mcp", "tooling"]:
                 result = subprocess.run(["bash", str(ROOT / f"verify-{mode}.sh"), "--help"], cwd=directory,
                     env=os.environ | {"PYTHON": sys.executable}, capture_output=True, text=True, check=True)
                 self.assertIn("--dry-run", result.stdout)
+                if mode not in ("full", "light"):
+                    leaf_output = Path(directory) / ("unused-" + mode)
+                    selection = (["--component", "core"] if mode in ("unit", "integration", "acceptance", "performance")
+                                 else ["--suite", "unit"])
+                    dry = subprocess.run(["bash", str(ROOT / f"verify-{mode}.sh"), "--dry-run",
+                                          "--output", str(leaf_output), *selection], cwd=directory,
+                                         env=os.environ | {"PYTHON": sys.executable}, capture_output=True,
+                                         text=True, check=True, timeout=60)
+                    leaf_steps = json.loads(dry.stdout)
+                    self.assertTrue(leaf_steps)
+                    self.assertTrue(leaf_steps[-1]["always"])
+                    self.assertTrue(leaf_steps[-1]["name"].endswith("category-cleanup"))
+                    self.assertFalse(leaf_output.exists())
+            scoped = subprocess.run(
+                [sys.executable, str(ROOT / "tools/verify.py"), "integration", "--component", "engine", "--dry-run"],
+                cwd=directory, env=os.environ | {"CODECALLNAVIGATOR_TS_NODE_MODULES": str(Path(directory) / "custom-modules"),
+                                               "CODECALLNAVIGATOR_TEST_TYPESCRIPT_ROOT": str(Path(directory) / "explicit-typescript")},
+                capture_output=True, text=True, check=True)
+            scoped_steps = json.loads(scoped.stdout)
+            self.assertTrue(any(step['name'].endswith('-bootstrap') for step in scoped_steps))
+            for step in scoped_steps:
+                self.assertEqual(step['environment']['CODECALLNAVIGATOR_TEST_TYPESCRIPT_ROOT'],
+                                 str((Path(directory) / 'explicit-typescript').resolve()))
+                self.assertEqual(step['environment']['DOTNET_CLI_USE_MSBUILD_SERVER'], '0')
+                self.assertEqual(step['environment']['CARGO_CACHE_AUTO_CLEAN_FREQUENCY'], 'never')
+            scoped_env = os.environ | {"CODECALLNAVIGATOR_TS_NODE_MODULES": str(Path(directory) / "custom-modules")}
+            scoped_env.pop('CODECALLNAVIGATOR_TEST_TYPESCRIPT_ROOT', None)
+            derived = subprocess.run(
+                [sys.executable, str(ROOT / "tools/verify.py"), "engine", "--suite", "integration", "--dry-run"],
+                cwd=directory, env=scoped_env, capture_output=True, text=True, check=True)
+            for step in json.loads(derived.stdout):
+                self.assertEqual(step['environment']['CODECALLNAVIGATOR_TEST_TYPESCRIPT_ROOT'],
+                                 str((Path(directory) / 'custom-modules/typescript').resolve()))
             output = Path(directory) / "must-not-be-created"
             result = subprocess.run([sys.executable, str(ROOT / "tools/verify.py"), "full", "--dry-run", "--output", str(output),
                 "--profile-source", "./saved-data", "--codescene-command", "./bin/cs-mcp"], cwd=directory,
@@ -429,7 +485,7 @@ class VerificationPlans(unittest.TestCase):
             codescene = str((Path(directory) / "bin/cs-mcp").resolve())
             preflight = commands["prerequisites"]
             self.assertEqual(preflight[preflight.index("--profile-source") + 1], source)
-            self.assertEqual(commands["profile-snapshot"][-2], source)
+            self.assertEqual(commands["performance-profile-snapshot"][-2], source)
             self.assertEqual(preflight[preflight.index("--codescene-command") + 1], codescene)
             quality_command = commands["codescene"]
             self.assertEqual(quality_command[quality_command.index("--command") + 1], codescene)
@@ -438,7 +494,7 @@ class VerificationPlans(unittest.TestCase):
             self.assertNotIn("--keep-artifacts", commands["cleanup"])
             for step in steps:
                 self.assertEqual(step["environment"]["CARGO_INCREMENTAL"], "0")
-                self.assertEqual(step["environment"]["CARGO_CACHE_AUTO_CLEAN_FREQUENCY"], "always")
+                self.assertEqual(step["environment"]["CARGO_CACHE_AUTO_CLEAN_FREQUENCY"], "never")
             retained = subprocess.run(
                 [sys.executable, str(ROOT / "tools/verify.py"), "full", "--dry-run", "--keep-artifacts", "--output", str(output)],
                 cwd=directory, capture_output=True, text=True, check=True,

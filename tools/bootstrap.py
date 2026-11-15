@@ -173,24 +173,35 @@ def check_typescript_adapter():
             subprocess.run([node, "--check", source], check=True)
 
 
+def bootstrap_selected(lock, languages):
+    """Prepare only requested compiler adapters, plus the shared desktop library."""
+    fetch_repository('rune', lock['rune'])
+    apply_patch(lock['rune'], 'rune')
+    if 'csharp' in languages:
+        fetch_repository('callatlas', lock['callatlas'])
+        apply_patch(lock['callatlas'])
+        build_callatlas()
+    if 'java' in languages:
+        fetch_repository('java-callgraph2', lock['java-callgraph2'])
+        build_java_adapter()
+    if 'typescript' in languages:
+        check_typescript_adapter()
+
+
 def main():
     if sys.version_info < (3, 12):
         raise SystemExit("Dependency bootstrap requires Python 3.12+ for safe archive extraction.")
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--jdt-investigation", action="store_true", help="Also fetch the rejected JDT/Lombok setup for reproducing its acceptance failure")
+    parser.add_argument('--language', action='append', choices=('csharp', 'java', 'typescript'),
+                        help='Prepare selected adapters only; repeat to combine (default: all)')
     args = parser.parse_args()
     lock = json.loads((ROOT / "analyzers.lock.json").read_text())
     (ROOT / "vendor").mkdir(exist_ok=True)
-    for name in ("callatlas", "rune", "java-callgraph2"):
-        fetch_repository(name, lock[name])
-    apply_patch(lock["callatlas"])
-    apply_patch(lock["rune"], "rune")
     if args.jdt_investigation:
         fetch_jdt(lock["jdtls"])
         fetch_lombok(lock["lombok"])
-    build_callatlas()
-    build_java_adapter()
-    check_typescript_adapter()
+    bootstrap_selected(lock, set(args.language or ('csharp', 'java', 'typescript')))
 
 
 if __name__ == "__main__":

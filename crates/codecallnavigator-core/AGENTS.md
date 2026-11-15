@@ -41,18 +41,33 @@ transformations rather than treating the entire crate as pure.
 - Keep graph algorithms testable with explicit inputs. Confine filesystem and
   database access to their owning modules, and return contextual failures.
 
-## Verification
+## Testing strategy and verification
 
-From the workspace root, begin with:
+Follow [the shared strategy](../../docs/testing-strategy.md). Unit tests should
+carry most graph/flow algorithm, identity, canonicalization, transformation and
+validation cases using explicit in-memory inputs. Test real production operations,
+not copies of implementation logic. Fixture loading alone does not define category.
+
+Use integration tests for filesystem discovery, Git revisions, SQLite persistence,
+publication locks/atomic replacement and Graphviz. Exercise real temporary resources
+and verify observable artifacts, failure recovery and unchanged prior data. Core
+has no standalone application journey; engine, desktop and MCP consumers prove
+assembled behavior. Shared contract changes require relevant consumer checks.
 
 ```sh
-cargo check --locked -p codecallnavigator-core --all-targets
-cargo test --locked -p codecallnavigator-core --all-targets
+./verify-core.sh --suite unit
+./verify-integration.sh --component core
 ```
 
-For model/artifact changes, cover validation, serialization round trips,
-deterministic output and invalid inputs. Publication/storage changes also need
-failure recovery checks against temporary files or databases. Verify affected
-desktop and engine consumers with workspace checks; shared contract changes can
-compile locally yet break protocol or acceptance behavior. Follow the root guide
-for scoped formatting, CodeScene and full validation expectations.
+Run from the workspace root and inspect `--dry-run` for Git/SQLite/Graphviz and
+other selected prerequisites. Category scripts clean owned Rust outputs and
+temporary resources after success or failure, preserving evidence and downloaded
+caches. `--keep-artifacts` is an explicit diagnostic exception.
+
+Do not mock business behavior or fabricate successful dependency results. Narrow,
+documented process/protocol fault probes are integration tests only. Explain why
+new expensive tests cannot prove their risk at a cheaper layer. Before removing
+one, map its assertions to retained coverage and demonstrate defect detection.
+Roughly one minute of warm unit execution is aspirational, never a failure gate;
+quality and unique boundary coverage take precedence. Follow root full-verification,
+CodeScene and scoped-formatting requirements.

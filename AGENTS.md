@@ -118,58 +118,83 @@ and subprocess lifecycle. See [its contract and installation](docs/mcp.md).
 - Keep changes focused, avoid unrelated formatting, and add dependencies only
   when existing code and standard-library facilities do not meet the need.
 
-## Verification
+## Testing strategy and verification
 
-Choose checks for the behavior changed. Run focused tests while iterating and
-add regressions that assert observable results. Use real compiler/build fixtures
-for analyzer behavior and narrow unit tests for isolated graph or geometry logic.
-For documentation-only edits, verify paths, commands and the diff.
+Follow [the testing strategy](docs/testing-strategy.md). Choose the lowest and
+fastest layer that can reliably prove the behavior. Unit tests should carry most
+behavioral combinations; integration tests prove real boundaries, and a smaller
+set of end-to-end journeys proves the assembled application. There is no numerical
+quota. Roughly one minute of warm unit-test execution is an aspiration, never a
+pass/fail gate or permission to weaken verification.
 
-Runtime verification is not required when changes cannot affect runtime behavior,
-such as documentation, issue templates, licensing text or descriptive metadata.
-For those changes, check the affected content, syntax, links and diff instead;
-do not run app builds, Rust test suites, analyzer/UI acceptance or benchmarks.
-Changes to executable code, dependencies, bootstrap or packaging logic that can
-affect runtime behavior still require the applicable checks.
+- Test production code through observable results, not copied implementation or
+  internal call sequences. Extract cohesive logic only when it improves design.
+- Unit tests use explicit in-memory inputs and isolated logic. Filesystem,
+  database, compiler, native-window and application-process behavior belongs in
+  integration or acceptance tests with real dependencies and temporary resources.
+- Do not mock business behavior, fabricate successful analyzer results, or build
+  replacement services that reproduce production decisions. Narrow, explicitly
+  documented process/protocol fault probes are permitted for failures that real
+  dependencies cannot reliably produce (blocked pipes, stalled children, malformed
+  frames). These are integration tests, not evidence of successful real journeys.
+- Every new expensive test must state the risk covered and why a cheaper layer
+  cannot prove it. Keep tests with unique boundary value even when slow. Do not
+  shorten necessary correctness/recovery timeouts to meet a timing aspiration.
+- Classify each test by component, category, requirements and coverage purpose in
+  the verification inventory. Location and ignored status do not define category.
+  Fixture setup alone does not make a test an integration test. Preserve certainty,
+  provenance, source ownership and failure-recovery assertions.
+- Before removing an expensive test, map its assertions and defect scenario to
+  retained coverage and demonstrate that the replacement detects the failure.
 
-Choose a verification mode from the workspace root:
+Run category scripts from the workspace root:
 
-- Use `./verify-light.sh` for small, low-risk changes with minimal production-code
-  impact, including documentation-only edits.
-- Use `./verify-full.sh` for substantial behavior changes, broad or cross-crate
-  refactors, and analyzer, dependency, bootstrap or packaging changes.
+```sh
+./verify-unit.sh --component core
+./verify-integration.sh --component engine
+./verify-acceptance.sh --component mcp
+./verify-performance.sh --component ui
+```
 
-Default to full when the impact is uncertain.
+Category scripts accept `--component`; `verify-ui.sh`, `verify-core.sh`,
+`verify-engine.sh`, `verify-mcp.sh` and `verify-tooling.sh` accept `--suite` and
+otherwise run unit plus integration checks. Use their `--help` and `--dry-run` for
+selection, exact stages and prerequisites. During iteration run affected unit
+and real-boundary suites; shared contract changes also require consumer checks.
 
-Light verification checks changed-file formatting/syntax, workspace compilation,
-Clippy, ordinary Rust tests, both Python suites and CodeScene. For changes limited
-to documentation/descriptive metadata, it runs static content/diff checks and
-artifact cleanup without runtime verification.
-Full verification adds explicit toolchain/dependency preflight, analyzer bootstrap,
-TypeScript tests, all ignored Rust acceptance tests **in release mode**, storage
-and CPU/GPU benchmarks, and local packaging/signature verification. It snapshots
-the configured profiling workspace; never benchmark the live application store.
-Run full outside the macOS sandbox so Metal and descendant-process cleanup are
-available. Required inputs and commands are in
-[the validation reference](docs/reference.md#validation).
+`./verify-light.sh` and `./verify-full.sh` compose those same category execution
+paths with static, build, quality and packaging stages. Light is for small,
+low-risk changes. Full is mandatory for substantial/cross-component changes,
+analyzer, dependency, bootstrap or packaging changes, uncertain impact and release
+candidates. Full adds toolchain-backed integration, acceptance, performance and
+packaging checks; do not rerun ordinary tests in debug and release without a
+recorded release-specific reason. Report skipped/unavailable checks as not run.
+CodeScene requirements above remain mandatory and do not replace behavioral tests.
 
-Both scripts also clean generated artifacts after checks, including failures:
-light reclaims incremental state while preserving dependency caches; full cleans
-debug/release build profiles after build stages. Retain current packages/reports
-and one rollback per app name; verify active artifact usage before deletion.
-Use `--keep-artifacts` only when retaining diagnostic build state is intentional.
+Documentation/descriptive metadata changes require content, path, syntax and diff
+checks only. Do not run application builds or runtime suites for those changes.
+Executable/dependency/bootstrap/packaging changes require applicable runtime checks.
 
-Both scripts check formatting without rewriting files, log every stage under
-`target/verification/`, stop with nonzero status on missing prerequisites,
-failures or timeouts, and mark later steps not run. Use `--dry-run` to inspect the
-exact commands and `--base <ref>` when verifying committed changes against another
-revision. Do not run debug-profile `--include-ignored`: the canvas benchmarks
-require release mode and an isolated copied profiling workspace.
+Every category owns an isolated build workspace and cleans its Rust outputs and
+temporary fixtures/profiling copies before returning, including on failure,
+timeout or catchable interruption. Stop and reap owned processes first; prove
+ownership and inactivity before deletion. Never remove another run's artifacts.
+Preserve downloaded Cargo caches, logs, reports, acceptance evidence, current
+packages and one package rollback per app name. Cleanup failure or uncertainty
+fails verification. Reclaim abandoned workspaces only after proving inactivity.
+`--keep-artifacts` is an explicit diagnostic exception: report paths and sizes.
+Report compilation, setup, test execution and cleanup timing separately; do not
+hide rebuilding cost or weaken cleanup for apparent speed.
+
+Run full outside the macOS sandbox so Metal and descendant cleanup are available.
+Benchmarks use an isolated copied profiling workspace, never the live store.
+Keep operational hang timeouts separate from performance aspirations. See
+[validation prerequisites](docs/reference.md#validation). Both composite scripts
+record stages under `target/verification/`, fail nonzero on failures/unavailable
+prerequisites, and mark later stages not run. Use `--base <ref>` for comparisons.
 
 Format only touched project-owned Rust files, for example
 `rustfmt --edition 2024 --config skip_children=true path/to/changed.rs`.
-Do not run formatting recursively into vendored sources. For bootstrap,
-packaging, analyzer or substantial UI changes, use full verification and perform
-any change-specific visual acceptance described in the README/reference as well.
-Report unavailable prerequisites and pre-existing failures precisely; never
-describe an unrun check as passing.
+Never format recursively into vendor sources. Do not run debug-profile
+`--include-ignored`: canvas benchmarks require release mode. Perform applicable
+native visual acceptance for substantial UI changes and report limitations honestly.

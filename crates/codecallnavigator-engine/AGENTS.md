@@ -39,21 +39,39 @@ the desktop, Rune or WGPU. Keep the standalone build independent of UI resources
 - Update resource capability/version checks, bootstrap locks and packaging
   together when adapter contracts change. Executables and adapters must agree.
 
-## Verification
+## Testing strategy and verification
 
-Run from the workspace root:
+Follow [the shared strategy](../../docs/testing-strategy.md). Put argument rules,
+normalization, inference, ownership and scheduling policy combinations in unit
+tests of real isolated production logic with explicit in-memory inputs. Extract
+cohesive policy from build orchestration when it improves production design.
+
+Use integration tests with real minimal compiler/build fixtures for adapter
+semantics: symbol identity, ambiguity, unsupported input, source attribution,
+changed inputs and failed publication. Real compiler tests remain integration
+when they bypass the public engine command. End-to-end tests exercise the actual
+public executable with real dependencies, including analysis, queries, recovery
+and packaging. Retained artifact query fixtures need no recompilation to prove
+query behavior; retain separate compiler-to-artifact boundary checks.
 
 ```sh
-cargo check --locked -p codecallnavigator-engine --all-targets
-cargo test --locked -p codecallnavigator-engine --all-targets
-cargo build --locked -p codecallnavigator-engine --bin codecallnavigator-engine
+./verify-engine.sh --suite unit
+./verify-integration.sh --component engine
+./verify-acceptance.sh --component engine
 ```
 
-Use real compiler/build fixtures for adapter regressions, including ambiguity,
-unsupported input, cancellation and preservation of the previous artifact where
-affected. Keep unit tests focused on isolated normalization or argument logic.
-Run relevant ignored toolchain tests and corpus comparisons as documented in
-[README.md](../../README.md) and [engine evidence](../../evidence/engine/README.md).
-Resource/relocation changes also need engine packaging verification through
-`python3.13 tools/package.py --engine-only`. Follow root scoped-formatting and
-quality policies; report missing toolchains instead of claiming acceptance.
+Run from the workspace root. Inspect `--dry-run` for selected JDK/.NET/Node,
+resource, SDK and build-tool prerequisites; report unavailable tools as not run.
+Category scripts clean owned Rust outputs and temporary fixtures even on failures,
+retaining logs/evidence and downloaded caches. Use `--keep-artifacts` only for
+explicit diagnostics. Resource/bootstrap/packaging changes require full verification.
+
+Do not mock successful analyzer/build business behavior. Document narrow process
+fault probes for unreliable failures (blocked pipes, stalled children, malformed
+frames) as integration coverage, never successful real-dependency acceptance.
+Explain the unique risk of each expensive test and why a cheaper layer is
+insufficient. Removal requires assertion mappings and demonstrated defect detection.
+Preserve uncertainty, exact source ownership and byte-identical prior artifacts on
+failure/cancellation. Roughly one minute of warm unit execution is aspirational;
+never weaken verification or timeouts to meet it. Follow root CodeScene and
+scoped-formatting rules.

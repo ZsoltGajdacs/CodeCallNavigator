@@ -1,4 +1,4 @@
-use codecallnavigator::{
+use codecallnavigator_core::{
     graph::{Direction, Filter, GraphIndex, Neighborhood},
     model::{Edge, GraphData, Node, RelationshipKind as Kind, TargetResolution as Resolution},
 };
@@ -114,7 +114,7 @@ fn resolution_never_upgrades_unknown_or_reference_certainty() {
 
 #[test]
 fn explicit_evidence_and_provenance_obey_classification_precedence() {
-    use codecallnavigator::model::{RelationshipEvidence, SourceSite};
+    use codecallnavigator_core::model::{RelationshipEvidence, SourceSite};
     for semantics in ["deferred", "async-boundary"] {
         let evidence = RelationshipEvidence {
             rule: "fixture".into(),
@@ -157,7 +157,7 @@ fn every_type_and_resolution_combination_is_independently_selectable() {
         for resolution in Resolution::ALL {
             let mut filter = Filter::default();
             let classification =
-                codecallnavigator::model::RelationshipClassification { kind, resolution };
+                codecallnavigator_core::model::RelationshipClassification { kind, resolution };
             assert!(filter.accepts_classification(classification));
             filter.relationship_kinds.remove(&kind);
             assert!(!filter.accepts_classification(classification));

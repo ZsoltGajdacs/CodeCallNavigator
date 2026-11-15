@@ -64,31 +64,59 @@ def historical_projection(graph):
     return pages
 
 
-def baseline_parity(cli, baseline, work):
-    fixture = baseline["fixture"]
-    # Use the recorded task-owned path so every existing field, including absolute
-    # architecture source identity, can be compared without ignoring path changes.
+def rebase_expected_string(value, recorded_root, owned_root):
+    if not isinstance(value, str):
+        return value
+    if value == recorded_root or value.startswith(recorded_root + "/"):
+        return owned_root + value[len(recorded_root):]
+    return value
+
+
+def rebase_expected(value, recorded_root, owned_root):
+    """Relocate archived physical identities only; never normalize compiler output."""
+    if isinstance(value, dict):
+        return {key: rebase_expected(item, recorded_root, owned_root) for key, item in value.items()}
+    if isinstance(value, list):
+        return [rebase_expected(item, recorded_root, owned_root) for item in value]
+    return rebase_expected_string(value, str(recorded_root), str(owned_root))
+
+
+def recorded_baseline_source(fixture):
     recorded = Path(fixture["graph"]["architectureFiles"][0]["file"])
     require(recorded.name == fixture["source_file"] and recorded.parent.name == "task22-flow-baseline-source",
             "Baseline source is not the expected task-owned fixture")
-    root = recorded.parent
-    require(not root.is_symlink() and not recorded.is_symlink(), "Refuse symlinked baseline source")
+    return recorded
+
+
+def materialize_baseline_source(fixture, work):
+    recorded = recorded_baseline_source(fixture)
+    root = work.resolve() / recorded.parent.name
+    source = root / recorded.name
+    require(not root.is_symlink() and not source.is_symlink(), "Refuse symlinked baseline source")
     root.mkdir(exist_ok=True)
-    require(set(root.iterdir()) <= {recorded}, "Refuse baseline directory containing unrelated files")
+    require(set(root.iterdir()) <= {source}, "Refuse baseline directory containing unrelated files")
     expected_bytes = fixture["source"].encode("utf-8")
-    if recorded.exists():
-        require(recorded.read_bytes() == expected_bytes, "Refuse modified baseline source")
+    if source.exists():
+        require(source.read_bytes() == expected_bytes, "Refuse modified baseline source")
     else:
-        recorded.write_bytes(expected_bytes)
+        source.write_bytes(expected_bytes)
+    return source
+
+
+def baseline_parity(cli, baseline, work):
+    fixture = baseline["fixture"]
+    source = materialize_baseline_source(fixture, work)
+    root = source.parent
+    expected = rebase_expected(fixture["graph"], recorded_baseline_source(fixture).parent, root)
     graph = map_project(cli, root, work / "baseline.json")
     inventory = graph.pop("flowInventory")
     graph.pop("flowFactsVersion")
     graph.pop("root")
     source_pages = historical_projection(graph)
-    changed = sorted(key for key in graph.keys() | fixture["graph"].keys()
-                     if graph.get(key) != fixture["graph"].get(key))
+    changed = sorted(key for key in graph.keys() | expected.keys()
+                     if graph.get(key) != expected.get(key))
     require(not changed, f"Existing graph projection changed: {changed}")
-    require(recorded.read_bytes() == expected_bytes, "Mapping changed baseline source")
+    require(source.read_bytes() == fixture["source"].encode("utf-8"), "Mapping changed baseline source")
     repeated = map_project(cli, root, work / "baseline-repeated.json")
     require(repeated["flowInventory"] == inventory, "Flow export is not deterministic")
     return {"nodes": len(graph["nodes"]), "edges": len(graph["edges"]),

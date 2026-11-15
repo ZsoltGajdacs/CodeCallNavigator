@@ -7,6 +7,7 @@ from pathlib import Path
 import platform
 import shutil
 import subprocess
+import sys
 import tarfile
 import tempfile
 import zipfile
@@ -25,7 +26,7 @@ def run(*arguments, **kwargs):
 
 def source_package(package):
     run('cargo', 'package', '--locked', '--allow-dirty', '--no-verify', '-p', package['name'], cwd=ROOT)
-    return ROOT / 'target/package' / f"{package['name']}-{package['version']}.crate"
+    return ROOT / os.environ.get('CARGO_TARGET_DIR', 'target') / 'package' / f"{package['name']}-{package['version']}.crate"
 
 
 def install(archive, work):
@@ -95,6 +96,15 @@ def require_idle(path):
         raise RuntimeError(f'Cannot rotate an active or unverified MCP package: {path}: {usage.reason}')
 
 
+def independent_temporary_root():
+    root = Path(tempfile.gettempdir()).resolve()
+    if root.is_relative_to(ROOT):
+        # An inherited build TMPDIR may live below this Cargo workspace. The
+        # independent install must never inherit that workspace's dependencies.
+        root = Path('/private/tmp' if sys.platform == 'darwin' else '/tmp')
+    return root
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--engine', type=Path, required=True, help='Installed CLI for the process smoke test')
@@ -107,7 +117,7 @@ def main():
     output.mkdir(parents=True, exist_ok=True)
     # Extract outside the repository so Cargo cannot inherit its workspace or
     # satisfy an accidental path dependency from a sibling checkout directory.
-    with tempfile.TemporaryDirectory(prefix='mcp-package-') as temporary:
+    with tempfile.TemporaryDirectory(prefix='mcp-package-', dir=independent_temporary_root()) as temporary:
         work = Path(temporary)
         binary = install(archive, work)
         staged = work / 'CodeCallNavigatorMcp'

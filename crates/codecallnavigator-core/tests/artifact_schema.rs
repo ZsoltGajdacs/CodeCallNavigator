@@ -1,5 +1,5 @@
 //! Nested inventory versions are part of the public artifact compatibility boundary.
-use codecallnavigator::{
+use codecallnavigator_core::{
     artifact::{self, Artifact},
     model::GraphData,
 };
@@ -8,8 +8,11 @@ use codecallnavigator::{
 fn encoded_java_context_paths_relocate_even_with_quoted_directory_names() {
     let export = |root: &str| {
         let graph = GraphData {
-            nodes: vec![codecallnavigator::model::Node {
-                id: format!("{}|fixture.App:run()|void", serde_json::json!([root, format!("{root}/src"), "main"])),
+            nodes: vec![codecallnavigator_core::model::Node {
+                id: format!(
+                    "{}|fixture.App:run()|void",
+                    serde_json::json!([root, format!("{root}/src"), "main"])
+                ),
                 project: "fixture".into(),
                 build: root.into(),
                 file: format!("{root}/src/App.java"),
@@ -20,7 +23,10 @@ fn encoded_java_context_paths_relocate_even_with_quoted_directory_names() {
             }],
             ..Default::default()
         };
-        artifact::canonical(&graph, &[("repo".into(), root.into())]).unwrap().bytes().unwrap()
+        artifact::canonical(&graph, &[("repo".into(), root.into())])
+            .unwrap()
+            .bytes()
+            .unwrap()
     };
     assert_eq!(export("/first/quoted\"project"), export("/second/renamed"));
 }

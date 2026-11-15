@@ -23,6 +23,10 @@ from release_sources import (prepare_source_release, require_clean_source,
 ROOT = Path(__file__).resolve().parents[1]
 
 
+def release_binary(name):
+    return ROOT / os.environ.get('CARGO_TARGET_DIR', 'target') / 'release' / name
+
+
 def run(*arguments, **kwargs):
     kwargs.setdefault("check", True)
     return subprocess.run(list(map(str, arguments)), **kwargs)
@@ -286,8 +290,8 @@ def make_engine(destination):
     resources = destination / "Resources"
     binary.mkdir(parents=True)
     resources.mkdir()
-    shutil.copy2(ROOT / "target/release/codecallnavigator-engine", binary)
-    shutil.copy2(ROOT / "target/release/ccnavigator", binary)
+    shutil.copy2(release_binary('codecallnavigator-engine'), binary)
+    shutil.copy2(release_binary('ccnavigator'), binary)
     shutil.copy2(ROOT / "tools/install_cli.py", destination / "install.py")
     shutil.copy2(ROOT / "docs/cli-installation.md", destination / "INSTALL.md")
     copy_analyzers(resources)
@@ -300,8 +304,8 @@ def make_app(app):
     resources = contents / "Resources"
     (contents / "MacOS").mkdir(parents=True)
     resources.mkdir()
-    shutil.copy2(ROOT / "target/release/codecallnavigator", contents / "MacOS/CodeCallNavigator")
-    shutil.copy2(ROOT / "target/release/codecallnavigator-engine", contents / "MacOS/codecallnavigator-engine")
+    shutil.copy2(release_binary('codecallnavigator'), contents / "MacOS/CodeCallNavigator")
+    shutil.copy2(release_binary('codecallnavigator-engine'), contents / "MacOS/codecallnavigator-engine")
     analyzers = copy_analyzers(resources)
     graphviz_prefix = bundle_graphviz(analyzers / "graphviz")
     dependency_notices(resources, graphviz_prefix)

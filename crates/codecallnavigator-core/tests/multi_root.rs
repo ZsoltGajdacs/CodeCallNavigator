@@ -1,4 +1,4 @@
-use codecallnavigator::{
+use codecallnavigator_core::{
     graph::{Direction, Filter, GraphIndex, MultiNeighborhood, Neighborhood},
     model::{Edge, GraphData, Node},
 };

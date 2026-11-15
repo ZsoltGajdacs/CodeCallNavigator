@@ -1,11 +1,15 @@
 """Measured ownership of the public CLI observation stream."""
 import json
+import array
+import fcntl
 import os
 import queue
 import select
+import socket
 import subprocess
 import tempfile
 import threading
+import termios
 import time
 from dataclasses import dataclass
 
@@ -47,20 +51,88 @@ class Boundary:
     received: float = 0
 
 
+class BoundedOutput:
+    """A real bounded stdout transport for explicit undrained-output fault probes.
+
+    Fill only after the observer reader has stopped. Filler bytes exercise kernel
+    backpressure and must never be interpreted as application protocol frames.
+    """
+    def __init__(self):
+        self.reader, self.writer = socket.socketpair(socket.AF_UNIX, socket.SOCK_STREAM)
+        self.writer.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, 4096)
+
+    def pending_bytes(self):
+        pending = array.array('i', [0])
+        fcntl.ioctl(self.reader.fileno(), termios.FIONREAD, pending, True)
+        return pending[0]
+
+    def writable(self):
+        poller = select.poll()
+        poller.register(self.writer, select.POLLOUT)
+        return any(events & select.POLLOUT for _, events in poller.poll(0))
+
+    def fill(self):
+        blocking = self.writer.getblocking()
+        self.writer.setblocking(False)
+        try:
+            self.fill_send_buffer()
+        finally:
+            self.writer.setblocking(blocking)
+        return self.queued_backpressure()
+
+    def fill_send_buffer(self):
+        while True:
+            try:
+                self.writer.send(b'x' * 4096, socket.MSG_DONTWAIT)
+            except BlockingIOError:
+                return
+
+    def queued_backpressure(self):
+        if self.writable():
+            raise RuntimeError('Bounded stdout transport did not establish kernel backpressure')
+        queued = self.pending_bytes()
+        if queued <= 0:
+            raise RuntimeError('Bounded stdout transport contains no unread bytes')
+        return queued
+
+    def close(self):
+        self.writer.close()
+        self.reader.close()
+
+
+@dataclass(frozen=True)
+class ObserverOptions:
+    on_event: object = None
+    output: BoundedOutput | None = None
+
+
 class Observer:
     """Keep stdin open, timestamp complete output lines, and reap on every exit."""
-    def __init__(self, command, initial_request, timeout, on_event=None):
+    def __init__(self, command, initial_request, timeout, options=ObserverOptions()):
         self.timeout, self.events = timeout, queue.Queue()
-        self.on_event = on_event
+        self.on_event, self.output = options.on_event, options.output
         self.stop_reader, self.output_eof = threading.Event(), False
         self.stderr = tempfile.TemporaryFile()
-        self.measurement = ProcessMeasurement(command, subprocess.PIPE, self.stderr)
+        self.measurement = self.start_measurement(command)
         self.reader = threading.Thread(target=self.read)
         self.reader.start()
         try:
             self.measurement.send(initial_request, keep_open=True)
         except BaseException:
             self.close()
+            raise
+
+    def start_measurement(self, command):
+        stdout = self.output.writer if self.output is not None else subprocess.PIPE
+        try:
+            measurement = ProcessMeasurement(command, stdout, self.stderr)
+            if self.output is not None:
+                measurement.process.stdout = self.output.reader
+            return measurement
+        except BaseException:
+            self.stderr.close()
+            if self.output is not None:
+                self.output.close()
             raise
 
     def read(self):
@@ -141,9 +213,13 @@ class Observer:
         finally:
             kill_owned(owned, self.measurement.cleanup_errors)
             self.measurement.finish()
+            if self.output is not None:
+                self.output.writer.close()
             self.stop_reader.set()
             self.reader.join(timeout=5)
             process.stdout.close()
+            if self.output is not None:
+                self.output.close()
         self.stderr.seek(0)
         report = self.measurement.resource_report() | {
             "stderr": self.stderr.read().decode(errors="replace"),

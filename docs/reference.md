@@ -354,6 +354,11 @@ Use the repository entry points, which work from any current directory:
 ./verify-full.sh
 ./verify-full.sh --dry-run
 ./verify-light.sh --base origin/main
+./verify-unit.sh --component core
+./verify-integration.sh --component engine
+./verify-acceptance.sh --component mcp
+./verify-performance.sh --component ui
+./verify-ui.sh --suite unit
 ```
 
 Install the locked test-only Python dependencies once in the repository's isolated
@@ -368,24 +373,32 @@ The lock includes the existing JSON Schema contract-test dependency. Set `PYTHON
 only when intentionally using another interpreter with these locked packages.
 Documentation-only light checks do not require the test packages.
 
-Choose light for small changes with minimal production-code effect. It checks
-whitespace and the syntax/formatting of changed project files, builds the matching
-debug engine, runs workspace compilation, Clippy, ordinary Rust tests, Python
-suites in both `tests/` and `tools/`, and changed-source CodeScene reviews plus the
-repository safeguard. For documentation-only changes, it performs static checks and artifact cleanup
-without builds, runtime tests or benchmarks. Formatting uses `rustfmt --check`
-with `skip_children=true` only on changed project-owned Rust files. It never
-rewrites files or recursively formats vendored sources.
+Category scripts select unit, integration, acceptance or performance tests; component
+scripts (`verify-ui.sh`, `verify-core.sh`, `verify-engine.sh`, `verify-mcp.sh`,
+`verify-tooling.sh`) accept `--suite` and default to unit plus integration.
+All entry points share the same runner, category plans, inventory and cleanup.
+See [the testing strategy](testing-strategy.md) for placement and coverage rules.
 
-Choose full for substantial runtime/UI, analyzer, dependency, bootstrap or
-packaging changes. In addition to the regular checks, it bootstraps pinned
-analyzers, runs TypeScript tests, builds a matching release engine, runs **all**
-Rust tests including ignored tests in **release mode**, runs the storage benchmark,
-and builds/signature-verifies the local app and engine packages. Tests are serial
-and benchmark paths point to an isolated snapshot. This avoids invoking the
-release-only canvas benchmarks in debug mode. Offscreen GPU throughput does not
-claim interactive/native displayed FPS; perform change-specific visual acceptance
-separately when applicable.
+Choose light for small changes with minimal production-code effect. It composes
+changed-file static checks, workspace compilation/Clippy, ordinary unit/integration
+categories and changed-source CodeScene reviews plus the repository safeguard.
+Documentation-only light verification stays static, without application builds,
+runtime tests or benchmarks. Formatting checks only touched project-owned files
+and never rewrites vendored sources.
+
+Choose full for substantial/cross-component runtime or UI work, analyzer,
+dependency, bootstrap or packaging changes, uncertain impact and release candidates.
+It composes the same category plans with toolchain-backed integration, acceptance,
+performance and package/signature/install gates. Tests run once in their selected
+category/configuration; ignored status does not define category. Release-sensitive
+compiler, acceptance and benchmark checks use the appropriate release build.
+Native visual acceptance is distinct from headless UI tests, and offscreen GPU
+throughput does not prove interactive/native displayed FPS.
+
+Category/component `--dry-run` output lists exact stages and requirements without
+creating evidence or builds. The approximately one-minute warm unit-execution goal
+is aspirational, not a failure threshold; preserve valuable coverage even when a
+suite takes longer. Report compilation, setup, execution and cleanup separately.
 
 Full requires Apple Silicon macOS, native Metal/process-table access, Python 3.12+
 (the local verification environment, falling back to `python3.13`), Rust with Clippy/rustfmt, Node 24+, JDK 25,
@@ -414,25 +427,25 @@ pass `--profile-source /absolute/path`. The runner uses the SQLite backup API to
 snapshot the catalog (including committed WAL data), copies the immutable graph
 generation, and benchmarks only that copy. It never points benchmarks at the live
 application store. Keep the selected source available through snapshot creation.
+The standalone core storage-scale benchmark creates a synthetic database under its
+category workspace and does not require a saved profiling source.
 
-Artifact cleanup runs after verification, including failed/interrupted attempts,
-and has its own `cleanup.json` report. An active or uninspectable artifact is
-retained and cleanup reports a failure instead of deleting it. Use
-`--keep-artifacts` to retain all artifacts for investigation explicitly.
+Each category cleans its owned Rust build outputs, fixtures/test stores and copied
+profiling data before returning, including after failure, timeout or interruption.
+Category builds live below their run evidence directory; logs, inventory selection,
+acceptance evidence and timing/cleanup reports remain. Stop and reap owned processes
+first. Ownership markers and native process inspection must prove inactivity before
+deletion; uncertain or active artifacts are retained and fail cleanup. Abandoned
+category workspaces are reclaimed only after proving ownership and inactivity.
 
-- Light removes incremental compiler state while retaining compiled dependencies
-  and reusable debug/release binaries. Verification sets `CARGO_INCREMENTAL=0`
-  so its builds do not recreate that state.
-- Full cleans the debug and release Cargo profiles after verification/packaging,
-  including compiled dependency artifacts. The next build recompiles them. A full
-  run that fails before reaching build stages does not clean existing profiles.
-- Both remove their run-local profiling and scale benchmark data, and prune
-  rotated app backups, keeping the newest rollback for each current/legacy app
-  name. Current app/engine packages, ZIPs/DMGs and verification reports remain.
-- Cargo's own age-based cleanup is enabled for downloaded dependency caches using
-  `CARGO_CACHE_AUTO_CLEAN_FREQUENCY=always`; shared caches are not manually purged.
-  Cargo retains recently used cache entries according to its
-  [documented global-cache policy](https://doc.rust-lang.org/cargo/reference/config.html#global-caches).
+`--keep-artifacts` explicitly retains diagnostic build state and reports retained
+paths/sizes. Downloaded Cargo registry/Git caches remain; compiled category outputs
+do not accumulate between categories. Report reclaimed/retained bytes. Rebuilding
+after cleanup has a real cost and must not be hidden in execution-only timings.
+Composite cleanup also preserves current packages/reports and one rollback per
+current/legacy app name while pruning obsolete rotated packages. Cargo's own
+age-based downloaded-cache management remains enabled; shared caches are not
+manually purged.
 
 The checkout lock prevents competing verification runs. Cleanup additionally
 checks open-file usage with native `lsof` before removing artifact directories;

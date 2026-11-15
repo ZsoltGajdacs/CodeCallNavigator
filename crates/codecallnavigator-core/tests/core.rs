@@ -1,4 +1,4 @@
-use codecallnavigator::{
+use codecallnavigator_core::{
     graph::{Direction, Filter, GraphIndex, Neighborhood},
     model::{Edge, GraphData, Node},
     store::{SqliteStore, SymbolSearch},
@@ -111,7 +111,7 @@ fn sqlite_roundtrip_search_session_and_failed_refresh_preserve_active_graph() {
 
 #[test]
 fn visibility_survives_publication_and_legacy_json_defaults_to_unknown() {
-    use codecallnavigator::model::Visibility;
+    use codecallnavigator_core::model::Visibility;
     let directory = tempfile::tempdir().unwrap();
     let store = SqliteStore::open(directory.path()).unwrap();
     let mut data = sample();
@@ -146,9 +146,9 @@ fn reference_and_uncertain_edges_remain_distinct() {
     data.edges[0].kind = "methodgroup".into();
     let graph = GraphIndex::new(Arc::new(data)).unwrap();
     let filter = Filter {
-        relationship_kinds: codecallnavigator::model::RelationshipKind::ALL
+        relationship_kinds: codecallnavigator_core::model::RelationshipKind::ALL
             .into_iter()
-            .filter(|k| *k != codecallnavigator::model::RelationshipKind::FunctionReference)
+            .filter(|k| *k != codecallnavigator_core::model::RelationshipKind::FunctionReference)
             .collect(),
         ..Default::default()
     };
@@ -162,8 +162,8 @@ fn reference_and_uncertain_edges_remain_distinct() {
     let uncertain = GraphIndex::new(Arc::new(uncertain)).unwrap();
     let filter = Filter {
         target_resolutions: [
-            codecallnavigator::model::TargetResolution::Direct,
-            codecallnavigator::model::TargetResolution::VirtualDispatch,
+            codecallnavigator_core::model::TargetResolution::Direct,
+            codecallnavigator_core::model::TargetResolution::VirtualDispatch,
         ]
         .into(),
         ..Default::default()
@@ -270,7 +270,7 @@ fn search_pins_generation_while_a_new_analysis_is_published() {
 
 #[test]
 fn sqlite_preserves_architecture_facts_and_source_for_offline_reclassification() {
-    use codecallnavigator::architecture::{ArchitectureFacts, FileFacts};
+    use codecallnavigator_core::architecture::{ArchitectureFacts, FileFacts};
     let temp = tempfile::tempdir().unwrap();
     let store = SqliteStore::open(temp.path()).unwrap();
     let mut data = sample();

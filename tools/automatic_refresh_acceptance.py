@@ -6,7 +6,6 @@ cleanup is checked before the measurement helper's emergency cleanup can run.
 This is correctness acceptance, not a latency benchmark or a fake analyzer.
 """
 import argparse
-import array
 import fcntl
 import gzip
 import json
@@ -15,11 +14,10 @@ from pathlib import Path
 import signal
 import subprocess
 import tempfile
-import termios
 import time
 
 from freshness_measurement import descendants, kill_owned, process_inventory, response, run
-from freshness_observer_measurement import Observer, request
+from freshness_observer_measurement import BoundedOutput, Observer, ObserverOptions, request
 from freshness_scenarios import Project
 from measure_freshness import Session, metadata
 
@@ -45,12 +43,13 @@ def active_identities(owned):
 
 
 class Monitor:
-    def __init__(self, case, automatic=True):
+    def __init__(self, case, automatic=True, output_channel=None):
         self.case, self.events, self.report = case, [], None
         command = [str(case.executable), "observe"]
         if automatic:
             command.append("--auto-refresh")
-        self.observer = Observer(command, request(case.project), case.timeout)
+        self.observer = Observer(command, request(case.project), case.timeout,
+                                 ObserverOptions(output=output_channel))
 
     def next(self, deadline):
         received, event = self.observer.next_event(deadline)
@@ -161,8 +160,8 @@ class Case:
         self.before = self.artifact.read_bytes()
         self.monitors = []
 
-    def monitor(self, automatic=True):
-        monitor = Monitor(self, automatic)
+    def monitor(self, automatic=True, output_channel=None):
+        monitor = Monitor(self, automatic, output_channel)
         self.monitors.append(monitor)
         initial = monitor.next(time.monotonic() + self.timeout)
         require(initial.get("kind") == "initial" and initial.get("sequence") == 1,
@@ -298,12 +297,6 @@ def active_shutdown(case, mode):
     monitor.close(mode)
 
 
-def unread_output_bytes(monitor):
-    pending = array.array("i", [0])
-    fcntl.ioctl(monitor.observer.measurement.process.stdout.fileno(), termios.FIONREAD, pending, True)
-    return pending[0]
-
-
 def write_pressure_files(paths, value):
     for index, path in enumerate(paths):
         path.write_text(f"export function pressure{index}(){{return {value};}}\n")
@@ -315,21 +308,26 @@ def undrained_output(case):
     write_pressure_files(paths, 1)
     case.baseline = case.session.analyze()
     case.before = case.artifact.read_bytes()
-    monitor = case.monitor()
-    monitor.observer.stop_reader.set()
-    monitor.observer.reader.join(timeout=2)
-    require(not monitor.observer.reader.is_alive(), "Cannot suspend client output draining")
-    for value in range(2, 26):
-        write_pressure_files(paths, value)
-        time.sleep(.26)
-    pending = unread_output_bytes(monitor)
-    write_pressure_files(paths, 26)
-    time.sleep(.6)
-    require(pending >= 8192 and unread_output_bytes(monitor) == pending,
-            f"Did not establish stable output backpressure: {pending} queued bytes")
-    monitor.node_worker()
-    report = monitor.close()
-    report["undrained_output_bytes_before_shutdown"] = pending
+    output = BoundedOutput()
+    try:
+        monitor = case.monitor(output_channel=output)
+        monitor.observer.stop_reader.set()
+        monitor.observer.reader.join(timeout=2)
+        require(not monitor.observer.reader.is_alive(), "Cannot suspend client output draining")
+        # The initial frame above is from the real CLI. After its reader stops,
+        # fill only the physical transport: these bytes are never decoded as
+        # application frames. Queue length alone cannot prove macOS pipe pressure.
+        pending = output.fill()
+        require(pending > 0 and not output.writable(), "Kernel did not establish stdout backpressure")
+        write_pressure_files(paths, 2)
+        monitor.node_worker()
+        require(output.pending_bytes() == pending and not output.writable(),
+                "Client output did not remain blocked during real compiler work")
+        report = monitor.close()
+        report['undrained_output_bytes_before_shutdown'] = pending
+        report['backpressure_setup'] = 'Bounded Unix socket; unread fault-probe bytes after a real initial CLI frame'
+    finally:
+        output.close()
 
 
 def edits_during_analysis(case):
