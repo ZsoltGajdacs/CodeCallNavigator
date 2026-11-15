@@ -1,0 +1,147 @@
+{
+  "status": "passed",
+  "scope": "ROOT Task6 native-probe catalog publication guard only",
+  "distinct_tests": 22,
+  "batches": [
+    {
+      "group": "probe",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "-p",
+        "codecallnavigator",
+        "--release",
+        "--bin",
+        "codecallnavigator",
+        "flow_acceptance::comparison",
+        "--",
+        "--test-threads=1",
+        "--nocapture"
+      ],
+      "exit_code": 0,
+      "tests": [
+        "flow_acceptance::comparison::config::tests::misleading_case_roles_unbounded_sources_and_unknown_configuration_fields_are_rejected",
+        "flow_acceptance::comparison::driver::tests::a_published_matching_query_without_its_expected_id_still_fails",
+        "flow_acceptance::comparison::driver::tests::cancelled_external_reply_cannot_queue_another_terminal_report",
+        "flow_acceptance::comparison::driver::tests::catalog_selection_waits_for_the_published_query_before_asserting_exact_identity",
+        "flow_acceptance::comparison::driver::tests::terminal_write_failure_is_terminal_instead_of_retrying_a_finished_worker",
+        "flow_acceptance::comparison::protocol::tests::acknowledgments_reject_stale_sequence_operation_checkpoint_unknown_fields_and_failure",
+        "flow_acceptance::comparison::protocol::tests::external_wait_never_turns_missing_timeout_or_cancel_into_success",
+        "flow_acceptance::comparison::surface::tests::provenance_and_source_checks_require_actual_endpoint_widgets"
+      ],
+      "summary": [
+        "test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 337 filtered out; finished in 0.48s"
+      ],
+      "seconds": 1.057,
+      "log": "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/target/native-catalog-publication-verification/independent-probe.log"
+    },
+    {
+      "group": "comparison-ui",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "-p",
+        "codecallnavigator",
+        "--release",
+        "--bin",
+        "codecallnavigator",
+        "ui_tests::flow_comparison_",
+        "--",
+        "--test-threads=1",
+        "--nocapture"
+      ],
+      "exit_code": 0,
+      "tests": [
+        "ui_tests::flow_comparison_catalog::catalog_paging_and_search_reset_use_returned_cursors",
+        "ui_tests::flow_comparison_catalog::explicit_counterpart_reset_and_search_keep_exact_identity_actions",
+        "ui_tests::flow_comparison_catalog::missing_and_unavailable_sides_stay_explicit",
+        "ui_tests::flow_comparison_catalog::moved_ref_blocks_actions_until_explicit_reload",
+        "ui_tests::flow_comparison_editor::entry_cleanup_preserves_the_single_flow_session_history_and_actual_scroll",
+        "ui_tests::flow_comparison_editor::entry_cleanup_submitting_different_refs_keeps_the_captured_project_and_roots",
+        "ui_tests::flow_comparison_layout::minimum_light_and_dark_layouts_keep_full_controls_and_local_panes",
+        "ui_tests::flow_comparison_layout::qualified_target_label_stays_visible_inside_minimum_comparison_inspector",
+        "ui_tests::flow_comparison_outcomes::cancel_control_reaps_the_owned_pending_query_and_does_not_publish_its_pair",
+        "ui_tests::flow_comparison_outcomes::incompatible_endpoint_membership_and_missing_cached_source_are_not_guessed",
+        "ui_tests::flow_comparison_panes::back_keeps_saved_camera_when_the_restored_pane_is_measured_again",
+        "ui_tests::flow_comparison_panes::pane_steps_tabs_scroll_and_zoom_are_independent_and_use_local_coordinates",
+        "ui_tests::flow_comparison_panes::target_and_back_restore_active_source_tab_scroll_selection_and_cameras",
+        "ui_tests::flow_comparison_panes::unlocated_comparison_step_keeps_source_position_and_target_metadata_is_endpoint_owned"
+      ],
+      "summary": [
+        "test result: ok. 14 passed; 0 failed; 0 ignored; 0 measured; 331 filtered out; finished in 9.22s"
+      ],
+      "seconds": 9.478,
+      "log": "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/target/native-catalog-publication-verification/independent-comparison-ui.log"
+    }
+  ],
+  "hashes_before": {
+    "src/flow_acceptance/comparison/driver/selection.rs": "4980f98f915bbd49f3f206c63d1cdd20163d40b0f4cd80c90b9c52e0bce442e3",
+    "src/flow_acceptance/comparison/driver/tests.rs": "5e8cbf1d587539cb6498a16cb5fffa5b80a433e15b8e70d6805b67b7734b18d3"
+  },
+  "hashes_after": {
+    "src/flow_acceptance/comparison/driver/selection.rs": "4980f98f915bbd49f3f206c63d1cdd20163d40b0f4cd80c90b9c52e0bce442e3",
+    "src/flow_acceptance/comparison/driver/tests.rs": "5e8cbf1d587539cb6498a16cb5fffa5b80a433e15b8e70d6805b67b7734b18d3"
+  },
+  "label_fix_hashes_before": {
+    "src/flow_view/details.rs": "667c5dcb06fb4bbac5891629953fabe3fde940605f0205829e79f17a89d9fefb",
+    "src/ui_tests/flow_comparison_layout.rs": "2c4d01dc13ebe0f63e7cc898382647f30f6ac814bcc9cfaae0230bb8e686487f",
+    "src/ui_tests/function_flows.rs": "b90fd67c2ce3f3f71639d2146195cad5c21dbeeeaa62a4bccca97d7469a94844"
+  },
+  "label_fix_hashes_after": {
+    "src/flow_view/details.rs": "667c5dcb06fb4bbac5891629953fabe3fde940605f0205829e79f17a89d9fefb",
+    "src/ui_tests/flow_comparison_layout.rs": "2c4d01dc13ebe0f63e7cc898382647f30f6ac814bcc9cfaae0230bb8e686487f",
+    "src/ui_tests/function_flows.rs": "b90fd67c2ce3f3f71639d2146195cad5c21dbeeeaa62a4bccca97d7469a94844"
+  },
+  "environment": {
+    "CARGO_TARGET_DIR": "/private/tmp/codecallnavigator-task22.6/target",
+    "CODECALLNAVIGATOR_ENGINE": "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/dist/CodeCallNavigatorEngine/bin/codecallnavigator-engine",
+    "CODECALLNAVIGATOR_RESOURCES": "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/dist/CodeCallNavigatorEngine/resources"
+  },
+  "engine_sha256": "98a9a70347f73380168665092ff5abab72857fc8d670262e13db1e9e3c348b43",
+  "quality_retained_raw_reports": {
+    "old": {
+      "status": "passed",
+      "scores": [
+        10.0,
+        10.0
+      ],
+      "safeguard": {
+        "checked-file-count": 90,
+        "code-health-eligible-file-count": 90,
+        "status": "no-issues-found",
+        "total-modified-file-count": 267
+      }
+    },
+    "modern": {
+      "status": "passed",
+      "scores": [
+        10.0,
+        10.0
+      ],
+      "safeguard": {
+        "checked-file-count": 90,
+        "code-health-eligible-file-count": 90,
+        "status": "no-issues-found",
+        "total-modified-file-count": 267
+      }
+    }
+  },
+  "review": [
+    "Regression explicitly starts with settled Latest/no pending worker while stale old page is published; stale text keeps Wait.",
+    "Matching text but offset1 keeps Wait; matching text offset0 with exact expected ID advances to Record.",
+    "Matching text offset0 without expected ID still returns original exact-ID failure; guard does not weaken identity assertion.",
+    "Change is restricted to opt-in acceptance driver; production comparison controller and label presentation remain unchanged."
+  ],
+  "preserved_prior_failures": [
+    "red.log records actual stale-catalog regression.",
+    "green.log remains7pass/1environment failure; definitive producer green-with-engine and independent probe both use explicit packaged CLI.",
+    "Earlier sandbox quality failures retained; current retained reports are outside-sandbox passes."
+  ],
+  "limits": [
+    "Focused release/headless checks only; no source edits, full/package/nativeGUI/JS runs, or temp7 access.",
+    "Earlier full115pass predates this probe-only delta; no full-after-delta claim.",
+    "Root owns rebuilt-candidate native retry/package/full or light-final requirements."
+  ]
+}

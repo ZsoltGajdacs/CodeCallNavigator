@@ -1,21 +1,17 @@
 # TASK-22 investigation and delivery plan
 
-Investigated 2026-11-14. This is a planning handoff; no runtime changes or new
-runtime test results are claimed. The existing parent acceptance criteria remain
-unchanged. Child tasks contain durable scope, outcomes, dependencies and completion
-checks; their worker must recheck current code and record an execution plan when
-starting them.
+Investigated 2026-11-14. This document retains the investigation baseline and
+delivery plan. The existing parent acceptance criteria remain unchanged. Child
+tasks contain durable scope, outcomes, dependencies and completion checks; their
+worker must recheck current code and record an execution plan when starting them.
 
 Implementation is now authorized on `feature/task-22-function-flowcharts` in the
-listed sequence. The investigation below records the starting state, not the
-current support matrix. TASK-22.1 is complete; TASK-22.2 binds its compiler flow
-facts to canonical source snapshots and CLI queries. Fresh analysis additionally
-requires typed source-encoding facts so non-UTF-8 projects retain graph support
-without claiming exact UTF-8 flow spans. Per-task evidence and Backlog status
-record verification and completion; the AI provider/data decision remains a
-separate checkpoint before generation is enabled.
+listed sequence. The investigation below records the starting state. See
+[function flowcharts](../function-flowcharts.md) for current capabilities and
+per-task evidence and Backlog status for verification and completion. The AI
+provider/data decision remains a separate checkpoint before generation is enabled.
 
-## Current implementation
+## Investigation baseline
 
 - [Function flowcharts](../function-flowcharts.md) and
   [existing evidence](../../evidence/flowcharts/README.md) describe the delivered
@@ -54,9 +50,10 @@ separate checkpoint before generation is enabled.
 
 ## Delivery order and completion map
 
-All children are tracked under TASK-22 as To Do and unassigned. This indicates
-queued scope, not approval of the unresolved AI design. Dependencies express
-technical prerequisites, not a requirement to build all four branches together.
+Children were initially queued under TASK-22; their live statuses and assignments
+are recorded in Backlog. Queuing scope does not approve the unresolved AI design.
+Dependencies express technical prerequisites, not a requirement to build all four
+branches together.
 
 | Task | Bounded result | Prerequisite | Parent criterion |
 | --- | --- | --- | --- |

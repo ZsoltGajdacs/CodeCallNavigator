@@ -1,0 +1,137 @@
+{
+  "engine": "/private/tmp/flow-comparison-native-ofmwr47a/Relocated CodeCallNavigator.app/Contents/MacOS/codecallnavigator-engine",
+  "helper_pid": 88522,
+  "execution": "require_escalated; actual packaged query-session; no GUI/window/build/analysis",
+  "identity": {
+    "parent": 88536,
+    "query": 88537,
+    "group": 88537
+  },
+  "cleanup_error": "Owned query group did not exit after verified termination",
+  "parent_still_alive": true,
+  "group_still_present": true,
+  "helper_waitpid_error": {
+    "errno": 10,
+    "name": "ECHILD",
+    "message": "[Errno 10] No child processes"
+  },
+  "parent_exit_code": 0,
+  "final_group_present": false,
+  "events": [
+    {
+      "label": "before_cleanup",
+      "elapsed_ms": 194.5362500846386,
+      "rows": [
+        {
+          "pid": 88536,
+          "ppid": 88522,
+          "pgid": 88522,
+          "stat": "S",
+          "command": "/Users/zsolt.gajdacs/.local/bin/python3.13 /private/tmp/codecallnavigator-task22.6/target/unit4-verification/native-unreaped-parent/parent.py /private/tmp/flow-comparison-native-ofmwr47a/Relocated CodeCallNavigator.app/Contents/MacOS/codecallnavigator-engine /private/tmp/codecallnavigator-task22.6/target/unit4-verification/native-unreaped-parent"
+        },
+        {
+          "pid": 88537,
+          "ppid": 88536,
+          "pgid": 88537,
+          "stat": "S",
+          "command": "/private/tmp/flow-comparison-native-ofmwr47a/Relocated CodeCallNavigator.app/Contents/MacOS/codecallnavigator-engine query-session"
+        }
+      ]
+    },
+    {
+      "label": "transition",
+      "elapsed_ms": 277.9356250539422,
+      "rows": [
+        {
+          "pid": 88536,
+          "ppid": 88522,
+          "pgid": 88522,
+          "stat": "S",
+          "command": "/Users/zsolt.gajdacs/.local/bin/python3.13 /private/tmp/codecallnavigator-task22.6/target/unit4-verification/native-unreaped-parent/parent.py /private/tmp/flow-comparison-native-ofmwr47a/Relocated CodeCallNavigator.app/Contents/MacOS/codecallnavigator-engine /private/tmp/codecallnavigator-task22.6/target/unit4-verification/native-unreaped-parent"
+        },
+        {
+          "pid": 88537,
+          "ppid": 88536,
+          "pgid": 88537,
+          "stat": "S",
+          "command": "/private/tmp/flow-comparison-native-ofmwr47a/Relocated CodeCallNavigator.app/Contents/MacOS/codecallnavigator-engine query-session"
+        }
+      ]
+    },
+    {
+      "label": "transition",
+      "elapsed_ms": 1074.4825830915943,
+      "rows": [
+        {
+          "pid": 88536,
+          "ppid": 88522,
+          "pgid": 88522,
+          "stat": "S",
+          "command": "/Users/zsolt.gajdacs/.local/bin/python3.13 /private/tmp/codecallnavigator-task22.6/target/unit4-verification/native-unreaped-parent/parent.py /private/tmp/flow-comparison-native-ofmwr47a/Relocated CodeCallNavigator.app/Contents/MacOS/codecallnavigator-engine /private/tmp/codecallnavigator-task22.6/target/unit4-verification/native-unreaped-parent"
+        },
+        {
+          "pid": 88537,
+          "ppid": 88536,
+          "pgid": 88537,
+          "stat": "Z",
+          "command": "<defunct>"
+        }
+      ]
+    },
+    {
+      "label": "after_cleanup_while_parent_retains_unreaped_child",
+      "elapsed_ms": 3190.482458099723,
+      "rows": [
+        {
+          "pid": 88536,
+          "ppid": 88522,
+          "pgid": 88522,
+          "stat": "S",
+          "command": "/Users/zsolt.gajdacs/.local/bin/python3.13 /private/tmp/codecallnavigator-task22.6/target/unit4-verification/native-unreaped-parent/parent.py /private/tmp/flow-comparison-native-ofmwr47a/Relocated CodeCallNavigator.app/Contents/MacOS/codecallnavigator-engine /private/tmp/codecallnavigator-task22.6/target/unit4-verification/native-unreaped-parent"
+        },
+        {
+          "pid": 88537,
+          "ppid": 88536,
+          "pgid": 88537,
+          "stat": "Z",
+          "command": "<defunct>"
+        }
+      ]
+    },
+    {
+      "label": "transition",
+      "elapsed_ms": 3291.56112507917,
+      "rows": [
+        {
+          "pid": 88536,
+          "ppid": 88522,
+          "pgid": 88522,
+          "stat": "S",
+          "command": "(python3.13)"
+        },
+        {
+          "pid": 88537,
+          "ppid": 88536,
+          "pgid": 88537,
+          "stat": "Z",
+          "command": "<defunct>"
+        }
+      ]
+    },
+    {
+      "label": "immediately_after_parent_exit_and_helper_wait",
+      "elapsed_ms": 3324.044292094186,
+      "rows": []
+    },
+    {
+      "label": "transition",
+      "elapsed_ms": 3395.6531250150874,
+      "rows": []
+    },
+    {
+      "label": "final_after_parent_exit",
+      "elapsed_ms": 3452.258958015591,
+      "rows": []
+    }
+  ]
+}

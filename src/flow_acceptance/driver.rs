@@ -1,6 +1,6 @@
 //! One bounded native workflow; graph semantics still come exclusively from the CLI.
 use super::{
-    config::Configuration,
+    config::Ordinary as Configuration,
     input::Input,
     io::{Reply, Worker},
     observation::{self, CallSelection},
@@ -156,6 +156,9 @@ impl Driver {
             process_id: std::process::id(),
             expected_viewport: self.configuration.expected_viewport,
         })
+    }
+    pub fn encoded(&mut self, frame: &rune::FrameEncoded) {
+        self.report.borrow_mut().encoded(frame, self.origin);
     }
     pub fn finished(&self) -> bool {
         self.phase == Phase::Closing

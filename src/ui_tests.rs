@@ -9,6 +9,10 @@ mod canvas_performance;
 mod cli_backend;
 mod cli_freshness;
 mod csharp_flows;
+mod flow_comparison_editor;
+mod flow_comparison_fixture;
+mod flow_comparison_panes;
+mod flow_comparisons;
 mod function_flows;
 mod graph_fit;
 mod graph_studio;
@@ -739,3 +743,8 @@ fn failed_freshness_check_preserves_matching_state_instead_of_claiming_stale() {
             .is_some_and(|text| text.contains("Freshness check failed"))
     }));
 }
+
+mod flow_comparison_catalog;
+mod flow_comparison_layout;
+
+mod flow_comparison_outcomes;

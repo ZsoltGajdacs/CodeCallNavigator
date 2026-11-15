@@ -9,7 +9,7 @@ use std::{
 
 #[derive(Clone, Deserialize)]
 #[serde(deny_unknown_fields)]
-pub(super) struct Configuration {
+pub(super) struct Ordinary {
     pub version: u32,
     pub project: PathBuf,
     pub root_symbol: String,
@@ -20,11 +20,17 @@ pub(super) struct Configuration {
     pub timeout_seconds: u64,
 }
 
-fn timeout_seconds() -> u64 {
-    120
+pub(super) enum Configuration {
+    Single(Ordinary),
+    Comparison(Box<super::comparison::config::Configuration>),
 }
-
 impl Configuration {
+    pub fn timeout(&self) -> Duration {
+        match self {
+            Self::Single(config) => config.timeout(),
+            Self::Comparison(config) => config.timeout(),
+        }
+    }
     pub fn load(directory: &Path) -> Result<Self> {
         let mut bytes = Vec::new();
         File::open(directory.join("config.json"))?
@@ -34,8 +40,27 @@ impl Configuration {
             bytes.len() <= 4 * 1024 * 1024,
             "Flow acceptance configuration exceeds 4 MiB"
         );
+        let version = serde_json::from_slice::<serde_json::Value>(&bytes)?
+            .get("version")
+            .and_then(|v| v.as_u64());
+        match version {
+            Some(1) => Ordinary::decode(&bytes).map(Self::Single),
+            Some(2) => super::comparison::config::Configuration::decode(&bytes)
+                .map(Box::new)
+                .map(Self::Comparison),
+            _ => anyhow::bail!("Unsupported flow acceptance configuration version"),
+        }
+    }
+}
+
+fn timeout_seconds() -> u64 {
+    120
+}
+
+impl Ordinary {
+    fn decode(bytes: &[u8]) -> Result<Self> {
         let mut configuration: Self =
-            serde_json::from_slice(&bytes).context("Invalid flow acceptance configuration")?;
+            serde_json::from_slice(bytes).context("Invalid flow acceptance configuration")?;
         configuration.validate()?;
         configuration.project = configuration
             .project
@@ -131,17 +156,35 @@ mod tests {
     }
 
     #[test]
+    fn comparison_configuration_dispatches_version_two_without_using_single_flow_fields() {
+        let project = tempfile::tempdir().unwrap();
+        let output = tempfile::tempdir().unwrap();
+        let configuration = super::super::comparison::config::tests::value(project.path());
+        std::fs::write(
+            output.path().join("config.json"),
+            serde_json::to_vec(&configuration).unwrap(),
+        )
+        .unwrap();
+        let result = Configuration::load(output.path());
+        assert!(
+            result.is_ok(),
+            "Comparison launch configuration must dispatch independently: {}",
+            result.err().unwrap()
+        );
+    }
+
+    #[test]
     fn acceptance_requires_an_explicit_expected_viewport() {
         let configuration = serde_json::json!({
             "version": 1, "project": "/tmp/project", "root_symbol": "Run",
             "target_symbol": "Leaf", "source": "class Example {}"
         });
-        assert!(serde_json::from_value::<Configuration>(configuration).is_err());
+        assert!(serde_json::from_value::<Ordinary>(configuration).is_err());
     }
 
     #[test]
     fn viewport_gate_rejects_the_observed_oversized_native_window() {
-        let configuration: Configuration = serde_json::from_value(serde_json::json!({
+        let configuration: Ordinary = serde_json::from_value(serde_json::json!({
             "version": 1, "project": "/tmp/project", "root_symbol": "Run",
             "target_symbol": "Leaf", "source": "class Example {}",
             "expected_viewport": [1050, 680]
@@ -153,7 +196,7 @@ mod tests {
         assert!(!configuration.viewport_matches([1050.0, 682.0]));
         assert!(!configuration.viewport_matches([f32::NAN, 680.0]));
         assert!(configuration.validate().is_ok());
-        let invalid = Configuration {
+        let invalid = Ordinary {
             expected_viewport: [0, 680],
             ..configuration
         };

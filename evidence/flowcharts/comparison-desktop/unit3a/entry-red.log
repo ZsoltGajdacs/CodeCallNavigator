@@ -1,0 +1,380 @@
+warning: unreachable expression
+   --> vendor/rune/vendor/parley_engine/src/shape/shaped_text.rs:108:9
+    |
+106 |             return metrics;
+    |             -------------- any code following this expression is unreachable
+107 |         }
+108 |         Self::compute_from_font_instance(font, font_size, variations)
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ unreachable expression
+    |
+    = note: `#[warn(unreachable_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: `parley_engine` (lib) generated 1 warning
+warning: rune@0.0.1: The precompiled DX12 uber shader (uber.vs.dxbc, uber.fs.dxbc) was built from other WGSL (blake3 4566c05378d954a5c28dba3dedd4571c732f0b0b0107fdab0ef54631be4751a1, the sources now hash 1bb8151c9dc8977ceba6de7ce6df6dac6480d75941eb24657aab9a0ffce097fc), so it isn't used: run `cargo run -p rune --example regen_dxbc` on Windows; until then every Windows launch compiles it with FXC, which takes seconds
+warning: rune@0.0.1: The precompiled Metal uber shader (uber.metallib) was built from other WGSL (blake3 f65915c6c9eb3eb73d776445fe1dbc19ae6079bc5a55c71f1604cf0462b25dca, the sources now hash aed778372fc2e7119495cbcc1c454069b236f849f8418dcc2b6c3cd3722c624a), so it isn't used: run scripts/precompile-metal-shaders.sh on a Mac
+warning: rune@0.0.1: The precompiled Metal Windfoil shader (uber_windfoil.metallib) was built from other WGSL (blake3 4566c05378d954a5c28dba3dedd4571c732f0b0b0107fdab0ef54631be4751a1, the sources now hash 1bb8151c9dc8977ceba6de7ce6df6dac6480d75941eb24657aab9a0ffce097fc), so it isn't used: run scripts/precompile-metal-shaders.sh on a Mac
+warning: hiding a lifetime that's elided elsewhere is confusing
+   --> vendor/rune/vendor/tiny-skia-path/src/path.rs:152:21
+    |
+152 |     pub fn segments(&self) -> PathSegmentsIter {
+    |                     ^^^^^     ^^^^^^^^^^^^^^^^ the same lifetime is hidden here
+    |                     |
+    |                     the lifetime is elided here
+    |
+    = help: the same lifetime is referred to in inconsistent ways, making the signature confusing
+    = note: `#[warn(mismatched_lifetime_syntaxes)]` on by default
+help: use `'_` for type paths
+    |
+152 |     pub fn segments(&self) -> PathSegmentsIter<'_> {
+    |                                               ++++
+
+warning: missing documentation for a method
+   --> vendor/rune/vendor/tiny-skia-path/src/path_builder.rs:208:5
+    |
+208 |     pub fn conic_to(&mut self, x1: f32, y1: f32, x: f32, y: f32, weight: f32) {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+note: the lint level is defined here
+   --> vendor/rune/vendor/tiny-skia-path/src/lib.rs:16:9
+    |
+ 16 | #![warn(missing_docs)]
+    |         ^^^^^^^^^^^^
+
+warning: type does not implement `Debug`; consider adding `#[derive(Debug)]` or a manual implementation
+   --> vendor/rune/vendor/tiny-skia-path/src/path_geometry.rs:867:1
+    |
+867 | / pub struct AutoConicToQuads {
+868 | |     pub points: [Point; 64],
+869 | |     pub len: u8, // the number of quads
+870 | | }
+    | |_^
+    |
+note: the lint level is defined here
+   --> vendor/rune/vendor/tiny-skia-path/src/lib.rs:18:9
+    |
+ 18 | #![warn(missing_debug_implementations)]
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: hiding a lifetime that's elided elsewhere is confusing
+   --> vendor/rune/vendor/tiny-skia-path/src/stroker.rs:449:17
+    |
+449 |     fn builders(&mut self) -> SwappableBuilders {
+    |                 ^^^^^^^^^     ^^^^^^^^^^^^^^^^^ the same lifetime is hidden here
+    |                 |
+    |                 the lifetime is elided here
+    |
+    = help: the same lifetime is referred to in inconsistent ways, making the signature confusing
+help: use `'_` for type paths
+    |
+449 |     fn builders(&mut self) -> SwappableBuilders<'_> {
+    |                                                ++++
+
+warning: `tiny-skia-path` (lib) generated 4 warnings (run `cargo fix --lib -p tiny-skia-path` to apply 2 suggestions)
+warning: unreachable pattern
+  --> vendor/rune/crates/rune/src/window/minimize.rs:77:21
+   |
+66 |         (M::None, _) => Effects::none(),
+   |          ------- matches all the relevant values
+...
+77 |         (M::Asked | M::None, E::Returned) => Effects::none(),
+   |                     ^^^^^^^ no value can reach this
+   |
+   = note: `#[warn(unreachable_patterns)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused variable: `field`
+  --> vendor/rune/crates/rune/src/window/minimize.rs:72:20
+   |
+72 |         (M::Held { field }, E::Asked) => { *state = M::Held { field: true }; Effects::none() }
+   |                    ^^^^^ help: try ignoring the field: `field: _`
+   |
+   = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+warning: unnecessary `unsafe` block
+   --> vendor/rune/crates/rune/src/window/mac.rs:111:13
+    |
+111 |     let r = unsafe { close.convertRect_toView(close.bounds(), None) };
+    |             ^^^^^^ unnecessary `unsafe` block
+    |
+    = note: `#[warn(unused_unsafe)]` (part of `#[warn(unused)]`) on by default
+
+warning: method `notify_structure` is never used
+   --> vendor/rune/crates/rune/src/a11y/mod.rs:270:19
+    |
+197 | impl Adapter {
+    | ------------ method in this implementation
+...
+270 |     pub(crate) fn notify_structure(&self) {
+    |                   ^^^^^^^^^^^^^^^^
+    |
+    = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: function `display_vendor` is never used
+   --> vendor/rune/crates/rune/src/gpu/pick.rs:247:15
+    |
+247 | pub(crate) fn display_vendor() -> Option<u32> {
+    |               ^^^^^^^^^^^^^^
+
+warning: static `DISPLAY_VENDOR` is never used
+   --> vendor/rune/crates/rune/src/gpu/pick.rs:251:8
+    |
+251 | static DISPLAY_VENDOR: std::sync::OnceLock<Option<u32>> = std::sync::OnceLock::new();
+    |        ^^^^^^^^^^^^^^
+
+warning: method `latched` is never used
+  --> vendor/rune/crates/rune/src/window/minimize.rs:44:19
+   |
+42 | impl Minimize {
+   | ------------- method in this implementation
+43 |     /// Whether an ask waits at all, held or not.
+44 |     pub(crate) fn latched(self) -> bool { !matches!(self, Minimize::None) }
+   |                   ^^^^^^^
+
+warning: associated function `borrowed_within` is never used
+  --> vendor/rune/crates/rune/src/render/pass.rs:47:19
+   |
+41 | impl<'a, 'p> ActivePass<'a, 'p> {
+   | ------------------------------- associated function in this implementation
+...
+47 |     pub(super) fn borrowed_within(pass: &'a mut wgpu::RenderPass<'p>, bound: [u32; 4]) -> Self {
+   |                   ^^^^^^^^^^^^^^^
+
+warning: method `running` is never used
+   --> vendor/rune/crates/rune/src/runtime/selection/edge_scroll.rs:200:31
+    |
+187 | impl EdgeScroll {
+    | --------------- method in this implementation
+...
+200 |     pub(in crate::runtime) fn running(&self) -> bool { matches!(self.state, State::Running { .. } | State::Laying { .. }) }
+    |                               ^^^^^^^
+
+warning: method `publish` is never used
+   --> vendor/rune/crates/rune/src/runtime/motion/live_latch.rs:130:19
+    |
+ 95 | impl LiveLane {
+    | ------------- method in this implementation
+...
+130 |     pub(crate) fn publish(&self) { self.wake.notify(); }
+    |                   ^^^^^^^
+
+warning: function `natural` is never used
+  --> vendor/rune/crates/rune/src/text/collate.rs:87:4
+   |
+87 | fn natural(a: &str, b: &str) -> Ordering {
+   |    ^^^^^^^
+
+warning: `rune` (lib) generated 11 warnings (run `cargo fix --lib -p rune` to apply 1 suggestion)
+   Compiling codecallnavigator v0.1.0 (/private/tmp/codecallnavigator-task22.6)
+warning: unused imports: `ComparisonClient` and `Result`
+ --> src/engine_client/flow_comparison.rs:5:48
+  |
+5 | pub use client::{BoundComparison, CatalogPage, ComparisonClient, Error, Result};
+  |                                                ^^^^^^^^^^^^^^^^         ^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: field `message` is never read
+  --> src/engine_client/flow_comparison/model.rs:30:9
+   |
+28 | pub struct Failure {
+   |            ------- field in this struct
+29 |     pub reason: String,
+30 |     pub message: String,
+   |         ^^^^^^^
+   |
+   = note: `Failure` has derived impls for the traits `Debug` and `Clone`, but these are intentionally ignored during dead code analysis
+   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: field `0` is never read
+  --> src/engine_client/flow_comparison/model.rs:36:17
+   |
+36 |     Unavailable(Failure),
+   |     ----------- ^^^^^^^
+   |     |
+   |     field in this variant
+   |
+   = note: `EndpointStatus` has derived impls for the traits `Debug` and `Clone`, but these are intentionally ignored during dead code analysis
+help: consider changing the field to be of unit type to suppress this warning while preserving the field numbering, or remove the field
+   |
+36 -     Unavailable(Failure),
+36 +     Unavailable(()),
+   |
+
+warning: fields `signature` and `line` are never read
+  --> src/engine_client/flow_comparison/model.rs:54:9
+   |
+51 | pub struct Symbol {
+   |            ------ fields in this struct
+...
+54 |     pub signature: String,
+   |         ^^^^^^^^^
+55 |     pub line: u32,
+   |         ^^^^
+   |
+   = note: `Symbol` has derived impls for the traits `Debug` and `Clone`, but these are intentionally ignored during dead code analysis
+
+warning: field `0` is never read
+  --> src/engine_client/flow_comparison/model.rs:63:17
+   |
+63 |     Unavailable(Failure),
+   |     ----------- ^^^^^^^
+   |     |
+   |     field in this variant
+   |
+   = note: `Recorded` has derived impls for the traits `Debug` and `Clone`, but these are intentionally ignored during dead code analysis
+help: consider changing the field to be of unit type to suppress this warning while preserving the field numbering, or remove the field
+   |
+63 -     Unavailable(Failure),
+63 +     Unavailable(()),
+   |
+
+warning: field `flow` is never read
+  --> src/engine_client/flow_comparison/model.rs:68:9
+   |
+66 | pub struct Present {
+   |            ------- field in this struct
+67 |     pub node: Option<Symbol>,
+68 |     pub flow: Recorded,
+   |         ^^^^
+   |
+   = note: `Present` has derived impls for the traits `Debug` and `Clone`, but these are intentionally ignored during dead code analysis
+
+warning: field `0` is never read
+  --> src/engine_client/flow_comparison/model.rs:75:13
+   |
+75 |     Unknown(Failure),
+   |     ------- ^^^^^^^
+   |     |
+   |     field in this variant
+   |
+   = note: `CatalogSide` has derived impls for the traits `Debug` and `Clone`, but these are intentionally ignored during dead code analysis
+help: consider changing the field to be of unit type to suppress this warning while preserving the field numbering, or remove the field
+   |
+75 -     Unknown(Failure),
+75 +     Unknown(()),
+   |
+
+warning: field `line` is never read
+   --> src/engine_client/flow_comparison/model.rs:119:9
+    |
+115 | pub struct Source {
+    |            ------ field in this struct
+...
+119 |     pub line: u32,
+    |         ^^^^
+    |
+    = note: `Source` has a derived impl for the trait `Debug`, but this is intentionally ignored during dead code analysis
+
+warning: field `0` is never read
+  --> src/flow_comparison.rs:29:20
+   |
+29 |     ReloadRequired(String),
+   |     -------------- ^^^^^^
+   |     |
+   |     field in this variant
+   |
+   = note: `Phase` has a derived impl for the trait `Debug`, but this is intentionally ignored during dead code analysis
+help: consider changing the field to be of unit type to suppress this warning while preserving the field numbering, or remove the field
+   |
+29 -     ReloadRequired(String),
+29 +     ReloadRequired(()),
+   |
+
+warning: field `0` is never read
+  --> src/flow_comparison.rs:30:12
+   |
+30 |     Failed(String),
+   |     ------ ^^^^^^
+   |     |
+   |     field in this variant
+   |
+   = note: `Phase` has a derived impl for the trait `Debug`, but this is intentionally ignored during dead code analysis
+help: consider changing the field to be of unit type to suppress this warning while preserving the field numbering, or remove the field
+   |
+30 -     Failed(String),
+30 +     Failed(()),
+   |
+
+warning: methods `references`, `catalog_pending`, and `detail_pending` are never used
+  --> src/flow_comparison.rs:64:12
+   |
+58 | impl Workspace {
+   | -------------- methods in this implementation
+...
+64 |     pub fn references(&self) -> Option<(&str, &str)> {
+   |            ^^^^^^^^^^
+...
+69 |     pub fn catalog_pending(&self) -> bool {
+   |            ^^^^^^^^^^^^^^^
+...
+72 |     pub fn detail_pending(&self) -> bool {
+   |            ^^^^^^^^^^^^^^
+
+warning: methods `select_step` and `fit` are never used
+  --> src/flow_comparison/navigation.rs:77:12
+   |
+ 3 | impl Workspace {
+   | -------------- methods in this implementation
+...
+77 |     pub fn select_step(&mut self, side: SideId, index: usize, tx: &mut rune::Tx) {
+   |            ^^^^^^^^^^^
+...
+99 |     pub fn fit(&mut self, side: SideId) {
+   |            ^^^
+
+warning: field `node` is never read
+  --> src/flow_comparison/pair.rs:24:9
+   |
+22 | pub struct ReadySide {
+   |            --------- field in this struct
+23 |     pub session: Session,
+24 |     pub node: Arc<wire::Symbol>,
+   |         ^^^^
+   |
+   = note: `ReadySide` has a derived impl for the trait `Clone`, but this is intentionally ignored during dead code analysis
+
+warning: field `0` is never read
+  --> src/flow_comparison/pair.rs:31:17
+   |
+31 |     Unavailable(Arc<wire::UnavailableSide>),
+   |     ----------- ^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |     |
+   |     field in this variant
+   |
+   = note: `Side` has a derived impl for the trait `Clone`, but this is intentionally ignored during dead code analysis
+help: consider changing the field to be of unit type to suppress this warning while preserving the field numbering, or remove the field
+   |
+31 -     Unavailable(Arc<wire::UnavailableSide>),
+31 +     Unavailable(()),
+   |
+
+warning: method `side_mut` is never used
+   --> src/flow_comparison/pair.rs:129:12
+    |
+122 | impl Pair {
+    | --------- method in this implementation
+...
+129 |     pub fn side_mut(&mut self, side: SideId) -> &mut Side {
+    |            ^^^^^^^^
+
+warning: `codecallnavigator` (bin "codecallnavigator" test) generated 15 warnings (run `cargo fix --bin "codecallnavigator" -p codecallnavigator --tests` to apply 1 suggestion)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 5.73s
+     Running unittests src/main.rs (target/debug/build/codecallnavigator/68caccc8ef025d0b/out/codecallnavigator-68caccc8ef025d0b)
+
+running 1 test
+test ui_tests::flow_comparisons::global_comparison_entry_opens_revision_controls_without_a_loaded_graph ... FAILED
+
+failures:
+
+---- ui_tests::flow_comparisons::global_comparison_entry_opens_revision_controls_without_a_loaded_graph stdout ----
+
+thread 'ui_tests::flow_comparisons::global_comparison_entry_opens_revision_controls_without_a_loaded_graph' (49450953) panicked at src/ui_tests.rs:59:28:
+Missing control compare-flows
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    ui_tests::flow_comparisons::global_comparison_entry_opens_revision_controls_without_a_loaded_graph
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 315 filtered out; finished in 0.09s
+
+error: test failed, to rerun pass `-p codecallnavigator --bin codecallnavigator`

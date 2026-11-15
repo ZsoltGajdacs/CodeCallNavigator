@@ -1,0 +1,10 @@
+namespace RevisionFixture;
+public static class Cases {
+    public static int Changed(bool flag) {
+        if (flag) return Leaf(2);
+        return Leaf(4);
+    }
+    public static int Leaf(int value) => value;
+    public static int Manual(bool flag) => flag ? Leaf(3) : 2;
+    public static int Added() => Leaf(9);
+}

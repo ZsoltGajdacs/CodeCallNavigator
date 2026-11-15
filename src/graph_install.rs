@@ -41,6 +41,12 @@ pub(crate) fn install(state: &mut State, loaded: LoadedGraph, mode: Mode) {
     {
         navigation.retain_with_inventory(&loaded.graph, &loaded.navigation);
     }
+    state.flow_comparison.project_installed(
+        loaded
+            .context
+            .as_ref()
+            .map(|context| context.descriptor.project.as_path()),
+    );
     state.query_context = loaded.context;
     state.freshness.installed(
         state

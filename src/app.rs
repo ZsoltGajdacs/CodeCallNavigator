@@ -24,6 +24,7 @@ pub struct TargetChoice {
 pub struct State {
     pub explorer: crate::explorer::Workspace,
     pub flow_workspace: crate::flow_workspace::Workspace,
+    pub flow_comparison: crate::flow_comparison::Workspace,
     pub root: TextEdit,
     pub search: crate::search::Workspace,
     pub targets: Vec<TargetChoice>,
@@ -88,6 +89,7 @@ impl State {
         Self {
             explorer: crate::explorer::Workspace::default(),
             flow_workspace: crate::flow_workspace::Workspace::default(),
+            flow_comparison: Default::default(),
             root: TextEdit::new(""),
             search: crate::search::Workspace::default(),
             targets: Vec::new(),

@@ -1,0 +1,91 @@
+{
+  "scope": "TASK22.6 Unit1 typed desktop comparison client only",
+  "status": "focused_unit_ready_for_independent_review",
+  "tests_first": [
+    {
+      "log": "red.log",
+      "failed": 1,
+      "reason": "complete optional v1 contract incorrectly unsupported before negotiation implemented"
+    },
+    {
+      "log": "endpoint-red.log",
+      "failed": 1,
+      "reason": "WORKTREE base incorrectly passed endpoint role validation before guard"
+    },
+    {
+      "log": "catalog-red.log",
+      "failed": 1,
+      "reason": "all eight malformed-v1 catalog cases were accepted before hardening"
+    },
+    {
+      "log": "catalog-union-red.log",
+      "failed": 1,
+      "reason": "row without any known present endpoint was accepted before final union-attribution guard"
+    }
+  ],
+  "tests": {
+    "log": "focused-final.log",
+    "passed": 35,
+    "ignored": 3,
+    "explicit_skips": [],
+    "new_tests": 13,
+    "engine_override": "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/dist/CodeCallNavigatorEngine/bin/codecallnavigator-engine",
+    "resources_override": "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/dist/CodeCallNavigatorEngine/resources",
+    "note": "Both previously missing-engine observation tests now pass with the packaged override."
+  },
+  "compiler": {
+    "command": "cargo clippy --locked -p codecallnavigator --bin codecallnavigator --tests",
+    "exit": 0,
+    "log": "clippy.log",
+    "project_warning_summaries": [
+      "warning: `codecallnavigator` (bin \"codecallnavigator\") generated 45 warnings (run `cargo clippy --fix --bin \"codecallnavigator\" -p codecallnavigator -- ` to apply 2 suggestions)",
+      "warning: `codecallnavigator` (bin \"codecallnavigator\" test) generated 13 warnings (2 duplicates)"
+    ],
+    "limitations": "New unused exported API and DTO fields intentionally have no production consumer until Unit2. No suppressions or fake consumers. Full-workspace -D warnings gate remains pending actual UI consumers. Vendor warnings unchanged.",
+    "note": "Clippy exit0 predates the final catalog-only validator delta; final compiler test build passed and reviews green. Unused API warnings remain until real UI consumer."
+  },
+  "quality": {
+    "modern": "1.5.20",
+    "installed": "1.5.6",
+    "behavior_files": 10,
+    "score": 10,
+    "declarations_only_barrel": "src/engine_client/flow_comparison.rs",
+    "unchanged_parser_safeguard": "passed 11 eligible/11 modified",
+    "logs": [
+      "quality-final.json",
+      "quality-cap-final.json",
+      "quality-modern.json",
+      "quality-catalog.json",
+      "quality-catalog-modern.json"
+    ]
+  },
+  "invariants": [
+    "No current graph generation attached to historical queries",
+    "Every continued catalog/detail request carries immutable comparison_id and original refs",
+    "Envelope generation must equal typed head artifact digest",
+    "No recomputation of CLI comparison identity",
+    "Base must be committed; head kind matches WORKTREE or committed ref",
+    "No SHA-1 commit-length assumption",
+    "Structured CLI errors including comparison_mismatch preserved",
+    "Target summary body flag separate from function call certainty/provenance",
+    "No artifact/graph/source filesystem reads in client",
+    "No workspace/UI implementation in Unit1",
+    "Catalog records strictly ordered unique IDs; supplied node symbol matches record ID",
+    "Complete/endpoint availability/side knowledge/membership must be mutually consistent",
+    "Every returned catalog identity has a known present endpoint; count fits reported total",
+    "Empty pages with offset beyond total remain valid"
+  ],
+  "files": {
+    "src/engine_client.rs": "e2f424d11673698e2f4df09fe5088e38650d5c64a9f73b323b9ea1f1babf6511",
+    "src/engine_client/queries.rs": "199016da031d003e7be67b4c117ba4a186a52d100a682e6d47841eb814e8246e",
+    "src/engine_client/query_process.rs": "f65ba6397f57e7c06b156b9bbf5ae9fc02c9d9729109d47b8a2b2b5ced7f16b0",
+    "src/engine_client/capabilities.rs": "ea82bde63fef566cc0761e6398d0b667f609c965e5c47a94ad4bfb6f1aebc19a",
+    "src/engine_client/capabilities/flow_comparison.rs": "c97942c626b2e2520cec63d2907acbe2db80755464f3401362660bdc7feb34ba",
+    "src/engine_client/flow_comparison.rs": "b3ef5a174a8342e547141782f2aab726a5d93e0c83cc2a60a0ca97dd89fbf02b",
+    "src/engine_client/flow_comparison/client.rs": "2b1d01096d135c71c0413d677e7222377b57dbe0c084e417fec3c50e983e9b97",
+    "src/engine_client/flow_comparison/validation.rs": "692c638ddaa7ead295739db96317c9496694ee6a43ab786fffad4c5526964adc",
+    "src/engine_client/flow_comparison/tests.rs": "143dad0fb5ad0596222265cc8bb2edd1f4c57921993e6c8387fa56966fc1a262",
+    "src/engine_client/flow_comparison/model.rs": "9c4bdba74655d56750958e2c8acdef40b6849e2d7cb2e7403b0e7e77c72397a6",
+    "src/engine_client/flow_comparison/validation/catalog.rs": "877ae602c23fb038b96fd8a0f1d7cf1ba0613db6f5b3591afc9623741bc48a76"
+  }
+}

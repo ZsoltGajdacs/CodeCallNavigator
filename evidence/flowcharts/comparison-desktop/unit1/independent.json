@@ -1,0 +1,53 @@
+{
+  "status": "passed_scoped_intermediate_unit",
+  "scope": "TASK22.6 Unit1 independent typed-client verification in temporary checkout",
+  "tests": {
+    "initial_existing_batch_passed": 33,
+    "previously_skipped_real_observation_tests_now_passed": [
+      "real_cli_observes_repairs_and_owned_cancellation_completes",
+      "retry_renegotiates_capabilities_after_cli_upgrade"
+    ],
+    "final_focused_passed": 36,
+    "final_duration_seconds": 22.41,
+    "existing_ignored": 3,
+    "new_actual_git_cli_test_passed": 1
+  },
+  "added_test": "Actual packaged CLI typed catalog open, mandatory-bound offset1 continuation, and detail against committed artifacts with no working graph/live source; unrelated current descriptor generation retained locally but not attached historically; exact cached source and targets decoded.",
+  "changed_paths_by_tester": [
+    "src/engine_client/flow_comparison/client.rs",
+    "src/engine_client/flow_comparison/real_tests.rs"
+  ],
+  "production_edits_by_tester": false,
+  "quality": {
+    "both_new_touched_files_modern_score": 10,
+    "both_new_touched_files_installed_1_5_6_score": 10,
+    "report": "independent-quality.json"
+  },
+  "engine": {
+    "path": "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/dist/CodeCallNavigatorEngine/bin/codecallnavigator-engine",
+    "sha256": "98a9a70347f73380168665092ff5abab72857fc8d670262e13db1e9e3c348b43",
+    "resources": "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/dist/CodeCallNavigatorEngine/Resources",
+    "capabilities_preflight": "v1 flow_comparison and streaming freshness supported"
+  },
+  "commands": {
+    "workdir": "/private/tmp/codecallnavigator-task22.6",
+    "test": "CODECALLNAVIGATOR_ENGINE=/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/dist/CodeCallNavigatorEngine/bin/codecallnavigator-engine CODECALLNAVIGATOR_RESOURCES=/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/dist/CodeCallNavigatorEngine/Resources CARGO_TARGET_DIR=/private/tmp/codecallnavigator-task22.6/target cargo test --locked -p codecallnavigator --bin codecallnavigator engine_client -- --test-threads=1 --nocapture",
+    "format": "rustfmt --check --edition 2024 --config skip_children=true src/engine_client/flow_comparison/client.rs src/engine_client/flow_comparison/real_tests.rs",
+    "diff": "git diff --check"
+  },
+  "logs": [
+    "independent-focused.log",
+    "independent-real-client.log",
+    "independent-final-client.log"
+  ],
+  "source_hashes": {
+    "src/engine_client/flow_comparison/client.rs": "ed6a949ae554bab8e52e6af33a29ec5a4d355d0f7db0b998afc18cc1f9ce4adc",
+    "src/engine_client/flow_comparison/real_tests.rs": "8b4c98bc8e14f28457e4d41aa52fc191c1f9b2cefb96bc11d0d9fc7d2633b1ea"
+  },
+  "limits": [
+    "No full/native/analyzer verification or standalone engine build",
+    "The actual Git test seeds valid saved compiler-like fixture facts; it does not run a language compiler",
+    "New API/DTO unused production warnings remain intentionally intermediate until Unit2/3 consumers; no suppressions or fake production consumers added",
+    "One local integration request offset typo was corrected in the test harness; no production defect or change was needed"
+  ]
+}

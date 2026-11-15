@@ -1,0 +1,76 @@
+{
+  "scope": "Unit3 narrow entry/editor cleanup, before shared pane extraction",
+  "status": "frozen_for_independent_review",
+  "red": [
+    {
+      "log": "preservation-red.log",
+      "failed": 2,
+      "reasons": [
+        "Comparison entry discarded the prior single-flow session",
+        "Submitting refs recaptured editable project context"
+      ]
+    },
+    {
+      "log": "paging-red.log",
+      "failed": 1,
+      "reason": "Reload retained old paging offsets"
+    }
+  ],
+  "green": {
+    "preservation-green.log": [
+      "test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 319 filtered out; finished in 1.29s"
+    ],
+    "paging-green.log": [
+      "test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 320 filtered out; finished in 1.31s"
+    ],
+    "editor-checkpoint.log": [
+      "test result: ok. 37 passed; 0 failed; 0 ignored; 0 measured; 284 filtered out; finished in 16.39s"
+    ],
+    "ordinary-flow-checkpoint.log": [
+      "test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 309 filtered out; finished in 1.56s"
+    ]
+  },
+  "expected_pending_red": {
+    "name": "real_revision_controls_load_catalog_select_a_function_and_show_both_charts",
+    "log": "panes-red.log",
+    "reason": "Catalog rows and shared panes belong to the next slice; explicitly excluded from the checkpoint command"
+  },
+  "quality": {
+    "versions": [
+      "1.5.6",
+      "1.5.20"
+    ],
+    "files": 11,
+    "scores": 10,
+    "old_reports": [
+      "quality-editor-cleanup.json",
+      "quality-preservation-tests.json"
+    ],
+    "modern_report": "quality-editor-cleanup-modern.json"
+  },
+  "invariants": [
+    "Single-flow ready data, selection, camera, history and rendered source scroll survive comparison entry/Close",
+    "Ordinary scroll restoration remains armed while its view is hidden",
+    "New refs and Reload share one captured canonical project/runtime/roots setup",
+    "One concrete private page-direction operation preserves actual prior offsets",
+    "Search and new comparison reset prior offset history"
+  ],
+  "files": {
+    "src/flow_comparison/controls.rs": "03ddd6fd4c63cf3b8b6fff647fb7bd44bdd369903a3e6755b40d1ce4c26121e7",
+    "src/flow_comparison/controls_tests.rs": "5ca8f3eb8676baf61e35cfc2bba267dd23f493d2249ec8a4875901bf960ac156",
+    "src/flow_comparison.rs": "edeed5af6c751916ae96ae48069de5d1254b825881195b140e30d9adbc8c0763",
+    "src/flow_workspace.rs": "b328fb2bdbd23b74cec5ee0544bdfb3b1f339c7b0883aed6f3c8e701619921c1",
+    "src/flow_view.rs": "d5fc2d3f688d2210c5172555f274656df6dc83e3541ed01591c48848f27f85a1",
+    "src/view.rs": "ccdd44a157355b7aec1dfbe423b11ae80f17cd8b1e51137307ee874d387201dc",
+    "src/flow_comparison_view.rs": "8b049631474becca8f3d29ef85074648e59c2e48b780465964dea44a3660d362",
+    "src/ui_tests/flow_comparison_editor.rs": "7edcddadc6b7f67ca74afb10ff2c6522af3f517db0b8209b62ff3071a44d5d32",
+    "src/ui_tests/flow_comparisons.rs": "edf13e01f023b624c22ab5fcade2df8ad705a0224d6d400c84f3a1cadd99f2a8",
+    "src/ui_tests/function_flows.rs": "a7699e84c162778a88b3a83d625490c5ea693db5e3e7d01dd073f6530f7ec4e8",
+    "src/ui_tests.rs": "7b0db37d2b054de15970fcd83a6f38f324c82957f6ec6b2099366ee0ce9c71de"
+  },
+  "not_run": [
+    "No pane extraction yet",
+    "No native acceptance",
+    "No full verification"
+  ]
+}

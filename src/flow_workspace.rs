@@ -1,9 +1,11 @@
 //! Generation-bound flow sessions, background construction and independent navigation.
+mod keys;
 use crate::{app::State, camera::Camera, source};
 use codecallnavigator::{
     flow::{self, FlowChart},
     graph::GraphIndex,
 };
+pub(crate) use keys::SourceKeys;
 use rune::{Latest, Tx};
 use std::{cell::Cell, collections::HashMap, path::Path, rc::Rc, sync::Arc};
 
@@ -35,6 +37,9 @@ impl Session {
             "flow-source-scroll-{}",
             blake3::hash(format!("{epoch}:{visit}:{symbol}").as_bytes()).to_hex()
         );
+        Self::with_scroll_key(symbol, scroll_key)
+    }
+    fn with_scroll_key(symbol: String, scroll_key: String) -> Self {
         Self {
             symbol,
             scroll_key,
@@ -69,6 +74,9 @@ pub struct Output {
     result: Result<Ready, String>,
 }
 impl Workspace {
+    pub(crate) fn preserve_current_scroll(&mut self) {
+        self.restore_scroll = self.current.as_ref().map(|session| session.scroll.get());
+    }
     pub fn invalidate(&mut self) {
         self.cancelled
             .store(true, std::sync::atomic::Ordering::Release);
@@ -201,28 +209,9 @@ impl State {
         }
     }
     pub fn select_flow_step(&mut self, index: usize, tx: &mut Tx) {
-        let Some(session) = &mut self.flow_workspace.current else {
-            return;
-        };
-        let Some(ready) = &session.ready else {
-            return;
-        };
-        if ready.chart.steps.get(index).is_none() {
-            return;
+        if let Some(session) = &mut self.flow_workspace.current {
+            session.select_step(index, &SourceKeys::Single, tx);
         }
-        session.selected = Some(index);
-        let Some(span) = session.selected_source_span() else {
-            return;
-        };
-        let target = ready
-            .source
-            .lines
-            .partition_point(|line| line.range.end < span.start)
-            .min(ready.source.lines.len().saturating_sub(1));
-        tx.scroll_center_in_instant(
-            session.scroll_key.clone(),
-            format!("flow-source-line-{target}"),
-        );
     }
 }
 
@@ -232,7 +221,8 @@ pub fn poll(state: &mut State, tx: &mut Tx) -> bool {
         return true;
     }
     let loaded = take_output(state);
-    let scrolled = restore_scroll(&mut state.flow_workspace, tx);
+    let scrolled =
+        !state.flow_comparison.controls.visible && restore_scroll(&mut state.flow_workspace, tx);
     loaded | scrolled
 }
 
@@ -292,7 +282,41 @@ impl State {
 }
 
 impl Session {
-    fn install(&mut self, ready: Arc<Ready>, viewport: [f32; 2]) {
+    pub(crate) fn namespaced(symbol: String, namespace: &str) -> Self {
+        let key = blake3::hash(namespace.as_bytes()).to_hex();
+        Self::with_scroll_key(symbol, format!("comparison-flow-source-{key}"))
+    }
+    pub(crate) fn select_index(&mut self, index: usize) -> bool {
+        if self
+            .ready
+            .as_ref()
+            .is_none_or(|ready| index >= ready.chart.steps.len())
+        {
+            return false;
+        }
+        self.selected = Some(index);
+        true
+    }
+    pub(crate) fn select_step(&mut self, index: usize, keys: &SourceKeys, tx: &mut Tx) {
+        if self.select_index(index) {
+            self.center_selected(keys, tx);
+        }
+    }
+    pub(crate) fn center_selected(&self, keys: &SourceKeys, tx: &mut Tx) {
+        let Some(span) = self.selected_source_span() else {
+            return;
+        };
+        let Some(ready) = &self.ready else {
+            return;
+        };
+        let target = ready
+            .source
+            .lines
+            .partition_point(|line| line.range.end < span.start)
+            .min(ready.source.lines.len().saturating_sub(1));
+        tx.scroll_center_in_instant(self.scroll_key.clone(), keys.line(target));
+    }
+    pub(crate) fn install(&mut self, ready: Arc<Ready>, viewport: [f32; 2]) {
         self.camera.fit(ready.chart.size, viewport);
         let target = ready
             .source

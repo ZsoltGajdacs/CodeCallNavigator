@@ -1,0 +1,58 @@
+{
+  "scope": [
+    "src/flow_acceptance/comparison/driver/selection.rs",
+    "src/flow_acceptance/comparison/driver/tests.rs"
+  ],
+  "red": {
+    "log": "red.log",
+    "passed": 3,
+    "failed": 1,
+    "reason": "Nonpending worker state with stale published catalog prematurely asserted the next exact ID"
+  },
+  "green": {
+    "log": "green-with-engine.log",
+    "passed": 8,
+    "failed": 0
+  },
+  "ui_regressions": {
+    "log": "ui-regressions.log",
+    "passed": 14,
+    "failed": 0
+  },
+  "distinct_passes": 22,
+  "quality": {
+    "reports": [
+      "quality-old.json",
+      "quality-modern.json"
+    ],
+    "status": "passed",
+    "scores": [
+      10,
+      10
+    ],
+    "safeguard_eligible": 90,
+    "total_modified": 267
+  },
+  "prior_environment_limits": [
+    {
+      "logs": [
+        "quality-old-sandbox-failure.json",
+        "quality-modern-sandbox-failure.json"
+      ],
+      "reason": "Sandbox prevents verified process-group cleanup; definitive raw reports rerun outside sandbox"
+    },
+    {
+      "log": "green.log",
+      "reason": "Surface test missing engine discovery override; 7 passed,1 failed. Definitive green-with-engine.log uses explicit packaged CLI and passed all 8."
+    }
+  ],
+  "static": "touched rustfmt and git diff checks passed",
+  "warnings": "11 existing vendor Rune warnings",
+  "preserved_ui_label_hashes": true,
+  "not_run": [
+    "native retry",
+    "packaging",
+    "full verification after probe-only change"
+  ],
+  "status": "frozen"
+}

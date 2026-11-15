@@ -1,0 +1,68 @@
+{
+  "frozen_at": "2026-11-15T02:55:44.037093+00:00",
+  "scope": [
+    "tools/comparison_desktop_cleanup.py",
+    "tools/test_comparison_desktop_cleanup.py"
+  ],
+  "sha256": {
+    "tools/comparison_desktop_cleanup.py": "b10d322e9ed824c8d217a5f17c13d7c50f488a8201028a615b3c0c53394f2312",
+    "tools/test_comparison_desktop_cleanup.py": "74a04216ed88b428fbc02387109b29f53bcaf393446e7babe106036e797884fe"
+  },
+  "regression": {
+    "red": "parent-reaping-red.log",
+    "green": "focused-first.log",
+    "observed_result": "17 focused tests passed outside sandbox"
+  },
+  "actual_packaged_engine": {
+    "result": "packaged/result.json",
+    "audit": "packaged/query-cleanup.json",
+    "status": "passed"
+  },
+  "quality": {
+    "old": {
+      "path": "quality-old.json",
+      "status": "passed",
+      "reviews": [
+        [
+          "tools/comparison_desktop_cleanup.py",
+          10.0
+        ],
+        [
+          "tools/test_comparison_desktop_cleanup.py",
+          10.0
+        ]
+      ],
+      "safeguard": "passed",
+      "metadata": {
+        "checked-file-count": 90,
+        "code-health-eligible-file-count": 90,
+        "status": "no-issues-found",
+        "total-modified-file-count": 205
+      }
+    },
+    "modern": {
+      "path": "quality-modern.json",
+      "status": "passed",
+      "reviews": [
+        [
+          "tools/comparison_desktop_cleanup.py",
+          10.0
+        ],
+        [
+          "tools/test_comparison_desktop_cleanup.py",
+          10.0
+        ]
+      ],
+      "safeguard": "passed",
+      "metadata": {
+        "checked-file-count": 90,
+        "code-health-eligible-file-count": 90,
+        "status": "no-issues-found",
+        "total-modified-file-count": 205
+      }
+    }
+  },
+  "static": "Python syntax and scoped diff check passed",
+  "source_changes": "Only the approved helper and test; no docs/Backlog/other source changes by this agent.",
+  "remaining": "Desktop availability/native retry and full verification are root-owned; no package/native GUI/full run by this agent."
+}

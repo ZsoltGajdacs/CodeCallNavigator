@@ -1,0 +1,2177 @@
+[
+  {
+    "name": "prerequisites",
+    "command": [
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/.venv-verification/bin/python",
+      "tools/verification/prerequisites.py",
+      "--root",
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph",
+      "--codescene-command",
+      "cs-mcp",
+      "--profile-source",
+      "/Users/zsolt.gajdacs/Library/Application Support/CodeCallNavigator"
+    ],
+    "timeout": 180,
+    "status": "passed",
+    "log": "01-prerequisites.log",
+    "exit_code": 0,
+    "seconds": 1.858
+  },
+  {
+    "name": "whitespace",
+    "command": [
+      "git",
+      "diff",
+      "--check",
+      "HEAD",
+      "--"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "02-whitespace.log",
+    "exit_code": 0,
+    "seconds": 0.041
+  },
+  {
+    "name": "syntax-format-179",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "src/app.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "03-syntax-format-179.log",
+    "exit_code": 0,
+    "seconds": 0.239
+  },
+  {
+    "name": "syntax-format-180",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "src/engine_client.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "04-syntax-format-180.log",
+    "exit_code": 0,
+    "seconds": 0.042
+  },
+  {
+    "name": "syntax-format-181",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "src/engine_client/capabilities.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "05-syntax-format-181.log",
+    "exit_code": 0,
+    "seconds": 0.04
+  },
+  {
+    "name": "syntax-format-182",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "src/engine_client/capabilities/flow_comparison.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "06-syntax-format-182.log",
+    "exit_code": 0,
+    "seconds": 0.041
+  },
+  {
+    "name": "syntax-format-183",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "src/engine_client/flow_comparison.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "07-syntax-format-183.log",
+    "exit_code": 0,
+    "seconds": 0.041
+  },
+  {
+    "name": "syntax-format-184",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "src/engine_client/flow_comparison/client.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "08-syntax-format-184.log",
+    "exit_code": 0,
+    "seconds": 0.039
+  },
+  {
+    "name": "syntax-format-185",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "src/engine_client/flow_comparison/model.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "09-syntax-format-185.log",
+    "exit_code": 0,
+    "seconds": 0.041
+  },
+  {
+    "name": "syntax-format-186",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "src/engine_client/flow_comparison/real_tests.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "10-syntax-format-186.log",
+    "exit_code": 0,
+    "seconds": 0.041
+  },
+  {
+    "name": "syntax-format-187",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "src/engine_client/flow_comparison/tests.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "11-syntax-format-187.log",
+    "exit_code": 0,
+    "seconds": 0.038
+  },
+  {
+    "name": "syntax-format-188",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "src/engine_client/flow_comparison/validation.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "12-syntax-format-188.log",
+    "exit_code": 0,
+    "seconds": 0.037
+  },
+  {
+    "name": "syntax-format-189",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "src/engine_client/flow_comparison/validation/catalog.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "13-syntax-format-189.log",
+    "exit_code": 0,
+    "seconds": 0.041
+  },
+  {
+    "name": "syntax-format-190",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "src/engine_client/queries.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "14-syntax-format-190.log",
+    "exit_code": 0,
+    "seconds": 0.041
+  },
+  {
+    "name": "syntax-format-191",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "src/engine_client/query_process.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "15-syntax-format-191.log",
+    "exit_code": 0,
+    "seconds": 0.037
+  },
+  {
+    "name": "syntax-format-192",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "src/flow_acceptance.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "16-syntax-format-192.log",
+    "exit_code": 0,
+    "seconds": 0.037
+  },
+  {
+    "name": "syntax-format-193",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "src/flow_acceptance/comparison.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "17-syntax-format-193.log",
+    "exit_code": 0,
+    "seconds": 0.037
+  },
+  {
+    "name": "syntax-format-194",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "src/flow_acceptance/comparison/config.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "18-syntax-format-194.log",
+    "exit_code": 0,
+    "seconds": 0.073
+  },
+  {
+    "name": "syntax-format-195",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "src/flow_acceptance/comparison/config_tests.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "19-syntax-format-195.log",
+    "exit_code": 0,
+    "seconds": 0.041
+  },
+  {
+    "name": "syntax-format-196",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "src/flow_acceptance/comparison/driver.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "20-syntax-format-196.log",
+    "exit_code": 0,
+    "seconds": 0.041
+  },
+  {
+    "name": "syntax-format-197",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "src/flow_acceptance/comparison/driver/interaction.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "21-syntax-format-197.log",
+    "exit_code": 0,
+    "seconds": 0.04
+  },
+  {
+    "name": "syntax-format-198",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "src/flow_acceptance/comparison/driver/recovery.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "22-syntax-format-198.log",
+    "exit_code": 0,
+    "seconds": 0.039
+  },
+  {
+    "name": "syntax-format-199",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "src/flow_acceptance/comparison/driver/selection.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "23-syntax-format-199.log",
+    "exit_code": 0,
+    "seconds": 0.041
+  },
+  {
+    "name": "syntax-format-200",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "src/flow_acceptance/comparison/driver/tests.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "24-syntax-format-200.log",
+    "exit_code": 0,
+    "seconds": 0.041
+  },
+  {
+    "name": "syntax-format-201",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "src/flow_acceptance/comparison/observation.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "25-syntax-format-201.log",
+    "exit_code": 0,
+    "seconds": 0.041
+  },
+  {
+    "name": "syntax-format-202",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "src/flow_acceptance/comparison/protocol.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "26-syntax-format-202.log",
+    "exit_code": 0,
+    "seconds": 0.041
+  },
+  {
+    "name": "syntax-format-203",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "src/flow_acceptance/comparison/report.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "27-syntax-format-203.log",
+    "exit_code": 0,
+    "seconds": 0.041
+  },
+  {
+    "name": "syntax-format-204",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "src/flow_acceptance/comparison/source_observation.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "28-syntax-format-204.log",
+    "exit_code": 0,
+    "seconds": 0.074
+  },
+  {
+    "name": "syntax-format-205",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "src/flow_acceptance/comparison/surface.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "29-syntax-format-205.log",
+    "exit_code": 0,
+    "seconds": 0.039
+  },
+  {
+    "name": "syntax-format-206",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "src/flow_acceptance/comparison/surface_tests.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "30-syntax-format-206.log",
+    "exit_code": 0,
+    "seconds": 0.041
+  },
+  {
+    "name": "syntax-format-207",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "src/flow_acceptance/config.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "31-syntax-format-207.log",
+    "exit_code": 0,
+    "seconds": 0.041
+  },
+  {
+    "name": "syntax-format-208",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "src/flow_acceptance/driver.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "32-syntax-format-208.log",
+    "exit_code": 0,
+    "seconds": 0.071
+  },
+  {
+    "name": "syntax-format-209",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "src/flow_acceptance/input.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "33-syntax-format-209.log",
+    "exit_code": 0,
+    "seconds": 0.041
+  },
+  {
+    "name": "syntax-format-210",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "src/flow_acceptance/io.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "34-syntax-format-210.log",
+    "exit_code": 0,
+    "seconds": 0.04
+  },
+  {
+    "name": "syntax-format-211",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "src/flow_acceptance/mode.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "35-syntax-format-211.log",
+    "exit_code": 0,
+    "seconds": 0.039
+  },
+  {
+    "name": "syntax-format-212",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "src/flow_acceptance/observation.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "36-syntax-format-212.log",
+    "exit_code": 0,
+    "seconds": 0.041
+  },
+  {
+    "name": "syntax-format-213",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "src/flow_acceptance/report.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "37-syntax-format-213.log",
+    "exit_code": 0,
+    "seconds": 0.037
+  },
+  {
+    "name": "syntax-format-214",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "src/flow_comparison.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "38-syntax-format-214.log",
+    "exit_code": 0,
+    "seconds": 0.04
+  },
+  {
+    "name": "syntax-format-215",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "src/flow_comparison/cleanup_tests.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "39-syntax-format-215.log",
+    "exit_code": 0,
+    "seconds": 0.041
+  },
+  {
+    "name": "syntax-format-216",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "src/flow_comparison/context_tests.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "40-syntax-format-216.log",
+    "exit_code": 0,
+    "seconds": 0.039
+  },
+  {
+    "name": "syntax-format-217",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "src/flow_comparison/controls.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "41-syntax-format-217.log",
+    "exit_code": 0,
+    "seconds": 0.068
+  },
+  {
+    "name": "syntax-format-218",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "src/flow_comparison/controls_tests.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "42-syntax-format-218.log",
+    "exit_code": 0,
+    "seconds": 0.039
+  },
+  {
+    "name": "syntax-format-219",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "src/flow_comparison/identity.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "43-syntax-format-219.log",
+    "exit_code": 0,
+    "seconds": 0.041
+  },
+  {
+    "name": "syntax-format-220",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "src/flow_comparison/identity_tests.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "44-syntax-format-220.log",
+    "exit_code": 0,
+    "seconds": 0.039
+  },
+  {
+    "name": "syntax-format-221",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "src/flow_comparison/lifecycle.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "45-syntax-format-221.log",
+    "exit_code": 0,
+    "seconds": 0.041
+  },
+  {
+    "name": "syntax-format-222",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "src/flow_comparison/navigation.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "46-syntax-format-222.log",
+    "exit_code": 0,
+    "seconds": 0.04
+  },
+  {
+    "name": "syntax-format-223",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "src/flow_comparison/pair.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "47-syntax-format-223.log",
+    "exit_code": 0,
+    "seconds": 0.039
+  },
+  {
+    "name": "syntax-format-224",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "src/flow_comparison/pane_geometry.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "48-syntax-format-224.log",
+    "exit_code": 0,
+    "seconds": 0.073
+  },
+  {
+    "name": "syntax-format-225",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "src/flow_comparison/publication.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "49-syntax-format-225.log",
+    "exit_code": 0,
+    "seconds": 0.045
+  },
+  {
+    "name": "syntax-format-226",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "src/flow_comparison/publication_race_tests.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "50-syntax-format-226.log",
+    "exit_code": 0,
+    "seconds": 0.042
+  },
+  {
+    "name": "syntax-format-227",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "src/flow_comparison/publication_tests.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "51-syntax-format-227.log",
+    "exit_code": 0,
+    "seconds": 0.038
+  },
+  {
+    "name": "syntax-format-228",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "src/flow_comparison/requests.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "52-syntax-format-228.log",
+    "exit_code": 0,
+    "seconds": 0.039
+  },
+  {
+    "name": "syntax-format-229",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "src/flow_comparison/source_navigation.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "53-syntax-format-229.log",
+    "exit_code": 0,
+    "seconds": 0.037
+  },
+  {
+    "name": "syntax-format-230",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "src/flow_comparison/tests.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "54-syntax-format-230.log",
+    "exit_code": 0,
+    "seconds": 0.041
+  },
+  {
+    "name": "syntax-format-231",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "src/flow_comparison/work.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "55-syntax-format-231.log",
+    "exit_code": 0,
+    "seconds": 0.04
+  },
+  {
+    "name": "syntax-format-232",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "src/flow_comparison_view.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "56-syntax-format-232.log",
+    "exit_code": 0,
+    "seconds": 0.041
+  },
+  {
+    "name": "syntax-format-233",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "src/flow_comparison_view/catalog.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "57-syntax-format-233.log",
+    "exit_code": 0,
+    "seconds": 0.042
+  },
+  {
+    "name": "syntax-format-234",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "src/flow_comparison_view/panes.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "58-syntax-format-234.log",
+    "exit_code": 0,
+    "seconds": 0.039
+  },
+  {
+    "name": "syntax-format-235",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "src/flow_comparison_view/provenance.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "59-syntax-format-235.log",
+    "exit_code": 0,
+    "seconds": 0.038
+  },
+  {
+    "name": "syntax-format-236",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "src/flow_view.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "60-syntax-format-236.log",
+    "exit_code": 0,
+    "seconds": 0.041
+  },
+  {
+    "name": "syntax-format-237",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "src/flow_view/address.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "61-syntax-format-237.log",
+    "exit_code": 0,
+    "seconds": 0.038
+  },
+  {
+    "name": "syntax-format-238",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "src/flow_view/chart.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "62-syntax-format-238.log",
+    "exit_code": 0,
+    "seconds": 0.037
+  },
+  {
+    "name": "syntax-format-239",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "src/flow_view/details.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "63-syntax-format-239.log",
+    "exit_code": 0,
+    "seconds": 0.04
+  },
+  {
+    "name": "syntax-format-240",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "src/flow_view/source.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "64-syntax-format-240.log",
+    "exit_code": 0,
+    "seconds": 0.041
+  },
+  {
+    "name": "syntax-format-241",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "src/flow_workspace.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "65-syntax-format-241.log",
+    "exit_code": 0,
+    "seconds": 0.041
+  },
+  {
+    "name": "syntax-format-242",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "src/flow_workspace/keys.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "66-syntax-format-242.log",
+    "exit_code": 0,
+    "seconds": 0.04
+  },
+  {
+    "name": "syntax-format-243",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "src/graph_install.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "67-syntax-format-243.log",
+    "exit_code": 0,
+    "seconds": 0.04
+  },
+  {
+    "name": "syntax-format-244",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "src/jobs.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "68-syntax-format-244.log",
+    "exit_code": 0,
+    "seconds": 0.04
+  },
+  {
+    "name": "syntax-format-245",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "src/jobs/comparison_tests.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "69-syntax-format-245.log",
+    "exit_code": 0,
+    "seconds": 0.041
+  },
+  {
+    "name": "syntax-format-246",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "src/main.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "70-syntax-format-246.log",
+    "exit_code": 0,
+    "seconds": 0.041
+  },
+  {
+    "name": "syntax-format-247",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "src/ui_tests.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "71-syntax-format-247.log",
+    "exit_code": 0,
+    "seconds": 0.073
+  },
+  {
+    "name": "syntax-format-248",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "src/ui_tests/flow_comparison_catalog.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "72-syntax-format-248.log",
+    "exit_code": 0,
+    "seconds": 0.04
+  },
+  {
+    "name": "syntax-format-249",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "src/ui_tests/flow_comparison_editor.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "73-syntax-format-249.log",
+    "exit_code": 0,
+    "seconds": 0.04
+  },
+  {
+    "name": "syntax-format-250",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "src/ui_tests/flow_comparison_fixture.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "74-syntax-format-250.log",
+    "exit_code": 0,
+    "seconds": 0.04
+  },
+  {
+    "name": "syntax-format-251",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "src/ui_tests/flow_comparison_layout.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "75-syntax-format-251.log",
+    "exit_code": 0,
+    "seconds": 0.04
+  },
+  {
+    "name": "syntax-format-252",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "src/ui_tests/flow_comparison_outcomes.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "76-syntax-format-252.log",
+    "exit_code": 0,
+    "seconds": 0.04
+  },
+  {
+    "name": "syntax-format-253",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "src/ui_tests/flow_comparison_panes.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "77-syntax-format-253.log",
+    "exit_code": 0,
+    "seconds": 0.039
+  },
+  {
+    "name": "syntax-format-254",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "src/ui_tests/flow_comparisons.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "78-syntax-format-254.log",
+    "exit_code": 0,
+    "seconds": 0.039
+  },
+  {
+    "name": "syntax-format-255",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "src/ui_tests/function_flows.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "79-syntax-format-255.log",
+    "exit_code": 0,
+    "seconds": 0.04
+  },
+  {
+    "name": "syntax-format-256",
+    "command": [
+      "rustfmt",
+      "--check",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "src/view.rs"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "80-syntax-format-256.log",
+    "exit_code": 0,
+    "seconds": 0.041
+  },
+  {
+    "name": "syntax-format-257",
+    "command": [
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/.venv-verification/bin/python",
+      "-c",
+      "import ast, pathlib, sys; ast.parse(pathlib.Path(sys.argv[1]).read_bytes(), filename=sys.argv[1])",
+      "tools/comparison_desktop_cleanup.py"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "81-syntax-format-257.log",
+    "exit_code": 0,
+    "seconds": 0.04
+  },
+  {
+    "name": "syntax-format-258",
+    "command": [
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/.venv-verification/bin/python",
+      "-c",
+      "import ast, pathlib, sys; ast.parse(pathlib.Path(sys.argv[1]).read_bytes(), filename=sys.argv[1])",
+      "tools/comparison_desktop_facts.py"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "82-syntax-format-258.log",
+    "exit_code": 0,
+    "seconds": 0.04
+  },
+  {
+    "name": "syntax-format-259",
+    "command": [
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/.venv-verification/bin/python",
+      "-c",
+      "import ast, pathlib, sys; ast.parse(pathlib.Path(sys.argv[1]).read_bytes(), filename=sys.argv[1])",
+      "tools/comparison_desktop_fixture.py"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "83-syntax-format-259.log",
+    "exit_code": 0,
+    "seconds": 0.038
+  },
+  {
+    "name": "syntax-format-260",
+    "command": [
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/.venv-verification/bin/python",
+      "-c",
+      "import ast, pathlib, sys; ast.parse(pathlib.Path(sys.argv[1]).read_bytes(), filename=sys.argv[1])",
+      "tools/comparison_desktop_gate.py"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "84-syntax-format-260.log",
+    "exit_code": 0,
+    "seconds": 0.035
+  },
+  {
+    "name": "syntax-format-261",
+    "command": [
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/.venv-verification/bin/python",
+      "-c",
+      "import ast, pathlib, sys; ast.parse(pathlib.Path(sys.argv[1]).read_bytes(), filename=sys.argv[1])",
+      "tools/comparison_desktop_protocol.py"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "85-syntax-format-261.log",
+    "exit_code": 0,
+    "seconds": 0.039
+  },
+  {
+    "name": "syntax-format-262",
+    "command": [
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/.venv-verification/bin/python",
+      "-c",
+      "import ast, pathlib, sys; ast.parse(pathlib.Path(sys.argv[1]).read_bytes(), filename=sys.argv[1])",
+      "tools/csharp_desktop_acceptance.py"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "86-syntax-format-262.log",
+    "exit_code": 0,
+    "seconds": 0.041
+  },
+  {
+    "name": "syntax-format-263",
+    "command": [
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/.venv-verification/bin/python",
+      "-c",
+      "import ast, pathlib, sys; ast.parse(pathlib.Path(sys.argv[1]).read_bytes(), filename=sys.argv[1])",
+      "tools/flow_comparison_desktop_acceptance.py"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "87-syntax-format-263.log",
+    "exit_code": 0,
+    "seconds": 0.041
+  },
+  {
+    "name": "syntax-format-264",
+    "command": [
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/.venv-verification/bin/python",
+      "-c",
+      "import ast, pathlib, sys; ast.parse(pathlib.Path(sys.argv[1]).read_bytes(), filename=sys.argv[1])",
+      "tools/test_comparison_desktop_cleanup.py"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "88-syntax-format-264.log",
+    "exit_code": 0,
+    "seconds": 0.041
+  },
+  {
+    "name": "syntax-format-265",
+    "command": [
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/.venv-verification/bin/python",
+      "-c",
+      "import ast, pathlib, sys; ast.parse(pathlib.Path(sys.argv[1]).read_bytes(), filename=sys.argv[1])",
+      "tools/test_comparison_desktop_gate.py"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "89-syntax-format-265.log",
+    "exit_code": 0,
+    "seconds": 0.041
+  },
+  {
+    "name": "syntax-format-266",
+    "command": [
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/.venv-verification/bin/python",
+      "-c",
+      "import ast, pathlib, sys; ast.parse(pathlib.Path(sys.argv[1]).read_bytes(), filename=sys.argv[1])",
+      "tools/test_comparison_desktop_protocol.py"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "90-syntax-format-266.log",
+    "exit_code": 0,
+    "seconds": 0.041
+  },
+  {
+    "name": "bootstrap",
+    "command": [
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/.venv-verification/bin/python",
+      "tools/bootstrap.py"
+    ],
+    "timeout": 3600,
+    "status": "passed",
+    "log": "91-bootstrap.log",
+    "exit_code": 0,
+    "seconds": 4.184
+  },
+  {
+    "name": "build-debug-engine",
+    "command": [
+      "cargo",
+      "build",
+      "--locked",
+      "-p",
+      "codecallnavigator-engine",
+      "--bin",
+      "codecallnavigator-engine"
+    ],
+    "timeout": 3600,
+    "status": "passed",
+    "log": "92-build-debug-engine.log",
+    "exit_code": 0,
+    "seconds": 9.533
+  },
+  {
+    "name": "cargo-check",
+    "command": [
+      "cargo",
+      "check",
+      "--locked",
+      "--workspace",
+      "--all-targets"
+    ],
+    "timeout": 3600,
+    "status": "passed",
+    "log": "93-cargo-check.log",
+    "exit_code": 0,
+    "seconds": 27.844
+  },
+  {
+    "name": "mcp-dependency-boundary",
+    "command": [
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/.venv-verification/bin/python",
+      "tools/mcp_boundary.py",
+      "--root",
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph"
+    ],
+    "timeout": 3600,
+    "status": "passed",
+    "log": "94-mcp-dependency-boundary.log",
+    "exit_code": 0,
+    "seconds": 0.604
+  },
+  {
+    "name": "clippy",
+    "command": [
+      "cargo",
+      "clippy",
+      "--locked",
+      "--workspace",
+      "--all-targets",
+      "--no-deps",
+      "--",
+      "-D",
+      "warnings"
+    ],
+    "timeout": 3600,
+    "status": "passed",
+    "log": "95-clippy.log",
+    "exit_code": 0,
+    "seconds": 6.203
+  },
+  {
+    "name": "rust-tests",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "--workspace",
+      "--all-targets",
+      "--",
+      "--test-threads=1"
+    ],
+    "timeout": 3600,
+    "status": "passed",
+    "log": "96-rust-tests.log",
+    "exit_code": 0,
+    "seconds": 229.188
+  },
+  {
+    "name": "python-tests",
+    "command": [
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/.venv-verification/bin/python",
+      "-m",
+      "unittest",
+      "discover",
+      "-s",
+      "tests",
+      "-v"
+    ],
+    "timeout": 3600,
+    "status": "passed",
+    "log": "97-python-tests.log",
+    "exit_code": 0,
+    "seconds": 40.149
+  },
+  {
+    "name": "python-tool-tests",
+    "command": [
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/.venv-verification/bin/python",
+      "-m",
+      "unittest",
+      "discover",
+      "-s",
+      "tools",
+      "-p",
+      "test_*.py",
+      "-v"
+    ],
+    "timeout": 3600,
+    "status": "passed",
+    "log": "98-python-tool-tests.log",
+    "exit_code": 0,
+    "seconds": 14.876
+  },
+  {
+    "name": "typescript-tests",
+    "command": [
+      "node",
+      "--test",
+      "tools/typescript/adapter.test.js",
+      "tools/typescript/boundary.test.js",
+      "tools/typescript/callable.test.js",
+      "tools/typescript/flow-export.test.js",
+      "tools/typescript/observations.test.js",
+      "tools/typescript/observer.test.js",
+      "tools/typescript/paths.test.js",
+      "tools/typescript/signature.test.js",
+      "tools/typescript/worker.test.js"
+    ],
+    "timeout": 3600,
+    "status": "passed",
+    "log": "99-typescript-tests.log",
+    "exit_code": 0,
+    "seconds": 29.435
+  },
+  {
+    "name": "build-release-engine",
+    "command": [
+      "cargo",
+      "build",
+      "--locked",
+      "--release",
+      "-p",
+      "codecallnavigator-engine",
+      "--bin",
+      "codecallnavigator-engine"
+    ],
+    "timeout": 3600,
+    "status": "passed",
+    "log": "100-build-release-engine.log",
+    "exit_code": 0,
+    "seconds": 27.005
+  },
+  {
+    "name": "csharp-cleanup-acceptance",
+    "command": [
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/.venv-verification/bin/python",
+      "tools/csharp_cleanup_acceptance.py",
+      "--engine",
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/target/release/codecallnavigator-engine",
+      "--output",
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/target/verification/full-tpvcnnp4/csharp-cleanup.json"
+    ],
+    "timeout": 3600,
+    "status": "passed",
+    "log": "101-csharp-cleanup-acceptance.log",
+    "exit_code": 0,
+    "seconds": 19.262
+  },
+  {
+    "name": "profile-snapshot",
+    "command": [
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/.venv-verification/bin/python",
+      "tools/verification/profile.py",
+      "/Users/zsolt.gajdacs/Library/Application Support/CodeCallNavigator",
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/target/verification/full-tpvcnnp4/profile"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "102-profile-snapshot.log",
+    "exit_code": 0,
+    "seconds": 0.133
+  },
+  {
+    "name": "release-acceptance-and-benchmarks",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "--release",
+      "--workspace",
+      "--all-targets",
+      "--no-fail-fast",
+      "--",
+      "--include-ignored",
+      "--test-threads=1",
+      "--nocapture"
+    ],
+    "timeout": 3600,
+    "status": "passed",
+    "log": "103-release-acceptance-and-benchmarks.log",
+    "exit_code": 0,
+    "seconds": 1835.437
+  },
+  {
+    "name": "storage-benchmark",
+    "command": [
+      "cargo",
+      "run",
+      "--locked",
+      "--release",
+      "--bin",
+      "benchmark",
+      "--",
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/target/verification/full-tpvcnnp4/scale-cache"
+    ],
+    "timeout": 3600,
+    "status": "passed",
+    "log": "104-storage-benchmark.log",
+    "exit_code": 0,
+    "seconds": 40.401
+  },
+  {
+    "name": "package",
+    "command": [
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/.venv-verification/bin/python",
+      "tools/package.py"
+    ],
+    "timeout": 3600,
+    "status": "passed",
+    "log": "105-package.log",
+    "exit_code": 0,
+    "seconds": 24.916
+  },
+  {
+    "name": "package-signature",
+    "command": [
+      "codesign",
+      "--verify",
+      "--deep",
+      "--strict",
+      "dist/CodeCallNavigator.app"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "106-package-signature.log",
+    "exit_code": 0,
+    "seconds": 0.148
+  },
+  {
+    "name": "packaged-engine",
+    "command": [
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/dist/CodeCallNavigatorEngine/bin/codecallnavigator-engine",
+      "--help"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "107-packaged-engine.log",
+    "exit_code": 0,
+    "seconds": 0.253
+  },
+  {
+    "name": "installed-cli",
+    "command": [
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/.venv-verification/bin/python",
+      "tools/installed_cli_acceptance.py",
+      "--package",
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/dist/CodeCallNavigatorEngine",
+      "--node-modules",
+      "/Users/zsolt.gajdacs/Zs/Programming/PacificFateMapEditor/node_modules",
+      "--output",
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/target/verification/full-tpvcnnp4/installed-cli.json"
+    ],
+    "timeout": 3600,
+    "status": "passed",
+    "log": "108-installed-cli.log",
+    "exit_code": 0,
+    "seconds": 2.797
+  },
+  {
+    "name": "agent-integrations-check",
+    "command": [
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/.venv-verification/bin/python",
+      "tools/package_agent_integrations.py",
+      "--host",
+      "all",
+      "--check"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "109-agent-integrations-check.log",
+    "exit_code": 0,
+    "seconds": 0.047
+  },
+  {
+    "name": "agent-integrations-package",
+    "command": [
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/.venv-verification/bin/python",
+      "tools/package_agent_integrations.py",
+      "--host",
+      "all",
+      "--output",
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/target/verification/full-tpvcnnp4/agent-integrations"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "110-agent-integrations-package.log",
+    "exit_code": 0,
+    "seconds": 0.048
+  },
+  {
+    "name": "agent-cli-journeys",
+    "command": [
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/.venv-verification/bin/python",
+      "tools/agent_journeys.py",
+      "--node-modules",
+      "/Users/zsolt.gajdacs/Zs/Programming/PacificFateMapEditor/node_modules",
+      "--output",
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/target/verification/full-tpvcnnp4/agent-journeys.json"
+    ],
+    "timeout": 3600,
+    "status": "passed",
+    "log": "111-agent-cli-journeys.log",
+    "exit_code": 0,
+    "seconds": 1.75
+  },
+  {
+    "name": "mcp-independent-install",
+    "command": [
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/.venv-verification/bin/python",
+      "tools/package_mcp.py",
+      "--engine",
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/dist/CodeCallNavigatorEngine/bin/codecallnavigator-engine"
+    ],
+    "timeout": 3600,
+    "status": "passed",
+    "log": "112-mcp-independent-install.log",
+    "exit_code": 0,
+    "seconds": 17.807
+  },
+  {
+    "name": "agent-mcp-journeys",
+    "command": [
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/.venv-verification/bin/python",
+      "tools/agent_mcp_journeys.py",
+      "--node-modules",
+      "/Users/zsolt.gajdacs/Zs/Programming/PacificFateMapEditor/node_modules",
+      "--output",
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/target/verification/full-tpvcnnp4/agent-mcp-journeys.json"
+    ],
+    "timeout": 3600,
+    "status": "passed",
+    "log": "113-agent-mcp-journeys.log",
+    "exit_code": 0,
+    "seconds": 1.612
+  },
+  {
+    "name": "codescene",
+    "command": [
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/.venv-verification/bin/python",
+      "tools/verification/quality.py",
+      "--root",
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph",
+      "--command",
+      "cs-mcp",
+      "--timeout",
+      "120",
+      "--files",
+      ".backlog/tasks/task-22.6 - Display-before-and-after-function-flows-with-revision-provenance.md",
+      ".backlog/tasks/task-22.7 - Build-bounded-call-site-flow-expansion-in-shared-core.md",
+      "docs/function-flowcharts.md",
+      "docs/plans/task-22-function-flowcharts.md",
+      "docs/testing/flow-comparison-native.md",
+      "evidence/flowcharts/comparison-desktop/cleanup-reaping/README.md",
+      "evidence/flowcharts/comparison-desktop/cleanup-reaping/archive-members.json",
+      "evidence/flowcharts/comparison-desktop/cleanup-reaping/freeze.json",
+      "evidence/flowcharts/comparison-desktop/cleanup-reaping/independent/report.json",
+      "evidence/flowcharts/comparison-desktop/cleanup-reaping/original-repro/ready.json",
+      "evidence/flowcharts/comparison-desktop/cleanup-reaping/original-repro/result.json",
+      "evidence/flowcharts/comparison-desktop/cleanup-reaping/packaged/query-cleanup.json",
+      "evidence/flowcharts/comparison-desktop/cleanup-reaping/packaged/ready.json",
+      "evidence/flowcharts/comparison-desktop/cleanup-reaping/packaged/result.json",
+      "evidence/flowcharts/comparison-desktop/cleanup-reaping/quality-modern.json",
+      "evidence/flowcharts/comparison-desktop/cleanup-reaping/quality-old.json",
+      "evidence/flowcharts/comparison-desktop/cleanup-reaping/raw-evidence.tar.gz",
+      "evidence/flowcharts/comparison-desktop/full-verification/README.md",
+      "evidence/flowcharts/comparison-desktop/full-verification/report-index.json",
+      "evidence/flowcharts/comparison-desktop/full-verification/results.json",
+      "evidence/flowcharts/comparison-desktop/native-label-red/README.md",
+      "evidence/flowcharts/comparison-desktop/native-label-red/dark-clipped-target.png",
+      "evidence/flowcharts/comparison-desktop/native-label-red/light-clipped-target.png",
+      "evidence/flowcharts/comparison-desktop/native-label-red/raw-runs.tar.gz",
+      "evidence/flowcharts/comparison-desktop/native-label-red/report-index.json",
+      "evidence/flowcharts/comparison-desktop/target-label-fix/README.md",
+      "evidence/flowcharts/comparison-desktop/target-label-fix/freeze-sha256.json",
+      "evidence/flowcharts/comparison-desktop/target-label-fix/independent.json",
+      "evidence/flowcharts/comparison-desktop/target-label-fix/raw-reports.tar.gz",
+      "evidence/flowcharts/comparison-desktop/target-label-fix/report-index.json",
+      "evidence/flowcharts/comparison-desktop/target-label-fix/verification.json",
+      "evidence/flowcharts/comparison-desktop/unit1/catalog-red.log",
+      "evidence/flowcharts/comparison-desktop/unit1/catalog-union-red.log",
+      "evidence/flowcharts/comparison-desktop/unit1/clippy.log",
+      "evidence/flowcharts/comparison-desktop/unit1/endpoint-red.log",
+      "evidence/flowcharts/comparison-desktop/unit1/independent-final-client.log",
+      "evidence/flowcharts/comparison-desktop/unit1/independent-quality.json",
+      "evidence/flowcharts/comparison-desktop/unit1/independent-real-client.log",
+      "evidence/flowcharts/comparison-desktop/unit1/independent.json",
+      "evidence/flowcharts/comparison-desktop/unit1/quality-cap-final.json",
+      "evidence/flowcharts/comparison-desktop/unit1/quality-catalog-modern.json",
+      "evidence/flowcharts/comparison-desktop/unit1/quality-catalog.json",
+      "evidence/flowcharts/comparison-desktop/unit1/quality-final.json",
+      "evidence/flowcharts/comparison-desktop/unit1/quality-modern.json",
+      "evidence/flowcharts/comparison-desktop/unit1/red.log",
+      "evidence/flowcharts/comparison-desktop/unit1/verification.json",
+      "evidence/flowcharts/comparison-desktop/unit2/clippy-final.log",
+      "evidence/flowcharts/comparison-desktop/unit2/independent-batches.json",
+      "evidence/flowcharts/comparison-desktop/unit2/independent-comparison.log",
+      "evidence/flowcharts/comparison-desktop/unit2/independent-error-outcome-red.log",
+      "evidence/flowcharts/comparison-desktop/unit2/independent-jobs.log",
+      "evidence/flowcharts/comparison-desktop/unit2/independent-ordinary-flow-publication.log",
+      "evidence/flowcharts/comparison-desktop/unit2/independent-ordinary-flow-ui.log",
+      "evidence/flowcharts/comparison-desktop/unit2/independent-quality.json",
+      "evidence/flowcharts/comparison-desktop/unit2/independent-symlink-red.log",
+      "evidence/flowcharts/comparison-desktop/unit2/independent.json",
+      "evidence/flowcharts/comparison-desktop/unit2/lease-red.log",
+      "evidence/flowcharts/comparison-desktop/unit2/publication-race-red.log",
+      "evidence/flowcharts/comparison-desktop/unit2/quality-catalog-outcomes.json",
+      "evidence/flowcharts/comparison-desktop/unit2/quality-final.json",
+      "evidence/flowcharts/comparison-desktop/unit2/quality-identity.json",
+      "evidence/flowcharts/comparison-desktop/unit2/quality-modern-catalog-outcomes.json",
+      "evidence/flowcharts/comparison-desktop/unit2/quality-modern-identity.json",
+      "evidence/flowcharts/comparison-desktop/unit2/quality-modern-publication-race.json",
+      "evidence/flowcharts/comparison-desktop/unit2/quality-modern.json",
+      "evidence/flowcharts/comparison-desktop/unit2/quality-publication-race.json",
+      "evidence/flowcharts/comparison-desktop/unit2/unavailable-identity-red.log",
+      "evidence/flowcharts/comparison-desktop/unit2/verification.json",
+      "evidence/flowcharts/comparison-desktop/unit3a/editor-cleanup.json",
+      "evidence/flowcharts/comparison-desktop/unit3a/editor-green.log",
+      "evidence/flowcharts/comparison-desktop/unit3a/entry-green.log",
+      "evidence/flowcharts/comparison-desktop/unit3a/entry-red.log",
+      "evidence/flowcharts/comparison-desktop/unit3a/independent-cleanup-batches.json",
+      "evidence/flowcharts/comparison-desktop/unit3a/independent-cleanup.json",
+      "evidence/flowcharts/comparison-desktop/unit3a/ordinary-flow-checkpoint.log",
+      "evidence/flowcharts/comparison-desktop/unit3a/paging-green.log",
+      "evidence/flowcharts/comparison-desktop/unit3a/paging-red.log",
+      "evidence/flowcharts/comparison-desktop/unit3a/preservation-green.log",
+      "evidence/flowcharts/comparison-desktop/unit3a/preservation-red.log",
+      "evidence/flowcharts/comparison-desktop/unit3a/quality-editor-cleanup.json",
+      "evidence/flowcharts/comparison-desktop/unit3a/quality-entry-root-cli.json",
+      "evidence/flowcharts/comparison-desktop/unit3a/quality-preservation-tests.json",
+      "evidence/flowcharts/comparison-desktop/unit3b/README.md",
+      "evidence/flowcharts/comparison-desktop/unit3b/clippy-final.log",
+      "evidence/flowcharts/comparison-desktop/unit3b/comparison-focused-final.log",
+      "evidence/flowcharts/comparison-desktop/unit3b/csharp-ui-release.log",
+      "evidence/flowcharts/comparison-desktop/unit3b/fit-unavailable-red.log",
+      "evidence/flowcharts/comparison-desktop/unit3b/freeze.json",
+      "evidence/flowcharts/comparison-desktop/unit3b/independent-unit3b-comparison.log",
+      "evidence/flowcharts/comparison-desktop/unit3b/independent-unit3b-csharp-sandbox-failed.log",
+      "evidence/flowcharts/comparison-desktop/unit3b/independent-unit3b-csharp.log",
+      "evidence/flowcharts/comparison-desktop/unit3b/independent-unit3b-ordinary.log",
+      "evidence/flowcharts/comparison-desktop/unit3b/independent-unit3b-sandbox-19674-callatlas.stderr",
+      "evidence/flowcharts/comparison-desktop/unit3b/independent-unit3b-sandbox-19674-callatlas.stdout",
+      "evidence/flowcharts/comparison-desktop/unit3b/independent-unit3b-sandbox-20524-callatlas.stderr",
+      "evidence/flowcharts/comparison-desktop/unit3b/independent-unit3b-sandbox-20524-callatlas.stdout",
+      "evidence/flowcharts/comparison-desktop/unit3b/independent-unit3b-sandbox-21517-callatlas.stderr",
+      "evidence/flowcharts/comparison-desktop/unit3b/independent-unit3b-sandbox-21517-callatlas.stdout",
+      "evidence/flowcharts/comparison-desktop/unit3b/independent-unit3b-sandbox-checkpoint.json",
+      "evidence/flowcharts/comparison-desktop/unit3b/independent-unit3b.json",
+      "evidence/flowcharts/comparison-desktop/unit3b/ordinary-flow-final.log",
+      "evidence/flowcharts/comparison-desktop/unit3b/pane-interactions.log",
+      "evidence/flowcharts/comparison-desktop/unit3b/panes-fit-green.log",
+      "evidence/flowcharts/comparison-desktop/unit3b/panes-fit-observed.log",
+      "evidence/flowcharts/comparison-desktop/unit3b/quality-final-modern.json",
+      "evidence/flowcharts/comparison-desktop/unit3b/quality-final-old.json",
+      "evidence/flowcharts/comparison-desktop/unit3b/scroll-extent-trace.log",
+      "evidence/flowcharts/comparison-desktop/unit3b/scroll-owner-green.log",
+      "evidence/flowcharts/comparison-desktop/unit3b/scroll-ownership-trace.log",
+      "evidence/flowcharts/comparison-desktop/unit3b/single-help-red.log",
+      "evidence/flowcharts/comparison-desktop/unit4/README.md",
+      "evidence/flowcharts/comparison-desktop/unit4/archive-members.json",
+      "evidence/flowcharts/comparison-desktop/unit4/evidence-sha256.json",
+      "evidence/flowcharts/comparison-desktop/unit4/freeze.json",
+      "evidence/flowcharts/comparison-desktop/unit4/independent-unit4-compiler-1.json",
+      "evidence/flowcharts/comparison-desktop/unit4/independent-unit4-compiler-2.json",
+      "evidence/flowcharts/comparison-desktop/unit4/independent-unit4-prepared-config.json",
+      "evidence/flowcharts/comparison-desktop/unit4/independent-unit4-prepared-metrics.json",
+      "evidence/flowcharts/comparison-desktop/unit4/independent-unit4.json",
+      "evidence/flowcharts/comparison-desktop/unit4/logs/before-group-membership-fix-helper-final.log",
+      "evidence/flowcharts/comparison-desktop/unit4/logs/clippy-final.log",
+      "evidence/flowcharts/comparison-desktop/unit4/logs/compiler-fixture-final.log",
+      "evidence/flowcharts/comparison-desktop/unit4/logs/config-dispatch-red.log",
+      "evidence/flowcharts/comparison-desktop/unit4/logs/group-membership-red.log",
+      "evidence/flowcharts/comparison-desktop/unit4/logs/helper-final.log",
+      "evidence/flowcharts/comparison-desktop/unit4/logs/independent-unit4-python.log",
+      "evidence/flowcharts/comparison-desktop/unit4/logs/independent-unit4-rust.log",
+      "evidence/flowcharts/comparison-desktop/unit4/logs/owned-cleanup-red.log",
+      "evidence/flowcharts/comparison-desktop/unit4/logs/probe-final.log",
+      "evidence/flowcharts/comparison-desktop/unit4/logs/protocol-red.log",
+      "evidence/flowcharts/comparison-desktop/unit4/logs/terminal-worker-red.log",
+      "evidence/flowcharts/comparison-desktop/unit4/prepared-config.json",
+      "evidence/flowcharts/comparison-desktop/unit4/prepared-metrics.json",
+      "evidence/flowcharts/comparison-desktop/unit4/quality-final-modern.json",
+      "evidence/flowcharts/comparison-desktop/unit4/quality-final-old.json",
+      "evidence/flowcharts/comparison-desktop/unit4/raw-evidence.sha256",
+      "evidence/flowcharts/comparison-desktop/unit4/raw-evidence.tar.gz",
+      "evidence/flowcharts/comparison-desktop/unit4/static-final.json",
+      "evidence/flowcharts/expansion/unit1/README.md",
+      "evidence/flowcharts/expansion/unit1/archive-members.json",
+      "evidence/flowcharts/expansion/unit1/freeze-sha256.json",
+      "evidence/flowcharts/expansion/unit1/independent-batches.json",
+      "evidence/flowcharts/expansion/unit1/independent.json",
+      "evidence/flowcharts/expansion/unit1/quality-modern-alias-checkpoint.json",
+      "evidence/flowcharts/expansion/unit1/quality-modern-pre-final-test-cleanup.json",
+      "evidence/flowcharts/expansion/unit1/quality-modern.json",
+      "evidence/flowcharts/expansion/unit1/quality-old-alias-checkpoint.json",
+      "evidence/flowcharts/expansion/unit1/quality-old-pre-final-test-cleanup.json",
+      "evidence/flowcharts/expansion/unit1/quality-old.json",
+      "evidence/flowcharts/expansion/unit1/raw-evidence.tar.gz",
+      "evidence/flowcharts/expansion/unit1/verification.json",
+      "evidence/flowcharts/expansion/unit2a/README.md",
+      "evidence/flowcharts/expansion/unit2a/freeze-sha256.json",
+      "evidence/flowcharts/expansion/unit2a/independent.json",
+      "evidence/flowcharts/expansion/unit2a/projection-proof.json",
+      "evidence/flowcharts/expansion/unit2a/quality-baseline-comparison.json",
+      "evidence/flowcharts/expansion/unit2a/raw-reports.tar.gz",
+      "evidence/flowcharts/expansion/unit2a/report-index.json",
+      "evidence/flowcharts/expansion/unit2a/verification.json",
+      "evidence/flowcharts/expansion/unit2b/README.md",
+      "evidence/flowcharts/expansion/unit2b/freeze-sha256.json",
+      "evidence/flowcharts/expansion/unit2b/independent.json",
+      "evidence/flowcharts/expansion/unit2b/native-projection.json",
+      "evidence/flowcharts/expansion/unit2b/raw-reports.tar.gz",
+      "evidence/flowcharts/expansion/unit2b/report-index.json",
+      "evidence/flowcharts/expansion/unit2b/verification.json",
+      "evidence/flowcharts/expansion/unit2c/README.md",
+      "evidence/flowcharts/expansion/unit2c/freeze-sha256.json",
+      "evidence/flowcharts/expansion/unit2c/independent.json",
+      "evidence/flowcharts/expansion/unit2c/projection-relocation-frozen.json",
+      "evidence/flowcharts/expansion/unit2c/raw-reports.tar.gz",
+      "evidence/flowcharts/expansion/unit2c/report-index.json",
+      "evidence/flowcharts/expansion/unit2c/stale-relocation-checkpoint.json",
+      "evidence/flowcharts/expansion/unit2c/verification.json",
+      "fixtures/flow/csharp-comparison/After.cs.txt",
+      "fixtures/flow/csharp-comparison/Before.cs.txt",
+      "fixtures/flow/csharp-comparison/Comparison.csproj",
+      "fixtures/flow/csharp-comparison/Legacy.cs",
+      "fixtures/flow/csharp-comparison/Unchanged.cs",
+      "src/app.rs",
+      "src/engine_client.rs",
+      "src/engine_client/capabilities.rs",
+      "src/engine_client/capabilities/flow_comparison.rs",
+      "src/engine_client/flow_comparison.rs",
+      "src/engine_client/flow_comparison/client.rs",
+      "src/engine_client/flow_comparison/model.rs",
+      "src/engine_client/flow_comparison/real_tests.rs",
+      "src/engine_client/flow_comparison/tests.rs",
+      "src/engine_client/flow_comparison/validation.rs",
+      "src/engine_client/flow_comparison/validation/catalog.rs",
+      "src/engine_client/queries.rs",
+      "src/engine_client/query_process.rs",
+      "src/flow_acceptance.rs",
+      "src/flow_acceptance/comparison.rs",
+      "src/flow_acceptance/comparison/config.rs",
+      "src/flow_acceptance/comparison/config_tests.rs",
+      "src/flow_acceptance/comparison/driver.rs",
+      "src/flow_acceptance/comparison/driver/interaction.rs",
+      "src/flow_acceptance/comparison/driver/recovery.rs",
+      "src/flow_acceptance/comparison/driver/selection.rs",
+      "src/flow_acceptance/comparison/driver/tests.rs",
+      "src/flow_acceptance/comparison/observation.rs",
+      "src/flow_acceptance/comparison/protocol.rs",
+      "src/flow_acceptance/comparison/report.rs",
+      "src/flow_acceptance/comparison/source_observation.rs",
+      "src/flow_acceptance/comparison/surface.rs",
+      "src/flow_acceptance/comparison/surface_tests.rs",
+      "src/flow_acceptance/config.rs",
+      "src/flow_acceptance/driver.rs",
+      "src/flow_acceptance/input.rs",
+      "src/flow_acceptance/io.rs",
+      "src/flow_acceptance/mode.rs",
+      "src/flow_acceptance/observation.rs",
+      "src/flow_acceptance/report.rs",
+      "src/flow_comparison.rs",
+      "src/flow_comparison/cleanup_tests.rs",
+      "src/flow_comparison/context_tests.rs",
+      "src/flow_comparison/controls.rs",
+      "src/flow_comparison/controls_tests.rs",
+      "src/flow_comparison/identity.rs",
+      "src/flow_comparison/identity_tests.rs",
+      "src/flow_comparison/lifecycle.rs",
+      "src/flow_comparison/navigation.rs",
+      "src/flow_comparison/pair.rs",
+      "src/flow_comparison/pane_geometry.rs",
+      "src/flow_comparison/publication.rs",
+      "src/flow_comparison/publication_race_tests.rs",
+      "src/flow_comparison/publication_tests.rs",
+      "src/flow_comparison/requests.rs",
+      "src/flow_comparison/source_navigation.rs",
+      "src/flow_comparison/tests.rs",
+      "src/flow_comparison/work.rs",
+      "src/flow_comparison_view.rs",
+      "src/flow_comparison_view/catalog.rs",
+      "src/flow_comparison_view/panes.rs",
+      "src/flow_comparison_view/provenance.rs",
+      "src/flow_view.rs",
+      "src/flow_view/address.rs",
+      "src/flow_view/chart.rs",
+      "src/flow_view/details.rs",
+      "src/flow_view/source.rs",
+      "src/flow_workspace.rs",
+      "src/flow_workspace/keys.rs",
+      "src/graph_install.rs",
+      "src/jobs.rs",
+      "src/jobs/comparison_tests.rs",
+      "src/main.rs",
+      "src/ui_tests.rs",
+      "src/ui_tests/flow_comparison_catalog.rs",
+      "src/ui_tests/flow_comparison_editor.rs",
+      "src/ui_tests/flow_comparison_fixture.rs",
+      "src/ui_tests/flow_comparison_layout.rs",
+      "src/ui_tests/flow_comparison_outcomes.rs",
+      "src/ui_tests/flow_comparison_panes.rs",
+      "src/ui_tests/flow_comparisons.rs",
+      "src/ui_tests/function_flows.rs",
+      "src/view.rs",
+      "tools/comparison_desktop_cleanup.py",
+      "tools/comparison_desktop_facts.py",
+      "tools/comparison_desktop_fixture.py",
+      "tools/comparison_desktop_gate.py",
+      "tools/comparison_desktop_protocol.py",
+      "tools/csharp_desktop_acceptance.py",
+      "tools/flow_comparison_desktop_acceptance.py",
+      "tools/test_comparison_desktop_cleanup.py",
+      "tools/test_comparison_desktop_gate.py",
+      "tools/test_comparison_desktop_protocol.py"
+    ],
+    "timeout": 180,
+    "status": "passed",
+    "log": "114-codescene.log",
+    "exit_code": 0,
+    "seconds": 28.669
+  },
+  {
+    "name": "cleanup",
+    "command": [
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/.venv-verification/bin/python",
+      "tools/verification/cleanup.py",
+      "--root",
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph",
+      "--output",
+      "/Users/zsolt.gajdacs/Zs/Programming/CodeGraph/target/verification/full-tpvcnnp4",
+      "--mode",
+      "full"
+    ],
+    "timeout": 600,
+    "status": "passed",
+    "log": "115-cleanup.log",
+    "exit_code": 0,
+    "seconds": 10.373
+  }
+]
