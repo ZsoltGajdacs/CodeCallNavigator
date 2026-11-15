@@ -93,7 +93,9 @@ fn inventory_key(
     source: &super::build::JavaSourceSet,
     runtime: &super::super::AnalyzerRuntime,
 ) -> Result<String> {
-    let adapter = runtime.bytecode_lib()?.join("codecallnavigator-bytecode.jar");
+    let adapter = runtime
+        .bytecode_lib()?
+        .join("codecallnavigator-bytecode.jar");
     let digest = blake3::hash(&fs::read(adapter)?).to_hex().to_string();
     let input = (super::source_inventory::VERSION, source, digest);
     Ok(blake3::hash(&serde_json::to_vec(&input)?)
@@ -218,7 +220,7 @@ mod tests {
         assert_eq!(previous, inventory_key(&source, &runtime).unwrap());
         fs::write(&jar, "rebuilt adapter").unwrap();
         assert_ne!(previous, inventory_key(&source, &runtime).unwrap());
-        assert_eq!(super::super::source_inventory::VERSION, 8);
+        assert_eq!(super::super::source_inventory::VERSION, 9);
     }
 
     #[test]

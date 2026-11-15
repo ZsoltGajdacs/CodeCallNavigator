@@ -7,7 +7,7 @@ pub(super) struct Condition {
     pub no: Vec<Exit>,
     pub abrupt: Vec<Exit>,
 }
-impl Builder {
+impl Builder<'_> {
     pub(super) fn expression(
         &mut self,
         value: &Expression,
@@ -25,7 +25,7 @@ impl Builder {
                 regions,
             } => {
                 let exits = self.action(
-                    StepSpec::new("expression", text, *span).calls(calls.clone()),
+                    StepSpec::new("expression", text, *span).calls(calls),
                     incoming,
                 )?;
                 for region in regions {
@@ -181,10 +181,27 @@ impl Builder {
             unreachable!()
         };
 
-        let id = self.step(
-            StepSpec::new("decision", text, *span).calls(calls.clone()),
-            &incoming,
-        )?;
+        let spec = StepSpec::new("decision", text, *span).calls(calls);
+        let (id, abrupt) = match self.selected_value(&spec, &incoming)? {
+            Some(super::expansion::SelectedValue::Expanded { exits }) => {
+                let (normal, abrupt): (Vec<_>, Vec<_>) = exits
+                    .into_iter()
+                    .partition(|exit| exit.completion == Completion::Normal);
+                if normal.is_empty() {
+                    return Ok(Condition {
+                        yes: vec![],
+                        no: vec![],
+                        abrupt,
+                    });
+                }
+                (
+                    self.step(StepSpec::new("decision", text, *span), &normal)?,
+                    abrupt,
+                )
+            }
+            Some(super::expansion::SelectedValue::Stopped { step }) => (step, vec![]),
+            None => (self.step(spec, &incoming)?, vec![]),
+        };
         for region in regions {
             self.statement(region, vec![Exit::normal(id)])?;
         }
@@ -197,7 +214,7 @@ impl Builder {
                 .then(|| Exit::normal(id).branch("false", "no"))
                 .into_iter()
                 .collect(),
-            abrupt: Vec::new(),
+            abrupt,
         })
     }
     pub(super) fn region(
@@ -218,15 +235,20 @@ impl Builder {
             return self.block(body, incoming);
         }
         let first = self.chart.steps.len();
-        let entry = self.step(StepSpec::new("deferred", label, span), &[])?;
-        let exits = self.block(body, vec![Exit::normal(entry)])?;
-        self.finish(exits, span)?;
+        if let Some(recording) = &mut self.recording {
+            recording.deferred += 1;
+        }
+        let assembled = self.function(StepSpec::new("deferred", label, span), body)?;
+        if let Some(recording) = &mut self.recording {
+            recording.deferred -= 1;
+        }
+        self.finish(assembled.exits, span)?;
         let steps: Vec<_> = (first..self.chart.steps.len()).collect();
-        self.deferred.extend(steps.iter().copied());
+        self.calls.defer(&steps);
         self.chart.regions.push(FlowRegion {
             label: label.into(),
             deferred: *deferred,
-            entry,
+            entry: assembled.entry,
             steps,
         });
         Ok(incoming)

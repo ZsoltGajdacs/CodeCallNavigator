@@ -1,0 +1,202 @@
+[
+  {
+    "path": "task22-unit5b-api-red/01-unit-prerequisites.log",
+    "bytes": 98,
+    "sha256": "1d8f628e485539d483f346457d0561c4800e8e404cddbc4b0b21c35a690fae28"
+  },
+  {
+    "path": "task22-unit5b-api-red/02-unit-prepare.log",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "task22-unit5b-api-red/03-unit-compile-rust.log",
+    "bytes": 3924,
+    "sha256": "63b5e36567a421924bc3fdf694e383661572eab244eb58696e705239ab07367d"
+  },
+  {
+    "path": "task22-unit5b-api-red/05-unit-category-cleanup.log",
+    "bytes": 1777,
+    "sha256": "331ee8e5b9501e6842efedd951254e632a9fff31178ec199a028ab51bf0f8372"
+  },
+  {
+    "path": "task22-unit5b-api-red/changes.json",
+    "bytes": 11310,
+    "sha256": "648fa5f49a1199549beba376b2a597636ac4a3d5879b8c6e45a8cef071dc1113"
+  },
+  {
+    "path": "task22-unit5b-api-red/results.json",
+    "bytes": 2731,
+    "sha256": "ba4f15c1c59ee882c10556dcf53f1dd1d716c19cb8e74198943720ee6a6e1e41"
+  },
+  {
+    "path": "task22-unit5b-api-red/summary.json",
+    "bytes": 2945,
+    "sha256": "34454ff1233938ccfbfecdda723a31c1bca7fd89e08643b596ce27186572a147"
+  },
+  {
+    "path": "task22-unit5b-api-red/unit/category-cleanup.json",
+    "bytes": 1777,
+    "sha256": "331ee8e5b9501e6842efedd951254e632a9fff31178ec199a028ab51bf0f8372"
+  },
+  {
+    "path": "task22-unit5b-api-red/unit/category-workspace.json",
+    "bytes": 277,
+    "sha256": "f72dc2212cc6984a43f4be60c81807d958fa2250fc1876235311b406f5405c13"
+  },
+  {
+    "path": "task22-unit5b-api-red/unit/reclamation.json",
+    "bytes": 13472,
+    "sha256": "4f684357c27acf46269872928c9dba530e808c6aaaad920c0f92d66cbd086111"
+  },
+  {
+    "path": "task22-unit5b-api-red/unit/results.json",
+    "bytes": 3,
+    "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+  },
+  {
+    "path": "task22-unit5b-api-red/unit/selection.json",
+    "bytes": 112733,
+    "sha256": "bfbb7613d74aecdde4263d603a17b08c74d30820048e08a39b7061331ff71d2b"
+  },
+  {
+    "path": "task22-unit5b-final/01-unit-prerequisites.log",
+    "bytes": 98,
+    "sha256": "1d8f628e485539d483f346457d0561c4800e8e404cddbc4b0b21c35a690fae28"
+  },
+  {
+    "path": "task22-unit5b-final/02-unit-prepare.log",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "task22-unit5b-final/03-unit-compile-rust.log",
+    "bytes": 1847,
+    "sha256": "3e3c23f135374e94b04b3a69ce9fea4b959a7114698cc2c11068342536f0c151"
+  },
+  {
+    "path": "task22-unit5b-final/04-unit-test-rust.log",
+    "bytes": 17718,
+    "sha256": "a91435fc7c790e070abcc02b75f6c828d1a0f631e0b3384ed657ccceece44b79"
+  },
+  {
+    "path": "task22-unit5b-final/05-unit-category-cleanup.log",
+    "bytes": 1765,
+    "sha256": "c29072b0d0cff9a8a18f60561b230c6a21391b5da244634d1db464adb2088b2f"
+  },
+  {
+    "path": "task22-unit5b-final/changes.json",
+    "bytes": 11597,
+    "sha256": "81584a1caacf18c7c55a08b73004f18974ffca10f607b742e03e8d4310b725b6"
+  },
+  {
+    "path": "task22-unit5b-final/results.json",
+    "bytes": 2798,
+    "sha256": "f10207244381caeb9f113c26094114f1bdce86dff3122766a12e6e0b4e24316c"
+  },
+  {
+    "path": "task22-unit5b-final/summary.json",
+    "bytes": 2871,
+    "sha256": "127f1caca8b1bc446a9676241122e7f2094db624aeb8b05cc6a512b34d58cf48"
+  },
+  {
+    "path": "task22-unit5b-final/unit/category-cleanup.json",
+    "bytes": 1765,
+    "sha256": "c29072b0d0cff9a8a18f60561b230c6a21391b5da244634d1db464adb2088b2f"
+  },
+  {
+    "path": "task22-unit5b-final/unit/category-workspace.json",
+    "bytes": 275,
+    "sha256": "b857958d83f62d169f7c093f2c2553f41dd0301eb33934f9e403fd092e15ee08"
+  },
+  {
+    "path": "task22-unit5b-final/unit/reclamation.json",
+    "bytes": 13950,
+    "sha256": "92d14d388964a4803ac61a5cb487b2949c9ccfb28858c27060f59926c1bf6f88"
+  },
+  {
+    "path": "task22-unit5b-final/unit/results.json",
+    "bytes": 3,
+    "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+  },
+  {
+    "path": "task22-unit5b-final/unit/rust-artifacts.json",
+    "bytes": 23635,
+    "sha256": "ff8733af5026acf19a33a03f88a511906d07018fda2feeaf3c0c01f2fdbc5428"
+  },
+  {
+    "path": "task22-unit5b-final/unit/selection.json",
+    "bytes": 117331,
+    "sha256": "de0945736e05bd71f2e600c818b74fdf78619f88b3a3f4336b5eba2219f426eb"
+  },
+  {
+    "path": "task22-unit5b-first/01-unit-prerequisites.log",
+    "bytes": 98,
+    "sha256": "1d8f628e485539d483f346457d0561c4800e8e404cddbc4b0b21c35a690fae28"
+  },
+  {
+    "path": "task22-unit5b-first/02-unit-prepare.log",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "task22-unit5b-first/03-unit-compile-rust.log",
+    "bytes": 1847,
+    "sha256": "383460d58fc6edecbc12508e38a4fc24e74dcb9be839df56da4bf6f89c9b1634"
+  },
+  {
+    "path": "task22-unit5b-first/04-unit-test-rust.log",
+    "bytes": 17718,
+    "sha256": "47c0d17ae233ff2df8cf5d5073ec27035dc7036f098601b3637b13b763c9ac24"
+  },
+  {
+    "path": "task22-unit5b-first/05-unit-category-cleanup.log",
+    "bytes": 1765,
+    "sha256": "49c7daf254dc8c82416932634573b49c6f99832a0591db52f7aede10e0f6d2a7"
+  },
+  {
+    "path": "task22-unit5b-first/changes.json",
+    "bytes": 11597,
+    "sha256": "81584a1caacf18c7c55a08b73004f18974ffca10f607b742e03e8d4310b725b6"
+  },
+  {
+    "path": "task22-unit5b-first/results.json",
+    "bytes": 2801,
+    "sha256": "0a170a85a78997584b5ea932f9797007beb34903cbe6b1cd63f032381602e084"
+  },
+  {
+    "path": "task22-unit5b-first/summary.json",
+    "bytes": 2873,
+    "sha256": "c41ba7eed79a02cf7f2474ff0b85279881e2def732f66eb5c435e0dd081caff8"
+  },
+  {
+    "path": "task22-unit5b-first/unit/category-cleanup.json",
+    "bytes": 1765,
+    "sha256": "49c7daf254dc8c82416932634573b49c6f99832a0591db52f7aede10e0f6d2a7"
+  },
+  {
+    "path": "task22-unit5b-first/unit/category-workspace.json",
+    "bytes": 275,
+    "sha256": "4ce14b895cf47bd24993798e20623af6d01dbb5324e39e1772c8388954626c14"
+  },
+  {
+    "path": "task22-unit5b-first/unit/reclamation.json",
+    "bytes": 13712,
+    "sha256": "9c977d224d9a44a89b39bfd2cae79055a198dc5e9e965d18e8e4f7b0696096ca"
+  },
+  {
+    "path": "task22-unit5b-first/unit/results.json",
+    "bytes": 3,
+    "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+  },
+  {
+    "path": "task22-unit5b-first/unit/rust-artifacts.json",
+    "bytes": 23635,
+    "sha256": "0d30c40e94cab1925fa1d728d23d00fce0e3f0e321d30a0fb4ca91bf676bfead"
+  },
+  {
+    "path": "task22-unit5b-first/unit/selection.json",
+    "bytes": 117331,
+    "sha256": "de0945736e05bd71f2e600c818b74fdf78619f88b3a3f4336b5eba2219f426eb"
+  }
+]

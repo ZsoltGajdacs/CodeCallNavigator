@@ -1,0 +1,100 @@
+{
+  "status": "failed",
+  "reviews": [
+    {
+      "score": null,
+      "review": [],
+      "path": "crates/codecallnavigator-core/src/flow/expanded.rs",
+      "applicability": "declarations_only"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "path": "crates/codecallnavigator-core/src/flow/expanded/address.rs",
+      "applicability": "reviewed"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "path": "crates/codecallnavigator-core/src/flow/expanded/chart_validation.rs",
+      "applicability": "reviewed"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "path": "crates/codecallnavigator-core/src/flow/expanded/result.rs",
+      "applicability": "reviewed"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "path": "crates/codecallnavigator-core/src/flow/expanded/sources.rs",
+      "applicability": "reviewed"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "path": "crates/codecallnavigator-core/src/flow/expanded/validation.rs",
+      "applicability": "reviewed"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "path": "crates/codecallnavigator-core/tests/flow_expanded_contract.rs",
+      "applicability": "reviewed"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "path": "crates/codecallnavigator-core/tests/flow_expanded_contract/identity.rs",
+      "applicability": "reviewed"
+    },
+    {
+      "score": 10.0,
+      "review": [],
+      "path": "crates/codecallnavigator-core/tests/flow_expanded_contract/validation.rs",
+      "applicability": "reviewed"
+    }
+  ],
+  "safeguard": {
+    "results": [
+      {
+        "name": "crates/codecallnavigator-core/src/flow/parts.rs",
+        "verdict": "degraded",
+        "findings": [
+          {
+            "category": "Excess Number of Function Arguments",
+            "change-details": [
+              {
+                "change-type": "introduced",
+                "description": "Parts.push has 5 arguments, max arguments = 4",
+                "locations": [
+                  {
+                    "end-line": 80,
+                    "function": "Parts.push",
+                    "start-line": 77
+                  }
+                ],
+                "value": 5
+              }
+            ],
+            "change-type": "introduced",
+            "new-pp": 1.0,
+            "threshold": 4
+          }
+        ]
+      }
+    ],
+    "quality_gates": "failed",
+    "metadata": {
+      "checked-file-count": 59,
+      "code-health-eligible-file-count": 59,
+      "status": "issues-found",
+      "total-modified-file-count": 107
+    }
+  },
+  "errors": [
+    "CodeScene safeguard quality gate failed"
+  ],
+  "skipped_files": []
+}

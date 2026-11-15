@@ -1,0 +1,1 @@
+{"compilerOptions":{"strict":true,"target":"ES2023","module":"esnext","moduleResolution":"bundler","types":[],"noEmit":true},"files":["main.ts","leaf.ts"]}

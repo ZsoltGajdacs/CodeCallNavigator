@@ -1,0 +1,522 @@
+[
+  {
+    "symbol": "normal-and-return-finally",
+    "file": "fixture.ts",
+    "span": {
+      "start": 0,
+      "end": 200
+    },
+    "body": [
+      {
+        "kind": "try",
+        "body": [
+          {
+            "kind": "if",
+            "condition": {
+              "kind": "value",
+              "text": "flag()",
+              "calls": [
+                {
+                  "label": "flag()"
+                }
+              ]
+            },
+            "then_branch": [
+              {
+                "kind": "return",
+                "value": {
+                  "kind": "value",
+                  "text": "result"
+                }
+              }
+            ]
+          }
+        ],
+        "finally": [
+          {
+            "kind": "action",
+            "text": "cleanup()",
+            "calls": [
+              {
+                "label": "cleanup()"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "kind": "action",
+        "text": "after"
+      }
+    ]
+  },
+  {
+    "symbol": "finally-overrides-throw",
+    "file": "fixture.ts",
+    "span": {
+      "start": 0,
+      "end": 200
+    },
+    "body": [
+      {
+        "kind": "try",
+        "body": [
+          {
+            "kind": "throw",
+            "value": {
+              "kind": "value",
+              "text": "error"
+            }
+          }
+        ],
+        "finally": [
+          {
+            "kind": "return",
+            "value": {
+              "kind": "value",
+              "text": "replacement"
+            }
+          }
+        ]
+      },
+      {
+        "kind": "action",
+        "text": "unreachable"
+      }
+    ]
+  },
+  {
+    "symbol": "switch-yield-finally",
+    "file": "fixture.ts",
+    "span": {
+      "start": 0,
+      "end": 200
+    },
+    "body": [
+      {
+        "kind": "return",
+        "value": {
+          "kind": "switch",
+          "subject": {
+            "kind": "value",
+            "text": "choice()",
+            "calls": [
+              {
+                "label": "choice()"
+              }
+            ]
+          },
+          "cases": [
+            {
+              "is_default": true,
+              "body": [
+                {
+                  "kind": "try",
+                  "body": [
+                    {
+                      "kind": "yield",
+                      "value": {
+                        "kind": "value",
+                        "text": "picked"
+                      }
+                    }
+                  ],
+                  "finally": [
+                    {
+                      "kind": "action",
+                      "text": "yield cleanup()",
+                      "calls": [
+                        {
+                          "label": "yield cleanup()"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "symbol": "resource-acquisition-cleanup",
+    "file": "fixture.ts",
+    "span": {
+      "start": 0,
+      "end": 200
+    },
+    "body": [
+      {
+        "kind": "try",
+        "resources": [
+          {
+            "kind": "action",
+            "text": "acquire first()",
+            "calls": [
+              {
+                "label": "acquire first()"
+              }
+            ]
+          },
+          {
+            "kind": "action",
+            "text": "acquire second()",
+            "calls": [
+              {
+                "label": "acquire second()"
+              }
+            ]
+          }
+        ],
+        "body": [
+          {
+            "kind": "action",
+            "text": "body()",
+            "calls": [
+              {
+                "label": "body()"
+              }
+            ]
+          }
+        ],
+        "cleanup": [
+          {
+            "kind": "action",
+            "text": "close second()",
+            "calls": [
+              {
+                "label": "close second()"
+              }
+            ]
+          },
+          {
+            "kind": "action",
+            "text": "close first()",
+            "calls": [
+              {
+                "label": "close first()"
+              }
+            ]
+          }
+        ],
+        "finally": [
+          {
+            "kind": "action",
+            "text": "finally()",
+            "calls": [
+              {
+                "label": "finally()"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "kind": "action",
+        "text": "after"
+      }
+    ]
+  },
+  {
+    "symbol": "catch-and-rethrow",
+    "file": "fixture.ts",
+    "span": {
+      "start": 0,
+      "end": 200
+    },
+    "body": [
+      {
+        "kind": "try",
+        "body": [
+          {
+            "kind": "action",
+            "text": "body()",
+            "calls": [
+              {
+                "label": "body()"
+              }
+            ]
+          },
+          {
+            "kind": "throw",
+            "value": {
+              "kind": "value",
+              "text": "failure"
+            }
+          }
+        ],
+        "catches": [
+          {
+            "parameter": "candidate",
+            "catch_all": false,
+            "body": [
+              {
+                "kind": "action",
+                "text": "handler()",
+                "calls": [
+                  {
+                    "label": "handler()"
+                  }
+                ]
+              },
+              {
+                "kind": "throw",
+                "value": {
+                  "kind": "value",
+                  "text": "rethrow"
+                }
+              }
+            ]
+          }
+        ],
+        "finally": [
+          {
+            "kind": "action",
+            "text": "cleanup()",
+            "calls": [
+              {
+                "label": "cleanup()"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "symbol": "labeled-break-continue",
+    "file": "fixture.ts",
+    "span": {
+      "start": 0,
+      "end": 200
+    },
+    "body": [
+      {
+        "kind": "loop",
+        "label": "outer",
+        "condition": {
+          "kind": "value",
+          "text": "true"
+        },
+        "body": [
+          {
+            "kind": "try",
+            "body": [
+              {
+                "kind": "if",
+                "condition": {
+                  "kind": "value",
+                  "text": "stop()",
+                  "calls": [
+                    {
+                      "label": "stop()"
+                    }
+                  ]
+                },
+                "then_branch": [
+                  {
+                    "kind": "break",
+                    "label": "outer"
+                  }
+                ],
+                "else_branch": [
+                  {
+                    "kind": "continue",
+                    "label": "outer"
+                  }
+                ]
+              }
+            ],
+            "finally": [
+              {
+                "kind": "action",
+                "text": "loop cleanup()",
+                "calls": [
+                  {
+                    "label": "loop cleanup()"
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "update": [
+          {
+            "kind": "action",
+            "text": "update()",
+            "calls": [
+              {
+                "label": "update()"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "kind": "action",
+        "text": "after loop"
+      }
+    ]
+  },
+  {
+    "symbol": "short-circuit-and-deferred",
+    "file": "fixture.ts",
+    "span": {
+      "start": 0,
+      "end": 200
+    },
+    "body": [
+      {
+        "kind": "try",
+        "body": [
+          {
+            "kind": "if",
+            "condition": {
+              "kind": "and",
+              "left": {
+                "kind": "value",
+                "text": "flag()",
+                "calls": [
+                  {
+                    "label": "flag()"
+                  }
+                ]
+              },
+              "right": {
+                "kind": "value",
+                "text": "condition()",
+                "calls": [
+                  {
+                    "label": "condition()"
+                  }
+                ]
+              }
+            },
+            "then_branch": [
+              {
+                "kind": "action",
+                "text": "then()",
+                "calls": [
+                  {
+                    "label": "then()"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "kind": "evaluate",
+            "value": {
+              "kind": "value",
+              "text": "register()",
+              "calls": [
+                {
+                  "label": "register()"
+                }
+              ],
+              "regions": [
+                {
+                  "kind": "region",
+                  "label": "callback",
+                  "deferred": true,
+                  "body": [
+                    {
+                      "kind": "action",
+                      "text": "callback()",
+                      "calls": [
+                        {
+                          "label": "callback()"
+                        }
+                      ]
+                    },
+                    {
+                      "kind": "try",
+                      "body": [
+                        {
+                          "kind": "action",
+                          "text": "nested callback()",
+                          "calls": [
+                            {
+                              "label": "nested callback()"
+                            }
+                          ]
+                        }
+                      ],
+                      "finally": [
+                        {
+                          "kind": "action",
+                          "text": "callback cleanup()",
+                          "calls": [
+                            {
+                              "label": "callback cleanup()"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        ],
+        "finally": [
+          {
+            "kind": "action",
+            "text": "outer cleanup()",
+            "calls": [
+              {
+                "label": "outer cleanup()"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "symbol": "unreachable-loop-anchors",
+    "file": "fixture.ts",
+    "span": {
+      "start": 0,
+      "end": 200
+    },
+    "body": [
+      {
+        "kind": "loop",
+        "condition": {
+          "kind": "value",
+          "text": "false"
+        },
+        "body": [
+          {
+            "kind": "action",
+            "text": "unreachable body()",
+            "calls": [
+              {
+                "label": "unreachable body()"
+              }
+            ]
+          }
+        ],
+        "update": [
+          {
+            "kind": "action",
+            "text": "unreachable update()",
+            "calls": [
+              {
+                "label": "unreachable update()"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "kind": "action",
+        "text": "after loop"
+      }
+    ]
+  }
+]

@@ -86,6 +86,7 @@ impl Snapshot<'_> {
     fn function(&self, location: &Location, source: &str) -> FunctionFlowIR {
         let call_span = span(source, "target()");
         let call = CallSite {
+            invocation: Default::default(),
             span: call_span,
             label: "target()".into(),
             targets: vec![CallTarget {
@@ -103,6 +104,7 @@ impl Snapshot<'_> {
             calls: vec![call],
         };
         FunctionFlowIR {
+            execution: Default::default(),
             symbol: "same".into(),
             file: location.file.clone(),
             build: location.build.clone(),

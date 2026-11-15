@@ -124,10 +124,27 @@ mappings and unsupported path patterns remain inventory blockers; unbound method
 also survive as blockers. Fake annotations with the same simple names are ignored.
 Property-dependent paths remain owner-wide blockers. Route facts do not prove bean
 registration, servlet deployment context paths or custom global MVC configuration.
-The current engine requires matching v8 resources; legacy inventory formats remain
+The current engine requires matching v9 resources; legacy inventory formats remain
 readable for historical fixtures but cannot silently satisfy the current runtime.
 
-The current `kind_v8` source inventory retains portable lambda export keys and
+The current `kind_v9` format adds optional compiler-owned `execution` and
+call-site `invocation` facts while retaining flow inventory version 1. Explicit,
+attributed ordinary methods with located bodies are synchronous; constructors,
+compiler-created methods and lambdas have unknown execution. Compiler attribution
+errors leave both new fact kinds unknown for the affected source unit; errors
+without an owned source unit leave them unknown everywhere. Existing source-flow
+records and diagnostics remain available. Future or Reactor
+return types do not determine execution timing. Only the isolated final ordinary
+invocation Value after receiver and arguments gets activation/order proof, and
+embedded Reactor regions prevent that claim. Dispatch follows compiler static,
+private, final-method and final-owner facts; virtual dispatch survives target
+mapping and pruning, including when no project target remains. Constructors,
+member references and generic callback helpers receive no invocation proof.
+Fresh runtime reads and package validation reject v8 adapters with rebuild help;
+legacy inventory reads remain available for historical fixtures. Actual adapter
+JAR bytes and the source-inventory version both participate in cache invalidation.
+
+The `kind_v8` source inventory retains portable lambda export keys and
 adds verified compiler/source correlation. Within named type owners, the source
 key still contains the logical enclosing method/initializer, syntactic role,
 normalized AST fingerprint and deterministic sibling occurrence. Singleton key

@@ -40,7 +40,7 @@ impl std::error::Error for GenerationChanged {}
 /// Own this before taking the input snapshot, through final artifact publication.
 pub struct AnalysisLock {
     project: PathBuf,
-    _file: File,
+    _file: LockedFile,
 }
 
 impl AnalysisLock {
@@ -82,7 +82,7 @@ impl AnalysisLock {
 
 /// This lease bounds coordinators only; analysis children acquire graph.lock.
 pub struct CoordinatorLease {
-    _file: File,
+    _file: LockedFile,
 }
 impl CoordinatorLease {
     pub fn acquire(project: &Path) -> Result<Self> {
@@ -91,7 +91,22 @@ impl CoordinatorLease {
     }
 }
 
-fn acquire_file(project: &Path, name: &str, owner: LockOwner) -> Result<(PathBuf, File)> {
+// Constructed only after successful acquisition: failed contenders must never
+// unlock a lock held by another guard.
+struct LockedFile {
+    file: File,
+}
+
+impl Drop for LockedFile {
+    fn drop(&mut self) {
+        // Explicit unlock releases the shared OS lock even if a cloned or
+        // inherited descriptor remains open. Drop cannot return unlock errors;
+        // closing this File remains the OS fallback if explicit unlock fails.
+        let _ = self.file.unlock();
+    }
+}
+
+fn acquire_file(project: &Path, name: &str, owner: LockOwner) -> Result<(PathBuf, LockedFile)> {
     let project = project
         .canonicalize()
         .context("Cannot open analysis project")?;
@@ -104,7 +119,7 @@ fn acquire_file(project: &Path, name: &str, owner: LockOwner) -> Result<(PathBuf
         .write(true)
         .open(directory.join(name))?;
     match file.try_lock() {
-        Ok(()) => Ok((project, file)),
+        Ok(()) => Ok((project, LockedFile { file })),
         Err(std::fs::TryLockError::WouldBlock) => Err(LockBusy { owner }.into()),
         Err(error) => Err(error).context("Cannot acquire project lock"),
     }
@@ -183,23 +198,61 @@ mod tests {
             super::super::verification::InputStatus::Match
         );
         drop(owner);
-        // Other parallel tests can fork while this lease is held. The inherited
-        // descriptor closes at exec; reacquisition is eventual, not synchronous
-        // with dropping this process's last descriptor.
-        let deadline = std::time::Instant::now() + std::time::Duration::from_secs(2);
-        loop {
-            match CoordinatorLease::acquire(project.path()) {
-                Ok(_) => break,
-                Err(error) => {
-                    assert!(error.is::<LockBusy>(), "{error:#}");
-                    assert!(
-                        std::time::Instant::now() < deadline,
-                        "Lease remained held: {error:#}"
-                    );
-                    std::thread::sleep(std::time::Duration::from_millis(10));
-                }
-            }
+        let _next_owner = CoordinatorLease::acquire(project.path()).unwrap();
+    }
+
+    // File clones share an OS lock description. Only a real filesystem test can
+    // prove guard-drop release and that an old descriptor cannot unlock a new owner.
+    #[test]
+    fn analysis_guard_drop_releases_lock_with_a_retained_file_clone() {
+        let project = tempfile::tempdir().unwrap();
+        let owner = AnalysisLock::acquire(project.path()).unwrap();
+        let retained = owner._file.file.try_clone().unwrap();
+        for _ in 0..2 {
+            let error = AnalysisLock::acquire(project.path()).err().unwrap();
+            assert_eq!(
+                error.downcast_ref::<LockBusy>().unwrap().owner,
+                LockOwner::Analysis
+            );
         }
+        drop(owner);
+        let next = AnalysisLock::acquire(project.path()).unwrap();
+        drop(retained);
+        for _ in 0..2 {
+            let error = AnalysisLock::acquire(project.path()).err().unwrap();
+            assert_eq!(
+                error.downcast_ref::<LockBusy>().unwrap().owner,
+                LockOwner::Analysis
+            );
+        }
+        drop(next);
+        let _final_owner = AnalysisLock::acquire(project.path()).unwrap();
+    }
+
+    #[test]
+    fn coordinator_guard_drop_releases_lock_with_a_retained_file_clone() {
+        let project = tempfile::tempdir().unwrap();
+        let owner = CoordinatorLease::acquire(project.path()).unwrap();
+        let retained = owner._file.file.try_clone().unwrap();
+        for _ in 0..2 {
+            let error = CoordinatorLease::acquire(project.path()).err().unwrap();
+            assert_eq!(
+                error.downcast_ref::<LockBusy>().unwrap().owner,
+                LockOwner::Coordinator
+            );
+        }
+        drop(owner);
+        let next = CoordinatorLease::acquire(project.path()).unwrap();
+        drop(retained);
+        for _ in 0..2 {
+            let error = CoordinatorLease::acquire(project.path()).err().unwrap();
+            assert_eq!(
+                error.downcast_ref::<LockBusy>().unwrap().owner,
+                LockOwner::Coordinator
+            );
+        }
+        drop(next);
+        let _final_owner = CoordinatorLease::acquire(project.path()).unwrap();
     }
 
     #[test]

@@ -7,6 +7,9 @@ use std::{
     process::{Command, Stdio},
 };
 
+#[path = "support/compiler_expansion.rs"]
+mod compiler_expansion;
+
 const PROJECT: &str = "<Project Sdk=\"Microsoft.NET.Sdk\"><PropertyGroup><TargetFramework>net11.0</TargetFramework></PropertyGroup></Project>";
 const SOURCE: &str = "\u{feff}class App {\r\n static int Leaf(int x)=>x; static int Leaf(string x)=>x.Length; public int Run(bool flag) { string text=\"é😀\"; if(flag) return Leaf(1); return Leaf(text); }\r\n}";
 const GENERATED_SOURCE: &str =
@@ -122,6 +125,7 @@ fn csharp_flow_queries_keep_exact_snapshot_and_overload_targets_without_dotnet()
         query(root, json!({"kind":"flow","symbol":symbol}))["result"]["source"]["content"],
         SOURCE
     );
+    assert_cached_compiler_expansion(root, symbol);
 }
 
 fn assert_persistence_and_composition(root: &Path) {
@@ -386,4 +390,23 @@ fn cross_file_partial_method_keeps_graph_when_flow_source_cannot_match_native_ow
         query(root, json!({"kind":"snapshot"}))["generation"],
         snapshot["generation"]
     );
+}
+
+fn assert_cached_compiler_expansion(root: &Path, caller: &str) {
+    use codecallnavigator_core::artifact;
+    let path = root.join(artifact::GRAPH_PATH);
+    let bytes = fs::read(&path).unwrap();
+    let saved = artifact::Artifact::from_bytes(&bytes).unwrap();
+    compiler_expansion::assert_cached_expansion(
+        &saved,
+        compiler_expansion::Pair {
+            caller,
+            call_text: "Leaf(1)",
+            label: "Leaf(1)",
+            callee_label: "Leaf",
+            callee_signature: "Leaf(System.Int32)",
+            content: [SOURCE, SOURCE],
+        },
+    );
+    assert_eq!(fs::read(path).unwrap(), bytes);
 }

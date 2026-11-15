@@ -1,0 +1,120 @@
+{
+  "unit": "TASK-22.7 Unit 2B Java only",
+  "source_frozen": true,
+  "manifest": "freeze-sha256.json",
+  "scope_files": 19,
+  "prior_frozen_hash_counts_unchanged": {
+    "unit1": 17,
+    "unit2a": 22
+  },
+  "staged_baseline_files": 96,
+  "staged_diff_sha256": "5cf3b1364344ecd899fb54da4f4c59c30557f6136fba9e1cfdbad63ac9b37841",
+  "tests_first": [
+    {
+      "log": "javac-red.log",
+      "passed": 1,
+      "errors": 3,
+      "reason": "Real javac helper lacks new execution/invocation fields; constructor/reference negatives already pass."
+    },
+    {
+      "log": "capability-red.log",
+      "failed": 1,
+      "reason": "Fresh Rust reader accepts stale kind_v8."
+    },
+    {
+      "log": "package-red.log",
+      "failed": 1,
+      "reason": "Package boundary accepts a complete stale v8 JAR."
+    },
+    {
+      "log": "ambiguous-recovery-red.log",
+      "failed": 1,
+      "reason": "javac recovery returns an ExecutableElement for ambiguous pick(null); positive Direct/isolation would be false proof."
+    }
+  ],
+  "checks": [
+    {
+      "command": "JAVA_HOME=<installed JDK25> fixtures/gradle/gradlew --project-dir tools/java-bytecode installDist --console=plain --no-configuration-cache",
+      "status": "passed",
+      "log": "java-build-final.log"
+    },
+    {
+      "command": "PYTHONPATH=tests python3.13 -m unittest test_java_execution_facts test_java_inventory test_java_lambda_correlation test_package.JavaAdapterCapabilityTests",
+      "passed": 29,
+      "log": "javac-final.log"
+    },
+    {
+      "command": "PYTHONPATH=tests python3.13 -m unittest test_package",
+      "passed": 16,
+      "overlap_with_above": 5,
+      "log": "package-contracts-final.log"
+    },
+    {
+      "command": "cargo test --locked -p codecallnavigator-engine --lib analyzers::java",
+      "passed": 27,
+      "ignored": 12,
+      "log": "rust-java-final.log"
+    },
+    {
+      "command": "CODECALLNAVIGATOR_JAVA_EXECUTION_BASELINE=<temp7>/target/unit2b-verification/baseline-adapter/lib cargo test --locked -p codecallnavigator-engine --release --lib real_javac_execution_facts_keep_owned_targets_and_external_site_metadata -- --ignored --nocapture",
+      "passed": 1,
+      "log": "real-normalization-final.log",
+      "asserted": "Complete mapped native graph/source equality with actual immutable v8 helper, and flow equality except new facts."
+    },
+    {
+      "command": "cargo test --locked -p codecallnavigator-core --test flow_invocation_facts",
+      "passed": 16,
+      "log": "core-compatibility.log"
+    },
+    {
+      "command": "cargo clippy --locked -p codecallnavigator-engine --all-targets -- -D warnings",
+      "status": "passed",
+      "log": "clippy-engine.log"
+    }
+  ],
+  "distinct_passing_cases": 84,
+  "python_distinct": 40,
+  "quality": {
+    "raw_reports": [
+      "quality-old.json",
+      "quality-modern.json"
+    ],
+    "status": "passed",
+    "reviewed_files": 18,
+    "all_scores": 10,
+    "safeguards": "126 checked/eligible of 140 total; passed; no regressions"
+  },
+  "compatibility": {
+    "native_records_report": "native-projection.json",
+    "native_records_log": "native-projection.log",
+    "source_before": "source-before.tsv",
+    "source_after": "source-after.tsv",
+    "native_before": "native-before",
+    "native_after": "native-after",
+    "real_mapped_projection": "real-normalization-final.log",
+    "baseline_jar_immutable": true
+  },
+  "attribution_guard": {
+    "typed_errors": "Diagnostic.Kind.ERROR and compiler source URI identity only; no diagnostic string parsing",
+    "owned_unit_errors": "Only new execution and invocation facts suppressed in that unit; neighboring valid unit remains positive.",
+    "unowned_errors": "All new facts unknown; tested with an actual missing-module javac error with null source.",
+    "existing_outputs": "Native symbols, target resolver, graph edges, flow records and diagnostics are retained."
+  },
+  "contracts": {
+    "fresh": "kind_v9 only; stale v8/future v10 rejected with rebuild help",
+    "legacy": "kind_v8 remains readable, canonical inventory version remains 1",
+    "cache": "VERSION9 and actual JAR bytes both bind inventory cache",
+    "package": "Requires FlowCompilerFacts and FlowAttribution classes as well as v9 marker"
+  },
+  "environment": {
+    "cargo_target_dir": "/private/tmp/codecallnavigator-task22.7/target",
+    "checks_outside_sandbox": true,
+    "global_toolchain_changes": false,
+    "root_source_writes": false
+  },
+  "scope_limits": [
+    "No C#, vendor, TypeScript or expanded result/API edits.",
+    "No Maven/corpus/full/native/package command runs; only narrow Java adapter installDist and packaging contract tests.",
+    "Normal release acceptance always verifies compiler facts and normalization; immutable pre-v9 comparison is additionally exercised when the recorded baseline environment is supplied."
+  ]
+}

@@ -1,0 +1,5 @@
+{
+  "crates/codecallnavigator-core/tests/fixtures/invocation-facts/artifact.json": "1d01d6429535980e78a9cd5fdaa90210309c9b2fd7171c1956096c318372df20",
+  "crates/codecallnavigator-core/tests/fixtures/invocation-facts/chart.json": "8023661aabe26bd6bba583ba9535b325c65f9ce996afd6b85868871b2c00bf23",
+  "crates/codecallnavigator-core/tests/fixtures/invocation-facts/ir.json": "5bad8b94e7daab2947dc0ca5a0bc319b86daafa0311710ad33a30bd1e0c90c83"
+}

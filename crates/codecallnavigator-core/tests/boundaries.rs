@@ -302,6 +302,7 @@ fn unknown_request_method_is_unresolved_and_flow_requires_an_actual_matching_cal
                 kind: StatementKind::Action {
                     text: "fetch".into(),
                     calls: vec![CallSite {
+                        invocation: Default::default(),
                         span: SourceSpan { start: 1, end: 5 },
                         label: "fetch".into(),
                         targets: vec![CallTarget {

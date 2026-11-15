@@ -1,0 +1,152 @@
+[
+  {
+    "path": "task22-lock-lifetime-red/01-integration-prerequisites.log",
+    "bytes": 98,
+    "sha256": "1d8f628e485539d483f346457d0561c4800e8e404cddbc4b0b21c35a690fae28"
+  },
+  {
+    "path": "task22-lock-lifetime-red/02-integration-prepare.log",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "task22-lock-lifetime-red/03-integration-compile-rust.log",
+    "bytes": 1837,
+    "sha256": "dded57e948971d9327538fee7b128ea0655fd98730ff457d9f62ad7ca521f0dd"
+  },
+  {
+    "path": "task22-lock-lifetime-red/04-integration-test-rust.log",
+    "bytes": 14955,
+    "sha256": "e34b974ef64ed45d96fe7b0922feb72648c343d2c08e2166e7f97e5f392b1aab"
+  },
+  {
+    "path": "task22-lock-lifetime-red/05-integration-category-cleanup.log",
+    "bytes": 1844,
+    "sha256": "ce7180f69541017fb77c8954010db707650d98838521fd31e14c30c3fbd327e0"
+  },
+  {
+    "path": "task22-lock-lifetime-red/changes.json",
+    "bytes": 13352,
+    "sha256": "4a8e8ad78bd34a9471d6048f21d808978f79583bd4cd8e095a934d9fc53f726e"
+  },
+  {
+    "path": "task22-lock-lifetime-red/integration/category-cleanup.json",
+    "bytes": 1844,
+    "sha256": "ce7180f69541017fb77c8954010db707650d98838521fd31e14c30c3fbd327e0"
+  },
+  {
+    "path": "task22-lock-lifetime-red/integration/category-workspace.json",
+    "bytes": 294,
+    "sha256": "2b247b75cc178c9e79e43e233f44014f344a8fb9450e4b31818e8179ce46a761"
+  },
+  {
+    "path": "task22-lock-lifetime-red/integration/reclamation.json",
+    "bytes": 17144,
+    "sha256": "59a28ce7fc37e3980975fba47d127590981d260d91f4dbb9355b99772a4285b7"
+  },
+  {
+    "path": "task22-lock-lifetime-red/integration/results.json",
+    "bytes": 3,
+    "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+  },
+  {
+    "path": "task22-lock-lifetime-red/integration/rust-artifacts.json",
+    "bytes": 16477,
+    "sha256": "6d786bc713193fefc55b1e7ccf50105391acccff9db84c54917e5eda09f01327"
+  },
+  {
+    "path": "task22-lock-lifetime-red/integration/selection.json",
+    "bytes": 74910,
+    "sha256": "ab002aaf2b0bbad61a6bb71ad83e418145f557dbada0bc8b0b5302aca65905a1"
+  },
+  {
+    "path": "task22-lock-lifetime-red/results.json",
+    "bytes": 2946,
+    "sha256": "7899b4c8cabfbae5c034b9ae681325d36d69a34e2802c2eaeada1027cf9ea27a"
+  },
+  {
+    "path": "task22-lock-lifetime-red/summary.json",
+    "bytes": 2914,
+    "sha256": "b654429a0be5ea0b91acf3e6338df6542e7a1b68307d5f4a61645c8bd72798dc"
+  },
+  {
+    "path": "task22-lock-lifetime-green/01-integration-prerequisites.log",
+    "bytes": 98,
+    "sha256": "1d8f628e485539d483f346457d0561c4800e8e404cddbc4b0b21c35a690fae28"
+  },
+  {
+    "path": "task22-lock-lifetime-green/02-integration-prepare.log",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "task22-lock-lifetime-green/03-integration-compile-rust.log",
+    "bytes": 1837,
+    "sha256": "5ace3501e02021f0c0dbb85177cb585b69033d403a72574f582f28796883afb0"
+  },
+  {
+    "path": "task22-lock-lifetime-green/04-integration-test-rust.log",
+    "bytes": 11696,
+    "sha256": "9090a12997b69d448146a296fdb4c3b2a5096bb8864794ecc12cbc7e4becb8e2"
+  },
+  {
+    "path": "task22-lock-lifetime-green/05-integration-category-cleanup.log",
+    "bytes": 1856,
+    "sha256": "92a8a0885a9cea0a7f0f2f904ecc80d691d623814d431e8077bb3e82b65cb86f"
+  },
+  {
+    "path": "task22-lock-lifetime-green/changes.json",
+    "bytes": 13352,
+    "sha256": "4a8e8ad78bd34a9471d6048f21d808978f79583bd4cd8e095a934d9fc53f726e"
+  },
+  {
+    "path": "task22-lock-lifetime-green/integration/category-cleanup.json",
+    "bytes": 1856,
+    "sha256": "92a8a0885a9cea0a7f0f2f904ecc80d691d623814d431e8077bb3e82b65cb86f"
+  },
+  {
+    "path": "task22-lock-lifetime-green/integration/category-workspace.json",
+    "bytes": 296,
+    "sha256": "64bde41a198a332a4bd972104a3e86803b8fb604fd0624db89fd05e208215ffa"
+  },
+  {
+    "path": "task22-lock-lifetime-green/integration/reclamation.json",
+    "bytes": 17394,
+    "sha256": "05fe56e58864b28200c3669b37c0b9bdf3c99e80a494f9cd40c3194914c5bfe4"
+  },
+  {
+    "path": "task22-lock-lifetime-green/integration/results.json",
+    "bytes": 3,
+    "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+  },
+  {
+    "path": "task22-lock-lifetime-green/integration/rust-artifacts.json",
+    "bytes": 16529,
+    "sha256": "fc9117329d09ca974e43f3773d291ec2bfaff9669c66ac03809f23c6bdebb713"
+  },
+  {
+    "path": "task22-lock-lifetime-green/integration/selection.json",
+    "bytes": 74910,
+    "sha256": "ab002aaf2b0bbad61a6bb71ad83e418145f557dbada0bc8b0b5302aca65905a1"
+  },
+  {
+    "path": "task22-lock-lifetime-green/results.json",
+    "bytes": 2955,
+    "sha256": "4482a886cbeb58b5afa8f1d16748977c49840d02b5b62205d7b11da02b95b17b"
+  },
+  {
+    "path": "task22-lock-lifetime-green/summary.json",
+    "bytes": 2880,
+    "sha256": "ddd26beada65773503fe2f196c1696950c8cc46d59c336f786b07399932488ad"
+  },
+  {
+    "path": "task22-final-full-r3/results.json",
+    "bytes": 67372,
+    "sha256": "0979ed6ba07a175e24d9b594e2c699a67df3438a4ef97039ede694e31fe4337f"
+  },
+  {
+    "path": "task22-final-full-r3/98-integration-test-rust.log",
+    "bytes": 68622,
+    "sha256": "285593ff212b97653cb0f82b691f74eaf96c3c5613f1290bd94741dad0c7475d"
+  }
+]

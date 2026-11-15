@@ -2,10 +2,14 @@
 mod availability;
 mod builder;
 mod checked;
+mod expanded;
 mod inventory;
 mod layout;
 mod lookup;
+mod metadata;
 mod model;
+mod parts;
+pub(crate) use metadata::validate_metadata;
 mod prune;
 mod source;
 pub(crate) use availability::{
@@ -13,6 +17,7 @@ pub(crate) use availability::{
 };
 pub use builder::build;
 pub use checked::{MAX_SOURCE_BYTES, checked_chart};
+pub use expanded::*;
 pub use inventory::{merge_inventory, visit_calls_mut};
 pub use layout::layout;
 pub use lookup::lookup;

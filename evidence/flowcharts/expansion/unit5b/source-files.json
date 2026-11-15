@@ -1,0 +1,16 @@
+[
+  "crates/codecallnavigator-core/src/flow/expanded.rs",
+  "crates/codecallnavigator-core/src/flow/expanded/request.rs",
+  "crates/codecallnavigator-core/src/flow/expanded/limits.rs",
+  "crates/codecallnavigator-core/src/flow/builder.rs",
+  "crates/codecallnavigator-core/src/flow/builder/expansion.rs",
+  "crates/codecallnavigator-core/src/flow/builder/expansion/budget.rs",
+  "crates/codecallnavigator-core/src/flow/builder/expansion/attempt.rs",
+  "crates/codecallnavigator-core/src/flow/builder/expansion/retry.rs",
+  "crates/codecallnavigator-core/src/flow/builder/expansion/prepared.rs",
+  "crates/codecallnavigator-core/src/flow/builder/expansion/pending.rs",
+  "crates/codecallnavigator-core/src/flow/builder/expansion/run.rs",
+  "crates/codecallnavigator-core/src/flow/builder/expansion/child.rs",
+  "crates/codecallnavigator-core/tests/flow_expansion.rs",
+  "crates/codecallnavigator-core/tests/flow_expansion/budgets.rs"
+]

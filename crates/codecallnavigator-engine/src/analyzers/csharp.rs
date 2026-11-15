@@ -551,7 +551,7 @@ fn validate_atlas(map: &AtlasMap) -> Result<()> {
         "CallAtlas reported incomplete compilation"
     );
     ensure!(
-        map.flow_facts_version == "1"
+        map.flow_facts_version == "2"
             && map
                 .flow_inventory
                 .as_ref()
@@ -669,7 +669,7 @@ mod tests {
         let mut value = serde_json::json!({
             "schema":"callatlas.ir.v3", "declarationFactsVersion":"2", "nodes":[], "edges":[],
             "httpFactsVersion":"1", "httpRoutes":[],
-            "flowFactsVersion":"1", "flowInventory":{"version":1,"functions":[]}, "sourceFactsVersion":"1", "architectureFiles":[]
+            "flowFactsVersion":"2", "flowInventory":{"version":1,"functions":[]}, "sourceFactsVersion":"1", "architectureFiles":[]
         });
         let stale: AtlasMap = serde_json::from_value(value.clone()).unwrap();
         assert!(
@@ -696,7 +696,7 @@ mod tests {
         let mut value = serde_json::json!({
             "schema":"callatlas.ir.v3", "declarationFactsVersion":"2", "nodes":[], "edges":[],
             "frameworkFactsVersion":"1", "frameworkEdges":[], "frameworkEntries":[], "frameworkDiagnostics":[],
-            "flowFactsVersion":"1", "flowInventory":{"version":1,"functions":[]}, "sourceFactsVersion":"1", "architectureFiles":[]
+            "flowFactsVersion":"2", "flowInventory":{"version":1,"functions":[]}, "sourceFactsVersion":"1", "architectureFiles":[]
         });
         let missing: AtlasMap = serde_json::from_value(value.clone()).unwrap();
         assert!(
@@ -731,7 +731,7 @@ mod tests {
                 .to_string()
                 .contains("flow")
         );
-        value["flowFactsVersion"] = "1".into();
+        value["flowFactsVersion"] = "2".into();
         value["flowInventory"] = serde_json::json!({"version":1,"functions":[]});
         validate_atlas(&serde_json::from_value(value.clone()).unwrap()).unwrap();
         for invalid in [
@@ -742,14 +742,16 @@ mod tests {
             assert!(validate_atlas(&serde_json::from_value(value.clone()).unwrap()).is_err());
         }
         value["flowInventory"] = serde_json::json!({"version":1,"functions":[]});
-        value["flowFactsVersion"] = "2".into();
-        assert!(validate_atlas(&serde_json::from_value(value).unwrap()).is_err());
+        for version in ["1", "3"] {
+            value["flowFactsVersion"] = version.into();
+            assert!(validate_atlas(&serde_json::from_value(value.clone()).unwrap()).is_err());
+        }
     }
     #[test]
     fn fresh_source_capability_requires_current_version_and_file_inventory() {
         let mut value = serde_json::json!({"schema":"callatlas.ir.v3","declarationFactsVersion":"2","nodes":[],"edges":[],
             "frameworkFactsVersion":"1","frameworkEdges":[],"frameworkEntries":[],"frameworkDiagnostics":[],
-            "httpFactsVersion":"1","httpRoutes":[],"flowFactsVersion":"1","flowInventory":{"version":1,"functions":[]},
+            "httpFactsVersion":"1","httpRoutes":[],"flowFactsVersion":"2","flowInventory":{"version":1,"functions":[]},
             "sourceFactsVersion":"1","architectureFiles":[]});
         validate_atlas(&serde_json::from_value(value.clone()).unwrap()).unwrap();
         for version in ["", "2"] {

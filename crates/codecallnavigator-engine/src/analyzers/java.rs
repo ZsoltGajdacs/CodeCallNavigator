@@ -15,6 +15,8 @@ mod class_facts;
 mod compose;
 mod contexts;
 mod engine;
+#[cfg(test)]
+mod execution_tests;
 mod flow_inventory;
 mod framework;
 mod gradle;

@@ -1548,10 +1548,10 @@ index 0000000..ab25c1c
 +}
 diff --git a/src/CallAtlas.Core/FlowContracts.cs b/src/CallAtlas.Core/FlowContracts.cs
 new file mode 100644
-index 0000000..1c7d189
+index 0000000..a745be5
 --- /dev/null
 +++ b/src/CallAtlas.Core/FlowContracts.cs
-@@ -0,0 +1,58 @@
+@@ -0,0 +1,70 @@
 +using System.Text.Json.Serialization;
 +
 +namespace CallAtlas.Core;
@@ -1560,18 +1560,20 @@ index 0000000..1c7d189
 +public sealed record FlowInventory([property: JsonRequired] int Version,
 +    [property: JsonRequired] IReadOnlyList<FunctionFlow> Functions)
 +{
-+    public const string CapabilityVersion = "1";
++    public const string CapabilityVersion = "2";
 +}
 +
 +public sealed record FunctionFlow([property: JsonRequired] string Symbol, [property: JsonRequired] string File,
 +    [property: JsonRequired] string Build, [property: JsonRequired] string Project, [property: JsonRequired] string Language,
 +    [property: JsonRequired] FlowSpan Span, [property: JsonRequired] IReadOnlyList<FlowStatement> Body,
-+    [property: JsonRequired] IReadOnlyList<string> Diagnostics);
++    [property: JsonRequired] IReadOnlyList<string> Diagnostics,
++    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] FlowExecutionTiming Execution = FlowExecutionTiming.Unknown);
 +public sealed record FlowSpan([property: JsonRequired] int Start, [property: JsonRequired] int End);
 +public sealed record FlowTarget([property: JsonRequired] string Symbol, [property: JsonRequired] string Certainty,
 +    [property: JsonRequired] string Provenance, string Kind = "call");
 +public sealed record FlowCall([property: JsonRequired] FlowSpan Span, [property: JsonRequired] string Label,
-+    [property: JsonRequired] IReadOnlyList<FlowTarget> Targets, string? Diagnostic);
++    [property: JsonRequired] IReadOnlyList<FlowTarget> Targets, string? Diagnostic,
++    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] FlowInvocationFacts Invocation = default);
 +
 +public sealed record FlowStatement([property: JsonRequired] string Kind, [property: JsonRequired] FlowSpan Span)
 +{
@@ -1610,6 +1612,16 @@ index 0000000..1c7d189
 +    bool FallsThrough, IReadOnlyList<FlowStatement> Body);
 +public sealed record FlowCatch([property: JsonRequired] string Parameter, [property: JsonRequired] bool CatchAll,
 +    [property: JsonRequired] IReadOnlyList<FlowStatement> Body);
++
++
++/// <summary>Whole-body suitability is independent of activation at a caller's invocation site.</summary>
++public enum FlowExecutionTiming { Unknown, Synchronous, Deferred }
++public enum FlowInvocationDispatch { Unknown, Direct, Virtual, Candidate }
++
++public readonly record struct FlowInvocationFacts(
++    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] FlowExecutionTiming Timing = FlowExecutionTiming.Unknown,
++    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] FlowInvocationDispatch Dispatch = FlowInvocationDispatch.Unknown,
++    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] bool IsolatedOrdered = false);
 diff --git a/src/CallAtlas.Core/FlowExceptions.cs b/src/CallAtlas.Core/FlowExceptions.cs
 new file mode 100644
 index 0000000..b0a82b6
@@ -1637,12 +1649,113 @@ index 0000000..b0a82b6
 +        return Protected(statement, Body(statement.Block, depth + 1)) with { Catches = catches, Finally = final };
 +    }
 +}
+diff --git a/src/CallAtlas.Core/FlowExecution.cs b/src/CallAtlas.Core/FlowExecution.cs
+new file mode 100644
+index 0000000..700e593
+--- /dev/null
++++ b/src/CallAtlas.Core/FlowExecution.cs
+@@ -0,0 +1,33 @@
++using Microsoft.CodeAnalysis;
++using Microsoft.CodeAnalysis.CSharp.Syntax;
++
++namespace CallAtlas.Core;
++
++/// <summary>Compiler-owned whole-body execution, independent of return-type names or call-site timing.</summary>
++internal static class FlowExecution
++{
++    internal static FlowExecutionTiming Classify(FlowInput input, IReadOnlyList<SyntaxNode> bodies)
++    {
++        var declaration = input.Declaration ?? TopLevelOwner(input, bodies);
++        if (!OrdinaryOwner(declaration, input.Declaration is null)) return FlowExecutionTiming.Unknown;
++        return BodyTiming(bodies);
++    }
++
++    private static FlowExecutionTiming BodyTiming(IReadOnlyList<SyntaxNode> bodies)
++    {
++        if (bodies.Any(FlowSuspension.HasYield)) return FlowExecutionTiming.Deferred;
++        return bodies.Any(FlowSuspension.IsAsyncOrIterator) ? FlowExecutionTiming.Unknown : FlowExecutionTiming.Synchronous;
++    }
++
++    private static bool OrdinaryOwner(IMethodSymbol? declaration, bool topLevel) => declaration is
++        { IsAsync: false, MethodKind: MethodKind.Ordinary or MethodKind.LocalFunction }
++        && (topLevel || !declaration.IsImplicitlyDeclared);
++
++    private static IMethodSymbol? TopLevelOwner(FlowInput input, IReadOnlyList<SyntaxNode> bodies)
++    {
++        if (!bodies.All(body => body.Parent is GlobalStatementSyntax)) return null;
++        var entry = input.Model.Compilation.GetEntryPoint(default);
++        return entry is not null && bodies.All(body => SymbolEqualityComparer.Default.Equals(
++            input.Model.GetEnclosingSymbol(body.SpanStart), entry)) ? entry : null;
++    }
++}
+diff --git a/src/CallAtlas.Core/FlowExecutionJson.cs b/src/CallAtlas.Core/FlowExecutionJson.cs
+new file mode 100644
+index 0000000..fb45e29
+--- /dev/null
++++ b/src/CallAtlas.Core/FlowExecutionJson.cs
+@@ -0,0 +1,56 @@
++using System.Text.Json;
++using System.Text.Json.Serialization;
++
++namespace CallAtlas.Core;
++
++// Shared IR tokens are case-sensitive. The built-in enum converter accepts aliases
++// such as Synchronous, which Rust correctly rejects; keep these two contracts exact.
++internal sealed class FlowExecutionTimingJson : JsonConverter<FlowExecutionTiming>
++{
++    public override FlowExecutionTiming Read(ref Utf8JsonReader reader, Type type, JsonSerializerOptions options)
++        => FlowFactToken.Read(ref reader) switch
++        {
++            "unknown" => FlowExecutionTiming.Unknown,
++            "synchronous" => FlowExecutionTiming.Synchronous,
++            "deferred" => FlowExecutionTiming.Deferred,
++            _ => throw new JsonException("Unknown execution timing"),
++        };
++
++    public override void Write(Utf8JsonWriter writer, FlowExecutionTiming value, JsonSerializerOptions options)
++        => writer.WriteStringValue(value switch
++        {
++            FlowExecutionTiming.Unknown => "unknown",
++            FlowExecutionTiming.Synchronous => "synchronous",
++            FlowExecutionTiming.Deferred => "deferred",
++            _ => throw new JsonException("Unknown execution timing"),
++        });
++}
++
++internal sealed class FlowInvocationDispatchJson : JsonConverter<FlowInvocationDispatch>
++{
++    public override FlowInvocationDispatch Read(ref Utf8JsonReader reader, Type type, JsonSerializerOptions options)
++        => FlowFactToken.Read(ref reader) switch
++        {
++            "unknown" => FlowInvocationDispatch.Unknown,
++            "direct" => FlowInvocationDispatch.Direct,
++            "virtual" => FlowInvocationDispatch.Virtual,
++            "candidate" => FlowInvocationDispatch.Candidate,
++            _ => throw new JsonException("Unknown invocation dispatch"),
++        };
++
++    public override void Write(Utf8JsonWriter writer, FlowInvocationDispatch value, JsonSerializerOptions options)
++        => writer.WriteStringValue(value switch
++        {
++            FlowInvocationDispatch.Unknown => "unknown",
++            FlowInvocationDispatch.Direct => "direct",
++            FlowInvocationDispatch.Virtual => "virtual",
++            FlowInvocationDispatch.Candidate => "candidate",
++            _ => throw new JsonException("Unknown invocation dispatch"),
++        });
++}
++
++internal static class FlowFactToken
++{
++    internal static string Read(ref Utf8JsonReader reader) => reader.TokenType == JsonTokenType.String
++        ? reader.GetString()! : throw new JsonException("Flow fact must be an exact string token");
++}
 diff --git a/src/CallAtlas.Core/FlowExport.cs b/src/CallAtlas.Core/FlowExport.cs
 new file mode 100644
-index 0000000..ec67d13
+index 0000000..c70d0f4
 --- /dev/null
 +++ b/src/CallAtlas.Core/FlowExport.cs
-@@ -0,0 +1,94 @@
+@@ -0,0 +1,95 @@
 +using Microsoft.CodeAnalysis;
 +using Microsoft.CodeAnalysis.CSharp.Syntax;
 +
@@ -1671,7 +1784,8 @@ index 0000000..ec67d13
 +            var exporter = new FlowBody(group.Key, first.Model, source, bindings);
 +            var body = exporter.Export(bodies);
 +            var function = new FunctionFlow(group.Key, first.Tree.FilePath, "", first.Model.Compilation.AssemblyName ?? "",
-+                "csharp", span, body, exporter.Diagnostics.ToArray());
++                "csharp", span, body, exporter.Diagnostics.ToArray())
++            { Execution = FlowExecution.Classify(first, bodies) };
 +            try { FlowValidation.ValidateBody(function); }
 +            catch (FlowUnsupported)
 +            {
@@ -1703,7 +1817,7 @@ index 0000000..ec67d13
 +        {
 +            if (bindings.Exceeded(symbol)) throw new FlowUnsupported("Flow binding exceeds 1500 sites or targets per callable", true);
 +            if (source.Problem is not null) throw new FlowUnsupported(source.Problem, true);
-+            if (bodies.Any(IsAsyncOrIterator))
++            if (bodies.Any(FlowSuspension.IsAsyncOrIterator))
 +                throw new FlowUnsupported("Async/iterator execution and suspension are opaque", true);
 +            if (bodies.All(body => body.Parent is GlobalStatementSyntax))
 +                return LexicalBody(bodies.Cast<StatementSyntax>().ToArray(), 0, 0);
@@ -1739,10 +1853,10 @@ index 0000000..ec67d13
 +}
 diff --git a/src/CallAtlas.Core/FlowExpressionValidation.cs b/src/CallAtlas.Core/FlowExpressionValidation.cs
 new file mode 100644
-index 0000000..8443946
+index 0000000..23f3276
 --- /dev/null
 +++ b/src/CallAtlas.Core/FlowExpressionValidation.cs
-@@ -0,0 +1,42 @@
+@@ -0,0 +1,53 @@
 +namespace CallAtlas.Core;
 +
 +internal static partial class FlowValidation
@@ -1764,7 +1878,16 @@ index 0000000..8443946
 +    {
 +        Require(node.Text is not null);
 +        Require(node.Calls is not null);
-+        foreach (var call in node.Calls!) Call(call, owner);
++        foreach (var call in node.Calls!)
++        {
++            Call(call, owner);
++            if (call.Invocation.IsolatedOrdered)
++            {
++                Require(call.Invocation.Timing == FlowExecutionTiming.Synchronous);
++                Require(node.Calls.Count == 1);
++                Require(node.Span.Start < node.Span.End && node.Span == call.Span);
++            }
++        }
 +    }
 +
 +    private static void Call(FlowCall? call, FlowSpan owner)
@@ -1774,6 +1897,8 @@ index 0000000..8443946
 +        Require(call.Targets is not null);
 +        CheckSpan(call.Span, owner);
 +        foreach (var target in call.Targets!) Target(target);
++        if (call.Invocation.Dispatch == FlowInvocationDispatch.Direct)
++            Require(call.Targets!.Where(target => target.Kind == "call").Select(target => target.Symbol).Distinct().Take(2).Count() <= 1);
 +    }
 +
 +    private static void Target(FlowTarget? target)
@@ -1787,7 +1912,7 @@ index 0000000..8443946
 +}
 diff --git a/src/CallAtlas.Core/FlowExpressions.cs b/src/CallAtlas.Core/FlowExpressions.cs
 new file mode 100644
-index 0000000..a498c8f
+index 0000000..29109ea
 --- /dev/null
 +++ b/src/CallAtlas.Core/FlowExpressions.cs
 @@ -0,0 +1,149 @@
@@ -1888,14 +2013,14 @@ index 0000000..a498c8f
 +    private FlowExpression InvocationValue(InvocationExpressionSyntax invocation, IOperation? operation)
 +    {
 +        var value = Value(invocation);
-+        if (operation is not IInvocationOperation) return value;
-+        if (value.Calls is { Count: > 0 }) return value;
-+        // Preserve native graph limitations without silently hiding a compiler-proven invocation.
-+        return value with
++        if (operation is not IInvocationOperation invocationOperation) return value;
++        if (value.Calls is not { Count: > 0 })
 +        {
-+            Calls = [new(source.Span(invocation), FlowText.Label(invocation), [],
-+                "Native analyzer omitted binding for this compiler-resolved invocation")],
-+        };
++            // Preserve native graph limitations; compiler facts never invent a graph target.
++            value = value with { Calls = [new(source.Span(invocation), FlowText.Label(invocation), [],
++                "Native analyzer omitted binding for this compiler-resolved invocation")] };
++        }
++        return FlowInvocationProof.Apply(value, invocationOperation);
 +    }
 +
 +    private FlowExpression Binary(BinaryExpressionSyntax binary, int depth)
@@ -2028,12 +2153,52 @@ index 0000000..4886b0b
 +        throw new FlowUnsupported("Enumerator disposal category is unresolved");
 +    }
 +}
+diff --git a/src/CallAtlas.Core/FlowInvocationProof.cs b/src/CallAtlas.Core/FlowInvocationProof.cs
+new file mode 100644
+index 0000000..17e5220
+--- /dev/null
++++ b/src/CallAtlas.Core/FlowInvocationProof.cs
+@@ -0,0 +1,34 @@
++using Microsoft.CodeAnalysis;
++using Microsoft.CodeAnalysis.Operations;
++
++namespace CallAtlas.Core;
++
++/// <summary>Only the explicit final invocation Value owns compiler activation/order proof.</summary>
++internal static class FlowInvocationProof
++{
++    internal static FlowExpression Apply(FlowExpression value, IInvocationOperation operation)
++    {
++        if (!SupportedOperation(operation) || !IsolatedValue(value)) return value;
++        var facts = new FlowInvocationFacts(FlowExecutionTiming.Synchronous, Dispatch(operation), true);
++        return value with { Calls = [value.Calls![0] with { Invocation = facts }] };
++    }
++
++    private static bool SupportedOperation(IInvocationOperation operation) => !operation.IsImplicit
++        && PlainTarget(operation.TargetMethod)
++        && operation.Arguments.All(argument => argument.Parameter?.RefKind == RefKind.None);
++
++    private static bool PlainTarget(IMethodSymbol target) => target is
++        { IsImplicitlyDeclared: false, ReducedFrom: null, IsExtensionMethod: false,
++          ReturnsByRef: false, ReturnsByRefReadonly: false, MethodKind: MethodKind.Ordinary or MethodKind.LocalFunction };
++
++    private static bool IsolatedValue(FlowExpression value) => value.Calls is { Count: 1 }
++        && value.Span.Start < value.Span.End && value.Calls[0].Span == value.Span;
++
++    private static FlowInvocationDispatch Dispatch(IInvocationOperation operation)
++    {
++        var target = operation.TargetMethod;
++        var virtualTarget = target is { IsVirtual: true } or { IsAbstract: true } or { IsOverride: true }
++            || target.ContainingType.TypeKind == TypeKind.Interface;
++        return operation.IsVirtual || virtualTarget ? FlowInvocationDispatch.Virtual : FlowInvocationDispatch.Direct;
++    }
++}
 diff --git a/src/CallAtlas.Core/FlowJson.cs b/src/CallAtlas.Core/FlowJson.cs
 new file mode 100644
-index 0000000..2f20e3f
+index 0000000..3052879
 --- /dev/null
 +++ b/src/CallAtlas.Core/FlowJson.cs
-@@ -0,0 +1,72 @@
+@@ -0,0 +1,73 @@
 +using System.Text.Json;
 +using System.Text.Json.Serialization;
 +
@@ -2047,6 +2212,7 @@ index 0000000..2f20e3f
 +        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
 +        MaxDepth = 128,
 +        UnmappedMemberHandling = JsonUnmappedMemberHandling.Disallow,
++        Converters = { new FlowExecutionTimingJson(), new FlowInvocationDispatchJson() },
 +    };
 +
 +    internal static void Write(Utf8JsonWriter writer, CodeMap map)
@@ -2619,26 +2785,30 @@ index 0000000..c989e28
 +}
 diff --git a/src/CallAtlas.Core/FlowSuspension.cs b/src/CallAtlas.Core/FlowSuspension.cs
 new file mode 100644
-index 0000000..8b7a6d8
+index 0000000..ce90262
 --- /dev/null
 +++ b/src/CallAtlas.Core/FlowSuspension.cs
-@@ -0,0 +1,36 @@
+@@ -0,0 +1,40 @@
 +using Microsoft.CodeAnalysis;
 +using Microsoft.CodeAnalysis.CSharp;
 +using Microsoft.CodeAnalysis.CSharp.Syntax;
 +
 +namespace CallAtlas.Core;
 +
-+internal sealed partial class FlowBody
++internal static class FlowSuspension
 +{
-+    private static bool IsAsyncOrIterator(SyntaxNode body)
++    internal static bool IsAsyncOrIterator(SyntaxNode body)
 +    {
 +        // A grouped top-level declaration is deferred; its separate callable owns its body.
 +        if (DeferredDeclaration(body)) return false;
 +        if (AsyncDeclaration(body.Parent)) return true;
-+        return body.DescendantNodesAndSelf(node => node == body || !DeferredDeclaration(node))
-+            .Any(Suspends);
++        return OwnNodes(body).Any(Suspends);
 +    }
++
++    internal static bool HasYield(SyntaxNode body) => OwnNodes(body).Any(node => node is YieldStatementSyntax);
++
++    private static IEnumerable<SyntaxNode> OwnNodes(SyntaxNode body) => DeferredDeclaration(body)
++        ? [] : body.DescendantNodesAndSelf(node => node == body || !DeferredDeclaration(node));
 +
 +    private static bool DeferredDeclaration(SyntaxNode node) =>
 +        node is AnonymousFunctionExpressionSyntax or LocalFunctionStatementSyntax;
@@ -3752,12 +3922,199 @@ index 0000000..e28c41a
 +    }
 +
 +}
+diff --git a/tests/CallAtlas.Tests/FlowExecutionDefaultsTests.cs b/tests/CallAtlas.Tests/FlowExecutionDefaultsTests.cs
+new file mode 100644
+index 0000000..97c3b5b
+--- /dev/null
++++ b/tests/CallAtlas.Tests/FlowExecutionDefaultsTests.cs
+@@ -0,0 +1,46 @@
++using System.Text.Json;
++using System.Text.Json.Nodes;
++using CallAtlas.Core;
++using Xunit;
++using static CallAtlas.Tests.FlowFactsTests;
++
++namespace CallAtlas.Tests;
++
++public class FlowExecutionDefaultsTests
++{
++    [Fact]
++    public void Explicit_unknown_and_empty_facts_serialize_as_absent_with_stable_roundtrip_bytes()
++    {
++        var map=JsonNode.Parse(Snapshot("class A { static int Leaf()=>1; int Run()=>Leaf(); }").GetRawText())!;
++        foreach(var function in map["flowInventory"]!["functions"]!.AsArray())
++        {
++            function!["execution"]="unknown";
++            SetDefaultCalls(function);
++        }
++        var saved=CodeMapJson.Write(CodeMapJson.Read(map.ToJsonString()));
++        var inventory=JsonDocument.Parse(saved).RootElement.GetProperty("flowInventory");
++        Assert.All(Objects(inventory),node=>{
++            Assert.False(node.TryGetProperty("execution",out _));
++            Assert.False(node.TryGetProperty("invocation",out _));
++        });
++        Assert.Equal(saved,CodeMapJson.Write(CodeMapJson.Read(saved)));
++    }
++
++    private static void SetDefaultCalls(JsonNode root)
++    {
++        var pending=new Stack<JsonNode>([root]);
++        while(pending.TryPop(out var node))
++        {
++            if(node is JsonObject obj && obj.ContainsKey("targets"))
++                obj["invocation"]=JsonNode.Parse("""{"timing":"unknown","dispatch":"unknown","isolated_ordered":false}""");
++            foreach(var child in Children(node)) pending.Push(child);
++        }
++    }
++
++    private static IEnumerable<JsonNode> Children(JsonNode node) => node switch
++    {
++        JsonObject obj => obj.Select(property=>property.Value).OfType<JsonNode>(),
++        JsonArray array => array.OfType<JsonNode>(),
++        _ => [],
++    };
++}
+diff --git a/tests/CallAtlas.Tests/FlowExecutionFactsTests.cs b/tests/CallAtlas.Tests/FlowExecutionFactsTests.cs
+new file mode 100644
+index 0000000..78d8ef3
+--- /dev/null
++++ b/tests/CallAtlas.Tests/FlowExecutionFactsTests.cs
+@@ -0,0 +1,57 @@
++using System.Text.Json;
++using System.Text.Json.Nodes;
++using CallAtlas.Core;
++using Xunit;
++using static CallAtlas.Tests.FlowFactsTests;
++
++namespace CallAtlas.Tests;
++
++public class FlowExecutionFactsTests
++{
++    [Fact]
++    public void Known_execution_and_invocation_facts_roundtrip_at_the_strict_boundary()
++    {
++        var map = JsonNode.Parse(Snapshot("class A { static int Leaf()=>1; int Run()=>Leaf(); }").GetRawText())!;
++        var function = map["flowInventory"]!["functions"]!.AsArray().Single(f=>f!["symbol"]!.GetValue<string>().EndsWith("A::Run()"))!;
++        function["execution"] = "synchronous";
++        var site = function["body"]![0]!["value"]!;
++        var call = site["calls"]![0]!;
++        call["invocation"] = JsonNode.Parse("""{"timing":"synchronous","dispatch":"direct","isolated_ordered":true}""");
++        var result = CodeMapJson.Write(CodeMapJson.Read(map.ToJsonString()));
++        var saved = Function(JsonDocument.Parse(result).RootElement,"A::Run()");
++        Assert.Equal("synchronous", saved.GetProperty("execution").GetString());
++        Assert.True(Objects(saved).Single(o=>o.TryGetProperty("targets",out _)).GetProperty("invocation").GetProperty("isolated_ordered").GetBoolean());
++    }
++
++    [Fact]
++    public void Compiler_callable_execution_is_independent_of_return_type_and_nested_declarations()
++    {
++        var map = CheckedSnapshot("using System.Collections.Generic; using System.Threading.Tasks; class A { Task Plain()=>Task.CompletedTask; async Task Async(){await Task.Delay(1);} IEnumerable<int> Iterator(){yield return 1;} int Outer(){async Task Local(){await Task.Delay(1);} System.Func<Task> f=async()=>{await Task.Delay(1);}; return 1;} }");
++        Assert.Equal("synchronous", Function(map,"A::Plain()").GetProperty("execution").GetString());
++        Assert.False(Function(map,"A::Async()").TryGetProperty("execution",out _));
++        Assert.Equal("deferred", Function(map,"A::Iterator()").GetProperty("execution").GetString());
++        Assert.Equal("synchronous", Function(map,"A::Outer()").GetProperty("execution").GetString());
++        var local = map.GetProperty("flowInventory").GetProperty("functions").EnumerateArray().Single(f=>f.GetProperty("symbol").GetString()!.Contains("Local"));
++        Assert.False(local.TryGetProperty("execution",out _));
++    }
++
++    [Fact]
++    public void Explicit_final_invocations_have_compiler_dispatch_before_native_target_pruning()
++    {
++        var map = CheckedSnapshot("class A { static int Leaf()=>1; virtual public int V()=>1; int Run(A a){int Local()=>Leaf(); return a.V()+Local()+System.Math.Abs(-1);} }");
++        var calls = Objects(Function(map,"A::Run(A)")).Where(o=>o.TryGetProperty("targets",out _)).ToArray();
++        Assert.Equal(3,calls.Length);
++        Assert.Equal("virtual", calls[0].GetProperty("invocation").GetProperty("dispatch").GetString());
++        Assert.Equal("direct", calls[1].GetProperty("invocation").GetProperty("dispatch").GetString());
++        Assert.Equal("direct", calls[2].GetProperty("invocation").GetProperty("dispatch").GetString());
++        Assert.Empty(calls[2].GetProperty("targets").EnumerateArray());
++        Assert.All(calls,c=>Assert.True(c.GetProperty("invocation").GetProperty("isolated_ordered").GetBoolean()));
++    }
++    internal static JsonElement CheckedSnapshot(string source)
++    {
++        var map = Snapshot(source);
++        Assert.Equal(0, map.GetProperty("bodyErrorCount").GetInt32());
++        Assert.Empty(map.GetProperty("diagnostics").EnumerateArray());
++        return map;
++    }
++}
+diff --git a/tests/CallAtlas.Tests/FlowExecutionValidationTests.cs b/tests/CallAtlas.Tests/FlowExecutionValidationTests.cs
+new file mode 100644
+index 0000000..4495259
+--- /dev/null
++++ b/tests/CallAtlas.Tests/FlowExecutionValidationTests.cs
+@@ -0,0 +1,66 @@
++using System.Text.Json.Nodes;
++using CallAtlas.Core;
++using Xunit;
++using static CallAtlas.Tests.FlowFactsTests;
++
++namespace CallAtlas.Tests;
++
++public class FlowExecutionValidationTests
++{
++    [Theory]
++    [InlineData("execution", "null")]
++    [InlineData("execution", "\"Synchronous\"")]
++    [InlineData("execution", "\"SYNCHRONOUS\"")]
++    [InlineData("execution", "\"1\"")]
++    [InlineData("call", "{\"timing\":\"Synchronous\"}")]
++    [InlineData("call", "{\"dispatch\":\"Direct\"}")]
++    [InlineData("call", "{\"dispatch\":\"DIRECT\"}")]
++    [InlineData("call", "{\"dispatch\":\"1\"}")]
++    [InlineData("execution", "1")]
++    [InlineData("execution", "\"guessed\"")]
++    [InlineData("call", "null")]
++    [InlineData("call", "{\"timing\":null}")]
++    [InlineData("call", "{\"timing\":1}")]
++    [InlineData("call", "{\"dispatch\":null}")]
++    [InlineData("call", "{\"isolated_ordered\":null}")]
++    [InlineData("call", "{\"dispatch\":1}")]
++    [InlineData("call", "{\"dispatch\":\"guessed\"}")]
++    [InlineData("call", "{\"timing\":\"synchronous\",\"isolated_ordered\":true,\"extra\":true}")]
++    [InlineData("call", "{\"isolated_ordered\":true}")]
++    public void Invalid_fact_states_fail_at_the_json_boundary(string field, string json)
++    {
++        var (map, function, value) = Sample();
++        if(field=="execution") function[field]=JsonNode.Parse(json);
++        else value["calls"]![0]!["invocation"]=JsonNode.Parse(json);
++        Assert.Throws<CallAtlasException>(()=>CodeMapJson.Read(map.ToJsonString()));
++    }
++
++    [Theory]
++    [InlineData("zero")]
++    [InlineData("different")]
++    [InlineData("multiple")]
++    [InlineData("targets")]
++    [InlineData("action")]
++    public void Positive_claims_require_their_structural_owner(string invalid)
++    {
++        var (map, function, value) = Sample();
++        var call=value["calls"]![0]!;
++        call["invocation"]=JsonNode.Parse("""{"timing":"synchronous","dispatch":"direct","isolated_ordered":true}""");
++        switch(invalid)
++        {
++            case "zero": value["span"]=JsonNode.Parse("""{"start":0,"end":0}""");call["span"]=value["span"]!.DeepClone();break;
++            case "different": call["span"]!["start"]=call["span"]!["start"]!.GetValue<int>()+1;break;
++            case "multiple": value["calls"]!.AsArray().Add(call.DeepClone());break;
++            case "targets": var target=call["targets"]![0]!.DeepClone();target["symbol"]="other";call["targets"]!.AsArray().Add(target);break;
++            case "action": function["body"]![0]!["kind"]="action";function["body"]![0]!["calls"]=value["calls"]!.DeepClone();break;
++        }
++        Assert.Throws<CallAtlasException>(()=>CodeMapJson.Read(map.ToJsonString()));
++    }
++
++    private static (JsonNode Map,JsonNode Function,JsonNode Value) Sample()
++    {
++        var map=JsonNode.Parse(Snapshot("class A { static int Leaf()=>1; int Run()=>Leaf(); }").GetRawText())!;
++        var function=map["flowInventory"]!["functions"]!.AsArray().Single(f=>f!["symbol"]!.GetValue<string>().EndsWith("A::Run()"))!;
++        return(map,function,function["body"]![0]!["value"]!);
++    }
++}
 diff --git a/tests/CallAtlas.Tests/FlowFactsTests.cs b/tests/CallAtlas.Tests/FlowFactsTests.cs
 new file mode 100644
-index 0000000..44336b3
+index 0000000..82f6342
 --- /dev/null
 +++ b/tests/CallAtlas.Tests/FlowFactsTests.cs
-@@ -0,0 +1,281 @@
+@@ -0,0 +1,285 @@
 +using System.Text;
 +using System.Text.Json;
 +using System.Text.Json.Nodes;
@@ -3776,22 +4133,26 @@ index 0000000..44336b3
 +
 +    internal static IEnumerable<JsonElement> Objects(JsonElement node)
 +    {
-+        if (node.ValueKind == JsonValueKind.Object)
++        var pending = new Stack<JsonElement>([node]);
++        while (pending.TryPop(out var current))
 +        {
-+            yield return node;
-+            foreach (var property in node.EnumerateObject())
-+                foreach (var child in Objects(property.Value)) yield return child;
++            if (current.ValueKind == JsonValueKind.Object) yield return current;
++            foreach (var child in Children(current).Reverse()) pending.Push(child);
 +        }
-+        if (node.ValueKind == JsonValueKind.Array)
-+            foreach (var item in node.EnumerateArray())
-+                foreach (var child in Objects(item)) yield return child;
 +    }
++
++    private static IEnumerable<JsonElement> Children(JsonElement node) => node.ValueKind switch
++    {
++        JsonValueKind.Object => node.EnumerateObject().Select(property => property.Value),
++        JsonValueKind.Array => node.EnumerateArray(),
++        _ => [],
++    };
 +
 +    [Fact]
 +    public void Current_flow_capability_roundtrips_and_historical_maps_stay_absent()
 +    {
 +        var map = Snapshot("class A { static int Leaf(int x) => x; int Run() => Leaf(1); }");
-+        Assert.Equal("1", map.GetProperty("flowFactsVersion").GetString());
++        Assert.Equal("2", map.GetProperty("flowFactsVersion").GetString());
 +        Assert.Equal(1, map.GetProperty("flowInventory").GetProperty("version").GetInt32());
 +        var roundtrip = JsonDocument.Parse(CodeMapJson.Write(CodeMapJson.Read(map.GetRawText()))).RootElement;
 +        Assert.Equal(map.GetProperty("flowInventory").GetRawText(), roundtrip.GetProperty("flowInventory").GetRawText());
@@ -3800,15 +4161,15 @@ index 0000000..44336b3
 +    }
 +
 +    [Theory]
-+    [InlineData("""{"schema":"callatlas.ir.v3","flowFactsVersion":"2","flowInventory":{"version":1,"functions":[]}}""")]
-+    [InlineData("""{"schema":"callatlas.ir.v3","flowFactsVersion":"1"}""")]
-+    [InlineData("""{"schema":"callatlas.ir.v3","flowFactsVersion":"1","flowInventory":null}""")]
-+    [InlineData("""{"schema":"callatlas.ir.v3","flowFactsVersion":"1","flowInventory":{"version":2,"functions":[]}}""")]
-+    [InlineData("""{"schema":"callatlas.ir.v3","flowFactsVersion":"1","flowInventory":{"version":"1","functions":[]}}""")]
++    [InlineData("""{"schema":"callatlas.ir.v3","flowFactsVersion":"3","flowInventory":{"version":1,"functions":[]}}""")]
++    [InlineData("""{"schema":"callatlas.ir.v3","flowFactsVersion":"2"}""")]
++    [InlineData("""{"schema":"callatlas.ir.v3","flowFactsVersion":"2","flowInventory":null}""")]
++    [InlineData("""{"schema":"callatlas.ir.v3","flowFactsVersion":"2","flowInventory":{"version":2,"functions":[]}}""")]
++    [InlineData("""{"schema":"callatlas.ir.v3","flowFactsVersion":"2","flowInventory":{"version":"1","functions":[]}}""")]
 +    [InlineData("""{"schema":"callatlas.ir.v3","flowFactsVersion":1}""")]
 +    [InlineData("""{"schema":"callatlas.ir.v3","flowFactsVersion":null}""")]
-+    [InlineData("""{"schema":"callatlas.ir.v3","flowFactsVersion":"1","flowInventory":{"version":1}}""")]
-+    [InlineData("""{"schema":"callatlas.ir.v3","flowFactsVersion":"1","flowInventory":{"version":1,"functions":null}}""")]
++    [InlineData("""{"schema":"callatlas.ir.v3","flowFactsVersion":"2","flowInventory":{"version":1}}""")]
++    [InlineData("""{"schema":"callatlas.ir.v3","flowFactsVersion":"2","flowInventory":{"version":1,"functions":null}}""")]
 +    [InlineData("""{"schema":"callatlas.ir.v3","flowInventory":{"version":1,"functions":[]}}""")]
 +    public void Unsupported_or_incomplete_flow_capability_is_rejected(string json) =>
 +        Assert.Throws<CallAtlasException>(() => CodeMapJson.Read(json));
@@ -4038,6 +4399,77 @@ index 0000000..44336b3
 +        Assert.Empty(invocation.GetProperty("targets").EnumerateArray());
 +        Assert.Contains("Native analyzer omitted", invocation.GetProperty("diagnostic").GetString());
 +    }
++}
+diff --git a/tests/CallAtlas.Tests/FlowInvocationCompilerTests.cs b/tests/CallAtlas.Tests/FlowInvocationCompilerTests.cs
+new file mode 100644
+index 0000000..17fabee
+--- /dev/null
++++ b/tests/CallAtlas.Tests/FlowInvocationCompilerTests.cs
+@@ -0,0 +1,65 @@
++using System.Text.Json;
++using CallAtlas.Core;
++using Xunit;
++using static CallAtlas.Tests.FlowFactsTests;
++using static CallAtlas.Tests.FlowExecutionFactsTests;
++
++namespace CallAtlas.Tests;
++
++public class FlowInvocationCompilerTests
++{
++    [Fact]
++    public void Activation_is_synchronous_even_when_the_callee_is_async_or_an_iterator()
++    {
++        var map = CheckedSnapshot("using System.Threading.Tasks; using System.Collections.Generic; class A { async Task Async(){await Task.Delay(1);} IEnumerable<int> Iter(){yield return 1;} object Run(){Async();return Iter();} }");
++        var calls = Calls(Function(map,"A::Run()"));
++        Assert.Equal(2,calls.Length);
++        Assert.All(calls,call=>Assert.Equal("synchronous",call.GetProperty("invocation").GetProperty("timing").GetString()));
++        Assert.False(Function(map,"A::Async()").TryGetProperty("execution",out _));
++        Assert.Equal("deferred",Function(map,"A::Iter()").GetProperty("execution").GetString());
++    }
++
++    [Fact]
++    public void Receivers_and_arguments_precede_the_isolated_final_invocation()
++    {
++        var map = CheckedSnapshot("class A { static A Receiver()=>new A(); static int Arg()=>1; int Leaf(int x)=>x; int Run()=>Receiver().Leaf(Arg()); }");
++        var calls = Calls(Function(map,"A::Run()"));
++        Assert.Equal(new[]{"Receiver()","Arg()","Receiver().Leaf(Arg())"},calls.Select(call=>call.GetProperty("label").GetString()));
++        Assert.All(calls,call=>Assert.True(call.GetProperty("invocation").GetProperty("isolated_ordered").GetBoolean()));
++    }
++
++    [Fact]
++    public void Delegate_extension_constructor_accessor_and_reference_facts_remain_unknown()
++    {
++        var map = CheckedSnapshot("using System; static class Extensions { public static int Ext(this int x)=>x; } class A { static int Leaf()=>1; int P=>1; int Ref(ref int x)=>x; int Run(){Func<int> f=Leaf;int x=1;Ref(ref x);var a=new A();return f()+x.Ext()+a.P;} }");
++        var calls = Calls(Function(map,"A::Run()"));
++        Assert.NotEmpty(calls);
++        Assert.All(calls,call=>Assert.False(call.TryGetProperty("invocation",out _)));
++    }
++
++    [Fact]
++    public void Unknown_default_facts_are_absent_and_top_level_suspension_stays_unknown()
++    {
++        var map = CheckedSnapshot("await System.Threading.Tasks.Task.Delay(1); System.Console.WriteLine(1);");
++        var top=Assert.Single(map.GetProperty("flowInventory").GetProperty("functions").EnumerateArray());
++        Assert.False(top.TryGetProperty("execution",out _));
++        Assert.Empty(Calls(top));
++    }
++
++    [Fact]
++    public void Local_execution_excludes_nested_iterator_suspension_and_unproven_top_level_stays_unknown()
++    {
++        var map = CheckedSnapshot("using System.Collections.Generic; int Local()=>1; IEnumerable<int> Iter(){yield return 1;} System.Console.WriteLine(Local());");
++        var functions=map.GetProperty("flowInventory").GetProperty("functions").EnumerateArray().ToArray();
++        var local=functions.Single(f=>f.GetProperty("symbol").GetString()!.Contains("Local"));
++        var iterator=functions.Single(f=>f.GetProperty("symbol").GetString()!.Contains("Iter"));
++        var top=functions.Single(f=>f.GetProperty("symbol").GetString()!.Contains("<top-level>"));
++        Assert.Equal("synchronous",local.GetProperty("execution").GetString());
++        Assert.Equal("deferred",iterator.GetProperty("execution").GetString());
++        // The in-memory DLL compilation has no compiler entry point to prove ownership.
++        Assert.False(top.TryGetProperty("execution",out _));
++    }
++
++    private static JsonElement[] Calls(JsonElement function) => Objects(function.GetProperty("body"))
++        .Where(value=>value.TryGetProperty("targets",out _)).ToArray();
 +}
 diff --git a/tests/CallAtlas.Tests/FlowOwnershipTests.cs b/tests/CallAtlas.Tests/FlowOwnershipTests.cs
 new file mode 100644

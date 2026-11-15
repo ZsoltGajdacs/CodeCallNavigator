@@ -294,7 +294,7 @@ round trips; stale/incomplete facts fail explicitly.
 
 ### C# source flows
 
-Fresh C# analysis additionally requires `flowFactsVersion: "1"`, a version-1
+Fresh C# analysis additionally requires `flowFactsVersion: "2"`, a version-1
 `flowInventory`, and `sourceFactsVersion: "1"`. Compiler source facts include a
 nullable `sourceCodePage`. Existing node identities and evaluated compile owners
 bind functions and targets; exact UTF-8 originals bind source spans. Explicit
@@ -303,6 +303,52 @@ required facts reject publication and preserve the prior artifact generation.
 Historical graphs remain readable and explain when a refresh is needed for flows.
 See [function flowcharts](function-flowcharts.md) for the supported subset and
 current semantic limits.
+
+### Shared call-site expansion (library)
+
+The shared `flow::expand` API accepts immutable borrowed `FunctionSource` pairs
+and an explicit `ExpansionRequest`. CLI and desktop controls are delivered in
+TASK-22.8; the existing single-function query remains unchanged.
+
+Optional `FunctionFlowIR.execution` and `CallSite.invocation` facts describe
+compiler-owned whole-body execution and final invocation activation separately.
+Unknown facts are omitted and remain unknown when reading older artifacts. The
+canonical flow inventory stays version 1. Fresh Java resources require
+`kind_v9`; fresh TypeScript preparation requires adapter 7. Rebuild matching
+resources after upgrading; historical graph and ordinary flow reads remain valid.
+
+Only a proven isolated synchronous invocation into a synchronous body can be
+expanded. Receiver and arguments precede that final invocation in the supplied
+IR. A virtual or candidate target requires an exact explicit choice and retains
+its certainty and provenance. References, HTTP/navigation relationships, deferred
+regions and unsupported or unknown execution remain stopped. Return types and
+the number of retained targets do not establish activation timing or dispatch.
+
+Each occurrence retains its complete caller/site/target path. Original IR fields,
+call slots and typed cleanup routes distinguish equal spans, repeated calls and
+cleanup copies. Source snapshots retain build/project/file/language ownership,
+exact UTF-8 bytes and digests. Step origins bind every displayed call and span to
+the correct occurrence. A stopped ancestor has a real marker; requested descendants
+are recorded separately as unevaluated `blocked_selections`, never invented bodies.
+
+Defaults are depth 8, 64 reached selection evaluations, 1,500 assembly steps,
+6,000 links and 16 MiB of unique-owner source bytes. Hard depth/request ceilings
+are 32/128; the other defaults are also hard ceilings. Zero depth or request work
+is valid and produces typed stops. Graph/source allowances must be positive.
+The independent request envelope permits 128 selections, occurrence depth 32 and
+1 MiB of encoded identity data. Assembly limits apply before unreachable pruning.
+
+Limits never silently cut off caller continuation or cleanup. The same assembler
+first proves that the complete stopped root fits. Private attempts then demote an
+active or latest accepted root expansion on budget exhaustion and retry, at most
+once per demoted selection. This deterministic policy does not maximize the
+expanded subset. A mandatory root that cannot fit fails explicitly. Sources stay
+borrowed until complete success; cancellation publishes no partial result.
+
+Query generation, artifact digest and revision binding belong to the consuming
+query boundary, rather than an arbitrary snapshot string inside the core result.
+Expansion does not modify graph relationships, stored inventories or ordinary
+single-function chart construction.
 
 
 ## Navigation and HTTP

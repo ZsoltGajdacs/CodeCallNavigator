@@ -1,0 +1,16 @@
+{
+  "status": "failed",
+  "reviews": [
+    {
+      "score": 10.0,
+      "review": [],
+      "path": "crates/codecallnavigator-core/src/artifact/validation.rs",
+      "applicability": "reviewed"
+    }
+  ],
+  "safeguard": null,
+  "errors": [
+    "CodeScene review for crates/codecallnavigator-core/src/flow.rs: CodeScene review omitted a numeric score"
+  ],
+  "skipped_files": []
+}

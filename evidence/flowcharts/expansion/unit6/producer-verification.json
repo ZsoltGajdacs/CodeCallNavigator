@@ -1,0 +1,163 @@
+{
+  "status": "selector_and_signature_corrected_frozen_awaiting_all_three_final_sdk_execution",
+  "scope": "freeze-sha256.json",
+  "files": [
+    "crates/codecallnavigator-engine/src/analyzers/java/execution_tests.rs",
+    "crates/codecallnavigator-engine/tests/csharp_flows.rs",
+    "crates/codecallnavigator-engine/tests/typescript_facts.rs",
+    "crates/codecallnavigator-engine/tests/support/compiler_expansion.rs"
+  ],
+  "existing_test_identities": [
+    "analyzers::java::execution_tests::real_javac_execution_facts_keep_owned_targets_and_external_site_metadata",
+    "csharp_flow_queries_keep_exact_snapshot_and_overload_targets_without_dotnet",
+    "real_typescript_facts_survive_stable_ids_cached_queries_and_excluded_targets"
+  ],
+  "coverage_purpose": "Reuse the existing real compiler boundaries to prove actual normalized compiler facts and cached source flow through portable Artifact View into core expansion. Pure IR tests cannot establish that SDK attribution survives normalization and canonical identity mapping. No additional SDK fixture or test identity.",
+  "pairs": [
+    {
+      "language": "java",
+      "caller": "fixture.FinalOwner:run()",
+      "site": "leaf()",
+      "callee": "fixture.FinalOwner:leaf()",
+      "source_removed_after": "Existing optional compatibility projection probe; then one canonical artifact roundtrip."
+    },
+    {
+      "language": "csharp",
+      "caller": "App.Run(bool)",
+      "site": "Leaf(1)",
+      "callee": "Leaf(System.Int32)",
+      "source_removed_after": "Existing persistence/composition/pruning and compiler-free public cached queries."
+    },
+    {
+      "language": "typescript",
+      "caller": "run",
+      "site": "alias()",
+      "callee": "Imported leaf in existing leaf.ts fixture",
+      "source_removed_after": "Existing graph-prune assertions; cached public query after deleting owned main.ts and leaf.ts."
+    }
+  ],
+  "shared_assertions": [
+    "Select two Ready values through artifact::flow::View and retain their owned normalized functions plus borrowed cached content.",
+    "At the known site assert compiler synchronous body/activation, Direct dispatch and isolation; select the full actual CallTarget record. No copied production eligibility decision.",
+    "Core expand result validates and is Expanded; exact choice survives; reachable callee return reconnects to parent-owned continuation.",
+    "Snapshot content equals original compiler input bytes, owner tuple equals saved endpoint node, BLAKE3 digest is exact, shared owners deduplicate.",
+    "Cached artifact bytes remain unchanged."
+  ],
+  "execution": {
+    "producer": "No SDK compile/run by producer.",
+    "root_coordinated_prior": "Java passed with owned cleanup before selector correction; TypeScript failed on the known label test premise; C# not executed in that failed batch per parent report.",
+    "next": "Final r2 reruns all three exact SDK workflows: shared selector helper and consuming Java Pair changed after prior Java pass, so previous Java pass is historical only."
+  },
+  "environment": {
+    "resources": "Matching current analyzer resources via default repository discovery or CODECALLNAVIGATOR_RESOURCES override.",
+    "java": "JDK 25 (JAVA_HOME or existing /usr/libexec/java_home discovery); optional CODECALLNAVIGATOR_JAVA_EXECUTION_BASELINE unchanged.",
+    "csharp": ".NET 11 and pinned CallAtlas capability 2 for analyze; existing query subprocess PATH excludes SDK locations.",
+    "typescript": "Node 24+, TypeScript 6, adapter version 7; CODECALLNAVIGATOR_TS_NODE_MODULES=/Users/zsolt.gajdacs/Zs/Programming/PacificFateMapEditor/node_modules."
+  },
+  "quality": {
+    "old": {
+      "status": "passed",
+      "reviews": [
+        {
+          "score": 10.0,
+          "review": [],
+          "applicability": "reviewed",
+          "path": "crates/codecallnavigator-engine/src/analyzers/java/execution_tests.rs"
+        },
+        {
+          "score": 10.0,
+          "review": [],
+          "applicability": "reviewed",
+          "path": "crates/codecallnavigator-engine/tests/csharp_flows.rs"
+        },
+        {
+          "score": 10.0,
+          "review": [],
+          "applicability": "reviewed",
+          "path": "crates/codecallnavigator-engine/tests/support/compiler_expansion.rs"
+        },
+        {
+          "score": 10.0,
+          "review": [],
+          "applicability": "reviewed",
+          "path": "crates/codecallnavigator-engine/tests/typescript_facts.rs"
+        }
+      ],
+      "safeguard": {
+        "results": [],
+        "quality_gates": "passed",
+        "metadata": {
+          "checked-file-count": 90,
+          "code-health-eligible-file-count": 90,
+          "status": "no-issues-found",
+          "total-modified-file-count": 196
+        }
+      },
+      "errors": []
+    },
+    "modern": {
+      "status": "passed",
+      "reviews": [
+        {
+          "score": 10.0,
+          "review": [],
+          "path": "crates/codecallnavigator-engine/src/analyzers/java/execution_tests.rs",
+          "applicability": "reviewed"
+        },
+        {
+          "score": 10.0,
+          "review": [],
+          "path": "crates/codecallnavigator-engine/tests/csharp_flows.rs",
+          "applicability": "reviewed"
+        },
+        {
+          "score": 10.0,
+          "review": [],
+          "path": "crates/codecallnavigator-engine/tests/support/compiler_expansion.rs",
+          "applicability": "reviewed"
+        },
+        {
+          "score": 10.0,
+          "review": [],
+          "path": "crates/codecallnavigator-engine/tests/typescript_facts.rs",
+          "applicability": "reviewed"
+        }
+      ],
+      "safeguard": {
+        "results": [],
+        "quality_gates": "passed",
+        "metadata": {
+          "checked-file-count": 90,
+          "code-health-eligible-file-count": 90,
+          "status": "no-issues-found",
+          "total-modified-file-count": 196
+        }
+      },
+      "errors": []
+    }
+  },
+  "quality_limit": "Resolved by separately owned core-test helper extraction; both final raw safeguards pass. All four engine test files score 10 in both versions.",
+  "static": "Scoped rustfmt and git diff --check passed.",
+  "core_production": "No changes; latest Unit 5B hashes verified before independent tester-owned core test extension.",
+  "maintenance": "Shared assertion helper is test-only in all three consumers; cached-query phase extracted from TypeScript test; positive compiler facts assertion separated from assembly/source topology checks.",
+  "selector": "Match the known invocation text against the original input CallSite UTF-8 source slice; independently assert its existing analyzer label. Request and output identity remain full structural address plus complete actual CallTarget; no output span matching.",
+  "test_premise_corrections": [
+    {
+      "problem": "TypeScript labels the callee expression alias rather than invocation alias(); label-based unique search found zero.",
+      "correction": "Use exact cached input slice alias() as call_text, preserve label alias separately. Java leaf()/C# Leaf(1) get the same input-text guard."
+    },
+    {
+      "problem": "TypeScript node signature is a function type, not a name.",
+      "correction": "Require observed implementation signature (value?: number): number while retaining label leaf, exact actual target, Ready/Expanded and source checks.",
+      "observation": "target/task22-progress/typescript-callsite104-target-observation.json",
+      "actual_target": "leaf.ts|74|function; body_unavailable=false; owned synchronous body span 74..118"
+    }
+  ],
+  "previous_reports_preserved": [
+    "target/task22-unit6-compiler-expansion-before-selector/",
+    "target/task22-unit6-selector-before-signature/",
+    "quality-old.json (historical global core-test length failure)",
+    "quality-selector-old.json",
+    "quality-selector-modern.json"
+  ]
+}

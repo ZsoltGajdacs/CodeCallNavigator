@@ -64,6 +64,22 @@ fn start_worker(build: &BuildTarget, context: &AnalysisJob<'_>) -> Result<(Worke
     Ok((worker, output))
 }
 
+/// Validate fresh resource compatibility independently of process preparation.
+fn validate_capabilities(versions: &serde_json::Value) -> Result<()> {
+    ensure!(
+        versions.get("adapter").and_then(|value| value.as_str()) == Some("7"),
+        "TypeScript adapter lacks compiler execution/invocation facts version 7; rebuild matching analyzer resources"
+    );
+    ensure!(
+        versions
+            .get("boundary_rules")
+            .and_then(|value| value.as_str())
+            == Some("1"),
+        "TypeScript adapter lacks boundary inventory support; rebuild matching analyzer resources"
+    );
+    Ok(())
+}
+
 pub(super) fn prepare(
     build: &BuildTarget,
     context: &AnalysisJob<'_>,
@@ -71,14 +87,7 @@ pub(super) fn prepare(
     let _timing = crate::metrics::stage("typescript.prepare");
     let (worker, output) = start_worker(build, context)?;
     let metadata: Metadata = serde_json::from_slice(&fs::read(output)?)?;
-    ensure!(
-        metadata
-            .versions
-            .get("boundary_rules")
-            .and_then(|value| value.as_str())
-            == Some("1"),
-        "TypeScript adapter lacks boundary inventory support; rebuild matching analyzer resources"
-    );
+    validate_capabilities(&metadata.versions)?;
     ensure!(
         !metadata.configs.is_empty(),
         "TypeScript emitted no configurations"
@@ -229,3 +238,7 @@ fn finalize_candidates(graph: &mut GraphData) {
         entries.candidates.sort();
     }
 }
+
+#[cfg(test)]
+#[path = "typescript_tests.rs"]
+mod tests;

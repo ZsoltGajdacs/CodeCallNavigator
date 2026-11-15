@@ -14,7 +14,7 @@ use std::{
     sync::Arc,
 };
 
-pub(super) const VERSION: u32 = 8;
+pub(super) const VERSION: u32 = 9;
 
 pub(super) type Inventories = HashMap<usize, Arc<SourceInventory>>;
 
@@ -29,6 +29,7 @@ pub(super) struct SourceInventory {
     pub has_http: bool,
     pub has_portable_lambdas: bool,
     pub has_lambda_correlations: bool,
+    pub has_execution_facts: bool,
     pub lambda_correlations: LambdaCorrelations,
     pub http_routes: Vec<super::http::SourceRoute>,
     pub flows: Vec<super::flow_inventory::SourceFlow>,
@@ -41,8 +42,8 @@ impl SourceInventory {
     pub fn read_current(path: &Path) -> Result<Self> {
         let inventory = Self::read(path)?;
         ensure!(
-            inventory.has_lambda_correlations,
-            "Java source inventory lacks compiled lambda correlation capability kind_v8; rebuild the matching Java adapter"
+            inventory.has_execution_facts,
+            "Java source inventory lacks compiler execution/invocation facts capability kind_v9; rebuild the matching Java adapter"
         );
         Ok(inventory)
     }
@@ -109,43 +110,18 @@ impl SourceInventory {
     }
 
     fn capabilities(&mut self, header: &mut Option<Vec<String>>) {
-        self.has_lambda_correlations = header
+        let generation = header
             .as_ref()
-            .is_some_and(|fields| fields.first().is_some_and(|field| field == "kind_v8"));
-        self.has_portable_lambdas = header.as_ref().is_some_and(|fields| {
-            fields
-                .first()
-                .is_some_and(|field| matches!(field.as_str(), "kind_v7" | "kind_v8"))
-        });
-        self.has_http = header.as_ref().is_some_and(|fields| {
-            fields
-                .first()
-                .is_some_and(|field| matches!(field.as_str(), "kind_v6" | "kind_v7" | "kind_v8"))
-        });
-        self.has_framework = header.as_ref().is_some_and(|fields| {
-            fields.first().is_some_and(|field| {
-                matches!(
-                    field.as_str(),
-                    "kind_v5" | "kind_v6" | "kind_v7" | "kind_v8"
-                )
-            })
-        });
-        self.has_flow = header.as_ref().is_some_and(|fields| {
-            fields.first().is_some_and(|field| {
-                matches!(
-                    field.as_str(),
-                    "kind_v4" | "kind_v5" | "kind_v6" | "kind_v7" | "kind_v8"
-                )
-            })
-        });
-        self.has_architecture = header.as_ref().is_some_and(|fields| {
-            fields.first().is_some_and(|field| {
-                matches!(
-                    field.as_str(),
-                    "kind_v3" | "kind_v4" | "kind_v5" | "kind_v6" | "kind_v7" | "kind_v8"
-                )
-            })
-        });
+            .and_then(|fields| fields.first())
+            .map(|field| inventory_generation(field))
+            .unwrap_or(0);
+        self.has_execution_facts = generation == 9;
+        self.has_lambda_correlations = generation >= 8;
+        self.has_portable_lambdas = generation >= 7;
+        self.has_http = generation >= 6;
+        self.has_framework = generation >= 5;
+        self.has_flow = generation >= 4;
+        self.has_architecture = generation >= 3;
         if self.has_architecture {
             header.as_mut().unwrap()[0] = "kind_v2".into();
         }
@@ -225,6 +201,21 @@ fn architecture_row(fields: &[String]) -> Result<crate::architecture::FileFacts>
     })
 }
 
+// Recognize only advertised formats; unknown future headers must not inherit capabilities.
+fn inventory_generation(field: &str) -> u32 {
+    match field {
+        "kind_v2" => 2,
+        "kind_v3" => 3,
+        "kind_v4" => 4,
+        "kind_v5" => 5,
+        "kind_v6" => 6,
+        "kind_v7" => 7,
+        "kind_v8" => 8,
+        "kind_v9" => 9,
+        _ => 0,
+    }
+}
+
 #[cfg(test)]
 mod capability_tests {
     use super::SourceInventory;
@@ -248,6 +239,22 @@ mod capability_tests {
         assert!(SourceInventory::read(&path).unwrap().has_portable_lambdas);
         assert!(SourceInventory::read_current(&path).is_err());
         std::fs::write(&path, format!("kind_v8{suffix}")).unwrap();
-        assert!(SourceInventory::read_current(&path).unwrap().has_http);
+        assert!(
+            SourceInventory::read(&path)
+                .unwrap()
+                .has_lambda_correlations
+        );
+        assert!(SourceInventory::read_current(&path).is_err());
+        std::fs::write(&path, format!("kind_v9{suffix}")).unwrap();
+        let current = SourceInventory::read_current(&path).unwrap();
+        assert!(current.has_http && current.has_flow && current.has_architecture);
+        assert!(
+            current.has_framework
+                && current.has_portable_lambdas
+                && current.has_lambda_correlations
+        );
+        std::fs::write(&path, format!("kind_v10{suffix}")).unwrap();
+        assert!(SourceInventory::read(&path).is_err());
+        assert!(SourceInventory::read_current(&path).is_err());
     }
 }

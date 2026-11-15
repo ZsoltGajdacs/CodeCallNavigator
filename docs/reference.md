@@ -444,7 +444,8 @@ do not accumulate between categories. Report reclaimed/retained bytes. Rebuildin
 after cleanup has a real cost and must not be hidden in execution-only timings.
 Composite cleanup also preserves current packages/reports and one rollback per
 current/legacy app name while pruning obsolete rotated packages. Cargo's own
-age-based downloaded-cache management remains enabled; shared caches are not
+age-based downloaded-cache management is disabled for verification children with
+`CARGO_CACHE_AUTO_CLEAN_FREQUENCY=never`; shared caches are not
 manually purged.
 
 The checkout lock prevents competing verification runs. Cleanup additionally

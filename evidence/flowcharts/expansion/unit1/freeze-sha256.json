@@ -1,0 +1,19 @@
+{
+  "crates/codecallnavigator-core/src/artifact/validation.rs": "0b52fe265d73e53e4b6338fed0a9754dd28c670d07abd2db1d7a0bf99cb61708",
+  "crates/codecallnavigator-core/src/flow.rs": "fe6a5ca049a2bafc5a2c4e46688ceb44ecb60e362ad184dbf07db54df91685d4",
+  "crates/codecallnavigator-core/src/flow/builder.rs": "417846fb12ae39ea39f365e696fd8b7ce80f75225e7b8213c84bc9d325d613f7",
+  "crates/codecallnavigator-core/src/flow/metadata.rs": "51ec8033f0d5065b2ff96ebcd849559fe87bc3a9eb5c276f999164c10e87e522",
+  "crates/codecallnavigator-core/src/flow/model.rs": "d656cd77f50866de9aee5e0bcdb77b37fd9f210a18d4f385eb38b20c7fe7bfe4",
+  "crates/codecallnavigator-core/src/flow/model/facts.rs": "913781907dd6373b8d00177e9631bbb7fc17b8941930e53e8b69cfe8d8b56850",
+  "crates/codecallnavigator-core/src/flow/parts.rs": "230e2da3b42b101b04f0859ad332fda9345e9fd70b800fb47bcb8af73ebf40f8",
+  "crates/codecallnavigator-core/src/flow/source.rs": "e4a7cb1c34e948166de6febb6d281c51ca9ba531857cb387ceae206594bae7ef",
+  "crates/codecallnavigator-core/tests/artifact_flows.rs": "a49d1b1d56f5c0ed847f61547ed6855a54b8c15fa7459bb217444f9c15a8c0e2",
+  "crates/codecallnavigator-core/tests/fixtures/invocation-facts/artifact.json": "1d01d6429535980e78a9cd5fdaa90210309c9b2fd7171c1956096c318372df20",
+  "crates/codecallnavigator-core/tests/fixtures/invocation-facts/chart.json": "8023661aabe26bd6bba583ba9535b325c65f9ce996afd6b85868871b2c00bf23",
+  "crates/codecallnavigator-core/tests/fixtures/invocation-facts/ir.json": "5bad8b94e7daab2947dc0ca5a0bc319b86daafa0311710ad33a30bd1e0c90c83",
+  "crates/codecallnavigator-core/tests/flow_invocation_facts.rs": "9760375b028069dde1fb07a2354467a422a25ff322f3dcfc176c66cc62f70be3",
+  "crates/codecallnavigator-engine/tests/flow_comparison/snapshot.rs": "05b2a135f9be8dc4e998bb211d323333c8481aed328c1dc8401da371812aec94",
+  "src/flow_scenes.rs": "59bfbcaa9004cd732801a4a190d2250498322e7931206c4ffb5b97cfbb47d5b5",
+  "tests/boundaries.rs": "3a708f0789b11b34f2e9b9c8aea3320e0d457e76d7de3faf8af5a79b8e62b36b",
+  "tests/boundary_cache.rs": "47900517794247934bd6e25bbefee97020aee500387afeabd7e7196a0bdba547"
+}

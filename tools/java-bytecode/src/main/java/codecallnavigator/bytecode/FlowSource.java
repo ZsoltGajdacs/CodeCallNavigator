@@ -19,6 +19,7 @@ final class FlowSource {
     final JavacTask task;
     final Trees trees;
     final CompiledTypes compiled;
+    final FlowAttribution attribution;
     final String text;
     final String file;
     final List<String> diagnostics = new ArrayList<>();
@@ -27,7 +28,10 @@ final class FlowSource {
     private final Map<Tree, TreePath> paths = new IdentityHashMap<>();
 
     FlowSource(CompilationUnitTree unit, JavacTask task, CompiledTypes compiled) throws IOException {
-        this.unit = unit; this.task = task; this.compiled = compiled; this.trees = Trees.instance(task);
+        this(unit, task, compiled, FlowAttribution.UNKNOWN);
+    }
+    FlowSource(CompilationUnitTree unit, JavacTask task, CompiledTypes compiled, FlowAttribution attribution) throws IOException {
+        this.unit = unit; this.task = task; this.compiled = compiled; this.attribution = attribution; this.trees = Trees.instance(task);
         text = unit.getSourceFile().getCharContent(true).toString();
         file = Path.of(unit.getSourceFile().toUri()).toRealPath().toString();
         offsets = byteOffsets(text);

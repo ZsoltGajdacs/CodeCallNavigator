@@ -37,6 +37,7 @@ fn statement(kind: StatementKind, text: &str) -> Statement {
 }
 fn function(symbol: &str, body: Vec<Statement>) -> FunctionFlowIR {
     FunctionFlowIR {
+        execution: Default::default(),
         symbol: symbol.into(),
         file: FILE.into(),
         build: BUILD.into(),
@@ -75,6 +76,7 @@ fn inventory() -> FlowInventory {
                             value: Some(value(
                                 "save()",
                                 vec![CallSite {
+                                    invocation: Default::default(),
                                     span: span("save()"),
                                     label: "save".into(),
                                     targets: vec![CallTarget {

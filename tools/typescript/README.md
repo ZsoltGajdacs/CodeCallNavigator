@@ -129,3 +129,30 @@ or middleware/proxy presence conservatively blocks routing rather than executing
 project configuration. Metadata tracks present and absent configuration files.
 The Rust entry point requires boundary capability v1 and a present inventory;
 stale adapter distributions fail explicitly.
+
+## Compiler execution facts (adapter 7)
+
+Fresh preparation requires exact adapter version 7; old, missing and future
+versions fail with matching-resource rebuild guidance. Prepare/analyze equality
+and resumed-worker checks still bind the complete metadata. Persisted flow
+inventory version 1 and old canonical artifacts remain readable with unknown facts.
+
+Authored function and method implementations use their actual async and generator
+flags. Ordinary bodies are synchronous, non-async generators deferred, and async
+or mixed suspension unknown. Generator parameter defaults form a synchronous
+IR prefix before deferred execution and therefore also leave execution unknown.
+Promise return types do not determine timing. Nested
+callables do not classify their enclosing body; constructors, accessors and callback
+declarations remain unknown.
+
+Only a compiler-resolved, unchanged function-declaration implementation can prove
+an isolated direct invocation. Runtime import aliases and overloads may identify
+that unique owned implementation; type-only/declaration-only and mutable bindings
+cannot. Flattened Values prove only no-argument calls or primitive-literal and
+resolved-parameter arguments. RegExp, object/array allocation and other nontrivial
+arguments are excluded. Existing explicit conditional/short-circuit operand
+sequences may prove a final invocation after their supported ordered operands.
+Flattened nested calls, optional/property/getter/computed/spread/dynamic/new/tagged
+and callback forms retain unknown invocation facts. Generic call collection and
+relationship certainty/provenance are unchanged. Proof scans have a separate bound
+and never spend the IR budget or reshape legacy flow output.

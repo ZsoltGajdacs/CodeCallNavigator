@@ -1,77 +1,47 @@
 //! Completion-aware flow assembly. Abrupt exits survive cleanup until overridden.
 mod branches;
+mod calls;
+mod completion;
 mod exceptions;
+mod expansion;
 mod expressions;
+mod function;
+mod recording;
+pub use expansion::expand;
 mod loops;
 use super::*;
 use anyhow::{Result, ensure};
-use std::collections::HashSet;
+use calls::CallFrame;
+use completion::{Completion, Exit};
 
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
-enum Completion {
-    Normal,
-    Return,
-    Throw,
-    Break(Option<String>),
-    Continue(Option<String>),
-    Yield,
-}
 #[derive(Clone)]
-struct Exit {
-    from: usize,
-    completion: Completion,
-    label: String,
-    kind: String,
-}
-impl Exit {
-    fn normal(from: usize) -> Self {
-        Self {
-            from,
-            completion: Completion::Normal,
-            label: String::new(),
-            kind: "normal".into(),
-        }
-    }
-    fn with_completion(from: usize, completion: Completion) -> Self {
-        Self {
-            completion,
-            ..Self::normal(from)
-        }
-    }
-    fn resume(mut self) -> Self {
-        self.completion = Completion::Normal;
-        self
-    }
-    fn branch(mut self, label: &str, kind: &str) -> Self {
-        self.label = label.into();
-        self.kind = kind.into();
-        self
-    }
-}
-struct StepSpec {
+struct StepSpec<'a> {
     kind: String,
     label: String,
     span: SourceSpan,
-    calls: Vec<CallSite>,
+    calls: &'a [CallSite],
 }
-impl StepSpec {
+impl<'a> StepSpec<'a> {
     fn new(kind: impl Into<String>, label: impl Into<String>, span: SourceSpan) -> Self {
         Self {
             kind: kind.into(),
             label: label.into(),
             span,
-            calls: Vec::new(),
+            calls: &[],
         }
     }
-    fn calls(mut self, calls: Vec<CallSite>) -> Self {
+    fn calls(mut self, calls: &'a [CallSite]) -> Self {
         self.calls = calls;
         self
     }
 }
-struct Builder {
+struct Builder<'a> {
     chart: FlowChart,
-    deferred: HashSet<usize>,
-    handled_calls: HashSet<usize>,
+    calls: CallFrame,
+    recording: Option<recording::Recording>,
+    selection: Option<expansion::Selection<'a>>,
+    cancel: Option<&'a std::sync::atomic::AtomicBool>,
+    allowance: Option<expansion::Allowance>,
 }
 
 pub fn build(function: &FunctionFlowIR) -> Result<FlowChart> {
@@ -79,28 +49,39 @@ pub fn build(function: &FunctionFlowIR) -> Result<FlowChart> {
         function.span.start <= function.span.end,
         "Invalid function source span"
     );
-    let mut builder = Builder {
-        chart: FlowChart {
-            symbol: function.symbol.clone(),
-            file: function.file.clone(),
-            span: function.span,
-            diagnostics: function.diagnostics.clone(),
-            partial: !function.diagnostics.is_empty(),
-            ..Default::default()
-        },
-        deferred: HashSet::new(),
-        handled_calls: HashSet::new(),
-    };
-    let entry = builder.step(StepSpec::new("start", "Function entry", function.span), &[])?;
-    builder.chart.entry = entry;
-    let exits = builder.block(&function.body, vec![Exit::normal(entry)])?;
-    builder.finish(exits, function.span)?;
+    super::validate_metadata(function)?;
+    let mut builder = Builder::new(function);
+    let assembled = builder.function(
+        StepSpec::new("start", "Function entry", function.span),
+        &function.body,
+    )?;
+    builder.chart.entry = assembled.entry;
+    builder.finish(assembled.exits, function.span)?;
     super::prune::unreachable(&mut builder.chart);
     Ok(builder.chart)
 }
 
-impl Builder {
-    fn step(&mut self, spec: StepSpec, incoming: &[Exit]) -> Result<usize> {
+impl Builder<'_> {
+    fn new(function: &FunctionFlowIR) -> Self {
+        Self {
+            chart: FlowChart {
+                symbol: function.symbol.clone(),
+                file: function.file.clone(),
+                span: function.span,
+                diagnostics: function.diagnostics.clone(),
+                partial: !function.diagnostics.is_empty(),
+                ..Default::default()
+            },
+            calls: CallFrame::default(),
+            recording: None,
+            selection: None,
+            cancel: None,
+            allowance: None,
+        }
+    }
+    fn step(&mut self, spec: StepSpec<'_>, incoming: &[Exit]) -> Result<usize> {
+        self.check_cancel()?;
+        self.check_size(ExpansionLimit::Steps, self.chart.steps.len() + 1)?;
         let StepSpec {
             kind,
             label,
@@ -112,21 +93,27 @@ impl Builder {
             "Function flow exceeds {MAX_STEPS} steps; choose a smaller function"
         );
         ensure!(span.start <= span.end, "Invalid flow source span");
+        if let Some(recording) = &mut self.recording {
+            recording.step(calls)?;
+        }
         let id = self.chart.steps.len();
-        self.chart.steps.push(FlowStep {
+        let step = FlowStep {
             id,
             kind,
             label: compact(&label),
             span,
-            calls,
+            calls: calls.to_vec(),
             ..Default::default()
-        });
+        };
+        self.calls.register(&step);
+        self.chart.steps.push(step);
         for exit in incoming {
             self.link(exit, id)?;
         }
         Ok(id)
     }
     fn link(&mut self, exit: &Exit, to: usize) -> Result<()> {
+        self.check_size(ExpansionLimit::Links, self.chart.links.len() + 1)?;
         ensure!(
             self.chart.links.len() < MAX_LINKS,
             "Function flow exceeds {MAX_LINKS} links; choose a smaller function"
@@ -156,10 +143,9 @@ impl Builder {
     fn statement(&mut self, statement: &Statement, incoming: Vec<Exit>) -> Result<Vec<Exit>> {
         let span = statement.span;
         match &statement.kind {
-            StatementKind::Action { text, calls } => self.action(
-                StepSpec::new("action", text, span).calls(calls.clone()),
-                incoming,
-            ),
+            StatementKind::Action { text, calls } => {
+                self.action(StepSpec::new("action", text, span).calls(calls), incoming)
+            }
             StatementKind::Evaluate { value } => self.expression(value, incoming),
             StatementKind::If { .. } => self.branch(statement, incoming),
             StatementKind::Loop { .. } => self.loop_statement(statement, incoming),
@@ -196,13 +182,19 @@ impl Builder {
             }
         }
     }
-    fn action(&mut self, spec: StepSpec, incoming: Vec<Exit>) -> Result<Vec<Exit>> {
+    fn action(&mut self, spec: StepSpec<'_>, incoming: Vec<Exit>) -> Result<Vec<Exit>> {
+        if let Some(value) = self.selected_value(&spec, &incoming)? {
+            return Ok(match value {
+                expansion::SelectedValue::Expanded { exits } => exits,
+                expansion::SelectedValue::Stopped { step } => vec![Exit::normal(step)],
+            });
+        }
         let id = self.step(spec, &incoming)?;
         Ok(vec![Exit::normal(id)])
     }
     fn transfer(
         &mut self,
-        spec: StepSpec,
+        spec: StepSpec<'_>,
         completion: Completion,
         incoming: Vec<Exit>,
     ) -> Result<Vec<Exit>> {

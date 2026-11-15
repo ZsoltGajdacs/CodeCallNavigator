@@ -1,0 +1,126 @@
+{
+  "unit": "TASK-22.7 Unit 2A C# compiler facts only",
+  "source_frozen": true,
+  "manifest": "freeze-sha256.json",
+  "scope_files": 22,
+  "unit1_prior_17_hashes_unchanged": true,
+  "staged_96_baseline_diff_sha256": "5cf3b1364344ecd899fb54da4f4c59c30557f6136fba9e1cfdbad63ac9b37841",
+  "upstream_patch": {
+    "base": "916c2419c0cdb91b5b86b84df4842dadb17bb6b4",
+    "bytes": 240826,
+    "sha256": "be16765082be383bbd97c5b3dc98b9390b1145ca0845eb36cc30b3b55dd48105",
+    "exact_checkout_patch_equality": true,
+    "checkpoint_sha256": "c36315a4e60f2a0a547483bb4c253add2ed3dad9b9581329384004400bbaf572"
+  },
+  "tests_first": [
+    {
+      "log": "native-red.log",
+      "trx": "execution-red.trx",
+      "passed": 0,
+      "failed": 3,
+      "reason": "Strict old reader rejects new fact fields; old exporter omits execution and invocation."
+    },
+    {
+      "log": "engine-capability-red.log",
+      "passed": 0,
+      "failed": 1,
+      "reason": "Current fresh capability 2 was rejected by old capability 1 gate."
+    },
+    {
+      "log": "exact-enums-red.log",
+      "trx": "exact-enums-red.trx",
+      "passed": 14,
+      "failed": 5,
+      "reason": "Built-in enum converter accepted PascalCase/uppercase that shared Rust rejects; replaced only the two new enum converters."
+    }
+  ],
+  "checks": [
+    {
+      "command": "dotnet test vendor/callatlas/tests/CallAtlas.Tests/CallAtlas.Tests.csproj -c Release --filter FullyQualifiedName~Flow",
+      "passed": 86,
+      "ignored": 0,
+      "log": "flows-final.log",
+      "trx": "flows-final.trx"
+    },
+    {
+      "command": "cargo test --locked -p codecallnavigator-engine --lib analyzers::csharp",
+      "passed": 25,
+      "ignored": 4,
+      "log": "engine-csharp.log"
+    },
+    {
+      "command": "cargo test --locked -p codecallnavigator-engine --release --test csharp_flows -- --include-ignored",
+      "passed": 5,
+      "ignored": 0,
+      "log": "engine-real-csharp.log"
+    },
+    {
+      "command": "cargo test --locked -p codecallnavigator-engine --release --test process_protocol",
+      "passed": 4,
+      "ignored": 0,
+      "log": "process-lifecycle.log"
+    },
+    {
+      "command": "cargo test --locked -p codecallnavigator-core --test flow_invocation_facts",
+      "passed": 16,
+      "ignored": 0,
+      "log": "core-compatibility.log"
+    },
+    {
+      "command": "PYTHONPATH=tools python3.13 -m unittest tools/test_dependency_patches.py tools/test_dependency_added_files.py tests/test_bootstrap.py tests/test_package.py",
+      "passed": 40,
+      "skipped": 2,
+      "log": "bootstrap-package-contracts.log",
+      "skip_reason": "Two existing Java packaged-resource checks require the Java adapter, outside C# scope."
+    },
+    {
+      "command": "cargo clippy --locked -p codecallnavigator-engine --all-targets -- -D warnings",
+      "status": "passed",
+      "log": "clippy-engine.log"
+    },
+    {
+      "command": "python3.13 tools/csharp_flow_acceptance.py --output <temp7>/target/unit2a-verification/raw-cli-acceptance.json",
+      "status": "passed",
+      "report": "raw-cli-acceptance.json"
+    }
+  ],
+  "environment": {
+    "cargo_target_dir": "/private/tmp/codecallnavigator-task22.7/target",
+    "compiler_process_checks": "outside sandbox",
+    "dotnet_sdk_installation": "unchanged",
+    "root_source_writes": false
+  },
+  "quality": {
+    "raw_reports": [
+      "quality-old.json",
+      "quality-modern.json"
+    ],
+    "baseline_reports": [
+      "quality-baseline-old.json",
+      "quality-baseline-modern.json"
+    ],
+    "comparison": "quality-baseline-comparison.json",
+    "review_runner_status": "failed due to unchanged existing findings, not relabeled",
+    "safeguards": "passed; 108 checked/eligible of 121 total"
+  },
+  "compatibility": {
+    "projection_report": "projection-proof.json",
+    "raw_before": "projection-before.json",
+    "raw_after": "projection-after.json",
+    "native_graph_and_source_fields_equal": true,
+    "flow_equal_except_optional_new_metadata": true,
+    "protected_old_binary_unchanged": true,
+    "historical_canonical_v1_still_readable": "Core 16-case compatibility test suite including exact old artifact/IR/chart byte fixtures."
+  },
+  "limits": [
+    "No Java/TypeScript facts population or expanded result/builder/API work.",
+    "No package/native/full verification.",
+    "Full upstream suite and its known 29 baseline failures were not rerun or claimed passing.",
+    "In-memory DLL compilations without compiler entry ownership leave top-level execution unknown; real executable entry ownership was proven synchronous.",
+    "Extension calls are conservatively unproven, including static extension calls."
+  ],
+  "intermediate_test_corrections": [
+    "native-first-green.log: one new assertion expected compact JSON but writer uses pretty formatting; corrected to parse and assert fields.",
+    "An earlier native-final.log run (subsequently overwritten by its definitive passing rerun; failure remains in the tool transcript) expected synchronous top-level execution from an in-memory DLL. The DLL has no compiler entry point, so unknown is correct. The separate real executable CLI positive proof is in projection-proof.json."
+  ]
+}

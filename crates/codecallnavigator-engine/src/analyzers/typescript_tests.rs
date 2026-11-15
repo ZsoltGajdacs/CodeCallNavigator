@@ -1,0 +1,35 @@
+//! Pure fresh-resource compatibility policy; real CLI/compiler coverage lives in typescript_facts.
+use super::validate_capabilities;
+use serde_json::json;
+
+#[test]
+fn stale_missing_and_future_typescript_adapters_require_matching_resources() {
+    for version in [
+        None,
+        Some(json!("6")),
+        Some(json!("8")),
+        Some(json!(7)),
+        Some(json!(null)),
+    ] {
+        let mut versions = json!({"boundary_rules":"1"});
+        if let Some(version) = version {
+            versions["adapter"] = version;
+        }
+        let error =
+            validate_capabilities(&versions).expect_err("Stale/unknown adapter must be rejected");
+        assert!(
+            error
+                .to_string()
+                .contains("rebuild matching analyzer resources")
+        );
+    }
+}
+
+#[test]
+fn current_typescript_adapter_is_accepted_with_unchanged_prepare_contract() {
+    validate_capabilities(&json!({"adapter":"7","boundary_rules":"1"})).unwrap();
+    for boundary in [json!(null), json!(1), json!("2")] {
+        assert!(validate_capabilities(&json!({"adapter":"7","boundary_rules":boundary})).is_err());
+    }
+    assert!(validate_capabilities(&json!({"adapter":"7"})).is_err());
+}

@@ -1,0 +1,42 @@
+{
+  "old": {
+    "raw_review_runner_status": "failed",
+    "unchanged_existing_findings": [
+      {
+        "file": "vendor/callatlas/src/CallAtlas.Core/FlowExport.cs",
+        "score_before": 9.68,
+        "score_after": 9.68,
+        "same_findings_ignoring_source_line_offsets": true
+      },
+      {
+        "file": "vendor/callatlas/src/CallAtlas.Core/FlowExpressions.cs",
+        "score_before": 9.38,
+        "score_after": 9.38,
+        "same_findings_ignoring_source_line_offsets": true
+      }
+    ],
+    "safeguard": "passed",
+    "other_reviewed_files_without_findings": 16,
+    "no_new_source_findings": true
+  },
+  "modern": {
+    "raw_review_runner_status": "failed",
+    "unchanged_existing_findings": [
+      {
+        "file": "vendor/callatlas/src/CallAtlas.Core/FlowExport.cs",
+        "score_before": 9.68,
+        "score_after": 9.68,
+        "same_findings_ignoring_source_line_offsets": true
+      },
+      {
+        "file": "vendor/callatlas/src/CallAtlas.Core/FlowExpressions.cs",
+        "score_before": 9.38,
+        "score_after": 9.38,
+        "same_findings_ignoring_source_line_offsets": true
+      }
+    ],
+    "safeguard": "passed",
+    "other_reviewed_files_without_findings": 16,
+    "no_new_source_findings": true
+  }
+}

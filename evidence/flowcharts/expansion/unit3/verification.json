@@ -1,0 +1,165 @@
+{
+  "status": "frozen",
+  "scope": [
+    "crates/codecallnavigator-core/src/flow/expanded.rs",
+    "crates/codecallnavigator-core/src/flow/expanded/address.rs",
+    "crates/codecallnavigator-core/src/flow/expanded/chart_validation.rs",
+    "crates/codecallnavigator-core/src/flow/expanded/validation.rs",
+    "crates/codecallnavigator-core/src/flow/expanded/result.rs",
+    "crates/codecallnavigator-core/src/flow/expanded/sources.rs",
+    "crates/codecallnavigator-core/tests/flow_expanded_contract.rs",
+    "crates/codecallnavigator-core/tests/flow_expanded_contract/identity.rs",
+    "crates/codecallnavigator-core/tests/flow_expanded_contract/validation.rs",
+    "crates/codecallnavigator-core/src/flow/parts.rs"
+  ],
+  "runtime_red": [
+    {
+      "path": "target/verification/task22-unit3-red/04-unit-test-rust.log",
+      "contract_passed": 3,
+      "contract_failed": 4
+    },
+    {
+      "path": "target/verification/task22-unit3-correspondence-red/04-unit-test-rust.log",
+      "contract_passed": 15,
+      "contract_failed": 2
+    }
+  ],
+  "green": {
+    "command": "./verify-core.sh --suite unit --output target/verification/task22-unit3-final",
+    "outside_sandbox": true,
+    "results": "target/verification/task22-unit3-final/results.json",
+    "passed": 142,
+    "expanded_contract_passed": 17,
+    "owned_cleanup": "passed",
+    "timings_seconds": {
+      "unit-prerequisites": 0.891,
+      "unit-prepare": 0.95,
+      "unit-compile-rust": 9.808,
+      "unit-test-rust": 10.175,
+      "unit-category-cleanup": 1.059
+    }
+  },
+  "quality": {
+    "old": {
+      "status": "passed",
+      "scores": [
+        [
+          "crates/codecallnavigator-core/src/flow/expanded.rs",
+          null
+        ],
+        [
+          "crates/codecallnavigator-core/src/flow/expanded/address.rs",
+          10.0
+        ],
+        [
+          "crates/codecallnavigator-core/src/flow/expanded/chart_validation.rs",
+          10.0
+        ],
+        [
+          "crates/codecallnavigator-core/src/flow/expanded/result.rs",
+          10.0
+        ],
+        [
+          "crates/codecallnavigator-core/src/flow/expanded/sources.rs",
+          10.0
+        ],
+        [
+          "crates/codecallnavigator-core/src/flow/expanded/validation.rs",
+          10.0
+        ],
+        [
+          "crates/codecallnavigator-core/src/flow/parts.rs",
+          10.0
+        ],
+        [
+          "crates/codecallnavigator-core/tests/flow_expanded_contract.rs",
+          10.0
+        ],
+        [
+          "crates/codecallnavigator-core/tests/flow_expanded_contract/identity.rs",
+          10.0
+        ],
+        [
+          "crates/codecallnavigator-core/tests/flow_expanded_contract/validation.rs",
+          10.0
+        ]
+      ],
+      "safeguard": {
+        "results": [],
+        "quality_gates": "passed",
+        "metadata": {
+          "checked-file-count": 59,
+          "code-health-eligible-file-count": 59,
+          "status": "no-issues-found",
+          "total-modified-file-count": 108
+        }
+      }
+    },
+    "modern": {
+      "status": "passed",
+      "scores": [
+        [
+          "crates/codecallnavigator-core/src/flow/expanded.rs",
+          null
+        ],
+        [
+          "crates/codecallnavigator-core/src/flow/expanded/address.rs",
+          10.0
+        ],
+        [
+          "crates/codecallnavigator-core/src/flow/expanded/chart_validation.rs",
+          10.0
+        ],
+        [
+          "crates/codecallnavigator-core/src/flow/expanded/result.rs",
+          10.0
+        ],
+        [
+          "crates/codecallnavigator-core/src/flow/expanded/sources.rs",
+          10.0
+        ],
+        [
+          "crates/codecallnavigator-core/src/flow/expanded/validation.rs",
+          10.0
+        ],
+        [
+          "crates/codecallnavigator-core/src/flow/parts.rs",
+          10.0
+        ],
+        [
+          "crates/codecallnavigator-core/tests/flow_expanded_contract.rs",
+          10.0
+        ],
+        [
+          "crates/codecallnavigator-core/tests/flow_expanded_contract/identity.rs",
+          10.0
+        ],
+        [
+          "crates/codecallnavigator-core/tests/flow_expanded_contract/validation.rs",
+          10.0
+        ]
+      ],
+      "safeguard": {
+        "results": [],
+        "quality_gates": "passed",
+        "metadata": {
+          "checked-file-count": 59,
+          "code-health-eligible-file-count": 59,
+          "status": "no-issues-found",
+          "total-modified-file-count": 108
+        }
+      }
+    }
+  },
+  "preserved_failed_quality": [
+    "quality-old.json",
+    "quality-modern.json"
+  ],
+  "refactoring": "Parts.push now takes cohesive ChildLocation; ordinary traversal retains its non-recording path mode. Marker-reference checking separated from boundary-family validation.",
+  "warnings": "No warnings in definitive core unit compilation log.",
+  "static": "Touched-file rustfmt and git diff --check passed.",
+  "limits": [
+    "Contracts only; no expand API, callee assembly, or input-IR eligibility validation.",
+    "No full verification or new consumer category run by this agent; parent coordinates those gates."
+  ]
+}
