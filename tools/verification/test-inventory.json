@@ -978,6 +978,20 @@
       "purpose": "global callatlas versions do not invalidate other languages"
     },
     {
+      "id": "codecallnavigator-core/lib:codecallnavigator_core::artifact::verification::live::tests::traversals_share_only_identical_absolute_output_policies",
+      "runner": "rust",
+      "file": "crates/codecallnavigator-core/src/artifact/verification/live.rs",
+      "test_name": "artifact::verification::live::tests::traversals_share_only_identical_absolute_output_policies",
+      "ignored": false,
+      "package": "codecallnavigator-core",
+      "target_kind": "lib",
+      "target": "codecallnavigator_core",
+      "component": "core",
+      "category": "unit",
+      "requirements": [],
+      "purpose": "Equivalent absolute exclusion policies share traversal while distinct policies retain separate scope roots."
+    },
+    {
       "id": "codecallnavigator-core/lib:codecallnavigator_core::artifact::verification::observation_tests::broken_link_retargets_change_revision_but_plain_missing_inputs_remain_complete",
       "runner": "rust",
       "file": "crates/codecallnavigator-core/src/artifact/verification/observation_tests.rs",
@@ -1104,6 +1118,20 @@
       "purpose": "new file symlink bytes are observed and nested directory links are limited"
     },
     {
+      "id": "codecallnavigator-core/lib:codecallnavigator_core::artifact::verification::observation_tests::overlapping_scopes_reconcile_each_directory_once_and_keep_live_content",
+      "runner": "rust",
+      "file": "crates/codecallnavigator-core/src/artifact/verification/observation_tests.rs",
+      "test_name": "artifact::verification::observation_tests::overlapping_scopes_reconcile_each_directory_once_and_keep_live_content",
+      "ignored": false,
+      "package": "codecallnavigator-core",
+      "target_kind": "lib",
+      "target": "codecallnavigator_core",
+      "component": "core",
+      "category": "integration",
+      "requirements": [],
+      "purpose": "Real overlapping directory scopes have bounded walk cost and detect deep content edits, additions and repairs."
+    },
+    {
       "id": "codecallnavigator-core/lib:codecallnavigator_core::artifact::verification::observation_tests::refresh_trigger_keeps_full_freshness_but_excludes_only_owned_bytecode",
       "runner": "rust",
       "file": "crates/codecallnavigator-core/src/artifact/verification/observation_tests.rs",
@@ -1116,6 +1144,20 @@
       "category": "integration",
       "requirements": [],
       "purpose": "refresh trigger keeps full freshness but excludes only owned bytecode"
+    },
+    {
+      "id": "codecallnavigator-core/lib:codecallnavigator_core::artifact::verification::observation_tests::shared_traversal_keeps_explicit_generated_and_symlink_directory_roots",
+      "runner": "rust",
+      "file": "crates/codecallnavigator-core/src/artifact/verification/observation_tests.rs",
+      "test_name": "artifact::verification::observation_tests::shared_traversal_keeps_explicit_generated_and_symlink_directory_roots",
+      "ignored": false,
+      "package": "codecallnavigator-core",
+      "target_kind": "lib",
+      "target": "codecallnavigator_core",
+      "component": "core",
+      "category": "integration",
+      "requirements": [],
+      "purpose": "Shared real filesystem traversal still observes explicit generated and symlink directory roots skipped by ancestors."
     },
     {
       "id": "codecallnavigator-core/lib:codecallnavigator_core::artifact::verification::observation_tests::special_file_targets_return_incomplete_without_blocking",

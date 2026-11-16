@@ -372,3 +372,75 @@ fn refresh_trigger_keeps_full_freshness_but_excludes_only_owned_bytecode() {
         "Replacing an owned output with a symlink invalidates scheduling ownership"
     );
 }
+
+// Real directory traversal counters prove that overlapping scopes share I/O;
+// pure grouping tests cannot establish filesystem walk cost or content coverage.
+#[test]
+fn overlapping_scopes_reconcile_each_directory_once_and_keep_live_content() {
+    let root = tempfile::tempdir().unwrap();
+    let roots = [("repo".into(), root.path().into())];
+    let mut directories = vec![root.path().to_path_buf()];
+    for index in 0..16 {
+        let child = directories.last().unwrap().join(format!("level-{index}"));
+        fs::create_dir(&child).unwrap();
+        directories.push(child);
+    }
+    let source = directories.last().unwrap().join("Input.java");
+    fs::write(&source, "class Input {}").unwrap();
+    let artifact = artifact_for(&roots, directories.clone(), &[]);
+    let metrics = crate::metrics::Metrics::default();
+    let initial = {
+        let _scope = metrics.enter();
+        inspect(&artifact, &roots)
+    };
+    assert!(initial.complete);
+    assert_eq!(
+        metrics.report().counters["fingerprint.directories_visited"],
+        directories.len() as u64
+    );
+    assert_eq!(metrics.report().counters["fingerprint.files_hashed"], 1);
+    fs::write(&source, "class Input { void changed() {} }").unwrap();
+    let changed = inspect(&artifact, &roots);
+    assert_ne!(initial.input_revision, changed.input_revision);
+    let added = directories.last().unwrap().join("Added.java");
+    fs::write(&added, "class Added {}").unwrap();
+    let addition = inspect(&artifact, &roots);
+    assert_ne!(changed.input_revision, addition.input_revision);
+    fs::write(&added, "class Added { void repaired() {} }").unwrap();
+    assert_ne!(
+        addition.input_revision,
+        inspect(&artifact, &roots).input_revision
+    );
+}
+
+// Generated directories and directory aliases require actual filesystem entries:
+// an explicit scope must remain traversable even when its parent walk skips it.
+#[cfg(unix)]
+#[test]
+fn shared_traversal_keeps_explicit_generated_and_symlink_directory_roots() {
+    let root = tempfile::tempdir().unwrap();
+    let external = tempfile::tempdir().unwrap();
+    let generated = root.path().join("target/generated");
+    fs::create_dir_all(&generated).unwrap();
+    let generated_source = generated.join("Generated.java");
+    let linked_source = external.path().join("Linked.java");
+    fs::write(&generated_source, "class Generated {}").unwrap();
+    fs::write(&linked_source, "class Linked {}").unwrap();
+    let alias = root.path().join("alias");
+    std::os::unix::fs::symlink(external.path(), &alias).unwrap();
+    let roots = [("repo".into(), root.path().into())];
+    let artifact = artifact_for(&roots, vec![root.path().into(), generated, alias], &[]);
+    let initial = inspect(&artifact, &roots);
+    assert!(
+        initial.complete,
+        "Explicit directory aliases are covered scopes"
+    );
+    fs::write(&generated_source, "class Generated { void changed() {} }").unwrap();
+    let generated_change = inspect(&artifact, &roots);
+    assert!(generated_change.complete);
+    assert_ne!(initial.input_revision, generated_change.input_revision);
+    fs::write(&linked_source, "class Linked { void changed() {} }").unwrap();
+    let alias_change = inspect(&artifact, &roots);
+    assert!(alias_change.complete);
+    assert_ne!(generated_change.input_revision, alias_change.input_revision);
+}

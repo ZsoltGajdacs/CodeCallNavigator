@@ -43,11 +43,35 @@ impl Scope {
     }
 }
 
+#[derive(Debug, PartialEq, Eq)]
+struct Traversal {
+    roots: Vec<PathBuf>,
+    outputs: Vec<PathBuf>,
+}
+
+fn traversals(scopes: &BTreeSet<Scope>) -> Vec<Traversal> {
+    let mut groups: BTreeMap<Vec<PathBuf>, Vec<PathBuf>> = BTreeMap::new();
+    for scope in scopes {
+        groups
+            .entry(scope.outputs())
+            .or_default()
+            .push(scope.path.clone());
+    }
+    // The collector shares visits only for the same effective output policy.
+    // Retain every lexical root, including explicit generated and symlink roots
+    // that an ancestor traversal can skip; do not collapse them by containment.
+    groups
+        .into_iter()
+        .map(|(outputs, roots)| Traversal { roots, outputs })
+        .collect()
+}
+
 pub(super) struct Inputs<'a> {
     paths: &'a Paths,
     cancel: &'a AtomicBool,
     values: BTreeMap<Key, Value>,
     scopes: BTreeSet<Scope>,
+    scope_paths: BTreeSet<PathBuf>,
     complete: bool,
     reasons: Vec<Reason>,
     ignored_outputs: Vec<PathBuf>,
@@ -60,6 +84,7 @@ impl<'a> Inputs<'a> {
             cancel,
             values: BTreeMap::new(),
             scopes: BTreeSet::new(),
+            scope_paths: BTreeSet::new(),
             complete: true,
             reasons: Vec::new(),
             ignored_outputs: outputs.into(),
@@ -101,6 +126,7 @@ impl<'a> Inputs<'a> {
     ) -> Result<()> {
         self.check()?;
         if current.is_ok_and(|value| value.kind == InputKind::Directory) {
+            self.scope_paths.insert(local.into());
             self.scopes.insert(Scope {
                 path: local.into(),
                 excluded_children: input.excluded_children.clone(),
@@ -173,18 +199,14 @@ impl<'a> Inputs<'a> {
 
     pub fn finish(mut self) -> Result<Revision> {
         self.check()?;
-        for scope in self.scopes.clone() {
-            let outputs = scope.outputs();
-            let mut traversal_outputs = outputs.clone();
-            traversal_outputs.extend(self.ignored_outputs.clone());
-            let paths = fingerprint::observation_paths(
-                std::slice::from_ref(&scope.path),
-                &traversal_outputs,
-                self.cancel,
-            )
-            .context("Cannot reconcile observed input scopes")?;
+        for traversal in traversals(&self.scopes) {
+            let mut traversal_outputs = traversal.outputs.clone();
+            traversal_outputs.extend_from_slice(&self.ignored_outputs);
+            let paths =
+                fingerprint::observation_paths(&traversal.roots, &traversal_outputs, self.cancel)
+                    .context("Cannot reconcile observed input scopes")?;
             for path in paths {
-                self.observe_path(&path, &outputs)?;
+                self.observe_path(&path, &traversal.outputs)?;
             }
         }
         self.check()?;
@@ -204,7 +226,7 @@ impl<'a> Inputs<'a> {
     }
 
     fn unfollowed_directory_link(&self, local: &Path) -> bool {
-        if self.scopes.iter().any(|scope| scope.path == local) {
+        if self.scope_paths.contains(local) {
             return false;
         }
         if !fs::symlink_metadata(local).is_ok_and(|metadata| metadata.is_symlink()) {
@@ -238,5 +260,51 @@ impl<'a> Inputs<'a> {
             self.insert(key, local, current.as_ref());
         }
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn traversals_share_only_identical_absolute_output_policies() {
+        let scopes = [
+            Scope {
+                path: "/repo".into(),
+                excluded_children: Vec::new(),
+            },
+            Scope {
+                path: "/repo/src".into(),
+                excluded_children: Vec::new(),
+            },
+            Scope {
+                path: "/repo".into(),
+                excluded_children: vec!["build".into()],
+            },
+            Scope {
+                path: "/repo/src".into(),
+                excluded_children: vec!["build".into()],
+            },
+        ]
+        .into_iter()
+        .collect();
+        assert_eq!(
+            traversals(&scopes),
+            vec![
+                Traversal {
+                    roots: vec!["/repo".into(), "/repo/src".into()],
+                    outputs: Vec::new()
+                },
+                Traversal {
+                    roots: vec!["/repo".into()],
+                    outputs: vec!["/repo/build".into()]
+                },
+                Traversal {
+                    roots: vec!["/repo/src".into()],
+                    outputs: vec!["/repo/src/build".into()]
+                },
+            ]
+        );
     }
 }

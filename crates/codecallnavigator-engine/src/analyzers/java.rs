@@ -59,7 +59,7 @@ pub(super) fn analyze_java(
 ) -> Result<GraphData> {
     ensure_unchanged(&prepared.authored_before)?;
     (context.progress)(format!(
-        "Compiling all Java source sets for {} (no tests run)…",
+        "Compiling all Java source sets for {}…",
         build.label
     ));
     let metadata = build::compile(build, context)?;
