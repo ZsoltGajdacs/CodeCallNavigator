@@ -3,7 +3,7 @@ id: doc-32
 title: Upstream patch purposes revisions and application order
 type: guide
 created_date: '2026-11-16T07:08:00Z'
-updated_date: '2026-11-16T07:08:00Z'
+updated_date: '2026-11-16T07:47:00Z'
 ---
 # CallAtlas assembly-qualified identity patch
 
@@ -125,8 +125,8 @@ Apply this combined patch once, in place of any exact recognized checkpoint.
 # Rune platform warnings patch
 
 `rune-platform-warnings.patch` applies to Rune revision
-`c4eda05889c984fff91ccd906e3c00cdfc4cae24` (SHA-256
-`c1684f68d909a509b471433bef8fa34339a6b64e5d8aec2ddec330e4761f46a6`).
+`631e8a67cb3c40225efa3f6c4f57b80e7b18f190` (SHA-256
+`0df6767a7045df76dc4b06a837254ea95178e368ebbdd68eb257bea854d5773d`).
 It scopes platform-specific dead-code allowances to avoid warnings on macOS
 while preserving the shared state machines. The old Windows-only focus method
 was removed upstream, so its obsolete gating hunk is no longer carried. Bootstrap
@@ -136,7 +136,7 @@ unrelated Rune source changes rather than overwriting them.
 # Rune oriented segment quads
 
 `rune-oriented-segments.patch` replaces the warnings-only patch on Rune revision
-`c4eda05889c984fff91ccd906e3c00cdfc4cae24`. Its SHA-256 is pinned in
+`631e8a67cb3c40225efa3f6c4f57b80e7b18f190`. Its SHA-256 is pinned in
 `analyzers.lock.json`. It contains the existing platform-warning fixes followed
 by tightly oriented vertex quads for line segments and a GPU pixel regression.
 Apply the combined patch once to the pristine pinned revision. Do not stack the
@@ -179,7 +179,7 @@ unrelated-file rejection tests:
 # Rune input activity observers
 
 `rune-input-observers.patch` replaces the oriented-segments combined patch on Rune
-revision `c4eda05889c984fff91ccd906e3c00cdfc4cae24`; its SHA-256 is pinned in
+revision `631e8a67cb3c40225efa3f6c4f57b80e7b18f190`; its SHA-256 is pinned in
 `analyzers.lock.json`. It preserves the platform-warning and oriented-segment
 changes and adds non-consuming pointer and logical-key observers. CodeCallNavigator uses
 these to cancel a pending standalone Double Shift sequence even when a focused
@@ -198,8 +198,8 @@ Patch verification and migration: `python3 -m unittest discover -s tools -p 'tes
 
 # Rune latest-source refresh and commit meters
 
-All Rune patches above are rebased onto `c4eda05889c984fff91ccd906e3c00cdfc4cae24`
-(upstream `dev`, fetched 2026-11-13). Observer wiring follows the new browser
+All Rune patches above are rebased onto `631e8a67cb3c40225efa3f6c4f57b80e7b18f190`
+(upstream `dev`, refreshed 2026-11-16). Observer wiring follows the new browser
 `start_app` operation, preserving CPU-first startup and GPU handover. App
 initialization retains upstream `on_rest`; key and pointer observers still run
 before the new direction-chord and autoscroll early-return paths. The virtual
@@ -321,3 +321,51 @@ No target identities, native graph edges or relationship certainty are changed.
 The strict reader rejects malformed facts and structural proof claims. Fresh
 analysis requires capability 2 and tells older resources to bootstrap and refresh;
 old canonical inventories remain readable with unknown facts in shared core.
+
+# Rune warning cleanup and vendor audit — 2026-11-16
+
+Rune is pinned to upstream dev `631e8a67cb3c40225efa3f6c4f57b80e7b18f190`.
+All four replacement alternatives were rebased and checksum-pinned. None of the
+existing observer, oriented segment, privacy, meter or platform-warning changes
+has landed upstream, so those hunks remain necessary. Alternatives are never stacked.
+
+The active patch removes a redundant minimize pattern and unused binding, and
+removes an unnecessary macOS unsafe block. Windows-only accessibility/GPU helpers,
+test-only state inspectors and the non-macOS natural collation fallback now compile
+only with their callers. The borrowed render-pass helper remains available on both
+Windows and wasm32, matching the damaged-render module.
+
+The consuming workspace selects Rune's newly vendored `accesskit_macos` override;
+Cargo.lock records the path dependency. This carries upstream's accessibility fixes.
+CallAtlas main remains `916c2419c0cdb91b5b86b84df4842dadb17bb6b4`; java-callgraph2
+main remains `77f566d0878958bab929b4cdeafcc2c762ff555e`. Existing CallAtlas capability,
+identity and flow patches remain absent from upstream and are retained unchanged.
+
+Verification is scoped to UI per the user's instruction in TASK-67. Dependency
+installation, exact diff, repeat installation and all checkpoint migration tests
+passed (13 tests). Run evidence belongs under `target/verification/task-67-*`.
+
+The refresh additionally retains the macOS accessibility display-options observer
+through a named ownership field, gates the backdrop precompiled flag with its
+Windows callers, and corrects the std/no_std Parley metrics fallback. Explicit
+tiny-skia iterator lifetimes, conic documentation and a Debug derive eliminate
+new upstream warnings. Both nested vendor patch files carry these changes and
+were independently applied to published crate archives with byte-exact results.
+The patch migration fixture disables autocrlf so mixed upstream line endings
+remain exact regardless of the developer's global Git configuration.
+
+Precompiled DX12/Metal shader mismatch build notices are expected: the oriented
+segment shader changes the source, so stale bytecode must continue to be rejected.
+No stale binary fingerprint is relabeled as valid.
+
+TASK-67 final UI verification passed: 191 unit tests, 251 integration tests and
+all ten packaged acceptance stages, including native C# flow display, revision
+comparison and call expansion. Application debug/release builds contain no Rust
+source warnings. The focused oriented-segment GPU pixel comparison passed; its
+standalone upstream test harness retains two unrelated test-only dead-code
+warnings and a manifest warning. UI suites and GPU build cleanup passed.
+Evidence: `target/verification/task-67-ui-final`,
+`target/verification/task-67-ui-acceptance`, and
+`target/verification/task-67-rune-gpu`. Broader suites were excluded at the user's
+explicit direction. CodeScene source reviews and the root safeguard completed;
+reported upstream complexity predates these warning fixes.

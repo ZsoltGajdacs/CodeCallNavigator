@@ -38,6 +38,7 @@ debug = 0
 
 # Rune's upstream patches must be selected by the consuming workspace.
 [patch.crates-io]
+accesskit_macos = { path = "vendor/rune/vendor/accesskit_macos" }
 wgpu-hal = { path = "vendor/rune/vendor/wgpu-hal" }
 winit = { path = "vendor/rune/vendor/winit" }
 parley_engine = { path = "vendor/rune/vendor/parley_engine" }
