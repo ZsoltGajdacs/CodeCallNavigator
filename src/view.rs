@@ -1,5 +1,6 @@
 //! Graph Studio shell. Content and application actions live in focused modules.
 mod activity;
+mod activity_details;
 mod automatic_refresh;
 mod build_picker;
 mod drawer;
@@ -66,7 +67,7 @@ fn graph_workspace(state: &State, cx: &mut Cx<State>) -> El {
         .w_full()
         .h_full()
         .fill(k.c.bg_base)
-        .child(workspace_toolbar::identity(&k, cx.titlebar_inset()))
+        .child(workspace_toolbar::identity(state, &k, cx.titlebar_inset()))
         .child(
             rune::el()
                 .w_full()
@@ -162,16 +163,21 @@ fn canvas_workspace(state: &State, cx: &mut Cx<State>, k: &Kit, layer: &mut Vec<
     let activity = theme::floating_surface(k)
         .child(activity::view(state, k, layer))
         .max_w(380.0);
-    let bottom = row()
-        .key("floating-controls")
-        .on_layout(|state: &mut State, rect| state.set_canvas_controls_top(rect[1]))
-        .gap(12.0)
-        .flex_wrap()
-        .justify_between()
-        .items_end()
-        .child(activity)
-        .child(row().grow(1.0).justify_end().child(controls))
-        .pin(Some(12.0), None, Some(12.0), Some(12.0));
+    // Reserve a symmetric lane for the left activity card so it cannot displace
+    // the centered controls. Narrow canvases use two independent rows instead.
+    let centered = row().w_full().justify_center().child(controls);
+    let bottom = if state.viewport[0] < 1440.0 {
+        col().gap(12.0).child(centered).child(row().child(activity))
+    } else {
+        row()
+            .min_h(64.0)
+            .items_end()
+            .child(centered)
+            .child(activity.pin(Some(0.0), None, None, Some(0.0)))
+    }
+    .key("floating-controls")
+    .on_layout(|state: &mut State, rect| state.set_canvas_controls_top(rect[1]))
+    .pin(Some(12.0), None, Some(12.0), Some(12.0));
     col()
         .key("canvas-workspace")
         .grow(1.0)

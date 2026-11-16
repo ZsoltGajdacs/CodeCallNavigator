@@ -4,7 +4,7 @@ use crate::app::State;
 use rune::{El, TextStyle, el, icon, row, text};
 use rune_kit::{Button, ButtonVariant, Kit, glyphs};
 
-pub(super) fn identity(k: &Kit, titlebar_inset: f32) -> El {
+pub(super) fn identity(state: &State, k: &Kit, titlebar_inset: f32) -> El {
     row()
         .key("workspace-identity-band")
         .w_full()
@@ -27,6 +27,7 @@ pub(super) fn identity(k: &Kit, titlebar_inset: f32) -> El {
         )
         .child(el().w(1.0).h(20.0).fill(k.c.border_strong).a11y_hidden())
         .child(text("Open Canvas").font(k.ty.ui).color(k.c.text_muted))
+        .child(super::activity::titlebar(state, k))
 }
 
 pub(super) fn view(state: &State, k: &Kit, layers: &mut Vec<El>) -> El {
@@ -58,6 +59,7 @@ pub(super) fn clear_cache_action(state: &State, k: &Kit) -> El {
     } else {
         "Clear cache"
     })
+    .variant(ButtonVariant::Outline)
     .disabled(!state.can_clear_cache())
     .on_press(|state: &mut State| {
         state.close_overlay();
@@ -75,12 +77,14 @@ pub(super) fn analysis_action(state: &State, k: &Kit) -> El {
             .on_press(State::cancel_analysis)
             .build(k)
             .key("cancel-analysis")
+            .border(1.0, k.c.warning.fg)
     } else {
         Button::new(if state.graph.is_some() {
             "Refresh"
         } else {
             "Generate graph"
         })
+        .variant(ButtonVariant::Outline)
         .disabled(
             state.project_job_busy()
                 || state.store.is_none()

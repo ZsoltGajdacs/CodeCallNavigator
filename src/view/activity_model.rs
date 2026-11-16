@@ -32,31 +32,37 @@ pub(super) struct Input<'a> {
 pub(super) struct Presentation {
     pub title: &'static str,
     pub detail: String,
+    pub phase: Option<String>,
     pub busy: bool,
     pub tone: Tone,
 }
 
 pub(super) fn present(input: Input<'_>) -> Presentation {
     let (title, tone) = heading(&input);
-    let detail = if !input.warning.is_empty() {
-        input.warning
-    } else if input.work != Work::Idle {
+    let phase = if input.work != Work::Idle {
+        Some(input.status.to_owned())
+    } else if matches!(input.freshness, Status::Checking) {
+        Some("Checking graph inputs…".into())
+    } else {
+        None
+    };
+    let detail = if input.work != Work::Idle {
         input.status
+    } else if !input.warning.is_empty() {
+        input.warning
     } else {
         input.freshness_message.unwrap_or(input.status)
     };
     Presentation {
         title,
         detail: detail.into(),
+        phase,
         busy: input.work != Work::Idle || matches!(input.freshness, Status::Checking),
         tone,
     }
 }
 
 fn heading(input: &Input<'_>) -> (&'static str, Tone) {
-    if !input.warning.is_empty() {
-        return ("Graph needs attention", Tone::Attention);
-    }
     match input.work {
         Work::Discovery => return ("Finding builds", Tone::Neutral),
         Work::Analysis | Work::Automatic | Work::Layout => {
@@ -64,6 +70,9 @@ fn heading(input: &Input<'_>) -> (&'static str, Tone) {
         }
         Work::Reload => return ("Loading saved graph", Tone::Neutral),
         Work::Idle => {}
+    }
+    if !input.warning.is_empty() {
+        return ("Graph needs attention", Tone::Attention);
     }
     if !input.has_graph {
         return ("Ready to explore", Tone::Neutral);
@@ -103,6 +112,7 @@ mod tests {
         let checking = present(input(&Status::Checking));
         assert_eq!(checking.tone, Tone::Neutral);
         assert!(checking.busy);
+        assert_eq!(checking.phase.as_deref(), Some("Checking graph inputs…"));
         let current = present(input(&Status::Observed(InputStatus::Match)));
         assert_eq!(current.title, "Graph up to date");
         assert_eq!(current.tone, Tone::Current);
@@ -147,6 +157,21 @@ mod tests {
             "Analysis failed; the previous graph is preserved"
         );
         assert_eq!(result.tone, Tone::Attention);
+    }
+
+    #[test]
+    fn active_phase_stays_visible_alongside_a_warning() {
+        let mut data = input(&Status::Idle);
+        data.work = Work::Analysis;
+        data.status = "Compiling Java sources…";
+        data.warning = "Automatic refresh unavailable";
+        let result = present(data);
+        assert_eq!(result.title, "Updating graph");
+        assert_eq!(result.detail, "Compiling Java sources…");
+        assert_eq!(result.phase.as_deref(), Some("Compiling Java sources…"));
+        assert_eq!(result.tone, Tone::Neutral);
+        assert!(result.busy);
+        assert!(present(input(&Status::Idle)).phase.is_none());
     }
 
     #[test]

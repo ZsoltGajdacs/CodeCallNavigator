@@ -19,6 +19,7 @@ mod graph_fit;
 mod graph_studio;
 mod lambda_names;
 mod open_canvas_fidelity;
+mod panel_progress;
 mod project_explorer;
 mod search_modal;
 mod source_popup;

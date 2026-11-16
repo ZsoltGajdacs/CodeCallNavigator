@@ -89,15 +89,15 @@ fn assert_legend_fits(runtime: &Runtime<State>) {
         .elements()
         .into_iter()
         .filter(|e| {
-            e.text.as_deref().is_some_and(|text| {
-                text.starts_with("Solid ·") || text.starts_with("Purple dashes")
-            })
+            e.key
+                .as_deref()
+                .is_some_and(|key| key.starts_with("legend-"))
         })
         .collect::<Vec<_>>();
     assert_eq!(
         entries.len(),
-        2,
-        "Both relationship legend entries must remain present"
+        4,
+        "All relationship legend entries must remain present"
     );
     for entry in entries {
         assert!(

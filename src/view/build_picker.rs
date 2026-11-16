@@ -1,11 +1,14 @@
 //! Build picker presentation; discovery and selection lifecycle belong to build_discovery.
 use crate::{app::State, build_discovery::Phase, presentation::Overlay, theme};
 use rune::{Align, El, Side, col, row, text};
-use rune_kit::{Button, Checkbox, IconButton, IconButtonVariant, Kit, ScrollBar, popover};
+use rune_kit::{
+    Button, ButtonVariant, Checkbox, IconButton, IconButtonVariant, Kit, ScrollBar, popover,
+};
 
 pub(super) fn button(state: &State, k: &Kit) -> El {
     let open = state.ui.overlay == Some(Overlay::Builds);
     let button = Button::new("Analysis settings…")
+        .variant(ButtonVariant::Outline)
         .disabled(state.project_job_busy())
         .on_press(State::open_builds)
         .build(k)

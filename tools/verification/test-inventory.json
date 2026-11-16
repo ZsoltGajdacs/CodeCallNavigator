@@ -21848,6 +21848,85 @@
         "typescript"
       ],
       "purpose": "worker retains compiler output and exits after extraction"
+    },
+    {
+      "id": "codecallnavigator/bin:codecallnavigator::ui_tests::panel_progress::active_phase_stays_in_title_bar_while_warnings_and_panels_are_visible",
+      "runner": "rust",
+      "file": "src/ui_tests/panel_progress.rs",
+      "test_name": "ui_tests::panel_progress::active_phase_stays_in_title_bar_while_warnings_and_panels_are_visible",
+      "ignored": false,
+      "package": "codecallnavigator",
+      "target_kind": "bin",
+      "target": "codecallnavigator",
+      "component": "ui",
+      "category": "integration",
+      "purpose": "Real Rune title-bar bounds and presentation keep active progress visible while warnings and either popover are present; layout cannot be proved by copy-only unit tests.",
+      "requirements": [
+        "graphviz"
+      ]
+    },
+    {
+      "id": "codecallnavigator/bin:codecallnavigator::ui_tests::panel_progress::graph_controls_center_in_canvas_and_avoid_activity_after_pane_changes",
+      "runner": "rust",
+      "file": "src/ui_tests/panel_progress.rs",
+      "test_name": "ui_tests::panel_progress::graph_controls_center_in_canvas_and_avoid_activity_after_pane_changes",
+      "ignored": false,
+      "package": "codecallnavigator",
+      "target_kind": "bin",
+      "target": "codecallnavigator",
+      "component": "ui",
+      "category": "integration",
+      "purpose": "Real Rune responsive layout verifies centered controls and nonoverlapping activity through window sizes and pane open/resize states.",
+      "requirements": [
+        "graphviz"
+      ]
+    },
+    {
+      "id": "codecallnavigator/bin:codecallnavigator::ui_tests::panel_progress::busy_loader_paint_rotates_across_frames_and_updates_then_stops",
+      "runner": "rust",
+      "file": "src/ui_tests/panel_progress.rs",
+      "test_name": "ui_tests::panel_progress::busy_loader_paint_rotates_across_frames_and_updates_then_stops",
+      "ignored": false,
+      "package": "codecallnavigator",
+      "target_kind": "bin",
+      "target": "codecallnavigator",
+      "component": "ui",
+      "category": "integration",
+      "purpose": "Inspect actual Rune glyph paint rotation across timed frames, progress updates, reduced motion and idle; loop metadata alone cannot prove visible rotation.",
+      "requirements": [
+        "graphviz"
+      ]
+    },
+    {
+      "id": "codecallnavigator/bin:codecallnavigator::ui_tests::panel_progress::native_metal_panel_mockup_and_spinner_captures",
+      "runner": "rust",
+      "file": "src/ui_tests/panel_progress.rs",
+      "test_name": "ui_tests::panel_progress::native_metal_panel_mockup_and_spinner_captures",
+      "ignored": true,
+      "package": "codecallnavigator",
+      "target_kind": "bin",
+      "target": "codecallnavigator",
+      "component": "ui",
+      "category": "integration",
+      "purpose": "Offscreen Metal panel and timed-spinner captures prove clipping/compositing and provide matched visual review in light/dark and narrow windows; cheaper view-tree checks cannot prove pixel output.",
+      "requirements": [
+        "native",
+        "graphviz"
+      ]
+    },
+    {
+      "id": "codecallnavigator/bin:codecallnavigator::view::activity::model::tests::active_phase_stays_visible_alongside_a_warning",
+      "runner": "rust",
+      "file": "src/view/activity_model.rs",
+      "test_name": "view::activity::model::tests::active_phase_stays_visible_alongside_a_warning",
+      "ignored": false,
+      "package": "codecallnavigator",
+      "target_kind": "bin",
+      "target": "codecallnavigator",
+      "component": "ui",
+      "category": "unit",
+      "purpose": "Pure activity presentation preserves the active phase separately from warnings.",
+      "requirements": []
     }
   ],
   "gates": [

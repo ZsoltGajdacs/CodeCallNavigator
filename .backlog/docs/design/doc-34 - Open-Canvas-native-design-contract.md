@@ -3,7 +3,7 @@ id: doc-34
 title: Open Canvas native design contract
 type: other
 created_date: '2026-11-16T08:14:00Z'
-updated_date: '2026-11-16T16:08:00Z'
+updated_date: '2026-11-16T22:08:00Z'
 ---
 ## Design contract
 
@@ -34,3 +34,14 @@ Follow-up fidelity work stays on codex/development. Compare native captures at m
 - Filters use grouped headings, separators and a real changed-state dot. Production defaults remain authoritative. Source previews preserve pin/resize/copy/origin/error behavior with bounded titles.
 
 Verification is explicitly UI-only: UI unit/integration, focused native visual journeys and release UI performance, plus scoped CodeScene/format/diff checks and owned cleanup. Full/light composites, unrelated component tests and packaging are excluded by user direction. Offscreen Metal renders are identified separately from physical-window acceptance.
+
+
+## Panel readability and progress (TASK-75)
+
+User-selected mockup 1 extends the existing native surfaces. The reference is retained locally at target/verification/open-canvas-panels/mockup-1.png.
+
+- Project picker targets 400 points with 16-point insets, left-aligned recent names and paths, labeled folder input, section dividers and spaced outlined action rows. Existing availability and lifecycle rules apply.
+- Analysis details targets 480 points with Current activity, Graph summary, Relationship legend and Freshness sections. Counts and legend entries use labeled rows; long messages wrap and actions follow complete warnings. Both panels fit the window and scroll when necessary.
+- Actual work phase appears after Open Canvas in the title bar, independently from warning emphasis. The bottom-left activity card remains. Busy rings rotate continuously except under system reduced motion.
+- The graph-control bar centers in the available canvas, independent of side panes and the activity card. Narrow layouts place it above the activity card; measured bounds reserve safe graph framing. This supersedes the opposite-corners placement described above.
+- Verification uses the repository deterministic selector, native layout assertions, timed paint instructions and offscreen Metal captures. Offscreen captures are distinguished from physical-window acceptance.

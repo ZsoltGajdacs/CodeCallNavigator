@@ -6,7 +6,7 @@ use crate::{
     projection::{FlowDirection, Grouping},
     theme,
 };
-use rune::{El, col, el, row, text};
+use rune::{Color, El, col, el, row, text};
 use rune_kit::{
     Button, ButtonVariant, ControlSize, IconButton, IconButtonVariant, Kit, SegmentedControl,
     Select,
@@ -174,23 +174,60 @@ pub fn legend(k: &Kit) -> El {
     col()
         .key("relationship-legend")
         .w_full()
-        .px(theme::SPACE)
-        .py(6.0)
-        .gap(2.0)
+        .gap(8.0)
+        .child(legend_entry(
+            "legend-calls",
+            "Directly resolved calls",
+            line_sample(k.c.text_muted, false),
+            k,
+        ))
+        .child(legend_entry(
+            "legend-other",
+            "Other relationships",
+            line_sample(theme::uncertain(k), true),
+            k,
+        ))
+        .child(legend_entry(
+            "legend-references",
+            "Function references",
+            line_sample(theme::callback(k), true),
+            k,
+        ))
+        .child(legend_entry(
+            "legend-cycle",
+            "Cycle",
+            el().w(40.0)
+                .h(12.0)
+                .radius(4.0)
+                .border(1.5, theme::uncertain(k)),
+            k,
+        ))
+}
+
+fn legend_entry(key: &str, label: &str, sample: El, k: &Kit) -> El {
+    row()
+        .key(key)
+        .w_full()
+        .gap(12.0)
+        .center_y()
+        .child(el().w(44.0).h(16.0).center_y().child(sample.a11y_hidden()))
         .child(
-            text("Solid · directly resolved calls     Amber dashes · other relationships")
-                .w_full()
+            text(label)
+                .grow(1.0)
+                .min_w(0.0)
                 .wrap()
-                .font(k.ty.small)
-                .color(k.c.text_muted),
+                .font(k.ty.ui)
+                .color(k.c.text_base),
         )
-        .child(
-            text("Purple dashes · function references     Amber outline · cycle")
-                .w_full()
-                .wrap()
-                .font(k.ty.small)
-                .color(k.c.text_muted),
-        )
+}
+
+fn line_sample(color: Color, dashed: bool) -> El {
+    if !dashed {
+        return el().w(40.0).h(2.0).radius(1.0).fill(color);
+    }
+    row()
+        .gap(4.0)
+        .children((0..4).map(|_| el().w(7.0).h(2.0).radius(1.0).fill(color)))
 }
 
 fn grouping_control(state: &State, k: &Kit, layer: &mut Vec<El>) -> El {

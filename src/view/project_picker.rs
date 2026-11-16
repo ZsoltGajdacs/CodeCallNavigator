@@ -1,7 +1,7 @@
 //! Project selection presentation; discovery owns filesystem validation and failures.
 use super::{build_picker, workspace_toolbar};
 use crate::{app::State, presentation::Overlay, theme};
-use rune::{Align, El, Side, col, icon, row, text};
+use rune::{Align, El, Side, col, el, icon, row, text};
 use rune_kit::{Button, ButtonVariant, ControlSize, Kit, TextInput, glyphs, popover};
 
 pub(super) fn button(state: &State, k: &Kit) -> El {
@@ -58,35 +58,22 @@ pub(super) fn layer(state: &State, k: &Kit, layers: &mut Vec<El>) {
         return;
     }
     let mut contents = col()
-        .w(320.0_f32.min((state.source_popup.window[0] - 24.0).max(1.0)))
-        .padding(12.0)
+        .w(400.0_f32.min((state.source_popup.window[0] - 24.0).max(1.0)))
+        .padding(16.0)
         .max_h((state.source_popup.window[1] - 100.0).max(1.0))
         .scroll(rune::ScrollSpec {
             stick_bottom: false,
         })
-        .gap(6.0)
+        .gap(12.0)
         .child(
             text("Recent projects")
-                .font(k.ty.small_medium)
+                .font(k.ty.ui_medium)
                 .color(k.c.text_muted),
         );
     for root in &state.recent_projects {
-        let selected = root.clone();
-        let name = std::path::Path::new(root)
-            .file_name()
-            .map(|name| name.to_string_lossy().into_owned())
-            .unwrap_or_else(|| root.clone());
-        contents = contents.child(
-            Button::new(name)
-                .variant(ButtonVariant::Ghost)
-                .disabled(state.project_job_busy())
-                .on_press(move |state: &mut State| state.select_recent_project(selected.clone()))
-                .build(k)
-                .help(root)
-                .w_full(),
-        );
+        contents = contents.child(recent_project(state, k, root));
     }
-    contents = contents.child(actions(state, k));
+    contents = contents.child(divider(k)).child(actions(state, k));
     layers.push(popover::raised(
         k,
         contents
@@ -105,8 +92,49 @@ pub(super) fn layer(state: &State, k: &Kit, layers: &mut Vec<El>) {
     ));
 }
 
+fn recent_project(state: &State, k: &Kit, root: &str) -> El {
+    let selected = root.to_owned();
+    let name = std::path::Path::new(root)
+        .file_name()
+        .map(|name| name.to_string_lossy().into_owned())
+        .unwrap_or_else(|| root.to_owned());
+    let path = root.to_owned();
+    Button::new(name.clone())
+        .label_with(move |font, ink| {
+            row()
+                .w_full()
+                .gap(12.0)
+                .center_y()
+                .child(icon(&glyphs::FOLDER, 20.0).color(ink).a11y_hidden())
+                .child(
+                    col()
+                        .grow(1.0)
+                        .min_w(0.0)
+                        .gap(2.0)
+                        .child(text(name).font(font).color(ink).truncate())
+                        .child(text(path).font(font).color(ink.alpha(0.7)).truncate()),
+                )
+        })
+        .variant(ButtonVariant::Ghost)
+        .on_press(move |state: &mut State| state.select_recent_project(selected.clone()))
+        .build(k)
+        // Keep project identity readable while analysis disables navigation.
+        .disabled(state.project_job_busy())
+        .focusable(!state.project_job_busy())
+        .help(root)
+        .h(56.0)
+        .w_full()
+}
+
 fn repository(state: &State, k: &Kit) -> El {
     col()
+        .w_full()
+        .gap(8.0)
+        .child(
+            text("Project folder")
+                .font(k.ty.ui_medium)
+                .color(k.c.text_muted),
+        )
         .child(
             TextInput::new(&state.root)
                 .width(None)
@@ -138,7 +166,7 @@ fn analysis_help(state: &State) -> &'static str {
 
 fn note(value: &str, k: &Kit) -> El {
     text(value)
-        .font(k.ty.text_xsmall)
+        .font(k.ty.ui)
         .color(k.c.text_muted)
         .w_full()
         .wrap_anywhere()
@@ -146,7 +174,10 @@ fn note(value: &str, k: &Kit) -> El {
 
 fn actions(state: &State, k: &Kit) -> El {
     col()
+        .w_full()
+        .gap(8.0)
         .child(repository(state, k))
+        .child(divider(k))
         .child(
             Button::new("Compare flows")
                 .variant(ButtonVariant::Outline)
@@ -155,12 +186,23 @@ fn actions(state: &State, k: &Kit) -> El {
                     state.show_flow_comparison();
                 })
                 .build(k)
-                .key("compare-flows"),
+                .key("compare-flows")
+                .min_h(36.0)
+                .w_full(),
         )
-        .child(workspace_toolbar::clear_cache_action(state, k))
-        .child(workspace_toolbar::analysis_action(state, k))
+        .child(
+            workspace_toolbar::clear_cache_action(state, k)
+                .min_h(36.0)
+                .w_full(),
+        )
+        .child(
+            workspace_toolbar::analysis_action(state, k)
+                .min_h(36.0)
+                .w_full(),
+        )
         .child(
             Button::new("Open folder…")
+                .variant(ButtonVariant::Outline)
                 .disabled(state.project_job_busy())
                 .on_press_tx(|state: &mut State, tx| {
                     state.close_overlay();
@@ -168,7 +210,12 @@ fn actions(state: &State, k: &Kit) -> El {
                 })
                 .build(k)
                 .key("choose-folder")
+                .min_h(36.0)
                 .w_full(),
         )
-        .child(build_picker::button(state, k))
+        .child(build_picker::button(state, k).min_h(36.0).w_full())
+}
+
+fn divider(k: &Kit) -> El {
+    el().w_full().h(1.0).fill(k.c.border_muted).a11y_hidden()
 }

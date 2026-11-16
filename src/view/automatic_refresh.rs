@@ -27,7 +27,7 @@ pub(super) fn append(state: &State, k: &Kit, mut body: El, mut actions: El) -> E
                 .help(state.freshness.automatic.details().unwrap_or(&activity))
                 .w_full()
                 .min_w(0.0)
-                .font(k.ty.small)
+                .font(k.ty.ui)
                 .color(k.c.text_muted)
                 .wrap()
                 .key("automatic-refresh-activity"),
@@ -58,7 +58,7 @@ fn cleanup_warning(state: &State, k: &Kit, mut bar: El) -> El {
             text(warning)
                 .w_full()
                 .min_w(0.0)
-                .font(k.ty.small)
+                .font(k.ty.ui)
                 .color(k.c.text_muted)
                 .wrap()
                 .key("freshness-cleanup-warning"),

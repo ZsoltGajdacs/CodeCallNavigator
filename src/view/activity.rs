@@ -2,7 +2,10 @@
 use super::automatic_refresh;
 use crate::{app::State, icons, presentation::Overlay};
 use rune::{El, col, el, icon, row, text};
-use rune_kit::{Button, ButtonVariant, Kit, Loader, Placement, Popover, popover};
+use rune_kit::{
+    Button, ButtonVariant, ControlSize, IconButton, IconButtonVariant, Kit, Loader, Placement,
+    popover,
+};
 
 #[path = "activity_model.rs"]
 mod model;
@@ -10,17 +13,16 @@ use model::{Input, Tone, Work};
 
 pub(super) fn view(state: &State, k: &Kit, layer: &mut Vec<El>) -> El {
     let summary = presentation(state);
-    let trigger = summary_trigger(&summary, k);
-    let details = Popover::new("activity-popover")
-        .title("Analysis details")
-        .trigger(trigger)
-        .open(state.ui.overlay == Some(Overlay::Activity))
-        .placement(Placement::TopStart)
-        .on_close(State::close_overlay)
-        .child(popover::fit_scroll(details(state, k)))
-        .build(k, layer)
+    let trigger =
+        summary_trigger(&summary, k).expanded(state.ui.overlay == Some(Overlay::Activity));
+    if state.ui.overlay == Some(Overlay::Activity) {
+        details_layer(state, k, layer, &summary);
+    }
+    let details = row()
+        .key("activity-popover-trigger")
         .grow(1.0)
-        .min_w(0.0);
+        .min_w(0.0)
+        .child(trigger);
     let mut bar = row()
         .key("status-bar")
         .w(360.0_f32.min((state.viewport[0] - 24.0).max(1.0)))
@@ -78,7 +80,7 @@ fn summary_trigger(summary: &model::Presentation, k: &Kit) -> El {
                 .child(
                     text(&summary.detail)
                         .key("status-message")
-                        .font(k.ty.small)
+                        .font(k.ty.ui)
                         .color(if summary.tone == Tone::Attention {
                             k.c.warning.fg
                         } else {
@@ -170,42 +172,77 @@ fn graph_work(state: &State) -> Work {
     }
 }
 
-fn details(state: &State, k: &Kit) -> El {
-    let counts = format!(
-        "Symbols: {} shown / {} omitted / {} filtered · Links: {} shown / {} inside groups / {} omitted / {} filtered",
-        state.graph_view.nodes.len(),
-        state.graph_view.omitted_nodes,
-        state.graph_view.hidden_nodes,
-        state.graph_view.edges.len(),
-        state.graph_view.collapsed_edges,
-        state.graph_view.omitted_edges,
-        state.graph_view.hidden_edges
-    );
-    let mut body = col()
-        .w_full()
-        .gap(12.0)
+fn details_layer(state: &State, k: &Kit, layers: &mut Vec<El>, summary: &model::Presentation) {
+    let close = IconButton::new(k.glyph.close)
+        .variant(IconButtonVariant::Ghost)
+        .control_size(ControlSize::Regular)
+        .label("Close")
+        .on_press(State::close_overlay)
+        .build(k)
+        .key("close");
+    let body =
+        super::activity_details::view(state, k, summary.phase.as_deref().unwrap_or(&state.status));
+    let content = col()
+        .key("activity-popover-content")
+        .role("dialog")
+        .label("Analysis details")
+        .focus_return("activity-details")
+        .modal(true, State::close_overlay)
+        .w(480.0_f32.min((state.source_popup.window[0] - 24.0).max(1.0)))
+        .min_h(0.0)
         .child(
-            text(&state.status)
-                .key("active-analysis")
-                .font(k.ty.small)
-                .color(k.c.text_muted)
-                .wrap(),
+            row()
+                .key("header")
+                .padding(16.0)
+                .pb(0.0)
+                .gap(8.0)
+                .center_y()
+                .child(
+                    text("Analysis details")
+                        .font(k.ty.body_medium)
+                        .color(k.c.text_base)
+                        .grow(1.0),
+                )
+                .child(close),
         )
-        .child(text(counts).wrap().font(k.ty.small).color(k.c.text_muted))
-        .child(super::graph_controls::legend(k));
-    if !state.warning.is_empty() {
-        body = body.child(
-            text(&state.warning)
-                .key("activity-warning")
-                .font(k.ty.small)
-                .color(k.c.warning.fg)
-                .wrap(),
-        );
-    }
-    if let Some(notice) = freshness_notice(state, k) {
-        body = body.child(notice);
-    }
-    body
+        .child(popover::fit_scroll(body.padding(16.0)));
+    layers.push(rune_kit::scrim(
+        "activity-popover-scrim",
+        State::close_overlay,
+    ));
+    layers.push(popover::anchored(
+        k,
+        popover::raised(k, content, k.radius.md),
+        "activity-popover-trigger",
+        Placement::TopStart,
+        8.0,
+    ));
+}
+
+/// Actual work phase is independent of idle warning/freshness emphasis.
+pub(super) fn titlebar(state: &State, k: &Kit) -> El {
+    let summary = presentation(state);
+    let Some(phase) = summary.phase else {
+        return el().grow(1.0);
+    };
+    row()
+        .key("titlebar-activity")
+        .grow(1.0)
+        .min_w(0.0)
+        .center_y()
+        .gap(10.0)
+        .child(el().w(1.0).h(20.0).fill(k.c.border_strong).a11y_hidden())
+        .child(Loader::new().size(18.0).color(k.c.text_accent).build(k))
+        .child(
+            text(&phase)
+                .key("titlebar-progress")
+                .font(k.ty.ui_medium)
+                .color(k.c.text_base)
+                .grow(1.0)
+                .min_w(0.0)
+                .truncate()
+                .help(&phase),
+        )
 }
 
 pub(super) fn freshness_notice(state: &State, k: &Kit) -> Option<El> {
@@ -215,7 +252,7 @@ pub(super) fn freshness_notice(state: &State, k: &Kit) -> Option<El> {
             .key("freshness-message")
             .w_full()
             .help(message.clone())
-            .font(k.ty.small)
+            .font(k.ty.ui)
             .color(k.c.text_muted)
             .wrap()
             .min_w(0.0),
