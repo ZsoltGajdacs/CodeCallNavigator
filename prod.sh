@@ -8,6 +8,7 @@ cargo clean
 
 "${PYTHON:-python3.13}" tools/bootstrap.py
 "${PYTHON:-python3.13}" tools/package.py
+"${PYTHON:-python3.13}" dist/CodeCallNavigatorEngine/install.py
 
 # Keep the previous image until the replacement has been created successfully.
 image_dir="$(mktemp -d "${TMPDIR:-/tmp}/codecallnavigator-dmg.XXXXXX")"

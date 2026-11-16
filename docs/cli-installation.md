@@ -12,6 +12,11 @@ ccnavigator --help
 For a local build, first run `python3.13 tools/package.py --engine-only`, then
 `python3.13 dist/CodeCallNavigatorEngine/install.py`.
 
+The root `dev.sh`, `optimized-dev.sh` and `prod.sh` scripts also package and
+install the latest CLI at the default prefix on every successful build. The
+development scripts install it before launching the desktop application;
+`dev.sh` retains its debug engine for the desktop and installs a release CLI.
+
 The installer copies the complete distribution, including analyzer resources,
 to `~/.local/share/CodeCallNavigatorEngine` and links `~/.local/bin/ccnavigator`
 to its public executable. You can then delete the extracted download. The
