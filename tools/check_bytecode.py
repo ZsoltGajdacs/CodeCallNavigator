@@ -150,7 +150,7 @@ def check_run(directory, checks):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--runs-dir", type=Path, default=DEFAULT_RUNS)
-    parser.add_argument("--summary", type=Path, default=ROOT / "evidence/analyzers/bytecode-summary.json")
+    parser.add_argument("--summary", type=Path, default=ROOT / "target/verification/analyzers/bytecode-summary.json")
     args = parser.parse_args()
     summary = {"fixture": check_run(args.runs_dir / "fixture-25-full", fixture_checks),
                "fixtureJava21": check_run(args.runs_dir / "fixture-21-full", fixture_checks),
@@ -164,6 +164,7 @@ def main():
         "Engine-reported endpoints absent from method declarations require body-unavailable placeholders, not name-based resolution.",
         "No adapter inference of DI, reflection, framework execution or cross-language calls.",
     ]
+    args.summary.parent.mkdir(parents=True, exist_ok=True)
     args.summary.write_text(json.dumps(summary, indent=2) + "\n")
     print(json.dumps(summary, indent=2))
     return 0 if passed else 1

@@ -167,12 +167,3 @@ independent group before it can be observed; the adapter cannot guarantee cleanu
 in that case and reports this uncertainty. It does not retain a long-running
 cache of process IDs that could be reused by unrelated processes.
 Server shutdown waits for all owned supervisors before leaving the async runtime.
-
-## Verification
-
-`cargo test --locked -p codecallnavigator-mcp` covers configuration, argument/wire
-validation and real subprocess transport lifecycle. Process-only integration
-acceptance under this package's `tests/` invokes the real CLI and compiler
-fixtures without importing workspace libraries. The workspace verification runner
-also enforces the dependency/source boundary and installs the packaged crate
-outside the workspace before an MCP stdio smoke test.

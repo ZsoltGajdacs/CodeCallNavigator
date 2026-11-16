@@ -87,7 +87,7 @@ class CallAtlasPatchMigration(PatchMigrationCases, unittest.TestCase):
     abbreviation = 7
 
     def test_pre_flow_checkpoint_preserves_the_recorded_exporter_baseline(self):
-        baseline = json.loads((ROOT / "evidence/flowcharts/csharp/pre-export-baseline.json").read_text())
+        baseline = json.loads((ROOT / "fixtures/flow/csharp-baselines/pre-export-baseline.json").read_text())
         checkpoint = ROOT / self.spec["pre_flow_patch"]
         self.assertEqual(hashlib.sha256(checkpoint.read_bytes()).hexdigest(),
                          baseline["patch_sha256"])
@@ -98,7 +98,7 @@ class CallAtlasPatchMigration(PatchMigrationCases, unittest.TestCase):
                          "173f6ea6a771f5d2dded30f68319c3b7aa8dd4384a61fa43ad2f0bd71b5f3a7f")
 
     def test_pre_cleanup_checkpoint_preserves_the_ingestion_baseline(self):
-        baseline = json.loads((ROOT / "evidence/flowcharts/csharp/ingestion/verification.json").read_text())
+        baseline = json.loads((ROOT / "fixtures/flow/csharp-baselines/ingestion-checkpoint.json").read_text())
         checkpoint = ROOT / self.spec["pre_cleanup_patch"]
         self.assertEqual(hashlib.sha256(checkpoint.read_bytes()).hexdigest(),
                          baseline["patch_sha256"])

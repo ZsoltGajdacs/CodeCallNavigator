@@ -5,11 +5,16 @@ status: Done
 assignee:
   - '@codex'
 created_date: '2026-11-09T13:07:00Z'
-updated_date: '2026-11-09T13:49:00Z'
+updated_date: '2026-11-16T07:11:00Z'
 labels: []
 dependencies: []
 documentation:
-  - evidence/performance/analysis.md
+  - >-
+    .backlog/docs/history/doc-9 -
+    Performance-methods-and-historical-measurements.md#source-evidence-performance-analysis-md
+  - >-
+    .backlog/docs/doc-33 -
+    Internal-documentation-index-and-migration-manifest.md
 priority: high
 ordinal: 17000
 ---

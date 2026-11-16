@@ -218,16 +218,6 @@ bundles the analyzer artifacts, relocates Graphviz and its required dylibs, coll
 third-party notices, ad hoc signs and verifies the app, and produces the ZIP.
 No Homebrew installation is needed to run the packaged Graphviz.
 
-One-shot build/analyzer subprocesses receive closed standard input, so launching
-through a terminal cannot suspend Gradle on background terminal reads. TypeScript's
-internal worker keeps its dedicated protocol pipe.
-
-Analysis reuses classpath and source inventories only within the current refresh.
-Gradle ownership discovery remains separate; compilation and final metadata export
-share one invocation. TypeScript retains its compiler for a single selected target;
-multi-target analysis bounds memory by recreating one verified worker at a time.
-All content snapshots and per-context classpath rules remain enforced.
-
 The same production analyzer pipeline is available without opening a window:
 
 ```sh
@@ -252,7 +242,7 @@ cargo run --release --bin codecallnavigator -- analyze --timings /tmp/codecallna
 
 The native app uses the same measurements through its initial layout. Stage times
 can nest and must not be summed; the CLI report covers its headless pipeline.
-See [analysis performance evidence](../evidence/performance/analysis.md) for the
+See [analysis performance evidence](<../.backlog/docs/history/doc-9 - Performance-methods-and-historical-measurements.md#source-evidence-performance-analysis-md>) for the
 release benchmark protocol, complete graph comparisons and measured results.
 
 ## Function flowcharts
@@ -342,136 +332,12 @@ generator output and some operators/dispatch candidates have upstream gaps. Java
 retains compiler bridge/lambda declarations and explicit inherited/reference
 placeholders with unavailable bodies; bytecode supplies lines but no columns.
 Build/import errors, incomplete output, concurrent source changes and analyzer
-limits reject the refresh. See [analyzer acceptance](../evidence/analyzers/ACCEPTANCE.md)
-and [pipeline evidence](../evidence/analyzers/native-pipeline.md).
+limits reject the refresh. See [analyzer acceptance](<../.backlog/docs/history/doc-4 - Analyzer-behavior-and-regression-acceptance.md#source-evidence-analyzers-acceptance-md>)
+and [pipeline evidence](<../.backlog/docs/history/doc-4 - Analyzer-behavior-and-regression-acceptance.md#source-evidence-analyzers-native-pipeline-md>).
 
 ## Validation
 
-Use the repository entry points, which work from any current directory:
-
-```sh
-./verify-light.sh
-./verify-full.sh
-./verify-full.sh --dry-run
-./verify-light.sh --base origin/main
-./verify-unit.sh --component core
-./verify-integration.sh --component engine
-./verify-acceptance.sh --component mcp
-./verify-performance.sh --component ui
-./verify-ui.sh --suite unit
-```
-
-Install the locked test-only Python dependencies once in the repository's isolated
-verification environment (the scripts select it automatically):
-
-```sh
-python3.13 -m venv .venv-verification
-.venv-verification/bin/python -m pip install --require-hashes -r requirements-verification.txt
-```
-
-The lock includes the existing JSON Schema contract-test dependency. Set `PYTHON`
-only when intentionally using another interpreter with these locked packages.
-Documentation-only light checks do not require the test packages.
-
-Category scripts select unit, integration, acceptance or performance tests; component
-scripts (`verify-ui.sh`, `verify-core.sh`, `verify-engine.sh`, `verify-mcp.sh`,
-`verify-tooling.sh`) accept `--suite` and default to unit plus integration.
-All entry points share the same runner, category plans, inventory and cleanup.
-See [the testing strategy](testing-strategy.md) for placement and coverage rules.
-
-Choose light for small changes with minimal production-code effect. It composes
-changed-file static checks, workspace compilation/Clippy, ordinary unit/integration
-categories and changed-source CodeScene reviews plus the repository safeguard.
-Documentation-only light verification stays static, without application builds,
-runtime tests or benchmarks. Formatting checks only touched project-owned files
-and never rewrites vendored sources.
-
-Choose full for substantial/cross-component runtime or UI work, analyzer,
-dependency, bootstrap or packaging changes, uncertain impact and release candidates.
-It composes the same category plans with toolchain-backed integration, acceptance,
-performance and package/signature/install gates. Tests run once in their selected
-category/configuration; ignored status does not define category. Release-sensitive
-compiler, acceptance and benchmark checks use the appropriate release build.
-Native visual acceptance is distinct from headless UI tests, and offscreen GPU
-throughput does not prove interactive/native displayed FPS.
-
-Category/component `--dry-run` output lists exact stages and requirements without
-creating evidence or builds. The approximately one-minute warm unit-execution goal
-is aspirational, not a failure threshold; preserve valuable coverage even when a
-suite takes longer. Report compilation, setup, execution and cleanup separately.
-
-Full requires Apple Silicon macOS, native Metal/process-table access, Python 3.12+
-(the local verification environment, falling back to `python3.13`), Rust with Clippy/rustfmt, Node 24+, JDK 25,
-.NET SDK 11, Maven 3.9+/4, Graphviz and Xcode command-line/signing tools. Run it
-outside the macOS sandbox. It also requires explicit inputs, configured once in
-your shell (replace these example paths with your actual installations):
-
-```sh
-export CODECALLNAVIGATOR_TS_NODE_MODULES=/absolute/path/to/node_modules
-export CODECALLNAVIGATOR_RECURRING_BILLING=/absolute/path/to/Recurring-billing
-export CODECALLNAVIGATOR_VERIFY_PROFILE_SOURCE="/absolute/path/to/saved-application-data"
-./verify-full.sh
-```
-
-The modules directory must contain TypeScript 6.0.x, React 19 and Next 16 fixture
-dependencies. The runner supplies the matching
-`CODECALLNAVIGATOR_TEST_TYPESCRIPT_ROOT` and engine binary paths; conflicting
-TypeScript settings fail preflight. The private Recurring Billing acceptance
-requires its Maven checkout and private-repository access; it is not silently
-excluded. `CODECALLNAVIGATOR_TEST_MAVEN` can choose Maven for fixtures that support
-that override; `mvn` must also be available on PATH for the other fixtures.
-
-The profiling source is an application data directory with `catalog.sqlite3`,
-saved navigation and an active published graph with relationships. You can also
-pass `--profile-source /absolute/path`. The runner uses the SQLite backup API to
-snapshot the catalog (including committed WAL data), copies the immutable graph
-generation, and benchmarks only that copy. It never points benchmarks at the live
-application store. Keep the selected source available through snapshot creation.
-The standalone core storage-scale benchmark creates a synthetic database under its
-category workspace and does not require a saved profiling source.
-
-Each category cleans its owned Rust build outputs, fixtures/test stores and copied
-profiling data before returning, including after failure, timeout or interruption.
-Category builds live below their run evidence directory; logs, inventory selection,
-acceptance evidence and timing/cleanup reports remain. Stop and reap owned processes
-first. Ownership markers and native process inspection must prove inactivity before
-deletion; uncertain or active artifacts are retained and fail cleanup. Abandoned
-category workspaces are reclaimed only after proving ownership and inactivity.
-
-`--keep-artifacts` explicitly retains diagnostic build state and reports retained
-paths/sizes. Downloaded Cargo registry/Git caches remain; compiled category outputs
-do not accumulate between categories. Report reclaimed/retained bytes. Rebuilding
-after cleanup has a real cost and must not be hidden in execution-only timings.
-Composite cleanup also preserves current packages/reports and one rollback per
-current/legacy app name while pruning obsolete rotated packages. Cargo's own
-age-based downloaded-cache management is disabled for verification children with
-`CARGO_CACHE_AUTO_CLEAN_FREQUENCY=never`; shared caches are not
-manually purged.
-
-The checkout lock prevents competing verification runs. Cleanup additionally
-checks open-file usage with native `lsof` before removing artifact directories;
-insufficient access or active users produce an explicit cleanup failure.
-
-CodeScene uses the installed `cs-mcp` executable over stdio MCP, including its
-normal authentication/license configuration. Select another executable path with
-`--codescene-command`. Missing tools, unavailable checks, quality regressions and
-incomplete results fail verification. Sonar remains a separate connected quality
-gate if `.sonar/config.json` is configured; it is currently absent in this project.
-
-A checkout lock prevents competing full/light runs from sharing build/package
-outputs. Each invocation writes fresh numbered stage logs, `results.json`, `cleanup.json` and `changes.json`
-under `target/verification/`. Failed, timed-out and not-run stages remain distinct;
-a failed/incomplete full run never reports full success. `--timeout SECONDS`
-bounds each build/test/package stage (default 1800); interruption/timeout stops
-the process group. If OS restrictions prevent descendant cleanup, the script
-reports `cleanup-unavailable` and fails. `--output /new/directory` retains evidence
-elsewhere; existing output directories are rejected. `PYTHON=python3.12` chooses
-another supported interpreter. `--base` controls committed changes plus staged,
-unstaged and untracked files; the default base is HEAD. No-change light runs are
-static-only, so use full for an unconditional complete verification.
-
-See [TypeScript acceptance](../evidence/analyzers/typescript.md) and [Maven acceptance](../evidence/analyzers/maven.md) for the compatibility matrix. Headless Rune GPU screenshots and interaction checks are under
-`evidence/ui`; `--scene fixture` is an explicit synthetic test scene, never normal
-startup data. Real-project results and scale measurements are summarized in
-[evidence/VALIDATION.md](../evidence/VALIDATION.md). Live physical trackpad/window
-validation remains outstanding: the execution session reports zero active displays.
+Source builders can inspect available repository checks with `./verify-light.sh --help`
+and `./verify-full.sh --dry-run`. These checks are separate from application use.
+Maintainer prerequisites, test ownership and verification operations are documented
+in [the internal verification runbook](<../.backlog/docs/testing/doc-21 - Verification-prerequisites-and-operations.md>).

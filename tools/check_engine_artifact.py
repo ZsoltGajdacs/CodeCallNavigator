@@ -46,7 +46,7 @@ def check(executable, workload, workloads, directory):
 
 
 def main():
-    corpus = json.loads((ROOT / 'evidence/engine/corpus.json').read_text())
+    corpus = json.loads((ROOT / 'fixtures/engine/corpus.json').read_text())
     workloads = {item['name']: item for item in corpus['workloads']}
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--executable', type=Path, required=True)

@@ -5,7 +5,7 @@ status: Done
 assignee:
   - '@codex'
 created_date: '2026-11-11T13:48:00Z'
-updated_date: '2026-11-13T08:56:00Z'
+updated_date: '2026-11-16T07:11:00Z'
 labels:
   - exploration
   - freshness
@@ -19,9 +19,20 @@ references:
   - DRAFT-2
 documentation:
   - docs/standalone-engine.md
+  - >-
+    .backlog/docs/architecture/doc-22 -
+    Engine-architecture-and-analyzer-implementation.md
   - docs/graph-contract.md
   - docs/graph-freshness.md
-  - evidence/freshness/README.md
+  - >-
+    .backlog/docs/architecture/doc-19 -
+    Saved-edit-freshness-design-and-delivery-rationale.md
+  - >-
+    .backlog/docs/history/doc-8 -
+    Freshness-design-measurements-and-delivery-history.md#source-evidence-freshness-readme-md
+  - >-
+    .backlog/docs/doc-33 -
+    Internal-documentation-index-and-migration-manifest.md
 type: spike
 ---
 

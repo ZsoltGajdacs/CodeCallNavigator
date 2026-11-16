@@ -11,11 +11,6 @@ Run the standalone package's `install.py` to expose the command in your terminal
 See [installation, updates and removal](cli-installation.md) for default and
 custom-prefix instructions.
 
-`codecallnavigator-core` owns shared graph/flow/architecture contracts and pure graph
-operations. `codecallnavigator-engine` owns the coordinator and compiler-backed language
-adapters. The desktop owns presentation and workspace caching and invokes the
-engine executable rather than calling analyzer functions.
-
 See the [external consumer contract](graph-contract.md) and its
 [JSON Schema](graph.schema.json) for compatibility and input verification.
 The [public CLI query interface](cli-queries.md) provides bounded graph queries,
@@ -109,30 +104,6 @@ The engine responds with its usual `hello`, followed by
 operational error. `removed_files` counts the cache database and any sidecars
 actually deleted; an already empty cache succeeds with zero. Older engines that
 lack this additive command reject it as an invalid request.
-`analyze-native` is an internal acceptance oracle retained for comparison with
-the pre-extraction SQLite implementation; it writes no persistent graph file and
-is not the supported project export interface.
-
-## Adding another language
-
-Keep new support within the existing explicit adapter dispatch:
-
-1. Add language/build discovery and default selection rules.
-2. Implement preparation and analyzer execution under the language adapter.
-3. Normalize actual analyzer symbols, ownership and relationships into shared
-   contracts. Supply semantic export keys where native IDs depend on positions.
-4. Extend runtime resources, bootstrap locks and packaging together.
-5. Add real-toolchain acceptance fixtures, invalid-input/cancellation checks and
-   corpus comparisons covering flow and architecture facts where supported.
-
-The shared coordinator owns lifecycle, composition, snapshots and publication.
-Build tools stay separate from graph analysis. Framework inference belongs to
-the relevant language adapter. This extraction introduces no dynamic plugin
-framework and does not substitute name matching for compiler bindings.
-
-Run `cargo test --workspace --all-targets` so moved package tests remain covered.
-The frozen baseline and reproducible corpus are described in
-`evidence/engine/README.md` and `evidence/engine/corpus.json`.
 
 ## Relationship evidence
 
@@ -186,7 +157,7 @@ and diagnostics. Return environments are specific to each call.
 Mutable/property paths, spread/rest forwarding, captured factories, optional
 factories and explicit possibly-nullish default arguments remain unresolved.
 See `tools/typescript/README.md` for the supported subset and
-`docs/engine-adaptations.md` for upstream solution references.
+[internal adaptation rationale](<../.backlog/docs/architecture/doc-17 - Resolution-adaptation-rationale-and-attribution.md>) for upstream solution references.
 
 ## Spring event dispatch
 
@@ -207,35 +178,9 @@ Runtime analysis requires the matching v6 Java source adapter, including its HTT
 
 ## C# evaluated build inputs
 
-After restore, the engine inventories each selected/referenced project's evaluated
-imports through MSBuild preprocessing in normal evaluation and the pinned Roslyn 5.9.0
-.NET design-time context. It queries TargetFramework/TargetFrameworks in both modes and
-includes each inner framework when required. Source/reference/additional-file metadata
-uses the same contexts, retaining design-only source scopes. Configured normal-root
-metadata remains authoritative for source ownership/classification; design-time and
-inner-framework metadata only fill missing file/assembly owners. Incompatible
-fallback-only classifications fail rather than letting evaluation order choose a result.
-Solution opens propagate the absolute SolutionDir with its trailing separator to every
-evaluation and metadata query. It snapshots those explicit files, including
-NuGet-generated `obj` imports and SDK/external imports, and repeats preprocessing under
-that snapshot before reading source metadata. It checks the same inventory and contents,
-including each context's exact import membership, after metadata and CallAtlas
-extraction; changes reject publication and preserve the previous graph. The existing
-authored-source/directory snapshots remain in force. Build outputs are excluded from
-directory scans, while evaluated import files remain explicit inputs, so ordinary output
-creation does not trigger refresh loops. No source/relationship normalization changes
-with this policy.
-
-The inventory uses strict SDK 11 XML comment framing, including balanced import end
-frames without parent labels. MSBuild escapes `--` as `__` in these comments; the engine
-resolves existing filesystem components and rejects ambiguous spellings instead of
-guessing. Unsupported framing, missing evaluated imports and ambiguity fail with project
-context. Evaluated lexical aliases are preserved.
-
-MSBuild command-line property values are encoded literally, escaping percent before
-semicolon and comma. This prevents a SolutionDir or dynamic target-framework value from
-introducing additional global-property assignments. A real SDK round-trip preserves the
-full value and the pinned design-time flags.
+Freshness records observed source/import membership and content. Changes during
+analysis reject publication and preserve the previous graph. Build outputs are
+excluded from directory scans, while evaluated imports remain explicit inputs.
 
 The pinned native Roslyn/CallAtlas integration has a separate limitation in the retained
 delimiter/percent solution-path probe: a SolutionDir-expanded Import produces only the
@@ -243,15 +188,14 @@ unconditional method, while a relative design-time Import produces the expected
 conditional method as well. Both imports are observed by the preflight inventory. This
 change fixes the CLI property boundary and does not repair that native import-expansion
 behavior; see the
-[probe](../evidence/freshness/csharp-import-fix/literal-property-probe.json). Ordinary
+[probe](<https://github.com/ZsoltGajdacs/CodeCallNavigator/blob/13b0de13f3ddf904145f93119816c33b8a5b3e55/evidence/freshness/csharp-import-fix/literal-property-probe.json>). Ordinary
 SolutionDir-expanded imports remain covered by real compiler acceptance.
 
 The JSON version report in `analysis.engine_versions` records `csharp_input_policy` as
 `msbuild-preprocess.v2`. The contexts follow the pinned [Roslyn BuildHost
 source](https://github.com/dotnet/roslyn/blob/35d9211b841e7613c1d2f8f5af6d628ace696c4c/src/Workspaces/MSBuild/BuildHost/Build/ProjectBuildManager.cs#L25-L52).
 The .NET design-time host uses the NonExistentFile sentinel and does not set
-BuildingInsideVisualStudio. Revisit this policy when upgrading the Roslyn dependency.
-Earlier v1 and legacy C# artifacts remain readable, but verification reports
+BuildingInsideVisualStudio. Earlier v1 and legacy C# artifacts remain readable, but verification reports
 `legacy_csharp_input_policy` and `unverifiable` until explicitly refreshed. Known
 changed inputs still take precedence as `stale`. This policy check applies to C# nodes
 or C# build targets, including valid empty graphs; Java/TypeScript artifacts are
@@ -304,53 +248,6 @@ Historical graphs remain readable and explain when a refresh is needed for flows
 See [function flowcharts](function-flowcharts.md) for the supported subset and
 current semantic limits.
 
-### Shared call-site expansion (library)
-
-The shared `flow::expand` API accepts immutable borrowed `FunctionSource` pairs
-and an explicit `ExpansionRequest`. CLI and desktop controls are delivered in
-TASK-22.8; the existing single-function query remains unchanged.
-
-Optional `FunctionFlowIR.execution` and `CallSite.invocation` facts describe
-compiler-owned whole-body execution and final invocation activation separately.
-Unknown facts are omitted and remain unknown when reading older artifacts. The
-canonical flow inventory stays version 1. Fresh Java resources require
-`kind_v9`; fresh TypeScript preparation requires adapter 7. Rebuild matching
-resources after upgrading; historical graph and ordinary flow reads remain valid.
-
-Only a proven isolated synchronous invocation into a synchronous body can be
-expanded. Receiver and arguments precede that final invocation in the supplied
-IR. A virtual or candidate target requires an exact explicit choice and retains
-its certainty and provenance. References, HTTP/navigation relationships, deferred
-regions and unsupported or unknown execution remain stopped. Return types and
-the number of retained targets do not establish activation timing or dispatch.
-
-Each occurrence retains its complete caller/site/target path. Original IR fields,
-call slots and typed cleanup routes distinguish equal spans, repeated calls and
-cleanup copies. Source snapshots retain build/project/file/language ownership,
-exact UTF-8 bytes and digests. Step origins bind every displayed call and span to
-the correct occurrence. A stopped ancestor has a real marker; requested descendants
-are recorded separately as unevaluated `blocked_selections`, never invented bodies.
-
-Defaults are depth 8, 64 reached selection evaluations, 1,500 assembly steps,
-6,000 links and 16 MiB of unique-owner source bytes. Hard depth/request ceilings
-are 32/128; the other defaults are also hard ceilings. Zero depth or request work
-is valid and produces typed stops. Graph/source allowances must be positive.
-The independent request envelope permits 128 selections, occurrence depth 32 and
-1 MiB of encoded identity data. Assembly limits apply before unreachable pruning.
-
-Limits never silently cut off caller continuation or cleanup. The same assembler
-first proves that the complete stopped root fits. Private attempts then demote an
-active or latest accepted root expansion on budget exhaustion and retry, at most
-once per demoted selection. This deterministic policy does not maximize the
-expanded subset. A mandatory root that cannot fit fails explicitly. Sources stay
-borrowed until complete success; cancellation publishes no partial result.
-
-Query generation, artifact digest and revision binding belong to the consuming
-query boundary, rather than an arbitrary snapshot string inside the core result.
-Expansion does not modify graph relationships, stored inventories or ordinary
-single-function chart construction.
-
-
 ## Navigation and HTTP
 
 Compiler-bound Next App Router navigation and builtin TypeScript `fetch` create
@@ -375,32 +272,14 @@ unmodeled deployment/route behavior stay unresolved. Next configuration or
 middleware/proxy presence conservatively blocks its route candidates; the
 analyzer does not execute project configuration.
 
-## Incremental inference
+## Inference cache
 
-Each run still extracts and validates fresh compiler facts. Observer, callable,
-Spring and MediatR inference currently recompute from those facts. The boundary
-pass reuses dependency-keyed routing decisions in the disposable project-local
-`.codecallnavigator/inference.sqlite3`; it never loads prior graph edges as evidence.
-The SQLite file and its exact journal/WAL/SHM names are excluded from discovery,
-source fingerprints and refresh triggers. Continue committing only the single
-graph file and authored configuration, not this derived cache.
-
-A decision depends on its current source use, configured application scope,
-toolchain, complete matching route/blocker membership and supported symbols.
-Negative lookups track empty membership, so adding a matching handler invalidates
-a cached miss. An automatic implementation digest invalidates decisions when the
-rule implementation changes. Hits rebind current symbols and construct fresh
-edge evidence and flow targets; unrelated node index changes cannot replay old
-indexes. Flow attachment always checks the current exact source call site.
-
-Cache reads are optional and read-only. Missing, incompatible or malformed data
-falls back to full inference and reports a volatile warning. Unowned, corrupt or
-nonregular cache files are preserved rather than overwritten; remove the derived
-cache to rebuild it. Successful input verification and atomic graph publication
-happen before the cache replaces its current rows in one transaction under the
-same project lock. Cache persistence failure cannot turn a published graph into a
-failed analysis. Failed or cancelled analysis preserves the successful graph and
-previous cache. The cache stores no graph history.
+Analysis still extracts and validates fresh compiler facts. The disposable
+`.codecallnavigator/inference.sqlite3` cache reuses selected inference decisions;
+it is not a graph history or a substitute for compiler analysis. Commit the single
+graph file and authored configuration, not this derived cache. Missing or malformed
+cache data falls back to full inference with a warning. Failed or cancelled
+analysis preserves the previous graph and cache.
 
 Use `codecallnavigator-engine clear-cache --project /checkout` or the desktop's
 **Clear cache** button beside analysis to discard the inference database and its

@@ -5,11 +5,16 @@ status: Done
 assignee:
   - '@codex'
 created_date: '2026-11-13T18:46:00Z'
-updated_date: '2026-11-13T19:33:00Z'
+updated_date: '2026-11-16T07:11:00Z'
 labels: []
 dependencies: []
 documentation:
-  - evidence/verification/vendor-refresh-2026-11-13.md
+  - >-
+    .backlog/docs/history/doc-10 -
+    Testing-migration-and-verification-operations.md#source-evidence-verification-vendor-refresh-2026-11-13-md
+  - >-
+    .backlog/docs/doc-33 -
+    Internal-documentation-index-and-migration-manifest.md
 type: chore
 ordinal: 72000
 ---

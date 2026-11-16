@@ -1,5 +1,0 @@
-{
-  "version": 1,
-  "status": "failed",
-  "error": "Native app exited before capture; see /Users/zsolt.gajdacs/Zs/Programming/CodeGraph/evidence/flowcharts/csharp/desktop/native-minimum/dark/app.log"
-}

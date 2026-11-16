@@ -1,5 +1,0 @@
-
-running 1 test
-test ui_tests::csharp_flows::real_csharp_controls_keep_exact_source_cleanup_targets_and_history ... ok
-
-test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 273 filtered out; finished in 10.74s

@@ -132,7 +132,7 @@ def check_collisions(path):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--evidence-dir", type=Path, default=Path("evidence/analyzers"))
+    parser.add_argument("--evidence-dir", type=Path, default=Path("target/verification/analyzers"))
     args = parser.parse_args()
     summary = {
         "status": "checks-passed-with-documented-limitations",
@@ -141,6 +141,7 @@ def main():
         "pacificfate": check_pacificfate(args.evidence_dir / "pacificfate-callatlas.json"),
     }
     output = args.evidence_dir / "callatlas-summary.json"
+    output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(json.dumps(summary, indent=2) + "\n")
     print(json.dumps(summary, indent=2))
 

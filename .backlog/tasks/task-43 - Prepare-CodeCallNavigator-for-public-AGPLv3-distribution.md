@@ -5,13 +5,17 @@ status: Done
 assignee:
   - '@codex'
 created_date: '2026-11-12T04:55:00Z'
-updated_date: '2026-11-12T05:36:00Z'
+updated_date: '2026-11-16T07:11:00Z'
 labels: []
 dependencies: []
 references:
   - https://www.gnu.org/licenses/agpl-3.0.html
   - >-
     https://docs.github.com/en/communities/setting-up-your-project-for-healthy-contributions/about-community-profiles-for-public-repositories
+documentation:
+  - >-
+    .backlog/docs/doc-33 -
+    Internal-documentation-index-and-migration-manifest.md
 type: chore
 ---
 

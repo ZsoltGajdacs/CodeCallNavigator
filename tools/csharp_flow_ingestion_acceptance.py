@@ -14,7 +14,7 @@ from csharp_flow_acceptance import objects, require, source_metadata, rebase_exp
 
 
 ROOT = Path(__file__).resolve().parents[1]
-BASELINE = ROOT / "evidence/flowcharts/csharp/ingestion/pre-ingestion.json"
+BASELINE = ROOT / "fixtures/flow/csharp-baselines/pre-ingestion.json"
 GRAPH = Path(".codecallnavigator/graph.json")
 PROJECT = '<Project Sdk="Microsoft.NET.Sdk"><PropertyGroup><TargetFramework>net11.0</TargetFramework></PropertyGroup></Project>\n'
 LINKED_SOURCE = ('namespace Linked; public static class Shared { public static int Leaf(int n)=>n; '

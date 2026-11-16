@@ -5,7 +5,7 @@ status: Done
 assignee:
   - '@codex'
 created_date: '2026-11-12T18:50:00Z'
-updated_date: '2026-11-12T21:01:00Z'
+updated_date: '2026-11-16T07:11:00Z'
 labels: []
 dependencies:
   - TASK-52
@@ -13,9 +13,21 @@ references:
   - TASK-51
 documentation:
   - docs/agent-integrations.md
-  - evidence/agent-integrations/delivery-mcp.md
-  - evidence/agent-integrations/claude-native-mcp.md
-  - evidence/agent-integrations/native-mcp-hosts-initial.md
+  - >-
+    .backlog/docs/research/doc-18 -
+    Agent-companion-integration-research-and-host-boundaries.md
+  - >-
+    .backlog/docs/history/doc-3 -
+    Agent-integration-research-and-host-validation.md#source-evidence-agent-integrations-delivery-mcp-md
+  - >-
+    .backlog/docs/history/doc-3 -
+    Agent-integration-research-and-host-validation.md#source-evidence-agent-integrations-claude-native-mcp-md
+  - >-
+    .backlog/docs/history/doc-3 -
+    Agent-integration-research-and-host-validation.md#source-evidence-agent-integrations-native-mcp-hosts-initial-md
+  - >-
+    .backlog/docs/doc-33 -
+    Internal-documentation-index-and-migration-manifest.md
 type: feature
 ordinal: 62000
 ---

@@ -100,12 +100,13 @@ def run_check(check, path):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--evidence-dir", type=Path, default=Path("evidence/analyzers"))
+    parser.add_argument("--evidence-dir", type=Path, default=Path("target/verification/analyzers"))
     args = parser.parse_args()
     summary = {"fixture": run_check(check_fixture, args.evidence_dir / "fixture-jdt.json"),
                "storyengine": run_check(check_storyengine, args.evidence_dir / "storyengine-jdt.json")}
     passed = all(item["passed"] for item in summary.values())
     summary["status"] = "checks-passed-with-documented-limitations" if passed else "gate-failed"
+    args.evidence_dir.mkdir(parents=True, exist_ok=True)
     (args.evidence_dir / "jdt-summary.json").write_text(json.dumps(summary, indent=2) + "\n")
     print(json.dumps(summary, indent=2))
     return 0 if passed else 1

@@ -1,5 +1,0 @@
-{
-  "version": 1,
-  "status": "failed",
-  "error": "Native app did not reach a displayed capture checkpoint before timeout"
-}

@@ -1,7 +1,0 @@
-{
-  "source_log": "target/verification/task22-unit4a-capture/04-unit-test-rust.log",
-  "recording": "Verbatim actual serialized chart array extracted from the pre-refactor builder test assertion; [] was solely a baseline capture placeholder, not a defect oracle.",
-  "charts": 8,
-  "bytes": 17644,
-  "sha256": "32fcd5279b59b32f42e48dc80cf5491af7c23c29effbada5c4a5638cd1d4a6e6"
-}

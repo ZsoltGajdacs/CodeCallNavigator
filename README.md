@@ -62,8 +62,6 @@ data while keeping that graph and navigation.
 - [CLI-only MCP server and independent installation](docs/mcp.md)
 - [Function flowcharts](docs/function-flowcharts.md)
 - [Architectural layers](docs/architectural-layers.md)
-- [Analyzer acceptance](evidence/analyzers/ACCEPTANCE.md) and
-  [validation results](evidence/VALIDATION.md)
 - [Release and redistribution](docs/public-releases.md)
 
 ## Validation
@@ -73,18 +71,11 @@ data while keeping that graph and navigation.
 ./verify-full.sh    # Complete runtime/analyzer/benchmark/package verification
 ```
 
-Light runs static checks and cleanup for documentation-only changes; otherwise it also
-checks, lints and tests the workspace. Full preflights compiler toolchains and
-explicit dependency/profiling inputs, runs ignored acceptance tests in release
-mode on an isolated profiling snapshot, and verifies local packaging. Both stop
-on failures/timeouts and preserve stage logs and results under `target/verification`.
-
-See [verification setup and commands](docs/reference.md#validation), including
-required full-mode inputs. Use `--dry-run` to inspect either script without running
-checks. Both clean unused artifacts afterward: light keeps compiled dependency
-caches; full reclaims debug/release build profiles. Use `--keep-artifacts` to retain
-build state for investigation. Neither script formats vendored sources or rewrites
-project files.
+Internal architecture, research, testing policy and maintainer runbooks live in
+[Backlog documents](<.backlog/docs/doc-33 - Internal-documentation-index-and-migration-manifest.md>).
+See the [verification runbook](<.backlog/docs/testing/doc-21 - Verification-prerequisites-and-operations.md#validation>)
+for prerequisites and commands. Run outputs are retained under ignored
+`target/verification/`; generated evidence is not checked in.
 
 ## License and feedback
 

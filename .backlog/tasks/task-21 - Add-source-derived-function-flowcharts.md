@@ -5,7 +5,7 @@ status: Done
 assignee:
   - '@codex'
 created_date: '2026-11-09T19:28:00Z'
-updated_date: '2026-11-09T21:09:00Z'
+updated_date: '2026-11-16T07:11:00Z'
 labels: []
 dependencies: []
 references:
@@ -14,7 +14,15 @@ references:
   - /Users/zsolt.gajdacs/Projects/interactive-review/web/src/flowLayout.ts
 documentation:
   - docs/function-flowcharts.md
-  - evidence/flowcharts/README.md
+  - >-
+    .backlog/docs/architecture/doc-24 -
+    Function-flow-implementation-boundaries.md
+  - >-
+    .backlog/docs/history/doc-7 -
+    Function-flow-semantics-and-delivery-history.md#source-evidence-flowcharts-readme-md
+  - >-
+    .backlog/docs/doc-33 -
+    Internal-documentation-index-and-migration-manifest.md
 ordinal: 21000
 ---
 

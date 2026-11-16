@@ -5,10 +5,14 @@ status: Done
 assignee:
   - '@codex'
 created_date: '2026-11-10T13:42:00Z'
-updated_date: '2026-11-10T19:23:00Z'
+updated_date: '2026-11-16T07:11:00Z'
 labels: []
 dependencies:
   - TASK-30.10
+documentation:
+  - >-
+    .backlog/docs/doc-33 -
+    Internal-documentation-index-and-migration-manifest.md
 parent_task_id: TASK-30
 ordinal: 41000
 ---

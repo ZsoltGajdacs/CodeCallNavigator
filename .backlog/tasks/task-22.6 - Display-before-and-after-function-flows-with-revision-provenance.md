@@ -5,7 +5,7 @@ status: Done
 assignee:
   - '@codex'
 created_date: '2026-11-14T11:50:00Z'
-updated_date: '2026-11-15T08:21:00Z'
+updated_date: '2026-11-16T07:11:00Z'
 labels: []
 dependencies:
   - TASK-22.5
@@ -16,7 +16,12 @@ references:
   - src/graph_queries.rs
   - docs/function-flowcharts.md
 documentation:
-  - docs/plans/task-22-function-flowcharts.md
+  - >-
+    .backlog/docs/planning/doc-14 -
+    Function-flowchart-investigation-and-delivery-history.md
+  - >-
+    .backlog/docs/doc-33 -
+    Internal-documentation-index-and-migration-manifest.md
 parent_task_id: TASK-22
 type: feature
 ordinal: 22060

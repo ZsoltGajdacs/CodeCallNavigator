@@ -1,8 +1,0 @@
-{
-  "rustfmt_files": 23,
-  "python_syntax": "passed",
-  "project_xml": "passed",
-  "doc_links": "passed",
-  "diff_check": "passed",
-  "index_unchanged": true
-}
