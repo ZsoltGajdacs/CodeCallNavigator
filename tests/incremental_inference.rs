@@ -232,7 +232,7 @@ fn cached_inference_matches_full_analysis_after_compiler_facts_change() {
     );
     fixture.analyze(true);
     assert_eq!(fixture.graph(), unregistered);
-    assert_only_graph_json(fixture.root());
+    assert_graph_bundle(fixture.root());
 }
 
 fn assert_route_invalidation(fixture: &Fixture) {
@@ -330,7 +330,7 @@ fn assert_cache_warmth(fixture: &Fixture, cold: &Value, initial: &[u8]) {
     assert!(counter(&rebuilt, "inference.cache_misses") >= 3);
     assert_eq!(fixture.graph(), initial);
     assert_eq!(rebuilt["digest"], cold["digest"]);
-    assert_only_graph_json(fixture.root());
+    assert_graph_bundle(fixture.root());
 }
 
 fn assert_configuration_invalidation(fixture: &Fixture, initial: &[u8]) {
@@ -374,7 +374,7 @@ fn failed_and_cancelled_incremental_runs_preserve_the_published_graph() {
     assert_eq!(fixture.graph(), successful);
     assert_eq!(fs::read(fixture.cache()).unwrap(), cache);
     fixture.compare_full();
-    assert_only_graph_json(fixture.root());
+    assert_graph_bundle(fixture.root());
 }
 fn counter(complete: &Value, name: &str) -> u64 {
     complete["metrics"]["counters"][name].as_u64().unwrap_or(0)
@@ -413,21 +413,39 @@ fn publication_failure_does_not_commit_new_inference_decisions() {
     fixture.compare_full();
 }
 
-fn assert_only_graph_json(root: &Path) {
-    let mut names = fs::read_dir(root.join(".codecallnavigator"))
+fn assert_graph_bundle(root: &Path) {
+    let directory = root.join(".codecallnavigator");
+    let mut names = fs::read_dir(&directory)
         .unwrap()
         .map(|entry| entry.unwrap().file_name().to_string_lossy().into_owned())
         .filter(|name| name.ends_with(".json"))
         .collect::<Vec<_>>();
     names.sort();
-    assert!(names == ["graph.json"] || names == ["graph.json", "previous.json"]);
-    for name in &names {
+    let mut expected = vec![
+        "graph.json",
+        "graph.manifest.schema.json",
+        "graph.schema.json",
+    ];
+    let mut manifests = vec!["graph.json"];
+    if directory.join("previous.json").exists() {
+        expected.push("previous.json");
+        manifests.push("previous.json");
+    }
+    assert_eq!(names, expected);
+    for name in [
+        "graph.manifest.schema.json",
+        "graph.schema.json",
+        "README.md",
+    ] {
+        assert!(directory.join(name).is_file(), "Missing companion {name}");
+    }
+    for name in manifests {
         let manifest = codecallnavigator_core::artifact::storage::Manifest::from_bytes(
-            &fs::read(root.join(".codecallnavigator").join(name)).unwrap(),
+            &fs::read(directory.join(name)).unwrap(),
         )
         .unwrap();
         manifest
-            .complete_with(|part| Ok(fs::read(root.join(".codecallnavigator").join(part))?))
+            .complete_with(|part| Ok(fs::read(directory.join(part))?))
             .unwrap();
     }
     assert_eq!(

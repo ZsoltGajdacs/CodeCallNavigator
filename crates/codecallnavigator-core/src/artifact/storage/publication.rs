@@ -78,6 +78,7 @@ pub(crate) fn publish(project: &Path, encoded: &EncodedParts, cancel: &AtomicBoo
     File::open(directory.join("objects"))?.sync_all()?;
     let _guard = Guard::write(project)?;
     check_cancel(cancel)?;
+    super::companions::publish(&directory, cancel)?;
     let previous = previous(project, encoded.as_ref())?;
     // All fallible cleanup happens before the manifest's commit point.
     prune(&directory, &encoded.manifest, previous.as_deref())?;
@@ -94,7 +95,7 @@ pub(crate) fn publish(project: &Path, encoded: &EncodedParts, cancel: &AtomicBoo
     Ok(())
 }
 
-fn check_cancel(cancel: &AtomicBool) -> Result<()> {
+pub(super) fn check_cancel(cancel: &AtomicBool) -> Result<()> {
     ensure!(
         !cancel.load(Ordering::Relaxed),
         "Analysis cancelled before graph publication"
@@ -155,7 +156,7 @@ pub(super) fn validate_object_directory(directory: &Path) -> Result<()> {
     Ok(())
 }
 
-fn atomic_write(path: &Path, bytes: &[u8]) -> Result<()> {
+pub(super) fn atomic_write(path: &Path, bytes: &[u8]) -> Result<()> {
     persist(path, prepare_write(path, bytes)?)
 }
 

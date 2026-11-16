@@ -612,6 +612,20 @@
       "purpose": "captured handles survive pruning and only current and previous parts remain; real filesystem/process boundary cannot be proven in memory"
     },
     {
+      "id": "codecallnavigator-core/lib:codecallnavigator_core::artifact::storage::tests::companion_write_failure_preserves_active_manifest_and_can_recover",
+      "runner": "rust",
+      "file": "crates/codecallnavigator-core/src/artifact/storage/tests.rs",
+      "test_name": "artifact::storage::tests::companion_write_failure_preserves_active_manifest_and_can_recover",
+      "ignored": false,
+      "package": "codecallnavigator-core",
+      "target_kind": "lib",
+      "target": "codecallnavigator_core",
+      "component": "core",
+      "category": "integration",
+      "requirements": [],
+      "purpose": "Real directory conflict proves companion publication failure retains a readable active graph and retry repairs output"
+    },
+    {
       "id": "codecallnavigator-core/lib:codecallnavigator_core::artifact::storage::tests::compressed_publication_is_deterministic_and_roundtrips_complete_facts",
       "runner": "rust",
       "file": "crates/codecallnavigator-core/src/artifact/storage/tests.rs",
@@ -654,6 +668,34 @@
       "purpose": "failed flow object does not disable structural navigation; real filesystem/process boundary cannot be proven in memory"
     },
     {
+      "id": "codecallnavigator-core/lib:codecallnavigator_core::artifact::storage::tests::graph_reads_do_not_repair_or_require_companions",
+      "runner": "rust",
+      "file": "crates/codecallnavigator-core/src/artifact/storage/tests.rs",
+      "test_name": "artifact::storage::tests::graph_reads_do_not_repair_or_require_companions",
+      "ignored": false,
+      "package": "codecallnavigator-core",
+      "target_kind": "lib",
+      "target": "codecallnavigator_core",
+      "component": "core",
+      "category": "integration",
+      "requirements": [],
+      "purpose": "Real filesystem graph loading works without schemas and does not rewrite companions"
+    },
+    {
+      "id": "codecallnavigator-core/lib:codecallnavigator_core::artifact::storage::tests::linked_companion_is_rejected_without_touching_its_target",
+      "runner": "rust",
+      "file": "crates/codecallnavigator-core/src/artifact/storage/tests.rs",
+      "test_name": "artifact::storage::tests::linked_companion_is_rejected_without_touching_its_target",
+      "ignored": false,
+      "package": "codecallnavigator-core",
+      "target_kind": "lib",
+      "target": "codecallnavigator_core",
+      "component": "core",
+      "category": "integration",
+      "requirements": [],
+      "purpose": "Real symlink conflict proves publication rejects linked companion without modifying target or active manifest"
+    },
+    {
       "id": "codecallnavigator-core/lib:codecallnavigator_core::artifact::storage::tests::linked_flow_objects_fail_without_reading_outside_the_artifact_directory",
       "runner": "rust",
       "file": "crates/codecallnavigator-core/src/artifact/storage/tests.rs",
@@ -666,6 +708,20 @@
       "category": "integration",
       "requirements": [],
       "purpose": "linked flow objects fail without reading outside the artifact directory; real filesystem/process boundary cannot be proven in memory"
+    },
+    {
+      "id": "codecallnavigator-core/lib:codecallnavigator_core::artifact::storage::tests::publication_distributes_and_repairs_contracts_without_changing_generation",
+      "runner": "rust",
+      "file": "crates/codecallnavigator-core/src/artifact/storage/tests.rs",
+      "test_name": "artifact::storage::tests::publication_distributes_and_repairs_contracts_without_changing_generation",
+      "ignored": false,
+      "package": "codecallnavigator-core",
+      "target_kind": "lib",
+      "target": "codecallnavigator_core",
+      "component": "core",
+      "category": "integration",
+      "requirements": [],
+      "purpose": "Real filesystem publication distributes canonical contracts, preserves identical files, repairs missing/changed companions and keeps manifest identity stable; pure encoding cannot prove persistence"
     },
     {
       "id": "codecallnavigator-core/lib:codecallnavigator_core::artifact::tests::cancellation_preserves_the_only_project_artifact_and_configuration",
@@ -21945,7 +22001,7 @@
         "typescript",
         "packaged"
       ],
-      "purpose": "agent journeys",
+      "purpose": "Real CLI compiler/query/refresh journey and offline consumption using schemas from its published bundle; fixture-only checks cannot prove installed publication",
       "arguments": [
         "--node-modules",
         "{modules}",

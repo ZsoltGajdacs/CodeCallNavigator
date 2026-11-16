@@ -1,6 +1,7 @@
 //! Immutable compressed parts, captured together under a brief publication guard.
 mod captured;
 mod codec;
+mod companions;
 mod publication;
 #[cfg(test)]
 mod tests;

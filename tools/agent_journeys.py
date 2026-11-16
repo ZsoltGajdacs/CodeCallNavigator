@@ -9,6 +9,7 @@ import subprocess
 import tempfile
 
 from agent_cli import AcceptanceError, Client, require
+from check_graph_contract import consume_bundle
 
 
 def fixture(root, modules):
@@ -104,6 +105,14 @@ def protocol(client, root):
             'Status must not create a missing graph')
     client.command('discover', ['discover', str(root)])
     client.analyze('explicit-initial-refresh')
+    # Reuse this real compiler journey: fixture-only tests cannot prove installed
+    # CLI publication includes sufficient contracts for an independent consumer.
+    with tempfile.TemporaryDirectory(prefix='offline-graph-consumer-') as directory:
+        bundle = Path(directory) / 'bundle'
+        shutil.copytree(root / '.codecallnavigator', bundle)
+        result = consume_bundle(bundle / 'graph.json')
+        require(result['symbols'] and result['relationships'], 'Offline consumer must resolve real graph edges')
+        require(len((bundle / 'README.md').read_text().split()) < 200, 'Bundle README must stay terse')
     status = client.query('initial-status', {'kind': 'status'})
     freshness = status['freshness']['input_status']
     require(freshness in {'match', 'unverifiable'}, 'Initial graph cannot be stale')

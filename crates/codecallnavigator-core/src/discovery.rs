@@ -81,6 +81,9 @@ fn generated_analysis_name(name: &str) -> bool {
     matches!(
         name,
         "graph.json"
+            | "graph.manifest.schema.json"
+            | "graph.schema.json"
+            | "README.md"
             | "graph.lock"
             | "publication.lock"
             | "previous.json"

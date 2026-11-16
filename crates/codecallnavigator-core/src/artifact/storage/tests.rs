@@ -175,3 +175,103 @@ fn corruption_lengths_and_legacy_graphs_are_rejected() {
     embedded.graph["flow_catalogue"] = json!({"inventory_version":1,"symbols":[]});
     assert!(super::codec::decode_structure(&embedded.bytes().unwrap()).is_err());
 }
+
+// Companion persistence and repair require real filesystem entries; pure encoding
+// tests cannot prove preservation, replacement, or read-only loading behavior.
+#[test]
+fn publication_distributes_and_repairs_contracts_without_changing_generation() {
+    let root = tempfile::tempdir().unwrap();
+    let artifact = artifact(root.path(), 0);
+    publish(root.path(), &artifact);
+    let directory = root.path().join(".codecallnavigator");
+    let manifest = fs::read(directory.join("graph.json")).unwrap();
+    for (name, expected) in companions::FILES {
+        let path = directory.join(name);
+        assert_eq!(fs::read(&path).unwrap(), expected);
+        let modified = fs::metadata(&path).unwrap().modified().unwrap();
+        publish(root.path(), &artifact);
+        assert_eq!(fs::metadata(&path).unwrap().modified().unwrap(), modified);
+        fs::write(&path, b"obsolete companion").unwrap();
+        publish(root.path(), &artifact);
+        assert_eq!(fs::read(&path).unwrap(), expected);
+        fs::remove_file(&path).unwrap();
+        publish(root.path(), &artifact);
+        assert_eq!(fs::read(&path).unwrap(), expected);
+    }
+    assert_eq!(fs::read(directory.join("graph.json")).unwrap(), manifest);
+    let readme = fs::read_to_string(directory.join("README.md")).unwrap();
+    assert!(readme.split_whitespace().count() < 200);
+}
+
+#[test]
+fn graph_reads_do_not_repair_or_require_companions() {
+    let root = tempfile::tempdir().unwrap();
+    publish(root.path(), &artifact(root.path(), 0));
+    let directory = root.path().join(".codecallnavigator");
+    fs::remove_file(directory.join("graph.schema.json")).unwrap();
+    fs::write(directory.join("README.md"), b"custom text").unwrap();
+    let modified = fs::metadata(directory.join("README.md"))
+        .unwrap()
+        .modified()
+        .unwrap();
+    assert!(Captured::open(root.path()).unwrap().complete().is_ok());
+    assert!(!directory.join("graph.schema.json").exists());
+    assert_eq!(
+        fs::read(directory.join("README.md")).unwrap(),
+        b"custom text"
+    );
+    assert_eq!(
+        fs::metadata(directory.join("README.md"))
+            .unwrap()
+            .modified()
+            .unwrap(),
+        modified
+    );
+}
+
+#[test]
+fn companion_write_failure_preserves_active_manifest_and_can_recover() {
+    let root = tempfile::tempdir().unwrap();
+    publish(root.path(), &artifact(root.path(), 0));
+    let directory = root.path().join(".codecallnavigator");
+    let manifest = fs::read(directory.join("graph.json")).unwrap();
+    let path = directory.join("graph.schema.json");
+    fs::remove_file(&path).unwrap();
+    fs::create_dir(&path).unwrap();
+    let result = artifact::publish(
+        root.path(),
+        &artifact(root.path(), 1),
+        &AtomicBool::new(false),
+    );
+    assert!(format!("{:#}", result.unwrap_err()).contains("Cannot publish graph companion"));
+    assert_eq!(fs::read(directory.join("graph.json")).unwrap(), manifest);
+    assert!(Captured::open(root.path()).unwrap().complete().is_ok());
+    fs::remove_dir(&path).unwrap();
+    publish(root.path(), &artifact(root.path(), 1));
+    assert_ne!(fs::read(directory.join("graph.json")).unwrap(), manifest);
+    assert_eq!(fs::read(path).unwrap(), companions::FILES[1].1);
+}
+
+#[cfg(unix)]
+#[test]
+fn linked_companion_is_rejected_without_touching_its_target() {
+    let root = tempfile::tempdir().unwrap();
+    publish(root.path(), &artifact(root.path(), 0));
+    let directory = root.path().join(".codecallnavigator");
+    let manifest = fs::read(directory.join("graph.json")).unwrap();
+    let path = directory.join("README.md");
+    fs::remove_file(&path).unwrap();
+    let outside = root.path().join("outside");
+    fs::write(&outside, b"outside bytes").unwrap();
+    std::os::unix::fs::symlink(&outside, &path).unwrap();
+    assert!(
+        artifact::publish(
+            root.path(),
+            &artifact(root.path(), 1),
+            &AtomicBool::new(false)
+        )
+        .is_err()
+    );
+    assert_eq!(fs::read(directory.join("graph.json")).unwrap(), manifest);
+    assert_eq!(fs::read(outside).unwrap(), b"outside bytes");
+}

@@ -10,6 +10,12 @@ an analyzer. The decoded semantic shape is specified in
 [graph.schema.json](graph.schema.json), using JSON Schema Draft 2020-12. The
 [engine guide](standalone-engine.md) describes production and comparison commands.
 
+Every successful analysis or refresh publishes both schemas and a terse
+[bundle README](graph-bundle.md) beside `graph.json`. These generated companions
+are embedded in the application and require no network access. Missing or modified
+copies are repaired on the next publication; opening or querying existing graphs
+does not write them. Companion files do not affect graph generation identity.
+
 ## Compatibility policy
 
 The envelope is `{ "schema": "codecallnavigator.graph.v2", "graph": { ... } }`.

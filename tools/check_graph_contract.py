@@ -15,15 +15,15 @@ from graph_bundle import load
 ROOT = Path(__file__).resolve().parent.parent
 
 
-def validator():
-    schema = json.loads((ROOT / 'docs/graph.schema.json').read_text())
+def validator(path=ROOT / 'docs/graph.schema.json'):
+    schema = json.loads(Path(path).read_text())
     Draft202012Validator.check_schema(schema)
     return Draft202012Validator(schema)
 
 
-def consume(artifact):
+def consume(artifact, schema_validator=None):
     """Resolve edge IDs and retain certainty, evidence and diagnostics as a consumer would."""
-    validator().validate(artifact)
+    (schema_validator if schema_validator is not None else validator()).validate(artifact)
     graph = artifact['graph']
     symbols = {node['id']: node for node in graph['nodes']}
     if len(symbols) != len(graph['nodes']):
@@ -44,6 +44,13 @@ def consume(artifact):
         'relationships': relationships,
         'diagnostics': graph['diagnostics'],
     }
+
+
+def consume_bundle(path):
+    """Use only the contracts beside a published bundle, with no repo fallback."""
+    path = Path(path)
+    validator(path.parent / 'graph.manifest.schema.json').validate(json.loads(path.read_bytes()))
+    return consume(load(path), validator(path.parent / 'graph.schema.json'))
 
 
 def main():

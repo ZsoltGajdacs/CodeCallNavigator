@@ -1,5 +1,12 @@
 use super::*;
 
+const GRAPH_RESOURCE_NAMES: [&str; 4] = [
+    "graph.json",
+    "graph.manifest.schema.json",
+    "graph.schema.json",
+    "README.md",
+];
+
 #[test]
 fn graph_publication_does_not_invalidate_sources_but_configuration_does() {
     let project = tempfile::tempdir().unwrap();
@@ -9,6 +16,9 @@ fn graph_publication_does_not_invalidate_sources_but_configuration_does() {
     fs::create_dir(&directory).unwrap();
     for name in [
         "graph.json",
+        "graph.manifest.schema.json",
+        "graph.schema.json",
+        "README.md",
         "graph.lock",
         "publication.lock",
         "previous.json",
@@ -48,6 +58,9 @@ fn resource_collection_excludes_only_project_graph_outputs() {
     fs::create_dir(&directory).unwrap();
     for name in [
         "graph.json",
+        "graph.manifest.schema.json",
+        "graph.schema.json",
+        "README.md",
         "graph.lock",
         "publication.lock",
         "previous.json",
@@ -65,17 +78,24 @@ fn resource_collection_excludes_only_project_graph_outputs() {
     fs::create_dir(directory.join("objects")).unwrap();
     let object = directory.join("objects/part.flows.json.zst");
     fs::write(&object, "compressed").unwrap();
-    fs::write(project.path().join("graph.json"), "authored resource").unwrap();
+    for name in GRAPH_RESOURCE_NAMES {
+        fs::write(project.path().join(name), "authored resource").unwrap();
+    }
     let paths = input_paths_excluding(&[project.path().into()], &[]).unwrap();
     assert!(paths.contains(&directory.join("layers.yml")));
     assert!(paths.contains(&directory.join("other.json")));
-    assert!(paths.contains(&project.path().join("graph.json")));
+    for name in GRAPH_RESOURCE_NAMES {
+        assert!(paths.contains(&project.path().join(name)));
+    }
     assert!(paths.contains(&directory.join("inference.sqlite3.authored")));
     assert!(!paths.contains(&object));
     assert!(capture([object.clone()]).unwrap().is_empty());
     assert!(input_paths_excluding(&[object], &[]).unwrap().is_empty());
     for name in [
         "graph.json",
+        "graph.manifest.schema.json",
+        "graph.schema.json",
+        "README.md",
         "graph.lock",
         ".graph-publish-active",
         "inference.sqlite3",
@@ -104,6 +124,9 @@ fn explicit_observations_of_generated_graph_files_are_excluded() {
     fs::create_dir(&directory).unwrap();
     for name in [
         "graph.json",
+        "graph.manifest.schema.json",
+        "graph.schema.json",
+        "README.md",
         "inference.sqlite3",
         "inference.sqlite3-wal",
         "inference.sqlite3-shm",

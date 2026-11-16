@@ -143,7 +143,7 @@ fn cancellation_preserves_the_only_project_artifact_and_configuration() {
             .filter_map(|e| e.ok())
             .filter(|e| e.path().extension().is_some_and(|e| e == "json"))
             .count(),
-        1
+        3
     );
 }
 
@@ -232,7 +232,7 @@ fn git_comparison_reads_history_without_writing_snapshots() {
         .unwrap()
         .map(|e| e.unwrap().file_name())
         .collect();
-    assert_eq!(files.len(), 5); // current/previous manifests, objects and persistent locks
+    assert_eq!(files.len(), 8); // manifests, objects, locks and three companions
 }
 
 #[test]
