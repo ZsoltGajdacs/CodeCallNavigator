@@ -292,3 +292,38 @@ fn selected_root_alias_maps_canonical_graph_files_without_following_interior_lin
     tree.observe_root("/another-root", 1.0);
     assert!(tree.canonical_root.is_none());
 }
+
+#[test]
+fn loaded_file_filter_keeps_ancestors_and_reports_no_matches() {
+    let rows = vec![
+        Row {
+            path: "/repo/src".into(),
+            label: "src".into(),
+            depth: 0,
+            kind: RowKind::Directory,
+        },
+        Row {
+            path: "/repo/src/Worker.java".into(),
+            label: "Worker.java".into(),
+            depth: 1,
+            kind: RowKind::File,
+        },
+        Row {
+            path: "/repo/Other.java".into(),
+            label: "Other.java".into(),
+            depth: 0,
+            kind: RowKind::File,
+        },
+    ];
+    let filtered = filtered_rows(rows.clone(), "worker", "/repo");
+    assert_eq!(
+        filtered
+            .iter()
+            .map(|row| row.label.as_str())
+            .collect::<Vec<_>>(),
+        vec!["src", "Worker.java"]
+    );
+    assert_eq!(filtered_rows(rows.clone(), "  ", "/repo").len(), 3);
+    let empty = filtered_rows(rows, "missing", "/repo");
+    assert!(matches!(empty[0].kind, RowKind::Empty));
+}

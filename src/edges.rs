@@ -36,7 +36,15 @@ pub fn render(state: &State, k: &Kit, emphasis: &GraphEmphasis) -> Shape {
             if emphasis.edge_emphasized(index) != emphasized {
                 continue;
             }
-            let edge_style = style(edge, k, emphasis.edge_opacity(index));
+            let edge_style = style(
+                edge,
+                k,
+                emphasis.edge_opacity(index)
+                    * state
+                        .graph_motion
+                        .opacity(edge.from)
+                        .min(state.graph_motion.opacity(edge.to)),
+            );
             shape = routes[index].paint(
                 shape,
                 Paint {

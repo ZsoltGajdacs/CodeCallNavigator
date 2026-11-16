@@ -24,6 +24,27 @@ fn eligible(node: &ViewNode, grouping: Grouping) -> bool {
 }
 
 impl State {
+    /// Open the inspected method through the same cancellable source lifecycle as hover.
+    pub(crate) fn open_selected_source(&mut self) {
+        let Some(member) = self.selected() else {
+            return;
+        };
+        let node = self
+            .graph_view
+            .nodes
+            .iter()
+            .find(|node| {
+                node.member == Some(member) || node.methods.iter().any(|row| row.member == member)
+            })
+            .cloned();
+        if let Some(mut node) = node {
+            node.member = Some(member);
+            self.close_source();
+            open_hover(self, node);
+            self.pin_source();
+        }
+    }
+
     pub fn hover_source(&mut self, node: ViewNode, inside: bool, tx: &mut Tx) {
         if self
             .source_popup

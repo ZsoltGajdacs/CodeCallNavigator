@@ -33,7 +33,7 @@ fn selected_summary(state: &State) -> String {
 }
 
 pub(super) fn layer(state: &State, k: &Kit, layers: &mut Vec<El>) {
-    if state.ui.overlay != Some(Overlay::Builds) || !state.ui.sidebar.is_open() {
+    if state.ui.overlay != Some(Overlay::Builds) {
         return;
     }
     let size = state.source_popup.window;
@@ -75,9 +75,9 @@ pub(super) fn layer(state: &State, k: &Kit, layers: &mut Vec<El>) {
                 .child(contents(state, k))
                 .scroll_bar(k),
         )
-        .focus_return("find-builds")
+        .focus_return("project-picker-trigger")
         .modal(true, State::close_overlay)
-        .anchored_fit("find-builds", Side::Right, Align::Start, 8.0);
+        .anchored_fit("project-picker-trigger", Side::Bottom, Align::Start, 8.0);
     layers.push(popover::raised(k, panel, k.radius.md));
 }
 

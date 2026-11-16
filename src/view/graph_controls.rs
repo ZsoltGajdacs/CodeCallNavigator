@@ -28,34 +28,9 @@ mod graph_filters;
 pub use graph_filters::filters;
 
 pub fn toolbar(state: &State, k: &Kit) -> El {
-    let navigation = navigation_controls(state, k);
-    let grouping = SegmentedControl::new(
-        &["Project", "Namespace", "Folder", "Method", "Layer"],
-        GROUPS.iter().position(|g| *g == state.nav.grouping),
-    )
-    .label("Group graph by")
-    .width(Some((state.viewport[0] - 16.0).min(492.0)))
-    .on_pick(|s: &mut State, i, _| s.set_grouping(GROUPS[i]))
-    .build(k)
-    .key("grouping");
-    let toolbar = if state.viewport[0] < 820.0 {
-        col()
-            .key("graph-toolbar")
-            .w_full()
-            .padding(8.0)
-            .gap(6.0)
-            .child(navigation)
-            .child(grouping)
-    } else {
-        row()
-            .key("graph-toolbar")
-            .w_full()
-            .padding(8.0)
-            .gap(12.0)
-            .center_y()
-            .child(navigation)
-            .child(grouping)
-    };
+    let toolbar = navigation_controls(state, k)
+        .key("graph-toolbar")
+        .padding(8.0);
     if state.nav.grouping == Grouping::Layer {
         col()
             .key("architecture-toolbar")
@@ -109,6 +84,7 @@ fn navigation_controls(state: &State, k: &Kit) -> El {
 }
 
 pub fn footer(state: &State, k: &Kit, layer: &mut Vec<El>) -> El {
+    let grouping = grouping_control(state, k, layer);
     let direction = direction_control(state, k);
     let depth = state.nav.depth.to_string();
     let values = (1..=64).map(|v| v.to_string()).collect::<Vec<_>>();
@@ -129,6 +105,7 @@ pub fn footer(state: &State, k: &Kit, layer: &mut Vec<El>) -> El {
     let scope = row()
         .gap(8.0)
         .center_y()
+        .child(grouping)
         .child(direction)
         .child(text("Depth").font(k.ty.small).color(k.c.text_muted))
         .child(depth_select);
@@ -235,4 +212,35 @@ pub fn legend(k: &Kit) -> El {
                 .font(k.ty.small)
                 .color(k.c.text_muted),
         )
+}
+
+fn grouping_control(state: &State, k: &Kit, layer: &mut Vec<El>) -> El {
+    let labels = ["Project", "Namespace", "Folder", "Method", "Layer"];
+    let current = GROUPS
+        .iter()
+        .position(|g| *g == state.nav.grouping)
+        .unwrap_or(0);
+    Select::new("grouping", &labels)
+        .label("Group graph by")
+        .current(Some(labels[current]))
+        .width(112.0)
+        .open(state.ui.overlay == Some(Overlay::Grouping))
+        .on_toggle(|s: &mut State| {
+            s.ui.overlay = if s.ui.overlay == Some(Overlay::Grouping) {
+                None
+            } else {
+                Some(Overlay::Grouping)
+            };
+        })
+        .on_close(State::close_overlay)
+        .on_choose(|s: &mut State, value, _| {
+            if let Some(index) = ["Project", "Namespace", "Folder", "Method", "Layer"]
+                .iter()
+                .position(|label| *label == value)
+            {
+                s.set_grouping(GROUPS[index]);
+            }
+            s.close_overlay();
+        })
+        .build(k, layer)
 }

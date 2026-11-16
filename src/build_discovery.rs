@@ -131,6 +131,7 @@ pub fn poll(state: &mut State) -> bool {
     }
     match output.result {
         Ok(targets) => {
+            crate::recent_projects::remember(&mut state.recent_projects, &output.root);
             state.targets = state.build_discovery.choices(state, targets);
             state.build_discovery.phase = Phase::Ready;
             state.status = format!("{} build targets found", state.targets.len());

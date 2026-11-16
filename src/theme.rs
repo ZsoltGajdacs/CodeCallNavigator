@@ -7,8 +7,8 @@ pub const RAIL_WIDTH: f32 = 48.0;
 
 pub fn kit(dark: bool) -> Kit {
     let mut kit = Kit::from_palette(PaletteSeed {
-        bg: hex(if dark { "#191c23" } else { "#f6f7f9" }),
-        fg: hex(if dark { "#e7eaf0" } else { "#202632" }),
+        bg: hex(if dark { "#191c23" } else { "#faf9f7" }),
+        fg: hex(if dark { "#e7eaf0" } else { "#20252c" }),
         accent: hex(if dark { "#69a7ff" } else { "#2164d8" }),
     });
     kit.dark = dark;
@@ -25,7 +25,7 @@ pub fn mono(size: f32, weight: f32) -> TextStyle {
 }
 
 pub fn canvas(k: &Kit) -> Color {
-    hex(if k.dark { "#101319" } else { "#ffffff" })
+    hex(if k.dark { "#101319" } else { "#faf9f7" })
 }
 
 pub fn callback(k: &Kit) -> Color {

@@ -79,6 +79,12 @@ impl Popup {
             [self.rect[0], self.rect[1]]
         } else {
             let node = self.active.as_ref().map(|p| &p.node).unwrap();
+            let node = state
+                .graph_view
+                .nodes
+                .iter()
+                .find(|current| current.key == node.key)
+                .unwrap_or(node);
             let point = state.nav.camera.screen(node.position);
             let right = self.canvas[0] + point[0] + node.size[0] * state.nav.camera.zoom + 8.0;
             let left = self.canvas[0] + point[0] - size[0] - 8.0;

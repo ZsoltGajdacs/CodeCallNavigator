@@ -17,8 +17,11 @@ pub enum Drawer {
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Overlay {
+    Grouping,
     Depth,
     Builds,
+    Filters,
+    Projects,
 }
 
 #[derive(Clone, Copy)]
@@ -28,6 +31,7 @@ pub enum Section {
     Callers,
     Callees,
     Analysis,
+    Activity,
 }
 
 #[derive(Clone, Copy)]
@@ -99,7 +103,7 @@ pub struct Presentation {
     pub overlay: Option<Overlay>,
     /// Latest window content width; runtime-only, independent of saved pane preferences.
     pub window_width: f32,
-    open_sections: [bool; 5],
+    open_sections: [bool; 6],
 }
 
 impl Default for Presentation {
@@ -110,7 +114,7 @@ impl Default for Presentation {
             drawer: Drawer::Repository,
             overlay: None,
             window_width: 1420.0,
-            open_sections: [true; 5],
+            open_sections: [true, true, true, true, true, false],
         }
     }
 }
@@ -211,6 +215,22 @@ impl State {
         };
     }
 
+    pub fn toggle_filters(&mut self) {
+        self.ui.overlay = match self.ui.overlay {
+            Some(Overlay::Filters) => None,
+            _ => Some(Overlay::Filters),
+        };
+    }
+
+    pub fn reset_filters(&mut self) {
+        let defaults = Filter::default();
+        if self.nav.filter != defaults {
+            self.checkpoint();
+            self.nav.filter = defaults;
+            self.changed();
+        }
+    }
+
     pub fn close_overlay(&mut self) {
         self.ui.overlay = None;
     }
@@ -273,6 +293,39 @@ mod tests {
             "needs_layout": state.needs_layout,
             "auto_fit": state.auto_fit,
         })
+    }
+
+    #[test]
+    fn reset_filters_restores_production_defaults_with_one_history_step() {
+        let mut state = State::new();
+        state.nav.filter.include_tests = true;
+        state.nav.filter.relationship_kinds.clear();
+        state.nav.filter.target_resolutions.clear();
+        state.nav.camera.zoom = 0.72;
+        let previous = state.nav.filter.clone();
+        let history_len = state.back.len();
+        state.reset_filters();
+        assert_eq!(state.nav.filter, Filter::default());
+        assert_eq!(state.nav.camera.zoom, 0.72);
+        assert_eq!(state.back.len(), history_len + 1);
+        assert_eq!(state.back.last().unwrap().filter, previous);
+        let revision = state.revision;
+        state.reset_filters();
+        assert_eq!(state.revision, revision);
+        assert_eq!(state.back.len(), history_len + 1);
+    }
+
+    #[test]
+    fn filter_popover_is_transient_and_exclusive_with_other_overlays() {
+        let mut state = State::new();
+        state.ui.overlay = Some(Overlay::Builds);
+        state.toggle_filters();
+        assert_eq!(state.ui.overlay, Some(Overlay::Filters));
+        state.toggle_depth();
+        assert_eq!(state.ui.overlay, Some(Overlay::Depth));
+        state.toggle_filters();
+        state.toggle_filters();
+        assert_eq!(state.ui.overlay, None);
     }
 
     #[test]

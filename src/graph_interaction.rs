@@ -89,6 +89,7 @@ pub fn poll(state: &mut State, time: f64, tx: &mut rune::Tx) -> bool {
 
 impl State {
     pub fn cancel_graph_camera(&mut self) {
+        self.graph_motion.interrupt_camera();
         self.cancel_graph_press();
         self.graph_interaction.center_after_layout = false;
     }

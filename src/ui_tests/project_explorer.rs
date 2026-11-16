@@ -400,7 +400,11 @@ fn explorer_layouts_and_optional_native_captures() {
         fixture.expand();
         fixture.double_click("a/deep/Shared.cs");
         assert_file_cards_clear_filters(&fixture.runtime);
-        for key in ["choose-folder", "explorer-refresh", "explorer-scroll"] {
+        for key in [
+            "project-picker-trigger",
+            "explorer-refresh",
+            "explorer-scroll",
+        ] {
             let element = fixture
                 .runtime
                 .elements()

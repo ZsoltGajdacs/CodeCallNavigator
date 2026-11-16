@@ -130,20 +130,10 @@ fn minimum_window_keeps_graph_controls_visible_without_toolbar_scrolling() {
         runtime.update(|s, _| s.graph_view.pages = 3);
         settle(&mut runtime);
         for key in [
-            "filter-tests",
-            "filter-generated",
-            "filter-unavailable",
-            "filter-possible",
-            "filter-direct",
-            "filter-other-resolution",
-            "filter-calls",
-            "filter-framework",
-            "filter-http-navigation",
-            "filter-other-relationships",
-            "filter-references",
+            "graph-filters",
             "overview",
             "collapse-all",
-            "grouping",
+            "grouping-trigger",
             "direction",
             "depth-trigger",
             "next-page",
@@ -168,7 +158,7 @@ fn repository_activity_rail_collapses_without_navigating_the_graph() {
     click(&mut runtime, "drawer-repository");
     settle(&mut runtime);
     assert!(!runtime.state.ui.sidebar.is_open());
-    assert!(runtime.find("filter-tests").is_some());
+    assert!(runtime.find("graph-filters").is_some());
     assert_eq!(serde_json::to_value(&runtime.state.nav).unwrap(), nav);
     assert_eq!(runtime.state.revision, revision);
 }
@@ -353,7 +343,13 @@ fn live_pane_drags_keep_controls_inside_the_minimum_window() {
         shown <= 1050.0 - 48.0 - 448.0,
         "Live pane resizing consumed graph space: {shown}"
     );
-    for key in ["grouping", "direction", "depth-trigger", "zoom-in", "fit"] {
+    for key in [
+        "grouping-trigger",
+        "direction",
+        "depth-trigger",
+        "zoom-in",
+        "fit",
+    ] {
         assert_visible(&runtime, key);
     }
     assert_eq!(runtime.state.nav.camera.pan, camera.pan);
@@ -383,7 +379,7 @@ fn assert_inside(inner: [f32; 4], outer: [f32; 4], padding: f32) {
 fn drawer_fields_and_long_inspector_signatures_stay_inside_their_panes() {
     let mut runtime = narrow_runtime(false);
     let drawer = element(&runtime, "drawer").rect;
-    assert_inside(element(&runtime, "root-path").rect, drawer, 12.0);
+    assert_inside(element(&runtime, "explorer-refresh").rect, drawer, 12.0);
     click(&mut runtime, "open-search");
     settle(&mut runtime);
     let modal = element(&runtime, "search-dialog").rect;
@@ -492,6 +488,7 @@ fn empty_workspace_shows_discovery_progress_and_a_real_directory_error() {
     let error = element(&runtime, "status-message");
     assert_eq!(error.text.as_deref(), Some(runtime.state.warning.as_str()));
     assert!(error.visible[2] > 10.0 && error.visible[3] > 10.0);
+    click(&mut runtime, "project-picker-trigger");
     assert_visible(&runtime, "choose-folder");
     assert_visible(&runtime, "find-builds");
 }

@@ -77,6 +77,7 @@ struct Output {
 }
 
 pub struct Workspace {
+    pub filter: rune::TextEdit,
     pub root: String,
     canonical_root: Option<String>,
     pub rows: Vec<Row>,
@@ -97,6 +98,7 @@ pub struct Workspace {
 impl Default for Workspace {
     fn default() -> Self {
         Self {
+            filter: rune::TextEdit::new(""),
             root: String::new(),
             canonical_root: None,
             rows: Vec::new(),
@@ -174,6 +176,10 @@ impl Workspace {
         self.queue_directory(path);
         self.rebuild();
     }
+    /// Filter the loaded tree only; filtering never starts filesystem traversal.
+    pub fn filter_changed(&mut self) {
+        self.rebuild();
+    }
     fn rebuild(&mut self) {
         let mut projection = TreeRows::default();
         if !self.root.is_empty() {
@@ -182,7 +188,7 @@ impl Workspace {
         for path in projection.missing {
             self.queue_directory(path);
         }
-        self.rows = projection.visible;
+        self.rows = filtered_rows(projection.visible, &self.filter.text, &self.root);
         self.serial += 1;
     }
     fn append_directory(&self, path: &str, depth: usize, rows: &mut TreeRows) {
@@ -447,5 +453,35 @@ fn replace_prefix(path: &str, from: &str, to: &str) -> String {
     match Path::new(path).strip_prefix(from) {
         Ok(relative) => Path::new(to).join(relative).to_string_lossy().into_owned(),
         Err(_) => path.into(),
+    }
+}
+
+fn filtered_rows(rows: Vec<Row>, query: &str, root: &str) -> Vec<Row> {
+    let query = query.trim().to_lowercase();
+    if query.is_empty() {
+        return rows;
+    }
+    let matches: Vec<_> = rows
+        .iter()
+        .filter(|row| row.label.to_lowercase().contains(&query))
+        .map(|row| row.path.clone())
+        .collect();
+    let filtered: Vec<_> = rows
+        .into_iter()
+        .filter(|row| {
+            matches
+                .iter()
+                .any(|path| path == &row.path || Path::new(path).starts_with(&row.path))
+        })
+        .collect();
+    if filtered.is_empty() {
+        vec![Row::note(
+            root,
+            0,
+            RowKind::Empty,
+            "No loaded files match this filter".into(),
+        )]
+    } else {
+        filtered
     }
 }

@@ -22,6 +22,7 @@ pub struct TargetChoice {
 }
 
 pub struct State {
+    pub recent_projects: Vec<String>,
     pub explorer: crate::explorer::Workspace,
     pub flow_workspace: crate::flow_workspace::Workspace,
     pub flow_comparison: crate::flow_comparison::Workspace,
@@ -48,6 +49,7 @@ pub struct State {
     pub back: Vec<Navigation>,
     pub forward: Vec<Navigation>,
     pub graph_view: GraphView,
+    pub graph_motion: crate::graph_motion::Motion,
     pub edge_geometry: RefCell<crate::edges::GeometryCache>,
     pub graph_emphasis: RefCell<crate::graph_emphasis::Cache>,
     pub visual_selection: Option<String>,
@@ -94,6 +96,7 @@ impl State {
             search: crate::search::Workspace::default(),
             targets: Vec::new(),
             build_discovery: Default::default(),
+            recent_projects: Vec::new(),
             saved_builds: Vec::new(),
             saved_targets: None,
             graph: None,
@@ -113,6 +116,7 @@ impl State {
             back: Vec::new(),
             forward: Vec::new(),
             graph_view: GraphView::default(),
+            graph_motion: Default::default(),
             edge_geometry: RefCell::default(),
             graph_emphasis: RefCell::default(),
             visual_selection: None,
@@ -193,6 +197,7 @@ impl State {
 
     /// Install a new layout, including same-sized replacements, before rendering it.
     pub fn replace_graph_view(&mut self, view: GraphView) {
+        self.graph_motion.clear();
         self.graph_view = view;
         *self.edge_geometry.get_mut() = Default::default();
         *self.graph_emphasis.get_mut() = Default::default();
@@ -289,6 +294,7 @@ impl State {
 
     pub fn session(&self) -> SavedSession {
         SavedSession {
+            recent_projects: self.recent_projects.clone(),
             presentation_cache: self.presentation_cache.clone(),
             graph_context: self
                 .query_context

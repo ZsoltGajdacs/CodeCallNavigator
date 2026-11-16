@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-11-16T07:56:00Z'
-updated_date: '2026-11-16T08:14:00Z'
+updated_date: '2026-11-16T08:25:00Z'
 labels:
   - ui
   - ux
@@ -58,4 +58,6 @@ Implement in committed slices: 1. Reconcile feature parity and preserve artifact
 
 <!-- SECTION:NOTES:BEGIN -->
 Plan reviewed against current code. Required refactorings: thin shell composition; separate status/action presentation; dedicated filter popover; model-owned recent roots/file filtering; one graph-motion owner with bounded outgoing state. ViewEdge has no provenance identity: do not add semantic contracts just to animate it. Match stable endpoints plus classification, crossfade ambiguous duplicate routes. Source bounds must resolve displayed node geometry by key.
+
+Slice checkpoint: native shell/pane controls, project picker with bounded recents, model-owned file filtering, grouped filter popover/default reset, inspector hierarchy/source action, floating controls/activity, and initial shared graph-motion geometry implemented. UI unit suite target/verification/ui-4xawnfqk passed 134 tests; category cleanup passed. Runtime integration is running with existing TypeScript fixture dependencies. Independent review identified follow-up motion route/layer/rapid-ghost hardening; task remains In Progress. Documentation-only planning commit 309e4fa already recorded. User requested targeted verification rather than broad unrelated analyzer reruns.
 <!-- SECTION:NOTES:END -->

@@ -8731,6 +8731,20 @@
       "purpose": "lists every entry folders first without following directory links"
     },
     {
+      "id": "codecallnavigator/bin:codecallnavigator::explorer::tests::loaded_file_filter_keeps_ancestors_and_reports_no_matches",
+      "runner": "rust",
+      "file": "src/explorer/tests.rs",
+      "test_name": "explorer::tests::loaded_file_filter_keeps_ancestors_and_reports_no_matches",
+      "ignored": false,
+      "package": "codecallnavigator",
+      "target_kind": "bin",
+      "target": "codecallnavigator",
+      "component": "ui",
+      "category": "unit",
+      "requirements": [],
+      "purpose": "loaded file filter keeps ancestors and reports no matches"
+    },
+    {
       "id": "codecallnavigator/bin:codecallnavigator::explorer::tests::method_and_group_files_resolve_without_navigation_mutation",
       "runner": "rust",
       "file": "src/explorer/tests.rs",
@@ -9855,6 +9869,76 @@
       "purpose": "bounds include only focus nodes and handle negative positions"
     },
     {
+      "id": "codecallnavigator/bin:codecallnavigator::graph_motion::tests::camera_interruption_preserves_manual_position_while_nodes_finish",
+      "runner": "rust",
+      "file": "src/graph_motion.rs",
+      "test_name": "graph_motion::tests::camera_interruption_preserves_manual_position_while_nodes_finish",
+      "ignored": false,
+      "package": "codecallnavigator",
+      "target_kind": "bin",
+      "target": "codecallnavigator",
+      "component": "ui",
+      "category": "unit",
+      "requirements": [],
+      "purpose": "camera interruption preserves manual position while nodes finish"
+    },
+    {
+      "id": "codecallnavigator/bin:codecallnavigator::graph_motion::tests::changing_size_keeps_edge_ports_attached",
+      "runner": "rust",
+      "file": "src/graph_motion.rs",
+      "test_name": "graph_motion::tests::changing_size_keeps_edge_ports_attached",
+      "ignored": false,
+      "package": "codecallnavigator",
+      "target_kind": "bin",
+      "target": "codecallnavigator",
+      "component": "ui",
+      "category": "unit",
+      "requirements": [],
+      "purpose": "changing size keeps edge ports attached"
+    },
+    {
+      "id": "codecallnavigator/bin:codecallnavigator::graph_motion::tests::reduced_motion_installs_target_without_travel",
+      "runner": "rust",
+      "file": "src/graph_motion.rs",
+      "test_name": "graph_motion::tests::reduced_motion_installs_target_without_travel",
+      "ignored": false,
+      "package": "codecallnavigator",
+      "target_kind": "bin",
+      "target": "codecallnavigator",
+      "component": "ui",
+      "category": "unit",
+      "requirements": [],
+      "purpose": "reduced motion installs target without travel"
+    },
+    {
+      "id": "codecallnavigator/bin:codecallnavigator::graph_motion::tests::removed_nodes_fade_as_noninteractive_presentation_ghosts",
+      "runner": "rust",
+      "file": "src/graph_motion.rs",
+      "test_name": "graph_motion::tests::removed_nodes_fade_as_noninteractive_presentation_ghosts",
+      "ignored": false,
+      "package": "codecallnavigator",
+      "target_kind": "bin",
+      "target": "codecallnavigator",
+      "component": "ui",
+      "category": "unit",
+      "requirements": [],
+      "purpose": "removed nodes fade as noninteractive presentation ghosts"
+    },
+    {
+      "id": "codecallnavigator/bin:codecallnavigator::graph_motion::tests::retargeting_starts_at_displayed_position_and_keeps_velocity",
+      "runner": "rust",
+      "file": "src/graph_motion.rs",
+      "test_name": "graph_motion::tests::retargeting_starts_at_displayed_position_and_keeps_velocity",
+      "ignored": false,
+      "package": "codecallnavigator",
+      "target_kind": "bin",
+      "target": "codecallnavigator",
+      "component": "ui",
+      "category": "unit",
+      "requirements": [],
+      "purpose": "retargeting starts at displayed position and keeps velocity"
+    },
+    {
       "id": "codecallnavigator/bin:codecallnavigator::inspector::tests::legacy_empty_analyzer_provenance_requests_refresh_explicitly",
       "runner": "rust",
       "file": "src/inspector.rs",
@@ -9983,6 +10067,20 @@
       "purpose": "sustained sweeps keep the graph near its saved camera and return home"
     },
     {
+      "id": "codecallnavigator/bin:codecallnavigator::presentation::tests::filter_popover_is_transient_and_exclusive_with_other_overlays",
+      "runner": "rust",
+      "file": "src/presentation.rs",
+      "test_name": "presentation::tests::filter_popover_is_transient_and_exclusive_with_other_overlays",
+      "ignored": false,
+      "package": "codecallnavigator",
+      "target_kind": "bin",
+      "target": "codecallnavigator",
+      "component": "ui",
+      "category": "unit",
+      "requirements": [],
+      "purpose": "Filter popover overlay toggles without persistent navigation state"
+    },
+    {
       "id": "codecallnavigator/bin:codecallnavigator::presentation::tests::legacy_search_and_filter_drawers_restore_repository",
       "runner": "rust",
       "file": "src/presentation.rs",
@@ -10079,6 +10177,20 @@
       "category": "unit",
       "requirements": [],
       "purpose": "presentation changes do not change graph camera or history"
+    },
+    {
+      "id": "codecallnavigator/bin:codecallnavigator::presentation::tests::reset_filters_restores_production_defaults_with_one_history_step",
+      "runner": "rust",
+      "file": "src/presentation.rs",
+      "test_name": "presentation::tests::reset_filters_restores_production_defaults_with_one_history_step",
+      "ignored": false,
+      "package": "codecallnavigator",
+      "target_kind": "bin",
+      "target": "codecallnavigator",
+      "component": "ui",
+      "category": "unit",
+      "requirements": [],
+      "purpose": "Reset restores production filter defaults and is undoable without duplicate no-op history"
     },
     {
       "id": "codecallnavigator/bin:codecallnavigator::presentation::tests::restore_clamps_widths_and_keeps_factory_reset_widths",
@@ -10515,6 +10627,48 @@
       "category": "unit",
       "requirements": [],
       "purpose": "visibility signs have precise descriptions"
+    },
+    {
+      "id": "codecallnavigator/bin:codecallnavigator::recent_projects::session_tests::recent_projects_round_trip_with_legacy_defaults",
+      "runner": "rust",
+      "file": "src/recent_projects.rs",
+      "test_name": "recent_projects::session_tests::recent_projects_round_trip_with_legacy_defaults",
+      "ignored": false,
+      "package": "codecallnavigator",
+      "target_kind": "bin",
+      "target": "codecallnavigator",
+      "component": "ui",
+      "category": "unit",
+      "requirements": [],
+      "purpose": "recent projects round trip with legacy defaults"
+    },
+    {
+      "id": "codecallnavigator/bin:codecallnavigator::recent_projects::tests::history_deduplicates_normalizes_and_bounds_recent_roots",
+      "runner": "rust",
+      "file": "src/recent_projects.rs",
+      "test_name": "recent_projects::tests::history_deduplicates_normalizes_and_bounds_recent_roots",
+      "ignored": false,
+      "package": "codecallnavigator",
+      "target_kind": "bin",
+      "target": "codecallnavigator",
+      "component": "ui",
+      "category": "unit",
+      "requirements": [],
+      "purpose": "history deduplicates normalizes and bounds recent roots"
+    },
+    {
+      "id": "codecallnavigator/bin:codecallnavigator::recent_projects::tests::legacy_restore_adds_current_root_without_reordering_history",
+      "runner": "rust",
+      "file": "src/recent_projects.rs",
+      "test_name": "recent_projects::tests::legacy_restore_adds_current_root_without_reordering_history",
+      "ignored": false,
+      "package": "codecallnavigator",
+      "target_kind": "bin",
+      "target": "codecallnavigator",
+      "component": "ui",
+      "category": "unit",
+      "requirements": [],
+      "purpose": "legacy restore adds current root without reordering history"
     },
     {
       "id": "codecallnavigator/bin:codecallnavigator::search::tests::reopening_search_discards_a_delayed_class_activation",
@@ -11825,20 +11979,18 @@
       "purpose": "graph click centers and double click focuses without extra history"
     },
     {
-      "id": "codecallnavigator/bin:codecallnavigator::ui_tests::graph_fit::fit_uses_the_full_canvas_beneath_wrapped_filters",
+      "id": "codecallnavigator/bin:codecallnavigator::ui_tests::graph_fit::fit_uses_the_full_canvas_with_filter_popover_closed",
       "runner": "rust",
       "file": "src/ui_tests/graph_fit.rs",
-      "test_name": "ui_tests::graph_fit::fit_uses_the_full_canvas_beneath_wrapped_filters",
+      "test_name": "ui_tests::graph_fit::fit_uses_the_full_canvas_with_filter_popover_closed",
       "ignored": false,
       "package": "codecallnavigator",
       "target_kind": "bin",
       "target": "codecallnavigator",
       "component": "ui",
       "category": "integration",
-      "requirements": [
-        "graphviz"
-      ],
-      "purpose": "fit uses the full canvas beneath wrapped filters"
+      "requirements": [],
+      "purpose": "fit uses the full canvas with filter popover closed"
     },
     {
       "id": "codecallnavigator/bin:codecallnavigator::ui_tests::graph_single_click_centers_after_click_interval_and_wheel_zooms",
@@ -11969,22 +12121,6 @@
       "purpose": "filter tooltips explain relationship semantics"
     },
     {
-      "id": "codecallnavigator/bin:codecallnavigator::ui_tests::graph_studio::filters::filters_share_one_line_when_wide_and_wrap_when_narrow",
-      "runner": "rust",
-      "file": "src/ui_tests/graph_studio_filters.rs",
-      "test_name": "ui_tests::graph_studio::filters::filters_share_one_line_when_wide_and_wrap_when_narrow",
-      "ignored": false,
-      "package": "codecallnavigator",
-      "target_kind": "bin",
-      "target": "codecallnavigator",
-      "component": "ui",
-      "category": "integration",
-      "requirements": [
-        "graphviz"
-      ],
-      "purpose": "filters share one line when wide and wrap when narrow"
-    },
-    {
       "id": "codecallnavigator/bin:codecallnavigator::ui_tests::graph_studio::filters::grouped_filters_fit_and_expose_full_names_in_both_themes",
       "runner": "rust",
       "file": "src/ui_tests/graph_studio_filters.rs",
@@ -12015,6 +12151,20 @@
         "graphviz"
       ],
       "purpose": "grouped filters toggle preserving zoom and centering the focus"
+    },
+    {
+      "id": "codecallnavigator/bin:codecallnavigator::ui_tests::graph_studio::filters::opening_and_closing_filters_preserves_camera_and_navigation",
+      "runner": "rust",
+      "file": "src/ui_tests/graph_studio_filters.rs",
+      "test_name": "ui_tests::graph_studio::filters::opening_and_closing_filters_preserves_camera_and_navigation",
+      "ignored": false,
+      "package": "codecallnavigator",
+      "target_kind": "bin",
+      "target": "codecallnavigator",
+      "component": "ui",
+      "category": "integration",
+      "requirements": [],
+      "purpose": "opening and closing filters preserves camera and navigation"
     },
     {
       "id": "codecallnavigator/bin:codecallnavigator::ui_tests::graph_studio::filters::relationship_type_and_resolution_are_independent_and_restored_by_history",

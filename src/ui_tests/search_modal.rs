@@ -298,16 +298,7 @@ fn replacement_graph_and_query_discard_old_results_before_activation() {
 #[test]
 fn typing_searches_the_index_and_escape_restores_the_previous_editor_focus() {
     let mut runtime = runtime(false);
-    click(&mut runtime, "root-path");
-    assert!(
-        runtime
-            .elements()
-            .iter()
-            .any(|element| element.key.as_deref() == Some("input")
-                && element.label.as_deref() == Some("Project folder")
-                && element.focused),
-        "project editor focused before opening"
-    );
+    click(&mut runtime, "project-picker-trigger");
     runtime.key(KeyEvent {
         key: Key::Command('f'),
         mods: Mods {
@@ -325,9 +316,7 @@ fn typing_searches_the_index_and_escape_restores_the_previous_editor_focus() {
     press(&mut runtime, Key::Escape);
     assert!(!runtime.state.search.open);
     assert!(runtime.elements().iter().any(|element| {
-        element.key.as_deref() == Some("input")
-            && element.label.as_deref() == Some("Project folder")
-            && element.focused
+        element.key.as_deref() == Some("project-picker-trigger") && element.focused
     }));
 }
 

@@ -153,6 +153,7 @@ pub fn poll(state: &mut State, time: f64, tx: &mut Tx) -> bool {
         | crate::flow_workspace::poll(state, tx)
         | state.flow_comparison.poll()
         | state.flow_comparison.restore_scroll(tx);
+    changed |= crate::graph_motion::poll(state, time, tx);
     changed |= crate::explorer::poll(state, time, tx);
     changed |= state.constrain_panes(state.ui.window_width);
     if state.needs_layout {
@@ -253,6 +254,8 @@ fn restore_navigation(
         state.root = rune::TextEdit::new(root);
     }
     if let Some(session) = session {
+        state.recent_projects =
+            crate::recent_projects::restore(session.recent_projects, &session.root);
         state.root = rune::TextEdit::new(session.root);
         state.saved_builds = session.selected_builds;
         state.saved_targets = session.selected_targets;

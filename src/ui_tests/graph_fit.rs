@@ -1,4 +1,4 @@
-//! Explicit Fit uses the full canvas beneath the floating filter controls.
+//! Explicit Fit uses the full canvas with filters dismissed.
 use super::click;
 use crate::{app::State, jobs, projection, view};
 use codecallnavigator::{
@@ -9,7 +9,7 @@ use rune::{Env, Runtime};
 use std::sync::Arc;
 
 #[test]
-fn fit_uses_the_full_canvas_beneath_wrapped_filters() {
+fn fit_uses_the_full_canvas_with_filter_popover_closed() {
     let mut state = State::fixture();
     state.scene = true;
     state.jobs.boot.cancel();
@@ -40,11 +40,17 @@ fn fit_uses_the_full_canvas_beneath_wrapped_filters() {
         .iter()
         .find(|e| e.key.as_deref() == Some("graph-canvas"))
         .unwrap();
-    assert!(panel.rect[3] > 60.0, "Filters should wrap at minimum width");
     assert!(
-        (canvas.rect[1] - panel.rect[1]).abs() < 0.5,
-        "Filters must float over the top of the canvas"
+        panel.rect[1] + panel.rect[3] <= canvas.rect[1] + 0.5,
+        "Filter trigger belongs above the canvas"
     );
+    let camera = runtime.state.nav.camera.clone();
+    click(&mut runtime, "graph-filters");
+    runtime.frame(1.0 / 60.0);
+    assert_eq!(runtime.state.nav.camera.pan, camera.pan);
+    assert_eq!(runtime.state.nav.camera.zoom, camera.zoom);
+    runtime.update(|state, _| state.close_overlay());
+    runtime.frame(1.0 / 60.0);
     click(&mut runtime, "fit");
     for node in &runtime.state.graph_view.nodes {
         let top = runtime.state.nav.camera.screen(node.position);

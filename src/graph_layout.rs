@@ -18,6 +18,8 @@ impl State {
             self.auto_fit = false;
             self.graph_interaction.center_after_layout = false;
         }
+        let before = crate::graph_motion::Snapshot::capture(&self.graph_view, &self.nav.camera);
+        let mut motion = std::mem::take(&mut self.graph_motion);
         self.replace_graph_view(view);
         self.reconcile_visual_selection();
         self.visible_revision = Some((self.epoch, self.revision));
@@ -34,6 +36,10 @@ impl State {
             }
             self.graph_interaction.center_after_layout = false;
         }
+        if !self.deterministic && !self.scene {
+            motion.begin(before, &mut self.graph_view, &mut self.nav.camera);
+        }
+        self.graph_motion = motion;
     }
 
     pub fn fit_visible_graph(&mut self) {
@@ -58,6 +64,9 @@ impl State {
 
     pub fn resize_graph_viewport(&mut self, viewport: [f32; 2]) {
         let resized = self.viewport != viewport;
+        if resized {
+            self.graph_motion.interrupt_camera();
+        }
         let centered = self.graph_focus_center().is_some_and(|center| {
             let screen = self.nav.camera.screen(center);
             (screen[0] - self.viewport[0] / 2.0).abs() < 0.1

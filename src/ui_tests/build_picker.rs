@@ -127,7 +127,7 @@ fn modal_selection_is_immediate_and_escape_returns_focus_to_button() {
         runtime
             .elements()
             .iter()
-            .any(|e| e.key.as_deref() == Some("find-builds") && e.focused)
+            .any(|e| e.key.as_deref() == Some("project-picker-trigger") && e.focused)
     );
 }
 
@@ -160,6 +160,7 @@ fn hover_summary_lists_only_selected_compact_names_and_hides_when_open() {
     let mut runtime = runtime((1050.0, 680.0), true);
     runtime.update(|state, _| state.targets.clear());
     settle(&mut runtime);
+    click(&mut runtime, "project-picker-trigger");
     let help = |runtime: &Runtime<State>| {
         runtime
             .elements()
@@ -178,7 +179,7 @@ fn hover_summary_lists_only_selected_compact_names_and_hides_when_open() {
         )
     );
     ready(&mut runtime, 3);
-    assert!(help(&runtime).is_none());
+    assert!(runtime.find("find-builds").is_none());
 }
 
 #[test]
@@ -189,7 +190,7 @@ fn scrollable_modal_fits_windows_and_leaves_explorer_space() {
         ((1050.0, 680.0), false, "builds-light-1050.png"),
     ] {
         let mut runtime = runtime(size, dark);
-        let button = rect(&runtime, "find-builds");
+        let button = rect(&runtime, "project-picker-trigger");
         let explorer = rect(&runtime, "explorer-refresh");
         assert!(
             explorer[1] < button[1] + 130.0,
@@ -197,8 +198,8 @@ fn scrollable_modal_fits_windows_and_leaves_explorer_space() {
         );
         ready(&mut runtime, 60);
         let panel = rect(&runtime, "build-picker");
-        assert!((panel[0] - (button[0] + button[2] + 8.0)).abs() < 1.0);
-        assert!((panel[1] - button[1]).abs() < 1.0);
+        assert!((panel[0] - button[0]).abs() < 1.0);
+        assert!(panel[1] >= button[1] + button[3]);
         assert!(panel[2] <= 421.0 && panel[3] <= 481.0, "{panel:?}");
         assert!(
             panel[0] >= 0.0

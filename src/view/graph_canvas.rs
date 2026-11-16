@@ -6,7 +6,8 @@ use rune::{Cx, Drag, El, MagnifyEvent, ScrollSpec, TextStyle, WheelEvent, canvas
 use rune_kit::{Kit, ScrollBar};
 use std::time::Duration;
 
-pub fn graph_canvas(state: &State, _: &mut Cx<State>, k: &Kit) -> El {
+pub fn graph_canvas(state: &State, cx: &mut Cx<State>, k: &Kit) -> El {
+    state.graph_motion.reduced.set(cx.is_reduced_motion());
     el().key("graph-canvas")
         .focusable(true)
         .grow(1.0)
@@ -67,6 +68,28 @@ fn graph_content(state: &State, k: &Kit) -> El {
                 card.inert()
             });
         }
+    }
+    for (node, opacity) in state.graph_motion.ghosts() {
+        let point = state.nav.camera.screen(node.position);
+        let scale = state.nav.camera.zoom;
+        content = content.child(
+            col()
+                .key(format!("departing-{}", node.key))
+                .absolute(point[0], point[1])
+                .size(node.size[0] * scale, node.size[1] * scale)
+                .radius(9.0)
+                .fill(k.c.layer_01)
+                .border(1.0, k.c.text_muted.alpha(0.3))
+                .padding(10.0 * scale)
+                .opacity(opacity)
+                .child(
+                    text(&node.label)
+                        .font(theme::mono((14.0 * scale).max(8.0), 600.0))
+                        .color(k.c.text_base)
+                        .truncate(),
+                )
+                .inert(),
+        );
     }
     if state.graph_view.nodes.is_empty() {
         content = content.child(empty_canvas(state, k));
@@ -179,7 +202,7 @@ fn node_card(state: &State, index: usize, k: &Kit, emphasis: &GraphEmphasis) -> 
     if !node.methods.is_empty() {
         card = card.child(method_list(node, scale, k));
     }
-    card.opacity(emphasis.card_opacity(index))
+    card.opacity(emphasis.card_opacity(index) * state.graph_motion.opacity(index))
 }
 
 fn node_header(node: &ViewNode, index: usize, scale: f32, k: &Kit) -> El {

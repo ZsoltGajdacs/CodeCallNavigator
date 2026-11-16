@@ -3,6 +3,7 @@ use crate::{
     app::{RESULT_PAGE_SIZE, State},
     presentation::Section,
     theme,
+    view::pane_controls,
 };
 use rune::{El, ScrollSpec, col, row, text};
 use rune_kit::{Button, ButtonVariant, Collapsible, Kit, List, ListItem};
@@ -14,7 +15,6 @@ pub fn view(state: &State, k: &Kit) -> El {
     let content = col()
         .w(state.ui.inspector.width() - 32.0)
         .gap(theme::SPACE)
-        .child(text("Inspector").font(k.ty.ui_medium).color(k.c.text_muted))
         .child(selection(state, k))
         .child(
             Collapsible::new("Analysis details", state.ui.section_open(Section::Analysis))
@@ -23,17 +23,27 @@ pub fn view(state: &State, k: &Kit) -> El {
                 .build(k)
                 .key("analysis-section"),
         );
-    col().w_full().h_full().min_h(0.0).fill(k.c.bg_base).child(
-        col()
-            .key("inspector-scroll")
-            .w_full()
-            .grow(1.0)
-            .min_h(0.0)
-            .scroll(ScrollSpec {
-                stick_bottom: false,
-            })
-            .child(col().w_full().padding(16.0).child(content)),
-    )
+    col()
+        .w_full()
+        .h_full()
+        .min_h(0.0)
+        .fill(k.c.bg_base)
+        .child(pane_controls::header(
+            state,
+            k,
+            pane_controls::Side::Inspector,
+        ))
+        .child(
+            col()
+                .key("inspector-scroll")
+                .w_full()
+                .grow(1.0)
+                .min_h(0.0)
+                .scroll(ScrollSpec {
+                    stick_bottom: false,
+                })
+                .child(col().w_full().padding(16.0).child(content)),
+        )
 }
 
 fn selection(state: &State, k: &Kit) -> El {
@@ -54,6 +64,8 @@ fn selection(state: &State, k: &Kit) -> El {
         content = content.child(detail(BODY_UNAVAILABLE, k));
     }
     let mut content = content
+        .child(neighbors(state, true, k))
+        .child(neighbors(state, false, k))
         .child(
             Collapsible::new(
                 "Shortest directed path",
@@ -73,9 +85,7 @@ fn selection(state: &State, k: &Kit) -> El {
             .child(crate::relationship::list(state, k))
             .build(k)
             .key("relationships-section"),
-        )
-        .child(neighbors(state, true, k))
-        .child(neighbors(state, false, k));
+        );
     if let Some(details) = architecture_details(state, node, k) {
         content = content.child(details);
     }
@@ -133,6 +143,14 @@ fn method_summary(node: &codecallnavigator::model::Node, k: &Kit) -> El {
             k,
         ))
         .child(detail(format!("{}:{}", node.file, node.line), k))
+        .child(
+            Button::new("View source")
+                .variant(ButtonVariant::Outline)
+                .on_press(State::open_selected_source)
+                .build(k)
+                .key("view-selected-source")
+                .w_full(),
+        )
         .child(
             Button::new("Focus this method")
                 .variant(ButtonVariant::Outline)

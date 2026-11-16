@@ -135,6 +135,7 @@ impl Navigation {
 #[derive(Clone, Default, Serialize, Deserialize)]
 #[serde(default)]
 pub struct SavedSession {
+    pub recent_projects: Vec<String>,
     pub presentation_cache: Option<crate::presentation_cache::PresentationCache>,
     pub graph_context: Option<crate::engine_client::Descriptor>,
     pub root: String,

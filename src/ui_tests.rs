@@ -56,6 +56,22 @@ fn reveal_graph_control(runtime: &mut Runtime<State>, key: &str) {
 }
 
 fn click(runtime: &mut Runtime<State>, key: &str) {
+    if runtime.find(key).is_none()
+        && matches!(
+            key,
+            "find-builds"
+                | "choose-folder"
+                | "root-path"
+                | "analyze"
+                | "clear-cache"
+                | "compare-flows"
+        )
+    {
+        click(runtime, "project-picker-trigger");
+    }
+    if runtime.find(key).is_none() && key.starts_with("freshness-") {
+        click(runtime, "activity-details");
+    }
     reveal_graph_control(runtime, key);
     let (x, y) = runtime
         .find(key)

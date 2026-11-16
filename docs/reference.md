@@ -77,15 +77,25 @@ restore dependencies and compile all configured source sets, including tests,
 but does not run applications or test-execution tasks.
 
 Use Project, Namespace, Folder, Layer or Method grouping (including global-namespace C# code).
-The Graph Studio workspace uses Rune Kit controls and follows the system's light or
-dark appearance. The activity rail switches between Repository, Search and Graph
-filters; pressing the active rail button collapses its drawer. Drag the drawer or
-inspector's inner edge to resize it, or double-click the edge to restore its default
-width. The Inspector button toggles the right pane. Pane sizes, visibility and the
-active drawer are restored with the saved workspace, independently of graph history.
-At smaller window sizes, pane widths are constrained to keep graph controls reachable.
-Cmd-F opens the Search drawer and focuses the field; depth is selected from its menu.
-The graph canvas still uses Rune's custom shapes and production Graphviz geometry.
+The Open Canvas workspace uses native Rune Kit controls and follows the system's
+light or dark appearance. The project picker opens folders, switches between recent
+projects and provides build selection and analysis actions. Files stays on the left;
+Inspector stays on the right. Matching toolbar and pane-header buttons open or close
+each pane independently. Drag a pane's inner edge to resize it, or double-click the
+edge to restore its default width. Pane sizes and visibility are restored with the
+saved workspace, independently of graph history.
+
+Graph grouping, depth, direction where applicable, Fit, zoom and paging are available
+in the floating graph controls. The separate activity surface shows current work;
+expand Details for counts, relationship legend and freshness actions. Filters opens
+an anchored popover with independent code visibility, relationship and target
+resolution choices. Reset restores the application's defaults.
+
+Search retains its existing keyboard shortcuts. Hover any eligible node to preview
+its source without selecting it; groups provide their file listing. The Inspector
+provides source and supported function-flow actions for the selected method.
+The graph uses production Graphviz layout; native transitions interpolate displayed
+geometry and honor system Reduce Motion. Direct pan and zoom interrupt camera follow.
 
 Method opens all entry-point candidates, including uncalled methods, with verified
 C# and Java application starts highlighted. C# starts come from the compiler;

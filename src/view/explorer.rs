@@ -5,7 +5,7 @@ use crate::{
     theme,
 };
 use rune::{El, GrowthSpec, col, row, text};
-use rune_kit::{Button, Kit, ScrollBar};
+use rune_kit::{Button, Kit, ScrollBar, TextInput};
 
 pub fn view(state: &State, k: &Kit) -> El {
     let kit = k.clone();
@@ -32,6 +32,15 @@ pub fn view(state: &State, k: &Kit) -> El {
                         .build(k)
                         .key("explorer-refresh"),
                 ),
+        )
+        .child(
+            TextInput::new(&state.explorer.filter)
+                .label("Filter loaded files")
+                .placeholder("Filter loaded files…")
+                .on_edit(|state: &mut State| &mut state.explorer.filter)
+                .on_change(|state: &mut State, _| state.explorer.filter_changed())
+                .build(k)
+                .key("explorer-filter"),
         )
         .child(
             col()

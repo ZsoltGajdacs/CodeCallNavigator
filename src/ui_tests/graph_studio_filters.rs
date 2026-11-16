@@ -7,6 +7,7 @@ use rune::{Env, Runtime};
 #[test]
 fn grouped_filters_toggle_preserving_zoom_and_centering_the_focus() {
     let mut runtime = narrow_runtime(true);
+    open_filters(&mut runtime);
     let before = runtime.state.nav.filter.clone();
     let zoom = runtime.state.nav.camera.zoom;
     for key in [
@@ -71,69 +72,36 @@ fn grouped_filters_toggle_preserving_zoom_and_centering_the_focus() {
 #[test]
 fn relationship_type_and_resolution_are_independent_and_restored_by_history() {
     let mut runtime = runtime();
+    open_filters(&mut runtime);
     click(&mut runtime, "filter-references");
     settle(&mut runtime);
-    assert!(
-        !runtime
-            .state
-            .nav
-            .filter
-            .relationship_kinds
-            .contains(&RelationshipKind::FunctionReference)
-    );
-    assert!(
-        runtime
-            .state
-            .nav
-            .filter
-            .target_resolutions
-            .contains(&TargetResolution::VirtualDispatch)
-    );
+    assert_relationship_dimensions(&runtime, false, true);
     click(&mut runtime, "filter-virtual-calls");
     settle(&mut runtime);
-    assert!(
-        !runtime
-            .state
-            .nav
-            .filter
-            .target_resolutions
-            .contains(&TargetResolution::VirtualDispatch)
-    );
-    assert!(
-        !runtime
-            .state
-            .nav
-            .filter
-            .relationship_kinds
-            .contains(&RelationshipKind::FunctionReference)
-    );
+    assert_relationship_dimensions(&runtime, false, false);
+    runtime.update(|state, _| state.close_overlay());
+    settle(&mut runtime);
     click(&mut runtime, "back");
     settle(&mut runtime);
-    assert!(
-        runtime
-            .state
-            .nav
-            .filter
-            .target_resolutions
-            .contains(&TargetResolution::VirtualDispatch)
-    );
-    assert!(
-        !runtime
-            .state
-            .nav
-            .filter
-            .relationship_kinds
-            .contains(&RelationshipKind::FunctionReference)
-    );
+    assert_relationship_dimensions(&runtime, false, true);
     click(&mut runtime, "forward");
     settle(&mut runtime);
-    assert!(
-        !runtime
-            .state
-            .nav
-            .filter
+    assert_relationship_dimensions(&runtime, false, false);
+}
+
+fn assert_relationship_dimensions(runtime: &Runtime<State>, references: bool, virtual_calls: bool) {
+    let filter = &runtime.state.nav.filter;
+    assert_eq!(
+        filter
+            .relationship_kinds
+            .contains(&RelationshipKind::FunctionReference),
+        references
+    );
+    assert_eq!(
+        filter
             .target_resolutions
-            .contains(&TargetResolution::VirtualDispatch)
+            .contains(&TargetResolution::VirtualDispatch),
+        virtual_calls
     );
 }
 
@@ -141,7 +109,7 @@ fn assert_filter_bar(runtime: &Runtime<State>) {
     let elements = runtime.elements();
     let canvas = elements
         .iter()
-        .find(|e| e.key.as_deref() == Some("graph-filters"))
+        .find(|e| e.key.as_deref() == Some("graph-filter-popover-content"))
         .unwrap();
     let mut previous: Option<[f32; 4]> = None;
     for (key, label) in [
@@ -218,6 +186,7 @@ fn grouped_filters_fit_and_expose_full_names_in_both_themes() {
             let mut runtime = Runtime::new(state, view::view, (width, height), Env::new(dark, 1.0));
             runtime.poll = Some(jobs::poll);
             settle(&mut runtime);
+            open_filters(&mut runtime);
             assert_filter_bar(&runtime);
         }
     }
@@ -225,7 +194,8 @@ fn grouped_filters_fit_and_expose_full_names_in_both_themes() {
 
 #[test]
 fn filter_tooltips_explain_relationship_semantics() {
-    let runtime = runtime();
+    let mut runtime = runtime();
+    open_filters(&mut runtime);
     assert!(runtime.elements().iter().any(|element| {
         element.label.as_deref() == Some("Function references")
             && element
@@ -267,24 +237,22 @@ fn saved_sessions_migrate_legacy_filters_and_preserve_new_empty_selections() {
 }
 
 #[test]
-fn filters_share_one_line_when_wide_and_wrap_when_narrow() {
-    for (width, single_line) in [(2200.0, true), (1050.0, false)] {
-        let mut state = State::fixture();
-        scenes::install(&mut state);
-        state.ui.sidebar.set_open(false);
-        state.ui.inspector.set_open(false);
-        let mut runtime = Runtime::new(state, view::view, (width, 900.0), Env::new(true, 1.0));
-        settle(&mut runtime);
-        assert_filter_bar(&runtime);
-        let elements = runtime.elements();
-        let first = elements
-            .iter()
-            .find(|e| e.key.as_deref() == Some("filter-tests"))
-            .unwrap();
-        let last = elements
-            .iter()
-            .find(|e| e.key.as_deref() == Some("filter-other-resolution"))
-            .unwrap();
-        assert_eq!((first.rect[1] - last.rect[1]).abs() < 0.5, single_line);
-    }
+fn opening_and_closing_filters_preserves_camera_and_navigation() {
+    let mut runtime = runtime();
+    let before = serde_json::to_value(&runtime.state.nav).unwrap();
+    let revision = runtime.state.revision;
+    assert!(runtime.find("filter-tests").is_none());
+    open_filters(&mut runtime);
+    assert_filter_bar(&runtime);
+    assert_eq!(serde_json::to_value(&runtime.state.nav).unwrap(), before);
+    assert_eq!(runtime.state.revision, revision);
+    runtime.update(|state, _| state.close_overlay());
+    settle(&mut runtime);
+    assert!(runtime.find("filter-tests").is_none());
+    assert_eq!(serde_json::to_value(&runtime.state.nav).unwrap(), before);
+}
+
+fn open_filters(runtime: &mut Runtime<State>) {
+    click(runtime, "graph-filters");
+    settle(runtime);
 }

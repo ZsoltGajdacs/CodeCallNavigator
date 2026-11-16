@@ -108,7 +108,7 @@ fn layer_controls_stay_inside_the_minimum_window_with_both_panes_open() {
     for _ in 0..60 {
         runtime.frame(1.0 / 60.0);
     }
-    for key in ["grouping", "layer-preset", "layer-tabs"] {
+    for key in ["grouping-trigger", "layer-preset", "layer-tabs"] {
         let element = runtime
             .elements()
             .into_iter()
