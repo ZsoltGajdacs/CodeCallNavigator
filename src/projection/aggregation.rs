@@ -135,11 +135,7 @@ fn add_member_metadata(representative: &mut ViewNode, source: &Node, index: u32)
 fn finish_metadata(node: &mut ViewNode) {
     node.methods
         .sort_by(|a, b| (&a.name, &a.id).cmp(&(&b.name, &b.id)));
-    let rows = node.methods.len().min(12) as f32;
-    node.size = [
-        237.6,
-        61.2 + if rows > 0.0 { 24.0 * rows + 8.0 } else { 0.0 },
-    ];
+    node.size = super::card_metrics::size(node.methods.len());
     node.files.sort();
     node.files.dedup_by(|a, b| a.path == b.path);
 }

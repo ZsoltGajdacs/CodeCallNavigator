@@ -12,11 +12,13 @@ pub fn kit(dark: bool) -> Kit {
         accent: hex(if dark { "#69a7ff" } else { "#2164d8" }),
     });
     kit.dark = dark;
+    kit.c.surface_raised = raised_surface(dark);
+    kit.c.surface_raised_base = raised_surface(dark);
     kit.ty.ui = TextStyle::new(14.0, 400.0).lh(20.0);
     kit.ty.ui_medium = TextStyle::new(14.0, 550.0).lh(20.0);
     kit.ty.ui_compact = TextStyle::new(14.0, 400.0).lh(18.0);
-    kit.radius.md = 6.0;
-    kit.radius.lg = 6.0;
+    kit.radius.md = 8.0;
+    kit.radius.lg = 12.0;
     kit
 }
 
@@ -38,4 +40,32 @@ pub fn uncertain(k: &Kit) -> Color {
 
 pub fn hex(value: &str) -> Color {
     rune::color::hex(value).expect("CodeCallNavigator color token")
+}
+
+/// Shared raised surface for the independent canvas activity and graph controls.
+pub fn floating_surface(k: &Kit) -> rune::El {
+    rune::col()
+        .radius(12.0)
+        .border(1.0, k.c.border_base)
+        .fill(raised_surface(k.dark))
+        .shadow(
+            3.0,
+            9.0,
+            k.c.bg_deep.alpha(if k.dark { 0.25 } else { 0.08 }),
+        )
+}
+
+/// Neutral graph cards stay visually distinct from the selected blue surface.
+pub fn card_surface(k: &Kit, selected: bool, application_start: bool) -> Color {
+    if selected {
+        hex(if k.dark { "#1e2c40" } else { "#e5efff" })
+    } else if application_start {
+        k.c.text_accent.alpha(0.10)
+    } else {
+        hex(if k.dark { "#22262e" } else { "#f3f2ef" })
+    }
+}
+
+fn raised_surface(dark: bool) -> Color {
+    hex(if dark { "#22262e" } else { "#fffefd" })
 }

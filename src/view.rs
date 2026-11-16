@@ -9,6 +9,7 @@ mod graph_controls;
 pub(crate) mod pane_controls;
 mod project_picker;
 mod search_modal;
+mod workspace_navigation;
 mod workspace_toolbar;
 
 use crate::{app::State, inspector, presentation, theme};
@@ -51,29 +52,31 @@ fn graph_workspace(state: &State, cx: &mut Cx<State>) -> El {
             presentation::inspector,
             inspector::view(state, &k),
         )
-        .titlebar_inset(cx.titlebar_inset())
+        .titlebar_inset(0.0)
         .hide_sidebar_toggle()
         .frame_inset(0.0)
         .reduced_motion(cx.is_reduced_motion())
-        .toolbar(workspace_toolbar::view(state, &k, &mut layer))
         .build(&shell_kit)
         .grow(1.0)
         .min_w(0.0);
+    let actions = workspace_toolbar::view(state, &k, &mut layer);
     let body = col()
         .key("application")
         .on_layout(|s: &mut State, rect| s.source_popup.window = [rect[2], rect[3]])
         .w_full()
         .h_full()
         .fill(k.c.bg_base)
+        .child(workspace_toolbar::identity(&k, cx.titlebar_inset()))
         .child(
-            row()
+            rune::el()
                 .w_full()
                 .grow(1.0)
                 .min_h(0.0)
                 .on_layout(|s: &mut State, rect| {
                     s.constrain_panes(rect[2]);
                 })
-                .child(split),
+                .child(split)
+                .child(actions.absolute(0.0, 0.0)),
         );
     with_overlays(state, &k, body, layer)
 }
@@ -153,24 +156,21 @@ pub(crate) fn freshness_notice(state: &State, k: &Kit) -> Option<El> {
 
 fn canvas_workspace(state: &State, cx: &mut Cx<State>, k: &Kit, layer: &mut Vec<El>) -> El {
     // Separate bottom surfaces wrap vertically when the available canvas is narrow.
-    let controls = col()
+    let controls = theme::floating_surface(k)
         .key("floating-graph-controls")
-        .radius(10.0)
-        .border(1.0, k.c.border_base)
-        .fill(k.c.bg_base)
         .child(graph_controls::footer(state, k, layer));
-    let activity = activity::view(state, k)
-        .max_w(480.0)
-        .radius(10.0)
-        .border(1.0, k.c.border_base);
+    let activity = theme::floating_surface(k)
+        .child(activity::view(state, k, layer))
+        .max_w(380.0);
     let bottom = row()
         .key("floating-controls")
         .on_layout(|state: &mut State, rect| state.set_canvas_controls_top(rect[1]))
         .gap(12.0)
         .flex_wrap()
+        .justify_between()
         .items_end()
         .child(activity)
-        .child(controls)
+        .child(row().grow(1.0).justify_end().child(controls))
         .pin(Some(12.0), None, Some(12.0), Some(12.0));
     col()
         .key("canvas-workspace")

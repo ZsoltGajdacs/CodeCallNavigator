@@ -80,6 +80,8 @@ fn clear_cache_button_uses_real_engine_preserves_graph_and_allows_retry() {
     assert!(Arc::ptr_eq(runtime.state.graph.as_ref().unwrap(), &graph));
     assert_eq!(runtime.state.session().root, nav.root);
     assert_eq!(runtime.state.status, crate::cache_jobs::CLEARED);
+    click(&mut runtime, "activity-details");
+    settle_revealed_control(&mut runtime);
     assert!(
         runtime
             .elements()

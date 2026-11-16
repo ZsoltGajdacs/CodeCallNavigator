@@ -2,6 +2,9 @@
 use codecallnavigator::architecture::LayerAssignments;
 use codecallnavigator::graph::{Direction, Filter, GraphIndex};
 use serde::{Deserialize, Serialize};
+
+#[path = "projection/card_metrics.rs"]
+pub(crate) mod card_metrics;
 use std::{collections::HashSet, sync::Arc};
 
 #[path = "projection/aggregation.rs"]

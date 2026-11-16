@@ -22,6 +22,8 @@ pub enum Overlay {
     Builds,
     Filters,
     Projects,
+    Navigation,
+    Activity,
 }
 
 #[derive(Clone, Copy)]
@@ -31,7 +33,6 @@ pub enum Section {
     Callers,
     Callees,
     Analysis,
-    Activity,
 }
 
 #[derive(Clone, Copy)]
@@ -104,7 +105,7 @@ pub struct Presentation {
     /// Latest window content width; runtime-only, independent of saved pane preferences.
     pub window_width: f32,
     pub canvas_bottom_inset: f32,
-    open_sections: [bool; 6],
+    open_sections: [bool; 5],
 }
 
 impl Default for Presentation {
@@ -116,7 +117,7 @@ impl Default for Presentation {
             overlay: None,
             window_width: 1420.0,
             canvas_bottom_inset: 0.0,
-            open_sections: [true, true, true, true, true, false],
+            open_sections: [false, false, true, true, false],
         }
     }
 }
@@ -424,7 +425,7 @@ mod tests {
         restored.restore(session.presentation);
         assert_eq!(restored.preferences(), state.ui.preferences());
         assert_eq!(restored.overlay, None);
-        assert!(restored.section_open(Section::Analysis));
+        assert!(!restored.section_open(Section::Analysis));
     }
 
     #[test]

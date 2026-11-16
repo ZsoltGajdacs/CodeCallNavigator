@@ -1,12 +1,13 @@
 //! Filter presentation is separate from graph semantics and navigation actions.
 use crate::{
     app::State,
+    icons,
     presentation::{FilterKind, Overlay},
     relationship::labels,
 };
 use codecallnavigator::model::{RelationshipKind, TargetResolution};
-use rune::{El, col, row, text};
-use rune_kit::{Button, ButtonVariant, Checkbox, Kit, Placement, Popover, popover};
+use rune::{El, TextStyle, col, el, row, text};
+use rune_kit::{Button, ButtonVariant, Checkbox, ControlSize, Kit, Placement, Popover, popover};
 
 struct FilterDescriptor {
     action: FilterKind,
@@ -17,17 +18,15 @@ struct FilterDescriptor {
 
 pub fn filters(state: &State, k: &Kit, layer: &mut Vec<El>) -> El {
     let changed = state.nav.filter != Default::default();
-    let trigger = Button::new(if changed { "Filters ·" } else { "Filters" })
-        .variant(ButtonVariant::Outline)
-        .on_press(State::toggle_filters)
-        .build(k)
-        .key("graph-filters")
-        .help("Choose code visibility, relationships and target resolution");
     let header = row()
         .w_full()
         .center_y()
         .justify_between()
-        .child(text("Filters").font(k.ty.ui_medium).color(k.c.text_base))
+        .child(
+            text("Filters")
+                .font(TextStyle::new(18.0, 650.0))
+                .color(k.c.text_base),
+        )
         .child(
             Button::new("Reset")
                 .variant(ButtonVariant::Ghost)
@@ -38,7 +37,7 @@ pub fn filters(state: &State, k: &Kit, layer: &mut Vec<El>) -> El {
         );
     let body = col()
         .w_full()
-        .gap(12.0)
+        .gap(10.0)
         .child(header)
         .child(
             text("Choose what appears in the graph.")
@@ -65,12 +64,41 @@ pub fn filters(state: &State, k: &Kit, layer: &mut Vec<El>) -> El {
         );
     Popover::new("graph-filter-popover")
         .label("Graph filters")
-        .trigger(trigger)
+        .trigger(filter_trigger(state, k, changed))
         .open(state.ui.overlay == Some(Overlay::Filters))
         .placement(Placement::BottomEnd)
         .on_close(State::close_overlay)
         .child(popover::fit_scroll(body))
         .build(k, layer)
+}
+
+fn filter_trigger(state: &State, k: &Kit, changed: bool) -> El {
+    let accent = k.c.text_accent;
+    Button::new("Filters")
+        .icon(&icons::OUTLINE_SLIDERS)
+        .control_size(ControlSize::ExtraLarge)
+        .expanded(state.ui.overlay == Some(Overlay::Filters))
+        .label_with(move |font, ink| {
+            let mut label = row()
+                .center_y()
+                .gap(7.0)
+                .child(text("Filters").font(font).color(ink));
+            if changed {
+                label = label.child(
+                    el().key("filters-changed-dot")
+                        .size(6.0, 6.0)
+                        .radius(3.0)
+                        .fill(accent)
+                        .a11y_hidden(),
+                );
+            }
+            label
+        })
+        .variant(ButtonVariant::Outline)
+        .on_press(State::toggle_filters)
+        .build(k)
+        .key("graph-filters")
+        .help("Choose code visibility, relationships and target resolution")
 }
 
 fn filter_section<const N: usize>(
@@ -82,7 +110,12 @@ fn filter_section<const N: usize>(
     let mut section = col()
         .w_full()
         .gap(8.0)
-        .child(text(title).font(k.ty.small_medium).color(k.c.text_muted));
+        .child(el().w_full().h(1.0).fill(k.c.border_muted))
+        .child(
+            text(title.to_uppercase())
+                .font(k.ty.small_medium)
+                .color(k.c.text_muted),
+        );
     for descriptor in descriptors {
         section = section.child(
             Checkbox::new(descriptor.action.enabled(&state.nav.filter))

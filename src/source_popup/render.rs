@@ -1,5 +1,5 @@
 use super::Contents;
-use crate::{app::State, theme};
+use crate::app::State;
 use rune::{El, GrowthSpec, col, el, row, text};
 use rune_kit::{Button, ButtonVariant, Kit};
 
@@ -14,9 +14,13 @@ pub fn view(state: &State, k: &Kit) -> Option<El> {
             .min_h(0.0)
             .fill(k.c.surface_raised)
             .border(1.0, k.c.std_border)
-            .radius(8.0)
-            .shadow(6.0, 24.0, k.c.bg_deep.alpha(0.5))
-            .clip_rounded(8.0)
+            .radius(12.0)
+            .shadow(
+                4.0,
+                18.0,
+                k.c.bg_deep.alpha(if k.dark { 0.35 } else { 0.12 }),
+            )
+            .clip_rounded(12.0)
             .on_press_tx(|_: &mut State, tx| tx.live_only())
             .role("group")
             .label("Source preview")
@@ -80,7 +84,7 @@ fn footer(source: bool, k: &Kit) -> El {
 
 fn header(state: &State, k: &Kit) -> El {
     let preview = state.source_popup.active.as_ref().unwrap();
-    let mut bar = row().w_full().gap(6.0).padding(8.0).center_y();
+    let mut bar = row().w_full().gap(8.0).padding(12.0).center_y();
     if preview.path.is_some() && preview.node.member.is_none() {
         bar = bar.child(
             Button::new("Back")
@@ -92,12 +96,15 @@ fn header(state: &State, k: &Kit) -> El {
     }
     bar.child(
         text(if preview.path.is_some() {
-            "Source"
+            &preview.node.label
         } else {
             "Source files"
         })
         .font(k.ty.ui_medium)
         .color(k.c.text_base)
+        .min_w(0.0)
+        .truncate()
+        .help(&preview.node.label)
         .grow(1.0),
     )
     .child(
@@ -191,7 +198,7 @@ fn file_list(state: &State, k: &Kit) -> El {
                             .key(format!("source-file-row-{i}"))
                             .h(32.0)
                             .px(12.0)
-                            .font(theme::mono(12.0, 400.0))
+                            .font(kit.ty.ui)
                             .color(kit.c.text_base)
                             .hover(kit.c.layer_01)
                             .role("button")

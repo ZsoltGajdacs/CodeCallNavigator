@@ -17,6 +17,7 @@ mod function_flows;
 mod graph_fit;
 mod graph_studio;
 mod lambda_names;
+mod open_canvas_fidelity;
 mod project_explorer;
 mod search_modal;
 mod source_popup;
@@ -56,27 +57,12 @@ fn reveal_graph_control(runtime: &mut Runtime<State>, key: &str) {
 }
 
 fn click(runtime: &mut Runtime<State>, key: &str) {
-    if runtime.find(key).is_none()
-        && matches!(
-            key,
-            "find-builds"
-                | "choose-folder"
-                | "root-path"
-                | "analyze"
-                | "clear-cache"
-                | "compare-flows"
-        )
-    {
-        click(runtime, "project-picker-trigger");
-        settle_revealed_control(runtime);
-    }
-    if runtime.find(key).is_none() && key.starts_with("freshness-") {
-        click(runtime, "activity-details");
-        settle_revealed_control(runtime);
-    }
-    if runtime.find(key).is_none() && key.starts_with("filter-") {
-        click(runtime, "graph-filters");
-        settle_revealed_control(runtime);
+    if runtime.find(key).is_none() {
+        if let Some(trigger) = control_surface(key) {
+            dismiss_control_surface(runtime);
+            click(runtime, trigger);
+            settle_revealed_control(runtime);
+        }
     }
     reveal_graph_control(runtime, key);
     let (x, y) = runtime
@@ -86,6 +72,34 @@ fn click(runtime: &mut Runtime<State>, key: &str) {
     runtime.pointer_up(x, y);
     runtime.frame(1.0 / 60.0);
     runtime.frame(1.0 / 60.0);
+}
+
+// Switching between modal control surfaces follows the same Escape path as a user.
+fn dismiss_control_surface(runtime: &mut Runtime<State>) {
+    if runtime.state.ui.overlay.is_some() {
+        runtime.update(|state, tx| {
+            view::key(
+                state,
+                &rune::KeyEvent {
+                    key: rune::Key::Escape,
+                    mods: rune::Mods::default(),
+                },
+                tx,
+            );
+        });
+        settle_revealed_control(runtime);
+    }
+}
+
+fn control_surface(key: &str) -> Option<&'static str> {
+    match key {
+        "overview" | "collapse-all" => Some("navigation-more"),
+        "find-builds" | "choose-folder" | "root-path" | "analyze" | "clear-cache"
+        | "compare-flows" => Some("project-picker-trigger"),
+        _ if key.starts_with("freshness-") => Some("activity-details"),
+        _ if key.starts_with("filter-") => Some("graph-filters"),
+        _ => None,
+    }
 }
 
 // Rune overlays/disclosures animate their drawn bounds; interact only once the newly
@@ -101,6 +115,8 @@ fn native_node_selection_and_history_restore_focus_and_camera() {
     let mut runtime = runtime();
     let expected = runtime.state.graph_view.nodes[0].member.unwrap();
     click(&mut runtime, "graph-node-0");
+    // Wait for the existing single/double-click decision and completed focus layout.
+    settle_revealed_control(&mut runtime);
     assert_eq!(runtime.state.selected(), Some(expected));
     let focus = runtime.state.nav.focus.clone();
     let camera = runtime.state.nav.camera.pan;
@@ -120,6 +136,7 @@ fn native_path_controls_show_a_real_directed_path_and_filter_can_reveal_tests() 
     runtime.frame(1.0 / 60.0);
     click(&mut runtime, "callers-section");
     click(&mut runtime, "callees-section");
+    click(&mut runtime, "path-section/trigger");
     click(&mut runtime, "path-from");
     runtime
         .state

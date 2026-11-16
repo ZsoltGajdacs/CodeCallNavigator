@@ -12,8 +12,8 @@ fn dot_input(view: &GraphView) -> String {
     for (index, node) in view.nodes.iter().enumerate() {
         source.push_str(&format!(
             "n{index} [width={},height={}];\n",
-            node.size[0].max(237.6) / 72.0,
-            node.size[1].max(61.2) / 72.0
+            node.size[0].max(super::card_metrics::WIDTH) / 72.0,
+            node.size[1].max(super::card_metrics::HEIGHT) / 72.0
         ));
     }
     if view.layer_bands.is_empty() {
@@ -79,7 +79,8 @@ pub fn layout(mut view: GraphView, dot: &Path) -> Result<GraphView> {
         view.size = [400.0, 300.0];
         return Ok(view);
     }
-    let output: Value = serde_json::from_slice(&codecallnavigator::graphviz::run(dot, &dot_input(&view))?)?;
+    let output: Value =
+        serde_json::from_slice(&codecallnavigator::graphviz::run(dot, &dot_input(&view))?)?;
     let bounds = coordinates(output["bb"].as_str().context("Graphviz omitted bounds")?)?;
     if bounds.len() != 4 {
         bail!("Invalid Graphviz bounds")
@@ -108,7 +109,10 @@ pub fn layout(mut view: GraphView, dot: &Path) -> Result<GraphView> {
         if position.len() != 2 {
             bail!("Invalid node position")
         }
-        node.size = [node.size[0].max(237.6), node.size[1].max(61.2)];
+        node.size = [
+            node.size[0].max(super::card_metrics::WIDTH),
+            node.size[1].max(super::card_metrics::HEIGHT),
+        ];
         node.position = [
             position[0] - node.size[0] / 2.0 + 16.0,
             bounds[3] - position[1] - node.size[1] / 2.0 + 16.0,

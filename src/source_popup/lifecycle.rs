@@ -41,6 +41,8 @@ impl State {
             node.member = Some(member);
             self.close_source();
             open_hover(self, node);
+            // Pin the same displayed anchor as hover before the first popup layout.
+            self.source_popup.rect = self.source_popup.bounds(self);
             self.pin_source();
         }
     }

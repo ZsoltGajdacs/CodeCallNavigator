@@ -201,6 +201,10 @@ fn compact_failure_and_manual_retry(runtime: &mut Runtime<State>, project: &Path
             &PathBuf::from(output).join("failed-light-compact.png"),
         );
     }
+    if runtime.state.ui.overlay != Some(crate::presentation::Overlay::Activity) {
+        click(runtime, "activity-details");
+        super::settle_revealed_control(runtime);
+    }
     assert!(runtime.find("freshness-retry").is_some());
     fs::write(path, bytes).unwrap();
     click(runtime, "freshness-retry");

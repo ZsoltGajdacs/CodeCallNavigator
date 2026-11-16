@@ -5,8 +5,8 @@ use crate::{
     theme,
     view::pane_controls,
 };
-use rune::{El, ScrollSpec, col, row, text};
-use rune_kit::{Button, ButtonVariant, Collapsible, Kit, List, ListItem};
+use rune::{El, ScrollSpec, TextStyle, col, row, text};
+use rune_kit::{Button, ButtonVariant, Collapsible, Kit};
 
 const BODY_UNAVAILABLE: &str =
     "The analyzer reports this target but no project method body is available.";
@@ -56,16 +56,14 @@ fn selection(state: &State, k: &Kit) -> El {
             k,
         );
     };
-    let mut content = method_summary(node, k);
-    if state.flow_supported(&node.language) {
-        content = content.child(flow_action(node.body_unavailable, k));
-    }
+    let mut content = method_summary(node, k).child(primary_actions(state, node, k));
     if node.body_unavailable {
         content = content.child(detail(BODY_UNAVAILABLE, k));
     }
     let mut content = content
         .child(neighbors(state, true, k))
         .child(neighbors(state, false, k))
+        .child(relationships(state, k))
         .child(
             Collapsible::new(
                 "Shortest directed path",
@@ -75,16 +73,6 @@ fn selection(state: &State, k: &Kit) -> El {
             .child(path_tools(state, k))
             .build(k)
             .key("path-section"),
-        )
-        .child(
-            Collapsible::new(
-                format!("Relationships · {}", state.relationships.len()),
-                state.ui.section_open(Section::Relationships),
-            )
-            .on_toggle(|s: &mut State| s.toggle_section(Section::Relationships))
-            .child(crate::relationship::list(state, k))
-            .build(k)
-            .key("relationships-section"),
         );
     if let Some(details) = architecture_details(state, node, k) {
         content = content.child(details);
@@ -121,55 +109,92 @@ fn architecture_details(
 fn method_summary(node: &codecallnavigator::model::Node, k: &Kit) -> El {
     col()
         .w_full()
-        .gap(theme::SPACE)
+        .gap(8.0)
+        .child(detail(format!("{} · {}", node.language, node.kind), k))
         .child(
             text(&node.label)
-                .font(theme::mono(20.0, 650.0))
+                .font(TextStyle::new(21.0, 650.0))
                 .color(k.c.text_base)
                 .w_full()
                 .wrap_anywhere(),
         )
         .child(
             text(&node.signature)
-                .font(theme::mono(12.0, 400.0))
+                .font(theme::mono(14.0, 400.0))
                 .color(k.c.text_base)
                 .selectable(true)
                 .selection_color(k.selection())
                 .w_full()
                 .wrap_anywhere(),
         )
-        .child(detail(
-            format!("{} · {} · {}", node.project, node.language, node.kind),
-            k,
-        ))
-        .child(detail(format!("{}:{}", node.file, node.line), k))
-        .child(
-            Button::new("View source")
-                .variant(ButtonVariant::Outline)
-                .on_press(State::open_selected_source)
-                .build(k)
-                .key("view-selected-source")
-                .w_full(),
-        )
-        .child(
-            Button::new("Focus this method")
-                .variant(ButtonVariant::Outline)
-                .on_press(|state: &mut State| {
-                    if let Some(selected) = state.selected() {
-                        state.select_method(
-                            selected,
-                            crate::graph_interaction::SelectionAction::Focus,
-                        );
-                    }
-                })
-                .build(k)
-                .key("focus-selected")
-                .w_full(),
-        )
+        .child(source_location(node, k))
+}
+
+fn source_location(node: &codecallnavigator::model::Node, k: &Kit) -> El {
+    let location = format!(
+        "{}:{}",
+        node.file.rsplit(['/', '\\']).next().unwrap_or(&node.file),
+        node.line
+    );
+    text(location)
+        .font(k.ty.ui)
+        .color(k.c.text_accent)
+        .w_full()
+        .truncate()
+        .key("selected-source-location")
+        .role("button")
+        .label(format!("View source · {}:{}", node.file, node.line))
+        .help(&node.file)
+        .focusable(true)
+        .focus_ring(2.0, 2.5, k.c.border_focus)
+        .on_press(State::open_selected_source)
+}
+
+fn primary_actions(state: &State, node: &codecallnavigator::model::Node, k: &Kit) -> El {
+    let mut actions = row().w_full().gap(8.0).flex_wrap().child(
+        Button::new("View source")
+            .icon(&rune_kit::glyphs::FILE_CODE)
+            .label_with(|_, ink| {
+                text("View source")
+                    .font(TextStyle::new(12.0, 400.0))
+                    .color(ink)
+            })
+            .variant(ButtonVariant::Outline)
+            .on_press(State::open_selected_source)
+            .build(k)
+            .key("view-selected-source"),
+    );
+    if state.flow_supported(&node.language) {
+        actions = actions.child(flow_action(node.body_unavailable, k));
+    }
+    actions
+}
+
+fn focus_action(k: &Kit) -> El {
+    Button::new("Focus this method")
+        .variant(ButtonVariant::Ghost)
+        .on_press(|state: &mut State| {
+            if let Some(selected) = state.selected() {
+                state.select_method(selected, crate::graph_interaction::SelectionAction::Focus);
+            }
+        })
+        .build(k)
+        .key("focus-selected")
+}
+
+fn relationships(state: &State, k: &Kit) -> El {
+    Collapsible::new(
+        format!("Relationships · {}", state.relationships.len()),
+        state.ui.section_open(Section::Relationships),
+    )
+    .on_toggle(|s: &mut State| s.toggle_section(Section::Relationships))
+    .child(crate::relationship::list(state, k))
+    .build(k)
+    .key("relationships-section")
 }
 
 fn analysis_details(state: &State, k: &Kit) -> El {
-    let mut content = col().w_full().gap(8.0);
+    let mut content = col().w_full().gap(8.0).child(focus_action(k));
     if let Some(graph) = &state.graph {
         content = content.child(
             text("Active analysis inputs")
@@ -307,7 +332,7 @@ fn neighbors(state: &State, incoming: bool, k: &Kit) -> El {
     };
     let content = neighbor_list(state, incoming, ids, k);
     Collapsible::new(
-        format!("{title} · {}", ids.len()),
+        format!("{title} ({})", ids.len()),
         state.ui.section_open(section),
     )
     .on_toggle(move |s: &mut State| s.toggle_section(section))
@@ -321,27 +346,95 @@ fn neighbor_list(state: &State, incoming: bool, ids: &[u32], k: &Kit) -> El {
         return detail("None reported with the current filters.", k);
     }
     let page = state.neighbor_pages[usize::from(!incoming)];
-    let mut rows = List::new().active(None).divider();
+    let mut rows = col()
+        .w_full()
+        .min_w(0.0)
+        .gap(0.0)
+        .role("listbox")
+        .label(if incoming { "Callers" } else { "Callees" })
+        .focus_group();
     if let Some(graph) = &state.graph {
-        for &id in ids
+        for (position, &id) in ids
             .iter()
+            .enumerate()
             .skip(page * RESULT_PAGE_SIZE)
             .take(RESULT_PAGE_SIZE)
         {
-            rows = rows.item(
-                ListItem::new(graph.data.nodes[id as usize].label.clone())
-                    .selected(state.selected() == Some(id))
-                    .on_select(move |state: &mut State, _| {
-                        state.select_method(id, crate::graph_interaction::SelectionAction::Focus)
-                    }),
-            );
+            let selected = state.selected() == Some(id);
+            let mut item = neighbor_row(id, &graph.data.nodes[id as usize], k)
+                .key(format!("neighbor-{incoming}-{id}"))
+                .focus_selected(selected)
+                .position_in_set(position + 1, ids.len());
+            if selected {
+                item = item.fill(k.c.text_accent.alpha(0.10)).child(
+                    rune::icon(k.glyph.check_small, 16.0)
+                        .color(k.c.text_accent)
+                        .a11y_hidden(),
+                );
+            }
+            rows = rows.child(item);
         }
     }
-    col()
+    let mut content = col().w_full().gap(6.0);
+    if ids.len() > RESULT_PAGE_SIZE {
+        content = content.child(neighbor_pager(state, incoming, ids.len(), k));
+    }
+    content.child(rows.key(format!("neighbor-list-{incoming}")))
+}
+
+fn neighbor_row(id: u32, node: &codecallnavigator::model::Node, k: &Kit) -> El {
+    let location = format!(
+        "{}:{}",
+        node.file.rsplit(['/', '\\']).next().unwrap_or(&node.file),
+        node.line
+    );
+    row()
+        .role("option")
+        .label(format!("{} · {}:{}", node.label, node.file, node.line))
+        .help(format!("{} · {}:{}", node.signature, node.file, node.line))
+        .focusable(true)
+        .focus_ring(2.0, 2.5, k.c.border_focus)
+        .focus_highlight(k.c.surface_raised_hover)
         .w_full()
+        .min_w(0.0)
+        .h(48.0)
+        .px(8.0)
         .gap(6.0)
-        .child(neighbor_pager(state, incoming, ids.len(), k))
-        .child(rows.build(k).key(format!("neighbor-list-{incoming}")))
+        .center_y()
+        .hover(k.c.surface_raised_hover)
+        .child(
+            col()
+                .grow(1.0)
+                .shrink()
+                .min_w(0.0)
+                .gap(2.0)
+                .child(
+                    text(&node.label)
+                        .font(TextStyle::new(14.0, 400.0))
+                        .color(k.c.text_accent)
+                        .w_full()
+                        .truncate()
+                        .a11y_hidden(),
+                )
+                .child(
+                    text(location)
+                        .font(TextStyle::new(12.0, 400.0))
+                        .color(k.c.text_muted)
+                        .w_full()
+                        .truncate()
+                        .a11y_hidden(),
+                ),
+        )
+        .child(
+            rune::el()
+                .h(1.0)
+                .pin(Some(8.0), None, Some(8.0), Some(0.0))
+                .fill(k.c.border_muted)
+                .a11y_hidden(),
+        )
+        .on_press(move |state: &mut State| {
+            state.select_method(id, crate::graph_interaction::SelectionAction::Focus);
+        })
 }
 
 fn neighbor_pager(state: &State, incoming: bool, count: usize, k: &Kit) -> El {
@@ -376,6 +469,11 @@ fn neighbor_pager(state: &State, incoming: bool, count: usize, k: &Kit) -> El {
 
 fn flow_action(body_unavailable: bool, k: &Kit) -> El {
     Button::new("Open flowchart")
+        .label_with(|_, ink| {
+            text("Open flowchart")
+                .font(TextStyle::new(12.0, 400.0))
+                .color(ink)
+        })
         .disabled(body_unavailable)
         .help(if body_unavailable {
             BODY_UNAVAILABLE

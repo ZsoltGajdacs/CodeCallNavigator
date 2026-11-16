@@ -57,16 +57,16 @@ impl Default for Popup {
             inside: false,
             trigger_inside: false,
             close_at: None,
-            size: [720.0, 480.0],
-            rect: [16.0, 16.0, 720.0, 480.0],
+            size: [440.0, 260.0],
+            rect: [16.0, 16.0, 440.0, 260.0],
             window: [1420.0, 900.0],
             canvas: [0.0; 2],
             serial: 0,
             cancelled: Arc::new(std::sync::atomic::AtomicBool::new(false)),
             now: 0.0,
             resizing: false,
-            resize_start: [720.0, 480.0],
-            resize_saved: [720.0, 480.0],
+            resize_start: [440.0, 260.0],
+            resize_saved: [440.0, 260.0],
         }
     }
 }

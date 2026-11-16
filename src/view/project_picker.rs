@@ -1,8 +1,8 @@
 //! Project selection presentation; discovery owns filesystem validation and failures.
 use super::{build_picker, workspace_toolbar};
 use crate::{app::State, presentation::Overlay, theme};
-use rune::{Align, El, Side, col, text};
-use rune_kit::{Button, ButtonVariant, Kit, TextInput, popover};
+use rune::{Align, El, Side, col, icon, row, text};
+use rune_kit::{Button, ButtonVariant, ControlSize, Kit, TextInput, glyphs, popover};
 
 pub(super) fn button(state: &State, k: &Kit) -> El {
     let displayed = state
@@ -23,13 +23,21 @@ pub(super) fn button(state: &State, k: &Kit) -> El {
         .unwrap_or("Open project…");
     let visible_title = title.to_owned();
     Button::new(title)
+        .icon(&glyphs::FOLDER)
+        .control_size(ControlSize::ExtraLarge)
         .label_with(move |font, ink| {
-            text(visible_title)
-                .key("workspace-identity")
-                .font(font)
-                .color(ink)
-                .max_w(220.0)
-                .truncate()
+            row()
+                .center_y()
+                .gap(12.0)
+                .child(
+                    text(visible_title)
+                        .key("workspace-identity")
+                        .font(font)
+                        .color(ink)
+                        .max_w(160.0)
+                        .truncate(),
+                )
+                .child(icon(&glyphs::CHEVRON_DOWN, 14.0).color(ink))
         })
         .variant(ButtonVariant::Outline)
         .expanded(state.ui.overlay == Some(Overlay::Projects))

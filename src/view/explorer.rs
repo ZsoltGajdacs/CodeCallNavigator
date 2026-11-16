@@ -2,10 +2,9 @@
 use crate::{
     app::State,
     explorer::{ROW_HEIGHT, Row, RowKind},
-    theme,
 };
-use rune::{El, GrowthSpec, col, row, text};
-use rune_kit::{Button, Kit, ScrollBar, TextInput};
+use rune::{El, GrowthSpec, col, el, icon, row, text};
+use rune_kit::{Kit, ScrollBar, TextInput, file_icon, glyphs};
 
 pub fn view(state: &State, k: &Kit) -> El {
     let kit = k.clone();
@@ -15,28 +14,13 @@ pub fn view(state: &State, k: &Kit) -> El {
         .w_full()
         .grow(1.0)
         .min_h(90.0)
-        .child(
-            row()
-                .w_full()
-                .center_y()
-                .gap(4.0)
-                .child(
-                    text("Project Explorer")
-                        .font(k.ty.ui_medium)
-                        .color(k.c.text_base)
-                        .grow(1.0),
-                )
-                .child(
-                    Button::new("Refresh files")
-                        .on_press(|s: &mut State| s.explorer.refresh())
-                        .build(k)
-                        .key("explorer-refresh"),
-                ),
-        )
+        .gap(16.0)
         .child(
             TextInput::new(&state.explorer.filter)
                 .label("Filter loaded files")
-                .placeholder("Filter loaded files…")
+                .placeholder("Filter files…")
+                .leading_icon(k.glyph.search)
+                .width(None)
                 .on_edit(|state: &mut State| &mut state.explorer.filter)
                 .on_change(|state: &mut State, _| state.explorer.filter_changed())
                 .build(k)
@@ -75,30 +59,44 @@ pub fn view(state: &State, k: &Kit) -> El {
 }
 
 fn file_row(state: &State, index: usize, k: &Kit) -> El {
-    let row = &state.explorer.rows[index];
-    let path = row.path.clone();
+    let entry = &state.explorer.rows[index];
+    let path = entry.path.clone();
     let double_path = path.clone();
-    let kind = row.kind.clone();
-    let reveal = row.is_file();
+    let kind = entry.kind.clone();
+    let reveal = entry.is_file();
     let selected = state.explorer.selected.contains(&path);
-    text(format!("{}{}", prefix(state, row), row.label))
-        .key(row.key())
+    row()
+        .center_y()
+        .gap(8.0)
+        .key(entry.key())
         .h(ROW_HEIGHT)
         .w_full()
-        .pl(4.0 + row.depth as f32 * 14.0)
+        .pl(4.0 + entry.depth as f32 * 14.0)
         .pr(8.0)
-        .font(theme::mono(12.0, if selected { 600.0 } else { 400.0 }))
-        .color(k.c.text_base)
-        .fill(if selected { k.c.layer_02 } else { k.c.bg_base })
+        .radius(6.0)
+        .fill(if selected {
+            k.c.text_accent.alpha(0.15)
+        } else {
+            k.c.bg_base
+        })
         .hover(k.c.layer_01)
-        .truncate()
         .role("button")
-        .label(&row.path)
-        .help(&row.label)
+        .label(&entry.path)
+        .help(&entry.label)
         // Rows mirror graph selection; pointer presses must retain graph keyboard focus.
         .focusable(false)
         .preserve_focus_on_press(true)
         .on_press(move |s: &mut State| press(s, &path, &kind))
+        .child(disclosure(state, entry, k))
+        .child(entry_icon(state, entry, k))
+        .child(
+            text(&entry.label)
+                .font(if selected { k.ty.ui_medium } else { k.ty.ui })
+                .color(k.c.text_base)
+                .truncate()
+                .grow(1.0)
+                .min_w(0.0),
+        )
         .on_double_press_tx(move |s: &mut State, tx| {
             if reveal && s.reveal_file_classes(double_path.clone()) {
                 tx.focus("graph-canvas", false);
@@ -106,13 +104,29 @@ fn file_row(state: &State, index: usize, k: &Kit) -> El {
         })
 }
 
-fn prefix(state: &State, row: &Row) -> &'static str {
-    match row.kind {
-        RowKind::Directory if state.explorer.expanded.contains(&row.path) => "▾ ",
-        RowKind::Directory => "▸ ",
-        RowKind::Symlink => "↗ ",
-        _ => "  ",
+fn disclosure(state: &State, entry: &Row, k: &Kit) -> El {
+    if !matches!(entry.kind, RowKind::Directory) {
+        return el().w(12.0);
     }
+    let glyph = if state.explorer.expanded.contains(&entry.path) {
+        k.glyph.chevron_down
+    } else {
+        &crate::icons::OUTLINE_CHEVRON_RIGHT
+    };
+    icon(glyph, 12.0).color(k.c.text_muted).a11y_hidden()
+}
+
+fn entry_icon(state: &State, entry: &Row, k: &Kit) -> El {
+    let glyph = match entry.kind {
+        RowKind::Directory if state.explorer.expanded.contains(&entry.path) => &glyphs::FOLDER_OPEN,
+        RowKind::Directory => &glyphs::FOLDER,
+        RowKind::File | RowKind::Symlink => file_icon(&entry.label),
+        _ => return el().w(16.0),
+    };
+    icon(glyph, 16.0)
+        .key(format!("explorer-icon-{}", entry.key()))
+        .color(k.c.text_base)
+        .a11y_hidden()
 }
 fn press(state: &mut State, path: &str, kind: &RowKind) {
     match kind {

@@ -12713,6 +12713,22 @@
       "purpose": "minimum window keeps graph controls visible without toolbar scrolling"
     },
     {
+      "id": "codecallnavigator/bin:codecallnavigator::ui_tests::graph_studio::neighbor_rows_preserve_keyboard_navigation_and_bound_long_labels",
+      "runner": "rust",
+      "file": "src/ui_tests/graph_studio.rs",
+      "test_name": "ui_tests::graph_studio::neighbor_rows_preserve_keyboard_navigation_and_bound_long_labels",
+      "ignored": false,
+      "package": "codecallnavigator",
+      "target_kind": "bin",
+      "target": "codecallnavigator",
+      "component": "ui",
+      "category": "integration",
+      "requirements": [
+        "graphviz"
+      ],
+      "purpose": "Real Rune focus-group arrow navigation, accessible neighbor options and long-label bounds; cheaper pure tests cannot prove runtime focus routing or clipping."
+    },
+    {
       "id": "codecallnavigator/bin:codecallnavigator::ui_tests::graph_studio::reduced_motion_pane_collapse_snaps_width_and_keeps_controls_reachable",
       "runner": "rust",
       "file": "src/ui_tests/graph_studio.rs",
@@ -12935,6 +12951,38 @@
         "graphviz"
       ],
       "purpose": "native path controls show a real directed path and filter can reveal tests"
+    },
+    {
+      "id": "codecallnavigator/bin:codecallnavigator::ui_tests::open_canvas_fidelity::long_source_title_keeps_pin_and_close_inside_minimum_preview",
+      "runner": "rust",
+      "file": "src/ui_tests/open_canvas_fidelity.rs",
+      "test_name": "ui_tests::open_canvas_fidelity::long_source_title_keeps_pin_and_close_inside_minimum_preview",
+      "ignored": false,
+      "package": "codecallnavigator",
+      "target_kind": "bin",
+      "target": "codecallnavigator",
+      "component": "ui",
+      "category": "integration",
+      "purpose": "Prevent long source labels from displacing Pin and Close outside the minimum-sized production preview; Rune layout and input handlers require integration.",
+      "requirements": []
+    },
+    {
+      "id": "codecallnavigator/bin:codecallnavigator::ui_tests::open_canvas_fidelity::native_metal_workspace_fidelity_captures",
+      "runner": "rust",
+      "file": "src/ui_tests/open_canvas_fidelity.rs",
+      "test_name": "ui_tests::open_canvas_fidelity::native_metal_workspace_fidelity_captures",
+      "ignored": true,
+      "package": "codecallnavigator",
+      "target_kind": "bin",
+      "target": "codecallnavigator",
+      "component": "ui",
+      "category": "integration",
+      "purpose": "Offscreen Metal visual journey through the production workspace with real temporary tree/source files, filters, status states and responsive bounds; pixel compositing cannot be proved by cheaper view-tree tests. Does not certify native-window presentation.",
+      "requirements": [
+        "native",
+        "graphviz",
+        "cli"
+      ]
     },
     {
       "id": "codecallnavigator/bin:codecallnavigator::ui_tests::project_explorer::closed_sidebar_sync_and_root_changes_do_not_publish_old_entries",
@@ -13735,6 +13783,62 @@
         "graphviz"
       ],
       "purpose": "single click walks both sides and restores previous selection and camera"
+    },
+    {
+      "id": "codecallnavigator/bin:codecallnavigator::view::activity::model::tests::discovery_and_initial_empty_states_do_not_claim_a_graph_exists",
+      "runner": "rust",
+      "file": "src/view/activity_model.rs",
+      "test_name": "view::activity::model::tests::discovery_and_initial_empty_states_do_not_claim_a_graph_exists",
+      "ignored": false,
+      "package": "codecallnavigator",
+      "target_kind": "bin",
+      "target": "codecallnavigator",
+      "component": "ui",
+      "category": "unit",
+      "requirements": [],
+      "purpose": "discovery and initial empty states do not claim a graph exists"
+    },
+    {
+      "id": "codecallnavigator/bin:codecallnavigator::view::activity::model::tests::idle_requires_verified_matching_inputs_before_claiming_current",
+      "runner": "rust",
+      "file": "src/view/activity_model.rs",
+      "test_name": "view::activity::model::tests::idle_requires_verified_matching_inputs_before_claiming_current",
+      "ignored": false,
+      "package": "codecallnavigator",
+      "target_kind": "bin",
+      "target": "codecallnavigator",
+      "component": "ui",
+      "category": "unit",
+      "requirements": [],
+      "purpose": "idle requires verified matching inputs before claiming current"
+    },
+    {
+      "id": "codecallnavigator/bin:codecallnavigator::view::activity::model::tests::pending_work_retains_actual_phase_and_never_reports_success",
+      "runner": "rust",
+      "file": "src/view/activity_model.rs",
+      "test_name": "view::activity::model::tests::pending_work_retains_actual_phase_and_never_reports_success",
+      "ignored": false,
+      "package": "codecallnavigator",
+      "target_kind": "bin",
+      "target": "codecallnavigator",
+      "component": "ui",
+      "category": "unit",
+      "requirements": [],
+      "purpose": "pending work retains actual phase and never reports success"
+    },
+    {
+      "id": "codecallnavigator/bin:codecallnavigator::view::activity::model::tests::warnings_and_new_generations_override_success",
+      "runner": "rust",
+      "file": "src/view/activity_model.rs",
+      "test_name": "view::activity::model::tests::warnings_and_new_generations_override_success",
+      "ignored": false,
+      "package": "codecallnavigator",
+      "target_kind": "bin",
+      "target": "codecallnavigator",
+      "component": "ui",
+      "category": "unit",
+      "requirements": [],
+      "purpose": "warnings and new generations override success"
     },
     {
       "id": "codecallnavigator/test:aspnet_routes::custom_endpoint_http_method_metadata_blocks_unproved_request_methods",

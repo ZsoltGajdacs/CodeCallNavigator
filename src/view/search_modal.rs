@@ -2,13 +2,25 @@
 use crate::{app::State, search::Results};
 use codecallnavigator::search::SearchCategory;
 use rune::{El, col, el, row, text};
-use rune_kit::{Button, ButtonVariant, IconButton, IconButtonVariant, Kit, TextInput};
+use rune_kit::{Button, ButtonVariant, ControlSize, IconButton, IconButtonVariant, Kit, TextInput};
 
 pub(super) fn button(k: &Kit) -> El {
-    IconButton::new(k.glyph.search)
-        .label("Search")
+    Button::new("Find a symbol…")
+        .icon(k.glyph.search)
+        .control_size(ControlSize::ExtraLarge)
+        .variant(ButtonVariant::Outline)
+        .label_with(|font, ink| {
+            row()
+                .center_y()
+                .gap(18.0)
+                .child(text("Find a symbol…").font(font).color(ink))
+                .child(
+                    text("⇧ ⇧")
+                        .font(rune::TextStyle::new(11.0, 400.0))
+                        .color(ink.alpha(0.65)),
+                )
+        })
         .help("Search classes and methods · Double Shift")
-        .variant(IconButtonVariant::GhostMuted)
         .on_press(State::open_search)
         .build(k)
         .key("open-search")

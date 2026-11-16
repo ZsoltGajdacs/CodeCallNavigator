@@ -20,7 +20,7 @@ use std::{
     time::Duration,
 };
 
-pub const ROW_HEIGHT: f32 = 26.0;
+pub const ROW_HEIGHT: f32 = 32.0;
 
 #[derive(Clone, Debug)]
 pub enum RowKind {

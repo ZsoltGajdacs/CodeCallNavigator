@@ -79,9 +79,18 @@ fn neighbors_and_relationships_use_friendly_names_and_inspector_keeps_signature(
     });
     settle(&mut runtime);
     assert!(
-        has_option(&runtime, NAME),
-        "Callee list must show the source name"
+        runtime.elements().iter().any(|element| {
+            element.key.as_deref() == Some("neighbor-false-2")
+                && element.role == "option"
+                && element
+                    .label
+                    .as_deref()
+                    .is_some_and(|label| label.starts_with(&format!("{NAME} · ")))
+        }),
+        "Callee list must show the source name and preserve source-location context"
     );
+    super::click(&mut runtime, "relationships-section/trigger");
+    settle(&mut runtime);
     assert!(
         runtime.elements().iter().any(|element| {
             element.role == "option"
@@ -125,6 +134,8 @@ fn virtual_call_details_explain_the_declared_target_without_reclassifying_it() {
             .unwrap();
         state.selected_edge = Some(edge as u32);
     });
+    settle(&mut runtime);
+    super::click(&mut runtime, "relationships-section/trigger");
     settle(&mut runtime);
     assert!(runtime.elements().iter().any(|element| {
         element.text.as_deref() == Some("Target resolution: Virtual / interface dispatch")

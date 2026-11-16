@@ -104,6 +104,10 @@ fn selected_relationship_shows_rule_source_construct_and_supporting_symbol() {
         .select_method(selected, crate::graph_interaction::SelectionAction::Inspect);
     runtime.state.selected_edge = Some(0);
     settle(&mut runtime);
+    if !runtime.state.ui.section_open(Section::Relationships) {
+        click(&mut runtime, "relationships-section");
+        settle(&mut runtime);
+    }
     let elements = runtime.elements();
     for label in [
         "Rule: codecallnavigator.react.v1:react-event · v1".to_string(),
@@ -131,10 +135,10 @@ fn minimum_window_keeps_graph_controls_visible_without_toolbar_scrolling() {
         settle(&mut runtime);
         for key in [
             "graph-filters",
-            "overview",
-            "collapse-all",
+            "navigation-more",
+            "open-search",
+            "project-picker-trigger",
             "grouping-trigger",
-            "direction",
             "depth-trigger",
             "next-page",
             "zoom-out",
@@ -143,6 +147,17 @@ fn minimum_window_keeps_graph_controls_visible_without_toolbar_scrolling() {
         ] {
             assert_visible(&runtime, key);
         }
+        assert!(
+            runtime.find("direction").is_none(),
+            "Focused neighborhoods show callers above and callees below without a direction choice"
+        );
+        click(&mut runtime, "navigation-more");
+        settle(&mut runtime);
+        assert_visible(&runtime, "overview");
+        assert_visible(&runtime, "collapse-all");
+        click(&mut runtime, "overview");
+        settle(&mut runtime);
+        assert_visible(&runtime, "direction");
         let before = runtime.state.nav.camera.zoom;
         click(&mut runtime, "zoom-in");
         assert!(runtime.state.nav.camera.zoom > before);
@@ -205,6 +220,9 @@ fn kit_checkbox_changes_graph_filter_and_inspector_disclosure_hides_only_its_sec
     runtime.update(|state, _| {
         state.select_method(0, crate::graph_interaction::SelectionAction::Inspect);
     });
+    settle(&mut runtime);
+    assert!(runtime.find("path-from").is_none());
+    click(&mut runtime, "path-section/trigger");
     settle(&mut runtime);
     assert!(runtime.find("path-from").is_some());
     click(&mut runtime, "path-section/trigger");
@@ -345,18 +363,16 @@ fn live_pane_drags_keep_controls_inside_the_minimum_window() {
         shown <= 1050.0 - 48.0 - 448.0,
         "Live pane resizing consumed graph space: {shown}"
     );
-    for key in [
-        "grouping-trigger",
-        "direction",
-        "depth-trigger",
-        "zoom-in",
-        "fit",
-    ] {
+    for key in ["grouping-trigger", "depth-trigger", "zoom-in", "fit"] {
         assert_visible(&runtime, key);
     }
     assert_eq!(runtime.state.nav.camera.pan, camera.pan);
     assert_eq!(runtime.state.nav.camera.zoom, camera.zoom);
     assert_eq!(runtime.state.revision, revision);
+    assert!(runtime.find("direction").is_none());
+    click(&mut runtime, "overview");
+    settle(&mut runtime);
+    assert_visible(&runtime, "direction");
 }
 
 fn element(runtime: &Runtime<State>, key: &str) -> rune::ElementInfo {
@@ -426,7 +442,7 @@ fn system_appearance_switch_rethemes_the_live_workspace_without_losing_search() 
     assert!(runtime.state.search.open);
     assert_visible(&runtime, "search");
     assert_visible(&runtime, "toggle-inspector");
-    assert_visible(&runtime, "overview");
+    assert_visible(&runtime, "navigation-more");
     runtime.set_system_dark(true);
     settle(&mut runtime);
     assert_eq!(element(&runtime, "graph-canvas").fill, dark_canvas);
@@ -450,7 +466,7 @@ fn reduced_motion_pane_collapse_snaps_width_and_keeps_controls_reachable() {
         element(&runtime, "sidebar-pane").rect[2] < 1.0,
         "Reduced motion should snap pane width instead of sliding it"
     );
-    assert_visible(&runtime, "overview");
+    assert_visible(&runtime, "navigation-more");
     assert_visible(&runtime, "toggle-inspector");
     click(&mut runtime, "open-search");
     settle(&mut runtime);
@@ -528,4 +544,54 @@ fn long_project_titles_keep_toolbar_controls_visible_at_minimum_width() {
     ] {
         assert_visible(&runtime, key);
     }
+}
+
+// The real runtime is required to prove listbox arrow routing and clipped layout,
+// which pure presentation tests cannot observe.
+#[test]
+fn neighbor_rows_preserve_keyboard_navigation_and_bound_long_labels() {
+    let mut runtime = narrow_runtime(false);
+    let name = "veryLongCallerMethodName".repeat(12);
+    runtime.update(|state, _| {
+        let mut data = state.graph.as_ref().unwrap().data.to_graph_data();
+        data.nodes[1].label = name.clone();
+        state.graph = Some(std::sync::Arc::new(
+            codecallnavigator::graph::GraphIndex::new(std::sync::Arc::new(data)).unwrap(),
+        ));
+        state.select_method(2, crate::graph_interaction::SelectionAction::Inspect);
+    });
+    settle(&mut runtime);
+    let callers = runtime.state.neighbors.0.clone();
+    assert!(callers.len() >= 2);
+    let first = format!("neighbor-true-{}", callers[0]);
+    let second = format!("neighbor-true-{}", callers[1]);
+    assert_eq!(element(&runtime, "neighbor-list-true").role, "listbox");
+    let row = element(&runtime, &first);
+    assert_eq!(row.role, "option");
+    assert!(
+        row.label
+            .as_deref()
+            .unwrap()
+            .contains("fixture/LoadOrder.cs:1")
+    );
+    let title = runtime
+        .elements()
+        .into_iter()
+        .find(|e| e.text.as_deref() == Some(&name))
+        .unwrap();
+    assert_inside(title.rect, row.rect, 8.0);
+    let focus_key = first.clone();
+    runtime.update(move |_, tx| tx.focus(focus_key, false));
+    settle(&mut runtime);
+    assert!(element(&runtime, &first).focused);
+    // Rune first reveals the highlight on pointer-focused rows, then traverses.
+    press(&mut runtime, Key::Down);
+    assert!(element(&runtime, &first).focused);
+    press(&mut runtime, Key::Down);
+    assert!(
+        element(&runtime, &second).focused,
+        "Arrow keys traverse the neighbor list after revealing its keyboard highlight"
+    );
+    press(&mut runtime, Key::Enter);
+    assert_eq!(runtime.state.selected(), Some(callers[1]));
 }

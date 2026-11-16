@@ -8,7 +8,8 @@ use crate::{
 };
 use rune::{El, col, el, row, text};
 use rune_kit::{
-    Button, ButtonVariant, IconButton, IconButtonVariant, Kit, SegmentedControl, Select,
+    Button, ButtonVariant, ControlSize, IconButton, IconButtonVariant, Kit, SegmentedControl,
+    Select,
 };
 
 #[path = "architecture_controls.rs"]
@@ -28,59 +29,15 @@ mod graph_filters;
 pub use graph_filters::filters;
 
 pub fn toolbar(state: &State, k: &Kit) -> El {
-    let toolbar = navigation_controls(state, k)
-        .key("graph-toolbar")
-        .padding(8.0);
     if state.nav.grouping == Grouping::Layer {
         col()
             .key("architecture-toolbar")
             .motion(rune::Spring::NONE)
             .w_full()
-            .child(toolbar)
             .child(architecture_controls::view(state, k))
     } else {
-        toolbar
+        el()
     }
-}
-
-fn navigation_controls(state: &State, k: &Kit) -> El {
-    row()
-        .gap(4.0)
-        .center_y()
-        .child(
-            IconButton::new(&icons::OUTLINE_ARROW_LEFT)
-                .label("Back")
-                .help("Back")
-                .variant(IconButtonVariant::GhostMuted)
-                .disabled(state.back.is_empty())
-                .on_press(|s: &mut State| s.history(false))
-                .build(k)
-                .key("back"),
-        )
-        .child(
-            IconButton::new(&icons::OUTLINE_ARROW_RIGHT)
-                .label("Forward")
-                .help("Forward")
-                .variant(IconButtonVariant::GhostMuted)
-                .disabled(state.forward.is_empty())
-                .on_press(|s: &mut State| s.history(true))
-                .build(k)
-                .key("forward"),
-        )
-        .child(
-            Button::new("Overview")
-                .variant(ButtonVariant::Ghost)
-                .on_press(State::overview)
-                .build(k)
-                .key("overview"),
-        )
-        .child(
-            Button::new("Collapse")
-                .variant(ButtonVariant::Ghost)
-                .on_press(State::collapse_all)
-                .build(k)
-                .key("collapse-all"),
-        )
 }
 
 pub fn footer(state: &State, k: &Kit, layer: &mut Vec<El>) -> El {
@@ -91,7 +48,7 @@ pub fn footer(state: &State, k: &Kit, layer: &mut Vec<El>) -> El {
     let depth_select = Select::new("depth", &values)
         .label("Neighborhood depth")
         .current(Some(&depth))
-        .width(100.0)
+        .width(52.0)
         .open(state.ui.overlay == Some(Overlay::Depth))
         .on_toggle(State::toggle_depth)
         .on_close(State::close_overlay)
@@ -105,8 +62,14 @@ pub fn footer(state: &State, k: &Kit, layer: &mut Vec<El>) -> El {
     let scope = row()
         .gap(8.0)
         .center_y()
+        .child(
+            rune::icon(&icons::CODE_SLASH, 16.0)
+                .color(k.c.text_base)
+                .a11y_hidden(),
+        )
         .child(grouping)
         .child(direction)
+        .child(separator(k))
         .child(text("Depth").font(k.ty.small).color(k.c.text_muted))
         .child(depth_select);
     let mut zoom = zoom(state, k);
@@ -123,10 +86,14 @@ pub fn footer(state: &State, k: &Kit, layer: &mut Vec<El>) -> El {
             .key("next-page"),
         );
     }
-    if state.viewport[0] < 650.0 || state.graph_view.pages > 1 {
+    let single_row_width = if state.has_graph_focus() && !state.nav.show_path {
+        460.0
+    } else {
+        650.0
+    };
+    if state.viewport[0] < single_row_width || state.graph_view.pages > 1 {
         col()
             .key("graph-footer")
-            .w_full()
             .padding(8.0)
             .gap(6.0)
             .child(scope)
@@ -134,22 +101,22 @@ pub fn footer(state: &State, k: &Kit, layer: &mut Vec<El>) -> El {
     } else {
         row()
             .key("graph-footer")
-            .w_full()
             .padding(8.0)
             .gap(8.0)
             .center_y()
             .child(scope)
-            .child(el().grow(1.0))
+            .child(separator(k))
             .child(zoom)
     }
 }
 
+fn separator(k: &Kit) -> El {
+    el().w(1.0).h(20.0).fill(k.c.border_muted).a11y_hidden()
+}
+
 fn direction_control(state: &State, k: &Kit) -> El {
     if state.has_graph_focus() && !state.nav.show_path {
-        return text("Callers above · Callees below")
-            .key("direction")
-            .font(k.ty.small)
-            .color(k.c.text_muted);
+        return el();
     }
     SegmentedControl::new(
         &["Callers", "Callees"],
@@ -164,34 +131,42 @@ fn direction_control(state: &State, k: &Kit) -> El {
 
 fn zoom(state: &State, k: &Kit) -> El {
     row()
-        .gap(4.0)
+        .gap(6.0)
         .center_y()
         .child(
-            IconButton::new(&icons::MINUS)
-                .label("Zoom out")
-                .help("Zoom out")
-                .on_press(|s: &mut State| s.zoom(0.8))
-                .build(k)
-                .key("zoom-out"),
-        )
-        .child(
             Button::new("Fit")
+                .icon(&icons::OUTLINE_EXPAND)
+                .variant(ButtonVariant::Ghost)
+                .control_size(ControlSize::Large)
                 .on_press(State::fit_graph)
                 .build(k)
                 .key("fit"),
         )
         .child(
-            IconButton::new(&icons::PLUS)
-                .label("Zoom in")
-                .help("Zoom in")
-                .on_press(|s: &mut State| s.zoom(1.25))
+            IconButton::new(&icons::MINUS)
+                .label("Zoom out")
+                .help("Zoom out")
+                .variant(IconButtonVariant::GhostMuted)
+                .control_size(ControlSize::Large)
+                .on_press(|s: &mut State| s.zoom(0.8))
                 .build(k)
-                .key("zoom-in"),
+                .key("zoom-out"),
         )
         .child(
             text(format!("{:.0}%", state.nav.camera.zoom * 100.0))
-                .font(k.ty.small)
-                .color(k.c.text_muted),
+                .font(k.ty.ui)
+                .color(k.c.text_muted)
+                .min_w(40.0),
+        )
+        .child(
+            IconButton::new(&icons::PLUS)
+                .label("Zoom in")
+                .help("Zoom in")
+                .variant(IconButtonVariant::GhostMuted)
+                .control_size(ControlSize::Large)
+                .on_press(|s: &mut State| s.zoom(1.25))
+                .build(k)
+                .key("zoom-in"),
         )
 }
 
@@ -223,7 +198,7 @@ fn grouping_control(state: &State, k: &Kit, layer: &mut Vec<El>) -> El {
     Select::new("grouping", &labels)
         .label("Group graph by")
         .current(Some(labels[current]))
-        .width(112.0)
+        .width(108.0)
         .open(state.ui.overlay == Some(Overlay::Grouping))
         .on_toggle(|s: &mut State| {
             s.ui.overlay = if s.ui.overlay == Some(Overlay::Grouping) {

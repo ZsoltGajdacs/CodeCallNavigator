@@ -466,6 +466,8 @@ fn resizing_a_window_constrained_popup_starts_from_its_visible_size() {
 fn moving_from_popup_overlap_to_exposed_trigger_keeps_preview_open() {
     let (mut runtime, _directory) = source_runtime(1);
     runtime.update(|state, _| {
+        // A user-resized large preview forces the overlap this recovery case covers.
+        state.source_popup.size = [720.0, 480.0];
         state.nav.camera.zoom = 1.0;
         state.nav.camera.pan = [0.0, 0.0];
         state.graph_view.nodes[0].position = [650.0 - state.source_popup.canvas[0], 60.0];

@@ -291,7 +291,8 @@ fn real_graphviz_uses_signed_order_and_class_card_dimensions() {
         std::path::Path::new("/opt/homebrew/bin/dot"),
     )
     .unwrap();
-    assert!(view.nodes.iter().all(|n| n.size[1] == 117.2));
+    // The approved card header plus two 24px member rows must fit the real layout.
+    assert!(view.nodes.iter().all(|n| n.size == [248.0, 140.0]));
     for pair in view.nodes.windows(2) {
         assert!(pair[0].position[1] + pair[0].size[1] < pair[1].position[1]);
     }

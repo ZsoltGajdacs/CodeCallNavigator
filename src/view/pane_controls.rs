@@ -1,7 +1,7 @@
 //! Shared pane affordances: presentation state never changes graph navigation.
 use crate::{app::State, icons, presentation::Drawer, theme};
-use rune::{El, row, text};
-use rune_kit::{IconButton, IconButtonVariant, Kit};
+use rune::{El, TextStyle, row, text};
+use rune_kit::{ControlSize, IconButton, IconButtonVariant, Kit};
 
 #[derive(Clone, Copy)]
 pub(crate) enum Side {
@@ -55,6 +55,7 @@ fn button(state: &State, k: &Kit, side: Side, close: bool) -> El {
             side.title()
         ))
         .variant(IconButtonVariant::GhostMuted)
+        .control_size(ControlSize::ExtraLarge)
         .expanded(side.open(state))
         .on_press(move |s: &mut State| side.toggle(s))
         .build(k)
@@ -66,16 +67,23 @@ pub(super) fn toggle(state: &State, k: &Kit, side: Side) -> El {
 }
 
 pub(crate) fn header(state: &State, k: &Kit, side: Side) -> El {
-    row()
-        .w_full()
-        .h(44.0)
-        .px(theme::SPACE)
-        .center_y()
-        .child(
-            text(side.title())
-                .font(k.ty.ui_medium)
-                .color(k.c.text_base)
-                .grow(1.0),
-        )
-        .child(button(state, k, side, true))
+    let mut header = row().w_full().h(56.0).px(theme::SPACE).center_y().child(
+        text(side.title())
+            .font(TextStyle::new(18.0, 650.0))
+            .color(k.c.text_base)
+            .grow(1.0),
+    );
+    if matches!(side, Side::Files) {
+        header = header.child(
+            IconButton::new(&icons::REFRESH)
+                .label("Refresh files")
+                .help("Refresh files")
+                .variant(IconButtonVariant::GhostMuted)
+                .control_size(ControlSize::Large)
+                .on_press(|state: &mut State| state.explorer.refresh())
+                .build(k)
+                .key("explorer-refresh"),
+        );
+    }
+    header.child(button(state, k, side, true))
 }

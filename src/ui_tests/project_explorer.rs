@@ -412,12 +412,38 @@ fn explorer_layouts_and_optional_native_captures() {
                 .find(|e| e.key.as_deref() == Some(key))
                 .unwrap();
             assert!(
-                element.visible[2] > 50.0 && element.visible[3] > 10.0,
+                element.visible[2] > 20.0 && element.visible[3] > 10.0,
                 "{key}: {:?}",
                 element.visible
             );
             assert!(element.rect[0] + element.rect[2] <= size.0);
         }
+        let icon_key = format!("explorer-icon-{}", fixture.key("a/deep/Shared.cs"));
+        let elements = fixture.runtime.elements();
+        let file_icon = elements
+            .iter()
+            .find(|e| e.key.as_deref() == Some(&icon_key))
+            .expect("Visible files need their own icon column");
+        assert!(file_icon.visible[2] >= 15.0 && file_icon.visible[3] >= 15.0);
+        let selected_row = elements
+            .iter()
+            .find(|e| e.key.as_deref() == Some(&fixture.key("a/deep/Shared.cs")))
+            .unwrap();
+        assert!(
+            file_icon.rect[0] > selected_row.rect[0]
+                && file_icon.rect[0] + file_icon.rect[2]
+                    < selected_row.rect[0] + selected_row.rect[2]
+        );
+        assert!(
+            selected_row.radius > 0.0,
+            "File selection follows the rounded concept treatment"
+        );
+        assert!(
+            !elements
+                .iter()
+                .any(|e| e.text.as_deref() == Some("Project Explorer")),
+            "Files has one heading"
+        );
         if let Some(output) = &output {
             capture(&mut fixture.runtime, size, &output.join(name));
         }
