@@ -37,7 +37,7 @@ pub fn symbol(saved: &Artifact, name: &str) -> String {
 }
 pub fn save(root: &Path, saved: &Artifact) {
     fs::create_dir_all(root.join(".codecallnavigator")).unwrap();
-    fs::write(root.join(artifact::GRAPH_PATH), saved.bytes().unwrap()).unwrap();
+    artifact::publish(root, saved, &std::sync::atomic::AtomicBool::new(false)).unwrap();
 }
 pub struct Repository {
     pub directory: tempfile::TempDir,
@@ -58,7 +58,10 @@ impl Repository {
         }
         .artifact();
         save(root, &before);
-        git(root, &["add", artifact::GRAPH_PATH]);
+        git(
+            root,
+            &["add", artifact::GRAPH_PATH, ".codecallnavigator/objects"],
+        );
         git(root, &["commit", "-qm", "before"]);
         git(root, &["tag", "base"]);
         let after = Snapshot {
@@ -68,7 +71,10 @@ impl Repository {
         }
         .artifact();
         save(root, &after);
-        git(root, &["add", artifact::GRAPH_PATH]);
+        git(
+            root,
+            &["add", artifact::GRAPH_PATH, ".codecallnavigator/objects"],
+        );
         git(root, &["commit", "-qm", "after"]);
         git(root, &["tag", "head"]);
         Self {
@@ -101,7 +107,7 @@ pub fn exchange(mut command: Command, root: &Path, operation: Value) -> Value {
         .take()
         .unwrap()
         .write_all(
-            json!({"version":1,"project":root,"query":operation})
+            json!({"version":2,"project":root,"query":operation})
                 .to_string()
                 .as_bytes(),
         )

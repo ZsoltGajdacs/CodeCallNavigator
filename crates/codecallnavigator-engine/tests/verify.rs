@@ -22,10 +22,8 @@ fn publish(root: &Path) -> Vec<u8> {
     let mut artifact = artifact::canonical(&GraphData::default(), &roots).unwrap();
     artifact.graph["analysis"] =
         serde_json::to_value(provenance::build(&inputs, &[], "", &roots).unwrap()).unwrap();
-    let bytes = artifact.bytes().unwrap();
-    fs::create_dir(root.join(".codecallnavigator")).unwrap();
-    fs::write(root.join(artifact::GRAPH_PATH), &bytes).unwrap();
-    bytes
+    artifact::publish(root, &artifact, &std::sync::atomic::AtomicBool::new(false)).unwrap();
+    fs::read(root.join(artifact::GRAPH_PATH)).unwrap()
 }
 fn verify(root: &Path, shared: bool) -> (i32, Value) {
     let mut command = Command::new(env!("CARGO_BIN_EXE_codecallnavigator-engine"));

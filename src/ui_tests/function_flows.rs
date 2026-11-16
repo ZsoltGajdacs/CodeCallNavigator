@@ -95,9 +95,7 @@ fn http_boundary_target_is_explicitly_labelled_in_flow_details() {
                 }
             });
         }
-        state.graph = Some(std::sync::Arc::new(
-            codecallnavigator::graph::GraphIndex::new(std::sync::Arc::new(graph)).unwrap(),
-        ));
+        crate::fixture_queries::install(state, graph).unwrap();
         state.flow_workspace.invalidate();
         state.open_flow("flow/load".into());
     });
@@ -137,9 +135,7 @@ fn old_graph_opens_an_actionable_refresh_message() {
         state.close_flow();
         let mut graph = flow_scenes::data();
         graph.flow_inventory = None;
-        state.graph = Some(std::sync::Arc::new(
-            codecallnavigator::graph::GraphIndex::new(std::sync::Arc::new(graph)).unwrap(),
-        ));
+        crate::fixture_queries::install(state, graph).unwrap();
         state.flow_workspace.invalidate();
         state.open_flow("flow/load".into());
     });
@@ -355,9 +351,7 @@ pub(super) fn prefixed_runtime() -> Runtime<State> {
     let mut inventory = serde_json::to_value(data.flow_inventory.take().unwrap()).unwrap();
     shift_spans(&mut inventory, prefix.len());
     data.flow_inventory = Some(serde_json::from_value(inventory).unwrap());
-    state.graph = Some(std::sync::Arc::new(
-        codecallnavigator::graph::GraphIndex::new(std::sync::Arc::new(data)).unwrap(),
-    ));
+    crate::fixture_queries::install(&mut state, data).unwrap();
     state.open_flow("flow/load".into());
     let mut runtime = Runtime::new(state, view::view, (1420.0, 900.0), Env::new(true, 1.0));
     runtime.poll = Some(jobs::poll);
@@ -485,9 +479,7 @@ fn inspector_runtime(graph: codecallnavigator::model::GraphData) -> Runtime<Stat
     let mut state = State::fixture();
     flow_scenes::install(&mut state);
     state.close_flow();
-    state.graph = Some(std::sync::Arc::new(
-        codecallnavigator::graph::GraphIndex::new(std::sync::Arc::new(graph)).unwrap(),
-    ));
+    crate::fixture_queries::install(&mut state, graph).unwrap();
     let mut runtime = Runtime::new(state, view::view, (1420.0, 900.0), Env::new(true, 1.0));
     runtime.poll = Some(jobs::poll);
     runtime.frame(0.0);
@@ -502,12 +494,11 @@ fn qualified_target_label_stays_visible_inside_minimum_single_flow_inspector() {
         ui.set_viewport((1050.0, 680.0), 1.0);
         ui.set_titlebar_inset(rune::tooling::Chrome::DEFAULT.titlebar_inset());
         ui.update(|state, _| {
-            state.graph = Some(std::sync::Arc::new(
-                codecallnavigator::graph::GraphIndex::new(std::sync::Arc::new(
-                    super::flow_comparison_layout::qualified_fixture(),
-                ))
-                .unwrap(),
-            ));
+            crate::fixture_queries::install(
+                state,
+                super::flow_comparison_layout::qualified_fixture(),
+            )
+            .unwrap();
         });
         let index = session(&ui)
             .ready

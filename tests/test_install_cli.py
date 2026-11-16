@@ -29,7 +29,7 @@ class TerminalInstallTests(unittest.TestCase):
         internal.write_text('internal executable')
         internal.chmod(0o755)
 
-    def write_command(self, marker, version=1):
+    def write_command(self, marker, version=2):
         capabilities = json.dumps({'query_version': version, 'generation_binding': True})
         executable = self.source / 'bin/ccnavigator'
         executable.write_text(

@@ -339,7 +339,7 @@ fn query_cli_snapshot(context: &serde_json::Value) -> serde_json::Value {
         .stderr(Stdio::piped())
         .spawn()
         .unwrap();
-    let request = serde_json::json!({"version":1,"project":context["project"],"roots":context["roots"],"expected_generation":context["generation"],"query":{"kind":"snapshot"}});
+    let request = serde_json::json!({"version":codecallnavigator::query::VERSION,"project":context["project"],"roots":context["roots"],"expected_generation":context["generation"],"query":{"kind":"snapshot"}});
     child
         .stdin
         .take()

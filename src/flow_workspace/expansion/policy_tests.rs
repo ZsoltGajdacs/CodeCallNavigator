@@ -479,7 +479,7 @@ fn cancelling_an_unpublished_mode_restores_the_exact_ordinary_session() {
 #[test]
 fn resized_expansion_toolbar_keeps_drawn_and_target_controls_inside_viewport() {
     let mut state = navigation_state(fixture());
-    let mut data = state.graph.as_ref().unwrap().data.as_ref().clone();
+    let mut data = state.graph.as_ref().unwrap().data.to_graph_data();
     data.nodes[0].signature = "ExpansionDesktop.Root.Run(System.Int32)".into();
     state.graph = Some(Arc::new(
         codecallnavigator::graph::GraphIndex::new(Arc::new(data)).unwrap(),

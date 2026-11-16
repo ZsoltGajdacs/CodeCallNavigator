@@ -219,7 +219,7 @@ async fn analysis_hello(reader: &mut (impl AsyncRead + Unpin)) -> Result<Vec<u8>
     let hello: serde_json::Value =
         serde_json::from_slice(&line).context("Invalid CLI protocol hello")?;
     ensure!(
-        hello == serde_json::json!({"event":"hello","version":1}),
+        hello == serde_json::json!({"event":"hello","version":2}),
         "Incompatible CLI analysis protocol hello"
     );
     Ok(line)
@@ -315,7 +315,7 @@ mod tests {
                 Invocation {
                     arguments: vec![
                         "-c".into(),
-                        "printf '{\"event\":\"hello\",\"version\":1}\\n'; read request; exit 7"
+                        "printf '{\"event\":\"hello\",\"version\":2}\\n'; read request; exit 7"
                             .into(),
                     ],
                     input: Some(b"{}\n".to_vec()),
@@ -358,7 +358,7 @@ mod tests {
     #[tokio::test]
     async fn stderr_is_drained_before_the_analysis_hello_arrives() {
         let processes = Processes::default();
-        let script = "import sys,json; sys.stderr.write('x'*1048576); sys.stderr.flush(); print(json.dumps({'event':'hello','version':1}),flush=True); json.loads(sys.stdin.readline()); print(json.dumps({'event':'complete','digest':'a'*64,'roots':[],'fingerprints':[],'metrics':{},'engine_versions':'test'}),flush=True)";
+        let script = "import sys,json; sys.stderr.write('x'*1048576); sys.stderr.flush(); print(json.dumps({'event':'hello','version':2}),flush=True); json.loads(sys.stdin.readline()); print(json.dumps({'event':'complete','digest':'a'*64,'roots':[],'fingerprints':[],'metrics':{},'engine_versions':'test'}),flush=True)";
         let output = processes
             .run(
                 Path::new("/usr/bin/python3"),
@@ -447,7 +447,7 @@ mod tests {
                 Invocation {
                     arguments: vec![
                         "-c".into(),
-                        "printf '{\"event\":\"hello\",\"version\":2}\\n'; read request; exit 7"
+                        "printf '{\"event\":\"hello\",\"version\":999}\\n'; read request; exit 7"
                             .into(),
                     ],
                     input: Some(b"analysis must not be sent\n".to_vec()),

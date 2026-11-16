@@ -15,7 +15,7 @@ fn automatic_refresh_rejects_a_pinned_observation_without_touching_the_project()
         .stderr(Stdio::piped())
         .spawn()
         .unwrap();
-    writeln!(child.stdin.take().unwrap(), "{}", json!({"version":1,"project":root.path(),"expected_generation":"old","query":{"kind":"freshness","observation_version":1}})).unwrap();
+    writeln!(child.stdin.take().unwrap(), "{}", json!({"version":2,"project":root.path(),"expected_generation":"old","query":{"kind":"freshness","observation_version":1}})).unwrap();
     let output = child.wait_with_output().unwrap();
     let frame: Value = serde_json::from_slice(&output.stdout)
         .expect("Automatic mode must report a structured invalid_request");

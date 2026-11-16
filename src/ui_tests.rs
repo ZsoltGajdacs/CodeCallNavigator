@@ -240,9 +240,10 @@ fn corrupt_session_is_recoverable_while_the_cached_graph_still_opens() {
     )
     .unwrap();
     std::fs::create_dir(project.join(".codecallnavigator")).unwrap();
-    std::fs::write(
-        project.join(codecallnavigator::artifact::GRAPH_PATH),
-        artifact.bytes().unwrap(),
+    codecallnavigator::artifact::publish(
+        &project,
+        &artifact,
+        &std::sync::atomic::AtomicBool::new(false),
     )
     .unwrap();
     let aliases = tempfile::tempdir().unwrap();

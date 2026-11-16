@@ -101,7 +101,12 @@ mod tests {
         };
         let artifact = artifact::canonical(&graph, &[("repo".into(), root.into())]).unwrap();
         fs::create_dir(root.join(".codecallnavigator")).unwrap();
-        fs::write(root.join(artifact::GRAPH_PATH), artifact.bytes().unwrap()).unwrap();
+        codecallnavigator::artifact::publish(
+            root,
+            &artifact,
+            &std::sync::atomic::AtomicBool::new(false),
+        )
+        .unwrap();
         QueryContext::for_project(&Runtime::discover().unwrap(), root.into())
             .snapshot(&AtomicBool::new(false))
             .unwrap()

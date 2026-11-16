@@ -19,6 +19,7 @@ pub(crate) fn mode(state: &State, loaded: &LoadedGraph) -> Mode {
 }
 
 pub(crate) fn install(state: &mut State, loaded: LoadedGraph, mode: Mode) {
+    state.flow_residency.retire(state.query_context.clone());
     invalidate(state);
     state.epoch += 1;
     state.revision += 1;

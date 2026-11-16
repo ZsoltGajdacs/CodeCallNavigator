@@ -90,6 +90,7 @@ fn validate(bytes: &[u8]) -> Result<Capabilities> {
         "live_source",
         "explorer",
         "flow",
+        "flow_resources",
         "search",
         "status",
     ] {

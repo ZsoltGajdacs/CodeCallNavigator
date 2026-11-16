@@ -98,5 +98,5 @@ class Client:
         require(actual == error, f'{scenario}: expected error {error}, got {actual}')
         require(bool(result.get('isError')) == bool(error), f'{scenario}: incorrect isError')
         if name != 'discover_builds':
-            require(envelope.get('version') == 1, f'{scenario}: unsupported CLI envelope version')
+            require(envelope.get('version') == 2, f'{scenario}: unsupported CLI envelope version')
         return envelope

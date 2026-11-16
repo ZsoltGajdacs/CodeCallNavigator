@@ -84,7 +84,7 @@ fn result(reply: Reply) -> CallToolResult {
 }
 fn failure(code: &str, message: impl std::fmt::Display) -> CallToolResult {
     result(Reply {
-        value: json!({"version":1,"generation":null,"freshness":null,"result":null,"error":{"code":code,"message":message.to_string()}}),
+        value: json!({"version":2,"generation":null,"freshness":null,"result":null,"error":{"code":code,"message":message.to_string()}}),
         is_error: true,
     })
 }

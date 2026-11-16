@@ -8,7 +8,7 @@ use std::{
     process::{Child, ChildStdin, Command, Stdio},
     sync::{
         Mutex, OnceLock, TryLockError,
-        atomic::{AtomicBool, Ordering},
+        atomic::{AtomicBool, AtomicU64, Ordering},
         mpsc,
     },
     time::{Duration, Instant},
@@ -17,6 +17,36 @@ use std::{
 const TIMEOUT: Duration = Duration::from_secs(120);
 const MAX_RESPONSE: u64 = 512 * 1024 * 1024;
 const MAX_REQUEST: usize = 4 * 1024 * 1024;
+
+pub(super) struct ReleaseGuard<'a> {
+    revision: &'a AtomicU64,
+    expected: u64,
+}
+
+impl<'a> ReleaseGuard<'a> {
+    pub(super) fn new(revision: &'a AtomicU64, expected: u64) -> Self {
+        Self { revision, expected }
+    }
+}
+
+enum Dispatch<'a> {
+    Required,
+    Release(ReleaseGuard<'a>),
+}
+
+impl Dispatch<'_> {
+    fn allowed(&self, connected: bool) -> bool {
+        match self {
+            Self::Required => true,
+            Self::Release(guard) => {
+                if guard.revision.load(Ordering::Acquire) != guard.expected {
+                    return false;
+                }
+                connected
+            }
+        }
+    }
+}
 
 pub(super) struct Client {
     runtime: Runtime,
@@ -34,6 +64,28 @@ impl Client {
     }
 
     pub fn query(&self, request: &Request, cancel: &AtomicBool) -> Result<Response> {
+        self.query_when(request, cancel, Dispatch::Required)?
+            .context("CLI query was not dispatched")
+    }
+
+    /// Recheck UI intent while holding the same lock that serializes flow loads.
+    /// An obsolete release never follows a newer flow request, and releasing an
+    /// unused connection must not launch a CLI process merely to unload it.
+    pub(super) fn release_flows(
+        &self,
+        request: &Request,
+        guard: ReleaseGuard<'_>,
+        cancel: &AtomicBool,
+    ) -> Result<Option<Response>> {
+        self.query_when(request, cancel, Dispatch::Release(guard))
+    }
+
+    fn query_when(
+        &self,
+        request: &Request,
+        cancel: &AtomicBool,
+        dispatch: Dispatch<'_>,
+    ) -> Result<Option<Response>> {
         let started = Instant::now();
         let mut session = loop {
             active(cancel, started)?;
@@ -44,6 +96,9 @@ impl Client {
             }
         };
         active(cancel, started)?;
+        if !dispatch.allowed(session.is_some()) {
+            return Ok(None);
+        }
         if session.is_none() {
             self.capabilities(cancel, started)?;
             *session = Some(Session::start(&self.runtime)?);
@@ -55,7 +110,7 @@ impl Client {
         if result.is_err() {
             session.take();
         }
-        result
+        result.map(Some)
     }
 
     pub(super) fn comparison_supported(&self, cancel: &AtomicBool) -> Result<bool> {
@@ -274,5 +329,21 @@ impl Drop for Session {
         // Read-only query sessions own no detached build processes. Analysis has
         // its own descendant-aware lifecycle in process.rs.
         stop_child(&mut self.child);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn release_guard_requires_connection_and_current_activity_revision() {
+        let revision = AtomicU64::new(4);
+        let release = Dispatch::Release(ReleaseGuard::new(&revision, 4));
+        assert!(!release.allowed(false));
+        assert!(release.allowed(true));
+        revision.fetch_add(1, Ordering::AcqRel);
+        assert!(!release.allowed(true));
+        assert!(Dispatch::Required.allowed(false));
     }
 }

@@ -36,10 +36,10 @@ fn capabilities_and_missing_graph_are_machine_readable() {
         .unwrap();
     assert!(output.status.success());
     let capabilities: Value = serde_json::from_slice(&output.stdout).unwrap();
-    assert_eq!(capabilities["query_version"], 1);
+    assert_eq!(capabilities["query_version"], 2);
     let root = tempfile::tempdir().unwrap();
     let (code, result) =
-        query(json!({"version":1,"project":root.path(),"query":{"kind":"status"}}));
+        query(json!({"version":2,"project":root.path(),"query":{"kind":"status"}}));
     assert_eq!(code, 2);
     assert_eq!(result["error"]["code"], "graph_missing");
 }
@@ -87,10 +87,8 @@ fn saved_graph(root: &Path) -> Vec<u8> {
         ..Default::default()
     };
     let artifact = artifact::canonical(&graph, &[("repo".into(), root.into())]).unwrap();
-    let bytes = artifact.bytes().unwrap();
-    fs::create_dir(root.join(".codecallnavigator")).unwrap();
-    fs::write(root.join(artifact::GRAPH_PATH), &bytes).unwrap();
-    bytes
+    artifact::publish(root, &artifact, &std::sync::atomic::AtomicBool::new(false)).unwrap();
+    fs::read(root.join(artifact::GRAPH_PATH)).unwrap()
 }
 
 fn source_fixture(
@@ -137,7 +135,7 @@ fn flow_fixture(root: &Path, file: String) -> codecallnavigator_core::flow::Flow
 }
 
 fn ask(root: &Path, operation: Value) -> Value {
-    let (code, response) = query(json!({"version":1,"project":root,"query":operation}));
+    let (code, response) = query(json!({"version":2,"project":root,"query":operation}));
     assert_eq!(code, 0, "{response}");
     response
 }
@@ -198,7 +196,7 @@ fn queries_preserve_stable_ids_uncertainty_source_and_bounds() {
         before
     );
     let (code, result) = query(
-        json!({"version":1,"project":root,"expected_generation":"wrong","query":{"kind":"status"}}),
+        json!({"version":2,"project":root,"expected_generation":"wrong","query":{"kind":"status"}}),
     );
     assert_eq!(code, 2);
     assert_eq!(result["error"]["code"], "generation_mismatch");
@@ -223,7 +221,7 @@ fn explorer_includes_hidden_entries_and_does_not_follow_symlinks() {
             .any(|e| e["label"] == "link" && e["kind"] == "symlink")
     );
     let (code, result) = query(
-        json!({"version":1,"project":root,"query":{"kind":"explorer","path":root.parent().unwrap()}}),
+        json!({"version":2,"project":root,"query":{"kind":"explorer","path":root.parent().unwrap()}}),
     );
     assert_eq!(code, 2);
     assert_eq!(result["error"]["code"], "outside_project");
@@ -233,8 +231,8 @@ fn explorer_includes_hidden_entries_and_does_not_follow_symlinks() {
 fn invalid_requests_and_legacy_csharp_flow_unavailability_remain_explicit() {
     let root = tempfile::tempdir().unwrap();
     let root = root.path().canonicalize().unwrap();
-    let bytes = saved_graph(&root);
-    let mut artifact = codecallnavigator_core::artifact::Artifact::from_bytes(&bytes).unwrap();
+    saved_graph(&root);
+    let mut artifact = codecallnavigator_core::artifact::load(&root).unwrap();
     for node in artifact.graph["nodes"].as_array_mut().unwrap() {
         node["language"] = "csharp".into();
     }
@@ -243,15 +241,16 @@ fn invalid_requests_and_legacy_csharp_flow_unavailability_remain_explicit() {
         .as_object_mut()
         .unwrap()
         .remove("flow_inventory");
-    fs::write(
-        root.join(codecallnavigator_core::artifact::GRAPH_PATH),
-        artifact.bytes().unwrap(),
+    codecallnavigator_core::artifact::publish(
+        &root,
+        &artifact,
+        &std::sync::atomic::AtomicBool::new(false),
     )
     .unwrap();
     let snapshot = ask(&root, json!({"kind":"snapshot"}));
     let symbol = snapshot["result"]["nodes"][0]["id"].as_str().unwrap();
     let (code, response) =
-        query(json!({"version":1,"project":root,"query":{"kind":"flow","symbol":symbol}}));
+        query(json!({"version":2,"project":root,"query":{"kind":"flow","symbol":symbol}}));
     assert_eq!(code, 2);
     assert_eq!(response["error"]["code"], "flow_unavailable");
     assert!(
@@ -260,16 +259,16 @@ fn invalid_requests_and_legacy_csharp_flow_unavailability_remain_explicit() {
             .unwrap()
             .contains("Refresh")
     );
-    let (code, response) = query(json!({"version":2,"project":root,"query":{"kind":"status"}}));
+    let (code, response) = query(json!({"version":999,"project":root,"query":{"kind":"status"}}));
     assert_eq!(code, 2);
     assert_eq!(response["error"]["code"], "unsupported_version");
     let (code, response) = query(
-        json!({"version":1,"project":root,"query":{"kind":"search","text":"Start","limit":201}}),
+        json!({"version":2,"project":root,"query":{"kind":"search","text":"Start","limit":201}}),
     );
     assert_eq!(code, 2);
     assert_eq!(response["error"]["code"], "invalid_request");
     let (code, response) =
-        query(json!({"version":1,"project":root,"query":{"kind":"symbol","symbol":"unknown"}}));
+        query(json!({"version":2,"project":root,"query":{"kind":"symbol","symbol":"unknown"}}));
     assert_eq!(code, 2);
     assert_eq!(response["error"]["code"], "symbol_missing");
 }
@@ -297,8 +296,7 @@ fn large_class(root: &Path) {
         ..Default::default()
     };
     let artifact = artifact::canonical(&graph, &[("repo".into(), root.into())]).unwrap();
-    fs::create_dir(root.join(".codecallnavigator")).unwrap();
-    fs::write(root.join(artifact::GRAPH_PATH), artifact.bytes().unwrap()).unwrap();
+    artifact::publish(root, &artifact, &std::sync::atomic::AtomicBool::new(false)).unwrap();
 }
 
 #[test]
@@ -314,7 +312,7 @@ fn render_membership_is_complete_while_agent_selection_is_bounded() {
     assert_eq!(bounded["result"]["nodes"].as_array().unwrap().len(), 1500);
     assert_eq!(bounded["result"]["omitted_nodes"], 1);
     let (code, render) = query(
-        json!({"version":1,"project":root,"expected_generation":status["generation"],"query":{"kind":"render_selection","selection":{"kind":"overview"}}}),
+        json!({"version":2,"project":root,"expected_generation":status["generation"],"query":{"kind":"render_selection","selection":{"kind":"overview"}}}),
     );
     assert_eq!(code, 0, "{render}");
     assert_eq!(render["result"]["nodes"].as_array().unwrap().len(), 1501);
@@ -408,3 +406,7 @@ fn real_typescript_analysis_is_queryable_without_reanalysis() {
         fs::read(root.join(codecallnavigator_core::artifact::GRAPH_PATH)).unwrap()
     );
 }
+
+// Real persistent-process residency and recovery journeys.
+#[path = "query/flow_resources.rs"]
+mod flow_resources;

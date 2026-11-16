@@ -3,7 +3,7 @@ use crate::{discovery::BuildTarget, model::FileFingerprint};
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 
-pub const VERSION: u32 = 1;
+pub const VERSION: u32 = 2;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(tag = "command", rename_all = "snake_case", deny_unknown_fields)]

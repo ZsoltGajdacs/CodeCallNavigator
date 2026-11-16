@@ -23,8 +23,13 @@ fn committed_nested_snapshots_bind_exact_bytes_without_a_working_graph() {
     let artifact =
         super::super::canonical(&GraphData::default(), &[("repo".into(), project.clone())])
             .unwrap();
-    let bytes = serde_json::to_vec_pretty(&artifact).unwrap();
-    fs::write(project.join(GRAPH_PATH), &bytes).unwrap();
+    super::super::publish(
+        &project,
+        &artifact,
+        &std::sync::atomic::AtomicBool::new(false),
+    )
+    .unwrap();
+    let bytes = fs::read(project.join(GRAPH_PATH)).unwrap();
     git(repo.path(), &["init", "-q"]);
     git(repo.path(), &["config", "user.name", "Tests"]);
     git(
@@ -58,12 +63,8 @@ fn committed_nested_snapshots_bind_exact_bytes_without_a_working_graph() {
         error_code(&load(&project, "missing").err().unwrap()),
         "revision_unavailable"
     );
-    assert_eq!(
-        fs::read_dir(project.join(".codecallnavigator"))
-            .unwrap()
-            .count(),
-        0
-    );
+    assert!(!project.join(GRAPH_PATH).exists());
+    assert!(!repo.path().join(".git/FETCH_HEAD").exists());
 }
 
 #[test]
@@ -113,7 +114,12 @@ fn missing_promisor_blob_never_starts_lazy_fetch() {
         &[("repo".into(), repo.path().into())],
     )
     .unwrap();
-    fs::write(repo.path().join(GRAPH_PATH), artifact.bytes().unwrap()).unwrap();
+    super::super::publish(
+        repo.path(),
+        &artifact,
+        &std::sync::atomic::AtomicBool::new(false),
+    )
+    .unwrap();
     git(repo.path(), &["init", "-q"]);
     git(repo.path(), &["config", "user.name", "Tests"]);
     git(

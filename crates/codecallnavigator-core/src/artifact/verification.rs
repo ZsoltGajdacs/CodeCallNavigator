@@ -3,11 +3,13 @@ mod csharp_policy;
 mod live;
 #[cfg(test)]
 mod observation_tests;
-use super::{Artifact, GRAPH_PATH, Roots, paths::Paths, provenance};
+use super::{Artifact, Roots, paths::Paths, provenance, storage};
 use crate::fingerprint::observe_content;
 use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
-use std::{collections::BTreeSet, fs, path::Path, sync::atomic::AtomicBool};
+#[cfg(test)]
+use std::fs;
+use std::{collections::BTreeSet, path::Path, sync::atomic::AtomicBool};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -50,10 +52,15 @@ impl Report {
     }
 }
 
-/// Hash actual file bytes (including legacy formatting), and never acquire a write lock.
+/// Validate the captured manifest and both immutable parts, then verify source inputs.
 pub fn verify(project: &Path, roots: &Roots) -> Result<Report> {
-    let bytes = fs::read(project.join(GRAPH_PATH)).context("Cannot read graph artifact")?;
-    verify_bytes(&bytes, roots)
+    Paths::new(roots)?;
+    let (bytes, captured) = storage::Captured::inspect(project)?;
+    let digest = blake3::hash(&bytes).to_hex().to_string();
+    match captured.and_then(|captured| captured.complete()) {
+        Ok(artifact) => verify_artifact(&artifact, &digest, roots),
+        Err(_) => Ok(invalid_report(&digest)),
+    }
 }
 
 pub fn verify_bytes(bytes: &[u8], roots: &Roots) -> Result<Report> {
@@ -62,14 +69,16 @@ pub fn verify_bytes(bytes: &[u8], roots: &Roots) -> Result<Report> {
     let digest = blake3::hash(bytes).to_hex().to_string();
     match Artifact::from_bytes(bytes) {
         Ok(artifact) => verify_artifact(&artifact, &digest, roots),
-        Err(_) => {
-            let mut report = report(&digest);
-            report.contract_valid = false;
-            report.input_status = InputStatus::Unverifiable;
-            report.reason("invalid_contract", None);
-            Ok(report)
-        }
+        Err(_) => Ok(invalid_report(&digest)),
     }
+}
+
+fn invalid_report(digest: &str) -> Report {
+    let mut report = report(digest);
+    report.contract_valid = false;
+    report.input_status = InputStatus::Unverifiable;
+    report.reason("invalid_contract", None);
+    report
 }
 
 fn report(digest: &str) -> Report {
@@ -294,6 +303,7 @@ fn verify_input(
 mod tests {
     use super::*;
     use crate::{artifact, fingerprint, model::GraphData};
+    use std::fs;
     fn artifact_bytes(root: &Path) -> Vec<u8> {
         let fingerprints = fingerprint::capture_excluding(
             [root.into(), root.join("input.txt"), root.join("absent.txt")],
@@ -314,10 +324,9 @@ mod tests {
         let roots = vec![("repo".into(), root.path().into())];
         let mut artifact = Artifact::from_bytes(&artifact_bytes(root.path())).unwrap();
         artifact.graph["analysis"]["targets"] = serde_json::json!(["@repo/Empty.CSPROJ"]);
-        let bytes = artifact.bytes().unwrap();
-        fs::create_dir(root.path().join(".codecallnavigator")).unwrap();
-        let path = root.path().join(GRAPH_PATH);
-        fs::write(&path, &bytes).unwrap();
+        artifact::publish(root.path(), &artifact, &AtomicBool::new(false)).unwrap();
+        let path = root.path().join(artifact::GRAPH_PATH);
+        let bytes = fs::read(&path).unwrap();
         let report = verify(root.path(), &roots).unwrap();
         assert_eq!(report.input_status, InputStatus::Unverifiable);
         assert!(

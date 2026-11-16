@@ -1,5 +1,6 @@
 """Produce the two saved C# artifacts and derive native expectations through the public CLI."""
 from dataclasses import dataclass
+from graph_bundle import load as load_bundle, publish_fixture, stored_bytes
 import hashlib
 import json
 from pathlib import Path
@@ -42,7 +43,7 @@ def revision_source(revision):
 
 def commit(project, name):
     git(project, "add", "Comparison.csproj", "Changed.cs", "Unchanged.cs", "Legacy.cs")
-    git(project, "add", "-f", GRAPH)
+    git(project, "add", "-f", GRAPH, ".codecallnavigator/objects")
     git(project, "commit", "-qm", name)
     git(project, "tag", name)
 
@@ -66,12 +67,12 @@ def compile_revision(client, project, revision):
     original = artifact.read_bytes()
     metadata = {"compiler_sha256": hashlib.sha256(original).hexdigest()}
     if revision == "Before":
-        artifact.write_text(json.dumps(remove_legacy_source(json.loads(original))))
+        publish_fixture(artifact, remove_legacy_source(load_bundle(artifact)))
         metadata["mutation"] = {"path": "/graph/architecture/files", "removed_file": "Legacy.cs",
                                 "removed_source_sha256": hashlib.sha256(inputs["Legacy.cs"]).hexdigest(),
                                 "removed_rows": 1, "nodes_and_ir_unchanged": True}
     metadata.update(committed_sha256=hashlib.sha256(artifact.read_bytes()).hexdigest(),
-                    committed_bytes=artifact.stat().st_size)
+                    committed_bytes=stored_bytes(artifact))
     return inputs, metadata
 
 

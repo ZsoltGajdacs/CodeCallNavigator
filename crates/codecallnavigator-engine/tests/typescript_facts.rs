@@ -138,8 +138,8 @@ fn analyze(root: &Path) -> (Artifact, Vec<u8>) {
         String::from_utf8_lossy(&output.stderr)
     );
     let bytes = fs::read(root.join(artifact::GRAPH_PATH)).unwrap();
-    let saved = Artifact::from_bytes(&bytes).unwrap();
-    assert_eq!(saved.bytes().unwrap(), bytes);
+    let saved = artifact::load(root).unwrap();
+    assert_eq!(saved.encode().unwrap().as_ref(), bytes);
     (saved, bytes)
 }
 
@@ -162,7 +162,7 @@ fn query(root: &Path, symbol: &str) -> Value {
         .take()
         .unwrap()
         .write_all(
-            json!({"version":1,"project":root,"query":{"kind":"flow","symbol":symbol}})
+            json!({"version":2,"project":root,"query":{"kind":"flow","symbol":symbol}})
                 .to_string()
                 .as_bytes(),
         )

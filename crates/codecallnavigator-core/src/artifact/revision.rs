@@ -1,13 +1,15 @@
 //! Read-only saved graph snapshots from immutable Git blobs or the working tree.
 mod inspection;
-use super::{Artifact, GRAPH_PATH};
+use super::{Artifact, GRAPH_PATH, storage};
 use anyhow::{Context, Result};
 pub use inspection::{
     ArtifactFailure, ArtifactResult, InspectedEndpoint, Inspection, ObservedSchema, inspect,
 };
 use serde::Serialize;
+#[cfg(test)]
+use std::fs;
 use std::{
-    fmt, fs,
+    fmt,
     io::{Read, Seek, SeekFrom},
     path::Path,
     process::{Child, Command, Stdio},
@@ -73,16 +75,20 @@ pub fn load(project: &Path, revision: &str) -> Result<Snapshot> {
 
 struct ReadSnapshot {
     bytes: Vec<u8>,
+    decoded: Result<Artifact>,
     commit: Option<String>,
     kind: EndpointKind,
     path: String,
 }
 
 fn read_snapshot(project: &Path, revision: &str) -> Result<ReadSnapshot> {
-    let (bytes, commit, kind, path) = if revision == "WORKTREE" {
-        let bytes = fs::read(project.join(GRAPH_PATH)).map_err(|error| {
+    let (bytes, decoded, commit, kind, path) = if revision == "WORKTREE" {
+        let (bytes, captured) = storage::Captured::inspect(project).map_err(|error| {
             failure(
-                if error.kind() == std::io::ErrorKind::NotFound {
+                if error
+                    .downcast_ref::<std::io::Error>()
+                    .is_some_and(|error| error.kind() == std::io::ErrorKind::NotFound)
+                {
                     "graph_missing"
                 } else {
                     "graph_unavailable"
@@ -90,17 +96,31 @@ fn read_snapshot(project: &Path, revision: &str) -> Result<ReadSnapshot> {
                 format!("Cannot read saved graph: {error}"),
             )
         })?;
+        let decoded = captured.and_then(|captured| captured.complete());
         let path = working_path(project_prefix(project))?;
-        (bytes, None, EndpointKind::Worktree, path)
+        (bytes, decoded, None, EndpointKind::Worktree, path)
     } else {
         let (bytes, commit, path) = committed(project, revision)?;
-        (bytes, Some(commit), EndpointKind::Commit, path)
+        let decoded = decode_committed(project, &bytes, &commit, &path);
+        (bytes, decoded, Some(commit), EndpointKind::Commit, path)
     };
     Ok(ReadSnapshot {
         bytes,
+        decoded,
         commit,
         kind,
         path,
+    })
+}
+
+fn decode_committed(project: &Path, bytes: &[u8], commit: &str, path: &str) -> Result<Artifact> {
+    let manifest = storage::Manifest::from_bytes(bytes)?;
+    let prefix = path
+        .strip_suffix("graph.json")
+        .context("Invalid manifest path")?;
+    manifest.complete_with(|part| {
+        let object = format!("{commit}:{prefix}{part}");
+        git(project, &["cat-file", "blob", &object], "graph_missing")
     })
 }
 

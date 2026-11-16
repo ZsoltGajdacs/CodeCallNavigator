@@ -1,4 +1,5 @@
 //! Real MSBuild restore/import provenance, including timestamp-only rewrites.
+use codecallnavigator_core::artifact;
 use serde_json::Value;
 use std::{fs, path::Path, process::Command};
 
@@ -33,7 +34,7 @@ fn analyze_target(root: &Path, target: &str, imports: Option<&Path>) -> Value {
         "{}",
         String::from_utf8_lossy(&output.stderr)
     );
-    serde_json::from_slice(&fs::read(root.join(".codecallnavigator/graph.json")).unwrap()).unwrap()
+    serde_json::to_value(artifact::load(root).unwrap()).unwrap()
 }
 
 fn project(root: &Path) {

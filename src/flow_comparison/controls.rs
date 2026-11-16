@@ -28,11 +28,13 @@ impl Default for Controls {
 }
 impl State {
     pub fn show_flow_comparison(&mut self) {
+        self.flow_residency.activity();
         self.close_source();
         self.flow_workspace.preserve_current_scroll();
         self.flow_comparison.controls.visible = true;
     }
     pub fn load_flow_comparison(&mut self) {
+        self.flow_residency.activity();
         let base = self.flow_comparison.controls.base.text.clone();
         let head = self.flow_comparison.controls.head.text.clone();
         let result = if self.flow_comparison.descriptor().is_some() {

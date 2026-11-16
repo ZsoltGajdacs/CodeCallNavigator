@@ -110,7 +110,7 @@ fn folder_focus_matches_depth_across_projects_and_keeps_shallow_and_root_folders
 
 #[test]
 fn namespace_focus_preserves_exact_packages_and_project_qualified_global_namespaces() {
-    let mut data = folder_graph().data.as_ref().clone();
+    let mut data = folder_graph().data.to_graph_data();
     for (node, namespace) in data.nodes.iter_mut().zip([
         "example.api",
         "example.service",
@@ -162,7 +162,7 @@ fn namespace_focus_preserves_exact_packages_and_project_qualified_global_namespa
     );
     assert_eq!(view.edges.len(), 4);
     req.filter.include_generated = false;
-    let mut data = graph.data.as_ref().clone();
+    let mut data = graph.data.to_graph_data();
     data.nodes[2].is_generated = true;
     let filtered = GraphIndex::new(Arc::new(data)).unwrap();
     assert_eq!(project(&filtered, &req).nodes.len(), 4);
@@ -251,7 +251,9 @@ fn project_focus_collapses_connected_projects_even_when_they_are_expanded() {
 }
 
 fn layer_request(graph: &GraphIndex) -> Request {
-    use codecallnavigator::architecture::{Assignment, LayerAssignments, LayerDefinition, file_key};
+    use codecallnavigator::architecture::{
+        Assignment, LayerAssignments, LayerDefinition, file_key,
+    };
     let mut req = request(FocusTarget::Group(key(&["layer", "Services"])));
     req.grouping = Grouping::Layer;
     req.layer_tab = Some("main".into());

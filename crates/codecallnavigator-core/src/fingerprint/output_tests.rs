@@ -10,6 +10,8 @@ fn graph_publication_does_not_invalidate_sources_but_configuration_does() {
     for name in [
         "graph.json",
         "graph.lock",
+        "publication.lock",
+        "previous.json",
         ".graph-publish-before",
         "inference.sqlite3",
         "inference.sqlite3-wal",
@@ -18,6 +20,8 @@ fn graph_publication_does_not_invalidate_sources_but_configuration_does() {
     ] {
         fs::write(directory.join(name), "generated").unwrap();
     }
+    fs::create_dir(directory.join("objects")).unwrap();
+    fs::write(directory.join("objects/part.flows.json.zst"), "compressed").unwrap();
     assert!(!is_stale(&before).unwrap());
     fs::write(directory.join("layers.yml"), "version: 1\n").unwrap();
     assert!(is_stale(&before).unwrap());
@@ -27,6 +31,11 @@ fn graph_publication_does_not_invalidate_sources_but_configuration_does() {
     fs::write(directory.join("graph.json"), "replacement").unwrap();
     fs::remove_file(directory.join(".graph-publish-before")).unwrap();
     fs::write(directory.join(".graph-publish-after"), "temporary").unwrap();
+    fs::write(
+        directory.join("objects/another.structure.json.zst"),
+        "compressed",
+    )
+    .unwrap();
     assert!(!is_stale(&before).unwrap());
     fs::write(directory.join("layers.yml"), "version: 2\n").unwrap();
     assert!(is_stale(&before).unwrap());
@@ -40,6 +49,8 @@ fn resource_collection_excludes_only_project_graph_outputs() {
     for name in [
         "graph.json",
         "graph.lock",
+        "publication.lock",
+        "previous.json",
         ".graph-publish-active",
         "layers.yml",
         "other.json",
@@ -51,12 +62,18 @@ fn resource_collection_excludes_only_project_graph_outputs() {
     ] {
         fs::write(directory.join(name), "content").unwrap();
     }
+    fs::create_dir(directory.join("objects")).unwrap();
+    let object = directory.join("objects/part.flows.json.zst");
+    fs::write(&object, "compressed").unwrap();
     fs::write(project.path().join("graph.json"), "authored resource").unwrap();
     let paths = input_paths_excluding(&[project.path().into()], &[]).unwrap();
     assert!(paths.contains(&directory.join("layers.yml")));
     assert!(paths.contains(&directory.join("other.json")));
     assert!(paths.contains(&project.path().join("graph.json")));
     assert!(paths.contains(&directory.join("inference.sqlite3.authored")));
+    assert!(!paths.contains(&object));
+    assert!(capture([object.clone()]).unwrap().is_empty());
+    assert!(input_paths_excluding(&[object], &[]).unwrap().is_empty());
     for name in [
         "graph.json",
         "graph.lock",

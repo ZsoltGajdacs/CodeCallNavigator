@@ -4,7 +4,6 @@ use super::{
     selection::node,
 };
 use crate::{
-    flow,
     graph::{Direction, Filter, GraphIndex},
     search::{NameSearchIndex, NameSearchQuery, SearchCategory, SearchTarget},
 };
@@ -52,12 +51,13 @@ pub fn execute(graph: &GraphIndex, query: &Query) -> Result<Value> {
         | Query::Source {
             origin: SourceOrigin::Analyzed,
             ..
+        } => symbol_query(graph, query),
+        Query::Flow { .. } | Query::FlowResources { .. } | Query::FlowExpansion(_) => {
+            Err(Error::new(
+                "invalid_request",
+                "Flow operations require engine-owned generation resources",
+            ))
         }
-        | Query::Flow { .. } => symbol_query(graph, query),
-        Query::FlowExpansion(_) => Err(Error::new(
-            "invalid_request",
-            "Flow expansion requires a generation-bound saved artifact",
-        )),
         Query::Source {
             origin: SourceOrigin::Live,
             ..
@@ -96,7 +96,6 @@ fn symbol_query(graph: &GraphIndex, query: &Query) -> Result<Value> {
             symbol,
             origin: SourceOrigin::Analyzed,
         } => source(graph, symbol),
-        Query::Flow { symbol } => function_flow(graph, symbol),
         _ => Err(Error::new(
             "invalid_request",
             "Expected a saved symbol operation",
@@ -104,22 +103,32 @@ fn symbol_query(graph: &GraphIndex, query: &Query) -> Result<Value> {
     }
 }
 
-fn function_flow(graph: &GraphIndex, symbol: &str) -> Result<Value> {
-    let function =
-        flow::lookup(&graph.data, symbol).map_err(|e| Error::new("flow_unavailable", e))?;
-    let content = analyzed_source(
-        graph,
-        FileLocation {
-            file: &function.file,
-            build: &function.build,
-            project: &function.project,
-        },
-    )?;
-    let chart = flow::checked_chart(function, content)
-        .map_err(|e| Error::new("flow_unavailable", format!("{e:#}")))?;
-    let line = graph.data.nodes[node(graph, symbol)? as usize].line;
-    let source = json!({"origin":"analyzed","file":function.file,"symbol":symbol,"line":line,"content":content});
-    Ok(json!({"function":function,"chart":chart,"source":source}))
+/// Render a function using the same validated view as expansion and history.
+pub fn function_flow(view: &crate::artifact::flow::View<'_>, symbol: &str) -> Result<Value> {
+    use crate::artifact::flow::Selection;
+    let ready = match view.select(symbol) {
+        Selection::Ready(ready) => ready,
+        Selection::Missing => {
+            return Err(Error::new(
+                "flow_unavailable",
+                "The selected method is no longer in this graph.",
+            ));
+        }
+        Selection::Unavailable(error) => {
+            use crate::artifact::flow::Reason;
+            let code = if matches!(
+                error.reason,
+                Reason::MissingSource | Reason::DuplicateSource | Reason::InvalidSource
+            ) {
+                "source_unavailable"
+            } else {
+                "flow_unavailable"
+            };
+            return Err(Error::new(code, error.message));
+        }
+    };
+    let source = json!({"origin":"analyzed","file":ready.node.owner.file,"symbol":symbol,"line":ready.node.line,"content":ready.content});
+    Ok(json!({"function":ready.function,"chart":ready.chart,"source":source}))
 }
 
 fn status(graph: &GraphIndex) -> Value {

@@ -6,6 +6,7 @@ in the original feasibility harness. Each scenario has one baseline analysis;
 samples restore its inputs and repeat the same edit without rebuilding. The
 first sample is separate from at least twenty requested warm repetitions.
 """
+from graph_bundle import load as load_bundle, stored_bytes
 import argparse
 from dataclasses import dataclass
 import json
@@ -69,8 +70,8 @@ def assert_clean_shutdown(resources):
 
 def project_size(project):
     raw = (project.root / ".codecallnavigator/graph.json").read_bytes()
-    graph = json.loads(raw)["graph"]
-    return {"artifact_bytes": len(raw), "nodes": len(graph["nodes"]), "relationships": len(graph["edges"]),
+    graph = load_bundle(project.root / ".codecallnavigator/graph.json")["graph"]
+    return {"artifact_bytes": stored_bytes(project.root / ".codecallnavigator/graph.json"), "nodes": len(graph["nodes"]), "relationships": len(graph["edges"]),
             "observed_inputs": len(graph["analysis"]["inputs"]),
             "authored_source_files": sum(path.suffix in {".ts", ".java", ".cs"} for path in project.source.parent.iterdir())}
 

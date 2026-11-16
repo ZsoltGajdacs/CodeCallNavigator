@@ -12,6 +12,9 @@ impl Executor {
         if let Err(error) = query::validate(request) {
             return query::envelope(None, Err(error));
         }
+        if let Some(response) = self.release_owned(request) {
+            return response;
+        }
         if let Some(response) = super::flow_comparison::respond(request) {
             return response;
         }
@@ -25,6 +28,30 @@ impl Executor {
             Ok(()) => self.response(request),
             Err(error) => query::envelope(None, Err(error)),
         }
+    }
+
+    /// An explicit release addresses resident ownership, even after a newer
+    /// publication. It must not materialize the new generation to release the old.
+    fn release_owned(&mut self, request: &Request) -> Option<Response> {
+        use codecallnavigator_core::query::{FlowResourceAction, Query};
+        if !matches!(
+            request.query,
+            Query::FlowResources {
+                action: FlowResourceAction::Unload
+            }
+        ) {
+            return None;
+        }
+        let loaded = self.loaded.as_mut()?;
+        let roots = match query::roots(request) {
+            Ok(roots) => roots,
+            Err(error) => return Some(query::envelope(None, Err(error))),
+        };
+        let expected = request.expected_generation.as_deref()?;
+        if !loaded.matches_generation(expected, &roots) {
+            return None;
+        }
+        loaded.flow_response(request)
     }
 
     fn response(&mut self, request: &Request) -> Response {
@@ -54,11 +81,13 @@ impl Executor {
                 Err(error) => query::envelope(None, Err(error)),
             };
         }
+        if let Some(response) = loaded.flow_response(request) {
+            return response;
+        }
         if let Some(response) = super::flow_expansion::respond(loaded, request) {
             return response;
         }
-        // Legacy queries verify inputs and hydration before attaching generation
-        // context. Freshness alone deliberately avoids graph hydration/indexing.
+        // Structural queries never materialize the independently owned flow inventory.
         if let Err(error) = loaded.refresh_freshness() {
             return query::envelope(None, Err(error));
         }
@@ -143,7 +172,20 @@ impl Executor {
         // The parsed artifact/index is reused only for identical bytes and roots.
         let roots = query::roots(request)?;
         let project = &roots.last().expect("project root is always appended").1;
-        let bytes = query::read_generation(project)?;
+        let (bytes, captured) =
+            codecallnavigator_core::artifact::storage::Captured::inspect(project).map_err(|e| {
+                codecallnavigator_core::query::Error::new(
+                    if project
+                        .join(codecallnavigator_core::artifact::GRAPH_PATH)
+                        .exists()
+                    {
+                        "graph_unavailable"
+                    } else {
+                        "graph_missing"
+                    },
+                    format!("{e:#}"),
+                )
+            })?;
         let generation = blake3::hash(&bytes).to_hex().to_string();
         query::check_generation(request, &generation)?;
         if self
@@ -153,7 +195,10 @@ impl Executor {
         {
             // Parsed immutable artifact/index remain executor-owned.
         } else {
-            self.loaded = Some(query::load_bytes(request, roots, &bytes, generation)?);
+            let captured = captured.map_err(|e| {
+                codecallnavigator_core::query::Error::new("invalid_graph", format!("{e:#}"))
+            })?;
+            self.loaded = Some(query::load_captured(request, roots, captured, generation)?);
         }
         Ok(())
     }

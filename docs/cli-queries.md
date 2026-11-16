@@ -7,7 +7,7 @@ through `query` and `query-session`. Graph refresh and committing the graph are
 separate operations. For example, send this JSON to `ccnavigator query`:
 
 ```json
-{"version":1,"project":"/checkout","query":{"kind":"compare","base":"main","head":"WORKTREE","offset":0,"limit":100}}
+{"version":2,"project":"/checkout","query":{"kind":"compare","base":"main","head":"WORKTREE","offset":0,"limit":100}}
 ```
 
 `base` must resolve to a commit; `head` defaults to `WORKTREE` (the saved graph,
@@ -46,7 +46,7 @@ Pages have `offset`, `limit`, `returned`, `total`, `more` and `next_offset`.
 `next_offset` and pass the first page's `comparison_id` as `expected_comparison`:
 
 ```json
-{"version":1,"project":"/checkout","query":{"kind":"compare","base":"main","offset":100,"limit":100,"expected_comparison":"<64-character comparison_id>"}}
+{"version":2,"project":"/checkout","query":{"kind":"compare","base":"main","offset":100,"limit":100,"expected_comparison":"<64-character comparison_id>"}}
 ```
 
 Every page rechecks refs and artifact bytes. Moving a ref, even to a commit with
@@ -80,7 +80,7 @@ requiring a loaded desktop graph or a current working artifact when both refs
 are commits. It does not analyze historical source. Start with a catalog:
 
 ```json
-{"version":1,"project":"/checkout","query":{"kind":"flow_comparison","base":"main","head":"WORKTREE","selection":{"kind":"catalog","text":"Service","offset":0,"limit":50}}}
+{"version":2,"project":"/checkout","query":{"kind":"flow_comparison","base":"main","head":"WORKTREE","selection":{"kind":"catalog","text":"Service","offset":0,"limit":50}}}
 ```
 
 The result has `kind: "catalog"`, `version: 1`, `base`, `head`,
@@ -102,7 +102,7 @@ endpoints. A moved ref or changed saved bytes returns `comparison_mismatch`,
 including a moved ref whose new commit contains identical artifact bytes.
 
 ```json
-{"version":1,"project":"/checkout","query":{"kind":"flow_comparison","base":"main","expected_comparison":"<64-character comparison_id>","selection":{"kind":"detail","symbol":"<exact symbol ID>"}}}
+{"version":2,"project":"/checkout","query":{"kind":"flow_comparison","base":"main","expected_comparison":"<64-character comparison_id>","selection":{"kind":"detail","symbol":"<exact symbol ID>"}}}
 ```
 
 The detail result contains `before` and `after`, each tagged `ready`, `missing`,
@@ -145,7 +145,7 @@ saved snapshot; expansion requires nonempty `expected_generation` and fails with
 
 ```json
 {
-  "version": 1,
+  "version": 2,
   "project": "/path/to/project",
   "expected_generation": "GENERATION_FROM_SNAPSHOT",
   "query": {
@@ -228,7 +228,7 @@ rather than guessed execution. Opening a flow never compiles the project.
 
 ```json
 {
-  "version": 1,
+  "version": 2,
   "project": "/checkout",
   "roots": [],
   "query": {
@@ -383,7 +383,7 @@ returned semantic chart without rebuilding its control flow.
 ```sh
 codecallnavigator-engine capabilities
 codecallnavigator-engine query <<'JSON'
-{"version":1,"project":"/checkout","query":{"kind":"status"}}
+{"version":2,"project":"/checkout","query":{"kind":"status"}}
 JSON
 ```
 
@@ -395,7 +395,7 @@ or reproduce semantic query logic.
 ## Saved-input freshness observations
 
 Check `capabilities.freshness` before using observation version 1. The one-shot
-request is `{"version":1,"project":"/checkout","query":{"kind":"freshness","observation_version":1}}`.
+request is `{"version":2,"project":"/checkout","query":{"kind":"freshness","observation_version":1}}`.
 Its normal response envelope contains a typed `result` with `generation`,
 `input_status` (`match`, `stale`, or `unverifiable`), bounded contextual `reasons`,
 `input_revision`, `coverage`, `mode`, and `verification_milliseconds`. Existing
@@ -505,3 +505,32 @@ temporarily incomplete while compilation replaces owned outputs. The existing
 saved-input limitations still apply. Unsaved editor buffers remain outside this contract.
 Publication latency depends on the selected compiler and workload; automatic
 refresh does not promise a universal one-second publication target.
+
+## Flow inventory residency
+
+Query contract version 2 separates structural snapshots from flow inventory.
+Search, navigation, architecture, source inspection, status and freshness do not
+load function bodies. `flow` and `flow_expansion` load flows automatically;
+`query-session` reuses them until unload, generation replacement or shutdown.
+One-shot queries release all resources on exit.
+
+For a persistent client, send a generation-bound operation:
+
+```json
+{"version":2,"project":"/checkout","expected_generation":"<manifest-digest>","query":{"kind":"flow_resources","action":"unload"}}
+```
+
+Actions are `load`, `unload` and `status`. Load and unload are idempotent; status
+never loads. The result contains `loaded`, `functions`, `retained_bytes` (an IR
+allocation estimate, not process RSS) and `load_milliseconds`. The CLI owns no
+idle policy. The desktop requests unload after all flow views have been hidden
+for 60 seconds, clearing hidden charts and expansion caches at the same time.
+Reopening a flow transparently reloads it.
+
+Structural snapshots contain no flow bodies. Errors loading flow objects affect
+flow requests; validated structural navigation remains usable. All related
+requests retain the same manifest generation binding.
+
+Ordinary-query freshness `contract_valid` covers the manifest and structural
+content validated for that query. Flow integrity and references are checked when
+flows load. Use the explicit `verify` command to validate both saved objects.

@@ -27,7 +27,7 @@ fn incompatible_capabilities_are_rejected_before_query_session_start() {
         r#"#!/usr/bin/env python3
 import json, pathlib, sys
 if sys.argv[1] == 'capabilities':
- print(json.dumps({'query_version':1,'operations':['snapshot','render_selection']}))
+ print(json.dumps({'query_version':2,'operations':['snapshot','render_selection']}))
 else:
  pathlib.Path(__file__).with_name('unexpected-query').write_text('started')
 "#,
@@ -55,7 +55,7 @@ fn cancelled_query_reaps_process_and_restart_cannot_receive_its_late_reply() {
 import json, os, pathlib, sys, time
 marker=pathlib.Path(__file__).with_name('started')
 if sys.argv[1] == 'capabilities':
- print(json.dumps({'query_version':1,'flow_languages':['java','typescript'],'operations':['snapshot','render_selection','inspect','architecture','live_source','explorer','flow','search','status']}))
+ print(json.dumps({'query_version':2,'flow_languages':['java','typescript'],'operations':['snapshot','render_selection','inspect','architecture','live_source','explorer','flow','flow_resources','search','status']}))
  sys.exit(0)
 for line in sys.stdin:
  json.loads(line)
@@ -67,7 +67,7 @@ for line in sys.stdin:
   token='late'
  else:
   token='fresh'
- print(json.dumps({'version':1,'generation':None,'freshness':None,'error':None,'result':{'token':token}}),flush=True)
+ print(json.dumps({'version':2,'generation':None,'freshness':None,'error':None,'result':{'token':token}}),flush=True)
 "#,
     );
     let context = QueryContext::for_project(&runtime, root.path().into());
@@ -127,13 +127,30 @@ fn expired_and_precancelled_requests_fail_before_io() {
 }
 
 #[test]
+fn releasing_an_unused_connection_does_not_start_the_cli() {
+    let runtime = Runtime {
+        engine: Default::default(),
+        resources: Default::default(),
+        dot: Default::default(),
+    };
+    let context = QueryContext::for_project(&runtime, Default::default());
+    context
+        .release_flows_if_current(
+            &std::sync::atomic::AtomicU64::new(7),
+            7,
+            &AtomicBool::new(false),
+        )
+        .unwrap();
+}
+
+#[test]
 fn valid_capability_json_from_failed_process_is_rejected() {
     let root = tempfile::tempdir().unwrap();
     let runtime = executable(
         root.path(),
         r#"#!/usr/bin/env python3
 import json, sys
-print(json.dumps({'query_version':1,'flow_languages':['java','typescript'],'operations':['snapshot','render_selection','inspect','architecture','live_source','explorer','flow','search','status']}))
+print(json.dumps({'query_version':2,'flow_languages':['java','typescript'],'operations':['snapshot','render_selection','inspect','architecture','live_source','explorer','flow','flow_resources','search','status']}))
 sys.exit(7)
 "#,
     );
@@ -159,7 +176,7 @@ fn blocked_stdin_write_is_cancellable_and_restarts_without_a_stale_request() {
 import json, os, pathlib, sys, time
 marker=pathlib.Path(__file__).with_name('write-blocked')
 if sys.argv[1] == 'capabilities':
- print(json.dumps({'query_version':1,'flow_languages':['java','typescript'],'operations':['snapshot','render_selection','inspect','architecture','live_source','explorer','flow','search','status']}))
+ print(json.dumps({'query_version':2,'flow_languages':['java','typescript'],'operations':['snapshot','render_selection','inspect','architecture','live_source','explorer','flow','flow_resources','search','status']}))
  sys.exit(0)
 if not marker.exists():
  pending=marker.with_suffix('.pending')
@@ -168,7 +185,7 @@ if not marker.exists():
  time.sleep(10)
 else:
  for line in sys.stdin:
-  print(json.dumps({'version':1,'generation':None,'freshness':None,'error':None,'result':{'token':'fresh'}}),flush=True)
+  print(json.dumps({'version':2,'generation':None,'freshness':None,'error':None,'result':{'token':'fresh'}}),flush=True)
 "#,
     );
     let context = QueryContext::for_project(&runtime, root.path().into());
@@ -223,14 +240,14 @@ fn explorer_rejects_a_more_page_that_makes_no_progress() {
         r#"#!/usr/bin/env python3
 import json, pathlib, sys
 if sys.argv[1] == 'capabilities':
- print(json.dumps({'query_version':1,'flow_languages':['java','typescript'],'operations':['snapshot','render_selection','inspect','architecture','live_source','explorer','flow','search','status']}))
+ print(json.dumps({'query_version':2,'flow_languages':['java','typescript'],'operations':['snapshot','render_selection','inspect','architecture','live_source','explorer','flow','flow_resources','search','status']}))
  sys.exit(0)
 for index, line in enumerate(sys.stdin):
  request=json.loads(line)
  if index:
   pathlib.Path(__file__).with_name('repeated-offset').write_text('requested')
   sys.exit(9)
- print(json.dumps({'version':1,'generation':None,'freshness':None,'error':None,'result':{'origin':'live','path':request['query']['path'],'entries':[],'more':True}}),flush=True)
+ print(json.dumps({'version':2,'generation':None,'freshness':None,'error':None,'result':{'origin':'live','path':request['query']['path'],'entries':[],'more':True}}),flush=True)
 "#,
     );
     let context = QueryContext::for_project(&runtime, root.path().into());
@@ -262,16 +279,16 @@ fn fresh_analysis_provenance_overrides_portable_snapshot_metadata() {
         r#"#!/usr/bin/env python3
 import json, pathlib, sys
 if sys.argv[1] == 'capabilities':
- print(json.dumps({'query_version':1,'flow_languages':['java','typescript'],'operations':['snapshot','render_selection','inspect','architecture','live_source','explorer','flow','search','status']}))
+ print(json.dumps({'query_version':2,'flow_languages':['java','typescript'],'operations':['snapshot','render_selection','inspect','architecture','live_source','explorer','flow','flow_resources','search','status']}))
  sys.exit(0)
 if sys.argv[1] == 'serve-once':
  request=json.loads(sys.stdin.readline())
- print(json.dumps({'event':'hello','version':1}),flush=True)
+ print(json.dumps({'event':'hello','version':2}),flush=True)
  print(json.dumps({'event':'complete','roots':[['repo',request['project']]],'digest':'a'*64,'fingerprints':[],'engine_versions':'fresh-runtime-record','metrics':{'stages':{},'counters':{}}}),flush=True)
  sys.exit(0)
 for line in sys.stdin:
  graph=json.loads(pathlib.Path(__file__).with_name('snapshot.json').read_text())
- print(json.dumps({'version':1,'generation':'a'*64,'freshness':None,'error':None,'result':graph}),flush=True)
+ print(json.dumps({'version':2,'generation':'a'*64,'freshness':None,'error':None,'result':graph}),flush=True)
 "#,
     );
     let snapshot = analyze_snapshot(

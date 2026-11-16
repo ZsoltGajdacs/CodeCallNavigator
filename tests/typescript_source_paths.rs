@@ -98,6 +98,10 @@ impl Fixture {
         );
         Snapshot {
             bytes: fs::read(self.project.join(".codecallnavigator/graph.json")).unwrap(),
+            artifact: serde_json::to_value(
+                codecallnavigator::artifact::load(&self.project).unwrap(),
+            )
+            .unwrap(),
             config_hash,
         }
     }
@@ -105,12 +109,13 @@ impl Fixture {
 
 struct Snapshot {
     bytes: Vec<u8>,
+    artifact: Value,
     config_hash: String,
 }
 
 impl Snapshot {
     fn graph_and_checked_provenance(&self) -> (Value, Value) {
-        let mut artifact: Value = serde_json::from_slice(&self.bytes).unwrap();
+        let mut artifact = self.artifact.clone();
         let mut analysis = artifact["graph"]
             .as_object_mut()
             .unwrap()

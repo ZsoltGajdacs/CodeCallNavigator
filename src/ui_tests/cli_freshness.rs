@@ -145,11 +145,14 @@ fn preserve_context_across_publication(runtime: &mut Runtime<State>, project: &P
 }
 
 fn legacy_saved_graph_is_unverifiable(runtime: &mut Runtime<State>, project: &Path) {
-    let path = project.join(codecallnavigator::artifact::GRAPH_PATH);
-    let mut artifact: serde_json::Value =
-        serde_json::from_slice(&fs::read(&path).unwrap()).unwrap();
-    artifact["graph"]["analysis"] = serde_json::Value::Null;
-    fs::write(path, serde_json::to_vec(&artifact).unwrap()).unwrap();
+    let mut artifact = codecallnavigator::artifact::load(project).unwrap();
+    artifact.graph["analysis"] = serde_json::Value::Null;
+    codecallnavigator::artifact::publish(
+        project,
+        &artifact,
+        &std::sync::atomic::AtomicBool::new(false),
+    )
+    .unwrap();
     let epoch = runtime.state.epoch;
     reload(runtime, epoch);
     settle(runtime, |state| {

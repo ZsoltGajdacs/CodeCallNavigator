@@ -6,6 +6,7 @@ from pathlib import Path
 import statistics
 import subprocess
 import time
+from graph_bundle import stored_bytes
 
 
 def checked_response(raw):
@@ -26,12 +27,12 @@ def measure(engine, project, repeats, include_render):
                "search": {"kind": "search", "text": "create", "limit": 50},
                "selection": {"kind": "selection", "selection": {"kind": "overview"}},
                "snapshot": {"kind": "snapshot"}}
-    requests = {name: json.dumps({"version": 1, "project": str(project), "query": query}).encode()
+    requests = {name: json.dumps({"version": 2, "project": str(project), "query": query}).encode()
                 for name, query in queries.items()}
     if include_render:
         status=subprocess.run([str(engine),"query"],input=requests["status"],capture_output=True,check=True,timeout=120)
         generation=checked_response(status.stdout)["generation"]
-        requests["render_selection"]=json.dumps({"version":1,"project":str(project),"expected_generation":generation,"query":{"kind":"render_selection","selection":{"kind":"overview"}}}).encode()
+        requests["render_selection"]=json.dumps({"version":2,"project":str(project),"expected_generation":generation,"query":{"kind":"render_selection","selection":{"kind":"overview"}}}).encode()
     return {"one_shot": measure_one_shot(engine, requests, repeats),
             "session": measure_session(engine, requests, repeats)}
 
@@ -90,7 +91,7 @@ def main():
         parser.error("--repeats must be positive")
     project = args.project.resolve()
     result = measure(args.engine.resolve(), project, args.repeats, args.render)
-    result["artifact_bytes"] = (project / ".codecallnavigator/graph.json").stat().st_size
+    result["artifact_bytes"] = stored_bytes(project / ".codecallnavigator/graph.json")
     result["method"] = "Wall time includes CLI execution, pipe transfer and client JSON decoding; first session status includes initial loading. Filesystem caches are uncontrolled."
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(result, indent=2) + "\n")

@@ -11,7 +11,7 @@ const SIGNATURE: &str =
 fn runtime() -> Runtime<State> {
     let mut state = State::fixture();
     scenes::install(&mut state);
-    let mut graph = (*state.graph.as_ref().unwrap().data).clone();
+    let mut graph = state.graph.as_ref().unwrap().data.to_graph_data();
     let lambda = &mut graph.nodes[2];
     lambda.label = NAME.into();
     lambda.signature = SIGNATURE.into();

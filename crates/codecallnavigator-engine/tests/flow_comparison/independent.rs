@@ -35,7 +35,10 @@ fn linked(saved: &Artifact, root: &Path, missing: &Path) -> Artifact {
 
 fn commit_as(root: &Path, saved: &Artifact, tag: &str) {
     save(root, saved);
-    git(root, &["add", artifact::GRAPH_PATH]);
+    git(
+        root,
+        &["add", artifact::GRAPH_PATH, ".codecallnavigator/objects"],
+    );
     git(root, &["commit", "--allow-empty", "-qm", tag]);
     git(root, &["tag", tag]);
 }
@@ -132,12 +135,10 @@ fn strict_invalid_artifacts_and_consumed_owner_ambiguity_have_distinct_membershi
     ] {
         let mut saved = repo.after.clone();
         fault.corrupt(&mut saved);
-        // Bypass fixture serialization validation only to feed intentionally malformed public input.
-        fs::write(
-            root.join(artifact::GRAPH_PATH),
-            serde_json::to_vec(&saved).unwrap(),
-        )
-        .unwrap();
+        match fault {
+            Ambiguity::Node => corrupt_node_object(root, &saved),
+            _ => save(root, &saved),
+        }
         let detail = query(root, WORKTREE.detail(&id));
         let listing = query(root, WORKTREE.catalog());
         assert!(
@@ -207,7 +208,7 @@ fn unavailable_schema_metadata_counts_toward_the_complete_response_budget() {
     let repo = Repository::new();
     let root = repo.root();
     let mut invalid = repo.after.clone();
-    invalid.schema = format!("future.{}", "s".repeat(12 * 1024 * 1024));
+    invalid.schema = format!("future.{}", "s".repeat(24 * 1024 * 1024));
     fs::write(
         root.join(artifact::GRAPH_PATH),
         serde_json::to_vec(&invalid).unwrap(),
@@ -296,4 +297,30 @@ fn real_ready_manual_counterpart_does_not_invent_a_rename_match() {
                 .contains(declaration)
         );
     }
+}
+
+/// Deliberately duplicate a node inside an otherwise valid compressed generation.
+/// This is a boundary fault fixture, not a replacement publication implementation.
+fn corrupt_node_object(root: &Path, saved: &Artifact) {
+    let path = root.join(artifact::GRAPH_PATH);
+    let mut manifest: Value = serde_json::from_slice(&fs::read(&path).unwrap()).unwrap();
+    let old = &manifest["structure"]["digest"].as_str().unwrap();
+    let object = root
+        .join(".codecallnavigator/objects")
+        .join(format!("{old}.structure.json.zst"));
+    let decoded = zstd::stream::decode_all(fs::read(object).unwrap().as_slice()).unwrap();
+    let mut structure: Value = serde_json::from_slice(&decoded).unwrap();
+    structure["graph"]["nodes"] = saved.graph["nodes"].clone();
+    let raw = serde_json::to_vec(&structure).unwrap();
+    let compressed = zstd::stream::encode_all(raw.as_slice(), 9).unwrap();
+    let digest = blake3::hash(&compressed).to_hex().to_string();
+    fs::write(
+        root.join(".codecallnavigator/objects")
+            .join(format!("{digest}.structure.json.zst")),
+        &compressed,
+    )
+    .unwrap();
+    manifest["structure"] =
+        json!({"digest":digest,"compressed_bytes":compressed.len(),"uncompressed_bytes":raw.len()});
+    fs::write(path, serde_json::to_vec(&manifest).unwrap()).unwrap();
 }

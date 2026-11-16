@@ -42,19 +42,19 @@ impl<'a> Endpoint<'a> {
             Self::Unavailable(error) => EndpointStatus::Unavailable(error.clone()),
         }
     }
-    pub fn symbols(&self) -> Box<dyn Iterator<Item = &'a str> + '_> {
+    pub fn symbols(&self) -> Box<dyn Iterator<Item = &str> + '_> {
         match self {
             Self::Available(view) => Box::new(view.symbols()),
             Self::Unavailable(_) => Box::new(std::iter::empty()),
         }
     }
-    pub fn describe(&self, symbol: &str) -> Option<flow::Symbol<'a>> {
+    pub fn describe(&self, symbol: &str) -> Option<flow::Symbol<'_>> {
         match self {
             Self::Available(view) => view.describe(symbol).ok().flatten(),
             Self::Unavailable(_) => None,
         }
     }
-    pub fn catalog(&self, symbol: &str) -> CatalogSide<'a> {
+    pub fn catalog(&self, symbol: &str) -> CatalogSide<'_> {
         let view = match self {
             Self::Available(view) => view,
             Self::Unavailable(error) => return CatalogSide::Unknown(error.clone()),
@@ -71,7 +71,7 @@ impl<'a> Endpoint<'a> {
             })),
         }
     }
-    pub fn detail(&self, symbol: &str) -> DetailSide<'a> {
+    pub fn detail(&self, symbol: &str) -> DetailSide<'_> {
         match self {
             Self::Unavailable(error) => DetailSide::Unavailable(Box::new(UnavailableSide {
                 membership: Presence::Unknown,

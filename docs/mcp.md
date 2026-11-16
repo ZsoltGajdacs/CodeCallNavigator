@@ -38,7 +38,7 @@ no project filesystem reads; canonicalization, discovery, source confinement and
 artifact/database access belong to the CLI. Relative addresses follow the CLI's
 normal working-directory/project rules; absolute paths avoid client ambiguity.
 
-Startup requires CLI query contract version 1, generation binding, and every
+Startup requires CLI query contract version 2, generation binding, and every
 advertised operation used by the tools. Incompatible capabilities or a failed
 capabilities process prevent startup. MCP negotiation is handled by the SDK;
 stdout carries MCP messages only and startup failures go to stderr.
@@ -167,3 +167,8 @@ independent group before it can be observed; the adapter cannot guarantee cleanu
 in that case and reports this uncertainty. It does not retain a long-running
 cache of process IDs that could be reused by unrelated processes.
 Server shutdown waits for all owned supervisors before leaving the async runtime.
+
+The installed CLI must support query contract version 2 and version-2 saved graph
+bundles. Reanalyze projects with old single-file graphs. MCP continues to delegate
+all storage, decompression and flow loading to the CLI; ordinary tools do not
+manage residency or start analysis.

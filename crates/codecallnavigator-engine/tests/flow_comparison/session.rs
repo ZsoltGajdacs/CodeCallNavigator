@@ -64,7 +64,7 @@ fn session_and_oneshot_match_without_using_or_mutating_current_graph() {
         writeln!(
             input,
             "{}",
-            json!({"version":1,"project":root,"query":operation})
+            json!({"version":2,"project":root,"query":operation})
         )
         .unwrap();
         input.flush().unwrap();

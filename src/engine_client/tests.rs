@@ -1,5 +1,5 @@
 use super::*;
-use codecallnavigator::artifact::{Artifact, GRAPH_PATH};
+use codecallnavigator::artifact::GRAPH_PATH;
 use std::fs;
 use std::{
     os::unix::fs::symlink,
@@ -53,7 +53,7 @@ fn terminal_result_requires_prompt_exit_and_reaps_engine() {
 import json, os, pathlib, sys, time
 sys.stdin.readline()
 pathlib.Path(__file__).with_name('pid').write_text(str(os.getpid()))
-print(json.dumps({'event': 'hello', 'version': 1}), flush=True)
+print(json.dumps({'event': 'hello', 'version': 2}), flush=True)
 print(json.dumps({'event': 'discovered', 'targets': []}), flush=True)
 time.sleep(12)
 "#,
@@ -104,7 +104,7 @@ sys.stdin.readline()
 signal.signal(signal.SIGTERM, signal.SIG_IGN)
 child = subprocess.Popen(['sleep', '30'], start_new_session=True)
 pathlib.Path(__file__).with_name('child').write_text(str(child.pid))
-print(json.dumps({'event': 'hello', 'version': 1}), flush=True)
+print(json.dumps({'event': 'hello', 'version': 2}), flush=True)
 while True: time.sleep(1)
 "#,
     )
@@ -209,7 +209,7 @@ fn real_engine_roundtrip_publishes_and_preserves_graph_on_failure() {
     );
     assert!(metrics.report().stages.contains_key("analysis"));
     let before = fs::read(project.join(GRAPH_PATH)).unwrap();
-    Artifact::from_bytes(&before).unwrap();
+    codecallnavigator::artifact::load(&project).unwrap();
     fs::write(
         project.join("src/main.ts"),
         "const invalid: number = 'broken';",
@@ -315,7 +315,7 @@ import json, pathlib, subprocess, sys
 sys.stdin.readline()
 child = CHILD_EXPRESSION
 pathlib.Path(__file__).with_name('child').write_text(str(child.pid))
-print(json.dumps({'event': 'hello', 'version': 1}), flush=True)
+print(json.dumps({'event': 'hello', 'version': 2}), flush=True)
 sys.exit(7)
 "#
     .replace("CHILD_EXPRESSION", child_expression);

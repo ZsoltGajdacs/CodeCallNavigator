@@ -46,9 +46,14 @@ impl Saved {
         fixture
     }
     fn write(&mut self) {
-        let bytes = self.saved.bytes().unwrap();
+        artifact::publish(
+            self.directory.path(),
+            &self.saved,
+            &std::sync::atomic::AtomicBool::new(false),
+        )
+        .unwrap();
+        let bytes = fs::read(&self.path).unwrap();
         self.digest = blake3::hash(&bytes).to_hex().to_string();
-        fs::write(&self.path, bytes).unwrap();
     }
     pub fn with_content(mut self, content: String) -> Self {
         for file in self.saved.graph["architecture"]["files"]
@@ -88,7 +93,7 @@ impl Saved {
             .stderr(Stdio::piped())
             .spawn()
             .unwrap();
-        writeln!(child.stdin.take().unwrap(), "{}", json!({"version":1,"project":self.directory.path(),"expected_generation":generation,"query":query})).unwrap();
+        writeln!(child.stdin.take().unwrap(), "{}", json!({"version":2,"project":self.directory.path(),"expected_generation":generation,"query":query})).unwrap();
         let output = child.wait_with_output().unwrap();
         serde_json::from_slice(&output.stdout)
             .unwrap_or_else(|_| panic!("{}", String::from_utf8_lossy(&output.stderr)))

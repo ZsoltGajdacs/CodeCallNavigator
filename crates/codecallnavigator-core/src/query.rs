@@ -5,11 +5,11 @@ mod expansion;
 mod operations;
 mod selection;
 pub use contract::*;
-pub use expansion::expand_flow;
-pub use operations::{execute, render_section};
+pub use expansion::{expand_flow, expand_flow_view};
+pub use operations::{execute, function_flow, render_section};
 pub use selection::{Selection, select, select_render};
 
-pub const VERSION: u32 = 1;
+pub const VERSION: u32 = 2;
 pub const MAX_SOURCE_BYTES: u64 = crate::flow::MAX_SOURCE_BYTES;
 pub const MAX_FRESHNESS_REASONS: usize = 50;
 pub const MAX_FRESHNESS_REASON_BYTES: usize = 8192;
@@ -17,7 +17,7 @@ pub const MAX_FRESHNESS_REASON_BYTES: usize = 8192;
 pub fn capabilities() -> serde_json::Value {
     serde_json::json!({
         "query_version": VERSION,
-        "operations": ["status", "freshness", "snapshot", "inspect", "live_source", "architecture", "search", "symbol", "source", "explorer", "selection", "render_selection", "neighbors", "flow", "compare", "flow_comparison", "flow_expansion"],
+        "operations": ["flow_resources", "status", "freshness", "snapshot", "inspect", "live_source", "architecture", "search", "symbol", "source", "explorer", "selection", "render_selection", "neighbors", "flow", "compare", "flow_comparison", "flow_expansion"],
         "automatic_refresh": {"version":crate::refresh::VERSION,"activity_version":crate::refresh::VERSION,"observe_flag":"--auto-refresh","debounce_milliseconds":crate::refresh::DEBOUNCE_MILLISECONDS,"cancel_command":"cancel_refresh"},
         "flow_comparison": {"version":1,"selections":["catalog","detail"],"default_limit":50,"maximum_limit":500,"maximum_text_bytes":1024,"maximum_symbol_bytes":16384,"maximum_response_bytes":crate::artifact::difference::MAX_RESPONSE_BYTES,"maximum_source_bytes":MAX_SOURCE_BYTES,"snapshot_binding":true,"correspondence":"exact_identity","manual_counterpart":true},
         "comparison": {"version":1,"default_limit":100,"maximum_limit":500,"maximum_response_bytes":24*1024*1024,"snapshot_binding":true},
@@ -26,7 +26,8 @@ pub fn capabilities() -> serde_json::Value {
         "flow_languages": ["java", "typescript", "csharp"],
         "source_origins": ["analyzed", "live"],
         "generation_binding": true,
-        "generation_required": ["render_selection", "inspect", "flow_expansion"],
+        "flow_resources": {"version":1,"actions":["load","unload","status"],"expected_generation":true},
+        "generation_required": ["flow_resources","render_selection", "inspect", "flow_expansion"],
         "default_limits": {"nodes":1500,"edges":6000,"search":50},
         "maximum_limits": {"nodes":1500,"edges":6000,"search":200,"diagnostics":diagnostics::COUNT,"diagnostic_characters":diagnostics::CHARACTERS,"freshness_reasons":MAX_FRESHNESS_REASONS,"freshness_reason_bytes":MAX_FRESHNESS_REASON_BYTES}
     })

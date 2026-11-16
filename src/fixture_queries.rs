@@ -1,10 +1,29 @@
 //! Explicit scene/test adapter. Production query paths never select this backend implicitly.
-use crate::{projection, source};
+use crate::{app::State, projection};
 use codecallnavigator::{
     flow,
     graph::{Direction, Filter, GraphIndex},
     search::{NameSearchIndex, NameSearchQuery, SearchPage},
 };
+use std::sync::Arc;
+
+/// Install a complete explicit fixture, keeping its inventory paired with its
+/// structure. Callers retain ownership of navigation and pending-work policy.
+pub fn install(
+    state: &mut State,
+    mut graph: codecallnavigator::model::GraphData,
+) -> anyhow::Result<()> {
+    anyhow::ensure!(
+        state.uses_fixture_queries(),
+        "Fixture installation requires an explicit fixture backend"
+    );
+    graph.validate()?;
+    let inventory = graph.flow_inventory.take().map(Arc::new);
+    let structure = Arc::new(GraphIndex::new(Arc::new(graph))?);
+    state.fixture_flow_inventory = inventory;
+    state.graph = Some(structure);
+    Ok(())
+}
 
 pub fn project(graph: &GraphIndex, request: &projection::Request) -> projection::GraphView {
     projection::project_prepared(
@@ -30,37 +49,22 @@ pub fn inspect(graph: &GraphIndex, node: u32, filter: &Filter) -> (Vec<u32>, Vec
     )
 }
 
-pub fn flow(graph: &GraphIndex, symbol: &str) -> anyhow::Result<(flow::FlowChart, String, String)> {
-    let function = flow::lookup(&graph.data, symbol).map_err(anyhow::Error::msg)?;
-    let facts = graph
-        .data
-        .architecture
-        .as_ref()
-        .and_then(|facts| {
-            facts.files.iter().find(|file| {
-                file.file == function.file
-                    && file.build == function.build
-                    && file.project == function.project
-            })
-        })
-        .ok_or_else(|| {
-            anyhow::anyhow!("Refresh the graph to cache this function's analyzed source")
-        })?;
-    anyhow::ensure!(
-        facts.content.len() as u64 <= source::MAX_SOURCE_BYTES,
-        "The analyzed source exceeds the 16 MiB flow source limit"
-    );
-    anyhow::ensure!(
-        function.span.start <= function.span.end
-            && facts.content.is_char_boundary(function.span.start)
-            && facts.content.is_char_boundary(function.span.end),
-        "The flow source range does not match its cached snapshot"
-    );
-    Ok((
-        flow::build(function)?,
-        facts.content.clone(),
-        function.file.clone(),
-    ))
+pub fn flow(
+    graph: &GraphIndex,
+    inventory: Option<&flow::FlowInventory>,
+    symbol: &str,
+) -> anyhow::Result<(flow::FlowChart, String, String)> {
+    use codecallnavigator::artifact::flow::{Selection, View};
+    let view = View::from_parts(&graph.data, inventory)?;
+    match view.select(symbol) {
+        Selection::Ready(ready) => Ok((
+            ready.chart,
+            ready.content.into(),
+            ready.node.owner.file.into(),
+        )),
+        Selection::Missing => anyhow::bail!("The selected method is no longer in this graph."),
+        Selection::Unavailable(error) => Err(error.into()),
+    }
 }
 
 /// Saved-canvas benchmarking explicitly snapshots the legacy presentation cache.

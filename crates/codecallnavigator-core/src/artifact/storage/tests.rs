@@ -1,0 +1,177 @@
+//! Filesystem tests cover immutable handles, retention and independently failed parts.
+//! In-memory round trips cannot prove these publication/read boundaries.
+use super::*;
+use crate::artifact::{self, Artifact};
+use serde_json::json;
+use std::{fs, path::Path, sync::atomic::AtomicBool};
+
+fn artifact(root: &Path, sequence: usize) -> Artifact {
+    let mut artifact = artifact::canonical(
+        &crate::model::GraphData::default(),
+        &[("repo".into(), root.into())],
+    )
+    .unwrap();
+    artifact.graph["diagnostics"] = json!([format!("generation {sequence}")]);
+    artifact.graph["flow_inventory"] = json!({"version":1,"functions":[]});
+    artifact
+}
+
+fn publish(root: &Path, artifact: &Artifact) {
+    artifact::publish(root, artifact, &AtomicBool::new(false)).unwrap();
+}
+
+#[test]
+fn compressed_publication_is_deterministic_and_roundtrips_complete_facts() {
+    let root = tempfile::tempdir().unwrap();
+    let artifact = artifact(root.path(), 0);
+    let first = EncodedParts::encode(&artifact).unwrap();
+    let repeated = EncodedParts::encode(&artifact).unwrap();
+    assert_eq!(first.as_ref(), repeated.as_ref());
+    assert_eq!(first.structure, repeated.structure);
+    assert_eq!(first.flows, repeated.flows);
+    publish(root.path(), &artifact);
+    let captured = Captured::open(root.path()).unwrap();
+    assert_eq!(captured.manifest_bytes(), first.as_ref());
+    let structure = captured.structure().unwrap();
+    assert!(structure.graph.get("flow_inventory").is_none());
+    assert_eq!(structure.graph["flow_catalogue"]["inventory_version"], 1);
+    assert_eq!(
+        captured
+            .load_flows_for(&structure)
+            .unwrap()
+            .unwrap()
+            .functions
+            .len(),
+        0
+    );
+    assert_eq!(
+        captured.complete().unwrap().bytes().unwrap(),
+        artifact.bytes().unwrap()
+    );
+}
+
+#[test]
+fn captured_handles_survive_pruning_and_only_current_and_previous_parts_remain() {
+    let root = tempfile::tempdir().unwrap();
+    let first = artifact(root.path(), 0);
+    publish(root.path(), &first);
+    let captured = Captured::open(root.path()).unwrap();
+    let manifest = Manifest::from_bytes(captured.manifest_bytes()).unwrap();
+    let first_path = root
+        .path()
+        .join(".codecallnavigator")
+        .join(manifest.structure.path("structure"));
+    publish(root.path(), &artifact(root.path(), 1));
+    publish(root.path(), &artifact(root.path(), 1));
+    assert!(
+        first_path.exists(),
+        "Previous generation must survive one publication"
+    );
+    publish(root.path(), &artifact(root.path(), 2));
+    assert!(!first_path.exists(), "Unreferenced object was not pruned");
+    assert_eq!(
+        captured.complete().unwrap().bytes().unwrap(),
+        first.bytes().unwrap()
+    );
+    let directory = root.path().join(".codecallnavigator/objects");
+    assert_eq!(fs::read_dir(directory).unwrap().count(), 3); // two structures, shared flow
+}
+
+#[cfg(unix)]
+#[test]
+fn linked_flow_objects_fail_without_reading_outside_the_artifact_directory() {
+    let root = tempfile::tempdir().unwrap();
+    publish(root.path(), &artifact(root.path(), 0));
+    let bytes = fs::read(root.path().join(artifact::GRAPH_PATH)).unwrap();
+    let manifest = Manifest::from_bytes(&bytes).unwrap();
+    let path = root
+        .path()
+        .join(".codecallnavigator")
+        .join(manifest.flows.path("flows"));
+    let outside = root.path().join("outside");
+    fs::rename(&path, &outside).unwrap();
+    std::os::unix::fs::symlink(&outside, &path).unwrap();
+    let captured = Captured::open(root.path()).unwrap();
+    assert!(captured.structure().is_ok());
+    assert!(captured.load_flows().is_err());
+}
+
+#[test]
+fn failed_flow_object_does_not_disable_structural_navigation() {
+    let root = tempfile::tempdir().unwrap();
+    publish(root.path(), &artifact(root.path(), 0));
+    let manifest =
+        Manifest::from_bytes(&fs::read(root.path().join(artifact::GRAPH_PATH)).unwrap()).unwrap();
+    let path = root
+        .path()
+        .join(".codecallnavigator")
+        .join(manifest.flows.path("flows"));
+    let saved = fs::read(&path).unwrap();
+    fs::remove_file(&path).unwrap();
+    let captured = Captured::open(root.path()).unwrap();
+    assert!(captured.structure().is_ok());
+    assert!(captured.load_flows().is_err());
+    assert!(captured.complete().is_err());
+    fs::write(&path, saved).unwrap();
+    assert!(
+        captured.load_flows().unwrap().is_some(),
+        "Restoring an object must recover the same captured generation"
+    );
+    let mut without_flows = artifact(root.path(), 1);
+    without_flows.graph["flow_inventory"] = serde_json::Value::Null;
+    publish(root.path(), &without_flows);
+    without_flows.graph["diagnostics"] = json!(["next structural generation"]);
+    publish(root.path(), &without_flows);
+    assert!(!path.exists(), "Old flow object path should be pruned");
+    assert!(
+        captured.load_flows().unwrap().is_some(),
+        "A successfully recovered handle must stay pinned after pruning"
+    );
+    publish(root.path(), &artifact(root.path(), 0));
+    let captured = Captured::open(root.path()).unwrap();
+    fs::write(&path, "corrupt").unwrap();
+    assert!(captured.structure().is_ok());
+    assert!(captured.load_flows().is_err());
+    publish(root.path(), &artifact(root.path(), 0));
+    assert!(
+        captured.load_flows().unwrap().is_some(),
+        "Reanalysis must repair a corrupt pinned flow object"
+    );
+}
+
+#[test]
+fn cancelled_publication_preserves_exact_manifest_and_existing_objects() {
+    let root = tempfile::tempdir().unwrap();
+    publish(root.path(), &artifact(root.path(), 0));
+    let before = fs::read(root.path().join(artifact::GRAPH_PATH)).unwrap();
+    let result = artifact::publish(
+        root.path(),
+        &artifact(root.path(), 1),
+        &AtomicBool::new(true),
+    );
+    assert!(result.is_err());
+    assert_eq!(
+        fs::read(root.path().join(artifact::GRAPH_PATH)).unwrap(),
+        before
+    );
+    assert!(Captured::open(root.path()).unwrap().complete().is_ok());
+}
+
+#[test]
+fn corruption_lengths_and_legacy_graphs_are_rejected() {
+    let artifact = artifact(Path::new("/fixture"), 0);
+    let encoded = EncodedParts::encode(&artifact).unwrap();
+    let mut part = encoded.manifest.flows.clone();
+    part.uncompressed_bytes += 1;
+    assert!(part.decode(encoded.flows.as_slice()).is_err());
+    part = encoded.manifest.flows.clone();
+    part.digest = "a".repeat(64);
+    assert!(part.decode(encoded.flows.as_slice()).is_err());
+    let mut manifest = serde_json::to_value(&encoded.manifest).unwrap();
+    manifest["flows"]["digest"] = json!("../../outside");
+    assert!(Manifest::from_bytes(&serde_json::to_vec(&manifest).unwrap()).is_err());
+    assert!(Manifest::from_bytes(&artifact.bytes().unwrap()).is_err());
+    let mut embedded = artifact;
+    embedded.graph["flow_catalogue"] = json!({"inventory_version":1,"symbols":[]});
+    assert!(super::codec::decode_structure(&embedded.bytes().unwrap()).is_err());
+}

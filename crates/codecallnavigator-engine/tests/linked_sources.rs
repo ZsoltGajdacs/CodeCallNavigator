@@ -45,7 +45,7 @@ fn machine_preserves_linked_sources_and_human_cli_requires_declared_root() {
     assert!(roots.iter().any(|(name, _)| name.starts_with("linked-")));
     let bytes = fs::read(project.join(codecallnavigator_core::artifact::GRAPH_PATH)).unwrap();
     assert!(!String::from_utf8_lossy(&bytes).contains(&root.to_string_lossy().to_string()));
-    let graph = codecallnavigator_core::artifact::Artifact::from_bytes(&bytes)
+    let graph = codecallnavigator_core::artifact::load(&project)
         .unwrap()
         .hydrate(&roots)
         .unwrap();
@@ -85,7 +85,7 @@ fn machine_analysis(project: &std::path::Path, target: Value) -> Value {
     writeln!(
         child.stdin.as_mut().unwrap(),
         "{}",
-        json!({"command":"analyze", "version":1,
+        json!({"command":"analyze", "version":2,
         "project":project, "roots":[], "infer_linked_roots":true,
         "targets":[target]})
     )
@@ -135,7 +135,7 @@ fn machine_external_java_module_identity_roots_relocate() {
         assert!(!String::from_utf8_lossy(&bytes).contains(root.to_str().unwrap()));
         let roots: Vec<(String, std::path::PathBuf)> =
             serde_json::from_value(response["roots"].clone()).unwrap();
-        let graph = codecallnavigator_core::artifact::Artifact::from_bytes(&bytes)
+        let graph = codecallnavigator_core::artifact::load(&project)
             .unwrap()
             .hydrate(&roots)
             .unwrap();

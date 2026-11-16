@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "CodeCallNavigator saved graph manifest v2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "structure",
+    "flows"
+  ],
+  "properties": {
+    "schema": {
+      "const": "codecallnavigator.graph.manifest.v2"
+    },
+    "structure": {
+      "$ref": "#/$defs/part"
+    },
+    "flows": {
+      "$ref": "#/$defs/part"
+    }
+  },
+  "$defs": {
+    "part": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "digest",
+        "compressed_bytes",
+        "uncompressed_bytes"
+      ],
+      "properties": {
+        "digest": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "compressed_bytes": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "uncompressed_bytes": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 18446744073709551614
+        }
+      }
+    }
+  }
+}

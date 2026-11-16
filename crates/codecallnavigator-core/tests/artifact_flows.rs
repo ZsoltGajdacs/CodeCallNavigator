@@ -2,15 +2,13 @@ use codecallnavigator_core::{
     architecture::{ArchitectureFacts, FileFacts},
     artifact::{
         self, Artifact,
-        flow::{Reason, Selection, View},
+        flow::{Reason, Selection, Unavailable, View},
     },
     flow::*,
-    graph::GraphIndex,
     model::{GraphData, Node},
-    query::{self, Query},
+    query,
 };
 use serde_json::json;
-use std::sync::Arc;
 
 const SOURCE: &str = "class F { int f(){ return target(); } }";
 const BUILD: &str = "/gone/App.build";
@@ -99,28 +97,38 @@ fn symbol(artifact: &Artifact) -> &str {
         .as_str()
         .unwrap()
 }
-fn ready(artifact: &Artifact) -> Box<artifact::flow::Ready<'_>> {
-    match View::new(artifact).unwrap().select(symbol(artifact)) {
+fn ready<'a>(view: &'a View<'_>) -> Box<artifact::flow::Ready<'a>> {
+    let symbol = view
+        .symbols()
+        .find(|symbol| view.describe(symbol).unwrap().unwrap().label == "F")
+        .unwrap();
+    match view.select(symbol) {
         Selection::Ready(value) => value,
         other => panic!("Expected selected saved flow, got {other:?}"),
     }
 }
 fn unavailable(artifact: &Artifact, expected: Reason) {
-    match View::new(artifact).unwrap().select(symbol(artifact)) {
-        Selection::Unavailable(value) => assert_eq!(value.reason, expected, "{}", value.message),
-        other => panic!("Expected {expected:?}, got {other:?}"),
+    match View::new(artifact) {
+        Err(value) => assert_eq!(value.reason, expected, "{}", value.message),
+        Ok(view) => match view.select(symbol(artifact)) {
+            Selection::Unavailable(value) => {
+                assert_eq!(value.reason, expected, "{}", value.message)
+            }
+            other => panic!("Expected {expected:?}, got {other:?}"),
+        },
     }
 }
 
 #[test]
 fn borrows_exact_portable_source_and_resolves_endpoint_target_labels() {
     let artifact = fixture();
-    let selected = ready(&artifact);
+    let view = View::new(&artifact).unwrap();
+    let selected = ready(&view);
     let stored = artifact.graph["architecture"]["files"][0]["content"]
         .as_str()
         .unwrap();
-    assert_eq!(selected.content, SOURCE);
-    assert_eq!(selected.content.as_ptr(), stored.as_ptr());
+    assert_eq!(selected.content, stored);
+    assert_eq!(selected.content.as_ptr(), ready(&view).content.as_ptr());
     assert_eq!(selected.function.file, "@repo/F.java");
     assert_eq!(selected.node.owner.file, "@repo/F.java");
     assert_eq!(selected.targets.len(), 1);
@@ -227,7 +235,7 @@ fn same_filename_in_another_project_never_supplies_selected_source() {
         .as_array_mut()
         .unwrap()
         .insert(0, other);
-    assert_eq!(ready(&artifact).content, SOURCE);
+    assert_eq!(ready(&View::new(&artifact).unwrap()).content, SOURCE);
     artifact.graph["architecture"]["files"]
         .as_array_mut()
         .unwrap()
@@ -251,13 +259,19 @@ fn shared_range_and_source_size_limits_reject_selected_facts() {
 }
 
 #[test]
-fn only_selected_ir_is_deserialized_and_source_is_not_read_from_disk() {
+fn malformed_inventory_is_rejected_before_any_flow_is_exposed() {
     let mut artifact = fixture();
     artifact.graph["flow_inventory"]["functions"]
         .as_array_mut()
         .unwrap()
         .push(json!({"symbol":"unselected-old-facts","body":{"incompatible":"shape"}}));
-    assert_eq!(ready(&artifact).content, SOURCE);
+    assert!(matches!(
+        View::new(&artifact),
+        Err(Unavailable {
+            reason: Reason::InvalidFlow,
+            ..
+        })
+    ));
 }
 
 #[test]
@@ -265,8 +279,8 @@ fn ordinary_flow_response_and_error_are_preserved() {
     let data = graph();
     let function = &data.flow_inventory.as_ref().unwrap().functions[0];
     let expected = json!({"function":function,"chart":codecallnavigator_core::flow::build(function).unwrap(),"source":{"origin":"analyzed","file":FILE,"symbol":"f","line":1,"content":SOURCE}});
-    let index = GraphIndex::new(Arc::new(data)).unwrap();
-    let actual = query::execute(&index, &Query::Flow { symbol: "f".into() }).unwrap();
+    let view = View::from_parts(&data, data.flow_inventory.as_ref()).unwrap();
+    let actual = query::function_flow(&view, "f").unwrap();
     assert_eq!(
         serde_json::to_vec(&actual).unwrap(),
         serde_json::to_vec(&expected).unwrap()
@@ -275,11 +289,8 @@ fn ordinary_flow_response_and_error_are_preserved() {
     invalid.flow_inventory.as_mut().unwrap().functions[0]
         .span
         .end += 1;
-    let error = query::execute(
-        &GraphIndex::new(Arc::new(invalid)).unwrap(),
-        &Query::Flow { symbol: "f".into() },
-    )
-    .unwrap_err();
+    let view = View::from_parts(&invalid, invalid.flow_inventory.as_ref()).unwrap();
+    let error = query::function_flow(&view, "f").unwrap_err();
     assert_eq!(error.code, "flow_unavailable");
     assert_eq!(
         error.message,
@@ -354,8 +365,10 @@ fn target_summaries_stay_with_each_endpoint_metadata() {
         .find(|node| node["label"] != "F")
         .unwrap();
     target["label"] = json!("After endpoint target");
-    let old = ready(&before);
-    let new = ready(&after);
+    let before_view = View::new(&before).unwrap();
+    let after_view = View::new(&after).unwrap();
+    let old = ready(&before_view);
+    let new = ready(&after_view);
     assert_eq!(old.targets[0].label, "Endpoint target");
     assert_eq!(new.targets[0].label, "After endpoint target");
     assert_eq!(old.targets[0].symbol, new.targets[0].symbol);
@@ -405,11 +418,8 @@ fn ordinary_flow_source_limit_build_and_availability_errors_are_preserved() {
 }
 
 fn assert_ordinary_error(data: GraphData, code: &str, message: &str) {
-    let error = query::execute(
-        &GraphIndex::new(Arc::new(data)).unwrap(),
-        &Query::Flow { symbol: "f".into() },
-    )
-    .unwrap_err();
+    let view = View::from_parts(&data, data.flow_inventory.as_ref()).unwrap();
+    let error = query::function_flow(&view, "f").unwrap_err();
     assert_eq!(error.code, code);
     assert_eq!(error.message, message);
 }
@@ -484,13 +494,14 @@ fn unicode_bom_crlf_flow_matches_current_query_after_explicit_owner_rebasing() {
             body,
         });
         let artifact = artifact::canonical(&data, &[("repo".into(), "/gone".into())]).unwrap();
-        let selected = ready(&artifact);
+        let view = View::new(&artifact).unwrap();
+        let selected = ready(&view);
         let stored = artifact.graph["architecture"]["files"][0]["content"]
             .as_str()
             .unwrap();
         assert_eq!(
             (selected.content, selected.content.as_ptr()),
-            (stored, stored.as_ptr())
+            (stored, ready(&view).content.as_ptr())
         );
         assert_eq!(
             &selected.content
@@ -500,14 +511,8 @@ fn unicode_bom_crlf_flow_matches_current_query_after_explicit_owner_rebasing() {
         let hydrated = artifact
             .hydrate(&[("repo".into(), "/gone".into())])
             .unwrap();
-        let index = GraphIndex::new(Arc::new(hydrated)).unwrap();
-        let current = query::execute(
-            &index,
-            &Query::Flow {
-                symbol: selected.node.symbol.into(),
-            },
-        )
-        .unwrap();
+        let current_view = View::from_parts(&hydrated, hydrated.flow_inventory.as_ref()).unwrap();
+        let current = query::function_flow(&current_view, selected.node.symbol).unwrap();
         assert_eq!(current["source"]["content"], stored);
         let mut saved_chart = serde_json::to_value(&selected.chart).unwrap();
         assert_eq!(saved_chart["file"], file.replacen("/gone/", "@repo/", 1));
@@ -556,7 +561,8 @@ fn target_body_availability_is_an_endpoint_fact_not_inferred_from_inventory() {
         .iter_mut()
         .find(|node| node["label"] != "F")
         .unwrap()["body_unavailable"] = json!(true);
-    let selected = ready(&artifact);
+    let view = View::new(&artifact).unwrap();
+    let selected = ready(&view);
     assert!(!selected.node.body_unavailable);
     assert!(selected.targets[0].body_unavailable);
     artifact.graph["nodes"]
@@ -568,5 +574,5 @@ fn target_body_availability_is_an_endpoint_fact_not_inferred_from_inventory() {
         .as_object_mut()
         .unwrap()
         .remove("body_unavailable");
-    assert!(!ready(&artifact).targets[0].body_unavailable);
+    assert!(!ready(&View::new(&artifact).unwrap()).targets[0].body_unavailable);
 }

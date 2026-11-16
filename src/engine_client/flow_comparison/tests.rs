@@ -36,7 +36,7 @@ for line in sys.stdin:
   import time
   time.sleep(20)
  error=payload.get('_error') if req['query'].get('expected_comparison') else None
- print(json.dumps({{'version':1,'generation':payload.get('_generation','b'*64),'freshness':None,'result':None if error else result,'error':error}}),flush=True)
+ print(json.dumps({{'version':2,'generation':payload.get('_generation','b'*64),'freshness':None,'result':None if error else result,'error':error}}),flush=True)
 "#,
         reply = reply.to_string()
     );

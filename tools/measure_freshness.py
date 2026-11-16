@@ -8,6 +8,7 @@ full analysis; later repetitions compare against that exact reference. Compiler
 and inference caches remain warm. Cold means first timed scenario repetition,
 not cold dependencies or a clean compiler build.
 """
+from graph_bundle import load as load_bundle, capture, restore
 import argparse
 import hashlib
 import json
@@ -46,7 +47,7 @@ class Session:
         self.targets = selected_targets(project, discovery)
 
     def analyze(self):
-        observation = run([str(self.executable), "serve-once"], {"command": "analyze", "version": 1,
+        observation = run([str(self.executable), "serve-once"], {"command": "analyze", "version": 2,
             "project": str(self.project.root), "roots": self.project.roots, "targets": self.targets,
             "infer_linked_roots": False}, timeout=self.timeout, keep_open=True)
         events = [json.loads(line) for line in observation["stdout"].splitlines()]
@@ -58,7 +59,7 @@ class Session:
         return observation
 
     def query(self, generation=None):
-        request = {"version": 1, "project": str(self.project.root), "roots": self.project.roots, "query": {"kind": "status"}}
+        request = {"version": 2, "project": str(self.project.root), "roots": self.project.roots, "query": {"kind": "status"}}
         if generation is not None:
             request["expected_generation"] = generation
         return run([str(self.executable), "query"], request)
@@ -66,7 +67,7 @@ class Session:
     def sample(self, scenario, iteration, context):
         self.project.reset(scenario)
         artifact = self.project.root / ".codecallnavigator/graph.json"
-        artifact.write_bytes(context["baseline_bytes"])
+        restore(artifact, context["baseline_capture"])
         saved = time.monotonic()
         self.project.edit(scenario, 0)
         edit_ms = (time.monotonic() - saved) * 1000
@@ -84,7 +85,7 @@ class Session:
             (directory / "candidate.json").write_bytes(candidate)
             (directory / "reference.json").write_bytes(context["reference_bytes"])
             raise RuntimeError(f"Full refresh differs from clean-project reference; inspect {directory}")
-        observable = assert_observable_edit(scenario, json.loads(context["baseline_bytes"])["graph"], json.loads(candidate)["graph"])
+        observable = assert_observable_edit(scenario, context["baseline_graph"], load_bundle(artifact)["graph"])
         return {"phase": "cold" if iteration == 0 else "warm", "iteration": iteration,
                 "edit_ms": edit_ms, "detection": detection, "refresh": refresh, "adoption": adoption,
                 "reference": reference, "reference_kind": "independent clean disposable project; shared dependency caches only", "observable_edit": observable, "reference_sha256": hashlib.sha256(context["reference_bytes"]).hexdigest(),
@@ -192,6 +193,9 @@ class Experiment:
         session.project.reset(scenario)
         baseline = session.analyze()
         context = {"baseline_bytes": (session.project.root / ".codecallnavigator/graph.json").read_bytes(), "baseline_generation": baseline["generation"]}
+        path = session.project.root / ".codecallnavigator/graph.json"
+        context["baseline_capture"] = capture(path)
+        context["baseline_graph"] = load_bundle(path)["graph"]
         for iteration in range(self.arguments.runs + 1):
             record = self.sample(session, scenario, iteration, context)
             if iteration == 0:

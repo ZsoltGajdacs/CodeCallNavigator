@@ -1,11 +1,28 @@
 use codecallnavigator_core::{
     artifact::{Artifact, SCHEMA},
-    flow, query,
+    flow,
+    model::Node,
+    query,
 };
 use serde_json::{Value, json};
 use std::sync::atomic::AtomicBool;
 fn fixture() -> Artifact {
-    let node = |id: &str, file: &str| json!({"id":id,"label":id,"signature":id,"language":"csharp","build":"@repo/App.csproj","project":"App","file":file});
+    let node = |id: &str, file: &str| {
+        serde_json::to_value(Node {
+            id: id.into(),
+            label: id.into(),
+            signature: id.into(),
+            language: "csharp".into(),
+            kind: "method".into(),
+            build: "@repo/App.csproj".into(),
+            project: "App".into(),
+            container: "App".into(),
+            file: file.into(),
+            line: 1,
+            ..Default::default()
+        })
+        .unwrap()
+    };
     let function = |id: &str, file: &str, body: Value| json!({"symbol":id,"language":"csharp","build":"@repo/App.csproj","project":"App","file":file,"execution":"synchronous","span":{"start":0,"end":6},"body":body});
     let call = json!({"kind":"value","text":"leaf()","span":{"start":0,"end":6},"calls":[{"label":"leaf()","span":{"start":0,"end":6},"invocation":{"timing":"synchronous","dispatch":"direct","isolated_ordered":true},"targets":[{"symbol":"leaf","certainty":"possible","provenance":"saved compiler fact"}]}]});
     let root = function(
@@ -21,7 +38,7 @@ fn fixture() -> Artifact {
     let source = |file: &str| json!({"file":file,"build":"@repo/App.csproj","project":"App","language":"csharp","content":"leaf()"});
     Artifact {
         schema: SCHEMA.into(),
-        graph: json!({"nodes":[node("root","@repo/Root.cs"),node("leaf","@repo/Leaf.cs")],"flow_inventory":{"version":1,"functions":[root,leaf]},"architecture":{"version":1,"files":[source("@repo/Root.cs"),source("@repo/Leaf.cs")]}}),
+        graph: json!({"edges":[],"roots":[],"diagnostics":[],"entry_points":null,"nodes":[node("root","@repo/Root.cs"),node("leaf","@repo/Leaf.cs")],"flow_inventory":{"version":1,"functions":[root,leaf]},"architecture":{"version":1,"files":[source("@repo/Root.cs"),source("@repo/Leaf.cs")]}}),
         extensions: Default::default(),
     }
 }

@@ -25,6 +25,7 @@ pub struct State {
     pub recent_projects: Vec<String>,
     pub explorer: crate::explorer::Workspace,
     pub flow_workspace: crate::flow_workspace::Workspace,
+    pub flow_residency: crate::flow_residency::Workspace,
     pub flow_comparison: crate::flow_comparison::Workspace,
     pub root: TextEdit,
     pub search: crate::search::Workspace,
@@ -37,6 +38,7 @@ pub struct State {
     pub presentation_cache: Option<crate::presentation_cache::PresentationCache>,
     pub browser_context: Option<crate::engine_client::QueryContext>,
     pub fixture_queries: bool,
+    pub fixture_flow_inventory: Option<Arc<codecallnavigator::flow::FlowInventory>>,
     pub architecture: Option<Arc<codecallnavigator::architecture::LayerAssignments>>,
     pub architecture_selection: Option<codecallnavigator::architecture::Selection>,
     pub architecture_workspace: crate::architecture_workspace::Workspace,
@@ -91,6 +93,7 @@ impl State {
         Self {
             explorer: crate::explorer::Workspace::default(),
             flow_workspace: crate::flow_workspace::Workspace::default(),
+            flow_residency: Default::default(),
             flow_comparison: Default::default(),
             root: TextEdit::new(""),
             search: crate::search::Workspace::default(),
@@ -104,6 +107,7 @@ impl State {
             presentation_cache: None,
             browser_context: None,
             fixture_queries: false,
+            fixture_flow_inventory: None,
             architecture: None,
             architecture_selection: None,
             architecture_workspace: Default::default(),
@@ -165,7 +169,10 @@ impl State {
     pub fn graph_queries(&self) -> Result<crate::graph_queries::GraphQueries, String> {
         let graph = self.graph.clone().ok_or("No analyzed graph is loaded")?;
         if self.uses_fixture_queries() {
-            return Ok(crate::graph_queries::GraphQueries::fixture(graph));
+            return Ok(crate::graph_queries::GraphQueries::fixture(
+                graph,
+                self.fixture_flow_inventory.clone(),
+            ));
         }
         let context = self
             .query_context

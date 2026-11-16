@@ -62,6 +62,15 @@ pub struct Workspace {
     pub viewports: [[f32; 2]; 2],
 }
 impl Workspace {
+    pub(crate) fn release_hidden(&mut self) {
+        self.cancel_requests();
+        self.current = None;
+        self.history.clear();
+        self.catalog = None;
+        self.pending_scroll = None;
+        self.mounted_source = None;
+    }
+
     pub(crate) fn view_revision(&self) -> u64 {
         self.presentation_revision
     }

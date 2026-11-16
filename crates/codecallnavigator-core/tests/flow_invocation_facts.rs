@@ -288,7 +288,8 @@ fn compiler_facts_survive_canonical_artifact_and_borrowed_comparison_view() {
         .unwrap()["id"]
         .as_str()
         .unwrap();
-    let Selection::Ready(side) = View::new(&a).unwrap().select(symbol) else {
+    let view = View::new(&a).unwrap();
+    let Selection::Ready(side) = view.select(symbol) else {
         panic!("Saved facts unavailable")
     };
     assert_eq!(

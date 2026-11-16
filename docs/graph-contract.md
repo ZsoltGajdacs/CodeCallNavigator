@@ -1,17 +1,21 @@
 # Portable graph JSON contract
 
-CodeCallNavigator publishes one canonical artifact at `.codecallnavigator/graph.json`. External
-consumers, including CodeQualityChecker, may read it without linking CodeCallNavigator's
-Rust crates or invoking an analyzer. The wire shape is specified in
+CodeCallNavigator publishes a canonical bundle through the manifest at
+`.codecallnavigator/graph.json`, described by
+[graph.manifest.schema.json](graph.manifest.schema.json). It references two
+Zstandard-compressed objects under `.codecallnavigator/objects/`: structural
+facts and function-flow inventory. External consumers, including CodeQualityChecker,
+may read the bundle without linking CodeCallNavigator's Rust crates or invoking
+an analyzer. The decoded semantic shape is specified in
 [graph.schema.json](graph.schema.json), using JSON Schema Draft 2020-12. The
 [engine guide](standalone-engine.md) describes production and comparison commands.
 
 ## Compatibility policy
 
-The envelope is `{ "schema": "codecallnavigator.graph.v1", "graph": { ... } }`.
-`codecallnavigator.graph.v1` is a major compatibility boundary, independent of the desktop
+The envelope is `{ "schema": "codecallnavigator.graph.v2", "graph": { ... } }`.
+`codecallnavigator.graph.v2` is a major compatibility boundary, independent of the desktop
 release version and the engine process protocol version. Consumers must reject
-unsupported versions explicitly. Within v1, existing field meanings, wire types,
+unsupported versions explicitly. Within v2, existing field meanings, wire types,
 and identity construction stay fixed. Adding optional properties is compatible;
 removing/changing fields or their semantics, changing symbol identity construction,
 or expanding a closed discriminator requires a new major contract version.
@@ -26,11 +30,18 @@ them, and treat unfamiliar certainty conservatively. The closed values currently
 include visibility, evidence semantics, flow statement/expression/call-target
 kinds, boundary kinds/frameworks, and analysis input kinds.
 
-Legacy formatted v1 artifacts remain readable without regeneration. New
-production output is automatically compact UTF-8 JSON, with one trailing newline.
-Loading and verification do not rewrite a file; the next successful analysis
-replaces it. Digests identify exact file bytes, so whitespace changes a digest
-but does not change the graph. Use `codecallnavigator-engine compare --project PATH
+There is no legacy saved-format reader: reanalyze existing projects. Each
+manifest names immutable objects by compressed BLAKE3 digest and records their
+compressed and uncompressed lengths. Verify hashes and lengths when decoding.
+Structure contains a sorted flow-availability catalogue; combine the decoded
+flow object as `graph.flow_inventory` and omit `graph.flow_catalogue` to obtain
+the complete semantic envelope described by the schema.
+
+Publication replaces the manifest atomically after both objects are complete.
+Commit the manifest and its referenced objects together. Generation digests
+identify exact manifest bytes; semantic comparisons decode both parts. Loading
+and verification do not rewrite saved files. Use
+`codecallnavigator-engine compare --project PATH
 --base REF --head REF|WORKTREE` for semantic comparison rather than raw line diffs.
 
 The schema validates shape and known discriminators. CodeCallNavigator's semantic
@@ -135,7 +146,7 @@ An unmapped target makes `complete` false; omitted `complete` means false.
 
 Automatic refresh requires a complete, supported exact selection. It never
 reconstructs build intent from current discovery defaults, graph nodes, or the
-legacy path set. Older artifacts need one explicit manual refresh to record it.
+path set. Bundles without selection metadata need an explicit manual refresh to record it.
 Future selection versions remain opaque to ordinary loading, querying and
 round-tripping; automatic refresh reports them unavailable. Selection metadata
 does not contain machine paths, monitor state, counters, or performance metrics.
@@ -198,7 +209,7 @@ and fresh output:
 
 ```sh
 python3.13 -m venv /tmp/codecallnavigator-schema-check
-/tmp/codecallnavigator-schema-check/bin/pip install 'jsonschema>=4.18,<5'
+/tmp/codecallnavigator-schema-check/bin/pip install -r requirements-verification.txt
 /tmp/codecallnavigator-schema-check/bin/python -m unittest discover -s tools -p test_graph_contract.py
 /tmp/codecallnavigator-schema-check/bin/python tools/check_graph_contract.py fixtures/.codecallnavigator/graph.json /checkout/.codecallnavigator/graph.json
 ```

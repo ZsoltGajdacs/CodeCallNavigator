@@ -632,9 +632,10 @@ time.sleep(60)
         )
         .unwrap();
         std::fs::create_dir(root.path().join(".codecallnavigator")).unwrap();
-        std::fs::write(
-            root.path().join(codecallnavigator::artifact::GRAPH_PATH),
-            artifact.bytes().unwrap(),
+        codecallnavigator::artifact::publish(
+            root.path(),
+            &artifact,
+            &std::sync::atomic::AtomicBool::new(false),
         )
         .unwrap();
         let wrapper = root.path().join("cli");
@@ -698,7 +699,12 @@ else:
         )
         .unwrap();
         std::fs::create_dir(root.join(".codecallnavigator")).unwrap();
-        std::fs::write(root.join(artifact::GRAPH_PATH), graph.bytes().unwrap()).unwrap();
+        codecallnavigator::artifact::publish(
+            &root,
+            &graph,
+            &std::sync::atomic::AtomicBool::new(false),
+        )
+        .unwrap();
         let context = super::super::QueryContext::for_project(&Runtime::discover().unwrap(), root);
         let cancel = std::sync::Arc::new(AtomicBool::new(false));
         let worker_cancel = cancel.clone();

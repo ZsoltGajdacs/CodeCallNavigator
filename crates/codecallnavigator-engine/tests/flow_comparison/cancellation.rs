@@ -6,7 +6,7 @@ use std::{
     fs,
     io::Write,
     os::unix::{fs::PermissionsExt, process::CommandExt},
-    process::{Command, Stdio},
+    process::{Child, Command, Stdio},
     thread,
     time::{Duration, Instant},
 };
@@ -18,7 +18,9 @@ fn cancellation_during_git_read_preserves_artifacts_and_reaps_the_git_group() {
     let driver = tempfile::tempdir().unwrap();
     let marker = driver.path().join("git-pid");
     let wrapper = driver.path().join("git");
-    fs::write(&wrapper,format!("#!/bin/sh\ncase \"$*\" in *'cat-file blob'*) printf '%s' \"$$\" > '{}'; sleep 30;; esac\nexec /usr/bin/git \"$@\"\n",marker.display())).unwrap();
+    // Creating the ready path before printf completes lets the test observe an
+    // empty PID. Rename a complete marker so readiness also proves its payload.
+    fs::write(&wrapper,format!("#!/bin/sh\ncase \"$*\" in *'cat-file blob'*) printf '%s' \"$$\" > '{}.tmp'; mv '{}.tmp' '{}'; sleep 30;; esac\nexec /usr/bin/git \"$@\"\n",marker.display(),marker.display(),marker.display())).unwrap();
     fs::set_permissions(&wrapper, fs::Permissions::from_mode(0o755)).unwrap();
     let saved = fs::read(root.join(artifact::GRAPH_PATH)).unwrap();
     let head = git(root, &["rev-parse", "HEAD"]);
@@ -37,13 +39,14 @@ fn cancellation_during_git_read_preserves_artifacts_and_reaps_the_git_group() {
             Ok(())
         });
     }
-    let mut child = command.spawn().unwrap();
+    let mut query = QueryChild(command.spawn().unwrap());
+    let child = &mut query.0;
     child
         .stdin
         .take()
         .unwrap()
         .write_all(
-            json!({"version":1,"project":root,"query":SAVED.catalog()})
+            json!({"version":2,"project":root,"query":SAVED.catalog()})
                 .to_string()
                 .as_bytes(),
         )
@@ -61,6 +64,22 @@ fn cancellation_during_git_read_preserves_artifacts_and_reaps_the_git_group() {
         after,
         json!({"graph":saved,"head":head,"fetch":false,"lock":false})
     );
+}
+
+/// This probe deliberately stalls descendants; assertions must not abandon its
+/// session leader or Git wrapper if readiness or cancellation checks fail.
+struct QueryChild(Child);
+
+impl Drop for QueryChild {
+    fn drop(&mut self) {
+        if matches!(self.0.try_wait(), Ok(None)) {
+            // The unreaped child owns this setsid-created process group.
+            unsafe {
+                libc::kill(-(self.0.id() as i32), libc::SIGKILL);
+            }
+        }
+        let _ = self.0.wait();
+    }
 }
 fn wait_for(complete: impl Fn() -> bool) {
     let start = Instant::now();

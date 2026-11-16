@@ -49,6 +49,26 @@ fn current(state: &mut State, symbol: &str) {
     workspace.cache.insert((state.epoch, symbol.into()), ready);
 }
 
+#[test]
+fn idle_release_drops_cached_charts_but_preserves_history_navigation() {
+    let mut state = State::new();
+    current(&mut state, "remembered");
+    let workspace = &mut state.flow_workspace;
+    let session = workspace.current.take().unwrap();
+    let ready = Arc::downgrade(session.ready.as_ref().unwrap());
+    let camera = session.camera.pan;
+    workspace.back.push(session);
+
+    workspace.release_hidden();
+
+    assert!(ready.upgrade().is_none());
+    assert!(workspace.cache.is_empty());
+    assert_eq!(workspace.back[0].symbol, "remembered");
+    assert_eq!(workspace.back[0].camera.pan, camera);
+    assert!(workspace.back[0].ready.is_none());
+    assert!(workspace.back[0].expansion.is_none());
+}
+
 fn supersede(state: &mut State, reason: Superseded) {
     let symbol = match reason {
         Superseded::Serial => {

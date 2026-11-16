@@ -38,6 +38,7 @@ pub struct Node {
     pub line: u32,
     pub is_test: bool,
     pub is_generated: bool,
+    #[serde(default)]
     pub body_unavailable: bool,
 }
 
@@ -104,7 +105,7 @@ pub struct GraphData {
     /// Adapter-owned export keys; native bindings and graph identity stay intact.
     #[serde(default, skip_serializing_if = "std::collections::HashMap::is_empty")]
     pub export_identities: std::collections::HashMap<String, String>,
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub flow_inventory: Option<crate::flow::FlowInventory>,
     #[serde(default)]
     pub architecture: Option<crate::architecture::ArchitectureFacts>,
@@ -191,4 +192,80 @@ fn validate_entries(entries: &[String], identities: &HashSet<&str>) -> Result<()
         );
     }
     Ok(())
+}
+
+/// Immutable navigation data. Construction removes all function bodies, so an
+/// indexed structural generation cannot keep a separately unloaded inventory alive.
+#[derive(Debug, Default, Serialize)]
+#[serde(transparent)]
+pub struct GraphStructure(GraphData);
+
+impl GraphStructure {
+    /// Explicitly copy structure when a caller needs an independently editable graph.
+    pub fn to_graph_data(&self) -> GraphData {
+        self.0.clone()
+    }
+
+    pub fn split(mut graph: GraphData) -> (Self, Option<crate::flow::FlowInventory>) {
+        let flows = graph.flow_inventory.take();
+        (Self(graph), flows)
+    }
+}
+
+impl std::ops::Deref for GraphStructure {
+    type Target = GraphData;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl<'de> Deserialize<'de> for GraphStructure {
+    fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        let data = GraphData::deserialize(deserializer)?;
+        if data.flow_inventory.is_some() {
+            return Err(serde::de::Error::custom(
+                "Structural snapshots cannot contain function flows",
+            ));
+        }
+        Ok(Self(data))
+    }
+}
+
+#[cfg(test)]
+mod structure_tests {
+    use super::*;
+
+    #[test]
+    fn structural_snapshot_excludes_function_bodies() {
+        let inventory = crate::flow::FlowInventory {
+            version: crate::flow::INVENTORY_VERSION,
+            functions: vec![crate::flow::FunctionFlowIR {
+                symbol: "example".into(),
+                ..Default::default()
+            }],
+        };
+        let (structure, flows) = GraphStructure::split(GraphData {
+            flow_inventory: Some(inventory.clone()),
+            ..Default::default()
+        });
+        assert!(structure.flow_inventory.is_none());
+        assert_eq!(flows, Some(inventory));
+        let wire = serde_json::to_value(&structure).unwrap();
+        assert!(wire.get("flow_inventory").is_none());
+        assert!(serde_json::from_value::<GraphStructure>(wire).is_ok());
+    }
+
+    #[test]
+    fn structural_snapshot_rejects_embedded_function_bodies() {
+        let wire = serde_json::to_value(GraphData {
+            flow_inventory: Some(crate::flow::FlowInventory {
+                version: crate::flow::INVENTORY_VERSION,
+                functions: Vec::new(),
+            }),
+            ..Default::default()
+        })
+        .unwrap();
+        assert!(serde_json::from_value::<GraphStructure>(wire).is_err());
+    }
 }

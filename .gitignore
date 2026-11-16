@@ -28,3 +28,7 @@
 # Isolated, locked Python verification dependencies.
 /.venv-verification/
 /.idea/*
+
+# Local coordination and one-generation publication rollback (not canonical history).
+**/.codecallnavigator/publication.lock
+**/.codecallnavigator/previous.json

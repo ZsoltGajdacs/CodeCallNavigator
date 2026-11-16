@@ -51,8 +51,17 @@ pub(crate) fn excluded_directory(name: &str) -> bool {
     )
 }
 
-/// Only generated analysis artifacts directly inside a project's configuration folder.
+/// Generated analysis artifacts and the reserved compressed object subtree.
 pub fn generated_graph_output(path: &Path) -> bool {
+    if path.ancestors().any(|ancestor| {
+        ancestor.file_name().is_some_and(|name| name == "objects")
+            && ancestor
+                .parent()
+                .and_then(Path::file_name)
+                .is_some_and(|name| name == ".codecallnavigator")
+    }) {
+        return true;
+    }
     if path
         .parent()
         .and_then(Path::file_name)
@@ -73,6 +82,9 @@ fn generated_analysis_name(name: &str) -> bool {
         name,
         "graph.json"
             | "graph.lock"
+            | "publication.lock"
+            | "previous.json"
+            | "objects"
             | "inference.sqlite3"
             | "inference.sqlite3-wal"
             | "inference.sqlite3-shm"

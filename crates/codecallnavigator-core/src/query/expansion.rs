@@ -18,9 +18,19 @@ pub fn expand_flow(
     cancel: &AtomicBool,
 ) -> Result<ExpandedFlow> {
     cancelled(cancel)?;
-    let request = prepare(query)?;
     let view = View::new(artifact).map_err(unavailable)?;
-    let inputs = inputs(&view, query, cancel)?;
+    expand_flow_view(&view, query, cancel)
+}
+
+/// Expand against a session-owned typed inventory without re-decoding artifact JSON.
+pub fn expand_flow_view(
+    view: &View<'_>,
+    query: &FlowExpansionRequest,
+    cancel: &AtomicBool,
+) -> Result<ExpandedFlow> {
+    cancelled(cancel)?;
+    let request = prepare(query)?;
+    let inputs = inputs(view, query, cancel)?;
     let borrowed: Vec<_> = inputs
         .iter()
         .map(|input| FunctionSource {
@@ -61,7 +71,7 @@ fn prepare(query: &FlowExpansionRequest) -> Result<ExpansionRequest> {
     Ok(request)
 }
 fn inputs<'a>(
-    view: &View<'a>,
+    view: &'a View<'_>,
     query: &FlowExpansionRequest,
     cancel: &AtomicBool,
 ) -> Result<Vec<Input<'a>>> {
@@ -100,7 +110,7 @@ fn targets(query: &FlowExpansionRequest) -> BTreeSet<&str> {
         .map(|choice| choice.target.symbol.as_str())
         .collect()
 }
-fn optional_input<'a>(view: &View<'a>, symbol: &str) -> Result<Option<Input<'a>>> {
+fn optional_input<'a>(view: &'a View<'_>, symbol: &str) -> Result<Option<Input<'a>>> {
     match view.input(symbol) {
         Ok(input) => Ok(input),
         Err(error)

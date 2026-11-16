@@ -76,7 +76,7 @@ fn grouped_depth_ignores_internal_calls_and_class_rows_are_complete() {
 
 #[test]
 fn class_focus_expands_collapsed_neighbor_folders_before_traversing() {
-    let mut data = graph().data.as_ref().clone();
+    let mut data = graph().data.to_graph_data();
     for (index, node) in data.nodes.iter_mut().enumerate() {
         node.file = format!(
             "/build/{}/{}.java",
@@ -176,7 +176,7 @@ fn depth_extends_both_sides_and_is_independent_of_overview_direction() {
 
 #[test]
 fn recursive_shared_nodes_are_unique_and_ties_go_above() {
-    let mut data = graph().data.as_ref().clone();
+    let mut data = graph().data.to_graph_data();
     data.edges
         .extend([(2, 1), (3, 2), (2, 2)].into_iter().map(|(from, to)| Edge {
             evidence: Vec::new(),
@@ -231,7 +231,7 @@ mod level_tests;
 
 #[test]
 fn focused_pagination_pins_the_anchor_and_counts_only_neighborhood_omissions() {
-    let mut data = graph().data.as_ref().clone();
+    let mut data = graph().data.to_graph_data();
     data.nodes = (0..NODE_LIMIT + 5)
         .map(|i| Node {
             id: format!("m{i:05}"),
@@ -302,7 +302,7 @@ fn layer_class_method_focus_resolves_qualified_keys_and_excludes_other_tabs() {
     use codecallnavigator::architecture::{
         Assignment, LayerAssignments, LayerDefinition, file_key,
     };
-    let mut data = graph().data.as_ref().clone();
+    let mut data = graph().data.to_graph_data();
     for node in &mut data.nodes {
         node.file = format!("/{}.java", node.id);
     }
@@ -412,7 +412,7 @@ fn class_methods_fill_the_page_before_external_context_at_the_canvas_limit() {
 
 #[test]
 fn file_focus_uses_existing_classes_from_each_build_at_every_grouping() {
-    let mut data = graph().data.as_ref().clone();
+    let mut data = graph().data.to_graph_data();
     for (index, node) in data.nodes.iter_mut().enumerate() {
         node.file = if index < 4 {
             "/repo/shared.cs"
@@ -446,7 +446,7 @@ fn file_focus_uses_existing_classes_from_each_build_at_every_grouping() {
 
 #[test]
 fn file_focus_filters_and_navigation_serialization_are_preserved() {
-    let mut data = graph().data.as_ref().clone();
+    let mut data = graph().data.to_graph_data();
     for node in &mut data.nodes {
         node.file = "/repo/test.cs".into();
         node.is_test = true;
@@ -467,7 +467,7 @@ fn file_focus_respects_layer_tabs_before_navigation() {
     use codecallnavigator::architecture::{
         Assignment, LayerAssignments, LayerDefinition, file_key,
     };
-    let mut data = graph().data.as_ref().clone();
+    let mut data = graph().data.to_graph_data();
     data.nodes[0].file = "/repo/layer.cs".into();
     let graph = GraphIndex::new(Arc::new(data)).unwrap();
     let node = &graph.data.nodes[0];

@@ -11,6 +11,7 @@ mod publish;
 pub mod refresh_inputs;
 pub mod revision;
 pub mod selection;
+pub mod storage;
 mod transform;
 mod validation;
 pub mod verification;
@@ -30,7 +31,7 @@ use serde_json::Value;
 use std::{collections::HashMap, path::PathBuf};
 
 pub type Roots = [(String, PathBuf)];
-pub const SCHEMA: &str = "codecallnavigator.graph.v1";
+pub const SCHEMA: &str = "codecallnavigator.graph.v2";
 pub const GRAPH_PATH: &str = ".codecallnavigator/graph.json";
 
 pub fn validate_roots(roots: &Roots) -> Result<()> {
@@ -45,14 +46,8 @@ pub struct Artifact {
     pub extensions: std::collections::BTreeMap<String, Value>,
 }
 
-/// Canonical bytes validated and produced only by the artifact serializer.
-/// This buffer is shared by digest computation and atomic publication.
-pub struct EncodedArtifact(Vec<u8>);
-impl AsRef<[u8]> for EncodedArtifact {
-    fn as_ref(&self) -> &[u8] {
-        &self.0
-    }
-}
+/// Encoded publication bundle; its bytes are the canonical generation manifest.
+pub type EncodedArtifact = storage::EncodedParts;
 
 /// Canonicalize named declarations; anonymous adapter keys can be supplied below.
 pub fn canonical(graph: &crate::model::GraphData, roots: &Roots) -> Result<Artifact> {
@@ -82,6 +77,7 @@ pub fn canonical_with_identities(
 }
 
 impl Artifact {
+    /// Decode semantic JSON after decompression; saved bundles are read by `storage::Captured`.
     pub fn from_bytes(bytes: &[u8]) -> Result<Self> {
         let artifact: Self =
             serde_json::from_slice(bytes).context("Invalid graph artifact JSON")?;
@@ -90,9 +86,11 @@ impl Artifact {
     }
 
     pub fn encode(&self) -> Result<EncodedArtifact> {
-        Ok(EncodedArtifact(self.bytes()?))
+        storage::EncodedParts::encode(self)
     }
 
+    /// Canonical decoded semantic content. `encode` produces the persisted bundle
+    /// whose manifest bytes define generation identity.
     pub fn bytes(&self) -> Result<Vec<u8>> {
         self.validate()?;
         let mut value = serde_json::to_value(self)?;
@@ -100,6 +98,45 @@ impl Artifact {
         let mut bytes = serde_json::to_vec(&value)?;
         bytes.push(b'\n');
         Ok(bytes)
+    }
+
+    /// Validate a separately decoded inventory against this structural generation.
+    pub fn hydrate_flow_inventory(
+        &self,
+        inventory: &mut crate::flow::FlowInventory,
+        roots: &Roots,
+    ) -> Result<()> {
+        let folder_builds = self.graph["folder_project_builds"]
+            .as_array()
+            .into_iter()
+            .flatten()
+            .filter_map(Value::as_str)
+            .map(str::to_owned)
+            .collect();
+        transform::hydrate_inventory(inventory, roots, folder_builds)
+    }
+
+    pub fn validate_flow_inventory(
+        &self,
+        inventory: &mut crate::flow::FlowInventory,
+    ) -> Result<()> {
+        let nodes = self.graph["nodes"]
+            .as_array()
+            .context("Missing structural nodes")?;
+        let ids = nodes
+            .iter()
+            .enumerate()
+            .map(|(index, node)| {
+                Ok((
+                    node["id"]
+                        .as_str()
+                        .context("Missing node identity")?
+                        .to_owned(),
+                    u32::try_from(index)?,
+                ))
+            })
+            .collect::<Result<HashMap<_, _>>>()?;
+        validation::validate_flows(inventory, &ids)
     }
 
     pub fn validate(&self) -> Result<()> {

@@ -7,6 +7,7 @@ use crate::{
 use std::path::Path;
 impl State {
     pub fn open_flow_comparison(&mut self, base: String, head: String) -> Result<(), String> {
+        self.flow_residency.activity();
         let runtime = self
             .runtime
             .as_ref()

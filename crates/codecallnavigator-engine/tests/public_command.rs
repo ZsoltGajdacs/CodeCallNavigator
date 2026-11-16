@@ -41,7 +41,7 @@ fn path_command_exposes_the_same_public_contract() {
         child.stdin.take().unwrap(),
         "{}",
         json!({
-            "version": 1, "project": root.path(), "query": {"kind": "status"}
+            "version": 2, "project": root.path(), "query": {"kind": "status"}
         })
     )
     .unwrap();

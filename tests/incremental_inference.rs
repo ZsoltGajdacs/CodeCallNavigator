@@ -28,7 +28,7 @@ impl Fixture {
             fixture.root().join("node_modules"),
         )
         .unwrap();
-        fixture.write("tsconfig.json", r#"{"compilerOptions":{"target":"ES2023","module":"esnext","moduleResolution":"bundler","jsx":"react-jsx","strict":true,"skipLibCheck":true},"include":["src/**/*.ts","src/**/*.tsx"]}"#);
+        fixture.write("tsconfig.json", r#"{"compilerOptions":{"target":"ES2023","module":"esnext","moduleResolution":"bundler","jsx":"react-jsx","strict":true,"skipLibCheck":true,"types":[]},"include":["src/**/*.ts","src/**/*.tsx"]}"#);
         fixture.write("src/client.ts", CLIENT);
         fixture.write("src/observers.ts", OBSERVERS);
         fixture.write(
@@ -114,7 +114,7 @@ fn run(root: &Path, disabled: bool, cancel: bool) -> Value {
         errors.read_to_string(&mut text).unwrap();
         text
     });
-    let request = json!({"command":"analyze","version":1,"project":root,"roots":[],"infer_linked_roots":false,
+    let request = json!({"command":"analyze","version":codecallnavigator_core::protocol::VERSION,"project":root,"roots":[],"infer_linked_roots":false,
         "targets":[{"path":root.join("tsconfig.json"),"language":"typescript","kind":"typescript","label":"incremental acceptance"}]});
     writeln!(input, "{request}").unwrap();
     let terminal = read_events(&mut output, &mut input, cancel);
@@ -146,8 +146,12 @@ fn read_events(output: &mut impl BufRead, input: &mut impl Write, mut cancel: bo
     }
 }
 
-fn targets(bytes: &[u8], caller: &str, provenance: &str) -> BTreeSet<String> {
-    let graph: Value = serde_json::from_slice(bytes).unwrap();
+fn targets(root: &Path, bytes: &[u8], caller: &str, provenance: &str) -> BTreeSet<String> {
+    let manifest = codecallnavigator_core::artifact::storage::Manifest::from_bytes(bytes).unwrap();
+    let artifact = manifest
+        .complete_with(|name| Ok(fs::read(root.join(".codecallnavigator").join(name))?))
+        .unwrap();
+    let graph = serde_json::to_value(artifact).unwrap();
     let nodes = graph["graph"]["nodes"].as_array().unwrap();
     let caller_ids = nodes
         .iter()
@@ -180,51 +184,41 @@ fn cached_inference_matches_full_analysis_after_compiler_facts_change() {
         "The engine must create the derived inference cache"
     );
     let initial = fixture.graph();
-    assert!(targets(&initial, "missing", "codecallnavigator.boundary.v1").is_empty());
+    assert!(
+        targets(
+            fixture.root(),
+            &initial,
+            "missing",
+            "codecallnavigator.boundary.v1"
+        )
+        .is_empty()
+    );
     assert_eq!(
-        targets(&initial, "notify", "codecallnavigator.observer.v1").len(),
+        targets(
+            fixture.root(),
+            &initial,
+            "notify",
+            "codecallnavigator.observer.v1"
+        )
+        .len(),
         2
     );
     assert_cache_warmth(&fixture, &cold, &initial);
     assert_configuration_invalidation(&fixture, &initial);
-    fixture.write(
-        "src/app/missing/route.ts",
-        "export function GET(){return new Response('new target')}",
-    );
-    let added = fixture.compare_full();
-    assert_eq!(
-        targets(&added, "missing", "codecallnavigator.boundary.v1").len(),
-        1,
-        "A cached negative match must be invalidated when a route is added"
-    );
-    fixture.write(
-        "src/app/api/route.ts",
-        "export function POST(){return new Response('changed verb')}",
-    );
-    let changed = fixture.compare_full();
-    assert!(
-        targets(&changed, "request", "codecallnavigator.boundary.v1").is_empty(),
-        "Old inferred GET target cannot survive a handler verb change"
-    );
-    fixture.write(
-        "src/client.ts",
-        &CLIENT.replace("fetch('/api')", "fetch('/missing')"),
-    );
-    let rewired = fixture.compare_full();
-    assert_eq!(
-        targets(&rewired, "request", "codecallnavigator.boundary.v1").len(),
-        1
-    );
-    fs::remove_file(fixture.root().join("src/app/missing/route.ts")).unwrap();
-    let removed = fixture.compare_full();
-    assert!(targets(&removed, "missing", "codecallnavigator.boundary.v1").is_empty());
+    assert_route_invalidation(&fixture);
     fixture.write(
         "src/observers.ts",
         &OBSERVERS.replace("subscribe(logUpdate);", ""),
     );
     let unregistered = fixture.compare_full();
     assert_eq!(
-        targets(&unregistered, "notify", "codecallnavigator.observer.v1").len(),
+        targets(
+            fixture.root(),
+            &unregistered,
+            "notify",
+            "codecallnavigator.observer.v1"
+        )
+        .len(),
         1,
         "Fresh compiler facts must remove vanished observer wiring"
     );
@@ -241,11 +235,75 @@ fn cached_inference_matches_full_analysis_after_compiler_facts_change() {
     assert_only_graph_json(fixture.root());
 }
 
+fn assert_route_invalidation(fixture: &Fixture) {
+    fixture.write(
+        "src/app/missing/route.ts",
+        "export function GET(){return new Response('new target')}",
+    );
+    let added = fixture.compare_full();
+    assert_eq!(
+        targets(
+            fixture.root(),
+            &added,
+            "missing",
+            "codecallnavigator.boundary.v1"
+        )
+        .len(),
+        1,
+        "A cached negative match must be invalidated when a route is added"
+    );
+    fixture.write(
+        "src/app/api/route.ts",
+        "export function POST(){return new Response('changed verb')}",
+    );
+    let changed = fixture.compare_full();
+    assert!(
+        targets(
+            fixture.root(),
+            &changed,
+            "request",
+            "codecallnavigator.boundary.v1"
+        )
+        .is_empty(),
+        "Old inferred GET target cannot survive a handler verb change"
+    );
+    fixture.write(
+        "src/client.ts",
+        &CLIENT.replace("fetch('/api')", "fetch('/missing')"),
+    );
+    let rewired = fixture.compare_full();
+    assert_eq!(
+        targets(
+            fixture.root(),
+            &rewired,
+            "request",
+            "codecallnavigator.boundary.v1"
+        )
+        .len(),
+        1
+    );
+    fs::remove_file(fixture.root().join("src/app/missing/route.ts")).unwrap();
+    let removed = fixture.compare_full();
+    assert!(
+        targets(
+            fixture.root(),
+            &removed,
+            "missing",
+            "codecallnavigator.boundary.v1"
+        )
+        .is_empty()
+    );
+}
+
 fn assert_cache_warmth(fixture: &Fixture, cold: &Value, initial: &[u8]) {
     let warm = fixture.analyze(false);
     assert_eq!(fixture.graph(), initial);
     assert_eq!(cold["digest"], warm["digest"]);
-    assert!(counter(cold, "inference.cache_misses") >= 3);
+    assert!(
+        counter(cold, "inference.cache_misses") >= 3,
+        "Cold metrics: {}",
+        cold["metrics"]
+    );
     assert!(
         counter(&warm, "inference.cache_hits") >= 3,
         "Positive and negative decisions should be reused"
@@ -279,7 +337,13 @@ fn assert_configuration_invalidation(fixture: &Fixture, initial: &[u8]) {
     fixture.write("next.config.js", "module.exports={basePath:'/deployment'};");
     let blocked = fixture.compare_full();
     assert!(
-        targets(&blocked, "go", "codecallnavigator.boundary.v1").is_empty(),
+        targets(
+            fixture.root(),
+            &blocked,
+            "go",
+            "codecallnavigator.boundary.v1"
+        )
+        .is_empty(),
         "New routing configuration must invalidate a previously cached navigation match"
     );
     fs::remove_file(fixture.root().join("next.config.js")).unwrap();
@@ -350,12 +414,22 @@ fn publication_failure_does_not_commit_new_inference_decisions() {
 }
 
 fn assert_only_graph_json(root: &Path) {
-    let names = fs::read_dir(root.join(".codecallnavigator"))
+    let mut names = fs::read_dir(root.join(".codecallnavigator"))
         .unwrap()
         .map(|entry| entry.unwrap().file_name().to_string_lossy().into_owned())
         .filter(|name| name.ends_with(".json"))
         .collect::<Vec<_>>();
-    assert_eq!(names, ["graph.json"]);
+    names.sort();
+    assert!(names == ["graph.json"] || names == ["graph.json", "previous.json"]);
+    for name in &names {
+        let manifest = codecallnavigator_core::artifact::storage::Manifest::from_bytes(
+            &fs::read(root.join(".codecallnavigator").join(name)).unwrap(),
+        )
+        .unwrap();
+        manifest
+            .complete_with(|part| Ok(fs::read(root.join(".codecallnavigator").join(part))?))
+            .unwrap();
+    }
     assert_eq!(
         fs::read_to_string(root.join(".codecallnavigator/layers.yml")).unwrap(),
         "# Existing project configuration must survive\n"

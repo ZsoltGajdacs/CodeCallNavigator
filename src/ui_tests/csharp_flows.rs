@@ -365,17 +365,18 @@ fn real_csharp_possible_dispatch_and_old_inventory_keep_uncertainty_and_refresh_
     frames(&mut runtime);
     assert!(visible_text(&runtime, "possible"));
     click(&mut runtime, "flow-close");
-    let path = fixture
-        .project
-        .join(codecallnavigator::artifact::GRAPH_PATH);
-    let mut artifact =
-        codecallnavigator::artifact::Artifact::from_bytes(&fs::read(&path).unwrap()).unwrap();
+    let mut artifact = codecallnavigator::artifact::load(&fixture.project).unwrap();
     artifact
         .graph
         .as_object_mut()
         .unwrap()
         .remove("flow_inventory");
-    fs::write(&path, artifact.bytes().unwrap()).unwrap();
+    codecallnavigator::artifact::publish(
+        &fixture.project,
+        &artifact,
+        &std::sync::atomic::AtomicBool::new(false),
+    )
+    .unwrap();
     let environment = crate::runtime::Runtime::discover().unwrap();
     let snapshot = engine_client::QueryContext::for_project(&environment, fixture.project.clone())
         .snapshot(&AtomicBool::new(false))

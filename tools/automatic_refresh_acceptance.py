@@ -5,6 +5,7 @@ All edits, locks and compiler outputs belong to disposable projects. Process
 cleanup is checked before the measurement helper's emergency cleanup can run.
 This is correctness acceptance, not a latency benchmark or a fake analyzer.
 """
+from graph_bundle import load as load_bundle, publish_fixture
 import argparse
 import fcntl
 import gzip
@@ -354,9 +355,9 @@ def edits_during_analysis(case):
 
 
 def legacy_selection(case):
-    artifact = json.loads(case.before)
+    artifact = load_bundle(case.artifact)
     artifact["graph"]["analysis"].pop("selection")
-    case.artifact.write_text(json.dumps(artifact))
+    publish_fixture(case.artifact, artifact)
     before = case.artifact.read_bytes()
     monitor = case.monitor()
     monitor.state("unavailable")
@@ -367,9 +368,9 @@ def legacy_selection(case):
 
 
 def future_selection(case):
-    artifact = json.loads(case.before)
+    artifact = load_bundle(case.artifact)
     artifact["graph"]["analysis"]["selection"]["version"] = 99
-    case.artifact.write_text(json.dumps(artifact))
+    publish_fixture(case.artifact, artifact)
     before = case.artifact.read_bytes()
     queried = response(case.session.query())
     require(not queried.get("error"), "Future selection broke ordinary graph queries")

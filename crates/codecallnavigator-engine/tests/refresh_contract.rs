@@ -33,7 +33,7 @@ fn exchange(request: Value) -> Vec<Value> {
 }
 
 fn request(root: &Path) -> Value {
-    json!({"command":"analyze","version":1,"project":root,"roots":[],"targets":[]})
+    json!({"command":"analyze","version":2,"project":root,"roots":[],"targets":[]})
 }
 
 fn publish(root: &Path, note: &str) -> String {

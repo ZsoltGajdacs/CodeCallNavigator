@@ -48,7 +48,7 @@ fn query_reply(root: &Path, operation: Value, generation: Option<&str>) -> Query
         .take()
         .unwrap()
         .write_all(
-            json!({"version":1,"project":root,"expected_generation":generation,"query":operation})
+            json!({"version":2,"project":root,"expected_generation":generation,"query":operation})
                 .to_string()
                 .as_bytes(),
         )
@@ -132,9 +132,7 @@ fn assert_persistence_and_composition(root: &Path) {
     use codecallnavigator_core::{artifact, flow, method_policy, store::SqliteStore};
     use std::{collections::HashSet, sync::atomic::AtomicBool};
     let roots = vec![("repo".into(), root.canonicalize().unwrap())];
-    let artifact =
-        artifact::Artifact::from_bytes(&fs::read(root.join(artifact::GRAPH_PATH)).unwrap())
-            .unwrap();
+    let artifact = artifact::load(root).unwrap();
     let graph = artifact.hydrate(&roots).unwrap();
     let expected = serde_json::to_value(&graph.flow_inventory).unwrap();
     let cache = tempfile::tempdir().unwrap();
@@ -396,7 +394,7 @@ fn assert_cached_compiler_expansion(root: &Path, caller: &str) {
     use codecallnavigator_core::artifact;
     let path = root.join(artifact::GRAPH_PATH);
     let bytes = fs::read(&path).unwrap();
-    let saved = artifact::Artifact::from_bytes(&bytes).unwrap();
+    let saved = artifact::load(root).unwrap();
     compiler_expansion::assert_cached_expansion(
         &saved,
         compiler_expansion::Pair {

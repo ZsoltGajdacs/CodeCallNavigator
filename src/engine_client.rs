@@ -4,6 +4,7 @@ use codecallnavigator::model::GraphData;
 mod capabilities;
 pub mod flow_comparison;
 mod flow_expansion;
+mod flow_resources;
 mod observation_process;
 pub(crate) use observation_process::{CleanupFailure, Notice, ObservationOptions};
 mod process;
@@ -108,7 +109,7 @@ fn analyze(
     progress: &dyn Fn(String),
 ) -> Result<GraphData> {
     let snapshot = analyze_snapshot(runtime, selection, cancel, progress)?;
-    Ok(snapshot.graph.data.as_ref().clone())
+    Ok(snapshot.graph.data.to_graph_data())
 }
 
 fn exchange(

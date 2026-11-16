@@ -122,7 +122,11 @@ fn cancellation_preserves_the_only_project_artifact_and_configuration() {
     let project = tempfile::tempdir().unwrap();
     let artifact = canonical(&fixture("/tmp/a"), &roots("/tmp/a")).unwrap();
     fs::create_dir(project.path().join(".codecallnavigator")).unwrap();
-    fs::write(project.path().join(".codecallnavigator/layers.yml"), "version: 1\n").unwrap();
+    fs::write(
+        project.path().join(".codecallnavigator/layers.yml"),
+        "version: 1\n",
+    )
+    .unwrap();
     publish(project.path(), &artifact, &AtomicBool::new(false)).unwrap();
     let before = fs::read(project.path().join(GRAPH_PATH)).unwrap();
     let mut changed = artifact;
@@ -205,7 +209,7 @@ fn git_comparison_reads_history_without_writing_snapshots() {
     git(&["config", "user.name", "Artifact test"]);
     let artifact = canonical(&fixture("/tmp/a"), &roots("/tmp/a")).unwrap();
     publish(project.path(), &artifact, &AtomicBool::new(false)).unwrap();
-    git(&["add", GRAPH_PATH]);
+    git(&["add", GRAPH_PATH, ".codecallnavigator/objects"]);
     git(&["commit", "-qm", "baseline"]);
     assert!(
         compare_git(project.path(), "HEAD", "WORKTREE")
@@ -228,7 +232,7 @@ fn git_comparison_reads_history_without_writing_snapshots() {
         .unwrap()
         .map(|e| e.unwrap().file_name())
         .collect();
-    assert_eq!(files.len(), 2); // graph.json and the persistent advisory lock
+    assert_eq!(files.len(), 5); // current/previous manifests, objects and persistent locks
 }
 
 #[test]
@@ -299,7 +303,7 @@ fn only_exact_owner_matched_portable_ids_reuse_their_semantic_component() {
 #[test]
 fn recorded_real_language_graph_can_be_recanonicalized_after_relocation() {
     let original =
-        Artifact::from_bytes(include_bytes!("../../../../fixtures/.codecallnavigator/graph.json")).unwrap();
+        Artifact::from_bytes(include_bytes!("../../../../fixtures/graph.semantic.json")).unwrap();
     let graph = original.hydrate(&roots("/tmp/mixed-relocated")).unwrap();
     let repeated = canonical(&graph, &roots("/tmp/mixed-relocated")).unwrap();
     let moved_again = repeated.hydrate(&roots("/tmp/mixed-again")).unwrap();

@@ -15,12 +15,16 @@ fn many(root: &std::path::Path) {
     let saved =
         codecallnavigator::artifact::canonical(&graph, &[("repo".into(), "/snapshot".into())])
             .unwrap();
-    std::fs::write(
-        root.join(codecallnavigator::artifact::GRAPH_PATH),
-        saved.bytes().unwrap(),
-    )
-    .unwrap();
-    git(root, &["add", codecallnavigator::artifact::GRAPH_PATH]);
+    codecallnavigator::artifact::publish(root, &saved, &std::sync::atomic::AtomicBool::new(false))
+        .unwrap();
+    git(
+        root,
+        &[
+            "add",
+            codecallnavigator::artifact::GRAPH_PATH,
+            ".codecallnavigator/objects",
+        ],
+    );
     git(root, &["commit", "-qm", "many identities"]);
     git(root, &["tag", "-f", "head"]);
 }

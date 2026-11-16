@@ -57,7 +57,7 @@ def validate(package):
     result = subprocess.run([str(package / 'bin/ccnavigator'), 'capabilities'],
                             capture_output=True, text=True, check=True, timeout=30)
     capabilities = json.loads(result.stdout)
-    if capabilities.get('query_version') != 1 or not capabilities.get('generation_binding'):
+    if capabilities.get('query_version') != 2 or not capabilities.get('generation_binding'):
         raise RuntimeError('Distribution has incompatible CLI capabilities')
 
 

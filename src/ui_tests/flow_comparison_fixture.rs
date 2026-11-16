@@ -5,8 +5,11 @@ use rune::{Env, Runtime};
 use std::{fs, path::Path};
 pub(super) fn commit(root: &Path, graph: &GraphData, name: &str) {
     let saved = artifact::canonical(graph, &[("repo".into(), "/snapshot".into())]).unwrap();
-    fs::write(root.join(artifact::GRAPH_PATH), saved.bytes().unwrap()).unwrap();
-    crate::flow_comparison::tests::git(root, &["add", artifact::GRAPH_PATH]);
+    artifact::publish(root, &saved, &std::sync::atomic::AtomicBool::new(false)).unwrap();
+    crate::flow_comparison::tests::git(
+        root,
+        &["add", artifact::GRAPH_PATH, ".codecallnavigator/objects"],
+    );
     crate::flow_comparison::tests::git(root, &["commit", "--allow-empty", "-qm", name]);
     crate::flow_comparison::tests::git(root, &["tag", name]);
 }

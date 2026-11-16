@@ -28,8 +28,12 @@ pub(crate) fn project(root: &Path) {
     fs::create_dir(root.join(".codecallnavigator")).unwrap();
     let graph = crate::flow_scenes::data();
     let saved = artifact::canonical(&graph, &[("repo".into(), "/snapshot".into())]).unwrap();
-    fs::write(root.join(artifact::GRAPH_PATH), saved.bytes().unwrap()).unwrap();
-    git(root, &["add", artifact::GRAPH_PATH]);
+    codecallnavigator::artifact::publish(root, &saved, &std::sync::atomic::AtomicBool::new(false))
+        .unwrap();
+    git(
+        root,
+        &["add", artifact::GRAPH_PATH, ".codecallnavigator/objects"],
+    );
     git(root, &["commit", "-qm", "base"]);
     git(root, &["tag", "base"]);
     git(root, &["tag", "head"]);

@@ -224,10 +224,10 @@ impl Motion {
         });
         let camera_tracks = self.camera.iter_mut().flat_map(|tracks| tracks.iter_mut());
         let ghost_tracks = self.ghosts.iter_mut().map(|ghost| &mut ghost.opacity);
-        let geometry_active = node_tracks
-            .chain(camera_tracks)
-            .chain(ghost_tracks)
-            .fold(false, |active, track| track.step(dt) || active);
+        let mut geometry_active = false;
+        for track in node_tracks.chain(camera_tracks).chain(ghost_tracks) {
+            geometry_active |= track.step(dt);
+        }
         self.route_presence.advance(dt) | self.bands.advance(dt) | geometry_active
     }
 

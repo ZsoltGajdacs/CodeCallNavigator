@@ -84,6 +84,22 @@ pub struct Output {
     result: Result<Ready, String>,
 }
 impl Workspace {
+    pub(crate) fn release_hidden(&mut self) {
+        self.expansion.cancel();
+        self.cancelled
+            .store(true, std::sync::atomic::Ordering::Release);
+        self.serial += 1;
+        self.job.cancel();
+        self.cache.clear();
+        for session in &mut self.back {
+            session.ready = None;
+            session.expansion = None;
+            session.selected = None;
+        }
+        self.restore_scroll = None;
+        self.mount_restore = None;
+    }
+
     pub(crate) fn preserve_current_scroll(&mut self) {
         self.restore_scroll = self.current.as_ref().map(|session| session.scroll.get());
         self.mount_restore = self.current.as_ref().map(|session| SourceRestore {
@@ -114,6 +130,7 @@ impl State {
         }
     }
     pub fn open_flow(&mut self, symbol: String) {
+        self.flow_residency.activity();
         self.close_source();
         let Some(graph) = self.graph.clone() else {
             return;
@@ -200,6 +217,7 @@ impl State {
         self.flow_workspace.mount_restore = None;
     }
     pub fn flow_back(&mut self) {
+        self.flow_residency.activity();
         self.flow_workspace.expansion.cancel();
         self.flow_workspace.presentation += 1;
         let Some(previous) = self.flow_workspace.back.pop() else {

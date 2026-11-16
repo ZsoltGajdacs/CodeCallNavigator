@@ -27,7 +27,7 @@ fn source_runtime(line: u32) -> (Runtime<State>, tempfile::TempDir) {
     let mut runtime = runtime();
     runtime.on_key = Some(view::key);
     runtime.update(|state, _| {
-        let mut data = state.graph.as_ref().unwrap().data.as_ref().clone();
+        let mut data = state.graph.as_ref().unwrap().data.to_graph_data();
         for node in &mut data.nodes {
             node.file = path.to_string_lossy().into_owned();
             node.line = line;

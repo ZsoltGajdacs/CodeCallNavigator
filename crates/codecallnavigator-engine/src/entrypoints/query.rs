@@ -2,19 +2,21 @@
 mod filesystem;
 pub(super) mod freshness;
 mod layers;
+mod resources;
 use codecallnavigator_core::{
     artifact::{self, Artifact, verification},
     graph::GraphIndex,
     query::{self, Error, Request, Response},
 };
 use std::{
-    fs,
     io::{self, Read},
     sync::{Arc, OnceLock},
 };
 
 pub(super) struct Loaded {
     pub artifact: Artifact,
+    captured: artifact::storage::Captured,
+    flows: resources::Residency,
     graph: OnceLock<query::Result<GraphIndex>>,
     pub generation: String,
     pub freshness: serde_json::Value,
@@ -53,30 +55,20 @@ pub(super) fn roots(request: &Request) -> query::Result<Vec<(String, std::path::
     Ok(roots)
 }
 
-pub(super) fn read_generation(project: &std::path::Path) -> query::Result<Vec<u8>> {
-    fs::read(project.join(artifact::GRAPH_PATH)).map_err(|e| {
-        Error::new(
-            if e.kind() == io::ErrorKind::NotFound {
-                "graph_missing"
-            } else {
-                "graph_unavailable"
-            },
-            e.to_string(),
-        )
-    })
-}
-
-pub(super) fn load_bytes(
+pub(super) fn load_captured(
     request: &Request,
     roots: Vec<(String, std::path::PathBuf)>,
-    bytes: &[u8],
+    captured: artifact::storage::Captured,
     generation: String,
 ) -> query::Result<Loaded> {
     check_generation(request, &generation)?;
-    let artifact =
-        Artifact::from_bytes(bytes).map_err(|e| Error::new("invalid_graph", format!("{e:#}")))?;
+    let artifact = captured
+        .structure()
+        .map_err(|e| Error::new("invalid_graph", format!("{e:#}")))?;
     Ok(Loaded {
         artifact,
+        captured,
+        flows: Default::default(),
         graph: OnceLock::new(),
         generation,
         freshness: serde_json::Value::Null,
@@ -138,6 +130,14 @@ pub(super) fn validate(request: &Request) -> query::Result<()> {
         ));
     }
     super::flow_expansion::validate(request)?;
+    if matches!(request.query, query::Query::FlowResources { .. })
+        && request.expected_generation.is_none()
+    {
+        return Err(Error::new(
+            "invalid_request",
+            "Flow resource operations require expected_generation",
+        ));
+    }
     if matches!(
         request.query,
         query::Query::RenderSelection { .. } | query::Query::Inspect { .. }

@@ -28,12 +28,15 @@ pub(super) fn validate(request: &Request) -> Result<()> {
     }
     Ok(())
 }
-pub(super) fn respond(loaded: &Loaded, request: &Request) -> Option<Response> {
+pub(super) fn respond(loaded: &mut Loaded, request: &Request) -> Option<Response> {
     let Query::FlowExpansion(expansion) = &request.query else {
         return None;
     };
     let result = query::check_generation(request, &loaded.generation).and_then(|()| {
-        let expanded = core::expand_flow(&loaded.artifact, expansion, &cancellation::CANCELLED)?;
+        loaded.refresh_freshness()?;
+        loaded.ensure_flows()?;
+        let view = loaded.flow_view()?;
+        let expanded = core::expand_flow_view(&view, expansion, &cancellation::CANCELLED)?;
         Reply {
             generation: &loaded.generation,
             freshness: None,

@@ -25,8 +25,13 @@ fn request() -> Request {
     }
 }
 
-fn architecture_graph() -> (GraphIndex, Arc<codecallnavigator::architecture::LayerAssignments>) {
-    use codecallnavigator::architecture::{Assignment, LayerAssignments, LayerDefinition, file_key};
+fn architecture_graph() -> (
+    GraphIndex,
+    Arc<codecallnavigator::architecture::LayerAssignments>,
+) {
+    use codecallnavigator::architecture::{
+        Assignment, LayerAssignments, LayerDefinition, file_key,
+    };
     let names = ["Controller", "Service", "Entity"];
     let mut data = GraphData {
         nodes: names
@@ -187,7 +192,7 @@ fn missing_layer_facts_explain_setup_without_affecting_other_groupings() {
 #[test]
 fn layer_filter_counts_do_not_report_hidden_node_relationships_as_omitted() {
     let (graph, assignments) = architecture_graph();
-    let mut data = (*graph.data).clone();
+    let mut data = graph.data.to_graph_data();
     data.nodes[2].is_test = true;
     let graph = GraphIndex::new(Arc::new(data)).unwrap();
     let mut query = request();
@@ -257,7 +262,9 @@ fn parallel_architecture_flows_align_their_starts_and_keep_independent_band_orde
 
 #[test]
 fn layer_source_paths_use_dotted_java_build_directories_as_roots() {
-    use codecallnavigator::architecture::{Assignment, LayerAssignments, LayerDefinition, file_key};
+    use codecallnavigator::architecture::{
+        Assignment, LayerAssignments, LayerDefinition, file_key,
+    };
     let node = Node {
         id: "method".into(),
         build: "/root/billing.service".into(),

@@ -51,6 +51,21 @@ pub(super) fn transform(
     transform.diagnostics(&mut graph.diagnostics);
     Ok(())
 }
+/// Apply the same ownership/path rules to an independently loaded inventory.
+pub(super) fn hydrate_inventory(
+    inventory: &mut flow::FlowInventory,
+    roots: &super::Roots,
+    folder_builds: HashSet<String>,
+) -> Result<()> {
+    Transform {
+        paths: &Paths::new(roots)?,
+        identities: None,
+        hydrate: true,
+        folder_builds,
+    }
+    .inventory(inventory)
+}
+
 struct Transform<'a> {
     paths: &'a Paths,
     identities: Option<&'a HashMap<String, String>>,

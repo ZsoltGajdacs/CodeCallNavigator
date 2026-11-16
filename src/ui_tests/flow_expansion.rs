@@ -135,12 +135,11 @@ fn assert_stale_request_retains_ordinary(
     runtime: &mut rune::Runtime<crate::app::State>,
     project: &std::path::Path,
 ) {
-    let path = project.join(artifact::GRAPH_PATH);
-    let mut saved = artifact::Artifact::from_bytes(&fs::read(&path).unwrap()).unwrap();
+    let mut saved = artifact::load(project).unwrap();
     saved
         .extensions
         .insert("expansion_stale_probe".into(), serde_json::json!(true));
-    fs::write(path, saved.bytes().unwrap()).unwrap();
+    artifact::publish(project, &saved, &std::sync::atomic::AtomicBool::new(false)).unwrap();
     let ordinary = session(runtime).ready.as_ref().unwrap().clone();
     click(runtime, "flow-expand-mode");
     settle(runtime, |state| !state.flow_workspace.expansion_pending());

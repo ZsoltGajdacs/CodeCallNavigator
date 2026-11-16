@@ -22,11 +22,11 @@ fn publish(root: &Path) {
     )
     .unwrap();
     fs::create_dir(root.join(".codecallnavigator")).unwrap();
-    fs::write(root.join(artifact::GRAPH_PATH), graph.bytes().unwrap()).unwrap();
+    artifact::publish(root, &graph, &std::sync::atomic::AtomicBool::new(false)).unwrap();
 }
 
 fn request(root: &Path, operation: Value) -> (i32, Value) {
-    raw_request(json!({"version":1,"project":root,"query":operation}))
+    raw_request(json!({"version":2,"project":root,"query":operation}))
 }
 
 fn raw_request(request: Value) -> (i32, Value) {
@@ -96,7 +96,7 @@ fn freshness_negotiation_and_generation_errors_do_not_mix_context() {
         "unsupported_freshness_version"
     );
     let (code, obsolete) = raw_request(
-        json!({"version":1,"project":root.path(),"expected_generation":"obsolete","query":{"kind":"freshness","observation_version":1}}),
+        json!({"version":2,"project":root.path(),"expected_generation":"obsolete","query":{"kind":"freshness","observation_version":1}}),
     );
     assert_eq!(code, 2);
     assert_eq!(obsolete["error"]["code"], "generation_mismatch");
@@ -105,7 +105,7 @@ fn freshness_negotiation_and_generation_errors_do_not_mix_context() {
     assert!(obsolete["result"].is_null());
     let initial = observation(root.path());
     let (code, bound) = raw_request(
-        json!({"version":1,"project":root.path(),"expected_generation":initial["generation"],"query":{"kind":"freshness","observation_version":1}}),
+        json!({"version":2,"project":root.path(),"expected_generation":initial["generation"],"query":{"kind":"freshness","observation_version":1}}),
     );
     assert_eq!(code, 0, "{bound}");
     assert_eq!(bound["result"]["input_revision"], initial["input_revision"]);
@@ -172,7 +172,7 @@ impl Drop for ObserverProcess {
 }
 
 fn observer_request(root: &Path) -> Value {
-    json!({"version":1,"project":root,"query":{"kind":"freshness","observation_version":1}})
+    json!({"version":2,"project":root,"query":{"kind":"freshness","observation_version":1}})
 }
 
 fn next_event(events: &std::sync::mpsc::Receiver<Value>) -> Value {
@@ -299,9 +299,10 @@ fn observer_eof_remains_bounded_when_stdout_is_backpressured() {
     )
     .unwrap();
     fs::create_dir(root.path().join(".codecallnavigator")).unwrap();
-    fs::write(
-        root.path().join(artifact::GRAPH_PATH),
-        graph.bytes().unwrap(),
+    artifact::publish(
+        root.path(),
+        &graph,
+        &std::sync::atomic::AtomicBool::new(false),
     )
     .unwrap();
     let (reader, writer) = observer_output();
@@ -332,10 +333,16 @@ fn observer_heartbeats_and_generation_replacement_follow_saved_artifact() {
         heartbeat["observation"]["input_revision"],
         initial["observation"]["input_revision"]
     );
-    let path = root.path().join(artifact::GRAPH_PATH);
-    let mut graph: Value = serde_json::from_slice(&fs::read(&path).unwrap()).unwrap();
-    graph["extension"] = json!("replacement");
-    fs::write(&path, serde_json::to_vec(&graph).unwrap()).unwrap();
+    let mut graph = artifact::load(root.path()).unwrap();
+    graph
+        .extensions
+        .insert("extension".into(), json!("replacement"));
+    artifact::publish(
+        root.path(),
+        &graph,
+        &std::sync::atomic::AtomicBool::new(false),
+    )
+    .unwrap();
     let replaced = next_event(&events);
     assert_eq!(replaced["kind"], "change");
     assert_ne!(

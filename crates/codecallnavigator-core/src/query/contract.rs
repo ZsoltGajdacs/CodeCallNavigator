@@ -19,6 +19,10 @@ pub struct Request {
 #[serde(tag = "kind", rename_all = "snake_case", deny_unknown_fields)]
 pub enum Query {
     Status,
+    /// Session-owned flow residency, bound to an explicit graph generation.
+    FlowResources {
+        action: FlowResourceAction,
+    },
     Freshness {
         observation_version: u32,
     },
@@ -277,4 +281,23 @@ fn filter<'de, D: serde::Deserializer<'de>>(
 
 fn flow_catalog_limit() -> usize {
     50
+}
+
+/// The caller owns residency policy; the CLI owns the retained data.
+#[derive(Clone, Copy, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum FlowResourceAction {
+    Load,
+    Unload,
+    Status,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct FlowResourceStatus {
+    pub loaded: bool,
+    pub functions: usize,
+    /// Approximation of heap allocations retained by the typed inventory and its lookup index.
+    pub retained_bytes: usize,
+    pub load_milliseconds: f64,
 }

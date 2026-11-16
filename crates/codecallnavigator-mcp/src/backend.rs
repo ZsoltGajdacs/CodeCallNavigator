@@ -61,7 +61,7 @@ impl Backend {
         if let Some(reply) = self.unsupported_observation(&operation) {
             return Ok(reply);
         }
-        let request = json!({"version":1,"project":self.config.project,"roots":self.config.roots,"expected_generation":query.generation,"query":query.query});
+        let request = json!({"version":2,"project":self.config.project,"roots":self.config.roots,"expected_generation":query.generation,"query":query.query});
         let output = self
             .processes
             .run(
@@ -99,7 +99,7 @@ impl Backend {
             return None;
         };
         Some(Reply {
-            value: json!({"version":1,"generation":null,"freshness":null,"result":null,"error":{"code":"unsupported_capability","message":message}}),
+            value: json!({"version":2,"generation":null,"freshness":null,"result":null,"error":{"code":"unsupported_capability","message":message}}),
             is_error: true,
         })
     }
@@ -130,7 +130,7 @@ impl Backend {
     pub async fn refresh(&self, args: RefreshArgs, cancel: &CancellationToken) -> Result<Reply> {
         let discovered: wire::Discovery = serde_json::from_value(self.discovery(cancel).await?)?;
         let targets = choose_targets(&discovered, args)?;
-        let request = json!({"command":"analyze","version":1,"project":self.config.project,"roots":self.config.roots,"targets":targets,"infer_linked_roots":false});
+        let request = json!({"command":"analyze","version":2,"project":self.config.project,"roots":self.config.roots,"targets":targets,"infer_linked_roots":false});
         let mut bytes = serde_json::to_vec(&request)?;
         bytes.push(b'\n');
         let output = self
@@ -189,7 +189,7 @@ fn analysis_reply(output: process::Output) -> Result<Reply> {
     let mut events = text.lines();
     let hello: Value = serde_json::from_str(events.next().context("CLI omitted protocol hello")?)?;
     ensure!(
-        hello == json!({"event":"hello","version":1}),
+        hello == json!({"event":"hello","version":2}),
         "Incompatible CLI analysis protocol hello"
     );
     let mut terminal = None;
@@ -213,14 +213,14 @@ fn analysis_reply(output: process::Output) -> Result<Reply> {
             .as_str()
             .context("Malformed CLI failure event")?;
         return Ok(Reply {
-            value: json!({"version":1,"generation":null,"freshness":null,"result":null,"error":{"code":"analysis_failed","message":message},"cli_event":terminal,"cleanup_diagnostic":output.cleanup_diagnostic}),
+            value: json!({"version":2,"generation":null,"freshness":null,"result":null,"error":{"code":"analysis_failed","message":message},"cli_event":terminal,"cleanup_diagnostic":output.cleanup_diagnostic}),
             is_error: true,
         });
     }
     validate_complete(&terminal)?;
     process::require_success(&output)?;
     Ok(Reply {
-        value: json!({"version":1,"generation":terminal["digest"],"freshness":null,"result":terminal,"error":null}),
+        value: json!({"version":2,"generation":terminal["digest"],"freshness":null,"result":terminal,"error":null}),
         is_error: false,
     })
 }

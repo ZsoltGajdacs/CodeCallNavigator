@@ -171,10 +171,11 @@ impl Routes {
         }
     }
     pub fn advance(&mut self, dt: f32) -> bool {
-        self.incoming
-            .iter_mut()
-            .chain(&mut self.outgoing)
-            .fold(false, |active, r| r.opacity.step(dt) || active)
+        let mut active = false;
+        for route in self.incoming.iter_mut().chain(&mut self.outgoing) {
+            active |= route.opacity.step(dt);
+        }
+        active
     }
     pub fn opacity(&self, index: usize) -> f32 {
         self.incoming.get(index).map_or(1.0, |r| r.opacity.value)

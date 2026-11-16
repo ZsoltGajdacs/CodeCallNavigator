@@ -8,6 +8,7 @@ import time
 from csharp_desktop_acceptance import callable_node, clean_environment
 from csharp_flow_acceptance import require
 from csharp_flow_ingestion_acceptance import Client
+from graph_bundle import stored_bytes
 
 FIXTURE = Path(__file__).resolve().parents[1] / "fixtures/flow/expansion-desktop"
 
@@ -64,7 +65,7 @@ def prepare(engine, project, timeout):
               "generation": generation, "expected_viewport": [1050, 680],
               "timeout_seconds": timeout}
     metrics = {"fixture": "fixtures/flow/expansion-desktop", "analyze_seconds": analyze_seconds,
-               "artifact_sha256": digest, "artifact_bytes": artifact.stat().st_size,
+               "artifact_sha256": digest, "artifact_bytes": stored_bytes(artifact),
                "compiler_sources": [{k: v for k, v in source.items() if k != "content"}
                                     for source in sources],
                "live_sources_removed": True, "cached_sources_exact": True,

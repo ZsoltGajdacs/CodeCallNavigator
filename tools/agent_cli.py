@@ -54,7 +54,7 @@ class Client:
         return data.decode()
 
     def query(self, scenario, query, generation=None, error=None):
-        request = {'version': 1, 'project': str(self.root), 'query': query}
+        request = {'version': 2, 'project': str(self.root), 'query': query}
         if generation is not None:
             request['expected_generation'] = generation
         started = time.monotonic()
@@ -68,7 +68,7 @@ class Client:
         actual = (envelope.get('error') or {}).get('code')
         require(actual == error, f'{scenario}: expected error {error}, got {actual}')
         require(code == (2 if error else 0), f'{scenario}: incorrect CLI exit {code}')
-        require(envelope.get('version') == 1, f'{scenario}: unsupported response version')
+        require(envelope.get('version') == 2, f'{scenario}: unsupported response version')
         return envelope
 
     def analyze(self, scenario):

@@ -1,6 +1,6 @@
 mod filter;
 mod filter_summary;
-use crate::model::{Edge, GraphData, RelationshipClassification};
+use crate::model::{Edge, GraphData, GraphStructure, RelationshipClassification};
 use anyhow::Result;
 pub use filter::Filter;
 pub use filter_summary::FilterSummary;
@@ -105,7 +105,7 @@ impl Adjacency {
 }
 
 pub struct GraphIndex {
-    pub data: Arc<GraphData>,
+    pub data: Arc<GraphStructure>,
     identities: HashMap<String, u32>,
     incoming: Adjacency,
     outgoing: Adjacency,
@@ -116,6 +116,8 @@ pub struct GraphIndex {
 impl GraphIndex {
     pub fn new(data: Arc<GraphData>) -> Result<Self> {
         data.validate()?;
+        let (structure, _) = GraphStructure::split(Arc::unwrap_or_clone(data));
+        let data = Arc::new(structure);
         let identities = data
             .nodes
             .iter()

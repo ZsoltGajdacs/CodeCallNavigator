@@ -108,7 +108,10 @@ fn validate_architecture(facts: &ArchitectureFacts) -> Result<()> {
     Ok(())
 }
 
-fn validate_flows(inventory: &mut FlowInventory, ids: &HashMap<String, u32>) -> Result<()> {
+pub(super) fn validate_flows(
+    inventory: &mut FlowInventory,
+    ids: &HashMap<String, u32>,
+) -> Result<()> {
     ensure!(
         inventory.version == flow::INVENTORY_VERSION,
         "Unsupported function flow inventory version"

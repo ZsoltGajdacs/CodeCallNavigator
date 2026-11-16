@@ -200,7 +200,7 @@ fn page_reports_cross_page_relationships_in_omitted_counts() {
 
 #[test]
 fn method_recursion_stays_visible_when_group_internals_are_summarized() {
-    let mut data = (*sample().data).clone();
+    let mut data = sample().data.to_graph_data();
     data.edges.push(Edge {
         evidence: Vec::new(),
         provenance: String::new(),
@@ -383,7 +383,7 @@ fn multiple_roots_shared_methods_cycles_and_start_highlighting_keep_stable_branc
 
 #[test]
 fn method_entry_filters_depth_and_manual_focus_are_independent() {
-    let mut data = (*branching().data).clone();
+    let mut data = branching().data.to_graph_data();
     data.nodes[7].is_test = true;
     let graph = GraphIndex::new(Arc::new(data)).unwrap();
     let mut query = request();
@@ -427,7 +427,7 @@ fn aggregate_overview_uses_directional_component_roots_even_for_cycles() {
 
 #[test]
 fn cycles_without_candidates_have_an_actionable_empty_method_overview() {
-    let mut data = (*sample().data).clone();
+    let mut data = sample().data.to_graph_data();
     data.edges.push(Edge {
         evidence: Vec::new(),
         provenance: String::new(),
@@ -453,7 +453,7 @@ fn traversal_remains_stable_when_storage_order_changes() {
     let mut query = request();
     query.grouping = Grouping::Project;
     let before = project(&graph, &query);
-    let mut data = (*graph.data).clone();
+    let mut data = graph.data.to_graph_data();
     data.nodes.reverse();
     let last = data.nodes.len() as u32 - 1;
     for edge in &mut data.edges {
@@ -526,7 +526,7 @@ fn paginated_graph(from: u32, to: u32) -> GraphIndex {
 
 #[test]
 fn framework_entry_is_a_method_root_without_verified_start_highlighting() {
-    let mut data = (*branching().data).clone();
+    let mut data = branching().data.to_graph_data();
     let id = data.nodes[1].id.clone();
     data.entry_points = Some(codecallnavigator::model::EntryPoints {
         candidates: vec![],
@@ -550,7 +550,7 @@ fn framework_entry_is_a_method_root_without_verified_start_highlighting() {
 #[test]
 fn equal_raw_relationships_keep_distinct_framework_classification_when_grouped() {
     use codecallnavigator::model::{RelationshipKind, TargetResolution};
-    let mut data = sample().data.as_ref().clone();
+    let mut data = sample().data.to_graph_data();
     data.nodes[1].container = "OtherType".into();
     data.nodes[1].file = "/example/other/OtherType.cs".into();
     data.edges.truncate(1);

@@ -10,6 +10,7 @@ import json
 from pathlib import Path
 
 from jsonschema import Draft202012Validator
+from graph_bundle import load
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -50,7 +51,7 @@ def main():
     parser.add_argument('artifacts', nargs='+', type=Path)
     arguments = parser.parse_args()
     for path in arguments.artifacts:
-        result = consume(json.loads(path.read_bytes()))
+        result = consume(load(path))
         print(json.dumps({
             'artifact': str(path), 'nodes': len(result['symbols']),
             'edges': len(result['relationships']),

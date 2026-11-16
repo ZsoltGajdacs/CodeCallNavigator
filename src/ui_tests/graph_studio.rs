@@ -70,7 +70,7 @@ fn selected_relationship_shows_rule_source_construct_and_supporting_symbol() {
     };
     use std::sync::Arc;
     let mut runtime = runtime();
-    let mut data = (*runtime.state.graph.as_ref().unwrap().data).clone();
+    let mut data = runtime.state.graph.as_ref().unwrap().data.to_graph_data();
     let edge = &mut data.edges[0];
     let selected = edge.from;
     let supporting = data.nodes[edge.to as usize].id.clone();
@@ -393,7 +393,7 @@ fn drawer_fields_and_long_inspector_signatures_stay_inside_their_panes() {
         "com.example.application.really.long.package.ExtractionContext".repeat(4)
     );
     runtime.update(|state, _| {
-        let mut data = state.graph.as_ref().unwrap().data.as_ref().clone();
+        let mut data = state.graph.as_ref().unwrap().data.to_graph_data();
         data.nodes[0].signature = signature.clone();
         state.graph = Some(std::sync::Arc::new(
             codecallnavigator::graph::GraphIndex::new(std::sync::Arc::new(data)).unwrap(),
@@ -500,7 +500,7 @@ fn long_project_titles_keep_toolbar_controls_visible_at_minimum_width() {
     let mut runtime = narrow_runtime(false);
     let title = "long-project-name-".repeat(12);
     let path = format!("/projects/{title}");
-    let mut data = (*runtime.state.graph.as_ref().unwrap().data).clone();
+    let mut data = runtime.state.graph.as_ref().unwrap().data.to_graph_data();
     data.roots = vec![path.clone()];
     runtime.state.graph = Some(std::sync::Arc::new(
         codecallnavigator::graph::GraphIndex::new(std::sync::Arc::new(data)).unwrap(),

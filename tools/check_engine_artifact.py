@@ -8,12 +8,13 @@ import tempfile
 
 from check_engine_reference import ROOT, prepare
 from corpus_boundaries import configure
+from graph_bundle import semantic_bytes
 
 
 def analyze(executable, project, targets):
     subprocess.run([str(executable), 'analyze', '--project', str(project), *targets],
                    check=True, stdout=subprocess.DEVNULL)
-    return (project / '.codecallnavigator/graph.json').read_bytes()
+    return semantic_bytes(project / '.codecallnavigator/graph.json')
 
 
 def targets_for(workload, workloads, project):

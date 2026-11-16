@@ -24,6 +24,34 @@ fn next_reply(driver: &Driver, deadline: Instant) -> Reply {
         std::thread::yield_now();
     }
 }
+
+#[test]
+fn no_graph_entry_opens_project_picker_before_comparison_controls() {
+    let (mut driver, _project, _output, _) = driver();
+    let mut runtime = Runtime::new(
+        State::new(),
+        crate::view::view,
+        (1050.0, 680.0),
+        rune::Env::new(true, 1.0),
+    );
+    runtime.frame(0.0);
+    assert!(runtime.find("compare-flows").is_none());
+    driver.phase = Phase::Editing(Editor::ProjectPicker);
+    let deadline = Instant::now() + Duration::from_secs(2);
+    while !runtime.state.flow_comparison.controls.visible {
+        assert!(
+            Instant::now() < deadline,
+            "Actual project-picker entry did not open comparison"
+        );
+        driver.advance(&mut runtime);
+        runtime.frame(1.0 / 60.0);
+        std::thread::sleep(Duration::from_millis(2));
+    }
+    assert_eq!(driver.phase, Phase::Editing(Editor::Base));
+    assert!(runtime.find("comparison-base").is_some());
+    assert!(runtime.find("comparison-head").is_some());
+    assert!(runtime.state.graph.is_none());
+}
 #[test]
 fn terminal_write_failure_is_terminal_instead_of_retrying_a_finished_worker() {
     let (mut driver, _project, output, mut runtime) = driver();

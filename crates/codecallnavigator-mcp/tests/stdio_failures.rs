@@ -18,7 +18,7 @@ import json, os, sys, time
 from pathlib import Path
 mode={mode:?}
 if sys.argv[1]=='capabilities':
-    print(json.dumps({{'query_version':99 if mode=='incompatible' else 1,'generation_binding':True,'comparison':{{'version':1,'snapshot_binding':True}},'operations':['compare','status','search','symbol','source','explorer','selection','neighbors','flow']}}))
+    print(json.dumps({{'query_version':99 if mode=='incompatible' else 2,'generation_binding':True,'comparison':{{'version':1,'snapshot_binding':True}},'operations':['compare','status','search','symbol','source','explorer','selection','neighbors','flow']}}))
 elif mode=='hung':
     marker=Path(__file__).with_suffix('.pid')
     pending=marker.with_suffix('.pid.tmp')
@@ -28,8 +28,8 @@ elif mode=='hung':
 else:
     json.loads(sys.stdin.read())
     if mode=='malformed': print('{{broken')
-    elif mode=='wrong_version': print(json.dumps({{'version':2,'generation':None,'freshness':None,'result':{{}},'error':None}}))
-    else: print(json.dumps({{'version':1,'result':{{}},'error':None}}))
+    elif mode=='wrong_version': print(json.dumps({{'version':999,'generation':None,'freshness':None,'result':{{}},'error':None}}))
+    else: print(json.dumps({{'version':2,'result':{{}},'error':None}}))
 "#)).unwrap();
     fs::set_permissions(&executable, fs::Permissions::from_mode(0o755)).unwrap();
     executable

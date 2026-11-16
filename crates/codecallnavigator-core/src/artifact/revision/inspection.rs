@@ -59,7 +59,7 @@ impl Inspection {
 /// Read once, validate strictly, and retain provenance even when saved facts are incompatible.
 pub fn inspect(project: &Path, revision: &str) -> Result<Inspection> {
     let read = super::read_snapshot(project, revision)?;
-    let decoded = Artifact::from_bytes(&read.bytes);
+    let decoded = read.decoded;
     let schema = match &decoded {
         Ok(artifact) => ObservedSchema::Known(artifact.schema.clone()),
         Err(_) => observed_schema(&read.bytes),

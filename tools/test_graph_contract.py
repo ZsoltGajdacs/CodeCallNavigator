@@ -6,12 +6,13 @@ import unittest
 from jsonschema import ValidationError
 
 from check_graph_contract import ROOT, consume, validator
+from graph_bundle import load
 
 
 class GraphContract(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.artifact = json.loads((ROOT / 'fixtures/.codecallnavigator/graph.json').read_bytes())
+        cls.artifact = load(ROOT / 'fixtures/.codecallnavigator/graph.json')
         cls.validator = validator()
 
     def mutated(self):

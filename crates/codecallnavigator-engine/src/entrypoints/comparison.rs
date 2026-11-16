@@ -65,7 +65,7 @@ fn execute(
         "returned":0,"total":total,"more":false,"next_offset":null
     });
     let response = Response {
-        version: 1,
+        version: codecallnavigator_core::query::VERSION,
         generation: Some(after.endpoint.digest),
         freshness,
         result: Some(result),

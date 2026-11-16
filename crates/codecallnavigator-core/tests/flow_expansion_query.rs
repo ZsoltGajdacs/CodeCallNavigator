@@ -4,7 +4,7 @@ use serde_json::json;
 
 #[test]
 fn expansion_wire_is_explicit_versioned_and_preserves_default_flow() {
-    let wire = json!({"version":1,"project":"/snapshot","expected_generation":"saved-digest","query":{"kind":"flow_expansion","expansion_version":1,"symbol":"root","selections":[],"limits":{"depth":0}}});
+    let wire = json!({"version":query::VERSION,"project":"/snapshot","expected_generation":"saved-digest","query":{"kind":"flow_expansion","expansion_version":1,"symbol":"root","selections":[],"limits":{"depth":0}}});
     let request: Request = serde_json::from_value(wire).unwrap();
     let encoded = serde_json::to_value(request).unwrap();
     assert_eq!(encoded["query"]["kind"], "flow_expansion");

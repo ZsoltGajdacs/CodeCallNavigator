@@ -36,17 +36,24 @@ fn repository(root: &Path) -> artifact::Artifact {
             .unwrap();
     fs::create_dir(root.join(".codecallnavigator")).unwrap();
     save(root, &graph);
-    git(root, &["add", ".codecallnavigator/graph.json"]);
+    git(
+        root,
+        &[
+            "add",
+            ".codecallnavigator/graph.json",
+            ".codecallnavigator/objects",
+        ],
+    );
     git(root, &["commit", "-qm", "baseline"]);
     graph
 }
 
 fn save(root: &Path, graph: &artifact::Artifact) {
-    fs::write(root.join(artifact::GRAPH_PATH), graph.bytes().unwrap()).unwrap();
+    artifact::publish(root, graph, &std::sync::atomic::AtomicBool::new(false)).unwrap();
 }
 
 fn query(root: &Path, operation: Value) -> Value {
-    let request = json!({"version":1,"project":root,"query":operation});
+    let request = json!({"version":2,"project":root,"query":operation});
     let mut child = Command::new(env!("CARGO_BIN_EXE_codecallnavigator-engine"))
         .arg("query")
         .stdin(Stdio::piped())
@@ -55,7 +62,9 @@ fn query(root: &Path, operation: Value) -> Value {
         .unwrap();
     write!(child.stdin.take().unwrap(), "{request}").unwrap();
     let output = child.wait_with_output().unwrap();
-    serde_json::from_slice(&output.stdout).unwrap()
+    let response: Value = serde_json::from_slice(&output.stdout).unwrap();
+    assert_eq!(response["version"], codecallnavigator_core::query::VERSION);
+    response
 }
 
 #[test]
@@ -134,7 +143,11 @@ fn committed_refs_and_nested_paths_are_bound_in_sessions() {
     save(&nested, &graph);
     git(
         &root,
-        &["add", "nested project/.codecallnavigator/graph.json"],
+        &[
+            "add",
+            "nested project/.codecallnavigator/graph.json",
+            "nested project/.codecallnavigator/objects",
+        ],
     );
     git(&root, &["commit", "-qm", "nested graph"]);
     git(&root, &["tag", "baseline-tag"]);
@@ -159,7 +172,7 @@ fn committed_refs_and_nested_paths_are_bound_in_sessions() {
         writeln!(
             input,
             "{}",
-            json!({"version":1,"project":nested,"query":operation})
+            json!({"version":2,"project":nested,"query":operation})
         )
         .unwrap();
         input.flush().unwrap();
@@ -253,15 +266,20 @@ fn strict_comparison_reports_invalid_base_before_reading_unavailable_head() {
         serde_json::to_vec(&graph).unwrap(),
     )
     .unwrap();
-    git(&root, &["add", artifact::GRAPH_PATH]);
+    git(
+        &root,
+        &["add", artifact::GRAPH_PATH, ".codecallnavigator/objects"],
+    );
     git(&root, &["commit", "-qm", "incompatible saved graph"]);
     let response = query(
         &root,
         json!({"kind":"compare","base":"HEAD","head":"missing-ref"}),
     );
     assert_eq!(response["error"]["code"], "invalid_graph");
-    assert_eq!(
-        response["error"]["message"],
-        "Unsupported graph artifact schema: incompatible.graph.v99"
+    assert!(
+        response["error"]["message"]
+            .as_str()
+            .unwrap()
+            .starts_with("Invalid graph manifest; reanalyze this project")
     );
 }

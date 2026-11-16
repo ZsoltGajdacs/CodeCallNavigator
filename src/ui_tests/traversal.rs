@@ -145,7 +145,7 @@ fn classes(runtime: &mut Runtime<State>) {
 
 fn grouped_runtime(grouping: crate::projection::Grouping) -> Runtime<State> {
     let mut runtime = runtime();
-    let mut data = runtime.state.graph.as_ref().unwrap().data.as_ref().clone();
+    let mut data = runtime.state.graph.as_ref().unwrap().data.to_graph_data();
     for node in &mut data.nodes {
         node.namespace = format!("sample.{}", node.container.to_lowercase());
         node.file = format!(
@@ -425,7 +425,7 @@ fn visibility_runtime() -> Runtime<State> {
     use codecallnavigator::{model::Visibility, store::SqliteStore};
     use std::sync::atomic::AtomicBool;
     let mut runtime = runtime();
-    let mut data = (*runtime.state.graph.as_ref().unwrap().data).clone();
+    let mut data = runtime.state.graph.as_ref().unwrap().data.to_graph_data();
     for node in &mut data.nodes {
         node.language = "java".into();
         node.container = format!("sample.{}", node.container);
@@ -515,7 +515,7 @@ fn legacy_focus_restores_and_filter_removal_returns_to_overview() {
     frames(&mut runtime, 3);
     assert_eq!(runtime.state.graph_view.focus_keys, ["m2"]);
     centered(&runtime, 2);
-    let mut data = runtime.state.graph.as_ref().unwrap().data.as_ref().clone();
+    let mut data = runtime.state.graph.as_ref().unwrap().data.to_graph_data();
     data.nodes[2].is_generated = true;
     runtime.state.graph = Some(Arc::new(GraphIndex::new(Arc::new(data)).unwrap()));
     runtime.state.changed();
@@ -646,7 +646,7 @@ fn restored_layer_focus_survives_missing_assignments_then_validates_membership()
     assert_eq!(runtime.state.nav.camera.zoom, zoom);
     centered(&runtime, 2);
 
-    let mut data = runtime.state.graph.as_ref().unwrap().data.as_ref().clone();
+    let mut data = runtime.state.graph.as_ref().unwrap().data.to_graph_data();
     data.nodes[2].is_generated = true;
     runtime.state.graph = Some(Arc::new(GraphIndex::new(Arc::new(data)).unwrap()));
     runtime.state.changed();

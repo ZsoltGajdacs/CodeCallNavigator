@@ -20,7 +20,7 @@ fn query(root: &Path, generation: Option<&str>, operation: Value) -> Value {
         .spawn()
         .unwrap();
     let request =
-        json!({"version":1,"project":root,"expected_generation":generation,"query":operation});
+        json!({"version":2,"project":root,"expected_generation":generation,"query":operation});
     write!(child.stdin.take().unwrap(), "{request}").unwrap();
     let output = child.wait_with_output().unwrap();
     serde_json::from_slice(&output.stdout).unwrap()
@@ -60,12 +60,9 @@ fn save(root: &Path, count: u32) -> String {
         }),
         ..Default::default()
     };
-    let bytes = artifact::canonical(&graph, &[("repo".into(), root.into())])
-        .unwrap()
-        .bytes()
-        .unwrap();
-    fs::create_dir(root.join(".codecallnavigator")).unwrap();
-    fs::write(root.join(artifact::GRAPH_PATH), &bytes).unwrap();
+    let saved = artifact::canonical(&graph, &[("repo".into(), root.into())]).unwrap();
+    artifact::publish(root, &saved, &std::sync::atomic::AtomicBool::new(false)).unwrap();
+    let bytes = fs::read(root.join(artifact::GRAPH_PATH)).unwrap();
     blake3::hash(&bytes).to_hex().to_string()
 }
 
@@ -203,8 +200,7 @@ fn flow_rejects_source_ranges_outside_the_analyzed_snapshot() {
     let temp = tempfile::tempdir().unwrap();
     let root = temp.path();
     save(root, 3);
-    let path = root.join(artifact::GRAPH_PATH);
-    let mut saved: Value = serde_json::from_slice(&fs::read(&path).unwrap()).unwrap();
+    let mut saved: Value = serde_json::to_value(artifact::load(root).unwrap()).unwrap();
     let symbol = saved["graph"]["nodes"][0]["id"]
         .as_str()
         .unwrap()
@@ -225,7 +221,12 @@ fn flow_rejects_source_ranges_outside_the_analyzed_snapshot() {
         }],
     })
     .unwrap();
-    fs::write(path, serde_json::to_vec(&saved).unwrap()).unwrap();
+    artifact::publish(
+        root,
+        &artifact::Artifact::from_bytes(&serde_json::to_vec(&saved).unwrap()).unwrap(),
+        &std::sync::atomic::AtomicBool::new(false),
+    )
+    .unwrap();
     let response = query(root, None, json!({"kind":"flow","symbol":symbol}));
     assert_eq!(response["error"]["code"], "flow_unavailable", "{response}");
 }
@@ -246,7 +247,7 @@ fn architecture_session_cache_distinguishes_configuration_roots() {
     let mut input = child.stdin.take().unwrap();
     let mut output = BufReader::new(child.stdout.take().unwrap());
     let mut exchange = |configuration_root: &Path| {
-        let request = json!({"version":1,"project":root,"expected_generation":generation,"query":{"kind":"architecture","selection":"Spring","configuration_root":configuration_root}});
+        let request = json!({"version":2,"project":root,"expected_generation":generation,"query":{"kind":"architecture","selection":"Spring","configuration_root":configuration_root}});
         writeln!(input, "{request}").unwrap();
         input.flush().unwrap();
         let mut line = String::new();
@@ -310,10 +311,14 @@ fn global_diagnostics_are_bounded_with_explicit_omissions() {
     let project = tempfile::tempdir().unwrap();
     let root = project.path();
     save(root, 3);
-    let path = root.join(artifact::GRAPH_PATH);
-    let mut saved: Value = serde_json::from_slice(&fs::read(&path).unwrap()).unwrap();
+    let mut saved: Value = serde_json::to_value(artifact::load(root).unwrap()).unwrap();
     saved["graph"]["diagnostics"] = json!(vec!["🦀".repeat(1000); 100]);
-    fs::write(&path, serde_json::to_vec(&saved).unwrap()).unwrap();
+    artifact::publish(
+        root,
+        &artifact::Artifact::from_bytes(&serde_json::to_vec(&saved).unwrap()).unwrap(),
+        &std::sync::atomic::AtomicBool::new(false),
+    )
+    .unwrap();
     let status = query(root, None, json!({"kind":"status"}));
     assert!(serde_json::to_vec(&status).unwrap().len() < 40000);
     let characters: usize = status["result"]["diagnostics"]
@@ -346,13 +351,12 @@ fn query_freshness_is_bounded_while_verify_retains_the_complete_report() {
         fs::write(path, "before").unwrap();
     }
     let inputs = fingerprint::capture_excluding(paths.clone(), &[]).unwrap();
-    let graph_path = root.join(artifact::GRAPH_PATH);
-    let mut saved = artifact::Artifact::from_bytes(&fs::read(&graph_path).unwrap()).unwrap();
+    let mut saved = artifact::load(root).unwrap();
     saved.graph["analysis"] = serde_json::to_value(
         provenance::build(&inputs, &[], "", &[("repo".into(), root.into())]).unwrap(),
     )
     .unwrap();
-    fs::write(&graph_path, saved.bytes().unwrap()).unwrap();
+    artifact::publish(root, &saved, &std::sync::atomic::AtomicBool::new(false)).unwrap();
     for path in &paths {
         fs::write(path, "after").unwrap();
     }
@@ -386,8 +390,7 @@ fn snapshot_preserves_recorded_analyzer_versions() {
     let project = tempfile::tempdir().unwrap();
     let root = project.path();
     save(root, 3);
-    let path = root.join(artifact::GRAPH_PATH);
-    let mut saved = artifact::Artifact::from_bytes(&fs::read(&path).unwrap()).unwrap();
+    let mut saved = artifact::load(root).unwrap();
     saved.graph["analysis"] = serde_json::to_value(
         provenance::build(
             &[],
@@ -398,7 +401,7 @@ fn snapshot_preserves_recorded_analyzer_versions() {
         .unwrap(),
     )
     .unwrap();
-    fs::write(path, saved.bytes().unwrap()).unwrap();
+    artifact::publish(root, &saved, &std::sync::atomic::AtomicBool::new(false)).unwrap();
     let snapshot = query(root, None, json!({"kind":"snapshot"}));
     let versions: Value =
         serde_json::from_str(snapshot["result"]["engine_versions"].as_str().unwrap()).unwrap();

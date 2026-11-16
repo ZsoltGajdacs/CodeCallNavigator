@@ -198,6 +198,48 @@
       "purpose": "reports field changes and distinguishes missing from null"
     },
     {
+      "id": "codecallnavigator-core/lib:codecallnavigator_core::artifact::flow::tests::borrowed_and_saved_views_produce_identical_flow_answers",
+      "runner": "rust",
+      "file": "crates/codecallnavigator-core/src/artifact/flow.rs",
+      "test_name": "artifact::flow::tests::borrowed_and_saved_views_produce_identical_flow_answers",
+      "ignored": false,
+      "package": "codecallnavigator-core",
+      "target_kind": "lib",
+      "target": "codecallnavigator_core",
+      "component": "core",
+      "category": "unit",
+      "requirements": [],
+      "purpose": "borrowed and saved views produce identical flow answers"
+    },
+    {
+      "id": "codecallnavigator-core/lib:codecallnavigator_core::artifact::flow::tests::duplicate_function_and_mismatched_owner_remain_unavailable",
+      "runner": "rust",
+      "file": "crates/codecallnavigator-core/src/artifact/flow.rs",
+      "test_name": "artifact::flow::tests::duplicate_function_and_mismatched_owner_remain_unavailable",
+      "ignored": false,
+      "package": "codecallnavigator-core",
+      "target_kind": "lib",
+      "target": "codecallnavigator_core",
+      "component": "core",
+      "category": "unit",
+      "requirements": [],
+      "purpose": "duplicate function and mismatched owner remain unavailable"
+    },
+    {
+      "id": "codecallnavigator-core/lib:codecallnavigator_core::artifact::flow::tests::saved_source_absence_is_rejected_before_defaults_erase_it",
+      "runner": "rust",
+      "file": "crates/codecallnavigator-core/src/artifact/flow.rs",
+      "test_name": "artifact::flow::tests::saved_source_absence_is_rejected_before_defaults_erase_it",
+      "ignored": false,
+      "package": "codecallnavigator-core",
+      "target_kind": "lib",
+      "target": "codecallnavigator_core",
+      "component": "core",
+      "category": "unit",
+      "requirements": [],
+      "purpose": "saved source absence is rejected before defaults erase it"
+    },
+    {
       "id": "codecallnavigator-core/lib:codecallnavigator_core::artifact::provenance::selection_tests::canonical_selection_normalizes_only_owned_v1_and_preserves_extension_order",
       "runner": "rust",
       "file": "crates/codecallnavigator-core/src/artifact/provenance_selection_tests.rs",
@@ -498,6 +540,104 @@
         "git"
       ],
       "purpose": "working paths only fall back for nonrepositories"
+    },
+    {
+      "id": "codecallnavigator-core/lib:codecallnavigator_core::artifact::storage::publication::tests::cancellation_after_preparation_preserves_active_manifest",
+      "runner": "rust",
+      "file": "crates/codecallnavigator-core/src/artifact/storage/publication.rs",
+      "test_name": "artifact::storage::publication::tests::cancellation_after_preparation_preserves_active_manifest",
+      "ignored": false,
+      "package": "codecallnavigator-core",
+      "target_kind": "lib",
+      "target": "codecallnavigator_core",
+      "component": "core",
+      "category": "integration",
+      "requirements": [],
+      "purpose": "Cancellation after flushed manifest preparation preserves the active generation; real file persistence cannot be proven in memory"
+    },
+    {
+      "id": "codecallnavigator-core/lib:codecallnavigator_core::artifact::storage::tests::cancelled_publication_preserves_exact_manifest_and_existing_objects",
+      "runner": "rust",
+      "file": "crates/codecallnavigator-core/src/artifact/storage/tests.rs",
+      "test_name": "artifact::storage::tests::cancelled_publication_preserves_exact_manifest_and_existing_objects",
+      "ignored": false,
+      "package": "codecallnavigator-core",
+      "target_kind": "lib",
+      "target": "codecallnavigator_core",
+      "component": "core",
+      "category": "integration",
+      "requirements": [],
+      "purpose": "cancelled publication preserves exact manifest and existing objects; real filesystem/process boundary cannot be proven in memory"
+    },
+    {
+      "id": "codecallnavigator-core/lib:codecallnavigator_core::artifact::storage::tests::captured_handles_survive_pruning_and_only_current_and_previous_parts_remain",
+      "runner": "rust",
+      "file": "crates/codecallnavigator-core/src/artifact/storage/tests.rs",
+      "test_name": "artifact::storage::tests::captured_handles_survive_pruning_and_only_current_and_previous_parts_remain",
+      "ignored": false,
+      "package": "codecallnavigator-core",
+      "target_kind": "lib",
+      "target": "codecallnavigator_core",
+      "component": "core",
+      "category": "integration",
+      "requirements": [],
+      "purpose": "captured handles survive pruning and only current and previous parts remain; real filesystem/process boundary cannot be proven in memory"
+    },
+    {
+      "id": "codecallnavigator-core/lib:codecallnavigator_core::artifact::storage::tests::compressed_publication_is_deterministic_and_roundtrips_complete_facts",
+      "runner": "rust",
+      "file": "crates/codecallnavigator-core/src/artifact/storage/tests.rs",
+      "test_name": "artifact::storage::tests::compressed_publication_is_deterministic_and_roundtrips_complete_facts",
+      "ignored": false,
+      "package": "codecallnavigator-core",
+      "target_kind": "lib",
+      "target": "codecallnavigator_core",
+      "component": "core",
+      "category": "integration",
+      "requirements": [],
+      "purpose": "compressed publication is deterministic and roundtrips complete facts; real filesystem/process boundary cannot be proven in memory"
+    },
+    {
+      "id": "codecallnavigator-core/lib:codecallnavigator_core::artifact::storage::tests::corruption_lengths_and_legacy_graphs_are_rejected",
+      "runner": "rust",
+      "file": "crates/codecallnavigator-core/src/artifact/storage/tests.rs",
+      "test_name": "artifact::storage::tests::corruption_lengths_and_legacy_graphs_are_rejected",
+      "ignored": false,
+      "package": "codecallnavigator-core",
+      "target_kind": "lib",
+      "target": "codecallnavigator_core",
+      "component": "core",
+      "category": "integration",
+      "requirements": [],
+      "purpose": "corruption lengths and legacy graphs are rejected; real filesystem/process boundary cannot be proven in memory"
+    },
+    {
+      "id": "codecallnavigator-core/lib:codecallnavigator_core::artifact::storage::tests::failed_flow_object_does_not_disable_structural_navigation",
+      "runner": "rust",
+      "file": "crates/codecallnavigator-core/src/artifact/storage/tests.rs",
+      "test_name": "artifact::storage::tests::failed_flow_object_does_not_disable_structural_navigation",
+      "ignored": false,
+      "package": "codecallnavigator-core",
+      "target_kind": "lib",
+      "target": "codecallnavigator_core",
+      "component": "core",
+      "category": "integration",
+      "requirements": [],
+      "purpose": "failed flow object does not disable structural navigation; real filesystem/process boundary cannot be proven in memory"
+    },
+    {
+      "id": "codecallnavigator-core/lib:codecallnavigator_core::artifact::storage::tests::linked_flow_objects_fail_without_reading_outside_the_artifact_directory",
+      "runner": "rust",
+      "file": "crates/codecallnavigator-core/src/artifact/storage/tests.rs",
+      "test_name": "artifact::storage::tests::linked_flow_objects_fail_without_reading_outside_the_artifact_directory",
+      "ignored": false,
+      "package": "codecallnavigator-core",
+      "target_kind": "lib",
+      "target": "codecallnavigator_core",
+      "component": "core",
+      "category": "integration",
+      "requirements": [],
+      "purpose": "linked flow objects fail without reading outside the artifact directory; real filesystem/process boundary cannot be proven in memory"
     },
     {
       "id": "codecallnavigator-core/lib:codecallnavigator_core::artifact::tests::cancellation_preserves_the_only_project_artifact_and_configuration",
@@ -1412,6 +1552,34 @@
       "purpose": "independent jobs restore nested scopes and collect worker measurements"
     },
     {
+      "id": "codecallnavigator-core/lib:codecallnavigator_core::model::structure_tests::structural_snapshot_excludes_function_bodies",
+      "runner": "rust",
+      "file": "crates/codecallnavigator-core/src/model.rs",
+      "test_name": "model::structure_tests::structural_snapshot_excludes_function_bodies",
+      "ignored": false,
+      "package": "codecallnavigator-core",
+      "target_kind": "lib",
+      "target": "codecallnavigator_core",
+      "component": "core",
+      "category": "unit",
+      "requirements": [],
+      "purpose": "structural snapshot excludes function bodies"
+    },
+    {
+      "id": "codecallnavigator-core/lib:codecallnavigator_core::model::structure_tests::structural_snapshot_rejects_embedded_function_bodies",
+      "runner": "rust",
+      "file": "crates/codecallnavigator-core/src/model.rs",
+      "test_name": "model::structure_tests::structural_snapshot_rejects_embedded_function_bodies",
+      "ignored": false,
+      "package": "codecallnavigator-core",
+      "target_kind": "lib",
+      "target": "codecallnavigator_core",
+      "component": "core",
+      "category": "unit",
+      "requirements": [],
+      "purpose": "structural snapshot rejects embedded function bodies"
+    },
+    {
       "id": "codecallnavigator-core/lib:codecallnavigator_core::process_ownership::tests::process_identity_mismatch_never_authorizes_a_signal",
       "runner": "rust",
       "file": "crates/codecallnavigator-core/src/process_ownership.rs",
@@ -1692,6 +1860,20 @@
       "purpose": "consumed duplicate nodes functions and source owners are not first matches"
     },
     {
+      "id": "codecallnavigator-core/test:artifact_flows::malformed_inventory_is_rejected_before_any_flow_is_exposed",
+      "runner": "rust",
+      "file": "crates/codecallnavigator-core/tests/artifact_flows.rs",
+      "test_name": "malformed_inventory_is_rejected_before_any_flow_is_exposed",
+      "ignored": false,
+      "package": "codecallnavigator-core",
+      "target_kind": "test",
+      "target": "artifact_flows",
+      "component": "core",
+      "category": "unit",
+      "requirements": [],
+      "purpose": "malformed inventory is rejected before any flow is exposed"
+    },
+    {
       "id": "codecallnavigator-core/test:artifact_flows::missing_membership_is_distinct_from_unavailable_saved_facts",
       "runner": "rust",
       "file": "crates/codecallnavigator-core/tests/artifact_flows.rs",
@@ -1704,20 +1886,6 @@
       "category": "unit",
       "requirements": [],
       "purpose": "missing membership is distinct from unavailable saved facts"
-    },
-    {
-      "id": "codecallnavigator-core/test:artifact_flows::only_selected_ir_is_deserialized_and_source_is_not_read_from_disk",
-      "runner": "rust",
-      "file": "crates/codecallnavigator-core/tests/artifact_flows.rs",
-      "test_name": "only_selected_ir_is_deserialized_and_source_is_not_read_from_disk",
-      "ignored": false,
-      "package": "codecallnavigator-core",
-      "target_kind": "test",
-      "target": "artifact_flows",
-      "component": "core",
-      "category": "unit",
-      "requirements": [],
-      "purpose": "only selected ir is deserialized and source is not read from disk"
     },
     {
       "id": "codecallnavigator-core/test:artifact_flows::ordinary_flow_response_and_error_are_preserved",
@@ -4002,22 +4170,6 @@
       "purpose": "pruning supporting declarations retains surviving edge and source evidence"
     },
     {
-      "id": "codecallnavigator-core/test:revision_inspection::incompatible_schema_or_inventory_retains_strict_failure_and_bound_metadata",
-      "runner": "rust",
-      "file": "crates/codecallnavigator-core/tests/revision_inspection.rs",
-      "test_name": "incompatible_schema_or_inventory_retains_strict_failure_and_bound_metadata",
-      "ignored": false,
-      "package": "codecallnavigator-core",
-      "target_kind": "test",
-      "target": "revision_inspection",
-      "component": "core",
-      "category": "integration",
-      "requirements": [
-        "git"
-      ],
-      "purpose": "incompatible schema or inventory retains strict failure and bound metadata"
-    },
-    {
       "id": "codecallnavigator-core/test:revision_inspection::malformed_json_has_explicit_unknown_schema_and_original_error",
       "runner": "rust",
       "file": "crates/codecallnavigator-core/tests/revision_inspection.rs",
@@ -4050,22 +4202,6 @@
       "purpose": "moved ref with identical blob changes binding without checkout or writes"
     },
     {
-      "id": "codecallnavigator-core/test:revision_inspection::older_valid_artifact_without_flow_is_available_without_fabricated_inventory",
-      "runner": "rust",
-      "file": "crates/codecallnavigator-core/tests/revision_inspection.rs",
-      "test_name": "older_valid_artifact_without_flow_is_available_without_fabricated_inventory",
-      "ignored": false,
-      "package": "codecallnavigator-core",
-      "target_kind": "test",
-      "target": "revision_inspection",
-      "component": "core",
-      "category": "integration",
-      "requirements": [
-        "git"
-      ],
-      "purpose": "older valid artifact without flow is available without fabricated inventory"
-    },
-    {
       "id": "codecallnavigator-core/test:revision_inspection::read_failures_keep_legacy_codes_and_messages",
       "runner": "rust",
       "file": "crates/codecallnavigator-core/tests/revision_inspection.rs",
@@ -4080,6 +4216,34 @@
         "git"
       ],
       "purpose": "read failures keep legacy codes and messages"
+    },
+    {
+      "id": "codecallnavigator-core/test:revision_inspection::unsupported_monolithic_schema_or_inventory_retains_failure_and_bound_metadata",
+      "runner": "rust",
+      "file": "crates/codecallnavigator-core/tests/revision_inspection.rs",
+      "test_name": "unsupported_monolithic_schema_or_inventory_retains_failure_and_bound_metadata",
+      "ignored": false,
+      "package": "codecallnavigator-core",
+      "target_kind": "test",
+      "target": "revision_inspection",
+      "component": "core",
+      "category": "unit",
+      "requirements": [],
+      "purpose": "unsupported monolithic schema or inventory retains failure and bound metadata"
+    },
+    {
+      "id": "codecallnavigator-core/test:revision_inspection::valid_generation_without_flows_is_available_without_fabricated_inventory",
+      "runner": "rust",
+      "file": "crates/codecallnavigator-core/tests/revision_inspection.rs",
+      "test_name": "valid_generation_without_flows_is_available_without_fabricated_inventory",
+      "ignored": false,
+      "package": "codecallnavigator-core",
+      "target_kind": "test",
+      "target": "revision_inspection",
+      "component": "core",
+      "category": "unit",
+      "requirements": [],
+      "purpose": "valid generation without flows is available without fabricated inventory"
     },
     {
       "id": "codecallnavigator-core/test:revision_inspection::valid_inspection_and_legacy_endpoint_have_identical_serialization",
@@ -6908,6 +7072,48 @@
       "purpose": "explorer includes hidden entries and does not follow symlinks"
     },
     {
+      "id": "codecallnavigator-engine/test:query::flow_resources::corrupt_flows_preserve_structure_and_recover_in_the_same_session",
+      "runner": "rust",
+      "file": "crates/codecallnavigator-engine/tests/query/flow_resources.rs",
+      "test_name": "flow_resources::corrupt_flows_preserve_structure_and_recover_in_the_same_session",
+      "ignored": false,
+      "package": "codecallnavigator-engine",
+      "target_kind": "test",
+      "target": "query",
+      "component": "engine",
+      "category": "integration",
+      "requirements": [],
+      "purpose": "corrupt flows preserve structure and recover in the same session; real filesystem/process boundary cannot be proven in memory"
+    },
+    {
+      "id": "codecallnavigator-engine/test:query::flow_resources::session_residency_is_explicit_and_structure_stays_lazy",
+      "runner": "rust",
+      "file": "crates/codecallnavigator-engine/tests/query/flow_resources.rs",
+      "test_name": "flow_resources::session_residency_is_explicit_and_structure_stays_lazy",
+      "ignored": false,
+      "package": "codecallnavigator-engine",
+      "target_kind": "test",
+      "target": "query",
+      "component": "engine",
+      "category": "integration",
+      "requirements": [],
+      "purpose": "session residency is explicit and structure stays lazy; real filesystem/process boundary cannot be proven in memory"
+    },
+    {
+      "id": "codecallnavigator-engine/test:query::flow_resources::unload_releases_owned_generation_after_a_new_publication",
+      "runner": "rust",
+      "file": "crates/codecallnavigator-engine/tests/query/flow_resources.rs",
+      "test_name": "flow_resources::unload_releases_owned_generation_after_a_new_publication",
+      "ignored": false,
+      "package": "codecallnavigator-engine",
+      "target_kind": "test",
+      "target": "query",
+      "component": "engine",
+      "category": "integration",
+      "requirements": [],
+      "purpose": "unload releases owned generation after a new publication; real filesystem/process boundary cannot be proven in memory"
+    },
+    {
       "id": "codecallnavigator-engine/test:query::invalid_requests_and_legacy_csharp_flow_unavailability_remain_explicit",
       "runner": "rust",
       "file": "crates/codecallnavigator-engine/tests/query.rs",
@@ -8456,6 +8662,20 @@
       "purpose": "stalled auto coordinator cleanup reaches independently grouped worker"
     },
     {
+      "id": "codecallnavigator/bin:codecallnavigator::engine_client::query_process::tests::release_guard_requires_connection_and_current_activity_revision",
+      "runner": "rust",
+      "file": "src/engine_client/query_process.rs",
+      "test_name": "engine_client::query_process::tests::release_guard_requires_connection_and_current_activity_revision",
+      "ignored": false,
+      "package": "codecallnavigator",
+      "target_kind": "bin",
+      "target": "codecallnavigator",
+      "component": "ui",
+      "category": "unit",
+      "requirements": [],
+      "purpose": "Serialized unload dispatch rejects obsolete UI revision and never connects an unused client."
+    },
+    {
       "id": "codecallnavigator/bin:codecallnavigator::engine_client::query_tests::automatic_capability_absence_preserves_passive_freshness",
       "runner": "rust",
       "file": "src/engine_client/query_tests.rs",
@@ -8552,6 +8772,20 @@
       "category": "integration",
       "requirements": [],
       "purpose": "incompatible capabilities are rejected before query session start"
+    },
+    {
+      "id": "codecallnavigator/bin:codecallnavigator::engine_client::query_tests::releasing_an_unused_connection_does_not_start_the_cli",
+      "runner": "rust",
+      "file": "src/engine_client/query_tests.rs",
+      "test_name": "engine_client::query_tests::releasing_an_unused_connection_does_not_start_the_cli",
+      "ignored": false,
+      "package": "codecallnavigator",
+      "target_kind": "bin",
+      "target": "codecallnavigator",
+      "component": "ui",
+      "category": "unit",
+      "requirements": [],
+      "purpose": "Unused connection release performs no process or filesystem work, even without an executable."
     },
     {
       "id": "codecallnavigator/bin:codecallnavigator::engine_client::query_tests::valid_capability_json_from_failed_process_is_rejected",
@@ -8877,6 +9111,20 @@
         "git"
       ],
       "purpose": "catalog selection waits for the published query before asserting exact identity"
+    },
+    {
+      "id": "codecallnavigator/bin:codecallnavigator::flow_acceptance::comparison::driver::tests::no_graph_entry_opens_project_picker_before_comparison_controls",
+      "runner": "rust",
+      "file": "src/flow_acceptance/comparison/driver/tests.rs",
+      "test_name": "flow_acceptance::comparison::driver::tests::no_graph_entry_opens_project_picker_before_comparison_controls",
+      "ignored": false,
+      "package": "codecallnavigator",
+      "target_kind": "bin",
+      "target": "codecallnavigator",
+      "component": "ui",
+      "category": "integration",
+      "requirements": [],
+      "purpose": "Actual no-graph native driver opens project-picker and comparison controls through production input, preventing stale hidden-control entry."
     },
     {
       "id": "codecallnavigator/bin:codecallnavigator::flow_acceptance::comparison::driver::tests::terminal_write_failure_is_terminal_instead_of_retrying_a_finished_worker",
@@ -9463,6 +9711,34 @@
       "purpose": "a queued request releases its shutdown lease when dropped before start"
     },
     {
+      "id": "codecallnavigator/bin:codecallnavigator::flow_residency::tests::idle_starts_after_last_view_hides_and_releases_once",
+      "runner": "rust",
+      "file": "src/flow_residency.rs",
+      "test_name": "flow_residency::tests::idle_starts_after_last_view_hides_and_releases_once",
+      "ignored": false,
+      "package": "codecallnavigator",
+      "target_kind": "bin",
+      "target": "codecallnavigator",
+      "component": "ui",
+      "category": "unit",
+      "requirements": [],
+      "purpose": "Visible flows remain resident; last hidden view starts exactly one sixty-second deadline."
+    },
+    {
+      "id": "codecallnavigator/bin:codecallnavigator::flow_residency::tests::reopening_cancels_deadline_and_invalidates_queued_release",
+      "runner": "rust",
+      "file": "src/flow_residency.rs",
+      "test_name": "flow_residency::tests::reopening_cancels_deadline_and_invalidates_queued_release",
+      "ignored": false,
+      "package": "codecallnavigator",
+      "target_kind": "bin",
+      "target": "codecallnavigator",
+      "component": "ui",
+      "category": "unit",
+      "requirements": [],
+      "purpose": "Reopening restarts idle grace and invalidates queued release intent."
+    },
+    {
       "id": "codecallnavigator/bin:codecallnavigator::flow_workspace::expansion::policy_tests::a_shared_stopped_marker_requires_a_specific_call_choice_instead_of_guessing",
       "runner": "rust",
       "file": "src/flow_workspace/expansion/policy_tests.rs",
@@ -9685,6 +9961,20 @@
       "category": "unit",
       "purpose": "Drive real synchronous expansion publication and source/session policies with core-produced in-memory flows; reject stale success/error, preserve last result on cancellation, ordinary cache and exact restoration without SDK or process substitutes",
       "requirements": []
+    },
+    {
+      "id": "codecallnavigator/bin:codecallnavigator::flow_workspace::tests::idle_release_drops_cached_charts_but_preserves_history_navigation",
+      "runner": "rust",
+      "file": "src/flow_workspace/tests.rs",
+      "test_name": "flow_workspace::tests::idle_release_drops_cached_charts_but_preserves_history_navigation",
+      "ignored": false,
+      "package": "codecallnavigator",
+      "target_kind": "bin",
+      "target": "codecallnavigator",
+      "component": "ui",
+      "category": "unit",
+      "requirements": [],
+      "purpose": "Idle release drops chart owners while retaining lightweight navigation."
     },
     {
       "id": "codecallnavigator/bin:codecallnavigator::flow_workspace::tests::late_error_results_cannot_replace_newer_serial_epoch_or_symbol",

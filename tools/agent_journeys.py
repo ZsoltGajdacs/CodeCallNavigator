@@ -97,8 +97,8 @@ def edit_and_refresh(client, root, generation, symbol):
 
 def protocol(client, root):
     capabilities = json.loads(client.command('capabilities', ['capabilities']))
-    require(capabilities.get('query_version') == 1 and capabilities.get('generation_binding'),
-            'CLI must support query contract version 1 and generation binding')
+    require(capabilities.get('query_version') == 2 and capabilities.get('generation_binding'),
+            'CLI must support query contract version 2 and generation binding')
     client.query('missing-graph', {'kind': 'status'}, error='graph_missing')
     require(not (root / '.codecallnavigator/graph.json').exists(),
             'Status must not create a missing graph')

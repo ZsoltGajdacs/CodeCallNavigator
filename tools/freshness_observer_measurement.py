@@ -17,7 +17,7 @@ from freshness_measurement import ProcessMeasurement, inventory_owned, kill_owne
 
 
 def request(project):
-    return {"version": 1, "project": str(project.root), "roots": project.roots,
+    return {"version": 2, "project": str(project.root), "roots": project.roots,
             "query": {"kind": "freshness", "observation_version": 1}}
 
 

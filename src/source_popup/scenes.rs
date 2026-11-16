@@ -5,7 +5,7 @@ use std::sync::Arc;
 
 pub fn source(state: &mut State) {
     crate::scenes::install(state);
-    let mut data = (*state.graph.as_ref().unwrap().data).clone();
+    let mut data = state.graph.as_ref().unwrap().data.to_graph_data();
     let path = concat!(
         env!("CARGO_MANIFEST_DIR"),
         "/tools/java-bytecode/src/main/java/codecallnavigator/bytecode/SourceInventory.java"
@@ -22,7 +22,7 @@ pub fn source(state: &mut State) {
 pub fn files(state: &mut State) {
     source(state);
     let graph = state.graph.as_ref().unwrap();
-    let mut data = (*graph.data).clone();
+    let mut data = graph.data.to_graph_data();
     let folder = std::path::Path::new(&data.nodes[0].file).parent().unwrap();
     let mut paths: Vec<_> = std::fs::read_dir(folder)
         .unwrap()

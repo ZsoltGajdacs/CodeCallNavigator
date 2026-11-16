@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Verify C# flow ingestion through production engine analysis and query processes."""
+from graph_bundle import load as load_bundle, publish_fixture, capture, restore
 import argparse
 from dataclasses import dataclass
 import hashlib
@@ -70,7 +71,7 @@ class Client:
         return result
 
     def query(self, root, operation, generation=None, succeeds=True):
-        request = {"version": 1, "project": str(root), "query": operation}
+        request = {"version": 2, "project": str(root), "query": operation}
         if generation is not None:
             request["expected_generation"] = generation
         result = self.command(["query"], root, request, succeeds)
@@ -120,7 +121,7 @@ def graph_parity(client, fixture, work):
     expected_native = rebase_expected(fixture["native_projection"], Path(fixture["root"]), paths.root)
     require(projection(native) == expected_native, f"Native graph changed for {fixture['name']}")
     client.analyze(paths.root, paths.project)
-    artifact = json.loads((paths.root / GRAPH).read_text())
+    artifact = load_bundle(paths.root / GRAPH)
     require(projection(artifact["graph"]) == fixture["canonical_projection"],
             f"Canonical graph changed for {fixture['name']}")
     require(paths.source.read_bytes() == paths.raw, "Analysis changed fixture source")
@@ -200,16 +201,17 @@ def cached_after_source_changes(client, fixture, reply):
 
 def historical_guidance(client, root, fixture, symbol):
     path = root / GRAPH
-    current = path.read_bytes()
+    current = capture(path)
     try:
-        path.write_text(json.dumps(fixture["artifact"]) + "\n")
+        artifact = {**fixture["artifact"], "schema": "codecallnavigator.graph.v2"}
+        publish_fixture(path, artifact)
         client.query(root, {"kind": "status"})
         unavailable = client.query(root, {"kind": "flow", "symbol": symbol}, succeeds=False)
-        require(unavailable["error"]["code"] == "flow_unavailable", "Old graph must remain graph-queryable")
-        require("refresh" in unavailable["error"]["message"].lower(), "Old graph lacks refresh guidance")
+        require(unavailable["error"]["code"] == "flow_unavailable", "Absent inventory must preserve structural queries")
+        require("refresh" in unavailable["error"]["message"].lower(), "Absent inventory lacks refresh guidance")
     finally:
-        path.write_bytes(current)
-    return {"old_graph_readable": True, "missing_inventory_refresh_guidance": True}
+        restore(path, current)
+    return {"structure_without_inventory_readable": True, "missing_inventory_refresh_guidance": True}
 
 
 def failed_source_refresh(client, fixture):

@@ -3,7 +3,7 @@ id: doc-11
 title: Desktop query architecture and lifecycle
 type: guide
 created_date: '2026-11-16T07:06:00Z'
-updated_date: '2026-11-16T07:06:00Z'
+updated_date: '2026-11-16T12:39:00Z'
 ---
 # Desktop query architecture and lifecycle
 
@@ -183,3 +183,41 @@ retention, invalid-code preservation/recovery, manual-analysis handoff and opt-o
 The same capture variable retains enabled, invalid-code and disabled UI states.
 Unit/process regressions cover authorization reset, stale pending-manual requests,
 optional-capability fallback and cleanup of independently grouped descendants.
+
+## Compressed generations and flow residency (TASK-69)
+
+Version-2 saved generations use a canonical manifest plus immutable, independently
+Zstandard-compressed structure and flow objects. The manifest digest binds every
+query to both parts. Structure retains analyzed source so ordinary source and
+architecture views do not need flows. There is no old saved-format reader.
+
+`GraphStructure` excludes inventories by construction while analyzer `GraphData`
+remains the complete analysis input/output aggregate. The CLI session owns a
+separate optional resident inventory, its lookup index, and portable typed flow
+ownership/source context. Ordinary, expanded and historical flows share typed
+validation and lookup rules; ordinary replies hydrate selected display paths,
+while expansion and historical ownership stay portable.
+
+The CLI automatically loads on flow requests and exposes generation-bound
+`flow_resources` load/unload/status. It owns no timer. Unload can address the old
+resident generation after a newer manifest appears, avoiding retention while the
+UI is waiting to adopt that publication. Captured file handles keep a generation
+reloadable even after its old object paths are pruned.
+
+The desktop starts a monotonic 60-second deadline only after the last flow view
+hides. Visible charts count as use even without input. Expiry clears hidden
+charts, source and expansion caches and dispatches an unload through the existing
+serialized connection. An activity revision rechecked under that connection's
+lock suppresses obsolete queued releases. Reopening either invalidates the queued
+release or loads after an already-dispatched unload. Project cutover and shutdown
+retire old resources immediately. Lightweight navigation identities survive.
+
+Publication uses a short read/publication guard separate from the long analysis
+lock. Both objects are validated and durable before the manifest commit; the
+current and previous distinct generations are retained. Cancellation is checked
+again after preparing and syncing the manifest temporary file, just before its
+atomic replacement. Git readers resolve all objects from the same commit.
+
+Verification and measured results are recorded in TASK-69. Run outputs remain
+under ignored target/verification/task69-*; allocation estimates and sampled RSS
+are distinct, since allocator retention can keep process RSS high after unload.

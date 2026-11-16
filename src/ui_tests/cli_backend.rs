@@ -224,6 +224,25 @@ fn optional_captures(runtime: &mut Runtime<State>) {
     capture(runtime, (1420.0, 900.0), &output.join("light-flow.png"));
 }
 
+fn assert_flow_residency(runtime: &Runtime<State>, expected: bool) {
+    let status: codecallnavigator::query::FlowResourceStatus = runtime
+        .state
+        .query_context
+        .as_ref()
+        .unwrap()
+        .request(
+            codecallnavigator::query::Query::FlowResources {
+                action: codecallnavigator::query::FlowResourceAction::Status,
+            },
+            &AtomicBool::new(false),
+        )
+        .unwrap();
+    assert_eq!(status.loaded, expected);
+    if !expected {
+        assert_eq!(status.retained_bytes, 0);
+    }
+}
+
 #[test]
 #[ignore = "requires built CLI, Node24/TypeScript6; optional captures require Metal"]
 fn actual_cli_keeps_graph_context_across_edited_root_and_drives_search_source_flow() {
@@ -256,9 +275,20 @@ fn actual_cli_keeps_graph_context_across_edited_root_and_drives_search_source_fl
             .any(|row| row.label == "other.txt")
     });
     preview_loaded_project_source(&mut runtime);
+    assert_flow_residency(&runtime, false);
     open_flow(&mut runtime, &symbol);
+    assert_flow_residency(&runtime, true);
     optional_captures(&mut runtime);
+    // Rune's explicit frame clock proves the actual controller wiring without
+    // adding a minute-long native test or another compiler-backed journey.
+    runtime.frame(61.0);
+    assert_flow_residency(&runtime, true);
     click(&mut runtime, "flow-close");
     assert!(runtime.state.flow_workspace.current.is_none());
     assert_eq!(runtime.state.nav.selected.as_deref(), Some(symbol.as_str()));
+    runtime.frame(60.1);
+    settle(&mut runtime, |state| state.flow_residency.stopped());
+    assert_flow_residency(&runtime, false);
+    open_flow(&mut runtime, &symbol);
+    assert_flow_residency(&runtime, true);
 }

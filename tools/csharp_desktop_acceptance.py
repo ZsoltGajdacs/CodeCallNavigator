@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Exercise a relocated native app using an isolated, compiler-analyzed C# fixture."""
+from graph_bundle import load as load_bundle, stored_bytes
 import argparse
 from dataclasses import dataclass
 import hashlib
@@ -82,13 +83,13 @@ def prepare_fixture(engine, project):
     require(source.encode("utf-8") == (project / "Example.cs").read_bytes(),
             "CLI flow must preserve fixture BOM, Unicode and CRLF bytes")
     artifact_path = project / ".codecallnavigator/graph.json"
-    artifact = json.loads(artifact_path.read_bytes())
+    artifact = load_bundle(artifact_path)
     inventory = artifact["graph"]["flow_inventory"]
     metrics = {
         "fixture": "fixtures/flow/csharp-desktop",
         "refresh_seconds": refresh_seconds,
         "direct_flow_query_seconds": query_seconds,
-        "artifact_bytes": artifact_path.stat().st_size,
+        "artifact_bytes": stored_bytes(artifact_path),
         "inventory_compact_json_bytes": len(json.dumps(inventory, separators=(",", ":")).encode()),
         "source_bytes": len(source.encode("utf-8")),
         "artifact_sha256": hashlib.sha256(artifact_path.read_bytes()).hexdigest(),

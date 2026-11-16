@@ -100,7 +100,7 @@ fn assert_compiler_facts(caller: &Ready<'_>, callee: &Ready<'_>, site: &flow::Ca
         )
     );
 }
-fn ready<'a>(view: &View<'a>, symbol: &str) -> Box<Ready<'a>> {
+fn ready<'a>(view: &'a View<'_>, symbol: &str) -> Box<Ready<'a>> {
     match view.select(symbol) {
         Selection::Ready(ready) => ready,
         other => panic!("Saved compiler flow must be ready: {other:?}"),

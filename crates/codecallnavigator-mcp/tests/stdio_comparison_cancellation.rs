@@ -28,10 +28,13 @@ fn repository(root: &Path) -> Vec<u8> {
         );
     }
     fs::create_dir(root.join(".codecallnavigator")).unwrap();
-    let bytes = serde_json::to_vec(&json!({"schema":"codecallnavigator.graph.v1","graph":{"nodes":[],"edges":[],"roots":[],"diagnostics":[]}})).unwrap();
-    fs::write(root.join(".codecallnavigator/graph.json"), &bytes).unwrap();
+    support::bundle::publish(
+        root,
+        json!({"graph":{"nodes":[],"edges":[],"roots":[],"diagnostics":[]}}),
+    );
+    let bytes = fs::read(root.join(".codecallnavigator/graph.json")).unwrap();
     for args in [
-        vec!["add", ".codecallnavigator/graph.json"],
+        vec!["add", ".codecallnavigator"],
         vec!["commit", "-qm", "baseline"],
     ] {
         assert!(
@@ -140,7 +143,7 @@ fn pending_comparison(disconnect: bool) {
         fs::read_dir(root.join(".codecallnavigator"))
             .unwrap()
             .count(),
-        1
+        2 // saved manifest and immutable object directory only
     );
     if !disconnect {
         client.assert_no_response(request);

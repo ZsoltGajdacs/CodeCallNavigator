@@ -1,4 +1,5 @@
 #![allow(dead_code)]
+pub mod bundle;
 use serde_json::{Value, json};
 use std::{
     io::{BufRead, BufReader, Write},
@@ -189,7 +190,7 @@ pub fn cli_query(engine: &Path, project: &Path, operation: Value) -> Value {
         .stderr(Stdio::piped())
         .spawn()
         .unwrap();
-    let request = json!({"version":1,"project":project,"query":operation});
+    let request = json!({"version":2,"project":project,"query":operation});
     write!(child.stdin.take().unwrap(), "{request}").unwrap();
     let output = child.wait_with_output().unwrap();
     assert!(

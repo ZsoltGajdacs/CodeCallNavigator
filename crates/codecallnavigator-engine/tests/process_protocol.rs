@@ -27,7 +27,7 @@ fn hello(child: &mut Child) {
         .unwrap();
     assert_eq!(
         serde_json::from_str::<Value>(&text).unwrap(),
-        json!({"event":"hello","version":1})
+        json!({"event":"hello","version":codecallnavigator_core::protocol::VERSION})
     );
 }
 
@@ -106,7 +106,7 @@ fn invalid_roots_fail_before_acquiring_project_lock() {
     hello(&mut child);
     send(
         &mut child,
-        &json!({"command":"analyze", "version":1, "project":project.path(),
+        &json!({"command":"analyze", "version":2, "project":project.path(),
         "roots":[["duplicate",project.path()],["duplicate",project.path()]], "targets":[]}),
     );
     assert_eq!(wait(&mut child), 2);
@@ -196,7 +196,7 @@ fn analysis_eof_and_sigterm_reap_build_descendants_and_preserve_artifact() {
         let output = EngineOutputReaders::drain(&mut child);
         send(
             &mut child,
-            &json!({"command":"analyze", "version":1, "project":project.path(), "roots":[],
+            &json!({"command":"analyze", "version":2, "project":project.path(), "roots":[],
             "targets":[{"path":project.path(),"language":"java","kind":"gradle","label":"slow"}]}),
         );
         let start = Instant::now();

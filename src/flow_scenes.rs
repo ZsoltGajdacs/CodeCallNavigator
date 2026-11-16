@@ -3,7 +3,6 @@ use crate::app::State;
 use codecallnavigator::{
     architecture::{ArchitectureFacts, FileFacts},
     flow::*,
-    graph::GraphIndex,
     model::{Edge, GraphData, Node},
 };
 use std::sync::Arc;
@@ -163,7 +162,7 @@ fn graph_data() -> GraphData {
 }
 pub fn install(state: &mut State) {
     crate::scenes::install(state);
-    state.graph = Some(Arc::new(GraphIndex::new(Arc::new(data())).unwrap()));
+    crate::fixture_queries::install(state, data()).expect("valid flow fixture");
     state.nav = crate::app::Navigation::default();
     state.nav.selected = Some("flow/load".into());
     state.replace_graph_view(crate::fixture_queries::project(

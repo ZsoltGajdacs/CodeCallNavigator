@@ -26,7 +26,7 @@ pub struct GraphQueries {
 #[derive(Clone)]
 enum Backend {
     Cli(QueryContext),
-    Fixture,
+    Fixture(Option<Arc<flow::FlowInventory>>),
 }
 
 impl GraphQueries {
@@ -47,10 +47,10 @@ impl GraphQueries {
         self.layer_signature = signature;
         self
     }
-    pub fn fixture(graph: Arc<GraphIndex>) -> Self {
+    pub fn fixture(graph: Arc<GraphIndex>, inventory: Option<Arc<flow::FlowInventory>>) -> Self {
         Self {
             graph,
-            backend: Backend::Fixture,
+            backend: Backend::Fixture(inventory),
             layer_selection: None,
             layer_signature: None,
         }
@@ -126,7 +126,10 @@ impl GraphQueries {
         cancel: &AtomicBool,
     ) -> Result<(flow::FlowChart, String, String)> {
         let Backend::Cli(context) = &self.backend else {
-            return crate::fixture_queries::flow(&self.graph, symbol);
+            let Backend::Fixture(inventory) = &self.backend else {
+                unreachable!()
+            };
+            return crate::fixture_queries::flow(&self.graph, inventory.as_deref(), symbol);
         };
         #[derive(Deserialize)]
         struct Source {
@@ -154,7 +157,7 @@ impl GraphQueries {
     pub fn source(&self, path: &str, cancel: &AtomicBool) -> Result<source::SourceFile> {
         match &self.backend {
             Backend::Cli(context) => live_source(context, path, cancel),
-            Backend::Fixture => source::load_fixture(path).map_err(anyhow::Error::msg),
+            Backend::Fixture(_) => source::load_fixture(path).map_err(anyhow::Error::msg),
         }
     }
 

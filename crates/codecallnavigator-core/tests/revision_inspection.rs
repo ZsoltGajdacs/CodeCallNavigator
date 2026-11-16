@@ -33,11 +33,21 @@ struct Repository {
     bytes: Vec<u8>,
 }
 impl Repository {
-    fn new(bytes: Vec<u8>) -> Self {
+    fn new(mut bytes: Vec<u8>) -> Self {
         let directory = tempfile::tempdir().unwrap();
         let project = directory.path().join("nested project");
         fs::create_dir_all(project.join(".codecallnavigator")).unwrap();
-        fs::write(project.join(artifact::GRAPH_PATH), &bytes).unwrap();
+        if let Ok(document) = artifact::Artifact::from_bytes(&bytes) {
+            artifact::publish(
+                &project,
+                &document,
+                &std::sync::atomic::AtomicBool::new(false),
+            )
+            .unwrap();
+            bytes = fs::read(project.join(artifact::GRAPH_PATH)).unwrap();
+        } else {
+            fs::write(project.join(artifact::GRAPH_PATH), &bytes).unwrap();
+        }
         git(directory.path(), &["init", "-q"]);
         git(
             directory.path(),
@@ -93,7 +103,7 @@ fn valid_inspection_and_legacy_endpoint_have_identical_serialization() {
 }
 
 #[test]
-fn incompatible_schema_or_inventory_retains_strict_failure_and_bound_metadata() {
+fn unsupported_monolithic_schema_or_inventory_retains_failure_and_bound_metadata() {
     for incompatible_schema in [true, false] {
         let mut document = artifact();
         if incompatible_schema {
@@ -103,11 +113,10 @@ fn incompatible_schema_or_inventory_retains_strict_failure_and_bound_metadata() 
         }
         let repo = Repository::new(serde_json::to_vec(&document).unwrap());
         let old = revision::load(&repo.project, "HEAD").err().unwrap();
-        let expected = if incompatible_schema {
-            "Unsupported graph artifact schema: future.graph.v99"
-        } else {
-            "Unsupported function flow inventory version"
-        };
+        let expected = format!(
+            "{:#}",
+            artifact::storage::Manifest::from_bytes(&repo.bytes).unwrap_err()
+        );
         assert_eq!(format!("{old:#}"), expected);
         let inspected = revision::inspect(&repo.project, "HEAD").unwrap();
         assert_eq!(
@@ -133,7 +142,10 @@ fn malformed_json_has_explicit_unknown_schema_and_original_error() {
     let old = revision::load(&repo.project, "HEAD").err().unwrap();
     assert_eq!(
         format!("{old:#}"),
-        "Invalid graph artifact JSON: expected ident at line 1 column 2"
+        format!(
+            "{:#}",
+            artifact::storage::Manifest::from_bytes(&repo.bytes).unwrap_err()
+        )
     );
     let inspected = revision::inspect(&repo.project, "HEAD").unwrap();
     assert_eq!(inspected.endpoint.schema, ObservedSchema::Unknown);
@@ -146,7 +158,7 @@ fn malformed_json_has_explicit_unknown_schema_and_original_error() {
 }
 
 #[test]
-fn older_valid_artifact_without_flow_is_available_without_fabricated_inventory() {
+fn valid_generation_without_flows_is_available_without_fabricated_inventory() {
     let mut document = artifact();
     document
         .graph
@@ -158,7 +170,7 @@ fn older_valid_artifact_without_flow_is_available_without_fabricated_inventory()
     let ArtifactResult::Available(artifact) = inspected.artifact else {
         panic!("Compatible historical artifact rejected")
     };
-    assert!(artifact.graph.get("flow_inventory").is_none());
+    assert!(artifact.graph["flow_inventory"].is_null());
     artifact.validate().unwrap();
 }
 
@@ -233,7 +245,10 @@ fn worktree_observation_binds_undecodable_bytes_without_poisoning_committed_snap
         fs::write(repo.project.join(artifact::GRAPH_PATH), &bytes).unwrap();
         let status = git(root, &["status", "--porcelain"]);
         let index = fs::read(root.join(".git/index")).unwrap();
-        let expected_failure = format!("{:#}", artifact::Artifact::from_bytes(&bytes).unwrap_err());
+        let expected_failure = format!(
+            "{:#}",
+            artifact::storage::Manifest::from_bytes(&bytes).unwrap_err()
+        );
         let observed = revision::inspect(&repo.project, "WORKTREE").unwrap();
         assert_eq!(
             serde_json::to_value(&observed.endpoint).unwrap(),

@@ -27,15 +27,17 @@ fn incompatible_endpoint_membership_and_missing_cached_source_are_not_guessed() 
     use codecallnavigator::artifact;
     let data = crate::flow_scenes::data();
     let (mut ui, project) = runtime(data.clone(), data.clone(), true);
-    let mut saved = artifact::canonical(&data, &[("repo".into(), "/snapshot".into())]).unwrap();
-    saved.schema = "future-schema".into();
+    let saved = artifact::canonical(&data, &[("repo".into(), "/snapshot".into())]).unwrap();
+    let mut manifest: serde_json::Value =
+        serde_json::from_slice(saved.encode().unwrap().as_ref()).unwrap();
+    manifest["schema"] = "future-schema".into();
     fs::write(
         project.path().join(artifact::GRAPH_PATH),
-        serde_json::to_vec(&saved).unwrap(),
+        serde_json::to_vec(&manifest).unwrap(),
     )
     .unwrap();
     for args in [
-        &["add", artifact::GRAPH_PATH][..],
+        &["add", artifact::GRAPH_PATH, ".codecallnavigator/objects"][..],
         &["commit", "-qm", "future"],
         &["tag", "-f", "base"],
     ] {

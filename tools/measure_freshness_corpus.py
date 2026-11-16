@@ -5,6 +5,7 @@ Requires --project beneath the system temporary directory. Never copies or edits
 the original checkout. Full semantic equivalence requires a separate corpus
 oracle; this probe reports that unavailable rather than using counts as proof.
 """
+from graph_bundle import capture, restore
 import argparse
 import json
 from pathlib import Path
@@ -16,7 +17,7 @@ from freshness_measurement import distribution, response, run
 
 def analyze(executable, project, targets):
     measurement = run([str(executable), "serve-once"], {
-        "command": "analyze", "version": 1, "project": str(project),
+        "command": "analyze", "version": 2, "project": str(project),
         "roots": [], "targets": targets, "infer_linked_roots": False,
     }, timeout=180, keep_open=True)
     events = [json.loads(line) for line in measurement["stdout"].splitlines()]
@@ -29,7 +30,7 @@ def analyze(executable, project, targets):
 
 
 def status(executable, project, generation=None):
-    request = {"version": 1, "project": str(project), "roots": [], "query": {"kind": "status"}}
+    request = {"version": 2, "project": str(project), "roots": [], "query": {"kind": "status"}}
     if generation:
         request["expected_generation"] = generation
     measurement = run([str(executable), "query"], request)
@@ -38,7 +39,7 @@ def status(executable, project, generation=None):
 
 def sample(executable, project, targets, baseline):
     source, artifact, pristine, before = baseline
-    artifact.write_bytes(before)
+    restore(artifact, before)
     source.write_text(pristine)
     started = time.monotonic()
     source.write_text(pristine.replace("return 1;", "return 2;"))
@@ -96,7 +97,7 @@ def prepare_corpus(executable, project):
     targets = response(run([str(executable), "discover", str(project / "backend")]))["targets"]
     analyze(executable, project, targets)
     artifact = project / ".codecallnavigator/graph.json"
-    return targets, (source, artifact, pristine, artifact.read_bytes())
+    return targets, (source, artifact, pristine, capture(artifact))
 
 
 def main():

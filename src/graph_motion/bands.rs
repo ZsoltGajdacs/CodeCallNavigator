@@ -43,10 +43,11 @@ impl Bands {
             .collect();
     }
     pub fn advance(&mut self, dt: f32) -> bool {
-        self.tracks
-            .iter_mut()
-            .flatten()
-            .fold(false, |active, t| t.step(dt) || active)
+        let mut active = false;
+        for track in self.tracks.iter_mut().flatten() {
+            active |= track.step(dt);
+        }
+        active
     }
     pub fn apply(&self, bands: &mut [LayerBand]) {
         for (band, tracks) in bands.iter_mut().zip(&self.tracks) {

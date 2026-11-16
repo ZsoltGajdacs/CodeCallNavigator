@@ -190,9 +190,10 @@ mod tests {
         let artifact =
             codecallnavigator::artifact::canonical(&data, &[("repo".into(), root.into())]).unwrap();
         fs::create_dir_all(root.join(".codecallnavigator")).unwrap();
-        fs::write(
-            root.join(codecallnavigator::artifact::GRAPH_PATH),
-            artifact.bytes().unwrap(),
+        codecallnavigator::artifact::publish(
+            root,
+            &artifact,
+            &std::sync::atomic::AtomicBool::new(false),
         )
         .unwrap();
         QueryContext::for_project(&crate::runtime::Runtime::discover().unwrap(), root.into())
@@ -308,9 +309,10 @@ mod tests {
         )
         .unwrap();
         fs::create_dir(project.join(".codecallnavigator")).unwrap();
-        fs::write(
-            project.join(artifact::GRAPH_PATH),
-            artifact.bytes().unwrap(),
+        codecallnavigator::artifact::publish(
+            project,
+            &artifact,
+            &std::sync::atomic::AtomicBool::new(false),
         )
         .unwrap();
         let runtime = crate::runtime::Runtime::discover().unwrap();

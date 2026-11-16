@@ -264,7 +264,7 @@ fn replacement_graph_and_query_discard_old_results_before_activation() {
     click(&mut runtime, "search-methods");
     query(&mut runtime, "LoadOrder");
     runtime.update(|state, _| {
-        let mut graph = state.graph.as_ref().unwrap().data.as_ref().clone();
+        let mut graph = state.graph.as_ref().unwrap().data.to_graph_data();
         graph.nodes[1].id = "new/Replacement".into();
         graph.nodes[1].label = "Replacement".into();
         graph.nodes[1].signature = "Orders:Replacement()".into();

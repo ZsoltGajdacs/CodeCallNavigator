@@ -18,7 +18,7 @@ fn live_explorer_works_before_first_analysis() {
         .spawn()
         .unwrap();
     let request =
-        json!({"version":1,"project":root.path(),"query":{"kind":"explorer","path":root.path()}});
+        json!({"version":2,"project":root.path(),"query":{"kind":"explorer","path":root.path()}});
     write!(child.stdin.take().unwrap(), "{request}").unwrap();
     let output = child.wait_with_output().unwrap();
     let response: Value = serde_json::from_slice(&output.stdout).unwrap();
@@ -41,8 +41,13 @@ fn session_rechecks_inputs_and_rejects_replaced_generations() {
             .unwrap();
     fs::create_dir(root.path().join(".codecallnavigator")).unwrap();
     let path = root.path().join(artifact::GRAPH_PATH);
-    let bytes = graph.bytes().unwrap();
-    fs::write(&path, &bytes).unwrap();
+    artifact::publish(
+        root.path(),
+        &graph,
+        &std::sync::atomic::AtomicBool::new(false),
+    )
+    .unwrap();
+    let bytes = fs::read(&path).unwrap();
     let generation = blake3::hash(&bytes).to_hex().to_string();
     let mut child = Command::new(env!("CARGO_BIN_EXE_codecallnavigator-engine"))
         .arg("query-session")
@@ -53,7 +58,7 @@ fn session_rechecks_inputs_and_rejects_replaced_generations() {
         .unwrap();
     let mut input_pipe = child.stdin.take().unwrap();
     let mut output = BufReader::new(child.stdout.take().unwrap());
-    let request = json!({"version":1,"project":root.path(),"expected_generation":generation,"query":{"kind":"status"}});
+    let request = json!({"version":2,"project":root.path(),"expected_generation":generation,"query":{"kind":"status"}});
     let mut exchange = |value: &Value| {
         writeln!(input_pipe, "{value}").unwrap();
         input_pipe.flush().unwrap();
@@ -70,9 +75,14 @@ fn session_rechecks_inputs_and_rejects_replaced_generations() {
     fs::write(&input, "after").unwrap();
     assert_eq!(exchange(&request)["freshness"]["input_status"], "stale");
     graph.extensions.insert("session_test".into(), json!(true));
-    fs::write(&path, graph.bytes().unwrap()).unwrap();
+    artifact::publish(
+        root.path(),
+        &graph,
+        &std::sync::atomic::AtomicBool::new(false),
+    )
+    .unwrap();
     assert_eq!(exchange(&request)["error"]["code"], "generation_mismatch");
-    let latest = exchange(&json!({"version":1,"project":root.path(),"query":{"kind":"status"}}));
+    let latest = exchange(&json!({"version":2,"project":root.path(),"query":{"kind":"status"}}));
     assert_ne!(latest["generation"], generation);
     drop(exchange);
     drop(input_pipe);

@@ -1,10 +1,9 @@
-use super::{Artifact, EncodedArtifact, GRAPH_PATH};
-use anyhow::{Context, Result, ensure};
+use super::{Artifact, EncodedArtifact, GRAPH_PATH, storage};
+use anyhow::{Context, Result};
 use std::{
     fs::{self, File, OpenOptions},
-    io::Write,
     path::{Path, PathBuf},
-    sync::atomic::{AtomicBool, Ordering},
+    sync::atomic::AtomicBool,
 };
 
 /// A competing publisher owns the advisory project lock; this is retryable.
@@ -68,7 +67,7 @@ impl AnalysisLock {
 
     /// Publish the exact canonical buffer used for the protocol digest.
     pub fn publish_encoded(&self, bytes: &EncodedArtifact, cancel: &AtomicBool) -> Result<()> {
-        replace(&self.project, bytes.as_ref(), cancel)
+        storage::publish(&self.project, bytes, cancel)
     }
 
     pub fn project(&self) -> &Path {
@@ -76,7 +75,7 @@ impl AnalysisLock {
     }
 
     pub fn publish(&self, artifact: &Artifact, cancel: &AtomicBool) -> Result<()> {
-        replace(&self.project, &artifact.bytes()?, cancel)
+        storage::publish(&self.project, &artifact.encode()?, cancel)
     }
 }
 
@@ -126,38 +125,12 @@ fn acquire_file(project: &Path, name: &str, owner: LockOwner) -> Result<(PathBuf
 }
 
 pub fn load(project: &Path) -> Result<Artifact> {
-    let path = project.join(GRAPH_PATH);
-    Artifact::from_bytes(
-        &fs::read(&path).with_context(|| format!("Cannot read {}", path.display()))?,
-    )
+    storage::Captured::open(project)?.complete()
 }
 
 /// One project artifact, replaced only after complete validation and serialization.
 pub fn publish(project: &Path, artifact: &Artifact, cancel: &AtomicBool) -> Result<()> {
     AnalysisLock::acquire(project)?.publish(artifact, cancel)
-}
-
-fn replace(project: &Path, bytes: &[u8], cancel: &AtomicBool) -> Result<()> {
-    ensure!(
-        !cancel.load(Ordering::Relaxed),
-        "Analysis cancelled before graph publication"
-    );
-    let directory = project.join(".codecallnavigator");
-    fs::create_dir_all(&directory)?;
-    let mut temporary = tempfile::Builder::new()
-        .prefix(".graph-publish-")
-        .tempfile_in(&directory)?;
-    temporary.write_all(bytes)?;
-    temporary.as_file().sync_all()?;
-    ensure!(
-        !cancel.load(Ordering::Relaxed),
-        "Analysis cancelled before graph replacement"
-    );
-    temporary
-        .persist(project.join(GRAPH_PATH))
-        .map_err(|e| e.error)?;
-    File::open(&directory)?.sync_all()?;
-    Ok(())
 }
 
 #[cfg(test)]

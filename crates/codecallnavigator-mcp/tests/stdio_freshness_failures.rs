@@ -14,7 +14,7 @@ import json, sys
 mode = MODE_LITERAL
 generation = 'a' * 64
 operations = ['compare','status','search','symbol','source','explorer','selection','neighbors','flow']
-capabilities = dict(query_version=1, generation_binding=True, operations=operations, comparison=dict(version=1,snapshot_binding=True))
+capabilities = dict(query_version=2, generation_binding=True, operations=operations, comparison=dict(version=1,snapshot_binding=True))
 if mode != 'legacy':
     capabilities['operations'] = operations + ['freshness']
     capabilities['freshness'] = dict(version=2 if mode=='future' else 1,mode='verified_polling',limited=True)
@@ -36,7 +36,7 @@ legacy = {key:observation[key] for key in ['contract_valid','input_status','reas
 legacy.update(version=1,digest=generation)
 if kind=='freshness' and mode=='mixed_summary': legacy['input_status']='stale'
 result = dict(nodes=0,edges=0) if kind=='status' else observation
-print(json.dumps(dict(version=1,generation=generation,freshness=legacy,result=result,error=None)))
+print(json.dumps(dict(version=2,generation=generation,freshness=legacy,result=result,error=None)))
 "#.replace("MODE_LITERAL", &format!("{mode:?}"));
     let path = root.join("wire_cli.py");
     fs::write(&path, source).unwrap();

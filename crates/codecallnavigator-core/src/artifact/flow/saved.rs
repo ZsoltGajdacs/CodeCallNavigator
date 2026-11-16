@@ -1,45 +1,57 @@
-use super::{Owner, Reason, Unavailable, ownership};
-use serde_json::Value;
+use super::{Owner, Reason, Unavailable};
+use crate::{
+    architecture::ArchitectureFacts,
+    flow::{FlowInventory, FunctionFlowIR},
+};
+use std::collections::BTreeMap;
 
-pub(super) fn function<'a>(graph: &'a Value, symbol: &str) -> Result<&'a Value, Unavailable> {
-    let inventory = graph
-        .get("flow_inventory")
-        .filter(|value| !value.is_null())
-        .ok_or_else(|| {
-            Unavailable::new(Reason::MissingInventory, crate::flow::INVENTORY_UNAVAILABLE)
-        })?;
-    if !inventory
-        .get("version")
-        .and_then(Value::as_u64)
-        .is_some_and(crate::flow::inventory_supported)
-    {
+pub(super) fn index(inventory: Option<&FlowInventory>) -> BTreeMap<String, Option<usize>> {
+    let mut index = BTreeMap::new();
+    if let Some(inventory) = inventory {
+        for (position, function) in inventory.functions.iter().enumerate() {
+            index
+                .entry(function.symbol.clone())
+                .and_modify(|position| *position = None)
+                .or_insert(Some(position));
+        }
+    }
+    index
+}
+
+pub(super) fn function<'a>(
+    inventory: Option<&'a FlowInventory>,
+    index: &BTreeMap<String, Option<usize>>,
+    symbol: &str,
+) -> Result<&'a FunctionFlowIR, Unavailable> {
+    let inventory = inventory.ok_or_else(|| {
+        Unavailable::new(Reason::MissingInventory, crate::flow::INVENTORY_UNAVAILABLE)
+    })?;
+    if !crate::flow::inventory_supported(u64::from(inventory.version)) {
         return Err(Unavailable::new(
             Reason::InventoryVersion,
             crate::flow::INVENTORY_UNAVAILABLE,
         ));
     }
-    let functions = inventory
-        .get("functions")
-        .and_then(Value::as_array)
-        .ok_or_else(|| {
-            Unavailable::new(
-                Reason::InvalidFlow,
-                "Saved function flow inventory has no function collection",
-            )
-        })?;
-    unique(
-        functions
-            .iter()
-            .filter(|value| value.get("symbol").and_then(Value::as_str) == Some(symbol)),
-        Reason::DuplicateFunction,
-        "Saved symbol has multiple function flows",
-    )?
-    .ok_or_else(|| Unavailable::new(Reason::MissingFunction, crate::flow::FUNCTION_UNAVAILABLE))
+    match index.get(symbol) {
+        None => Err(Unavailable::new(
+            Reason::MissingFunction,
+            crate::flow::FUNCTION_UNAVAILABLE,
+        )),
+        Some(None) => Err(Unavailable::new(
+            Reason::DuplicateFunction,
+            "Saved symbol has multiple function flows",
+        )),
+        Some(Some(position)) => Ok(&inventory.functions[*position]),
+    }
 }
 
-pub(super) fn owner(function: &Value, expected: Owner<'_>) -> Result<(), Unavailable> {
-    let actual = ownership::owner(function)
-        .map_err(|error| Unavailable::new(Reason::FunctionOwnership, error.message))?;
+pub(super) fn owner(function: &FunctionFlowIR, expected: Owner<'_>) -> Result<(), Unavailable> {
+    let actual = Owner {
+        build: &function.build,
+        project: &function.project,
+        file: &function.file,
+        language: &function.language,
+    };
     if actual != expected {
         return Err(Unavailable::new(
             Reason::FunctionOwnership,
@@ -49,7 +61,10 @@ pub(super) fn owner(function: &Value, expected: Owner<'_>) -> Result<(), Unavail
     Ok(())
 }
 
-pub(super) fn source<'a>(graph: &'a Value, owner: Owner<'_>) -> Result<&'a str, Unavailable> {
+pub(super) fn source<'a>(
+    facts: Option<&'a ArchitectureFacts>,
+    owner: Owner<'_>,
+) -> Result<&'a str, Unavailable> {
     let missing = || {
         Unavailable::new(
             Reason::MissingSource,
@@ -59,55 +74,39 @@ pub(super) fn source<'a>(graph: &'a Value, owner: Owner<'_>) -> Result<&'a str, 
     if owner.file.is_empty() {
         return Err(missing());
     }
-    let facts = graph
-        .get("architecture")
-        .filter(|value| !value.is_null())
-        .ok_or_else(missing)?;
-    if facts.get("version").and_then(Value::as_u64)
-        != Some(u64::from(crate::architecture::FACTS_VERSION))
-    {
+    let facts = facts.ok_or_else(missing)?;
+    if facts.version != crate::architecture::FACTS_VERSION {
         return Err(Unavailable::new(
             Reason::InvalidSource,
             "Unsupported saved analyzed source facts version",
         ));
     }
-    let files = facts
-        .get("files")
-        .and_then(Value::as_array)
-        .ok_or_else(missing)?;
-    let file = unique(
-        files.iter().filter(|file| same_source(file, owner)),
-        Reason::DuplicateSource,
-        "Analyzed source has multiple owners for this build, project and file",
-    )?
-    .ok_or_else(missing)?;
-    file.get("content")
-        .ok_or_else(missing)?
-        .as_str()
-        .ok_or_else(|| {
-            Unavailable::new(
-                Reason::InvalidSource,
-                "Analyzed source content is not UTF-8 text",
-            )
-        })
-}
-fn same_source(file: &Value, owner: Owner<'_>) -> bool {
-    [
-        ("build", owner.build),
-        ("project", owner.project),
-        ("file", owner.file),
-    ]
-    .into_iter()
-    .all(|(key, expected)| file.get(key).and_then(Value::as_str) == Some(expected))
-}
-fn unique<'a>(
-    mut values: impl Iterator<Item = &'a Value>,
-    reason: Reason,
-    message: &str,
-) -> Result<Option<&'a Value>, Unavailable> {
-    let first = values.next();
-    if values.next().is_some() {
-        return Err(Unavailable::new(reason, message));
+    let mut files = facts.files.iter().filter(|file| {
+        file.build == owner.build && file.project == owner.project && file.file == owner.file
+    });
+    let first = files.next().ok_or_else(missing)?;
+    if files.next().is_some() {
+        return Err(Unavailable::new(
+            Reason::DuplicateSource,
+            "Analyzed source has multiple owners for this build, project and file",
+        ));
     }
-    Ok(first)
+    Ok(&first.content)
+}
+
+/// FileFacts uses defaults for analyzer ingestion; saved source absence is explicit.
+pub(super) fn decode_sources(
+    value: &serde_json::Value,
+) -> Result<Option<ArchitectureFacts>, Unavailable> {
+    use serde::Deserialize;
+    if let Some(files) = value.get("files").and_then(serde_json::Value::as_array)
+        && files.iter().any(|file| file.get("content").is_none())
+    {
+        return Err(Unavailable::new(
+            Reason::MissingSource,
+            "Refresh to collect analyzed source for this declaration",
+        ));
+    }
+    Option::<ArchitectureFacts>::deserialize(value)
+        .map_err(|error| Unavailable::new(Reason::InvalidSource, error.to_string()))
 }

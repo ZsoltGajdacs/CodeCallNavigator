@@ -19,8 +19,12 @@ fn git(root: &Path, arguments: &[&str]) {
 }
 
 fn commit(root: &Path, saved: &Artifact, name: &str) {
-    fs::write(root.join(artifact::GRAPH_PATH), saved.bytes().unwrap()).unwrap();
-    git(root, &["add", artifact::GRAPH_PATH]);
+    codecallnavigator::artifact::publish(root, saved, &std::sync::atomic::AtomicBool::new(false))
+        .unwrap();
+    git(
+        root,
+        &["add", artifact::GRAPH_PATH, ".codecallnavigator/objects"],
+    );
     git(root, &["commit", "-qm", name]);
     git(root, &["tag", name]);
 }

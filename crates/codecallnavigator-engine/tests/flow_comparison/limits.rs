@@ -56,7 +56,10 @@ fn complete_detail_budget_counts_escaping_and_never_drops_a_side() {
         + "*/";
     large.graph["architecture"]["files"][0]["content"] = json!(content);
     save(root, &large);
-    git(root, &["add", artifact::GRAPH_PATH]);
+    git(
+        root,
+        &["add", artifact::GRAPH_PATH, ".codecallnavigator/objects"],
+    );
     git(root, &["commit", "-qm", "escaped source"]);
     git(root, &["tag", "large"]);
     let response = query(

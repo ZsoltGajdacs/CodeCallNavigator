@@ -51,8 +51,8 @@ pub fn capabilities(value: &Value) -> Result<Capabilities> {
     let capabilities: WireCapabilities =
         serde_json::from_value(value.clone()).context("Malformed CLI capabilities")?;
     ensure!(
-        capabilities.query_version == 1 && capabilities.generation_binding,
-        "Incompatible CLI query contract: version 1 with generation binding is required"
+        capabilities.query_version == 2 && capabilities.generation_binding,
+        "Incompatible CLI query contract: version 2 with generation binding is required"
     );
     ensure!(
         capabilities.comparison.version == 1 && capabilities.comparison.snapshot_binding,
@@ -90,7 +90,7 @@ pub fn response(value: &Value, expected: Option<&str>) -> Result<bool> {
     }
     let response: Response =
         serde_json::from_value(value.clone()).context("Malformed CLI query response")?;
-    ensure!(response.version == 1, "Unsupported CLI response version");
+    ensure!(response.version == 2, "Unsupported CLI response version");
     validate_generation(response.generation.as_deref())?;
     ensure!(
         response.result.is_some() != response.error.is_some(),
@@ -165,22 +165,22 @@ mod tests {
     fn malformed_or_incompatible_envelopes_are_rejected() {
         for value in [
             json!({}),
-            json!({"version":2,"generation":null,"freshness":null,"result":{},"error":null}),
-            json!({"version":1,"generation":"bad","freshness":null,"result":{},"error":null}),
-            json!({"version":1,"generation":null,"freshness":null,"result":{},"error":{"code":"x","message":"x"}}),
+            json!({"version":999,"generation":null,"freshness":null,"result":{},"error":null}),
+            json!({"version":2,"generation":"bad","freshness":null,"result":{},"error":null}),
+            json!({"version":2,"generation":null,"freshness":null,"result":{},"error":{"code":"x","message":"x"}}),
         ] {
             assert!(response(&value, None).is_err());
         }
         assert!(
             capabilities(
-                &json!({"query_version":2,"generation_binding":true,"operations":OPERATIONS})
+                &json!({"query_version":999,"generation_binding":true,"operations":OPERATIONS})
             )
             .is_err()
         );
     }
     #[test]
     fn structured_cli_failures_keep_original_codes_and_generation_metadata() {
-        let value = json!({"version":1,"generation":null,"freshness":null,"result":null,"error":{"code":"graph_missing","message":"Refresh explicitly"}});
+        let value = json!({"version":2,"generation":null,"freshness":null,"result":null,"error":{"code":"graph_missing","message":"Refresh explicitly"}});
         assert!(response(&value, None).unwrap());
         assert_eq!(value["error"]["code"], "graph_missing");
     }

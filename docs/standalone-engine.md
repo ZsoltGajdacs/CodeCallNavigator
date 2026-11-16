@@ -31,19 +31,31 @@ ccnavigator compare --project /checkout --base HEAD~1 --head WORKTREE
 ```
 
 With no explicit targets, analysis selects the same default builds as discovery.
-The only persistent graph JSON is `/checkout/.codecallnavigator/graph.json`. Each
-successful refresh atomically replaces it while holding the project analysis
-lock. Failed or cancelled work preserves the previous graph. Neither command
-stages files or creates Git commits. Commit the graph alongside the changes it
-describes, then use Git to compare any two revisions; comparisons read blobs
-without saving historical copies. Exit status is 0 for equality, 1 for changes,
-and 2 for operational/schema errors.
+The saved graph uses a version-2 bundle. `/checkout/.codecallnavigator/graph.json`
+is a small manifest referencing two immutable Zstandard-compressed objects under
+`objects/`: structure and function flows. Commit the manifest and its referenced
+objects alongside the source changes. Publication replaces the manifest atomically;
+failed or cancelled analysis preserves the previous generation. Neither command
+stages files or creates commits. The publisher retains the current and previous
+generations and prunes older owned objects; active readers keep captured handles.
 
-The versioned artifact includes nodes, relationships, entry points, diagnostics,
-source-derived flow inventories and architecture facts. Relationships refer to
-stable symbol IDs rather than array positions. Unordered sets are sorted;
-control-flow statement order is preserved. Complete source facts can make the
-artifact large. Treat it as project source information when sharing it.
+Structure contains nodes, relationships, entry points, diagnostics, architecture,
+analyzed source snapshots and analysis provenance. Flows contain function bodies
+and control-flow inventories. Both preserve stable symbol references, certainty,
+provenance and ordered control flow. Compression is deterministic Zstandard level
+9. The manifest's exact-byte BLAKE3 digest identifies the complete generation.
+Treat both objects as project source information when sharing them.
+
+Ordinary navigation loads only structure. Flow queries load the flow inventory on
+demand within a CLI session; it can be explicitly released and loaded again. The
+desktop releases hidden flow inventory and presentation caches after 60 seconds
+without a visible flow view. The CLI owns no idle timer.
+
+This is a clean format break: existing single-file graphs require reanalysis.
+Old-format Git revisions report an unsupported-format error. Comparisons between
+new-format revisions read their manifests and objects directly from the same
+resolved commits, without checkout or fetch. Full comparison includes flows.
+Exit status is 0 for equality, 1 for changes and 2 for operational/schema errors.
 
 Paths use `@repo/` relative to the output-owning project. Add repeated
 `--root NAME=PATH` mappings for project-owned sources outside that root; use the
@@ -82,7 +94,7 @@ Development can select `CODECALLNAVIGATOR_ENGINE` explicitly. `CODECALLNAVIGATOR
 selects an analyzer resource root when validating a frozen distribution.
 Executable and adapters must come from the same revision.
 
-The desktop uses the versioned `serve-once` newline-delimited JSON protocol.
+The desktop uses the version-2 `serve-once` newline-delimited JSON protocol.
 Runtime observations and metrics travel separately from the artifact. The client
 verifies the protocol version and artifact digest before caching the result.
 Cancellation or a disconnected client stops analysis and its owned subprocesses.
@@ -97,8 +109,8 @@ A mismatch reports `generation_changed` without replacing the artifact. Manual
 analysis omits this precondition. Automatic refresh uses a fresh `serve-once`
 process for every run, so cancellation never resets process-global state.
 
-Protocol version 1 also accepts
-`{"command":"clear_cache","version":1,"project":"/checkout"}`.
+Protocol version 2 also accepts
+`{"command":"clear_cache","version":2,"project":"/checkout"}`.
 The engine responds with its usual `hello`, followed by
 `{"event":"cache_cleared","removed_files":1}` on success, or `failed` on an
 operational error. `removed_files` counts the cache database and any sidecars
@@ -195,8 +207,9 @@ The JSON version report in `analysis.engine_versions` records `csharp_input_poli
 `msbuild-preprocess.v2`. The contexts follow the pinned [Roslyn BuildHost
 source](https://github.com/dotnet/roslyn/blob/35d9211b841e7613c1d2f8f5af6d628ace696c4c/src/Workspaces/MSBuild/BuildHost/Build/ProjectBuildManager.cs#L25-L52).
 The .NET design-time host uses the NonExistentFile sentinel and does not set
-BuildingInsideVisualStudio. Earlier v1 and legacy C# artifacts remain readable, but verification reports
-`legacy_csharp_input_policy` and `unverifiable` until explicitly refreshed. Known
+BuildingInsideVisualStudio. A version-2 bundle whose C# provenance lacks the current
+policy remains readable, but verification reports `legacy_csharp_input_policy`
+and `unverifiable` until explicitly refreshed. Old saved formats require reanalysis. Known
 changed inputs still take precedence as `stale`. This policy check applies to C# nodes
 or C# build targets, including valid empty graphs; Java/TypeScript artifacts are
 unaffected.
