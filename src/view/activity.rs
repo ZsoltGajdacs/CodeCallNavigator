@@ -210,30 +210,23 @@ fn details(state: &State, k: &Kit) -> El {
 
 pub(super) fn freshness_notice(state: &State, k: &Kit) -> Option<El> {
     let message = state.freshness.message(state.generation.as_deref())?;
-    let mut bar = row()
-        .key("freshness-status")
-        .w_full()
-        .gap(8.0)
-        .center_y()
-        .flex_wrap()
-        .child(
-            text(&message)
-                .key("freshness-message")
-                .max_lines(2)
-                .truncate()
-                .help(message.clone())
-                .font(k.ty.small)
-                .color(k.c.text_muted)
-                .wrap()
-                .grow(1.0)
-                .min_w(0.0),
-        );
+    let bar = col().key("freshness-status").w_full().gap(8.0).child(
+        text(&message)
+            .key("freshness-message")
+            .w_full()
+            .help(message.clone())
+            .font(k.ty.small)
+            .color(k.c.text_muted)
+            .wrap()
+            .min_w(0.0),
+    );
+    let mut actions = row().w_full().gap(8.0).center_y().flex_wrap();
     if state
         .freshness
         .new_generation(state.generation.as_deref())
         .is_some()
     {
-        bar = bar.child(
+        actions = actions.child(
             Button::new(if state.reload.job.is_pending() {
                 "Loading saved graph…"
             } else {
@@ -246,12 +239,12 @@ pub(super) fn freshness_notice(state: &State, k: &Kit) -> Option<El> {
         );
     }
     if state.freshness.retry_available() {
-        bar = bar.child(
+        actions = actions.child(
             Button::new("Retry freshness")
                 .on_press(State::retry_freshness)
                 .build(k)
                 .key("freshness-retry"),
         );
     }
-    Some(automatic_refresh::append(state, k, bar))
+    Some(automatic_refresh::append(state, k, bar, actions))
 }

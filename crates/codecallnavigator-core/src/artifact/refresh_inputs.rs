@@ -81,6 +81,11 @@ fn only_bytecode_inputs(inputs: &[Input], owned: &[String]) -> bool {
         if input.kind == InputKind::Directory {
             return true;
         }
+        // Test-only source sets may never create their declared main output.
+        // Only the exact owned root is safe; missing nested inputs remain blockers.
+        if input.kind == InputKind::Missing && owned.contains(&input.path) {
+            return true;
+        }
         if !owned.iter().any(|output| beneath(&input.path, output)) {
             return true;
         }
@@ -403,6 +408,85 @@ mod tests {
             build_inputs: vec![root.join("pom.xml").to_string_lossy().into_owned()],
         }
     }
+    #[test]
+    fn missing_output_roots_are_distinct_from_missing_nested_inputs() {
+        let owned = vec!["@repo/spec/target/classes".into()];
+        for (path, kind, allowed) in [
+            ("@repo/spec/target/classes", InputKind::Missing, true),
+            (
+                "@repo/spec/target/classes/foreign",
+                InputKind::Missing,
+                false,
+            ),
+            (
+                "@repo/spec/target/classes/config.properties",
+                InputKind::File,
+                false,
+            ),
+            (
+                "@repo/spec/target/classes/Example.class",
+                InputKind::File,
+                true,
+            ),
+            ("@repo/spec/target/classes", InputKind::File, false),
+            ("@repo/spec/target/classes", InputKind::Directory, true),
+            ("@repo/src/Spec.java", InputKind::File, true),
+        ] {
+            let input = Input {
+                path: path.into(),
+                kind,
+                hash: String::new(),
+                excluded_children: Vec::new(),
+            };
+            assert_eq!(
+                only_bytecode_inputs(&[input], &owned),
+                allowed,
+                "{path} ({kind:?})"
+            );
+        }
+    }
+
+    // Real fingerprints and root bindings are needed to prove that a missing
+    // output is certified and removed only from the scheduling manifest.
+    #[test]
+    fn absent_owned_directory_is_certified_without_hiding_nested_inputs() {
+        let directory = tempfile::tempdir().unwrap();
+        let root = directory.path().canonicalize().unwrap();
+        let roots = [("repo".into(), root.clone())];
+        let source = root.join("src/Spec.java");
+        std::fs::create_dir_all(source.parent().unwrap()).unwrap();
+        std::fs::write(&source, "class Spec {}").unwrap();
+        let missing_output = root.join("classes");
+        let captured =
+            fingerprint::capture_excluding(vec![source, missing_output.clone()], &[]).unwrap();
+        let mut analysis = super::super::provenance::build(&captured, &[], "{}", &roots).unwrap();
+        let outputs = ownership(&root);
+        let policy = capture(&analysis, &outputs, true, &roots).unwrap();
+        assert_eq!(policy.value["complete"], true);
+        analysis.refresh_inputs = Some(policy.value);
+        let filtered = filtered(&analysis).unwrap();
+        assert_eq!(filtered.inputs.len(), 1);
+        assert_eq!(filtered.inputs[0].path, "@repo/src/Spec.java");
+        assert!(
+            analysis
+                .inputs
+                .iter()
+                .any(|input| input.path == "@repo/classes" && input.kind == InputKind::Missing)
+        );
+        assert_eq!(
+            owned_outputs(&analysis, &roots).unwrap(),
+            vec![missing_output]
+        );
+
+        let captured =
+            fingerprint::capture_excluding(vec![root.join("classes/foreign")], &[]).unwrap();
+        let nested = super::super::provenance::build(&captured, &[], "{}", &roots).unwrap();
+        assert_eq!(
+            capture(&nested, &outputs, true, &roots).unwrap().value["complete"],
+            false
+        );
+    }
+
     #[test]
     fn output_ownership_never_excludes_source_config_or_other_consumed_inputs() {
         let root = tempfile::tempdir().unwrap();

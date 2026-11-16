@@ -394,6 +394,20 @@
       "purpose": "coordinator lease is separate and never changes observed input revision"
     },
     {
+      "id": "codecallnavigator-core/lib:codecallnavigator_core::artifact::refresh_inputs::tests::absent_owned_directory_is_certified_without_hiding_nested_inputs",
+      "runner": "rust",
+      "file": "crates/codecallnavigator-core/src/artifact/refresh_inputs.rs",
+      "test_name": "artifact::refresh_inputs::tests::absent_owned_directory_is_certified_without_hiding_nested_inputs",
+      "ignored": false,
+      "package": "codecallnavigator-core",
+      "target_kind": "lib",
+      "target": "codecallnavigator_core",
+      "component": "core",
+      "category": "integration",
+      "purpose": "Real absent-output fingerprints certify scheduling ownership without excluding source or unknown nested inputs.",
+      "requirements": []
+    },
+    {
       "id": "codecallnavigator-core/lib:codecallnavigator_core::artifact::refresh_inputs::tests::directory_overrides_keep_each_recorded_exclusion_policy_and_future_payloads_opaque",
       "runner": "rust",
       "file": "crates/codecallnavigator-core/src/artifact/refresh_inputs.rs",
@@ -434,6 +448,20 @@
       "category": "integration",
       "requirements": [],
       "purpose": "foreign classpath and unverified output bindings disable refresh"
+    },
+    {
+      "id": "codecallnavigator-core/lib:codecallnavigator_core::artifact::refresh_inputs::tests::missing_output_roots_are_distinct_from_missing_nested_inputs",
+      "runner": "rust",
+      "file": "crates/codecallnavigator-core/src/artifact/refresh_inputs.rs",
+      "test_name": "artifact::refresh_inputs::tests::missing_output_roots_are_distinct_from_missing_nested_inputs",
+      "ignored": false,
+      "package": "codecallnavigator-core",
+      "target_kind": "lib",
+      "target": "codecallnavigator_core",
+      "component": "core",
+      "category": "unit",
+      "purpose": "Absent exact owned output roots are allowed while missing nested or non-bytecode inputs remain blockers.",
+      "requirements": []
     },
     {
       "id": "codecallnavigator-core/lib:codecallnavigator_core::artifact::refresh_inputs::tests::output_ownership_never_excludes_source_config_or_other_consumed_inputs",
@@ -11395,6 +11423,22 @@
         "graphviz"
       ],
       "purpose": "a late discovery result cannot populate builds for a different root"
+    },
+    {
+      "id": "codecallnavigator/bin:codecallnavigator::ui_tests::activity_details::analysis_detail_warnings_use_full_width_above_actions",
+      "runner": "rust",
+      "file": "src/ui_tests/activity_details.rs",
+      "test_name": "ui_tests::activity_details::analysis_detail_warnings_use_full_width_above_actions",
+      "ignored": false,
+      "package": "codecallnavigator",
+      "target_kind": "bin",
+      "target": "codecallnavigator",
+      "component": "ui",
+      "category": "integration",
+      "purpose": "Real Rune layout keeps full warning text and legend within constrained details and leaves actions hit-testable.",
+      "requirements": [
+        "graphviz"
+      ]
     },
     {
       "id": "codecallnavigator/bin:codecallnavigator::ui_tests::architectural_layers::layer_control_exposes_presets_tabs_and_restores_navigation",

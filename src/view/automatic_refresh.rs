@@ -3,14 +3,14 @@ use crate::app::State;
 use rune::{El, text};
 use rune_kit::{Button, Kit};
 
-pub(super) fn append(state: &State, k: &Kit, mut bar: El) -> El {
+pub(super) fn append(state: &State, k: &Kit, mut body: El, mut actions: El) -> El {
     let enabled = state.query_context.as_ref().is_some_and(|context| {
         state
             .freshness
             .automatic
             .enabled(&context.descriptor.project)
     });
-    bar = bar.child(
+    actions = actions.child(
         Button::new(if enabled {
             "Disable automatic refresh"
         } else {
@@ -22,12 +22,10 @@ pub(super) fn append(state: &State, k: &Kit, mut bar: El) -> El {
         .key("freshness-auto-toggle"),
     );
     if enabled && let Some(activity) = state.freshness.automatic.message() {
-        bar = bar.child(
+        body = body.child(
             text(&activity)
                 .help(state.freshness.automatic.details().unwrap_or(&activity))
-                .max_lines(2)
-                .truncate()
-                .grow(1.0)
+                .w_full()
                 .min_w(0.0)
                 .font(k.ty.small)
                 .color(k.c.text_muted)
@@ -36,7 +34,7 @@ pub(super) fn append(state: &State, k: &Kit, mut bar: El) -> El {
         );
     }
     if state.freshness.manual_pending() {
-        bar = bar.child(
+        actions = actions.child(
             Button::new("Cancel manual analysis")
                 .on_press(State::cancel_analysis)
                 .build(k)
@@ -44,20 +42,22 @@ pub(super) fn append(state: &State, k: &Kit, mut bar: El) -> El {
         );
     }
     if enabled && state.freshness.automatic.can_cancel() {
-        bar = bar.child(
+        actions = actions.child(
             Button::new("Cancel automatic refresh")
                 .on_press(State::cancel_automatic_refresh)
                 .build(k)
                 .key("freshness-auto-cancel"),
         );
     }
-    cleanup_warning(state, k, bar)
+    cleanup_warning(state, k, body).child(actions)
 }
 
 fn cleanup_warning(state: &State, k: &Kit, mut bar: El) -> El {
     if let Some(warning) = &state.freshness.cleanup_warning {
         bar = bar.child(
             text(warning)
+                .w_full()
+                .min_w(0.0)
                 .font(k.ty.small)
                 .color(k.c.text_muted)
                 .wrap()

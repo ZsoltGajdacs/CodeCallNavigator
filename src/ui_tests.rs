@@ -1,6 +1,7 @@
 use crate::{app::State, jobs, scenes, view};
 use rune::{Env, Runtime};
 
+mod activity_details;
 mod architectural_layers;
 mod build_picker;
 mod cache_clear;
@@ -57,12 +58,12 @@ fn reveal_graph_control(runtime: &mut Runtime<State>, key: &str) {
 }
 
 fn click(runtime: &mut Runtime<State>, key: &str) {
-    if runtime.find(key).is_none() {
-        if let Some(trigger) = control_surface(key) {
-            dismiss_control_surface(runtime);
-            click(runtime, trigger);
-            settle_revealed_control(runtime);
-        }
+    if runtime.find(key).is_none()
+        && let Some(trigger) = control_surface(key)
+    {
+        dismiss_control_surface(runtime);
+        click(runtime, trigger);
+        settle_revealed_control(runtime);
     }
     reveal_graph_control(runtime, key);
     let (x, y) = runtime

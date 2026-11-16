@@ -179,11 +179,15 @@ pub fn legend(k: &Kit) -> El {
         .gap(2.0)
         .child(
             text("Solid · directly resolved calls     Amber dashes · other relationships")
+                .w_full()
+                .wrap()
                 .font(k.ty.small)
                 .color(k.c.text_muted),
         )
         .child(
             text("Purple dashes · function references     Amber outline · cycle")
+                .w_full()
+                .wrap()
                 .font(k.ty.small)
                 .color(k.c.text_muted),
         )
