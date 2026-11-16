@@ -38,7 +38,16 @@ def selection_counts(selection):
     sources = {(row['file'], row['test_name']) for row in selected}
     return dict(selected_registrations=len(selected), selected_source_cases=len(sources),
                 not_run_registrations=len(omitted), selected_gates=len(gates),
-                not_run_gates=len(gates_omitted), components=components)
+                not_run_gates=len(gates_omitted), components=components,
+                **policy_exclusion_counts(selection))
+
+
+def policy_exclusion_counts(selection):
+    excluded = selection.get('excluded_by_policy', [])
+    gates = selection.get('gates_excluded_by_policy', [])
+    return dict(excluded_by_policy_registrations=len(excluded),
+                excluded_by_policy_gates=len(gates),
+                excluded_by_policy_components=dict(sorted(Counter(row['component'] for row in excluded).items())))
 
 
 def recorded_costs(results):

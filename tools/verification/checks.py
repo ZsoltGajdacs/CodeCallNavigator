@@ -20,23 +20,26 @@ def docs_only(paths):
         or Path(p).name in {"LICENSE", "NOTICE", "COPYING"}) for p in paths)
 
 
+def syntax_command(path, python):
+    commands = {
+        '.rs': ['rustfmt', '--check', '--edition', '2024', '--config', 'skip_children=true'],
+        '.py': [python, '-c', 'import ast, pathlib, sys; ast.parse(pathlib.Path(sys.argv[1]).read_bytes(), filename=sys.argv[1])'],
+        '.json': [python, '-c', 'import json, pathlib, sys; json.loads(pathlib.Path(sys.argv[1]).read_bytes())'],
+        '.sh': ['bash', '-n'],
+        '.js': ['node', '--check'], '.cjs': ['node', '--check'], '.mjs': ['node', '--check'],
+    }
+    command = commands.get(Path(path).suffix)
+    return [*command, path] if command else None
+
+
 def static_steps(root, paths, base, python):
-    steps = [Step("whitespace", ["git", "diff", "--check", base, "--"])]
+    steps = [Step('whitespace', ['git', 'diff', '--check', base, '--'])]
     for index, path in enumerate(paths):
         if not (root / path).is_file():
             continue
-        suffix = Path(path).suffix
-        if suffix == ".rs":
-            command = ["rustfmt", "--check", "--edition", "2024", "--config", "skip_children=true", path]
-        elif suffix == ".py":
-            command = [python, "-c", "import ast, pathlib, sys; ast.parse(pathlib.Path(sys.argv[1]).read_bytes(), filename=sys.argv[1])", path]
-        elif suffix == ".sh":
-            command = ["bash", "-n", path]
-        elif suffix in {".js", ".cjs", ".mjs"}:
-            command = ["node", "--check", path]
-        else:
-            continue
-        steps.append(Step(f"syntax-format-{index:03d}", command))
+        command = syntax_command(path, python)
+        if command:
+            steps.append(Step(f'syntax-format-{index:03d}', command))
     return steps
 
 

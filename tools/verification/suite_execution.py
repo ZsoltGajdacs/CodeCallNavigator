@@ -201,7 +201,7 @@ def arguments():
     parser.add_argument('--root', type=Path, required=True)
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--suite', required=True)
-    parser.add_argument('--component')
+    parser.add_argument('--component', action='append')
     parser.add_argument('--ordinary', action='store_true')
     return parser.parse_args()
 

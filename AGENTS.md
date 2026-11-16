@@ -168,29 +168,38 @@ pass/fail gate or permission to weaken verification.
 - Before removing an expensive test, map its assertions and defect scenario to
   retained coverage and demonstrate that the replacement detects the failure.
 
-Run category scripts from the workspace root:
+Agents must use the deterministic selector for verification and test execution:
 
 ```sh
-./verify-unit.sh --component core
-./verify-integration.sh --component engine
-./verify-acceptance.sh --component mcp
-./verify-performance.sh --component ui
+./verify-changes.sh
+./verify-changes.sh --format json
+./verify-changes.sh --run
+./verify-changes.sh --base origin/main --run
 ```
 
-Category scripts accept `--component`; `verify-ui.sh`, `verify-core.sh`,
-`verify-engine.sh`, `verify-mcp.sh` and `verify-tooling.sh` accept `--suite` and
-otherwise run unit plus integration checks. Use their `--help` and `--dry-run` for
-selection, exact stages and prerequisites. During iteration run affected unit
-and real-boundary suites; shared contract changes also require consumer checks.
+Reporting is the default and creates no build/evidence artifacts. The default
+comparison is HEAD plus staged, unstaged and nonignored untracked changes; use
+`--base REF` to include committed changes. All commands work from any directory
+when invoked by their absolute path.
 
-`./verify-light.sh` and `./verify-full.sh` compose those same category execution
-paths with static, build, quality and packaging stages. Light is for small,
-low-risk changes. Full is mandatory for substantial/cross-component changes,
-analyzer, dependency, bootstrap or packaging changes, uncertain impact and release
-candidates. Full adds toolchain-backed integration, acceptance, performance and
-packaging checks; do not rerun ordinary tests in debug and release without a
-recorded release-specific reason. Report skipped/unavailable checks as not run.
-CodeScene requirements above remain mandatory and do not replace behavioral tests.
+Run the complete computed plan. Do not substitute raw Cargo/Python/Node test
+commands, manually choose category/component scripts, or override verification
+scope. Existing category/component and full/light scripts are compatibility and
+internal-composition entrypoints, not the agent verification workflow.
+
+The versioned policy in `tools/verification/change-rules.json` unions explicit
+file rules. Production changes select affected component correctness and consumer
+checks; performance runs for explicit sensitive paths. Dependencies, bootstrap,
+packaging, release workflows, vendor/patches and unknown paths automatically
+select full verification. Verification tooling and selector/rule changes select
+tooling checks and generated-plan equivalence tests, without application builds. There is no manual full
+flag or subjective full-versus-focused decision. See the shared testing strategy
+for inventory changes, rule ownership and deterministic fallback behavior.
+
+CodeScene requirements above remain mandatory and complement behavioral tests.
+Unavailable prerequisites and selected checks that did not run must be reported
+truthfully. Run automatically selected full verification outside the macOS sandbox
+for Metal and descendant cleanup. Do not weaken selection to bypass prerequisites.
 
 Documentation/descriptive metadata changes require content, path, syntax and diff
 checks only. Do not run application builds or runtime suites for those changes.
@@ -210,9 +219,9 @@ hide rebuilding cost or weaken cleanup for apparent speed.
 Run full outside the macOS sandbox so Metal and descendant cleanup are available.
 Benchmarks use an isolated copied profiling workspace, never the live store.
 Keep operational hang timeouts separate from performance aspirations. See
-[validation prerequisites](<.backlog/docs/testing/doc-21 - Verification-prerequisites-and-operations.md#validation>). Both composite scripts
-record stages under `target/verification/`, fail nonzero on failures/unavailable
-prerequisites, and mark later stages not run. Use `--base <ref>` for comparisons.
+[validation prerequisites](<.backlog/docs/testing/doc-21 - Verification-prerequisites-and-operations.md#validation>). Execution records stages under
+`target/verification/`, fails nonzero on failures/unavailable prerequisites, and
+marks later stages not run. Use `--base <ref>` for comparisons.
 
 Format only touched project-owned Rust files, for example
 `rustfmt --edition 2024 --config skip_children=true path/to/changed.rs`.

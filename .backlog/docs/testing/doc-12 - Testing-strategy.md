@@ -3,7 +3,7 @@ id: doc-12
 title: Testing strategy
 type: guide
 created_date: '2026-11-16T07:06:00Z'
-updated_date: '2026-11-16T07:07:00Z'
+updated_date: '2026-11-16T18:07:00Z'
 ---
 # Testing strategy
 
@@ -57,38 +57,57 @@ being relabeled as real acceptance.
 Run commands from the workspace root:
 
 ```sh
-./verify-unit.sh --component core
-./verify-integration.sh --component engine
-./verify-acceptance.sh --component mcp
-./verify-performance.sh --component ui
-./verify-ui.sh --suite unit
-./verify-core.sh
-./verify-engine.sh --suite integration
-./verify-mcp.sh --suite acceptance
-./verify-tooling.sh --suite unit
-./verify-light.sh --dry-run
-./verify-full.sh --dry-run
+./verify-changes.sh
+./verify-changes.sh --format json
+./verify-changes.sh --run
+./verify-changes.sh --base origin/main --run
 ```
 
-Category scripts accept `--component`; component scripts accept `--suite` and
-otherwise compose unit plus integration checks. All use the same execution paths,
-reporting and cleanup. Help/dry-run output describes exact stages and selected
-requirements. Common options include `--base`, `--timeout`, `--dry-run` and
-`--keep-artifacts`; a timeout guards hangs and is unrelated to the timing goal.
-Standalone categories preflight their selected requirements before compiling.
-Adapter bootstrap accepts repeated `--language` options; without them it retains
-the complete bootstrap. Engine packages contain all language resources, so package
-journeys require those resources even for an MCP-only consumer. Engine/MCP-only
-acceptance does not build the desktop package.
+Agents must use this entrypoint for verification and test execution, rather than
+raw test commands or manually selected category/component scripts. Reporting is
+the default and creates no build or evidence artifacts. Execute the entire
+computed plan with `--run`. There is no manual full-verification override.
 
-During iteration run affected units and boundaries. Light verification combines
-static/build/quality stages with unit and ordinary integration checks for small,
-low-risk work. Documentation-only verification remains static. Full verification
-adds compiler-backed integration, acceptance, performance and packaging for broad,
-cross-component, analyzer, dependency, bootstrap or packaging work, uncertain
-impact and release candidates. It includes applicable native visual acceptance.
-CodeScene checks complement behavioral verification. Unavailable prerequisites and
-unrun tests are never passing evidence. See [the validation reference](<doc-21 - Verification-prerequisites-and-operations.md#validation>).
+The checked-in versioned rules in `tools/verification/change-rules.json` combine
+by union. Desktop code selects UI correctness; core selects core and engine/UI/MCP
+consumer correctness; engine and analyzer adapters select engine/UI/MCP; MCP code
+selects MCP. Correctness includes every registered unit, integration and acceptance
+check for the selected components, including compiler/native boundaries. Dedicated
+registered test/gate files select their inventoried component/category pairs;
+production modules retain production rules even when they contain tests.
+
+Inventory edits select the union of changed, added and removed registrations from
+the comparison base, index and working tree. Explicit fixture, schema, integration
+asset and helper ownership rules add their consumers. Fixture and packaged-skill
+rules take precedence over documentation-only suffixes through additive selection.
+Ordinary Markdown, Backlog task/doc Markdown, licensing and issue templates select
+static checks. Unknown paths always require full verification.
+
+Dependencies, manifests, bootstrap, packaging, release workflows, vendor sources,
+patches and unknown paths deterministically select full verification. Verification
+infrastructure, selector/rule changes and verification-only dependency locks select
+tooling correctness checks plus generated-plan equivalence tests; they do not build
+or run unrelated application checks. Explicit UI rendering/layout/cache, core storage/artifact/graph/
+flow/query, engine query and benchmark paths add performance checks. No elapsed
+time, installed-tool availability or agent judgment changes selection. New paths
+must receive an explicit reviewed rule or retain the conservative full fallback.
+
+The default comparison is HEAD plus staged, unstaged and nonignored untracked
+changes. `--base REF` directly compares that revision with the index and worktree;
+it does not fetch or infer a merge base. Deletions, both rename endpoints, staged
+changes restored in the worktree, and vendor/submodule changes remain visible.
+
+Full reuses the existing full stage builder. Focused plans share category execution,
+prerequisites, bootstrap, reports and cleanup; component unions compile once per
+selected target/profile and execute each registration/gate once. Policy exclusions
+are distinct from selected stages that did not run. Text and versioned JSON report
+paths, rule matches, selected identities, requirements and ordered stages; execution
+persists `change-plan.json` beside results. Existing category/component/full/light
+scripts remain compatible building blocks, not the agent workflow.
+
+Static/build/CodeScene checks remain applicable. Unavailable prerequisites and
+unrun tests are never passing evidence. Run automatically selected full verification
+outside the macOS sandbox. See [the validation reference](<doc-21 - Verification-prerequisites-and-operations.md#validation>).
 
 Keep functional acceptance separate from performance and compiler requirements.
 Run each test once per selected composite unless a recorded release-specific risk

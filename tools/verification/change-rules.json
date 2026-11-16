@@ -1,0 +1,234 @@
+{
+  "version": 1,
+  "rules": [
+    {
+      "id": "verification-infrastructure-tooling",
+      "patterns": [
+        "verify-*.sh",
+        "tools/verify.py",
+        "tools/verify_changes.py",
+        "tools/verification/*.py",
+        "tools/verification/change-rules.json",
+        "tools/prepare_test_suite.py",
+        "requirements-verification.*"
+      ],
+      "correctness": [
+        "tooling"
+      ]
+    },
+    {
+      "id": "dependency-build-release-full",
+      "patterns": [
+        "Cargo.toml",
+        "Cargo.lock",
+        "*/Cargo.toml",
+        "analyzers.lock.json",
+        "patches/*",
+        "vendor/*",
+        ".github/workflows/*",
+        "tools/bootstrap.py",
+        "tools/package*.py",
+        "tools/install_cli.py",
+        "tools/release*",
+        "tools/ci/*",
+        "dev.sh",
+        "prod.sh",
+        "optimized-dev.sh",
+        "tools/*/package*.json",
+        "tools/*/build.gradle.kts",
+        "tools/*/settings.gradle.kts",
+        "tools/*/gradle.lockfile"
+      ],
+      "full": true
+    },
+    {
+      "id": "desktop-production",
+      "patterns": [
+        "src/*.rs"
+      ],
+      "correctness": [
+        "ui"
+      ]
+    },
+    {
+      "id": "core-production",
+      "patterns": [
+        "crates/codecallnavigator-core/src/*.rs"
+      ],
+      "correctness": [
+        "core",
+        "engine",
+        "mcp",
+        "ui"
+      ]
+    },
+    {
+      "id": "engine-production",
+      "patterns": [
+        "crates/codecallnavigator-engine/src/*.rs",
+        "tools/typescript/*.js",
+        "tools/java-bytecode/src/*",
+        "tools/maven-metadata/src/*",
+        "tools/gradle-metadata.gradle"
+      ],
+      "correctness": [
+        "engine",
+        "mcp",
+        "ui"
+      ]
+    },
+    {
+      "id": "mcp-production",
+      "patterns": [
+        "crates/codecallnavigator-mcp/src/*.rs"
+      ],
+      "correctness": [
+        "mcp"
+      ]
+    },
+    {
+      "id": "fixtures-and-public-schemas",
+      "patterns": [
+        "fixtures/*",
+        "docs/*.schema.json"
+      ],
+      "correctness": [
+        "core",
+        "engine",
+        "mcp",
+        "ui"
+      ]
+    },
+    {
+      "id": "packaged-agent-integrations",
+      "patterns": [
+        "integrations/*"
+      ],
+      "correctness": [
+        "engine",
+        "mcp"
+      ]
+    },
+    {
+      "id": "desktop-performance",
+      "patterns": [
+        "src/camera.rs",
+        "src/projection.rs",
+        "src/projection/*",
+        "src/graph_layout.rs",
+        "src/edges.rs",
+        "src/edges/*",
+        "src/*scenes.rs",
+        "src/scenes/*",
+        "src/view/graph_canvas*",
+        "src/graph_queries/render.rs",
+        "src/presentation*",
+        "src/pan_profile*",
+        "src/graph_emphasis*",
+        "src/ui_tests/*performance.rs"
+      ],
+      "performance": [
+        "ui"
+      ]
+    },
+    {
+      "id": "core-performance",
+      "patterns": [
+        "crates/codecallnavigator-core/src/store*",
+        "crates/codecallnavigator-core/src/artifact*",
+        "crates/codecallnavigator-core/src/graph*",
+        "crates/codecallnavigator-core/src/flow*",
+        "crates/codecallnavigator-core/src/query*",
+        "src/bin/*benchmark*.rs"
+      ],
+      "performance": [
+        "core",
+        "engine"
+      ]
+    },
+    {
+      "id": "engine-query-performance",
+      "patterns": [
+        "crates/codecallnavigator-engine/src/entrypoints/query*",
+        "tools/query_benchmark.py"
+      ],
+      "performance": [
+        "engine"
+      ]
+    },
+    {
+      "id": "documentation-static",
+      "patterns": [
+        "*.md",
+        "LICENSE",
+        "NOTICE",
+        "COPYING",
+        ".github/ISSUE_TEMPLATE/*"
+      ],
+      "static": true
+    },
+    {
+      "id": "owned-tooling-helpers",
+      "patterns": [
+        "tools/agent_cli.py",
+        "tools/agent_mcp.py",
+        "tools/analysis_graph.py",
+        "tools/check_bytecode.py",
+        "tools/check_callatlas.py",
+        "tools/check_engine_artifact.py",
+        "tools/check_engine_reference.py",
+        "tools/check_graph_contract.py",
+        "tools/check_jdt.py",
+        "tools/comparison_desktop_cleanup.py",
+        "tools/comparison_desktop_facts.py",
+        "tools/comparison_desktop_fixture.py",
+        "tools/comparison_desktop_gate.py",
+        "tools/comparison_desktop_protocol.py",
+        "tools/corpus_boundaries.py",
+        "tools/csharp_cleanup_boundaries.py",
+        "tools/flow_expansion_desktop_fixture.py",
+        "tools/freshness_measurement.py",
+        "tools/freshness_observer_measurement.py",
+        "tools/freshness_scenarios.py",
+        "tools/graph_bundle.py",
+        "tools/jdt_extract.py",
+        "tools/mcp_boundary.py",
+        "tools/mcp_smoke.py",
+        "tools/measure_analysis.py",
+        "tools/measure_automatic_refresh.py",
+        "tools/measure_engine_stage.py",
+        "tools/measure_flow_residency.py",
+        "tools/measure_freshness.py",
+        "tools/measure_freshness_corpus.py",
+        "tools/measure_freshness_idle.py",
+        "tools/measure_freshness_observer.py",
+        "tools/native_fixture.py",
+        "tools/native_window_setup.py",
+        "tools/pan_profile.py",
+        "tools/pan_profile_report.py",
+        "tools/profile_cache.py",
+        "tools/update_engine_corpus.py"
+      ],
+      "correctness": [
+        "tooling",
+        "engine",
+        "mcp",
+        "ui"
+      ]
+    },
+    {
+      "id": "benchmark-helpers-performance",
+      "patterns": [
+        "tools/pan_profile*.py",
+        "tools/profile_cache.py",
+        "tools/measure*.py",
+        "tools/freshness_measurement.py"
+      ],
+      "performance": [
+        "core",
+        "engine",
+        "ui"
+      ]
+    }
+  ]
+}

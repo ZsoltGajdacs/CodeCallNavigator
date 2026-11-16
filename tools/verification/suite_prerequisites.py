@@ -120,7 +120,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--root', type=Path, required=True)
     parser.add_argument('--suite', choices=SUITES, required=True)
-    parser.add_argument('--component', choices=COMPONENTS)
+    parser.add_argument('--component', choices=COMPONENTS, action='append')
     parser.add_argument('--ordinary', action='store_true')
     parser.add_argument('--profile-source', type=Path, default=os.environ.get('CODECALLNAVIGATOR_VERIFY_PROFILE_SOURCE'))
     args = parser.parse_args()

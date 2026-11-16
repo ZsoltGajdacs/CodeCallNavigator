@@ -55,16 +55,16 @@ and packaging. Retained artifact query fixtures need no recompilation to prove
 query behavior; retain separate compiler-to-artifact boundary checks.
 
 ```sh
-./verify-engine.sh --suite unit
-./verify-integration.sh --component engine
-./verify-acceptance.sh --component engine
+./verify-changes.sh
+./verify-changes.sh --run
+./verify-changes.sh --base origin/main --run
 ```
 
-Run from the workspace root. Inspect `--dry-run` for selected JDK/.NET/Node,
+Run from the workspace root. Inspect the report-only command for selected JDK/.NET/Node,
 resource, SDK and build-tool prerequisites; report unavailable tools as not run.
 Category scripts clean owned Rust outputs and temporary fixtures even on failures,
 retaining logs/evidence and downloaded caches. Use `--keep-artifacts` only for
-explicit diagnostics. Resource/bootstrap/packaging changes require full verification.
+explicit diagnostics. The selector automatically requires full verification for resource/bootstrap/packaging changes.
 
 Do not mock successful analyzer/build business behavior. Document narrow process
 fault probes for unreliable failures (blocked pipes, stalled children, malformed
@@ -75,3 +75,11 @@ Preserve uncertainty, exact source ownership and byte-identical prior artifacts 
 failure/cancellation. Roughly one minute of warm unit execution is aspirational;
 never weaken verification or timeouts to meet it. Follow root CodeScene and
 scoped-formatting rules.
+
+Agents must use `./verify-changes.sh` for verification selection and
+`./verify-changes.sh --run` for all test and verification execution. Do not
+substitute raw test commands or manually selected category/component scripts.
+Execute the complete computed plan; full verification is selected automatically
+by checked-in rules, with no manual scope override. Use `--base REF` to include
+committed changes. Run automatically selected full verification outside the macOS
+sandbox. Report unavailable prerequisites as not run, never as passing checks.

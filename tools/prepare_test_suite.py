@@ -11,7 +11,7 @@ from verification.suites import CATEGORIES, COMPONENTS, SuiteContext, SuiteSelec
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('suite', choices=CATEGORIES)
-    parser.add_argument('--component', choices=COMPONENTS)
+    parser.add_argument('--component', choices=COMPONENTS, action='append')
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--ordinary', action='store_true')
     args = parser.parse_args()

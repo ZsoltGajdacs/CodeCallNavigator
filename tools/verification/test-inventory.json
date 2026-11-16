@@ -16582,6 +16582,253 @@
       "purpose": "test unprepared cleanup accepts only absent safe directory"
     },
     {
+      "id": "tests/test_change_policy.py::FilePolicyTests.test_core_consumers_and_explicit_performance_are_additive",
+      "runner": "python",
+      "file": "tests/test_change_policy.py",
+      "test_name": "test_change_policy.FilePolicyTests.test_core_consumers_and_explicit_performance_are_additive",
+      "ignored": false,
+      "component": "tooling",
+      "category": "unit",
+      "purpose": "Verification selection preserves required coverage, Git boundaries and truthful execution; real Git/CLI tests cannot be proved by pure selection tests.",
+      "requirements": []
+    },
+    {
+      "id": "tests/test_change_policy.py::FilePolicyTests.test_documentation_cannot_downgrade_fixture_or_full_rule",
+      "runner": "python",
+      "file": "tests/test_change_policy.py",
+      "test_name": "test_change_policy.FilePolicyTests.test_documentation_cannot_downgrade_fixture_or_full_rule",
+      "ignored": false,
+      "component": "tooling",
+      "category": "unit",
+      "purpose": "Verification selection preserves required coverage, Git boundaries and truthful execution; real Git/CLI tests cannot be proved by pure selection tests.",
+      "requirements": []
+    },
+    {
+      "id": "tests/test_change_policy.py::FilePolicyTests.test_index_metadata_restored_in_worktree_keeps_staged_owner",
+      "runner": "python",
+      "file": "tests/test_change_policy.py",
+      "test_name": "test_change_policy.FilePolicyTests.test_index_metadata_restored_in_worktree_keeps_staged_owner",
+      "ignored": false,
+      "component": "tooling",
+      "category": "unit",
+      "purpose": "Verification selection preserves required coverage, Git boundaries and truthful execution; real Git/CLI tests cannot be proved by pure selection tests.",
+      "requirements": []
+    },
+    {
+      "id": "tests/test_change_policy.py::FilePolicyTests.test_invalid_paths_cannot_escape_repository",
+      "runner": "python",
+      "file": "tests/test_change_policy.py",
+      "test_name": "test_change_policy.FilePolicyTests.test_invalid_paths_cannot_escape_repository",
+      "ignored": false,
+      "component": "tooling",
+      "category": "unit",
+      "purpose": "Verification selection preserves required coverage, Git boundaries and truthful execution; real Git/CLI tests cannot be proved by pure selection tests.",
+      "requirements": []
+    },
+    {
+      "id": "tests/test_change_policy.py::FilePolicyTests.test_inventory_additions_removals_and_reclassification_union_owners",
+      "runner": "python",
+      "file": "tests/test_change_policy.py",
+      "test_name": "test_change_policy.FilePolicyTests.test_inventory_additions_removals_and_reclassification_union_owners",
+      "ignored": false,
+      "component": "tooling",
+      "category": "unit",
+      "purpose": "Verification selection preserves required coverage, Git boundaries and truthful execution; real Git/CLI tests cannot be proved by pure selection tests.",
+      "requirements": []
+    },
+    {
+      "id": "tests/test_change_policy.py::FilePolicyTests.test_malformed_policy_and_inventory_fail_explicitly",
+      "runner": "python",
+      "file": "tests/test_change_policy.py",
+      "test_name": "test_change_policy.FilePolicyTests.test_malformed_policy_and_inventory_fail_explicitly",
+      "ignored": false,
+      "component": "tooling",
+      "category": "unit",
+      "purpose": "Verification selection preserves required coverage, Git boundaries and truthful execution; real Git/CLI tests cannot be proved by pure selection tests.",
+      "requirements": []
+    },
+    {
+      "id": "tests/test_change_policy.py::FilePolicyTests.test_name_status_keeps_both_rename_endpoints_and_unusual_names",
+      "runner": "python",
+      "file": "tests/test_change_policy.py",
+      "test_name": "test_change_policy.FilePolicyTests.test_name_status_keeps_both_rename_endpoints_and_unusual_names",
+      "ignored": false,
+      "component": "tooling",
+      "category": "unit",
+      "purpose": "Verification selection preserves required coverage, Git boundaries and truthful execution; real Git/CLI tests cannot be proved by pure selection tests.",
+      "requirements": []
+    },
+    {
+      "id": "tests/test_change_policy.py::FilePolicyTests.test_order_duplicates_and_rule_order_do_not_change_selection",
+      "runner": "python",
+      "file": "tests/test_change_policy.py",
+      "test_name": "test_change_policy.FilePolicyTests.test_order_duplicates_and_rule_order_do_not_change_selection",
+      "ignored": false,
+      "component": "tooling",
+      "category": "unit",
+      "purpose": "Verification selection preserves required coverage, Git boundaries and truthful execution; real Git/CLI tests cannot be proved by pure selection tests.",
+      "requirements": []
+    },
+    {
+      "id": "tests/test_change_policy.py::FilePolicyTests.test_production_file_with_tests_keeps_consumer_rule",
+      "runner": "python",
+      "file": "tests/test_change_policy.py",
+      "test_name": "test_change_policy.FilePolicyTests.test_production_file_with_tests_keeps_consumer_rule",
+      "ignored": false,
+      "component": "tooling",
+      "category": "unit",
+      "purpose": "Verification selection preserves required coverage, Git boundaries and truthful execution; real Git/CLI tests cannot be proved by pure selection tests.",
+      "requirements": []
+    },
+    {
+      "id": "tests/test_change_policy.py::FilePolicyTests.test_registered_test_deletion_retains_old_owner",
+      "runner": "python",
+      "file": "tests/test_change_policy.py",
+      "test_name": "test_change_policy.FilePolicyTests.test_registered_test_deletion_retains_old_owner",
+      "ignored": false,
+      "component": "tooling",
+      "category": "unit",
+      "purpose": "Verification selection preserves required coverage, Git boundaries and truthful execution; real Git/CLI tests cannot be proved by pure selection tests.",
+      "requirements": []
+    },
+    {
+      "id": "tests/test_change_policy.py::FilePolicyTests.test_report_distinguishes_policy_exclusions_from_test_success",
+      "runner": "python",
+      "file": "tests/test_change_policy.py",
+      "test_name": "test_change_policy.FilePolicyTests.test_report_distinguishes_policy_exclusions_from_test_success",
+      "ignored": false,
+      "component": "tooling",
+      "category": "unit",
+      "purpose": "Verification selection preserves required coverage, Git boundaries and truthful execution; real Git/CLI tests cannot be proved by pure selection tests.",
+      "requirements": []
+    },
+    {
+      "id": "tests/test_change_policy.py::FilePolicyTests.test_unchanged_inventory_and_empty_tree_have_empty_selection",
+      "runner": "python",
+      "file": "tests/test_change_policy.py",
+      "test_name": "test_change_policy.FilePolicyTests.test_unchanged_inventory_and_empty_tree_have_empty_selection",
+      "ignored": false,
+      "component": "tooling",
+      "category": "unit",
+      "purpose": "Verification selection preserves required coverage, Git boundaries and truthful execution; real Git/CLI tests cannot be proved by pure selection tests.",
+      "requirements": []
+    },
+    {
+      "id": "tests/test_change_policy.py::FilePolicyTests.test_unknown_path_requires_every_component_and_category",
+      "runner": "python",
+      "file": "tests/test_change_policy.py",
+      "test_name": "test_change_policy.FilePolicyTests.test_unknown_path_requires_every_component_and_category",
+      "ignored": false,
+      "component": "tooling",
+      "category": "unit",
+      "purpose": "Verification selection preserves required coverage, Git boundaries and truthful execution; real Git/CLI tests cannot be proved by pure selection tests.",
+      "requirements": []
+    },
+    {
+      "id": "tests/test_change_selection.py::GitSelectionTests.test_index_worktree_rename_vendor_and_untracked_boundaries",
+      "runner": "python",
+      "file": "tests/test_change_selection.py",
+      "test_name": "test_change_selection.GitSelectionTests.test_index_worktree_rename_vendor_and_untracked_boundaries",
+      "ignored": false,
+      "component": "tooling",
+      "category": "integration",
+      "purpose": "Verification selection preserves required coverage, Git boundaries and truthful execution; real Git/CLI tests cannot be proved by pure selection tests.",
+      "requirements": [
+        "git"
+      ]
+    },
+    {
+      "id": "tests/test_change_selection.py::RepositoryPolicyTests.test_actual_component_consumers_and_performance_triggers",
+      "runner": "python",
+      "file": "tests/test_change_selection.py",
+      "test_name": "test_change_selection.RepositoryPolicyTests.test_actual_component_consumers_and_performance_triggers",
+      "ignored": false,
+      "component": "tooling",
+      "category": "integration",
+      "purpose": "Verification selection preserves required coverage, Git boundaries and truthful execution; real Git/CLI tests cannot be proved by pure selection tests.",
+      "requirements": [
+        "git"
+      ]
+    },
+    {
+      "id": "tests/test_change_selection.py::RepositoryPolicyTests.test_actual_full_triggers_include_dependencies_vendor_and_unknown",
+      "runner": "python",
+      "file": "tests/test_change_selection.py",
+      "test_name": "test_change_selection.RepositoryPolicyTests.test_actual_full_triggers_include_dependencies_vendor_and_unknown",
+      "ignored": false,
+      "component": "tooling",
+      "category": "integration",
+      "purpose": "Verification selection preserves required coverage, Git boundaries and truthful execution; real Git/CLI tests cannot be proved by pure selection tests.",
+      "requirements": [
+        "git"
+      ]
+    },
+    {
+      "id": "tests/test_change_selection.py::RepositoryPolicyTests.test_auto_full_stages_equal_legacy_and_skip_vendor_formatting",
+      "runner": "python",
+      "file": "tests/test_change_selection.py",
+      "test_name": "test_change_selection.RepositoryPolicyTests.test_auto_full_stages_equal_legacy_and_skip_vendor_formatting",
+      "ignored": false,
+      "component": "tooling",
+      "category": "integration",
+      "purpose": "Verification selection preserves required coverage, Git boundaries and truthful execution; real Git/CLI tests cannot be proved by pure selection tests.",
+      "requirements": [
+        "git"
+      ]
+    },
+    {
+      "id": "tests/test_change_selection.py::RepositoryPolicyTests.test_cli_text_json_and_execute_clean_checkout_without_artifacts",
+      "runner": "python",
+      "file": "tests/test_change_selection.py",
+      "test_name": "test_change_selection.RepositoryPolicyTests.test_cli_text_json_and_execute_clean_checkout_without_artifacts",
+      "ignored": false,
+      "component": "tooling",
+      "category": "integration",
+      "purpose": "Verification selection preserves required coverage, Git boundaries and truthful execution; real Git/CLI tests cannot be proved by pure selection tests.",
+      "requirements": [
+        "git"
+      ]
+    },
+    {
+      "id": "tests/test_change_selection.py::RepositoryPolicyTests.test_focused_correctness_keeps_compiler_backed_tests_and_component_union",
+      "runner": "python",
+      "file": "tests/test_change_selection.py",
+      "test_name": "test_change_selection.RepositoryPolicyTests.test_focused_correctness_keeps_compiler_backed_tests_and_component_union",
+      "ignored": false,
+      "component": "tooling",
+      "category": "integration",
+      "purpose": "Verification selection preserves required coverage, Git boundaries and truthful execution; real Git/CLI tests cannot be proved by pure selection tests.",
+      "requirements": [
+        "git"
+      ]
+    },
+    {
+      "id": "tests/test_change_selection.py::RepositoryPolicyTests.test_tsx_fixtures_receive_shared_source_quality_review",
+      "runner": "python",
+      "file": "tests/test_change_selection.py",
+      "test_name": "test_change_selection.RepositoryPolicyTests.test_tsx_fixtures_receive_shared_source_quality_review",
+      "ignored": false,
+      "component": "tooling",
+      "category": "integration",
+      "purpose": "Verification selection preserves required coverage, Git boundaries and truthful execution; real Git/CLI tests cannot be proved by pure selection tests.",
+      "requirements": [
+        "git"
+      ]
+    },
+    {
+      "id": "tests/test_change_selection.py::RepositoryPolicyTests.test_verification_tooling_selects_no_application_build_or_runtime_checks",
+      "runner": "python",
+      "file": "tests/test_change_selection.py",
+      "test_name": "test_change_selection.RepositoryPolicyTests.test_verification_tooling_selects_no_application_build_or_runtime_checks",
+      "ignored": false,
+      "component": "tooling",
+      "category": "integration",
+      "purpose": "Tooling-only changes require real Git/shared-runner coverage and must not build application integration tests.",
+      "requirements": [
+        "git"
+      ]
+    },
+    {
       "id": "tests/test_ci_macos.py::MacOSProvisioningTests.test_corrupt_bottle_is_never_published_to_cache",
       "runner": "python",
       "file": "tests/test_ci_macos.py",
@@ -18832,6 +19079,72 @@
       "category": "unit",
       "requirements": [],
       "purpose": "test selection counts separate selected from omitted"
+    },
+    {
+      "id": "tests/test_verification_unions.py::ComponentUnionTests.test_child_commands_carry_the_same_canonical_union",
+      "runner": "python",
+      "file": "tests/test_verification_unions.py",
+      "test_name": "test_verification_unions.ComponentUnionTests.test_child_commands_carry_the_same_canonical_union",
+      "ignored": false,
+      "component": "tooling",
+      "category": "unit",
+      "purpose": "Verification selection preserves required coverage, Git boundaries and truthful execution; real Git/CLI tests cannot be proved by pure selection tests.",
+      "requirements": []
+    },
+    {
+      "id": "tests/test_verification_unions.py::ComponentUnionTests.test_empty_unknown_and_invalid_component_unions_fail",
+      "runner": "python",
+      "file": "tests/test_verification_unions.py",
+      "test_name": "test_verification_unions.ComponentUnionTests.test_empty_unknown_and_invalid_component_unions_fail",
+      "ignored": false,
+      "component": "tooling",
+      "category": "unit",
+      "purpose": "Verification selection preserves required coverage, Git boundaries and truthful execution; real Git/CLI tests cannot be proved by pure selection tests.",
+      "requirements": []
+    },
+    {
+      "id": "tests/test_verification_unions.py::ComponentUnionTests.test_union_keeps_category_and_toolchain_requirements",
+      "runner": "python",
+      "file": "tests/test_verification_unions.py",
+      "test_name": "test_verification_unions.ComponentUnionTests.test_union_keeps_category_and_toolchain_requirements",
+      "ignored": false,
+      "component": "tooling",
+      "category": "unit",
+      "purpose": "Verification selection preserves required coverage, Git boundaries and truthful execution; real Git/CLI tests cannot be proved by pure selection tests.",
+      "requirements": []
+    },
+    {
+      "id": "tests/test_verification_unions.py::ComponentUnionTests.test_union_produces_one_compile_and_execution_stage_per_runner",
+      "runner": "python",
+      "file": "tests/test_verification_unions.py",
+      "test_name": "test_verification_unions.ComponentUnionTests.test_union_produces_one_compile_and_execution_stage_per_runner",
+      "ignored": false,
+      "component": "tooling",
+      "category": "unit",
+      "purpose": "Verification selection preserves required coverage, Git boundaries and truthful execution; real Git/CLI tests cannot be proved by pure selection tests.",
+      "requirements": []
+    },
+    {
+      "id": "tests/test_verification_unions.py::ComponentUnionTests.test_union_selects_every_owner_once_and_keeps_inventory_order",
+      "runner": "python",
+      "file": "tests/test_verification_unions.py",
+      "test_name": "test_verification_unions.ComponentUnionTests.test_union_selects_every_owner_once_and_keeps_inventory_order",
+      "ignored": false,
+      "component": "tooling",
+      "category": "unit",
+      "purpose": "Verification selection preserves required coverage, Git boundaries and truthful execution; real Git/CLI tests cannot be proved by pure selection tests.",
+      "requirements": []
+    },
+    {
+      "id": "tests/test_verification_unions.py::PolicyExclusionTests.test_policy_exclusions_are_separate_from_selected_execution_omissions",
+      "runner": "python",
+      "file": "tests/test_verification_unions.py",
+      "test_name": "test_verification_unions.PolicyExclusionTests.test_policy_exclusions_are_separate_from_selected_execution_omissions",
+      "ignored": false,
+      "component": "tooling",
+      "category": "unit",
+      "purpose": "Verification selection preserves required coverage, Git boundaries and truthful execution; real Git/CLI tests cannot be proved by pure selection tests.",
+      "requirements": []
     },
     {
       "id": "tools/test_automatic_refresh_measurement.py::AutomaticPublicationTests.test_already_delivered_compiler_metrics_do_not_wait_for_duplicate_activity",

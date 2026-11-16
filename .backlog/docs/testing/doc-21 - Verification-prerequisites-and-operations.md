@@ -3,7 +3,7 @@ id: doc-21
 title: Verification prerequisites and operations
 type: guide
 created_date: '2026-11-16T07:06:00Z'
-updated_date: '2026-11-16T07:07:00Z'
+updated_date: '2026-11-16T18:08:00Z'
 ---
 # Verification prerequisites and operations
 
@@ -11,19 +11,22 @@ Migrated 2026-11-16 from `docs/reference.md` at project revision `13b0de13f3ddf9
 
 ## Validation
 
-Use the repository entry points, which work from any current directory:
+Agents must use the deterministic changed-file entrypoint, which works from any
+current directory when invoked by its absolute path:
 
 ```sh
-./verify-light.sh
-./verify-full.sh
-./verify-full.sh --dry-run
-./verify-light.sh --base origin/main
-./verify-unit.sh --component core
-./verify-integration.sh --component engine
-./verify-acceptance.sh --component mcp
-./verify-performance.sh --component ui
-./verify-ui.sh --suite unit
+./verify-changes.sh
+./verify-changes.sh --format json
+./verify-changes.sh --run
+./verify-changes.sh --base origin/main --run
 ```
+
+The script reports by default and executes only with `--run`. It determines full
+verification automatically from explicit file rules, including conservative full
+fallback for unknown paths. There is no manual full flag or agent scope choice.
+Verification-tooling and selector/rule changes select tooling unit/integration
+checks and generated-plan equivalence assertions, without application builds.
+Do not substitute raw test commands or manually select category/component scripts.
 
 Install the locked test-only Python dependencies once in the repository's isolated
 verification environment (the scripts select it automatically):
@@ -37,32 +40,18 @@ The lock includes the existing JSON Schema contract-test dependency. Set `PYTHON
 only when intentionally using another interpreter with these locked packages.
 Documentation-only light checks do not require the test packages.
 
-Category scripts select unit, integration, acceptance or performance tests; component
-scripts (`verify-ui.sh`, `verify-core.sh`, `verify-engine.sh`, `verify-mcp.sh`,
-`verify-tooling.sh`) accept `--suite` and default to unit plus integration.
-All entry points share the same runner, category plans, inventory and cleanup.
-See [the testing strategy](<doc-12 - Testing-strategy.md>) for placement and coverage rules.
+The selector composes the existing category plans and runner, including all
+selected compiler-backed, native, packaging and performance checks. Its text and
+JSON output expose rule matches, selected checks, prerequisites and ordered stages
+without creating evidence or builds. Existing full/light/category/component scripts
+remain compatible internal building blocks. See [the testing strategy](<doc-12 - Testing-strategy.md>)
+for the authoritative rule semantics and coverage requirements.
 
-Choose light for small changes with minimal production-code effect. It composes
-changed-file static checks, workspace compilation/Clippy, ordinary unit/integration
-categories and changed-source CodeScene reviews plus the repository safeguard.
-Documentation-only light verification stays static, without application builds,
-runtime tests or benchmarks. Formatting checks only touched project-owned files
-and never rewrites vendored sources.
-
-Choose full for substantial/cross-component runtime or UI work, analyzer,
-dependency, bootstrap or packaging changes, uncertain impact and release candidates.
-It composes the same category plans with toolchain-backed integration, acceptance,
-performance and package/signature/install gates. Tests run once in their selected
-category/configuration; ignored status does not define category. Release-sensitive
-compiler, acceptance and benchmark checks use the appropriate release build.
+Report compilation, setup, execution and cleanup separately. The approximately
+one-minute warm unit-execution goal is aspirational, never a reason to omit checks.
 Native visual acceptance is distinct from headless UI tests, and offscreen GPU
-throughput does not prove interactive/native displayed FPS.
-
-Category/component `--dry-run` output lists exact stages and requirements without
-creating evidence or builds. The approximately one-minute warm unit-execution goal
-is aspirational, not a failure threshold; preserve valuable coverage even when a
-suite takes longer. Report compilation, setup, execution and cleanup separately.
+throughput does not prove interactive/native displayed FPS. Formatting checks only
+touched project-owned files and never rewrite vendored sources.
 
 Full requires Apple Silicon macOS, native Metal/process-table access, Python 3.12+
 (the local verification environment, falling back to `python3.13`), Rust with Clippy/rustfmt, Node 24+, JDK 25,
@@ -74,7 +63,7 @@ your shell (replace these example paths with your actual installations):
 export CODECALLNAVIGATOR_TS_NODE_MODULES=/absolute/path/to/node_modules
 export CODECALLNAVIGATOR_RECURRING_BILLING=/absolute/path/to/Recurring-billing
 export CODECALLNAVIGATOR_VERIFY_PROFILE_SOURCE="/absolute/path/to/saved-application-data"
-./verify-full.sh
+./verify-changes.sh --run
 ```
 
 The modules directory must contain TypeScript 6.0.x, React 19 and Next 16 fixture
@@ -122,17 +111,24 @@ normal authentication/license configuration. Select another executable path with
 incomplete results fail verification. Sonar remains a separate connected quality
 gate if `.sonar/config.json` is configured; it is currently absent in this project.
 
-A checkout lock prevents competing full/light runs from sharing build/package
-outputs. Each invocation writes fresh numbered stage logs, `results.json`, `cleanup.json` and `changes.json`
-under `target/verification/`. Failed, timed-out and not-run stages remain distinct;
-a failed/incomplete full run never reports full success. `--timeout SECONDS`
-bounds each build/test/package stage (default 1800); interruption/timeout stops
-the process group. If OS restrictions prevent descendant cleanup, the script
-reports `cleanup-unavailable` and fails. `--output /new/directory` retains evidence
-elsewhere; existing output directories are rejected. `PYTHON=python3.12` chooses
-another supported interpreter. `--base` controls committed changes plus staged,
-unstaged and untracked files; the default base is HEAD. No-change light runs are
-static-only, so use full for an unconditional complete verification.
+A checkout lock prevents competing execution runs from sharing build/package
+outputs. Execution writes fresh numbered stage logs, `results.json`,
+`change-plan.json` and `summary.json` under `target/verification/`. Selected
+categories record their own selection, cleanup and reclamation reports; full
+verification additionally records its final root `cleanup.json`. Report-only and
+clean-tree invocations create no evidence directory or builds.
+
+Failed, timed-out and not-run stages remain distinct; policy exclusions are not
+failed or passing tests. A failed/incomplete run never reports success.
+`--timeout SECONDS` bounds each build/test/package stage (default 1800);
+interruption/timeout stops the process group. If OS restrictions prevent descendant
+cleanup, the script reports `cleanup-unavailable` and fails.
+`--output /new/directory` retains evidence elsewhere; existing output directories
+are rejected. `PYTHON=python3.12` chooses another supported interpreter.
+`--base REF` controls committed changes plus staged, unstaged and nonignored
+untracked files; the default base is HEAD. Clean-tree selection is empty.
+Full verification is selected only by deterministic changed-file rules, never by
+an agent choosing a scope flag.
 
 See [TypeScript acceptance](<../history/doc-4 - Analyzer-behavior-and-regression-acceptance.md#source-evidence-analyzers-typescript-md>) and [Maven acceptance](<../history/doc-4 - Analyzer-behavior-and-regression-acceptance.md#source-evidence-analyzers-maven-md>) for the compatibility matrix. Headless Rune GPU screenshots and interaction checks are under
 `evidence/ui`; `--scene fixture` is an explicit synthetic test scene, never normal

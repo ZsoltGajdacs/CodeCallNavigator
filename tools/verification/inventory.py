@@ -169,21 +169,31 @@ def validate_inventory(root):
     return rows
 
 
+def component_names(component):
+    """Normalize legacy single owners and explicit unions; None selects all owners."""
+    if component is None:
+        return COMPONENTS
+    names = (component,) if isinstance(component, str) else component
+    require(isinstance(names, (tuple, list)) and bool(names), 'Test component union must not be empty')
+    require(all(isinstance(name, str) and name in COMPONENTS for name in names),
+            f'Unknown test component: {component}')
+    return tuple(sorted(set(names)))
+
+
 @dataclass(frozen=True)
 class Selection:
     suite: str
-    component: str | None
+    component: str | tuple[str, ...] | None
     include_toolchains: bool
 
     def validate(self):
         require(self.suite in SUITES, f'Unknown test suite: {self.suite}')
-        if self.component is not None:
-            require(self.component in COMPONENTS, f'Unknown test component: {self.component}')
+        component_names(self.component)
 
     def matches(self, row):
         if row['category'] != self.suite:
             return False
-        if self.component is not None and row['component'] != self.component:
+        if row['component'] not in component_names(self.component):
             return False
         return self.include_toolchains or not TOOLCHAINS.intersection(row['requirements'])
 

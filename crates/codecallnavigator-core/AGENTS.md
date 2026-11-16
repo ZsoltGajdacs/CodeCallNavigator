@@ -55,11 +55,12 @@ has no standalone application journey; engine, desktop and MCP consumers prove
 assembled behavior. Shared contract changes require relevant consumer checks.
 
 ```sh
-./verify-core.sh --suite unit
-./verify-integration.sh --component core
+./verify-changes.sh
+./verify-changes.sh --run
+./verify-changes.sh --base origin/main --run
 ```
 
-Run from the workspace root and inspect `--dry-run` for Git/SQLite/Graphviz and
+Run from the workspace root and inspect the report-only command for Git/SQLite/Graphviz and
 other selected prerequisites. Category scripts clean owned Rust outputs and
 temporary resources after success or failure, preserving evidence and downloaded
 caches. `--keep-artifacts` is an explicit diagnostic exception.
@@ -71,3 +72,11 @@ one, map its assertions to retained coverage and demonstrate defect detection.
 Roughly one minute of warm unit execution is aspirational, never a failure gate;
 quality and unique boundary coverage take precedence. Follow root full-verification,
 CodeScene and scoped-formatting requirements.
+
+Agents must use `./verify-changes.sh` for verification selection and
+`./verify-changes.sh --run` for all test and verification execution. Do not
+substitute raw test commands or manually selected category/component scripts.
+Execute the complete computed plan; full verification is selected automatically
+by checked-in rules, with no manual scope override. Use `--base REF` to include
+committed changes. Run automatically selected full verification outside the macOS
+sandbox. Report unavailable prerequisites as not run, never as passing checks.

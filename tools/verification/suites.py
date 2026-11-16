@@ -4,7 +4,7 @@ import os
 from pathlib import Path
 import sys
 
-from verification.inventory import validate_inventory, select_tests, select_gates, load_gates
+from verification.inventory import validate_inventory, select_tests, select_gates, load_gates, component_names
 from verification.runner import Step
 from verification.category_cleanup import temporary_path
 from verification.suite_prerequisites import requirements_for
@@ -19,7 +19,7 @@ BUILD_SERVER_ENVIRONMENT = {'DOTNET_CLI_USE_MSBUILD_SERVER': '0',
 @dataclass(frozen=True)
 class SuiteSelection:
     category: str
-    component: str | None = None
+    component: str | tuple[str, ...] | None = None
     ordinary: bool = False
     timeout: int = 1800
     keep_artifacts: bool = False
@@ -27,7 +27,10 @@ class SuiteSelection:
     @classmethod
     def from_args(cls, category, args):
         ordinary = getattr(args, 'mode', None) == 'light' or getattr(args, 'ordinary', False)
-        return cls(category, getattr(args, 'component', None), ordinary,
+        component = getattr(args, 'component', None)
+        if component is not None and not isinstance(component, str):
+            component = component_names(component)
+        return cls(category, component, ordinary,
                    getattr(args, 'timeout', 1800), getattr(args, 'keep_artifacts', False))
 
     @property
@@ -38,8 +41,9 @@ class SuiteSelection:
 
     def arguments(self):
         command = ['--suite', self.category]
-        if self.component:
-            command.extend(['--component', self.component])
+        if self.component is not None:
+            for component in component_names(self.component):
+                command.extend(['--component', component])
         if self.ordinary:
             command.append('--ordinary')
         return command
@@ -172,16 +176,21 @@ def category_cleanup_step(context):
 
 def selection_report(context, inventory, rows):
     choice = context.selection
-    selected = {row['id'] for row in rows}
-    relevant = [row for row in inventory if row['category'] == choice.category
-                and (choice.component is None or row['component'] == choice.component)]
     gates = context.selected_gates()
     return {'category': choice.category, 'component': choice.component, 'selected': rows,
-            'not_run': [row for row in relevant if row['id'] not in selected],
+            'components': list(component_names(choice.component)),
+            'not_run': [],
+            'excluded_by_policy': excluded_rows(inventory, choice.category, rows),
             'timing_goal': 'Approximately one minute of warm unit execution is aspirational, not a gate.',
             'gates': gates,
-            'gates_not_run': [gate for gate in load_gates(context.root)
-                              if gate['category'] == choice.category and gate not in gates]}
+            'gates_not_run': [],
+            'gates_excluded_by_policy': excluded_rows(load_gates(context.root), choice.category, gates)}
+
+
+def excluded_rows(inventory, category, selected):
+    """Selection omissions are policy exclusions, never failed execution evidence."""
+    identities = {row['id'] for row in selected}
+    return [row for row in inventory if row['category'] == category and row['id'] not in identities]
 
 
 def gate_environment(context):
