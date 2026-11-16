@@ -95,3 +95,48 @@ fn data() -> GraphData {
         ..Default::default()
     }
 }
+
+/// Risk: Rune's implicit layout motion can lag the shared graph geometry during
+/// direct pan. Only its real layout/presentation runtime can expose that second
+/// animation; pure interpolation tests cannot observe presented card rectangles.
+#[test]
+fn presented_cards_follow_sampled_camera_without_a_second_layout_spring() {
+    let mut runtime = super::runtime();
+    runtime.settle_all();
+    let node = runtime
+        .state
+        .graph_view
+        .nodes
+        .iter()
+        .find(|node| runtime.state.nav.camera.shows(node, runtime.state.viewport))
+        .unwrap()
+        .clone();
+    let key = format!("graph-card-{}", node.key);
+    for frame in 1..8 {
+        runtime.update(|state, _| {
+            state.cancel_graph_camera();
+            state.nav.camera.pan[0] += 7.0;
+            state.nav.camera.pan[1] += 3.0;
+        });
+        runtime.frame(frame as f64 / 60.0);
+        let (canvas, _) = runtime.presented("graph-canvas").unwrap();
+        let (card, _) = runtime.presented(&key).unwrap();
+        let point = runtime.state.nav.camera.screen(node.position);
+        assert!(
+            (card[0] - canvas[0] - point[0]).abs() < 0.1,
+            "card X lags camera: card={:?} canvas={:?} point={:?} node={:?} camera={:?}",
+            card,
+            canvas,
+            point,
+            node.position,
+            runtime.state.nav.camera
+        );
+        assert!(
+            (card[1] - canvas[1] - point[1]).abs() < 0.1,
+            "card Y lags camera: card={:?} canvas={:?} point={:?}",
+            card,
+            canvas,
+            point
+        );
+    }
+}

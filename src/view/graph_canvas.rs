@@ -50,7 +50,13 @@ fn graph_content(state: &State, k: &Kit) -> El {
         .graph_emphasis
         .borrow_mut()
         .get(&state.graph_view, state.visual_selection.as_deref());
-    let mut content = el().key("graph-world").w_full().h_full();
+    // Displayed geometry is already sampled by graph_motion. A second inherited
+    // Rune layout spring would detach cards/hit targets from canvas edge shapes.
+    let mut content = el()
+        .key("graph-world")
+        .motion(rune::Spring::NONE)
+        .w_full()
+        .h_full();
     for (index, band) in state.graph_view.layer_bands.iter().enumerate() {
         content = content.child(layer_band(state, index, band, k));
     }

@@ -3,11 +3,11 @@ id: doc-34
 title: Open Canvas native design contract
 type: other
 created_date: '2026-11-16T08:14:00Z'
-updated_date: '2026-11-16T08:14:00Z'
+updated_date: '2026-11-16T09:28:00Z'
 ---
 ## Design contract
 
-The selected direction is the light Open Canvas concept, refined through the interactive prototype. Use `inspector-toggle.jpg` for the latest panel controls, `hover-source.jpg` for source previews, `filters-concept.png` for the filter organization, and `inspector-concept.png` for the inspector hierarchy. The checked-in `prototype/` is a frozen browser interaction reference, not production code or an analyzer fixture. It contains illustrative code and relationships. Recreate it with native Rune/Kit, preserving real graph semantics and existing app features. System light/dark appearance remains supported; the approved light palette guides the light theme, not a light-only restriction.
+The selected direction is the light Open Canvas concept, refined through the interactive prototype. Use `inspector-toggle.jpg` for the latest panel controls, `hover-source.jpg` for source previews, `filters-concept.png` for the filter organization, and `inspector-concept.png` for the inspector hierarchy. The local `prototype/` is a frozen browser interaction reference, not production code or an analyzer fixture. It contains illustrative code and relationships. Recreate it with native Rune/Kit, preserving real graph semantics and existing app features. System light/dark appearance remains supported; the approved light palette guides the light theme, not a light-only restriction.
 
 Approved behavior:
 

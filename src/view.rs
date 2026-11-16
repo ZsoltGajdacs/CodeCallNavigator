@@ -35,6 +35,11 @@ fn graph_workspace(state: &State, cx: &mut Cx<State>) -> El {
         .min_h(0.0)
         .child(graph_controls::toolbar(state, &k))
         .child(canvas_workspace(state, cx, &k, &mut layer));
+    // The workspace is edge-to-edge, not an inset rounded card. A second rounded
+    // main-pane mask would intersect every graph card's own rounded clip and
+    // force an offscreen compositing layer per node in Rune.
+    let mut shell_kit = k.clone();
+    shell_kit.radius.lg = 0.0;
     let split = SplitView::new(main)
         .sidebar(
             &state.ui.sidebar,
@@ -51,7 +56,7 @@ fn graph_workspace(state: &State, cx: &mut Cx<State>) -> El {
         .frame_inset(0.0)
         .reduced_motion(cx.is_reduced_motion())
         .toolbar(workspace_toolbar::view(state, &k, &mut layer))
-        .build(&k)
+        .build(&shell_kit)
         .grow(1.0)
         .min_w(0.0);
     let body = col()

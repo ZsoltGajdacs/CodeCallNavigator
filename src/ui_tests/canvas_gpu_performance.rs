@@ -48,6 +48,7 @@ fn measure(gpu: &rune::render::Gpu, name: &str, scale: f32) -> anyhow::Result<()
     let mut complete = Vec::new();
     let mut segments = Vec::new();
     let mut instances = Vec::new();
+    let mut renderer_diagnostic = serde_json::Value::Null;
     for frame in 0..40 {
         let began = Instant::now();
         rt.state.nav.camera.pan = [
@@ -67,6 +68,9 @@ fn measure(gpu: &rune::render::Gpu, name: &str, scale: f32) -> anyhow::Result<()
             &rt.instances,
             size,
         );
+        if frame == 10 {
+            renderer_diagnostic = renderer_diagnostics(&rt, &renderer, name, nodes);
+        }
         renderer.draw(&mut encoder, &target.view, rt.clear_color());
         renderer.submit(&gpu.queue, encoder);
         let encoded_ms = began.elapsed().as_secs_f64() * 1000.0;
@@ -87,9 +91,34 @@ fn measure(gpu: &rune::render::Gpu, name: &str, scale: f32) -> anyhow::Result<()
     }
     println!(
         "{}",
-        serde_json::json!({"workload":name,"scale":scale,"size_px":[size.0,size.1],"nodes":nodes,"edges":edges,"zoom":zoom,"warmup":10,"frames":30,"update_ms":stats(update),"upload_encode_ms":stats(encode),"gpu_complete_frame_ms":stats(complete),"mean_segments":segments.iter().sum::<usize>()/segments.len(),"mean_instances":instances.iter().sum::<usize>()/instances.len()})
+        serde_json::json!({"workload":name,"scale":scale,"renderer":renderer_diagnostic,"size_px":[size.0,size.1],"nodes":nodes,"edges":edges,"zoom":zoom,"warmup":10,"frames":30,"update_ms":stats(update),"upload_encode_ms":stats(encode),"gpu_complete_frame_ms":stats(complete),"mean_segments":segments.iter().sum::<usize>()/segments.len(),"mean_instances":instances.iter().sum::<usize>()/instances.len()})
     );
     Ok(())
+}
+
+fn renderer_diagnostics(
+    runtime: &rune::Runtime<app::State>,
+    renderer: &rune::render::Renderer,
+    workload: &str,
+    nodes: usize,
+) -> serde_json::Value {
+    let layers = renderer.layer_stats();
+    if workload == "dense" {
+        // Fixed shell overlays may isolate paint. Scaling layers with the 300
+        // graph cards would reintroduce the measured GPU regression.
+        assert!(
+            layers.targets < nodes / 10,
+            "per-card GPU layer regression: {layers:?}"
+        );
+    }
+    let mut kinds = std::collections::BTreeMap::new();
+    for instance in &runtime.instances {
+        *kinds.entry(instance.params[1] as u32).or_insert(0usize) += 1;
+    }
+    serde_json::json!({"surfaces": runtime.surfaces.len(), "layers": {
+        "targets": layers.targets, "bytes": layers.bytes,
+        "extra_passes": layers.extra_passes, "allocations": layers.allocations},
+        "instance_kinds": kinds})
 }
 
 fn stats(mut times: Vec<f64>) -> serde_json::Value {

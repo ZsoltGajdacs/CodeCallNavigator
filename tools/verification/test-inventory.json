@@ -11347,7 +11347,7 @@
         "release",
         "cli"
       ],
-      "purpose": "canvas gpu frame completion",
+      "purpose": "canvas gpu frame completion Guard constant compositor layer count during dense graph pan to prevent per-card offscreen targets.",
       "serial_group": "profiling-machine"
     },
     {
@@ -12105,6 +12105,20 @@
       "category": "integration",
       "requirements": [],
       "purpose": "fit uses the full canvas with filter popover closed"
+    },
+    {
+      "id": "codecallnavigator/bin:codecallnavigator::ui_tests::graph_fit::presented_cards_follow_sampled_camera_without_a_second_layout_spring",
+      "runner": "rust",
+      "file": "src/ui_tests/graph_fit.rs",
+      "test_name": "ui_tests::graph_fit::presented_cards_follow_sampled_camera_without_a_second_layout_spring",
+      "ignored": false,
+      "package": "codecallnavigator",
+      "target_kind": "bin",
+      "target": "codecallnavigator",
+      "component": "ui",
+      "category": "integration",
+      "requirements": [],
+      "purpose": "Actual Rune presented card rectangles follow sampled camera immediately without an implicit second layout animation"
     },
     {
       "id": "codecallnavigator/bin:codecallnavigator::ui_tests::graph_single_click_centers_after_click_interval_and_wheel_zooms",
