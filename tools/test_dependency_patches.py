@@ -42,6 +42,8 @@ class PatchMigrationCases:
             destination.parent.mkdir(parents=True, exist_ok=True)
             destination.write_bytes(contents)
         self.git("init", "--quiet")
+        # Upstream blobs may contain mixed line endings; preserve their exact bytes.
+        self.git("config", "core.autocrlf", "false")
         self.git("config", "core.abbrev", str(self.abbreviation))
         self.git("add", ".")
         self.git("-c", "commit.gpgsign=false", "-c", "user.name=Patch test", "-c", "user.email=patch-test@example.invalid", "commit", "--quiet", "-m", "Pinned test sources")
