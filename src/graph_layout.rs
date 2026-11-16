@@ -43,7 +43,67 @@ impl State {
     }
 
     pub fn fit_visible_graph(&mut self) {
-        self.nav.camera.fit(self.graph_view.size, self.viewport);
+        self.nav
+            .camera
+            .fit(self.graph_view.size, self.graph_safe_viewport());
+    }
+
+    pub(crate) fn graph_safe_viewport(&self) -> [f32; 2] {
+        [
+            self.viewport[0],
+            (self.viewport[1] - self.ui.canvas_bottom_inset).max(1.0),
+        ]
+    }
+
+    /// Controls are pinned over the canvas; reserve their measured bounds only for framing.
+    /// World transforms, pointer coordinates and source-popup origins remain unchanged.
+    pub(crate) fn set_canvas_controls_top(&mut self, top: f32) {
+        if !top.is_finite() {
+            return;
+        }
+        let inset = (self.source_popup.canvas[1] + self.viewport[1] - top)
+            .clamp(0.0, self.viewport[1].max(0.0));
+        if (inset - self.ui.canvas_bottom_inset).abs() < 0.5 {
+            return;
+        }
+        let was_centered = self.focus_is_centered();
+        let was_fitted = self.camera_is_fitted();
+        self.ui.canvas_bottom_inset = inset;
+        if !was_fitted && !was_centered {
+            return;
+        }
+        if !self.view_is_current() {
+            return;
+        }
+        if self.preserve_adoption_camera {
+            return;
+        }
+        self.graph_motion.interrupt_camera();
+        if was_centered {
+            self.center_graph_focus();
+        } else {
+            self.fit_visible_graph();
+        }
+        self.dirty_session = true;
+    }
+
+    fn focus_is_centered(&self) -> bool {
+        self.graph_focus_center().is_some_and(|center| {
+            let point = self.nav.camera.screen(center);
+            let safe = self.graph_safe_viewport();
+            (point[0] - safe[0] / 2.0).abs() < 0.5 && (point[1] - safe[1] / 2.0).abs() < 0.5
+        })
+    }
+
+    fn camera_is_fitted(&self) -> bool {
+        let mut fitted = self.nav.camera.clone();
+        fitted.fit(self.graph_view.size, self.graph_safe_viewport());
+        fitted
+            .pan
+            .iter()
+            .zip(self.nav.camera.pan)
+            .all(|(a, b)| (*a - b).abs() < 0.5)
+            && (fitted.zoom - self.nav.camera.zoom).abs() < 0.001
     }
 
     fn focus_was_removed(&self, view: &GraphView) -> bool {
@@ -70,7 +130,7 @@ impl State {
         let centered = self.graph_focus_center().is_some_and(|center| {
             let screen = self.nav.camera.screen(center);
             (screen[0] - self.viewport[0] / 2.0).abs() < 0.1
-                && (screen[1] - self.viewport[1] / 2.0).abs() < 0.1
+                && (screen[1] - self.graph_safe_viewport()[1] / 2.0).abs() < 0.1
         });
         self.viewport = viewport;
         if self.preserve_adoption_camera {
@@ -85,6 +145,7 @@ impl State {
         }
     }
 
+    #[cfg(test)]
     pub(crate) fn set_graph_filter_height(&mut self, height: f32) {
         if self.graph_interaction.filter_height == height {
             return;
@@ -107,7 +168,7 @@ impl State {
             let zoom = self.nav.camera.zoom;
             self.nav.camera.pan = [
                 self.viewport[0] / 2.0 - center[0] * zoom,
-                self.viewport[1] / 2.0 - center[1] * zoom,
+                self.graph_safe_viewport()[1] / 2.0 - center[1] * zoom,
             ];
             self.dirty_session = true;
         }
@@ -115,8 +176,9 @@ impl State {
 
     fn fit_graph_focus(&mut self) {
         if let Some(bounds) = focus_bounds(&self.graph_view) {
-            let top = self.graph_interaction.filter_height.min(self.viewport[1]);
-            let available = [self.viewport[0], (self.viewport[1] - top).max(1.0)];
+            let safe = self.graph_safe_viewport();
+            let top = self.graph_interaction.filter_height.min(safe[1]);
+            let available = [safe[0], (safe[1] - top).max(1.0)];
             self.nav
                 .camera
                 .fit([bounds[2] - bounds[0], bounds[3] - bounds[1]], available);
@@ -187,5 +249,78 @@ mod tests {
         };
         assert_eq!(focus_bounds(&view), Some([-20.0, -10.0, 90.0, 50.0]));
         assert_eq!(focus_bounds(&GraphView::default()), None);
+    }
+}
+
+#[cfg(test)]
+mod overlay_tests {
+    use crate::app::State;
+
+    #[test]
+    fn fit_reserves_measured_controls_without_changing_canvas_coordinates() {
+        let mut state = State::fixture();
+        state.viewport = [1000.0, 700.0];
+        state.source_popup.canvas = [50.0, 100.0];
+        state.graph_view.size = [800.0, 600.0];
+        state.visible_revision = Some((state.epoch, state.revision));
+        state.fit_visible_graph();
+        state.set_canvas_controls_top(650.0);
+        assert_eq!(state.viewport, [1000.0, 700.0]);
+        assert_eq!(state.ui.canvas_bottom_inset, 150.0);
+        let corner = state.nav.camera.screen([800.0, 600.0]);
+        assert!(corner[0] < 1000.0 && corner[1] < 550.0);
+        assert_eq!(state.source_popup.canvas, [50.0, 100.0]);
+    }
+
+    #[test]
+    fn changing_controls_preserves_a_manually_positioned_camera() {
+        let mut state = State::fixture();
+        state.viewport = [1000.0, 700.0];
+        state.nav.camera.pan = [75.0, -30.0];
+        state.nav.camera.zoom = 0.75;
+        state.set_canvas_controls_top(550.0);
+        assert_eq!(state.nav.camera.pan, [75.0, -30.0]);
+        assert_eq!(state.nav.camera.zoom, 0.75);
+        state.fit_visible_graph();
+        assert_eq!(state.graph_safe_viewport(), [1000.0, 550.0]);
+    }
+    #[test]
+    fn changing_controls_keeps_existing_focus_centered_without_resetting_zoom() {
+        let mut state = State::fixture();
+        state.viewport = [1000.0, 700.0];
+        state.ui.canvas_bottom_inset = 80.0;
+        state.graph_view.focus_keys = vec!["focus".into()];
+        state.graph_view.nodes = vec![crate::projection::ViewNode {
+            key: "focus".into(),
+            position: [80.0, 120.0],
+            size: [200.0, 60.0],
+            ..Default::default()
+        }];
+        state.visible_revision = Some((state.epoch, state.revision));
+        state.nav.camera.zoom = 0.75;
+        state.center_graph_focus();
+        assert_eq!(state.nav.camera.screen([180.0, 150.0]), [500.0, 310.0]);
+        state.set_canvas_controls_top(550.0);
+        assert_eq!(state.nav.camera.screen([180.0, 150.0]), [500.0, 275.0]);
+        assert_eq!(state.nav.camera.zoom, 0.75);
+    }
+
+    #[test]
+    fn resizing_keeps_a_focused_node_centered_above_measured_controls() {
+        let mut state = State::fixture();
+        state.viewport = [1000.0, 700.0];
+        state.ui.canvas_bottom_inset = 150.0;
+        state.graph_view.focus_keys = vec!["focus".into()];
+        state.graph_view.nodes = vec![crate::projection::ViewNode {
+            key: "focus".into(),
+            position: [80.0, 120.0],
+            size: [200.0, 60.0],
+            ..Default::default()
+        }];
+        state.visible_revision = Some((state.epoch, state.revision));
+        state.center_graph_focus();
+        assert_eq!(state.nav.camera.screen([180.0, 150.0]), [500.0, 275.0]);
+        state.resize_graph_viewport([1200.0, 900.0]);
+        assert_eq!(state.nav.camera.screen([180.0, 150.0]), [600.0, 375.0]);
     }
 }

@@ -44,6 +44,7 @@ pub(super) fn layer(state: &State, k: &Kit, layers: &mut Vec<El>) {
                 .child(results(state, k)),
         )
         .child(pager(state, k))
+        .focus_return("open-search")
         .modal(true, State::close_search)
         .modal_click_outside(true);
     layers.push(
@@ -160,7 +161,12 @@ fn status(state: &State) -> Option<&str> {
     }
 }
 
-fn result_row(hit: &codecallnavigator::search::SearchHit, index: usize, selected: bool, k: &Kit) -> El {
+fn result_row(
+    hit: &codecallnavigator::search::SearchHit,
+    index: usize,
+    selected: bool,
+    k: &Kit,
+) -> El {
     let label = format!("{} · {}", hit.kind_label(), hit.name);
 
     col()

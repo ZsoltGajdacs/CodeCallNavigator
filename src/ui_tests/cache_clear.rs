@@ -13,10 +13,11 @@ fn cache_runtime(project: &std::path::Path) -> Runtime<State> {
 fn clear_cache_control_is_adjacent_and_disabled_during_analysis() {
     let project = tempfile::tempdir().unwrap();
     let mut runtime = cache_runtime(project.path());
+    click(&mut runtime, "project-picker-trigger");
     let clear = runtime.find("clear-cache").unwrap();
     let analyze = runtime.find("analyze").unwrap();
-    assert!(clear.0 < analyze.0);
-    assert!((clear.1 - analyze.1).abs() < 2.0);
+    assert!(clear.1 < analyze.1);
+    assert!((clear.1 - analyze.1).abs() < 70.0);
     runtime.state.analyzing = true;
     runtime.frame(1.0 / 60.0);
     click(&mut runtime, "clear-cache");

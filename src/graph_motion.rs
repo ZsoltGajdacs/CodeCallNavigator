@@ -1,4 +1,6 @@
 //! Transient displayed geometry. Graph semantics and target layout remain unchanged.
+mod bands;
+mod routes;
 use crate::{camera::Camera, projection::GraphView};
 use std::{cell::Cell, collections::HashMap, time::Duration};
 
@@ -40,6 +42,8 @@ pub struct Snapshot {
     rectangles: HashMap<String, [f32; 4]>,
     camera: Camera,
     nodes: Vec<crate::projection::ViewNode>,
+    edges: Vec<routes::Captured>,
+    bands: Vec<crate::projection::LayerBand>,
 }
 
 impl Snapshot {
@@ -56,7 +60,21 @@ impl Snapshot {
                 })
                 .collect(),
             camera: camera.clone(),
-            nodes: view.nodes.clone(),
+            // Departing cards only paint their label and rectangle. Do not clone
+            // potentially large method/file inventories merely to fade a card.
+            nodes: view
+                .nodes
+                .iter()
+                .map(|node| crate::projection::ViewNode {
+                    key: node.key.clone(),
+                    label: node.label.clone(),
+                    position: node.position,
+                    size: node.size,
+                    ..Default::default()
+                })
+                .collect(),
+            edges: routes::capture(view),
+            bands: view.layer_bands.clone(),
         }
     }
 }
@@ -71,6 +89,8 @@ pub struct Motion {
     nodes: Vec<Node>,
     ghosts: Vec<Ghost>,
     routes: Vec<Vec<[f32; 2]>>,
+    route_presence: routes::Routes,
+    bands: bands::Bands,
     camera: Option<[Spring; 3]>,
     last_time: Option<f64>,
     pub reduced: Cell<bool>,
@@ -82,38 +102,16 @@ impl Motion {
             self.clear();
             return;
         }
+        let previous_ghosts: HashMap<_, _> = self
+            .ghosts
+            .drain(..)
+            .map(|g| (g.node.key.clone(), g))
+            .collect();
         let previous: HashMap<_, _> = self.nodes.drain(..).map(|n| (n.key.clone(), n)).collect();
         self.nodes = view
             .nodes
             .iter()
-            .map(|n| {
-                let target = [n.position[0], n.position[1], n.size[0], n.size[1]];
-                let origin = before.rectangles.get(&n.key).copied().unwrap_or(target);
-                let mut rect = std::array::from_fn(|i| Spring::new(origin[i], target[i]));
-                if let Some(old) = previous.get(&n.key) {
-                    for i in 0..4 {
-                        rect[i].velocity = old.rect[i].velocity;
-                    }
-                }
-                let opacity = previous
-                    .get(&n.key)
-                    .map(|old| old.opacity)
-                    .unwrap_or_else(|| {
-                        Spring::new(
-                            if before.rectangles.contains_key(&n.key) {
-                                1.0
-                            } else {
-                                0.0
-                            },
-                            1.0,
-                        )
-                    });
-                Node {
-                    key: n.key.clone(),
-                    rect,
-                    opacity,
-                }
-            })
+            .map(|n| retarget_node(n, &before, &previous, &previous_ghosts))
             .collect();
         let retained: std::collections::HashSet<_> =
             view.nodes.iter().map(|n| n.key.as_str()).collect();
@@ -121,11 +119,26 @@ impl Motion {
             .nodes
             .into_iter()
             .filter(|n| !retained.contains(n.key.as_str()))
-            .map(|node| Ghost {
-                node,
-                opacity: Spring::new(1.0, 0.0),
+            .map(|node| {
+                let opacity = {
+                    let mut opacity = previous
+                        .get(&node.key)
+                        .map(|n| n.opacity)
+                        .unwrap_or(Spring::new(1.0, 0.0));
+                    opacity.target = 0.0;
+                    opacity
+                };
+                Ghost { node, opacity }
             })
+            .chain(
+                previous_ghosts
+                    .into_values()
+                    .filter(|g| !retained.contains(g.node.key.as_str())),
+            )
+            .take(1500)
             .collect();
+        self.route_presence.begin(before.edges, view);
+        self.bands.begin(before.bands, &view.layer_bands);
         self.routes = view.edges.iter().map(|e| e.points.clone()).collect();
         let origin = [
             before.camera.pan[0],
@@ -151,12 +164,21 @@ impl Motion {
         self.nodes.clear();
         self.ghosts.clear();
         self.routes.clear();
+        self.route_presence = Default::default();
+        self.bands = Default::default();
         self.camera = None;
         self.last_time = None;
     }
 
     pub fn ghosts(&self) -> impl Iterator<Item = (&crate::projection::ViewNode, f32)> {
         self.ghosts.iter().map(|g| (&g.node, g.opacity.value))
+    }
+
+    pub fn outgoing_routes(&self) -> impl Iterator<Item = (&crate::projection::ViewEdge, f32)> {
+        self.route_presence.outgoing()
+    }
+    pub fn edge_opacity(&self, index: usize) -> f32 {
+        self.route_presence.opacity(index)
     }
 
     pub fn interrupt_camera(&mut self) {
@@ -170,6 +192,11 @@ impl Motion {
         if self.nodes.is_empty() {
             return false;
         }
+        // Navigation restoration and framing can write a camera outside gesture handlers.
+        // A changed presented value transfers ownership back to that writer immediately.
+        if self.camera_overridden(camera) {
+            self.interrupt_camera();
+        }
         let dt = self
             .last_time
             .replace(time)
@@ -182,6 +209,13 @@ impl Motion {
         true
     }
 
+    fn camera_overridden(&self, camera: &Camera) -> bool {
+        self.camera.as_ref().is_some_and(|tracks| {
+            [camera.pan[0], camera.pan[1], camera.zoom]
+                != tracks.each_ref().map(|track| track.value)
+        })
+    }
+
     fn advance(&mut self, dt: f32) -> bool {
         let node_tracks = self.nodes.iter_mut().flat_map(|node| {
             node.rect
@@ -190,13 +224,14 @@ impl Motion {
         });
         let camera_tracks = self.camera.iter_mut().flat_map(|tracks| tracks.iter_mut());
         let ghost_tracks = self.ghosts.iter_mut().map(|ghost| &mut ghost.opacity);
-        node_tracks
+        let geometry_active = node_tracks
             .chain(camera_tracks)
             .chain(ghost_tracks)
-            .fold(false, |active, track| track.step(dt) || active)
+            .fold(false, |active, track| track.step(dt) || active);
+        self.route_presence.advance(dt) | self.bands.advance(dt) | geometry_active
     }
 
-    fn apply(&self, view: &mut GraphView, camera: &mut Camera) {
+    fn apply(&mut self, view: &mut GraphView, camera: &mut Camera) {
         for (node, track) in view.nodes.iter_mut().zip(&self.nodes) {
             node.position = [track.rect[0].value, track.rect[1].value];
             node.size = [track.rect[2].value, track.rect[3].value];
@@ -220,10 +255,65 @@ impl Motion {
                 }
             }
         }
+        self.bands.apply(&mut view.layer_bands);
+        self.route_presence.apply(view);
         if let Some(tracks) = &self.camera {
             camera.pan = [tracks[0].value, tracks[1].value];
             camera.zoom = tracks[2].value;
         }
+    }
+}
+
+fn retarget_node(
+    n: &crate::projection::ViewNode,
+    before: &Snapshot,
+    previous: &HashMap<String, Node>,
+    previous_ghosts: &HashMap<String, Ghost>,
+) -> Node {
+    let target = [n.position[0], n.position[1], n.size[0], n.size[1]];
+    let origin = before
+        .rectangles
+        .get(&n.key)
+        .copied()
+        .or_else(|| {
+            previous_ghosts.get(&n.key).map(|g| {
+                [
+                    g.node.position[0],
+                    g.node.position[1],
+                    g.node.size[0],
+                    g.node.size[1],
+                ]
+            })
+        })
+        .unwrap_or(target);
+    let mut rect = std::array::from_fn(|i| Spring::new(origin[i], target[i]));
+    if let Some(old) = previous.get(&n.key) {
+        for i in 0..4 {
+            rect[i].velocity = old.rect[i].velocity;
+        }
+    }
+    let opacity = previous
+        .get(&n.key)
+        .map(|old| old.opacity)
+        .or_else(|| previous_ghosts.get(&n.key).map(|g| g.opacity))
+        .map(|mut opacity| {
+            opacity.target = 1.0;
+            opacity
+        })
+        .unwrap_or_else(|| {
+            Spring::new(
+                if before.rectangles.contains_key(&n.key) {
+                    1.0
+                } else {
+                    0.0
+                },
+                1.0,
+            )
+        });
+    Node {
+        key: n.key.clone(),
+        rect,
+        opacity,
     }
 }
 
@@ -327,6 +417,28 @@ mod tests {
     }
 
     #[test]
+    fn external_camera_override_during_motion_preserves_position_and_zoom() {
+        let mut motion = Motion::default();
+        let mut camera = Camera::default();
+        let mut target = view(200.0);
+        motion.begin(
+            Snapshot::capture(&view(0.0), &camera),
+            &mut target,
+            &mut camera,
+        );
+        motion.tick(0.0, &mut target, &mut camera);
+        camera.pan = [91.0, -47.0];
+        camera.zoom = 0.67;
+        for frame in 1..240 {
+            motion.tick(frame as f64 / 60.0, &mut target, &mut camera);
+        }
+        assert_eq!(camera.pan, [91.0, -47.0]);
+        assert_eq!(camera.zoom, 0.67);
+        assert_eq!(target.nodes[0].position[0], 200.0);
+        assert!(motion.nodes.is_empty());
+    }
+
+    #[test]
     fn camera_interruption_preserves_manual_position_while_nodes_finish() {
         let mut motion = Motion::default();
         let mut camera = Camera::default();
@@ -359,5 +471,33 @@ mod tests {
         assert_eq!(motion.ghosts().next().unwrap().0.key, "same");
         assert!(motion.ghosts().next().unwrap().1 < 1.0);
         assert!(motion.opacity(0) > 0.0 && motion.opacity(0) < 1.0);
+    }
+    #[test]
+    fn rapid_retarget_preserves_departure_opacity_and_revives_displayed_node() {
+        let mut motion = Motion::default();
+        let mut camera = Camera::default();
+        let original = view(0.0);
+        let mut target = view(200.0);
+        target.nodes[0].key = "other".into();
+        motion.begin(
+            Snapshot::capture(&original, &camera),
+            &mut target,
+            &mut camera,
+        );
+        motion.tick(0.0, &mut target, &mut camera);
+        let opacity = motion.ghosts().next().unwrap().1;
+        let snapshot = Snapshot::capture(&target, &camera);
+        target = view(400.0);
+        target.nodes[0].key = "third".into();
+        motion.begin(snapshot, &mut target, &mut camera);
+        assert_eq!(
+            motion.ghosts().find(|(n, _)| n.key == "same").unwrap().1,
+            opacity
+        );
+        let snapshot = Snapshot::capture(&target, &camera);
+        target = view(600.0);
+        motion.begin(snapshot, &mut target, &mut camera);
+        assert_eq!(target.nodes[0].position, [0.0, 0.0]);
+        assert_eq!(motion.opacity(0), opacity);
     }
 }

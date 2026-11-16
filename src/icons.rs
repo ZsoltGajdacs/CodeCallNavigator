@@ -1,11 +1,6 @@
 //! Icons from the pinned Rune OpenCode catalog (MIT, copyright Anomaly).
 //! Source: vendor/rune/themes/opencode/src/icons.rs; paths are copied unchanged.
 use rune::Icon;
-pub static FOLDER: Icon = Icon {
-    name: "folder",
-    view: 16.0,
-    body: r#"<path d="M1.33337 2V13.3333H14.6667V4H8.66671L6.66671 2H1.33337Z" stroke="currentColor" stroke-miterlimit="10" stroke-linecap="square"/>"#,
-};
 pub static OUTLINE_ARROW_LEFT: Icon = Icon {
     name: "outline-arrow-left",
     view: 16.0,

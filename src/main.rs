@@ -75,6 +75,7 @@ fn main() {
             ("source-preview", source_popup::scenes::source),
             ("source-files", source_popup::scenes::files),
             ("method-callees", method_scenes::callees),
+            ("graph-motion", method_scenes::motion),
             ("architectural-layers", layer_scenes::install),
             ("method-callers", method_scenes::callers),
             ("cached", scenes::cached),

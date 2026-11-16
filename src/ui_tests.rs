@@ -33,7 +33,7 @@ fn runtime() -> Runtime<State> {
 
 fn reveal_graph_control(runtime: &mut Runtime<State>, key: &str) {
     // Pan graph targets clear of the floating filters before exercising their gestures.
-    if !key.starts_with("graph-") {
+    if !key.starts_with("graph-node-") {
         return;
     }
     let filters = runtime
@@ -68,9 +68,15 @@ fn click(runtime: &mut Runtime<State>, key: &str) {
         )
     {
         click(runtime, "project-picker-trigger");
+        settle_revealed_control(runtime);
     }
     if runtime.find(key).is_none() && key.starts_with("freshness-") {
         click(runtime, "activity-details");
+        settle_revealed_control(runtime);
+    }
+    if runtime.find(key).is_none() && key.starts_with("filter-") {
+        click(runtime, "graph-filters");
+        settle_revealed_control(runtime);
     }
     reveal_graph_control(runtime, key);
     let (x, y) = runtime
@@ -80,6 +86,14 @@ fn click(runtime: &mut Runtime<State>, key: &str) {
     runtime.pointer_up(x, y);
     runtime.frame(1.0 / 60.0);
     runtime.frame(1.0 / 60.0);
+}
+
+// Rune overlays/disclosures animate their drawn bounds; interact only once the newly
+// revealed target has arrived, as a person would after opening the control surface.
+fn settle_revealed_control(runtime: &mut Runtime<State>) {
+    for _ in 0..60 {
+        runtime.frame(1.0 / 60.0);
+    }
 }
 
 #[test]
@@ -104,6 +118,8 @@ fn native_path_controls_show_a_real_directed_path_and_filter_can_reveal_tests() 
         .state
         .select_method(0, crate::graph_interaction::SelectionAction::Inspect);
     runtime.frame(1.0 / 60.0);
+    click(&mut runtime, "callers-section");
+    click(&mut runtime, "callees-section");
     click(&mut runtime, "path-from");
     runtime
         .state
@@ -436,7 +452,8 @@ fn method_control_starts_at_entries_and_overview_restores_them() {
     let mut runtime = runtime();
     runtime.state.nav.direction = FlowDirection::Callers;
     runtime.state.nav.page = 7;
-    click(&mut runtime, "grouping/segment3");
+    click(&mut runtime, "grouping-trigger");
+    click(&mut runtime, "option3");
     assert_eq!(runtime.state.nav.grouping, Grouping::Method);
     assert_eq!(runtime.state.nav.direction, FlowDirection::Callees);
     assert_eq!(runtime.state.nav.page, 0);
@@ -645,7 +662,7 @@ fn graph_single_click_centers_after_click_interval_and_wheel_zooms() {
         node.position[1] + node.size[1] / 2.0,
     ]);
     assert!((center[0] - runtime.state.viewport[0] / 2.0).abs() < 0.1);
-    assert!((center[1] - runtime.state.viewport[1] / 2.0).abs() < 0.1);
+    assert!((center[1] - runtime.state.graph_safe_viewport()[1] / 2.0).abs() < 0.1);
     assert_eq!(runtime.state.nav.camera.zoom, zoom);
     let rect = runtime
         .elements()

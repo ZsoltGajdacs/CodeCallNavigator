@@ -94,7 +94,7 @@ fn selected_node(runtime: &mut Runtime<State>) -> ViewNode {
         "selected node centered horizontally: {center:?}"
     );
     assert!(
-        (center[1] - runtime.state.viewport[1] / 2.0).abs() < 0.1,
+        (center[1] - runtime.state.graph_safe_viewport()[1] / 2.0).abs() < 0.1,
         "selected node centered vertically: {center:?}"
     );
     node.clone()
@@ -315,9 +315,12 @@ fn typing_searches_the_index_and_escape_restores_the_previous_editor_focus() {
     assert_eq!(runtime.state.search.hits()[0].name, "ValidateOrder");
     press(&mut runtime, Key::Escape);
     assert!(!runtime.state.search.open);
-    assert!(runtime.elements().iter().any(|element| {
-        element.key.as_deref() == Some("project-picker-trigger") && element.focused
-    }));
+    assert!(
+        runtime
+            .elements()
+            .iter()
+            .any(|element| { element.key.as_deref() == Some("open-search") && element.focused })
+    );
 }
 
 #[test]

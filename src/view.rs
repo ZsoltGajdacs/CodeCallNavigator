@@ -160,6 +160,7 @@ fn canvas_workspace(state: &State, cx: &mut Cx<State>, k: &Kit, layer: &mut Vec<
         .border(1.0, k.c.border_base);
     let bottom = row()
         .key("floating-controls")
+        .on_layout(|state: &mut State, rect| state.set_canvas_controls_top(rect[1]))
         .gap(12.0)
         .flex_wrap()
         .items_end()

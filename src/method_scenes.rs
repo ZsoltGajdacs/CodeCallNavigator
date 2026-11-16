@@ -14,6 +14,15 @@ pub fn callees(state: &mut State) {
     install(state, FlowDirection::Callees);
 }
 
+/// Explicit synthetic topology through production projection, Graphviz and motion.
+/// Unlike ordinary stable capture scenes, this opts into interactive transitions.
+pub fn motion(state: &mut State) {
+    install(state, FlowDirection::Callees);
+    state.fixture_queries = true;
+    state.deterministic = false;
+    state.status = "Motion acceptance fixture · real Graphviz · no analyzer executed".into();
+}
+
 pub fn callers(state: &mut State) {
     install(state, FlowDirection::Callers);
 }

@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-11-16T07:56:00Z'
-updated_date: '2026-11-16T08:25:00Z'
+updated_date: '2026-11-16T09:00:00Z'
 labels:
   - ui
   - ux
@@ -38,7 +38,7 @@ Implement the approved native Open Canvas design from doc-34 and local evidence/
 - [ ] #9 Rapid navigation retargets displayed state without jumps or queued transitions; manual pan and zoom interrupt camera follow, and obsolete layout or source results cannot overwrite current content.
 - [ ] #10 Animated hit testing, culling, selection and source anchoring use the same displayed geometry; outgoing ghosts are noninteractive and generation changes cannot confuse node identities.
 - [ ] #11 System reduced motion is honored, idle animation scheduling settles, and release native dense-graph performance evidence shows no unacceptable regression against a recorded baseline.
-- [ ] #12 Feature parity inventory, native light/dark screenshots and motion recordings, test inventory updates, applicable CodeScene and configured Sonar checks, full verification and cleanup evidence are recorded with unavailable checks explicit.
+- [ ] #12 Feature parity inventory, native light/dark screenshots and motion recordings, test inventory updates, CodeScene checks and scoped UI unit/integration/release-performance verification with cleanup evidence are recorded; unavailable checks are explicit, following the user direction to run only strictly needed verification.
 <!-- AC:END -->
 
 ## Definition of Done
@@ -60,4 +60,8 @@ Implement in committed slices: 1. Reconcile feature parity and preserve artifact
 Plan reviewed against current code. Required refactorings: thin shell composition; separate status/action presentation; dedicated filter popover; model-owned recent roots/file filtering; one graph-motion owner with bounded outgoing state. ViewEdge has no provenance identity: do not add semantic contracts just to animate it. Match stable endpoints plus classification, crossfade ambiguous duplicate routes. Source bounds must resolve displayed node geometry by key.
 
 Slice checkpoint: native shell/pane controls, project picker with bounded recents, model-owned file filtering, grouped filter popover/default reset, inspector hierarchy/source action, floating controls/activity, and initial shared graph-motion geometry implemented. UI unit suite target/verification/ui-4xawnfqk passed 134 tests; category cleanup passed. Runtime integration is running with existing TypeScript fixture dependencies. Independent review identified follow-up motion route/layer/rapid-ghost hardening; task remains In Progress. Documentation-only planning commit 309e4fa already recorded. User requested targeted verification rather than broad unrelated analyzer reruns.
+
+Verification scope follows the user instruction to run only strictly needed checks: desktop UI unit/runtime/real-CLI integration, native offscreen Metal visual and motion captures, matching-input original-versus-candidate release UI performance, CodeScene reviews and per-commit safeguards. Broad unchanged analyzer/core/MCP suites, packaging and the full composite are intentionally excluded, not claimed passed. Sonar configuration is absent. Acceptance criterion 12 updated to make this authorized scoped-verification choice explicit.
+
+Hardening slice: stable endpoint/classification route crossfades, animated architectural bands, bounded continuous exit ghosts, shared hit/culling/source geometry, memory-light departing-card snapshots, safe measured floating-control framing, explicit external/history camera ownership, real status/freshness feedback and modal/focus corrections. UI unit210 passed (esmmq1lw), UI integration all runtime and real-CLI groups passed (u8mv5w26), category cleanup passed. Native Metal light/dark/minimum/popovers/source/layers and rapid motion captures reviewed under target/verification/open-canvas-visual-20261116-planner; owned visual build removed after process proof. Baseline64c performance3/3 passed with same-input fingerprints under target/ui-baseline-64c7e00; candidate comparison pending. Two performance inventory entries now correctly require CLI executable. No production dependencies/core/CLI contracts changed.
 <!-- SECTION:NOTES:END -->

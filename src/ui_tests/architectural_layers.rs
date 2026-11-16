@@ -9,7 +9,8 @@ fn layer_control_exposes_presets_tabs_and_restores_navigation() {
     let mut runtime = runtime();
     runtime.state.architecture = Some(assignments(&runtime.state));
     runtime.state.architecture_selection = Some(Selection::Repository);
-    click(&mut runtime, "grouping/segment4");
+    click(&mut runtime, "grouping-trigger");
+    click(&mut runtime, "option4");
     assert_eq!(
         runtime.state.nav.grouping,
         crate::projection::Grouping::Layer
@@ -31,7 +32,7 @@ fn layer_control_exposes_presets_tabs_and_restores_navigation() {
         .unwrap();
     let canvas = elements
         .iter()
-        .find(|e| e.key.as_deref() == Some("graph-canvas-wrapper"))
+        .find(|e| e.key.as_deref() == Some("graph-canvas"))
         .unwrap();
     assert!(
         canvas.rect[1] >= tabs.rect[1] + tabs.rect[3],

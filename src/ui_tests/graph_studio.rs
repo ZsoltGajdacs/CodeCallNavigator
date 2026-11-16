@@ -201,6 +201,7 @@ fn kit_checkbox_changes_graph_filter_and_inspector_disclosure_hides_only_its_sec
     assert!(!runtime.state.nav.filter.include_tests);
     click(&mut runtime, "filter-tests");
     assert!(runtime.state.nav.filter.include_tests);
+    runtime.update(|state, _| state.close_overlay());
     runtime.update(|state, _| {
         state.select_method(0, crate::graph_interaction::SelectionAction::Inspect);
     });
@@ -210,7 +211,7 @@ fn kit_checkbox_changes_graph_filter_and_inspector_disclosure_hides_only_its_sec
     settle(&mut runtime);
     assert!(!runtime.state.ui.section_open(Section::Path));
     assert!(runtime.find("path-from").is_none());
-    assert!(runtime.find("focus-selected").is_some());
+    assert!(runtime.find("view-selected-source").is_some());
     click(&mut runtime, "path-section/trigger");
     settle(&mut runtime);
     assert!(runtime.find("path-from").is_some());
@@ -271,12 +272,13 @@ fn disabled_kit_analysis_control_does_not_start_work() {
 }
 
 #[test]
-fn segmented_grouping_supports_keyboard_navigation_and_activation() {
+fn grouping_select_supports_keyboard_navigation_and_activation() {
     let mut runtime = runtime();
     runtime.on_key = Some(view::key);
-    click(&mut runtime, "grouping/segment0");
-    press(&mut runtime, Key::Right);
-    press(&mut runtime, Key::Text(" ".into()));
+    click(&mut runtime, "grouping-trigger");
+    press(&mut runtime, Key::Down);
+    press(&mut runtime, Key::Down);
+    press(&mut runtime, Key::Enter);
     assert_eq!(
         runtime.state.nav.grouping,
         crate::projection::Grouping::Namespace
@@ -491,4 +493,39 @@ fn empty_workspace_shows_discovery_progress_and_a_real_directory_error() {
     click(&mut runtime, "project-picker-trigger");
     assert_visible(&runtime, "choose-folder");
     assert_visible(&runtime, "find-builds");
+}
+
+#[test]
+fn long_project_titles_keep_toolbar_controls_visible_at_minimum_width() {
+    let mut runtime = narrow_runtime(false);
+    let title = "long-project-name-".repeat(12);
+    let path = format!("/projects/{title}");
+    let mut data = (*runtime.state.graph.as_ref().unwrap().data).clone();
+    data.roots = vec![path.clone()];
+    runtime.state.graph = Some(std::sync::Arc::new(
+        codecallnavigator::graph::GraphIndex::new(std::sync::Arc::new(data)).unwrap(),
+    ));
+    runtime.state.root = rune::TextEdit::new(&path);
+    runtime.invalidate();
+    settle(&mut runtime);
+    let picker = runtime
+        .elements()
+        .into_iter()
+        .find(|element| element.key.as_deref() == Some("project-picker-trigger"))
+        .unwrap();
+    assert_eq!(picker.label.as_deref(), Some(title.as_str()));
+    assert!(
+        picker.rect[2] <= 245.0,
+        "Project picker must bound its visible title: {:?}",
+        picker.rect
+    );
+    for key in [
+        "project-picker-trigger",
+        "drawer-repository",
+        "open-search",
+        "graph-filters",
+        "toggle-inspector",
+    ] {
+        assert_visible(&runtime, key);
+    }
 }

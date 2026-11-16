@@ -260,6 +260,8 @@ impl State {
         let Some(previous) = destination.pop() else {
             return;
         };
+        // History explicitly owns its saved camera, even if it equals this frame.
+        self.graph_motion.interrupt_camera();
         let old = std::mem::replace(&mut self.nav, previous);
         self.visual_selection = None;
         if forward {

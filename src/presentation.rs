@@ -103,6 +103,7 @@ pub struct Presentation {
     pub overlay: Option<Overlay>,
     /// Latest window content width; runtime-only, independent of saved pane preferences.
     pub window_width: f32,
+    pub canvas_bottom_inset: f32,
     open_sections: [bool; 6],
 }
 
@@ -114,6 +115,7 @@ impl Default for Presentation {
             drawer: Drawer::Repository,
             overlay: None,
             window_width: 1420.0,
+            canvas_bottom_inset: 0.0,
             open_sections: [true, true, true, true, true, false],
         }
     }

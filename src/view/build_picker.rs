@@ -5,7 +5,8 @@ use rune_kit::{Button, Checkbox, IconButton, IconButtonVariant, Kit, ScrollBar, 
 
 pub(super) fn button(state: &State, k: &Kit) -> El {
     let open = state.ui.overlay == Some(Overlay::Builds);
-    let button = Button::new("Find builds")
+    let button = Button::new("Analysis settings…")
+        .disabled(state.project_job_busy())
         .on_press(State::open_builds)
         .build(k)
         .key("find-builds")

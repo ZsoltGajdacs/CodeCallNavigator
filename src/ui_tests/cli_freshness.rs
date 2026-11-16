@@ -35,8 +35,8 @@ fn assert_workspace_identity(runtime: &Runtime<State>, expected: &Path) {
     let shown = runtime
         .elements()
         .into_iter()
-        .find(|element| element.key.as_deref() == Some("workspace-identity"))
-        .and_then(|element| element.text);
+        .find(|element| element.key.as_deref() == Some("project-picker-trigger"))
+        .and_then(|element| element.label);
     assert_eq!(
         shown.as_deref(),
         Some(label.as_ref()),
@@ -286,6 +286,7 @@ fn automatic_refresh_is_an_explicit_loaded_project_action() {
         rune::Env::new(true, 1.0),
     );
     runtime.frame(1.0 / 60.0);
+    super::click(&mut runtime, "activity-details");
     let action = runtime
         .elements()
         .into_iter()

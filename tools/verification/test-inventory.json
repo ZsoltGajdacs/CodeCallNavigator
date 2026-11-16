@@ -9855,6 +9855,62 @@
       "purpose": "visible selection overrides focus and rebuilding moves emphasis"
     },
     {
+      "id": "codecallnavigator/bin:codecallnavigator::graph_layout::overlay_tests::changing_controls_keeps_existing_focus_centered_without_resetting_zoom",
+      "runner": "rust",
+      "file": "src/graph_layout.rs",
+      "test_name": "graph_layout::overlay_tests::changing_controls_keeps_existing_focus_centered_without_resetting_zoom",
+      "ignored": false,
+      "package": "codecallnavigator",
+      "target_kind": "bin",
+      "target": "codecallnavigator",
+      "component": "ui",
+      "category": "unit",
+      "requirements": [],
+      "purpose": "Changing floating bar height preserves focused framing and zoom"
+    },
+    {
+      "id": "codecallnavigator/bin:codecallnavigator::graph_layout::overlay_tests::changing_controls_preserves_a_manually_positioned_camera",
+      "runner": "rust",
+      "file": "src/graph_layout.rs",
+      "test_name": "graph_layout::overlay_tests::changing_controls_preserves_a_manually_positioned_camera",
+      "ignored": false,
+      "package": "codecallnavigator",
+      "target_kind": "bin",
+      "target": "codecallnavigator",
+      "component": "ui",
+      "category": "unit",
+      "requirements": [],
+      "purpose": "changing controls preserves a manually positioned camera"
+    },
+    {
+      "id": "codecallnavigator/bin:codecallnavigator::graph_layout::overlay_tests::fit_reserves_measured_controls_without_changing_canvas_coordinates",
+      "runner": "rust",
+      "file": "src/graph_layout.rs",
+      "test_name": "graph_layout::overlay_tests::fit_reserves_measured_controls_without_changing_canvas_coordinates",
+      "ignored": false,
+      "package": "codecallnavigator",
+      "target_kind": "bin",
+      "target": "codecallnavigator",
+      "component": "ui",
+      "category": "unit",
+      "requirements": [],
+      "purpose": "fit reserves measured controls without changing canvas coordinates"
+    },
+    {
+      "id": "codecallnavigator/bin:codecallnavigator::graph_layout::overlay_tests::resizing_keeps_a_focused_node_centered_above_measured_controls",
+      "runner": "rust",
+      "file": "src/graph_layout.rs",
+      "test_name": "graph_layout::overlay_tests::resizing_keeps_a_focused_node_centered_above_measured_controls",
+      "ignored": false,
+      "package": "codecallnavigator",
+      "target_kind": "bin",
+      "target": "codecallnavigator",
+      "component": "ui",
+      "category": "unit",
+      "requirements": [],
+      "purpose": "resizing keeps focus centered within the measured safe canvas"
+    },
+    {
       "id": "codecallnavigator/bin:codecallnavigator::graph_layout::tests::bounds_include_only_focus_nodes_and_handle_negative_positions",
       "runner": "rust",
       "file": "src/graph_layout.rs",
@@ -9867,6 +9923,34 @@
       "category": "unit",
       "requirements": [],
       "purpose": "bounds include only focus nodes and handle negative positions"
+    },
+    {
+      "id": "codecallnavigator/bin:codecallnavigator::graph_motion::bands::tests::layer_bands_follow_shared_clock_by_architectural_identity",
+      "runner": "rust",
+      "file": "src/graph_motion/bands.rs",
+      "test_name": "graph_motion::bands::tests::layer_bands_follow_shared_clock_by_architectural_identity",
+      "ignored": false,
+      "package": "codecallnavigator",
+      "target_kind": "bin",
+      "target": "codecallnavigator",
+      "component": "ui",
+      "category": "unit",
+      "requirements": [],
+      "purpose": "layer bands follow shared clock by architectural identity"
+    },
+    {
+      "id": "codecallnavigator/bin:codecallnavigator::graph_motion::routes::tests::route_matching_uses_endpoint_identity_and_crossfades_changed_geometry",
+      "runner": "rust",
+      "file": "src/graph_motion/routes.rs",
+      "test_name": "graph_motion::routes::tests::route_matching_uses_endpoint_identity_and_crossfades_changed_geometry",
+      "ignored": false,
+      "package": "codecallnavigator",
+      "target_kind": "bin",
+      "target": "codecallnavigator",
+      "component": "ui",
+      "category": "unit",
+      "requirements": [],
+      "purpose": "route matching uses endpoint identity and crossfades changed geometry"
     },
     {
       "id": "codecallnavigator/bin:codecallnavigator::graph_motion::tests::camera_interruption_preserves_manual_position_while_nodes_finish",
@@ -9895,6 +9979,34 @@
       "category": "unit",
       "requirements": [],
       "purpose": "changing size keeps edge ports attached"
+    },
+    {
+      "id": "codecallnavigator/bin:codecallnavigator::graph_motion::tests::external_camera_override_during_motion_preserves_position_and_zoom",
+      "runner": "rust",
+      "file": "src/graph_motion.rs",
+      "test_name": "graph_motion::tests::external_camera_override_during_motion_preserves_position_and_zoom",
+      "ignored": false,
+      "package": "codecallnavigator",
+      "target_kind": "bin",
+      "target": "codecallnavigator",
+      "component": "ui",
+      "category": "unit",
+      "requirements": [],
+      "purpose": "External navigation camera writes interrupt stale camera ownership while node motion completes"
+    },
+    {
+      "id": "codecallnavigator/bin:codecallnavigator::graph_motion::tests::rapid_retarget_preserves_departure_opacity_and_revives_displayed_node",
+      "runner": "rust",
+      "file": "src/graph_motion.rs",
+      "test_name": "graph_motion::tests::rapid_retarget_preserves_departure_opacity_and_revives_displayed_node",
+      "ignored": false,
+      "package": "codecallnavigator",
+      "target_kind": "bin",
+      "target": "codecallnavigator",
+      "component": "ui",
+      "category": "unit",
+      "requirements": [],
+      "purpose": "rapid retarget preserves departure opacity and revives displayed node"
     },
     {
       "id": "codecallnavigator/bin:codecallnavigator::graph_motion::tests::reduced_motion_installs_target_without_travel",
@@ -11232,7 +11344,8 @@
       "requirements": [
         "native",
         "profile",
-        "release"
+        "release",
+        "cli"
       ],
       "purpose": "canvas gpu frame completion",
       "serial_group": "profiling-machine"
@@ -11267,7 +11380,8 @@
       "category": "performance",
       "requirements": [
         "profile",
-        "release"
+        "release",
+        "cli"
       ],
       "purpose": "saved canvas frame preparation",
       "serial_group": "profiling-machine"
@@ -12199,6 +12313,22 @@
       "purpose": "saved sessions migrate legacy filters and preserve new empty selections"
     },
     {
+      "id": "codecallnavigator/bin:codecallnavigator::ui_tests::graph_studio::grouping_select_supports_keyboard_navigation_and_activation",
+      "runner": "rust",
+      "file": "src/ui_tests/graph_studio.rs",
+      "test_name": "ui_tests::graph_studio::grouping_select_supports_keyboard_navigation_and_activation",
+      "ignored": false,
+      "package": "codecallnavigator",
+      "target_kind": "bin",
+      "target": "codecallnavigator",
+      "component": "ui",
+      "category": "integration",
+      "requirements": [
+        "graphviz"
+      ],
+      "purpose": "segmented grouping supports keyboard navigation and activation"
+    },
+    {
       "id": "codecallnavigator/bin:codecallnavigator::ui_tests::graph_studio::kit_checkbox_changes_graph_filter_and_inspector_disclosure_hides_only_its_section",
       "runner": "rust",
       "file": "src/ui_tests/graph_studio.rs",
@@ -12247,6 +12377,22 @@
       "purpose": "live pane drags keep controls inside the minimum window"
     },
     {
+      "id": "codecallnavigator/bin:codecallnavigator::ui_tests::graph_studio::long_project_titles_keep_toolbar_controls_visible_at_minimum_width",
+      "runner": "rust",
+      "file": "src/ui_tests/graph_studio.rs",
+      "test_name": "ui_tests::graph_studio::long_project_titles_keep_toolbar_controls_visible_at_minimum_width",
+      "ignored": false,
+      "package": "codecallnavigator",
+      "target_kind": "bin",
+      "target": "codecallnavigator",
+      "component": "ui",
+      "category": "integration",
+      "requirements": [
+        "graphviz"
+      ],
+      "purpose": "Long project names preserve reachable toolbar actions at minimum supported window width"
+    },
+    {
       "id": "codecallnavigator/bin:codecallnavigator::ui_tests::graph_studio::minimum_window_keeps_graph_controls_visible_without_toolbar_scrolling",
       "runner": "rust",
       "file": "src/ui_tests/graph_studio.rs",
@@ -12293,22 +12439,6 @@
         "graphviz"
       ],
       "purpose": "repository activity rail collapses without navigating the graph"
-    },
-    {
-      "id": "codecallnavigator/bin:codecallnavigator::ui_tests::graph_studio::segmented_grouping_supports_keyboard_navigation_and_activation",
-      "runner": "rust",
-      "file": "src/ui_tests/graph_studio.rs",
-      "test_name": "ui_tests::graph_studio::segmented_grouping_supports_keyboard_navigation_and_activation",
-      "ignored": false,
-      "package": "codecallnavigator",
-      "target_kind": "bin",
-      "target": "codecallnavigator",
-      "component": "ui",
-      "category": "integration",
-      "requirements": [
-        "graphviz"
-      ],
-      "purpose": "segmented grouping supports keyboard navigation and activation"
     },
     {
       "id": "codecallnavigator/bin:codecallnavigator::ui_tests::graph_studio::selected_relationship_shows_rule_source_construct_and_supporting_symbol",

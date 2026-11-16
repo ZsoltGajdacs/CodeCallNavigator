@@ -121,7 +121,7 @@ fn centered(runtime: &Runtime<State>, member: u32) {
     ]);
     assert!((center[0] - runtime.state.viewport[0] / 2.0).abs() < 0.1);
     assert!(
-        (center[1] - runtime.state.viewport[1] / 2.0).abs() < 0.1,
+        (center[1] - runtime.state.graph_safe_viewport()[1] / 2.0).abs() < 0.1,
         "member={member} center={center:?} viewport={:?} pan={:?}",
         runtime.state.viewport,
         runtime.state.nav.camera.pan
@@ -617,7 +617,7 @@ fn selecting_a_class_uses_box_hops_and_omits_unrelated_classes() {
         node.position[1] + node.size[1] / 2.0,
     ]);
     assert!((center[0] - runtime.state.viewport[0] / 2.0).abs() < 0.1);
-    assert!((center[1] - runtime.state.viewport[1] / 2.0).abs() < 0.1);
+    assert!((center[1] - runtime.state.graph_safe_viewport()[1] / 2.0).abs() < 0.1);
 }
 
 #[test]

@@ -60,7 +60,7 @@ fn grouped_filters_toggle_preserving_zoom_and_centering_the_focus() {
         anchor.position[1] + anchor.size[1] / 2.0,
     ]);
     assert!((center[0] - runtime.state.viewport[0] / 2.0).abs() < 0.1);
-    assert!((center[1] - runtime.state.viewport[1] / 2.0).abs() < 0.1);
+    assert!((center[1] - runtime.state.graph_safe_viewport()[1] / 2.0).abs() < 0.1);
     let saved: crate::navigation::SavedSession =
         serde_json::from_str(&serde_json::to_string(&runtime.state.session()).unwrap()).unwrap();
     assert_eq!(

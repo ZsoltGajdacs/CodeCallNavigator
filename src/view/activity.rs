@@ -40,11 +40,7 @@ fn active_analysis(state: &State, k: &Kit) -> El {
 }
 
 pub(super) fn view(state: &State, k: &Kit) -> El {
-    let status = if !state.warning.is_empty() {
-        &state.warning
-    } else {
-        &state.status
-    };
+    let status = summary_message(state);
     let counts = format!(
         "Symbols: {} shown / {} omitted / {} filtered · Links: {} shown / {} inside groups / {} omitted / {} filtered",
         state.graph_view.nodes.len(),
@@ -86,6 +82,7 @@ pub(super) fn view(state: &State, k: &Kit) -> El {
         .gap(4.0)
         .fill(k.c.bg_base)
         .child(summary)
+        .child(freshness_summary(state, k))
         .child(
             Collapsible::new("Details", state.ui.section_open(Section::Activity))
                 .on_toggle(|state: &mut State| state.toggle_section(Section::Activity))
@@ -155,4 +152,24 @@ pub(super) fn freshness_notice(state: &State, k: &Kit) -> Option<El> {
 
 fn updating(state: &State) -> bool {
     state.analyzing || state.jobs.layout.is_pending() || state.reload.job.is_pending()
+}
+
+fn summary_message(state: &State) -> String {
+    if !state.warning.is_empty() {
+        state.warning.clone()
+    } else {
+        state.status.clone()
+    }
+}
+
+fn freshness_summary(state: &State, k: &Kit) -> El {
+    let Some(message) = state.freshness.message(state.generation.as_deref()) else {
+        return rune::el();
+    };
+    text(message)
+        .key("freshness-summary")
+        .font(k.ty.small)
+        .color(k.c.text_muted)
+        .wrap()
+        .max_lines(2)
 }

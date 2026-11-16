@@ -27,6 +27,7 @@ fn global_comparison_entry_opens_revision_controls_without_a_loaded_graph() {
         );
     }
     click(&mut runtime, "comparison-close");
+    click(&mut runtime, "project-picker-trigger");
     assert!(runtime.find("compare-flows").is_some());
 }
 

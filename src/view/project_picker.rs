@@ -1,16 +1,36 @@
 //! Project selection presentation; discovery owns filesystem validation and failures.
-use super::{comparison_button, workspace_toolbar};
+use super::{build_picker, workspace_toolbar};
 use crate::{app::State, presentation::Overlay, theme};
 use rune::{Align, El, Side, col, text};
 use rune_kit::{Button, ButtonVariant, Kit, TextInput, popover};
 
 pub(super) fn button(state: &State, k: &Kit) -> El {
-    let path = state.root.text.trim();
+    let displayed = state
+        .query_context
+        .as_ref()
+        .map(|context| context.descriptor.project.to_string_lossy().into_owned())
+        .or_else(|| {
+            state
+                .graph
+                .as_ref()
+                .and_then(|graph| graph.data.roots.first().cloned())
+        })
+        .unwrap_or_else(|| state.root.text.trim().to_owned());
+    let path = displayed.as_str();
     let title = std::path::Path::new(path)
         .file_name()
         .and_then(|name| name.to_str())
         .unwrap_or("Open project…");
+    let visible_title = title.to_owned();
     Button::new(title)
+        .label_with(move |font, ink| {
+            text(visible_title)
+                .key("workspace-identity")
+                .font(font)
+                .color(ink)
+                .max_w(220.0)
+                .truncate()
+        })
         .variant(ButtonVariant::Outline)
         .expanded(state.ui.overlay == Some(Overlay::Projects))
         .on_press(|state: &mut State| {
@@ -119,7 +139,16 @@ fn note(value: &str, k: &Kit) -> El {
 fn actions(state: &State, k: &Kit) -> El {
     col()
         .child(repository(state, k))
-        .child(comparison_button(k))
+        .child(
+            Button::new("Compare flows")
+                .variant(ButtonVariant::Outline)
+                .on_press(|state: &mut State| {
+                    state.close_overlay();
+                    state.show_flow_comparison();
+                })
+                .build(k)
+                .key("compare-flows"),
+        )
         .child(workspace_toolbar::clear_cache_action(state, k))
         .child(workspace_toolbar::analysis_action(state, k))
         .child(
@@ -133,15 +162,5 @@ fn actions(state: &State, k: &Kit) -> El {
                 .key("choose-folder")
                 .w_full(),
         )
-        .child(
-            Button::new("Analysis settings…")
-                .disabled(state.project_job_busy())
-                .on_press(|state: &mut State| {
-                    state.ui.sidebar.set_open(true);
-                    state.dirty_session = true;
-                    state.open_builds();
-                })
-                .build(k)
-                .w_full(),
-        )
+        .child(build_picker::button(state, k))
 }

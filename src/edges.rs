@@ -30,6 +30,16 @@ pub fn render(state: &State, k: &Kit, emphasis: &GraphEmphasis) -> Shape {
     let mut cache = state.edge_geometry.borrow_mut();
     let routes = cache.routes(&state.graph_view.edges, state.nav.camera.zoom);
     let viewport = Viewport::new(state.viewport);
+    for (edge, opacity) in state.graph_motion.outgoing_routes() {
+        shape = Route::new(&edge.points, state.nav.camera.zoom).paint(
+            shape,
+            Paint {
+                pan: state.nav.camera.pan,
+                viewport,
+            },
+            style(edge, k, opacity),
+        );
+    }
     // Paint context first so bright connections stay on top at crossings.
     for emphasized in [false, true] {
         for (index, edge) in state.graph_view.edges.iter().enumerate() {
@@ -40,6 +50,7 @@ pub fn render(state: &State, k: &Kit, emphasis: &GraphEmphasis) -> Shape {
                 edge,
                 k,
                 emphasis.edge_opacity(index)
+                    * state.graph_motion.edge_opacity(index)
                     * state
                         .graph_motion
                         .opacity(edge.from)

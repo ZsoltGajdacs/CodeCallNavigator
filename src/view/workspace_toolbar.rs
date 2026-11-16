@@ -29,7 +29,10 @@ pub(super) fn clear_cache_action(state: &State, k: &Kit) -> El {
         "Clear cache"
     })
     .disabled(!state.can_clear_cache())
-    .on_press(State::clear_cache)
+    .on_press(|state: &mut State| {
+        state.close_overlay();
+        state.clear_cache();
+    })
     .build(k)
     .key("clear-cache")
     .help("Clear this project's analysis cache before starting a full analysis")
@@ -53,7 +56,10 @@ pub(super) fn analysis_action(state: &State, k: &Kit) -> El {
                 || state.store.is_none()
                 || state.targets.iter().all(|t| !t.selected),
         )
-        .on_press(State::analyze_selected)
+        .on_press(|state: &mut State| {
+            state.close_overlay();
+            state.analyze_selected();
+        })
         .build(k)
         .key("analyze")
     }
