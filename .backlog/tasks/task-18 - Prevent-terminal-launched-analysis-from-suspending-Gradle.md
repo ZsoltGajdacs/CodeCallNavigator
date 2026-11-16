@@ -5,11 +5,16 @@ status: Done
 assignee:
   - '@codex'
 created_date: '2026-11-09T14:05:00Z'
-updated_date: '2026-11-09T14:12:00Z'
+updated_date: '2026-11-16T07:11:00Z'
 labels: []
 dependencies: []
 documentation:
-  - evidence/analyzers/terminal-launch/README.md
+  - >-
+    .backlog/docs/history/doc-4 -
+    Analyzer-behavior-and-regression-acceptance.md#source-evidence-analyzers-terminal-launch-readme-md
+  - >-
+    .backlog/docs/doc-33 -
+    Internal-documentation-index-and-migration-manifest.md
 priority: high
 ordinal: 18000
 ---

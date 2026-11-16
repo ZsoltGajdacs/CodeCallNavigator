@@ -5,7 +5,7 @@ status: Done
 assignee:
   - '@codex'
 created_date: '2026-11-11T13:48:00Z'
-updated_date: '2026-11-12T18:57:00Z'
+updated_date: '2026-11-16T07:11:00Z'
 labels:
   - exploration
   - plugins
@@ -16,9 +16,21 @@ references:
   - DRAFT-3
 documentation:
   - docs/standalone-engine.md
+  - >-
+    .backlog/docs/architecture/doc-22 -
+    Engine-architecture-and-analyzer-implementation.md
   - docs/mcp.md
+  - .backlog/docs/testing/doc-25 - MCP-verification-boundaries.md
   - docs/agent-integrations.md
-  - evidence/agent-integrations/README.md
+  - >-
+    .backlog/docs/research/doc-18 -
+    Agent-companion-integration-research-and-host-boundaries.md
+  - >-
+    .backlog/docs/history/doc-3 -
+    Agent-integration-research-and-host-validation.md#source-evidence-agent-integrations-readme-md
+  - >-
+    .backlog/docs/doc-33 -
+    Internal-documentation-index-and-migration-manifest.md
 type: spike
 ---
 

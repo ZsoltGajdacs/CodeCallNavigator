@@ -1,6 +1,6 @@
 # Desktop and UI testing
 
-Follow [root guidance](../AGENTS.md) and [the testing strategy](../docs/testing-strategy.md).
+Follow [root guidance](../AGENTS.md) and [the testing strategy](<../.backlog/docs/testing/doc-12 - Testing-strategy.md>).
 
 Prefer unit tests for geometry, presentation transformations, filtering and isolated
 state policies. Exercise production functions with explicit data. Put behavioral

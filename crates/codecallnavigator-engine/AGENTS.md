@@ -41,7 +41,7 @@ the desktop, Rune or WGPU. Keep the standalone build independent of UI resources
 
 ## Testing strategy and verification
 
-Follow [the shared strategy](../../docs/testing-strategy.md). Put argument rules,
+Follow [the shared strategy](<../../.backlog/docs/testing/doc-12 - Testing-strategy.md>). Put argument rules,
 normalization, inference, ownership and scheduling policy combinations in unit
 tests of real isolated production logic with explicit in-memory inputs. Extract
 cohesive policy from build orchestration when it improves production design.

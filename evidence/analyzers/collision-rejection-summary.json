@@ -1,6 +1,0 @@
-{
-  "fixture": "fixtures/dotnet-collisions/rejected/RejectedSameAssembly.sln",
-  "exitCode": 1,
-  "rejectedDuplicateAssemblyName": true,
-  "completeGraphWritten": false
-}

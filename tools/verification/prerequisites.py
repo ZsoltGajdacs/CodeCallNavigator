@@ -144,7 +144,7 @@ def main():
     errors = problems(args.root, source, args.codescene_command, not args.light)
     if errors:
         print("Verification prerequisites are incomplete:\n- " + "\n- ".join(errors))
-        print("See docs/reference.md#validation. No required acceptance checks were skipped or marked passed.")
+        print("See Backlog doc-21 (Verification prerequisites and operations). No required acceptance checks were skipped or marked passed.")
         return 1
     print("Required verification tools and inputs are available.")
     return 0

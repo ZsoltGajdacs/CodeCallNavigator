@@ -36,7 +36,7 @@ def workload_targets(workload, workloads):
 
 
 def main():
-    corpus = json.loads((ROOT / 'evidence/engine/corpus.json').read_text())
+    corpus = json.loads((ROOT / 'fixtures/engine/corpus.json').read_text())
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--executable', type=Path, required=True)
     parser.add_argument('--workload', action='append', choices=[item['name'] for item in corpus['workloads']])

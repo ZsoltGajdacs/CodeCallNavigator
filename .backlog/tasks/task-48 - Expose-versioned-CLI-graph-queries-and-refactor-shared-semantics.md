@@ -5,11 +5,15 @@ status: Done
 assignee:
   - '@codex'
 created_date: '2026-11-12T13:16:00Z'
-updated_date: '2026-11-12T13:54:00Z'
+updated_date: '2026-11-16T07:11:00Z'
 labels: []
 dependencies: []
 references:
   - DRAFT-1
+documentation:
+  - >-
+    .backlog/docs/doc-33 -
+    Internal-documentation-index-and-migration-manifest.md
 ordinal: 58000
 ---
 

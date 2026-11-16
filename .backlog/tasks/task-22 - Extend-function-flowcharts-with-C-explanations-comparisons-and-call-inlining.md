@@ -7,14 +7,19 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-11-09T20:07:00Z'
-updated_date: '2026-11-14T21:39:00Z'
+updated_date: '2026-11-16T07:11:00Z'
 labels: []
 dependencies:
   - TASK-21
 references:
   - docs/function-flowcharts.md
 documentation:
-  - docs/plans/task-22-function-flowcharts.md
+  - >-
+    .backlog/docs/planning/doc-14 -
+    Function-flowchart-investigation-and-delivery-history.md
+  - >-
+    .backlog/docs/doc-33 -
+    Internal-documentation-index-and-migration-manifest.md
 ordinal: 22000
 ---
 

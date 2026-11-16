@@ -67,7 +67,6 @@ Deferred/async execution, references, HTTP/navigation relationships and unknown
 timing remain conservative boundaries. Recursive active paths stop, while sibling
 calls may expand independently. This feature neither executes the application
 nor changes its saved graph. See the [versioned CLI contract](cli-queries.md#bounded-call-expansion).
-Verification is recorded in the [expansion desktop evidence](../evidence/flowcharts/expansion/desktop/README.md).
 
 ## Compare saved function flows
 
@@ -158,11 +157,7 @@ inter-method graph nodes, relationships or resolved targets. Their possible
 exceptional paths remain conservative. Unsupported regions are partial and do not
 claim a complete simulation of arbitrary effects or transfers.
 
-C# desktop/native/package workflow acceptance is recorded in the
-[desktop evidence](../evidence/flowcharts/csharp/desktop/README.md). See the
-[CLI contract](cli-queries.md),
-[ingestion evidence](../evidence/flowcharts/csharp/ingestion/README.md) and
-[cleanup evidence](../evidence/flowcharts/csharp/cleanup/README.md).
+See the [CLI contract](cli-queries.md) for programmatic flow access.
 
 ## What the paths mean
 
@@ -217,20 +212,3 @@ Exceeding export limits produces partial metadata with explicit unsupported step
 so a deeply nested source file does not break the method graph. Constructed charts
 are capped at 1,500 steps and 6,000 links, and source display at 16 MiB. A chart
 that exceeds those limits reports the limit instead of silently truncating paths.
-
-## Implementation boundaries
-
-The Roslyn adapter, javac inventory and TypeScript compiler worker export detached,
-versioned statement trees during refresh. They reuse compiler contexts and call
-binding. The shared flow library owns completion semantics, binding cleanup and
-Graphviz geometry. Source spans are half-open UTF-8 byte ranges over the exact
-cached text, converted from compiler UTF-16 positions at export.
-
-Flow metadata is separate from method nodes and inter-method relationships. Graph
-composition and symbol pruning preserve those original relationships. The UI owns
-background jobs and separate navigation, rejects obsolete generation/method results,
-and shares source-row rendering and connector drawing with existing views. Layouts
-share Graphviz process execution while keeping their layout policies separate.
-
-See [verification evidence](../evidence/flowcharts/README.md) for real compiler
-traces, graph-invariance comparisons, cache/refresh measurements and UI captures.

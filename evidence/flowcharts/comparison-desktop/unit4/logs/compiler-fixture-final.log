@@ -1,3 +1,0 @@
-/private/tmp/task22-comparison-fixture-srk_hyvw
-[('changed', 'ready', 'ready'), ('unchanged', 'ready', 'ready'), ('added', 'missing', 'ready'), ('removed', 'ready', 'missing'), ('legacy', 'unavailable', 'ready'), ('manual', 'ready', 'ready'), ('target', 'ready', 'ready')]
-Exact compiler input bytes verified; same-byte later commit changes comparison binding; working artifact and live source files removed.

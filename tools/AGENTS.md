@@ -1,6 +1,6 @@
 # Tooling testing practices
 
-Follow [root guidance](../AGENTS.md) and [the testing strategy](../docs/testing-strategy.md).
+Follow [root guidance](../AGENTS.md) and [the testing strategy](<../.backlog/docs/testing/doc-12 - Testing-strategy.md>).
 
 Prefer unit tests of parsing, test selection, normalization and report evaluation
 using explicit inputs. Use real temporary directories, Git repositories, archives,

@@ -118,7 +118,7 @@ def arguments(corpus):
 
 
 def main():
-    corpus = json.loads((ROOT / 'evidence/engine/corpus.json').read_text())
+    corpus = json.loads((ROOT / 'fixtures/engine/corpus.json').read_text())
     args = arguments(corpus)
     selected = [item for item in corpus['workloads']
                 if not args.workload or item['name'] in args.workload]

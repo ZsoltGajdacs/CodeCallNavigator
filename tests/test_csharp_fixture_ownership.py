@@ -14,11 +14,11 @@ from csharp_flow_ingestion_acceptance import prepare_fixture
 
 
 def ingestion_fixtures():
-    return json.loads((ROOT / 'evidence/flowcharts/csharp/ingestion/pre-ingestion.json').read_text())['fixtures']
+    return json.loads((ROOT / 'fixtures/flow/csharp-baselines/pre-ingestion.json').read_text())['fixtures']
 
 
 def export_fixture():
-    return json.loads((ROOT / 'evidence/flowcharts/csharp/pre-export-baseline.json').read_text())['fixture']
+    return json.loads((ROOT / 'fixtures/flow/csharp-baselines/pre-export-baseline.json').read_text())['fixture']
 
 
 class ExpectedPathRebasingTests(unittest.TestCase):

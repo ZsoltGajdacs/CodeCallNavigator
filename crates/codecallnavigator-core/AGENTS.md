@@ -43,7 +43,7 @@ transformations rather than treating the entire crate as pure.
 
 ## Testing strategy and verification
 
-Follow [the shared strategy](../../docs/testing-strategy.md). Unit tests should
+Follow [the shared strategy](<../../.backlog/docs/testing/doc-12 - Testing-strategy.md>). Unit tests should
 carry most graph/flow algorithm, identity, canonicalization, transformation and
 validation cases using explicit in-memory inputs. Test real production operations,
 not copies of implementation logic. Fixture loading alone does not define category.

@@ -69,7 +69,9 @@ replace compiler, analyzer-acceptance, or packaging verification.
 | [`codecallnavigator-engine`](crates/codecallnavigator-engine/AGENTS.md) | Standalone CLI, analysis lifecycle, build preparation and compiler-backed language adapters |
 | `crates/codecallnavigator-mcp/` | Independently installed MCP adapter, public CLI wire contracts and owned process lifecycle |
 | `tools/` | Analyzer resources, bootstrap, acceptance helpers and packaging |
-| `fixtures/`, `tests/`, `evidence/` | Reproducible inputs, integration checks and measured verification records |
+| `fixtures/`, `tests/` | Reproducible inputs, frozen baselines and integration checks |
+| `.backlog/docs/` | Internal architecture, research, testing policy and durable verification summaries |
+| `docs/` | External user, installation, integration and redistribution documentation |
 | `vendor/`, `patches/` | Upstream checkouts and the recorded patches applied to them |
 
 Keep production dependencies flowing from desktop and engine into core. Core
@@ -84,6 +86,25 @@ It must not depend on core, engine or desktop libraries, including test
 dependencies or source inclusion. Keep project/source/artifact/database access,
 graph algorithms and graph caching in the CLI; MCP owns argument/wire validation
 and subprocess lifecycle. See [its contract and installation](docs/mcp.md).
+
+## Documentation ownership
+
+Internal project documentation belongs in Backlog documents and must be created
+or updated through the Backlog CLI. This includes architecture and design
+rationale, research, implementation investigations, maintainer runbooks, testing
+strategy and durable verification summaries. Keep task scope and execution plans
+in Backlog tasks. Use the [internal documentation index](<.backlog/docs/doc-33 - Internal-documentation-index-and-migration-manifest.md>)
+to find the canonical document.
+
+Reserve `docs/` for external user, installation, integration, public contract and
+redistribution documentation. Split mixed documents by audience and link to the
+canonical owner instead of duplicating content. Keep executable fixtures,
+schemas, manifests, instruction entry points, package-facing skills and license
+notices with their owning code or distribution.
+
+Generated logs, screenshots, traces and reports belong in ignored artifact
+directories and must not be checked in. Use `target/verification/` for new run
+output; historical local captures under ignored `evidence/` may be retained.
 
 ## Organizing changes
 
@@ -120,7 +141,7 @@ and subprocess lifecycle. See [its contract and installation](docs/mcp.md).
 
 ## Testing strategy and verification
 
-Follow [the testing strategy](docs/testing-strategy.md). Choose the lowest and
+Follow [the testing strategy](<.backlog/docs/testing/doc-12 - Testing-strategy.md>). Choose the lowest and
 fastest layer that can reliably prove the behavior. Unit tests should carry most
 behavioral combinations; integration tests prove real boundaries, and a smaller
 set of end-to-end journeys proves the assembled application. There is no numerical
@@ -189,7 +210,7 @@ hide rebuilding cost or weaken cleanup for apparent speed.
 Run full outside the macOS sandbox so Metal and descendant cleanup are available.
 Benchmarks use an isolated copied profiling workspace, never the live store.
 Keep operational hang timeouts separate from performance aspirations. See
-[validation prerequisites](docs/reference.md#validation). Both composite scripts
+[validation prerequisites](<.backlog/docs/testing/doc-21 - Verification-prerequisites-and-operations.md#validation>). Both composite scripts
 record stages under `target/verification/`, fail nonzero on failures/unavailable
 prerequisites, and mark later stages not run. Use `--base <ref>` for comparisons.
 

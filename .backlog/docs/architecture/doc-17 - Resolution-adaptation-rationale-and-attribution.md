@@ -1,0 +1,25 @@
+---
+id: doc-17
+title: Resolution adaptation rationale and attribution
+type: guide
+created_date: '2026-11-16T07:06:00Z'
+updated_date: '2026-11-16T07:06:00Z'
+---
+# Resolution adaptation rationale and attribution
+
+Migrated 2026-11-16 from `docs/engine-adaptations.md` at project revision `13b0de13f3ddf904145f93119816c33b8a5b3e55`. This is the canonical internal documentation; public user and wire contracts remain under `docs/`.
+
+The resolution roadmap draws on [colbymchenry/codegraph](https://github.com/colbymchenry/codegraph), reviewed at revision `f72c9d2efb14454ff4f9fd7b8460abd82f19a287` (MIT, copyright 2026 Colby Mchenry). The implementations currently described below are independent adaptations of its solutions; no upstream source has been copied into these passes.
+
+| Upstream solution | Adaptation here |
+| --- | --- |
+| [`callback-synthesizer.ts`](https://github.com/colbymchenry/codegraph/blob/f72c9d2efb14454ff4f9fd7b8460abd82f19a287/src/resolution/callback-synthesizer.ts): registration, collection and invocation form an observer channel | Join compiler-owned collection declarations and registration sites to actual callback calls. Preserve receiver distinctions and attach registration/invocation evidence to possible invocation edges. |
+| [`const-alias-synthesizer.ts`](https://github.com/colbymchenry/codegraph/blob/f72c9d2efb14454ff4f9fd7b8460abd82f19a287/src/resolution/const-alias-synthesizer.ts): logical/conditional initializers can hand on callables | Use TypeScript ASTs, immutable bindings and short-circuit value semantics; create invocation relationships only where the resulting callable is invoked. |
+| [`parameter-flow.ts`](https://github.com/colbymchenry/codegraph/blob/f72c9d2efb14454ff4f9fd7b8460abd82f19a287/src/resolution/parameter-flow.ts): caller facts constrain a parameter | Propagate strictly resolved callable arguments into actual parameter invocations, keeping returned values specific to each call. |
+| `springEventEdges` and `mediatrDispatchEdges` in [`callback-synthesizer.ts`](https://github.com/colbymchenry/codegraph/blob/f72c9d2efb14454ff4f9fd7b8460abd82f19a287/src/resolution/callback-synthesizer.ts): payload types connect publishers to handlers | Resolve actual framework contracts and qualified payload types in live javac/Roslyn contexts. Spring preserves runtime generic-erasure limits and conditional/deferred evidence; MediatR joins closed compiler types within visible assembly scopes. Matching by unqualified type names, receiver names or nearest folders is excluded. |
+| [`next-router-synthesizer.ts`](https://github.com/colbymchenry/codegraph/blob/f72c9d2efb14454ff4f9fd7b8460abd82f19a287/src/resolution/next-router-synthesizer.ts) and [`tier-synthesizer.ts`](https://github.com/colbymchenry/codegraph/blob/f72c9d2efb14454ff4f9fd7b8460abd82f19a287/src/resolution/tier-synthesizer.ts): navigation and HTTP connect separate programs | Resolve compiler-bound App Router APIs and builtin TypeScript fetch against compiler-qualified Next, Spring Web and ASP.NET route facts. Cross-language HTTP scopes are explicit project configuration; unsupported constraints remain blockers. Relationships and flow targets retain navigation/HTTP kinds with possible certainty, rather than synchronous call semantics. |
+| [`synthesis-stage.ts`](https://github.com/colbymchenry/codegraph/blob/f72c9d2efb14454ff4f9fd7b8460abd82f19a287/src/db/synthesis-stage.ts): private derivation overlay, explicit input ownership and atomic replacement | Collect fresh compiler facts and cache only dependency-keyed boundary decisions, including negative route membership and unsupported blockers. Rebind current symbols and rebuild graph/flow evidence on every replay. Publish the complete graph atomically under its project lock before committing current cache rows. Other inference passes conservatively recompute; previous inferred edges are never independent evidence. |
+
+The general fuzzy name matcher and monolithic synthesizer are not dependencies. Existing Java and C# compiler binding remains authoritative. Every new rule must have positive fixtures, unrelated-name and mutation controls, graph/flow agreement and removal checks.
+
+If upstream source is subsequently incorporated, preserve its MIT notice with the copied code, record its revision and exact source paths, and capture any vendored modifications as checked-in patches with checksum/bootstrap integration. Design references do not imply that an entire upstream pass was imported.

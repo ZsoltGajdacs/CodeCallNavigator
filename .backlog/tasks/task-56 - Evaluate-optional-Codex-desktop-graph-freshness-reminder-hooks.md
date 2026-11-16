@@ -4,7 +4,7 @@ title: Evaluate optional Codex desktop graph freshness reminder hooks
 status: To Do
 assignee: []
 created_date: '2026-11-12T18:50:00Z'
-updated_date: '2026-11-13T18:41:00Z'
+updated_date: '2026-11-16T07:11:00Z'
 labels: []
 dependencies:
   - TASK-54
@@ -12,7 +12,15 @@ references:
   - TASK-51
 documentation:
   - docs/agent-integrations.md
-  - evidence/agent-integrations/hook-spikes.md
+  - >-
+    .backlog/docs/research/doc-18 -
+    Agent-companion-integration-research-and-host-boundaries.md
+  - >-
+    .backlog/docs/history/doc-3 -
+    Agent-integration-research-and-host-validation.md#source-evidence-agent-integrations-hook-spikes-md
+  - >-
+    .backlog/docs/doc-33 -
+    Internal-documentation-index-and-migration-manifest.md
 type: spike
 ordinal: 65000
 ---

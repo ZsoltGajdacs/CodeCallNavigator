@@ -116,20 +116,13 @@ no native file is written on conversion failure. Imported path rules set `path_b
 owning build/configuration when a package is nested inside a repository. Native
 rules default to repository-relative paths.
 
-## Cache and module boundaries
+## Cached source and refresh
 
-Project graph artifacts retain compiler-owned per-file declaration facts **and source
-text** so content rules can be reevaluated without mixing current files
-with an older graph. This differs from older versions, which did not cache source
-text. Source popups request current files through the CLI. Refresh after source changes
-to update facts; older artifacts remain usable in ordinary groupings and require a
-refresh before Layer mode can classify them.
-
-The shared `architecture` library separates native validation, review-format import,
-pattern compilation, classification and filesystem loading. Analyzer adapters export
-facts only. Layer assignments are disposable presentation data. Native workspace
-jobs request CLI reloads and classification; projection owns aggregation and band metadata; Graphviz owns
-geometry. No layer rule changes graph symbol identities or analyzer call bindings.
+Layer rules use compiler-owned facts and analyzed source text from the saved graph,
+so changing rules does not mix live files with an older analysis. Refresh after
+source changes to update those facts. Older artifacts remain usable in ordinary
+groupings but need a refresh before Layer mode can classify them. Rule changes do
+not change symbol identities or analyzer call bindings.
 
 ## Headless classification
 

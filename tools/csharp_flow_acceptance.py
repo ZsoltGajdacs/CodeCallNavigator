@@ -10,7 +10,7 @@ import xml.etree.ElementTree as ET
 
 
 ROOT = Path(__file__).resolve().parents[1]
-BASELINE = ROOT / "evidence/flowcharts/csharp/pre-export-baseline.json"
+BASELINE = ROOT / "fixtures/flow/csharp-baselines/pre-export-baseline.json"
 
 
 def require(condition, message):

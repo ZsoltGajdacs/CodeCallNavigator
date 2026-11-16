@@ -1,6 +1,6 @@
 # MCP adapter practices and testing
 
-Follow [root guidance](../../AGENTS.md) and [the testing strategy](../../docs/testing-strategy.md).
+Follow [root guidance](../../AGENTS.md) and [the testing strategy](<../../.backlog/docs/testing/doc-12 - Testing-strategy.md>).
 
 MCP communicates only with the installed CLI. Do not depend on core, engine or
 desktop libraries, including in tests; do not read project graphs directly or

@@ -5,7 +5,7 @@ status: Done
 assignee:
   - '@codex'
 created_date: '2026-11-13T08:06:00Z'
-updated_date: '2026-11-13T18:07:00Z'
+updated_date: '2026-11-16T07:11:00Z'
 labels: []
 dependencies:
   - TASK-60
@@ -14,6 +14,12 @@ references:
   - TASK-59
 documentation:
   - docs/graph-freshness.md
+  - >-
+    .backlog/docs/architecture/doc-19 -
+    Saved-edit-freshness-design-and-delivery-rationale.md
+  - >-
+    .backlog/docs/doc-33 -
+    Internal-documentation-index-and-migration-manifest.md
 type: feature
 ordinal: 70000
 ---

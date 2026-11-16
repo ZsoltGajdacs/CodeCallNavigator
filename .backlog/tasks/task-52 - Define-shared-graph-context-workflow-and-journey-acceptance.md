@@ -5,18 +5,29 @@ status: Done
 assignee:
   - '@codex'
 created_date: '2026-11-12T18:50:00Z'
-updated_date: '2026-11-12T21:01:00Z'
+updated_date: '2026-11-16T07:11:00Z'
 labels: []
 dependencies: []
 references:
   - TASK-51
 documentation:
   - docs/agent-integrations.md
+  - >-
+    .backlog/docs/research/doc-18 -
+    Agent-companion-integration-research-and-host-boundaries.md
   - integrations/shared/graph-context.md
   - integrations/shared/journeys.md
-  - evidence/agent-integrations/delivery-task52.md
-  - evidence/agent-integrations/delivery-mcp.md
-  - evidence/agent-integrations/native-mcp-protocol.json
+  - >-
+    .backlog/docs/history/doc-3 -
+    Agent-integration-research-and-host-validation.md#source-evidence-agent-integrations-delivery-task52-md
+  - >-
+    .backlog/docs/history/doc-3 -
+    Agent-integration-research-and-host-validation.md#source-evidence-agent-integrations-delivery-mcp-md
+  - >-
+    https://github.com/ZsoltGajdacs/CodeCallNavigator/blob/13b0de13f3ddf904145f93119816c33b8a5b3e55/evidence/agent-integrations/native-mcp-protocol.json
+  - >-
+    .backlog/docs/doc-33 -
+    Internal-documentation-index-and-migration-manifest.md
 type: feature
 ordinal: 61000
 ---
