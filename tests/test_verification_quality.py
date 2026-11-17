@@ -1,6 +1,7 @@
 """Quality gates use real bounded stdio sessions and fail closed on incomplete evidence."""
 import json
 import os
+import signal
 from pathlib import Path
 import subprocess
 import sys
@@ -13,7 +14,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'tools'))
 from verification.quality import run_checks
 
 SERVER = r'''
-import json, os, subprocess, sys, time
+import json, os, signal, subprocess, sys, time
 from pathlib import Path
 root = Path.cwd()
 config = json.loads((root / 'server.json').read_text())
@@ -30,7 +31,21 @@ for line in sys.stdin:
         initialized = True
         continue
     if config.get('hang'):
-        child = subprocess.Popen([sys.executable, '-c', 'import time; time.sleep(30)'])
+        code = 'import time; time.sleep(30)'
+        if config.get('ignore_child_term'):
+            code = "import signal,time; from pathlib import Path; signal.signal(signal.SIGTERM,signal.SIG_IGN); Path('child.ready').touch(); time.sleep(30)"
+            (root / 'child.ready').unlink(missing_ok=True)
+        child = subprocess.Popen([sys.executable, '-c', code])
+        def terminate_server(signum, frame):
+            if not config.get('ignore_child_term'):
+                child.terminate()
+                child.wait(timeout=1)
+            raise SystemExit(0)
+        if config.get('reap_child'):
+            signal.signal(signal.SIGTERM, terminate_server)
+        if config.get('ignore_child_term'):
+            while not (root / 'child.ready').exists():
+                time.sleep(.005)
         publish_pid('child.pid', child.pid)
         time.sleep(30)
     if config.get('exit'):
@@ -87,11 +102,22 @@ class QualitySessionTests(unittest.TestCase):
         return run_checks(self.root, files or ['changed.py'], str(self.command), timeout)
 
     def test_complete_reviews_and_safeguard_pass_with_banner_and_notifications(self):
+        self.assert_quality_cli_starts_without_pythonpath()
         report = self.check()
         self.assertEqual(report['status'], 'passed', report)
         self.assertEqual(report['reviews'][0]['score'], 10)
         self.assertEqual(report['safeguard']['metadata']['checked-file-count'], 1)
         self.assertEqual(report['errors'], [])
+
+    def assert_quality_cli_starts_without_pythonpath(self):
+        command = Path(__file__).resolve().parents[1] / 'tools/verification/quality.py'
+        environment = dict(os.environ)
+        environment.pop('PYTHONPATH', None)
+        result = subprocess.run([sys.executable, str(command), '--help'], cwd=self.root,
+                                env=environment, capture_output=True, text=True, check=False)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn('--root', result.stdout)
+        self.assertIn('--files', result.stdout)
 
     def test_committed_source_is_reviewed_without_requiring_local_safeguard_coverage(self):
         self.commit_source()
@@ -244,27 +270,104 @@ class QualitySessionTests(unittest.TestCase):
         self.assertEqual(report['status'], 'failed')
         self.assertIn('cleanup unavailable', report['errors'][0])
         self.assert_process_stopped('server.pid')
+        self.assert_live_descendant_blocks_denied_cleanup()
+        self.assert_unavailable_probe_cannot_certify_cleanup()
 
     def test_timeout_stops_server_and_children(self):
-        started = time.monotonic()
-        # Include interpreter startup under full-build load; the three-second
-        # assertion still proves that the 30-second fixture and child are stopped.
-        report = self.check({'hang': True}, timeout=1.0)
+        for late_denial in (False, True):
+            with self.subTest(late_sigkill_denied=late_denial):
+                started = time.monotonic()
+                # The real parent reaps its terminated child before late SIGKILL.
+                with self.late_sigkill_denial(late_denial):
+                    report = self.check({'hang': True, 'reap_child': late_denial}, timeout=1.0)
+                self.assertEqual(report['status'], 'failed')
+                self.assertIn('timed out', report['errors'][0])
+                self.assertLess(time.monotonic() - started, 3)
+                self.assert_process_stopped('server.pid')
+                self.assert_process_stopped('child.pid')
+
+    def late_sigkill_denial(self, enabled=True):
+        native_killpg = os.killpg
+        def signal_group(group, requested):
+            if enabled and requested == signal.SIGKILL:
+                raise PermissionError('deterministic late group denial')
+            return native_killpg(group, requested)
+        return patch('verification.mcp_stdio.os.killpg', side_effect=signal_group)
+
+    def assert_live_descendant_blocks_denied_cleanup(self):
+        # No later probe may replace these evidence files before cleanup finishes.
+        for name in ('child.pid', 'server.pid'):
+            (self.root / name).unlink(missing_ok=True)
+        child, leader = None, None
+        try:
+            with self.late_sigkill_denial():
+                report = self.check({'hang': True, 'ignore_child_term': True}, timeout=1.0)
+            child = self.fixture_pid('child.pid')
+            leader = self.fixture_pid('server.pid')
+            self.assertEqual(report['status'], 'failed')
+            self.assertIn('cleanup unavailable', report['errors'][0])
+            self.assert_pid_stopped(leader, 'server')
+            self.assertEqual(os.getpgid(child), leader)
+            os.kill(child, 0)
+        finally:
+            # Capture any IDs published before an unexpected check exception.
+            child = child or self.fixture_pid('child.pid')
+            leader = leader or self.fixture_pid('server.pid')
+            self.stop_owned_fixture_child(child, leader)
+
+    def fixture_pid(self, name):
+        path = self.root / name
+        return int(path.read_text()) if path.exists() else None
+
+    def assert_unavailable_probe_cannot_certify_cleanup(self):
+        from verification.process_groups import GroupProbe, GroupState
+        unavailable = GroupProbe(GroupState.UNVERIFIED, 'native process table unavailable')
+        with self.late_sigkill_denial(), patch(
+                'verification.process_groups.group_snapshot', return_value=unavailable):
+            report = self.check({'hang': True, 'reap_child': True}, timeout=1.0)
         self.assertEqual(report['status'], 'failed')
-        self.assertIn('timed out', report['errors'][0])
-        self.assertLess(time.monotonic() - started, 3)
+        self.assertIn('cleanup unavailable', report['errors'][0])
         self.assert_process_stopped('server.pid')
         self.assert_process_stopped('child.pid')
 
+    def stop_owned_fixture_child(self, child, leader):
+        if child is None:
+            self.stop_unpublished_fixture_child(leader)
+            return
+        try:
+            self.assertEqual(os.getpgid(child), leader, 'fixture child group changed')
+            os.kill(child, signal.SIGKILL)
+        except ProcessLookupError:
+            pass
+        self.assert_pid_stopped(child, 'captured fixture child')
+
+    def stop_unpublished_fixture_child(self, leader):
+        if leader is None:
+            return
+        from verification.process_groups import group_snapshot
+        try:
+            os.killpg(leader, signal.SIGKILL)
+        except (ProcessLookupError, PermissionError):
+            pass
+        deadline = time.monotonic() + 1
+        while time.monotonic() < deadline:
+            if group_snapshot(leader, .2).absent:
+                return
+            time.sleep(.01)
+        self.fail('Unpublished fixture child group did not disappear')
+
     def assert_process_stopped(self, file):
-        pid = int((self.root / file).read_text())
+        self.assert_pid_stopped(self.fixture_pid(file), file)
+
+    def assert_pid_stopped(self, pid, label):
+        self.assertIsNotNone(pid, f'{label} PID was not published')
         for _ in range(20):
             try:
                 os.kill(pid, 0)
             except ProcessLookupError:
                 return
             time.sleep(0.01)
-        self.fail(f'{file} process remained after session cleanup')
+        self.fail(f'{label} process remained after session cleanup')
 
 
 if __name__ == '__main__':

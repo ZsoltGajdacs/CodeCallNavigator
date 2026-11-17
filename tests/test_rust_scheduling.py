@@ -26,7 +26,7 @@ def record(kind, name):
     with (root / 'events').open('a') as stream:
         fcntl.flock(stream, fcntl.LOCK_EX)
         stream.write(json.dumps({'kind':kind, 'name':name, 'time':time.monotonic_ns(),
-                                'args':sys.argv[1:], 'flags':os.environ.get('CCNAV_TEST_FLAGS')}) + '\n')
+                                'args':sys.argv[1:], 'flags':os.environ.get('CCNAV_TEST_FLAGS'), 'pid':os.getpid()}) + '\n')
         stream.flush()
 def wait_for(predicate):
     end = time.monotonic() + 5
@@ -81,6 +81,12 @@ class RustScheduling(unittest.TestCase):
     def events(self, root):
         return [json.loads(line) for line in (root / 'events').read_text().splitlines()]
 
+    def started_events(self, events):
+        return [event for event in events if event['kind'] == 'start']
+
+    def assert_all_cases_ran(self, starts, rows):
+        self.assertCountEqual([event['name'] for event in starts], [row['test_name'] for row in rows])
+
     def intervals(self, events):
         return {event['name']: (event['time'], next(end['time'] for end in events
                 if end['kind'] == 'end' and end['name'] == event['name']))
@@ -93,6 +99,35 @@ class RustScheduling(unittest.TestCase):
                     for marker in ('START ', 'END ')]
         self.assertEqual(markers, expected)
 
+    def assert_global_budget(self, events):
+        active, maximum = 0, 0
+        for event in sorted(events, key=lambda event:event['time']):
+            active += 1 if event['kind'] == 'start' else -1
+            maximum = max(maximum, active)
+        self.assertEqual(active, 0)
+        self.assertEqual(maximum, 4)
+
+    def test_same_binary_and_environment_cases_share_the_global_budget(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory).resolve()
+            specs = [dict(target='shared-binary', environment_append={'CCNAV_TEST_FLAGS':'shared'})
+                     for _ in range(6)]
+            runner, rows = self.probe(root, specs, 'overlap')
+            output = io.StringIO()
+            with patch.dict(os.environ, CCNAV_TEST_FLAGS='base'), contextlib.redirect_stdout(output):
+                runner.rust_run(root, root, rows, rows)
+            self.assert_ordered_logs(output, rows)
+            events = self.events(root)
+            self.assert_global_budget(events)
+            starts = self.started_events(events)
+            self.assert_all_cases_ran(starts, rows)
+            for event in starts:
+                names = [argument for argument in event['args'] if argument.startswith('case')]
+                self.assertEqual(names, [event['name']])
+                self.assertIn('--exact', event['args'])
+                self.assertIn('--test-threads=1', event['args'])
+                self.assertEqual(event['flags'], 'base shared')
+
     def test_independent_groups_overlap_with_one_global_four_worker_budget(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory).resolve()
@@ -103,14 +138,9 @@ class RustScheduling(unittest.TestCase):
                 runner.rust_run(root, root, rows, rows)
             self.assert_ordered_logs(output, rows)
             events = self.events(root)
-            starts = [event for event in events if event['kind'] == 'start']
-            self.assertCountEqual([event['name'] for event in starts], [row['test_name'] for row in rows])
-            active, maximum = 0, 0
-            for event in sorted(events, key=lambda event:event['time']):
-                active += 1 if event['kind'] == 'start' else -1
-                maximum = max(maximum, active)
-            self.assertEqual(active, 0)
-            self.assertEqual(maximum, 4)
+            starts = self.started_events(events)
+            self.assert_all_cases_ran(starts, rows)
+            self.assert_global_budget(events)
             for event in starts:
                 index = int(event['name'].removeprefix('case'))
                 self.assertIn('--exact', event['args'])
@@ -142,6 +172,31 @@ class RustScheduling(unittest.TestCase):
                 for name, second in intervals.items():
                     if name != exclusive:
                         self.assertTrue(first[1] <= second[0] or second[1] <= first[0], (exclusive, name))
+        self.assert_retained_groups_remain_batched()
+
+    def assert_retained_groups_remain_batched(self):
+        groups = [dict(target='unit', category='unit'),
+                  dict(target='native', requirements=['native']),
+                  dict(target='performance', category='performance'),
+                  dict(target='serial', serial_group='shared')]
+        specs = [dict(group, environment_append={}) for group in groups for _ in range(2)]
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory).resolve()
+            runner, rows = self.probe(root, specs)
+            runner.rust_run(root, root, rows, rows)
+            starts = self.started_events(self.events(root))
+            self.assert_all_cases_ran(starts, rows)
+            self.assertEqual(len({event['pid'] for event in starts}), len(groups))
+            for offset in range(0, len(rows), 2):
+                self.assert_same_child_batch(rows[offset:offset + 2], starts)
+
+    def assert_same_child_batch(self, rows, starts):
+        names = [row['test_name'] for row in rows]
+        events = [event for event in starts if event['name'] in names]
+        self.assertEqual(len({event['pid'] for event in events}), 1)
+        for event in events:
+            selected = [argument for argument in event['args'] if argument.startswith('case')]
+            self.assertEqual(selected, names)
 
     def test_failure_stops_pending_groups_and_drains_started_children(self):
         with tempfile.TemporaryDirectory() as directory:

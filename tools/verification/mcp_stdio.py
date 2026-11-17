@@ -6,6 +6,10 @@ import selectors
 import signal
 import subprocess
 import time
+if __package__:
+    from .process_groups import confirm_group_absent, signal_denial_detail
+else:
+    from process_groups import confirm_group_absent, signal_denial_detail
 
 class QualityError(RuntimeError):
     """An unavailable or invalid quality check must never become a passing gate."""
@@ -18,6 +22,7 @@ class McpClient:
         self.deadline = time.monotonic() + timeout
         self.sequence = 0
         self.buffer = b''
+        self.cleanup_diagnostics = []
         self.process = subprocess.Popen(
             [command], cwd=root, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
             stderr=subprocess.DEVNULL, start_new_session=True,
@@ -48,7 +53,9 @@ class McpClient:
             for stream in (self.process.stdin, self.process.stdout):
                 stream.close()
         if not available:
-            raise QualityError('CodeScene process-group cleanup unavailable; descendant termination could not be verified')
+            detail = '; '.join(self.cleanup_diagnostics)[-1000:]
+            raise QualityError('CodeScene process-group cleanup unavailable; descendant termination '
+                               f'could not be verified. {detail}')
 
     def stop_processes(self):
         available = self._signal(signal.SIGTERM)
@@ -66,7 +73,11 @@ class McpClient:
             return True
         except ProcessLookupError:
             return True
-        except PermissionError:
+        except PermissionError as error:
+            probe = confirm_group_absent(self.process)
+            self.cleanup_diagnostics.append(signal_denial_detail(self.process, sig, error, probe))
+            if probe.absent:
+                return True
             if self.process.poll() is None:
                 self.process.send_signal(sig)
             return False

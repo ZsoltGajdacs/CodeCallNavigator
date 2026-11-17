@@ -8,6 +8,7 @@ from pathlib import Path
 import signal
 import subprocess
 import time
+from verification.process_groups import confirm_group_absent, signal_denial_detail
 
 
 @contextmanager
@@ -89,8 +90,13 @@ def stop_group(process, log):
             os.killpg(process.pid, sig)
         except ProcessLookupError:
             break
-        except PermissionError:
-            log.write("\nProcess-group cleanup unavailable; descendant cleanup is unverified.\n")
+        except PermissionError as error:
+            probe = confirm_group_absent(process)
+            detail = signal_denial_detail(process, sig, error, probe)
+            log.write(f"\nProcess-group signal denied: {detail}\n")
+            if probe.absent:
+                break
+            log.write("Process-group cleanup unavailable; descendant cleanup is unverified.\n")
             process.kill()
             process.wait()
             return False

@@ -22319,6 +22319,39 @@
       "category": "integration",
       "requirements": [],
       "purpose": "Real child libtest-protocol probes prove missing selected executable fails before any test is started; pure command checks cannot prove process scheduling or draining. These are runner fault probes, not analyzer/compiler success coverage."
+    },
+    {
+      "id": "tests/test_rust_scheduling.py::RustScheduling.test_same_binary_and_environment_cases_share_the_global_budget",
+      "runner": "python",
+      "file": "tests/test_rust_scheduling.py",
+      "test_name": "test_rust_scheduling.RustScheduling.test_same_binary_and_environment_cases_share_the_global_budget",
+      "ignored": false,
+      "component": "tooling",
+      "category": "integration",
+      "requirements": [],
+      "purpose": "Real child libtest-protocol probes prove independent cases from one binary and identical environment overlap within a global four-case budget, preserving exact selection and ordered complete logs; pure command checks cannot prove scheduling. Runner protocol coverage only, not compiler/analyzer success."
+    },
+    {
+      "id": "tests/test_process_groups.py::GroupEvidence.test_complete_rows_include_kernel_ids_and_all_matching_members",
+      "runner": "python",
+      "file": "tests/test_process_groups.py",
+      "test_name": "test_process_groups.GroupEvidence.test_complete_rows_include_kernel_ids_and_all_matching_members",
+      "ignored": false,
+      "component": "tooling",
+      "category": "unit",
+      "requirements": [],
+      "purpose": "Pure native-process table parser validates complete unambiguous membership evidence and rejects uncertain observations; this does not prove OS process termination."
+    },
+    {
+      "id": "tests/test_process_groups.py::GroupEvidence.test_incomplete_malformed_negative_and_duplicate_rows_are_rejected",
+      "runner": "python",
+      "file": "tests/test_process_groups.py",
+      "test_name": "test_process_groups.GroupEvidence.test_incomplete_malformed_negative_and_duplicate_rows_are_rejected",
+      "ignored": false,
+      "component": "tooling",
+      "category": "unit",
+      "requirements": [],
+      "purpose": "Pure native-process table parser validates complete unambiguous membership evidence and rejects uncertain observations; this does not prove OS process termination."
     }
   ],
   "gates": [

@@ -96,8 +96,19 @@ def artifact_groups(root, artifact, rows, inventory):
     target = rust_target(root, artifact)
     verify_registered(inventory, artifact_tests(artifact), target)
     selected = [row for row in rows if row_target(row) == target]
-    return [RustGroup(artifact['executable'], list(group))
-            for _, group in groupby(sorted(selected, key=rust_group_key), key=rust_group_key)]
+    groups = []
+    for _, group in groupby(sorted(selected, key=rust_group_key), key=rust_group_key):
+        groups.extend(rust_group_invocations(artifact['executable'], list(group)))
+    return groups
+
+
+def rust_group_invocations(executable, rows):
+    # Independent boundary cases need separate processes to use the outer global
+    # budget even when all cases share one binary/environment. Keep deliberate
+    # resource chains and exclusive/unit harness batches intact.
+    if serial_group(rows[0]) is not None or exclusive_rust_group(rows[0]):
+        return [RustGroup(executable, rows)]
+    return [RustGroup(executable, [row]) for row in rows]
 
 
 def exclusive_rust_group(row):
