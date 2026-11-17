@@ -30,6 +30,8 @@ pub(super) struct PreparedTypeScript {
     metadata: Metadata,
     before: Vec<FileFingerprint>,
     worker: Option<Worker>,
+    raw_output: Option<PathBuf>,
+    raw_fingerprints: Vec<FileFingerprint>,
 }
 
 fn adapter(context: &AnalysisJob<'_>) -> Result<PathBuf> {
@@ -45,6 +47,8 @@ fn adapter(context: &AnalysisJob<'_>) -> Result<PathBuf> {
 fn start_worker(build: &BuildTarget, context: &AnalysisJob<'_>) -> Result<(Worker, PathBuf)> {
     let node = find_tool("node").context("TypeScript analysis requires installed Node 24+")?;
     let output = context.path.join("typescript-prepare.json");
+    // Callers hold no prior worker: preparation uses a fresh generation and
+    // resume reaches here only after its previous worker was dropped and reaped.
     // Re-preparation must wait for this worker's atomic output, never the prior file.
     if output.exists() {
         fs::remove_file(&output)?;
@@ -131,13 +135,40 @@ pub(super) fn prepare(
         metadata,
         before,
         worker: Some(worker),
+        raw_output: None,
+        raw_fingerprints: Vec::new(),
     })
 }
 
 impl PreparedTypeScript {
-    /// Multi-target analyses retain only metadata while other targets are prepared/run.
+    /// Multi-target preparation retains guards, not one compiler Program per
+    /// selected target. Dropping the owned worker stops and reaps it synchronously.
     pub(super) fn release_worker(&mut self) {
         self.worker.take();
+    }
+
+    pub(super) fn verify(&self) -> Result<()> {
+        ensure_unchanged(&self.before)?;
+        ensure_unchanged(&self.raw_fingerprints)
+    }
+
+    fn output(&mut self, build: &BuildTarget, context: &AnalysisJob<'_>) -> Result<PathBuf> {
+        self.verify()?;
+        if let Some(output) = &self.raw_output {
+            return Ok(output.clone());
+        }
+        let mut worker = self.resume(build, context)?;
+        let output = context.path.join("typescript-analyze.json");
+        if output.exists() {
+            fs::remove_file(&output)?;
+        }
+        worker.request(&serde_json::json!({"command":"analyze","output":output}).to_string())?;
+        worker.wait_for_output(&output, context.cancel)?;
+        worker.finish(context.cancel)?;
+        self.verify()?;
+        self.raw_fingerprints = fingerprint::capture([output.clone()])?;
+        self.raw_output = Some(output.clone());
+        Ok(output)
     }
 
     fn resume(&mut self, build: &BuildTarget, context: &AnalysisJob<'_>) -> Result<Worker> {
@@ -148,10 +179,15 @@ impl PreparedTypeScript {
         ensure_unchanged(&self.before)?;
         let (worker, output) = start_worker(build, context)?;
         let metadata: Metadata = serde_json::from_slice(&fs::read(output)?)?;
-        ensure!(
-            metadata == self.metadata,
-            "TypeScript preparation changed before extraction"
-        );
+        validate_capabilities(&metadata.versions)?;
+        if metadata != self.metadata {
+            return Err(fingerprint::InputsChanged::new(
+                "TypeScript preparation changed before extraction",
+                build.path.to_string_lossy().into_owned(),
+                "compiler input membership or toolchain metadata changed",
+            )
+            .into());
+        }
         ensure_unchanged(&self.before)?;
         Ok(worker)
     }
@@ -185,18 +221,13 @@ struct Output {
     versions: serde_json::Value,
 }
 
-pub(super) fn analyze(
+pub(super) fn extract(
     build: &BuildTarget,
     context: &AnalysisJob<'_>,
-    mut prepared: PreparedTypeScript,
+    prepared: &mut PreparedTypeScript,
 ) -> Result<GraphData> {
-    ensure_unchanged(&prepared.before)?;
-    let mut worker = prepared.resume(build, context)?;
     let _timing = crate::metrics::stage("typescript.extract");
-    let output = context.path.join("typescript-analyze.json");
-    worker.request(&serde_json::json!({"command":"analyze","output":output}).to_string())?;
-    worker.wait_for_output(&output, context.cancel)?;
-    worker.finish(context.cancel)?;
+    let output = prepared.output(build, context)?;
     let result: Output = serde_json::from_slice(&fs::read(output)?)?;
     ensure!(
         result.schema == "codecallnavigator.typescript.v2",
@@ -219,7 +250,7 @@ pub(super) fn analyze(
     crate::method_policy::prune(&mut graph, &result.excluded_methods)?;
     finalize_candidates(&mut graph);
     graph.validate()?;
-    graph.fingerprints = prepared.before;
+    graph.fingerprints = prepared.before.clone();
     graph.engine_versions = result.versions.to_string();
     Ok(graph)
 }

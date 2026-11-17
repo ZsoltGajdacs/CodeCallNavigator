@@ -41,7 +41,7 @@ impl ProcessLogs {
                 self.paths()
             );
         }
-        if elapsed > timeout {
+        if elapsed >= timeout {
             bail!(
                 "{} timed out after {:.2}s (limit {:.2}s); {}; stderr tail: {}",
                 self.name,

@@ -56,6 +56,17 @@ pub struct InputsChanged {
     path: String,
     change: &'static str,
 }
+impl InputsChanged {
+    /// Preserve typed invalidation for evaluated membership changes as well as
+    /// file changes; genuine observation failures must keep their own error.
+    pub fn new(message: &'static str, path: impl Into<String>, change: &'static str) -> Self {
+        Self {
+            message,
+            path: path.into(),
+            change,
+        }
+    }
+}
 impl std::fmt::Display for InputsChanged {
     fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
@@ -69,12 +80,7 @@ impl std::error::Error for InputsChanged {}
 
 pub fn require_unchanged(items: &[FileFingerprint], message: &'static str) -> Result<()> {
     if let Some((item, change)) = first_changed(items)? {
-        return Err(InputsChanged {
-            message,
-            path: item.path.clone(),
-            change,
-        }
-        .into());
+        return Err(InputsChanged::new(message, item.path.clone(), change).into());
     }
     Ok(())
 }

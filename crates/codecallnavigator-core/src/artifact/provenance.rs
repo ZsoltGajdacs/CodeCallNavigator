@@ -137,22 +137,12 @@ pub fn build_selected(
 
 fn portable_input(fingerprint: &FileFingerprint, paths: &Paths) -> Option<Input> {
     let path = paths.portable(&fingerprint.path).ok()?;
-    let kind = if fingerprint.missing {
-        InputKind::Missing
-    } else {
-        let metadata = std::fs::metadata(&fingerprint.path).ok()?;
-        if metadata.is_dir() {
-            InputKind::Directory
-        } else {
-            InputKind::File
-        }
-    };
     let mut excluded_children = fingerprint.excluded_children.clone();
     excluded_children.sort();
     excluded_children.dedup();
     Some(Input {
         path,
-        kind,
+        kind: fingerprint.kind,
         hash: fingerprint.hash.clone(),
         excluded_children,
     })
@@ -354,13 +344,24 @@ mod tests {
     #[test]
     fn runtime_version_paths_are_portable_and_compile_observations_are_omitted() {
         let versions = serde_json::json!({"callatlas":{"revision":"abc"},"projects":{"/checkout/pom.xml":{"compile_contexts":[{"classpath":["/home/cache/a.jar"]}],"classpath_order_hash":"unstable", "java_context_protocol":1},"/checkout/tsconfig.json":{"react:/checkout/tsconfig.json":"19"}}}).to_string();
+        // Provenance describes the captured revision, independently of whether
+        // its original filesystem location still exists during serialization.
+        let captured = FileFingerprint {
+            observation_policy: crate::fingerprint::InputPolicy::ScopedV1,
+            path: "/checkout/snapshot-only-source.cs".into(),
+            kind: InputKind::File,
+            hash: blake3::hash(b"class Captured {}").to_hex().to_string(),
+            ..Default::default()
+        };
         let analysis = build(
-            &[],
+            &[captured],
             &["/checkout/pom.xml".into()],
             &versions,
             &[("repo".into(), "/checkout".into())],
         )
         .unwrap();
+        assert_eq!(analysis.inputs.len(), 1);
+        assert_eq!(analysis.inputs[0].kind, InputKind::File);
         assert!(!analysis.engine_versions.contains("/checkout"));
         assert!(!analysis.engine_versions.contains("/home"));
         assert!(!analysis.engine_versions.contains("unstable"));

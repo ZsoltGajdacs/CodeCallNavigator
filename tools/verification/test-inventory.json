@@ -5322,10 +5322,10 @@
       "purpose": "http capability must be current and complete"
     },
     {
-      "id": "codecallnavigator-engine/lib:codecallnavigator_engine::analyzers::csharp::tests::linked_glob_root_detects_new_files_outside_the_project_directory",
+      "id": "codecallnavigator-engine/lib:codecallnavigator_engine::analyzers::csharp::prepared::tests::linked_glob_root_detects_new_files_outside_the_project_directory",
       "runner": "rust",
-      "file": "crates/codecallnavigator-engine/src/analyzers/csharp.rs",
-      "test_name": "analyzers::csharp::tests::linked_glob_root_detects_new_files_outside_the_project_directory",
+      "file": "crates/codecallnavigator-engine/src/analyzers/csharp/prepared.rs",
+      "test_name": "analyzers::csharp::prepared::tests::linked_glob_root_detects_new_files_outside_the_project_directory",
       "ignored": false,
       "package": "codecallnavigator-engine",
       "target_kind": "lib",
@@ -14656,7 +14656,7 @@
       "requirements": [
         "java"
       ],
-      "purpose": "maven standalone changes and failed refresh preserve cached graph"
+      "purpose": "Real Maven prepared-result reuse, cancellation retry, independent-build invalidation, changed bytecode rejection and failed publication preserve prior graph; native invocation counters distinguish reuse from no-op rebuilds"
     },
     {
       "id": "codecallnavigator/test:java_builds::maven_success_without_metadata_is_rejected",

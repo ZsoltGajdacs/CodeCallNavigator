@@ -127,6 +127,13 @@ fn repeated_preprocessing_rejects_new_external_conditional_imports() {
     .unwrap();
     let failure = preprocessor.verify(&snapshot).unwrap_err();
     assert!(format!("{failure:#}").contains("import inventory changed"));
+    assert!(failure.is::<crate::fingerprint::InputsChanged>());
+    assert!(failure.to_string().contains(project.to_str().unwrap()));
+    assert!(
+        failure
+            .to_string()
+            .contains("evaluated import membership changed")
+    );
 }
 
 #[test]
@@ -170,6 +177,13 @@ fn context_import_swaps_are_rejected_even_when_the_union_is_unchanged() {
     fs::write(directory.path().join("marker"), "").unwrap();
     let failure = evaluator.verify(&snapshot).unwrap_err();
     assert!(format!("{failure:#}").contains("import inventory changed"));
+    assert!(failure.is::<crate::fingerprint::InputsChanged>());
+    assert!(failure.to_string().contains(project.to_str().unwrap()));
+    assert!(
+        failure
+            .to_string()
+            .contains("evaluated import membership changed")
+    );
 }
 
 #[test]

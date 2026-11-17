@@ -38,6 +38,18 @@ struct Evaluation {
 }
 
 impl Evaluation {
+    fn require_same(&self, repeated: &Self, project: &Path) -> Result<()> {
+        if self != repeated {
+            return Err(crate::fingerprint::InputsChanged::new(
+                "C# evaluated import inventory changed during analysis",
+                project.to_string_lossy().into_owned(),
+                "evaluated import membership changed",
+            )
+            .into());
+        }
+        Ok(())
+    }
+
     fn input_paths(&self) -> Vec<PathBuf> {
         self.imports
             .values()
@@ -110,10 +122,7 @@ impl<'a> Preprocessor<'a> {
             &[],
         )?;
         let repeated = self.inventory(project, &format!("{sequence}-verify"))?;
-        ensure!(
-            inventory == repeated,
-            "C# evaluated import inventory changed during analysis"
-        );
+        inventory.require_same(&repeated, project)?;
         ensure_unchanged(&fingerprints)?;
         Ok(Snapshot {
             project: project.into(),
@@ -128,10 +137,9 @@ impl<'a> Preprocessor<'a> {
         snapshot.verify()?;
         let repeated =
             self.inventory(&snapshot.project, &format!("{}-recheck", snapshot.sequence))?;
-        ensure!(
-            snapshot.inventory == repeated,
-            "C# evaluated import inventory changed during analysis"
-        );
+        snapshot
+            .inventory
+            .require_same(&repeated, &snapshot.project)?;
         snapshot.verify()
     }
 

@@ -1,11 +1,11 @@
 ---
 id: TASK-79
 title: Use content-based input validity and precise change diagnostics
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-11-17T14:02:00Z'
-updated_date: '2026-11-17T16:33:00Z'
+updated_date: '2026-11-17T17:56:00Z'
 labels: []
 dependencies: []
 ordinal: 85000
@@ -52,4 +52,12 @@ Run changes-s5h9kxo3 passed revised alias acceptance, exact runtime coverage/dig
 Run changes-gzsrpjsy passed all unit/integration and Rust acceptance, including alias trace accounting and unchanged empty external C# project scope test; automatic_refresh_acceptance and csharp_cleanup_acceptance also passed. Native csharp_desktop_acceptance failed before behavior assertions: WindowLease could not find PID10695 window4191 in AeroSpace within setup interval. Native window-request and frame traces exist; native behavior not claimed passed. Later selected acceptance/performance/quality stages not run. Source Code Health reviews and safeguard passed 10 files. Asked user whether to defer native/later blocked gates to final Slice6 checkpoint or resolve native setup before continuing. No exception assumed; task remains In Progress.
 
 Checkpoint evidence changes-gzsrpjsy: 49 stages passed, 1 failed (native window setup), 13 not run. All three behavioral acceptance criteria proven; task stays In Progress pending required remaining gates or explicit accepted deferral. Final source safeguard passed 10/10 eligible files with no regressions; individual reviews 10.0. Timings seconds: setup/static20.312; compilation/packaging435.942; executed tests/gates1283.715 (external gates include their internal setup); cleanup11.729. Sonar inactive: project has no .sonar/config.json. Saving a local implementation checkpoint, no push; no full-verification claim.
+
+User explicitly accepted deferring the native-window gate and the checks it prevented from running to final Slice6 verification, and directed continuing engine slices. Behavioral criteria all passed; 49 passed stages and source Code Health recorded above. Remaining gates are deferred, not passed. Local checkpoint 990c30e; no push.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Content-based input validity with mandatory input kind; declared-output handling and required scopes preserved. Consumer regressions corrected and verified. 49 selected stages passed; native AeroSpace setup and 13 later checks explicitly deferred by user to final Slice6. Committed 990c30e.
+<!-- SECTION:FINAL_SUMMARY:END -->

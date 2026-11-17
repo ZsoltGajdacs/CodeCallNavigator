@@ -212,14 +212,22 @@ pub(super) fn snapshot(
 }
 
 impl PreparedJava {
-    pub(super) fn verify_compiled(&self, metadata: &JavaBuildMetadata) -> Result<()> {
+    pub(super) fn verify_compiled(
+        &self,
+        build: &BuildTarget,
+        metadata: &JavaBuildMetadata,
+    ) -> Result<()> {
         ensure_unchanged(&self.authored_before)?;
         let before = self.metadata.modules.iter().collect::<BTreeSet<_>>();
         let after = metadata.modules.iter().collect::<BTreeSet<_>>();
-        ensure!(
-            before == after,
-            "Build module membership changed during compilation"
-        );
+        if before != after {
+            return Err(fingerprint::InputsChanged::new(
+                "Build module membership changed during compilation",
+                build.path.to_string_lossy().into_owned(),
+                "evaluated build module membership changed",
+            )
+            .into());
+        }
         for source in &metadata.source_sets {
             let java = fingerprint::source_paths(&source.source_roots)?
                 .iter()

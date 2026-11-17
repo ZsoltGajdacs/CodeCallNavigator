@@ -52,20 +52,57 @@ struct JavaInput {
     source_set: Option<JavaSourceSet>,
 }
 
-pub(super) fn analyze_java(
+/// A compiler result remains reusable only while all of its consumed inputs and
+/// original classpath outputs match. Extraction never advances this baseline.
+pub(in crate::analyzers) struct CompiledJava {
+    preflight: PreparedJava,
+    metadata: build::JavaBuildMetadata,
+    fingerprints: Vec<crate::model::FileFingerprint>,
+}
+
+impl CompiledJava {
+    pub(in crate::analyzers) fn verify(&self) -> Result<()> {
+        ensure_unchanged(&self.fingerprints)
+    }
+
+    pub(in crate::analyzers) fn preflight(&self) -> &PreparedJava {
+        &self.preflight
+    }
+}
+
+pub(in crate::analyzers) fn compile(
     build: &BuildTarget,
     context: &AnalysisJob<'_>,
     prepared: PreparedJava,
-) -> Result<GraphData> {
+) -> Result<CompiledJava> {
     ensure_unchanged(&prepared.authored_before)?;
     (context.progress)(format!(
         "Compiling all Java source sets for {}…",
         build.label
     ));
     let metadata = build::compile(build, context)?;
-    prepared.verify_compiled(&metadata)?;
-    let graph = analyze_compiled(build, context, &metadata)?;
-    ensure_unchanged(&prepared.authored_before)?;
+    prepared.verify_compiled(build, &metadata)?;
+    let contexts = contexts::plan(&metadata.source_sets)?;
+    let mut fingerprints = prepared.authored_before.clone();
+    fingerprints.extend(build::snapshot(build, &metadata, true)?);
+    fingerprints.extend(contexts::snapshot(&contexts)?);
+    let compiled = CompiledJava {
+        preflight: prepared,
+        metadata,
+        fingerprints,
+    };
+    compiled.verify()?;
+    Ok(compiled)
+}
+
+pub(in crate::analyzers) fn extract_java(
+    build: &BuildTarget,
+    context: &AnalysisJob<'_>,
+    compiled: &CompiledJava,
+) -> Result<GraphData> {
+    compiled.verify()?;
+    let graph = analyze_compiled(build, context, &compiled.metadata)?;
+    compiled.verify()?;
     Ok(graph)
 }
 

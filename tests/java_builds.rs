@@ -2,7 +2,7 @@
 #[path = "support/java.rs"]
 mod support;
 use codecallnavigator_engine::{
-    analyzers::{AnalyzerRuntime, analyze},
+    analyzers::{AnalyzerRuntime, PreparedAnalysis, analyze},
     fingerprint,
     model::{GraphData, Node},
     store::SqliteStore,
@@ -177,8 +177,21 @@ fn maven_reactor_preserves_graph_ownership_and_does_not_execute_tests() {
 fn maven_standalone_changes_and_failed_refresh_preserve_cached_graph() {
     let fixture = maven_fixture();
     let root = fixture.path().join("standalone");
-    let build = target(&root, "maven");
-    let graph = run(vec![build.clone()]).unwrap();
+    let other = maven_fixture();
+    let other_root = other.path().join("standalone");
+    distinguish_selected_project(&other_root);
+    count_native_builds(&root);
+    count_native_builds(&other_root);
+    let mut session = PreparedAnalysis::new(
+        vec![target(&root, "maven"), target(&other_root, "maven")],
+        AnalyzerRuntime::discover().unwrap(),
+    )
+    .unwrap();
+    let cancel = AtomicBool::new(false);
+    let progress = |message| eprintln!("{message}");
+    session.prepare(&cancel, &progress).unwrap();
+    let graph = session.extract(&cancel, &progress).unwrap();
+    assert_prepared_extraction_reuses_builds(&mut session, &root, &other_root, &graph);
     let main = method(&graph, "Standalone", "main");
     assert!(
         graph
@@ -191,16 +204,132 @@ fn maven_standalone_changes_and_failed_refresh_preserve_cached_graph() {
     let cache = tempfile::tempdir().unwrap();
     let store = SqliteStore::open(cache.path()).unwrap();
     let generation = store.publish(&graph, &AtomicBool::new(false)).unwrap();
+    assert_only_changed_build_is_prepared(&mut session, &root, &other_root);
+    assert_changed_bytecode_rejects_extraction(&mut session, &root);
     fs::write(
         root.join("src/main/java/fixture/Standalone.java"),
         "invalid Java",
     )
     .unwrap();
     assert!(fingerprint::is_stale(&graph.fingerprints).unwrap());
-    assert!(run(vec![build]).is_err());
+    assert!(session.prepare(&cancel, &progress).is_err());
     let loaded = store.load_active().unwrap().unwrap();
     assert_eq!(loaded.nodes.len(), graph.nodes.len());
     assert!(cache.path().join(generation).exists());
+}
+
+// These counters observe real native invocations, including no-op lifecycle runs.
+// A class-file timestamp alone cannot prove that Maven was never launched.
+fn count_native_builds(root: &Path) {
+    use std::os::unix::fs::PermissionsExt;
+    let wrapper = root.join("mvnw");
+    let executable = if wrapper.is_file() {
+        // Keep its executable/shebang semantics and original working directory.
+        let native = root.join("mvnw-native");
+        fs::rename(&wrapper, &native).unwrap();
+        native
+    } else {
+        root.ancestors()
+            .skip(1)
+            .map(|directory| directory.join("mvnw"))
+            .find(|candidate| candidate.is_file())
+            .unwrap_or_else(|| PathBuf::from("mvn"))
+    };
+    let quoted = executable.to_string_lossy().replace('\'', "'\\''");
+    fs::write(
+        &wrapper,
+        format!("#!/bin/sh\nmkdir -p target\nprintf 'invocation\\n' >> target/analysis-invocations\nexec '{quoted}' \"$@\"\n"),
+    )
+    .unwrap();
+    fs::set_permissions(wrapper, fs::Permissions::from_mode(0o755)).unwrap();
+}
+
+fn native_build_count(root: &Path) -> usize {
+    fs::read_to_string(root.join("target/analysis-invocations"))
+        .unwrap()
+        .lines()
+        .count()
+}
+
+fn distinguish_selected_project(root: &Path) {
+    let pom = root.join("pom.xml");
+    fs::write(
+        &pom,
+        fs::read_to_string(&pom).unwrap().replace(
+            "<artifactId>standalone</artifactId>",
+            "<artifactId>other</artifactId>",
+        ),
+    )
+    .unwrap();
+    let source = root.join("src/main/java/fixture/Standalone.java");
+    fs::write(
+        &source,
+        fs::read_to_string(&source)
+            .unwrap()
+            .replace("package fixture;", "package other;"),
+    )
+    .unwrap();
+}
+
+fn assert_prepared_extraction_reuses_builds(
+    session: &mut PreparedAnalysis,
+    first: &Path,
+    second: &Path,
+    graph: &GraphData,
+) {
+    let counts = [native_build_count(first), native_build_count(second)];
+    assert!(counts.iter().all(|count| *count > 0));
+    let cancel = AtomicBool::new(false);
+    let repeated = session.extract(&cancel, &|_| {}).unwrap();
+    assert_eq!(graph.nodes, repeated.nodes);
+    assert_eq!(
+        serde_json::to_value(&graph.edges).unwrap(),
+        serde_json::to_value(&repeated.edges).unwrap()
+    );
+    cancel.store(true, std::sync::atomic::Ordering::Relaxed);
+    assert!(session.extract(&cancel, &|_| {}).is_err());
+    cancel.store(false, std::sync::atomic::Ordering::Relaxed);
+    let retried = session.extract(&cancel, &|_| {}).unwrap();
+    assert_eq!(graph.nodes, retried.nodes);
+    assert_eq!(
+        counts,
+        [native_build_count(first), native_build_count(second)]
+    );
+}
+
+fn assert_only_changed_build_is_prepared(
+    session: &mut PreparedAnalysis,
+    first: &Path,
+    second: &Path,
+) {
+    let counts = [native_build_count(first), native_build_count(second)];
+    let source = first.join("src/main/java/fixture/Standalone.java");
+    fs::write(
+        &source,
+        fs::read_to_string(&source)
+            .unwrap()
+            .replace("void leaf()", "void revisedLeaf()")
+            .replace("leaf();", "revisedLeaf();"),
+    )
+    .unwrap();
+    let cancel = AtomicBool::new(false);
+    assert!(session.extract(&cancel, &|_| {}).is_err());
+    session.prepare(&cancel, &|_| {}).unwrap();
+    let updated = session.extract(&cancel, &|_| {}).unwrap();
+    method(&updated, "Standalone", "revisedLeaf");
+    assert!(native_build_count(first) > counts[0]);
+    assert_eq!(native_build_count(second), counts[1]);
+}
+
+fn assert_changed_bytecode_rejects_extraction(session: &mut PreparedAnalysis, root: &Path) {
+    let classes = root.join("target/classes/fixture/Standalone.class");
+    let mut bytes = fs::read(&classes).unwrap();
+    bytes.push(0);
+    fs::write(classes, bytes).unwrap();
+    let error = session
+        .extract(&AtomicBool::new(false), &|_| {})
+        .unwrap_err();
+    assert!(error.is::<fingerprint::InputsChanged>());
 }
 
 #[test]

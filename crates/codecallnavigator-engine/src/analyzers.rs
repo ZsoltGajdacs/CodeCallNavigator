@@ -4,14 +4,15 @@ mod compose;
 mod csharp;
 mod java;
 mod process;
+mod session;
+pub use session::PreparedAnalysis;
 mod typescript;
 use crate::{
     discovery::BuildTarget,
     fingerprint,
     model::{FileFingerprint, GraphData},
 };
-use anyhow::{Context, Result, bail, ensure};
-use process::check_cancel;
+use anyhow::{Context, Result, ensure};
 use std::{
     fs,
     path::{Path, PathBuf},
@@ -131,97 +132,7 @@ pub fn analyze(
     cancel: &AtomicBool,
     progress: &dyn Fn(String),
 ) -> Result<GraphData> {
-    let _timer = crate::metrics::stage("analysis");
-    ensure!(!builds.is_empty(), "Select at least one build");
-    let mut job = JobDirectory::new()?;
-    let mut composition = compose::GraphComposition::default();
-    let context = AnalysisJob {
-        runtime,
-        path: &job.path,
-        shared_path: &job.path,
-        cancel,
-        progress,
-    };
-    let jobs = {
-        let _timer = crate::metrics::stage("preparation");
-        prepare_jobs(builds, &context)?
-    };
-    let total = jobs.len();
-    let mut versions = serde_json::Map::new();
-    for (index, prepared) in jobs.into_iter().enumerate() {
-        check_cancel(cancel)?;
-        progress(format!(
-            "Analyzing {} ({}/{total})",
-            prepared.build.label,
-            index + 1
-        ));
-        let context = AnalysisJob {
-            runtime,
-            path: &prepared.path,
-            shared_path: &job.path,
-            cancel,
-            progress,
-        };
-        let part = analyze_build(&prepared.build, &context, prepared.preparation)
-            .with_context(|| format!("Analysis failed. Logs: {}", prepared.path.display()))?;
-        if !part.engine_versions.is_empty() {
-            versions.insert(
-                prepared.build.path.to_string_lossy().into_owned(),
-                serde_json::from_str(&part.engine_versions)?,
-            );
-        }
-        {
-            let _timer = crate::metrics::stage("composition");
-            composition.append(part)?;
-        }
-    }
-    let mut graph = composition.finish();
-    progress("Verifying source state…".into());
-    ensure_unchanged(&graph.fingerprints)?;
-    let mut engines: serde_json::Value = serde_json::from_str(&engine_versions()?)?;
-    if !versions.is_empty() {
-        engines["projects"] = serde_json::Value::Object(versions);
-    }
-    graph.engine_versions = engines.to_string();
-    graph.validate()?;
-    crate::metrics::count("symbols", graph.nodes.len() as u64);
-    crate::metrics::count("relationships", graph.edges.len() as u64);
-    check_cancel(cancel)?;
-    job.remove_on_drop = true;
-    Ok(graph)
-}
-
-fn prepare_jobs(builds: Vec<BuildTarget>, context: &AnalysisJob<'_>) -> Result<Vec<PreparedJob>> {
-    let retain_worker = builds.len() == 1;
-    let mut jobs = Vec::with_capacity(builds.len());
-    for (index, build) in builds.into_iter().enumerate() {
-        check_cancel(context.cancel)?;
-        let path = context.path.join(index.to_string());
-        fs::create_dir_all(&path)?;
-        let context = AnalysisJob {
-            path: &path,
-            ..*context
-        };
-        let mut preparation = prepare_build(&build, &context)
-            .with_context(|| format!("Build preparation failed. Logs: {}", path.display()))?;
-        if !retain_worker && let Preparation::TypeScript(prepared) = &mut preparation {
-            prepared.release_worker();
-        }
-        jobs.push(PreparedJob {
-            build,
-            path,
-            preparation,
-        });
-    }
-    java::reject_overlaps(jobs.iter().filter_map(|job| match &job.preparation {
-        Preparation::Java(prepared) => Some((&job.build, prepared)),
-        _ => None,
-    }))?;
-    typescript::reject_overlaps(jobs.iter().filter_map(|job| match &job.preparation {
-        Preparation::TypeScript(prepared) => Some(prepared),
-        _ => None,
-    }))?;
-    Ok(jobs)
+    PreparedAnalysis::new(builds, runtime.clone())?.into_graph(cancel, progress)
 }
 
 struct AnalysisJob<'a> {
@@ -231,39 +142,6 @@ struct AnalysisJob<'a> {
     shared_path: &'a Path,
     cancel: &'a AtomicBool,
     progress: &'a dyn Fn(String),
-}
-
-struct PreparedJob {
-    build: BuildTarget,
-    path: PathBuf,
-    preparation: Preparation,
-}
-
-enum Preparation {
-    Csharp,
-    Java(java::PreparedJava),
-    TypeScript(typescript::PreparedTypeScript),
-}
-
-fn prepare_build(build: &BuildTarget, context: &AnalysisJob<'_>) -> Result<Preparation> {
-    match build.language.as_str() {
-        "csharp" => Ok(Preparation::Csharp),
-        "java" => java::prepare(build, context).map(Preparation::Java),
-        "typescript" => typescript::prepare(build, context).map(Preparation::TypeScript),
-        other => bail!("Unsupported language: {other}"),
-    }
-}
-
-fn analyze_build(
-    build: &BuildTarget,
-    context: &AnalysisJob<'_>,
-    prepared: Preparation,
-) -> Result<GraphData> {
-    match prepared {
-        Preparation::Csharp => csharp::analyze_csharp(build, context),
-        Preparation::Java(prepared) => java::analyze_java(build, context, prepared),
-        Preparation::TypeScript(prepared) => typescript::analyze(build, context, prepared),
-    }
 }
 
 static JOB_SEQUENCE: AtomicU64 = AtomicU64::new(0);
