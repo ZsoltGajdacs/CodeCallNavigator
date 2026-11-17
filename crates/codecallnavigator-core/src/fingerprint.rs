@@ -51,37 +51,76 @@ pub fn capture_excluding(
 
 /// A captured analysis input changed, so its result must not be published.
 #[derive(Debug)]
-pub struct InputsChanged(pub &'static str);
+pub struct InputsChanged {
+    message: &'static str,
+    path: String,
+    change: &'static str,
+}
 impl std::fmt::Display for InputsChanged {
     fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        formatter.write_str(self.0)
+        write!(
+            formatter,
+            "{} Changed input: {:?} ({}).",
+            self.message, self.path, self.change
+        )
     }
 }
 impl std::error::Error for InputsChanged {}
 
 pub fn require_unchanged(items: &[FileFingerprint], message: &'static str) -> Result<()> {
-    if is_stale(items)? {
-        return Err(InputsChanged(message).into());
+    if let Some((item, change)) = first_changed(items)? {
+        return Err(InputsChanged {
+            message,
+            path: item.path.clone(),
+            change,
+        }
+        .into());
     }
     Ok(())
 }
 
 pub fn is_stale(items: &[FileFingerprint]) -> Result<bool> {
+    Ok(first_changed(items)?.is_some())
+}
+
+fn first_changed(items: &[FileFingerprint]) -> Result<Option<(&FileFingerprint, &'static str)>> {
     let _stage = crate::metrics::stage("fingerprints.verify");
     for item in items {
         let path = Path::new(&item.path);
         let current = fingerprint(path, &item.excluded_children, true, item.observation_policy)?;
-        if (
-            current.missing,
-            current.size,
-            current.modified_ns,
-            &current.hash,
-        ) != (item.missing, item.size, item.modified_ns, &item.hash)
-        {
-            return Ok(true);
+        let change = classify_change(item, &current, path.is_dir());
+        if let Some(change) = change {
+            return Ok(Some((item, change)));
         }
     }
-    Ok(false)
+    Ok(None)
+}
+
+fn classify_change(
+    before: &FileFingerprint,
+    current: &FileFingerprint,
+    directory: bool,
+) -> Option<&'static str> {
+    match (before.missing, current.missing) {
+        (false, true) => return Some("removed"),
+        (true, false) => return Some("created"),
+        _ => {}
+    }
+    if before.hash != current.hash {
+        return Some(hash_change(directory));
+    }
+    if before.size != current.size || before.modified_ns != current.modified_ns {
+        return Some("metadata changed");
+    }
+    None
+}
+
+fn hash_change(directory: bool) -> &'static str {
+    if directory {
+        "directory membership or link target changed"
+    } else {
+        "content or link target changed"
+    }
 }
 
 pub fn source_paths(roots: &[PathBuf]) -> Result<Vec<PathBuf>> {
@@ -644,12 +683,27 @@ mod tests {
         assert!(!is_stale(&original).unwrap());
         fs::write(&file, "class New {}").unwrap();
         assert!(is_stale(&original).unwrap());
+        let error = require_unchanged(&original, "Analysis rejected").unwrap_err();
+        assert!(error.is::<InputsChanged>());
+        assert!(error.to_string().contains(file.to_str().unwrap()));
+        assert!(error.to_string().contains("content or link target changed"));
         let before_addition = capture_now();
         fs::write(directory.path().join("New.java"), "class New {}").unwrap();
         assert!(is_stale(&before_addition).unwrap());
+        let error = require_unchanged(&before_addition, "Analysis rejected").unwrap_err();
+        assert!(
+            error
+                .to_string()
+                .contains(directory.path().to_str().unwrap())
+        );
+        assert!(error.to_string().contains("directory membership"));
         let before_delete = capture_now();
+        let file_before_delete = capture([file.clone()]).unwrap();
         fs::remove_file(&file).unwrap();
         assert!(is_stale(&before_delete).unwrap());
+        let error = require_unchanged(&file_before_delete, "Analysis rejected").unwrap_err();
+        assert!(error.to_string().contains(file.to_str().unwrap()));
+        assert!(error.to_string().contains("removed"));
     }
 
     #[test]
@@ -660,6 +714,27 @@ mod tests {
         fs::create_dir(directory.path().join("build")).unwrap();
         fs::write(directory.path().join("build/output.class"), "compiled").unwrap();
         assert!(!is_stale(&before).unwrap());
+        // A fresh checkout has no frontend output until its first Maven build.
+        let frontend = directory.path().join("ui-backoffice");
+        fs::create_dir(&frontend).unwrap();
+        fs::write(frontend.join("pom.xml"), "<project/>").unwrap();
+        let before = capture(source_paths(&[directory.path().into()]).unwrap()).unwrap();
+        let dist = frontend.join("dist");
+        fs::create_dir(&dist).unwrap();
+        fs::write(dist.join("Generated.java"), "class Generated {}").unwrap();
+        require_unchanged(&before, "Analysis rejected").unwrap();
+        assert!(
+            !source_paths(&[directory.path().into()])
+                .unwrap()
+                .contains(&dist)
+        );
+        // Explicit compiler-required roots must retain coverage inside dist.
+        let explicit = source_paths_excluding(std::slice::from_ref(&dist), &[]).unwrap();
+        let required = capture_excluding(explicit, &[]).unwrap();
+        fs::write(dist.join("Generated.java"), "class Changed {}").unwrap();
+        assert!(require_unchanged(&required, "Analysis rejected").is_err());
+        fs::write(directory.path().join("App.java"), "class Edited {}").unwrap();
+        assert!(require_unchanged(&before, "Analysis rejected").is_err());
     }
 
     #[test]
@@ -708,8 +783,11 @@ mod tests {
         assert_eq!(before.len(), 1);
         assert!(!is_stale(&before).unwrap());
         fs::create_dir_all(absent.parent().unwrap()).unwrap();
-        fs::write(absent, "<settings/>").unwrap();
+        fs::write(&absent, "<settings/>").unwrap();
         assert!(is_stale(&before).unwrap());
+        let error = require_unchanged(&before, "Analysis rejected").unwrap_err();
+        assert!(error.to_string().contains(absent.to_str().unwrap()));
+        assert!(error.to_string().contains("created"));
         let old: FileFingerprint =
             serde_json::from_str(r#"{"path":"old","size":0,"modified_ns":0,"hash":"x"}"#).unwrap();
         assert!(!old.missing);
