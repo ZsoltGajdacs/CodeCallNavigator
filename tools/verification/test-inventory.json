@@ -22352,6 +22352,28 @@
       "category": "unit",
       "requirements": [],
       "purpose": "Pure native-process table parser validates complete unambiguous membership evidence and rejects uncertain observations; this does not prove OS process termination."
+    },
+    {
+      "id": "tests/test_ingestion_scheduling.py::IngestionScheduling.test_cases_overlap_with_isolated_mutations_and_ordered_reports",
+      "runner": "python",
+      "file": "tests/test_ingestion_scheduling.py",
+      "test_name": "test_ingestion_scheduling.IngestionScheduling.test_cases_overlap_with_isolated_mutations_and_ordered_reports",
+      "ignored": false,
+      "component": "tooling",
+      "category": "integration",
+      "requirements": [],
+      "purpose": "Real child-command probes prove four-case harness scheduling, owned working directories and records, ordered reports and fail-stop draining; this is process/harness coverage, not fabricated successful compiler analysis."
+    },
+    {
+      "id": "tests/test_ingestion_scheduling.py::IngestionScheduling.test_failure_prevents_pending_cases_and_drains_active_cases",
+      "runner": "python",
+      "file": "tests/test_ingestion_scheduling.py",
+      "test_name": "test_ingestion_scheduling.IngestionScheduling.test_failure_prevents_pending_cases_and_drains_active_cases",
+      "ignored": false,
+      "component": "tooling",
+      "category": "integration",
+      "requirements": [],
+      "purpose": "Real child-command probes prove four-case harness scheduling, owned working directories and records, ordered reports and fail-stop draining; this is process/harness coverage, not fabricated successful compiler analysis."
     }
   ],
   "gates": [

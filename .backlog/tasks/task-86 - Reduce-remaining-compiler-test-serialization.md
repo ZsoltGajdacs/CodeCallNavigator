@@ -1,11 +1,11 @@
 ---
 id: TASK-86
 title: Reduce remaining compiler test serialization
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-11-17T20:40:00Z'
-updated_date: '2026-11-17T21:21:00Z'
+updated_date: '2026-11-17T23:24:00Z'
 labels: []
 dependencies:
   - TASK-80
@@ -24,8 +24,8 @@ After the first bounded-parallel scheduler, matching Rust integration dropped fr
 <!-- AC:BEGIN -->
 - [x] #1 Measured critical paths and safe parallel boundaries are recorded from actual current runs
 - [x] #2 Independent cases within large Rust boundary groups use the existing global four-job budget while unit and serial/native/performance semantics remain correct
-- [ ] #3 Independent CLI acceptance fixtures run concurrently only when project and mutable-resource ownership are isolated
-- [ ] #4 Selected test identities, assertions, diagnostics, cancellation and cleanup coverage are retained and matched timings demonstrate the result
+- [x] #3 Independent CLI acceptance fixtures run concurrently only when project and mutable-resource ownership are isolated
+- [x] #4 Selected test identities, assertions, diagnostics, cancellation and cleanup coverage are retained and matched timings demonstrate the result
 - [x] #5 Late signal denial for a terminated group is accepted only with positive native absence evidence; live or unverified cleanup remains failed
 <!-- AC:END -->
 
@@ -51,4 +51,20 @@ Cleanupdiagnosis primarysource: AppleXNU kern_sig.c lines1612-1621 filtersSZOMB 
 CombinedUnit1+cleanupfix intermediate green changes-vtkg8yuf passed19/19stages (all6schedulerprobes, strictparser, timeoutnormalorphan/lateEPERM/live-denial/unknownproof, CLIexternalcwdstartup,CodeHealth). Rootpost-greenreview found testfixtureownershipbug: liveignoredchild cleanupregisteredby mutablePIDfiles, subsequentunknownprobe overwrote filesbeforecleanupcouldrun. This green is intermediate, not finalcheckpoint. Fixing immediateper-probe try/finally cleanup withimmutablechild/leaderidentity, PGIDownershipcheckandactualchild-exitwait beforeotherprobe canoverwritefiles. No productionbusinessbehaviorchanges; finalstabletoolingselector rerun required. Cleanupfailure/live-denial guarantees unchanged; no blindretry or testweakening.
 
 Final reviewed Unit1 checkpoint changes-3v963x29 passed all19 selected stages after immutable-PID finally cleanup correction:81unit and274integration passed; one optional existing CLI/TypeScript journey explicitly skipped (no candidate environment), not claimed passed. All6 scheduler probes, retained-batch PID/arguments, normal orphan transition, forced exited-group EPERM, live ignored-TERM denial, unavailable native proof and real standalone CLI startup passed. CodeScene passed; both category cleanup reports errors=[] and retainedbytes0. Unit2 CLI concurrency and matched application timing remain pending; TASK86 remains InProgress.
+
+Unit1 checkpoint committed ba5e715 after7/7eligible source safeguard passed. CLIUnit2 now extracting a cohesive ordered-case ownership helper first, preserving sequential production behavior for meaningful scheduling red. Five real top-level fixtures retain within-case mutation/recovery sequences; separate Client records/environment/workroots, bounded4 workers, deterministic merge and failure draining. Selector registered CLI gate adds engine acceptance; final comparison will include committed engine baseline via --base8429963, without manual scope override.
+
+CLIUnit2 meaningful red changes-le2d34i9 observed both new real child-command scheduling probes fail at four-case rendezvous under sequential helper (only1case started); otherintegration checks passed,1optionalCLIjourneyskip.9stagespassed1failed16laternotrun; selectedcategorycleanup passed. Earlier changes-0xqva283 was testsetup failure (missing workroot), corrected; not credited as behavioralred. Enabling boundedparallel after thisred, retaining actual5case compilerjourney as acceptance evidence. Green comparison planned --base8429963.
+
+CLIUnit2 code and independent review complete: ingestion-local stdlib executor <=4, worker-set failureEvent before future error, bounded submission, pending cancellation and context-manager drain; per-case Client/env/work ownership, deterministic reports and all5 original callbacks/assertions retained. Candidate SHA check afterdrain on success/failure; secondary identity failure attached withoutmasking originalfailure. Production/test sources CodeHealth10.0 and diffcheckpassed. Preparing final matched --base8429963 verification with baseline environment, no project-specific Maven overrides; actual measuredgreen/preservedidentity comparison pending.
+
+User steering: stop further optimization after current measured checkpoint, add agent guidance to favor parallel-safe test design, commit and resume remaining continuous-analysis slices. Root AGENTS.md now requires per-case mutable resource/environment/process ownership, no order dependence, coherent sequential recovery scenarios, explicit supported serialization metadata when necessary and runner-owned budgets/native-performance exclusivity. Documentation-only content/path/diff verification pending with checkpoint; no extra runtime suites for guidance.
+
+Final matched verification changes-wmwd6yi3 (--base8429963) retained every baseline1241testregistration and all12gates; added357toolingregistrations, none removed. All common app integration, new scheduling probes, packaging, MCP independent install, Rustacceptance, automaticrefresh and CSharpcleanup gates passed. Rustintegration384.107->370.544s (~3.5%); Rustacceptance234.938->172.927s (~26.4%). Compiler times essentially identical (unit66.228->66.252, integrationCLI28.661->28.808, integrationRust119.013->119.054s). ToolingPython and optionalrealCLIjourney passed (282tests0skips). No CLIpool timing claimed: desktoplocked. Stop raced desktopgate startup:61interrupted14.686s duringfixturepreparation, beforethemedirectory/app.log/WindowLease/GUI launch;62CLIingestion andlaterchecksnotrun. Truthful finalstatuses62passed1interrupted13notrun. Initialcategorycleanup passed errors=[]; nativePSpositiveabsence acceptedlateSIGKILL-EPERM, ownedrunscanempty. Acceptance diagnosticfixture intentionallyretained96,291,410bytes at isolatedtarget/verification/changes-wmwd6yi3/acceptance/gate-csharp_desktop_acceptance/retained-fixture; Rustoutputsreclaimed. No claim wholeplan green. Userexplicitlyaccepts lockeddesktop and blockedlater checks deferredfinalSlice6. RootAGENTS guidance staticselector changes-oh7zvsib passed; exact3CLIpatch transferredroot; sourceCodeHealth10 androot safeguard2/2passed. Stop further optimization peruser, returnSlice3.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Scheduled independent Rust boundary tests and C# CLI acceptance cases within a four-worker budget. Preserved sequential recovery scenarios, ordered command records and failure draining, and added agent guidance for parallel-safe tests. Matching Rust integration improved by 3.5% and Rust acceptance by 26.4%; compilation times stayed unchanged. All runnable checks through C# cleanup passed. The desktop gate was interrupted before GUI launch; the real CLI parallel journey and later selected checks remain explicitly deferred to Slice 6 while the desktop is locked. Further test optimization is stopped as requested; Slice 3 is next.
+<!-- SECTION:FINAL_SUMMARY:END -->

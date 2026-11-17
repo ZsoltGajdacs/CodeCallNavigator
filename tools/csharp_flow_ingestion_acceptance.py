@@ -2,6 +2,9 @@
 """Verify C# flow ingestion through production engine analysis and query processes."""
 from graph_bundle import load as load_bundle, publish_fixture, capture, restore
 import argparse
+from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, wait
+from functools import partial
+from threading import Event
 from dataclasses import dataclass
 import hashlib
 import json
@@ -17,6 +20,9 @@ from csharp_flow_acceptance import objects, require, source_metadata, rebase_exp
 ROOT = Path(__file__).resolve().parents[1]
 BASELINE = ROOT / "fixtures/flow/csharp-baselines/pre-ingestion.json"
 GRAPH = Path(".codecallnavigator/graph.json")
+# Match the four-boundary compiler budget inside this one acceptance gate;
+# outer native/performance gate exclusivity and timeouts remain unchanged.
+CASE_WORKERS = 4
 PROJECT = '<Project Sdk="Microsoft.NET.Sdk"><PropertyGroup><TargetFramework>net11.0</TargetFramework></PropertyGroup></Project>\n'
 LINKED_SOURCE = ('namespace Linked; public static class Shared { public static int Leaf(int n)=>n; '
                  'public static int Leaf(string s)=>s.Length; public static int Run(){\n'
@@ -445,6 +451,87 @@ def candidate_identity(client):
             "callatlas_revision": dependency["revision"], "combined_patch_sha256": dependency["patch_sha256"]}
 
 
+def acceptance_cases(fixtures):
+    return [
+        ("utf8", lambda client, work: utf8_acceptance(client, fixtures["utf8-bom"], work)),
+        ("utf16", lambda client, work: graph_only_encoding(client, fixtures["utf16"], work)),
+        ("latin1_ascii", lambda client, work: graph_only_encoding(client, fixtures["latin1-ascii"], work)),
+        ("linked", linked_contexts),
+        ("mixed_encoding_contexts", mixed_encoding_contexts),
+    ]
+
+
+def run_case(client, work, named_case, stopped):
+    name, case = named_case
+    try:
+        case_work = work / name
+        case_work.mkdir()
+        outcome = case(client, case_work)
+        return outcome, client.records
+    except BaseException:
+        # Signal failure in the worker before the coordinator can refill slots.
+        stopped.set()
+        raise
+
+
+def submit_cases(executor, pending, active, stopped):
+    while len(active) < CASE_WORKERS and not stopped.is_set():
+        item = next(pending, None)
+        if item is None:
+            break
+        index, operation = item
+        active[executor.submit(operation)] = index
+
+
+def run_cases(engine, environment, cases, work):
+    """Bound independent cases; each callback's mutation/recovery chain stays ordered."""
+    stopped = Event()
+    pending = iter((index, partial(run_case, Client(engine, environment), work, case, stopped))
+                   for index, case in enumerate(cases))
+    active, completed = {}, {}
+    with ThreadPoolExecutor(max_workers=CASE_WORKERS) as executor:
+        try:
+            submit_cases(executor, pending, active, stopped)
+            while active:
+                done, _ = wait(active, return_when=FIRST_COMPLETED)
+                for future in done:
+                    completed[active.pop(future)] = future.result()
+                submit_cases(executor, pending, active, stopped)
+        except BaseException:
+            stopped.set()
+            for future in active:
+                future.cancel()
+            # Executor exit waits for every active callback before owned fixture
+            # directories can be removed, including interruption/failure paths.
+            raise
+    return ordered_case_results(cases, completed)
+
+
+def ordered_case_results(cases, completed):
+    outcomes = {name: completed[index][0] for index, (name, _) in enumerate(cases)}
+    records = [record for index in range(len(cases)) for record in completed[index][1]]
+    return outcomes, records
+
+
+def verify_candidate(client, identity):
+    require(hashlib.sha256(client.engine.read_bytes()).hexdigest() == identity["engine_sha256"],
+            "Candidate engine changed during acceptance")
+
+
+def run_candidate_cases(client, identity, cases, work):
+    try:
+        result = run_cases(client.engine, client.environment, cases, work)
+    except BaseException as original:
+        # run_cases has drained its workers before this proof, even on failure.
+        try:
+            verify_candidate(client, identity)
+        except BaseException as identity_error:
+            original.add_note(f"Candidate identity verification also failed: {identity_error}")
+        raise
+    verify_candidate(client, identity)
+    return result
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--engine", type=Path, required=True)
@@ -457,14 +544,9 @@ def main():
     fixtures = {f["name"]: f for f in json.loads(BASELINE.read_text())["fixtures"]}
     with tempfile.TemporaryDirectory(prefix="task22-ingestion-acceptance-") as directory:
         work = Path(directory).resolve()
-        report = {"status": "passed", "candidate": identity,
-                  "utf8": utf8_acceptance(client, fixtures["utf8-bom"], work),
-                  "utf16": graph_only_encoding(client, fixtures["utf16"], work),
-                  "latin1_ascii": graph_only_encoding(client, fixtures["latin1-ascii"], work),
-                  "linked": linked_contexts(client, work),
-                  "mixed_encoding_contexts": mixed_encoding_contexts(client, work), "commands": client.records}
-        require(hashlib.sha256(client.engine.read_bytes()).hexdigest() == identity["engine_sha256"],
-                "Candidate engine changed during acceptance")
+        outcomes, records = run_candidate_cases(client, identity, acceptance_cases(fixtures), work)
+        report = {"status": "passed", "candidate": identity, **outcomes,
+                  "commands": client.records + records}
         args.output.parent.mkdir(parents=True, exist_ok=True)
         args.output.write_text(json.dumps(report, indent=2).replace(str(work), "<acceptance-work>") + "\n")
     print(f"C# flow ingestion CLI acceptance passed; report: {args.output}")
@@ -474,4 +556,5 @@ if __name__ == "__main__":
     try:
         main()
     except (OSError, ValueError, KeyError, subprocess.SubprocessError) as error:
-        raise SystemExit(f"C# flow ingestion acceptance failed: {error}") from error
+        notes = ''.join(f"\n{note}" for note in getattr(error, "__notes__", []))
+        raise SystemExit(f"C# flow ingestion acceptance failed: {error}{notes}") from error

@@ -5,7 +5,7 @@ status: To Do
 assignee:
   - '@codex'
 created_date: '2026-11-17T14:02:00Z'
-updated_date: '2026-11-17T15:00:00Z'
+updated_date: '2026-11-17T23:25:00Z'
 labels: []
 dependencies:
   - TASK-83
@@ -24,3 +24,9 @@ MCP and desktop must consume engine recovery rather than implement separate poli
 - [ ] #2 Desktop opt-in works before first publication and cancellation stops sessions
 - [ ] #3 All clients use the new engine contract directly; stale versions fail explicitly and packaging/native acceptance pass
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+The final checkpoint must resolve the accepted locked-desktop deferrals from Slices 1–2 and TASK-86. In the latest matched run, changes-wmwd6yi3, desktop stage 61 was interrupted during fixture preparation before GUI launch or WindowLease. Stage 62 (real CLI ingestion with parallel cases), flow comparison, installed CLI, agent CLI/MCP journeys, flow expansion, performance/query/storage benchmarks and the late CodeScene stage did not run. Earlier common checks, Rust acceptance, automatic refresh, C# cleanup and category cleanup passed. Source Code Health and commit safeguards passed independently. Run these deferred checks with an unlocked desktop at final verification; scheduling protocol probes do not replace the real compiler journey.
+<!-- SECTION:NOTES:END -->

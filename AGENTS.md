@@ -150,6 +150,14 @@ pass/fail gate or permission to weaken verification.
 
 - Test production code through observable results, not copied implementation or
   internal call sequences. Extract cohesive logic only when it improves design.
+- Write tests so independent cases can run in parallel whenever practical. Give
+  each case its own temporary directories, mutable fixtures, environment and
+  process ownership; avoid shared mutable state and order dependencies. Keep
+  steps that prove one mutation/recovery sequence together. When a real shared
+  resource requires serialization, record the reason and use the verification
+  runner-supported serialization metadata (`serial_group` for Rust). Preserve
+  native/performance exclusivity and let the runner enforce concurrency limits;
+  do not rely on execution order.
 - Unit tests use explicit in-memory inputs and isolated logic. Filesystem,
   database, compiler, native-window and application-process behavior belongs in
   integration or acceptance tests with real dependencies and temporary resources.
