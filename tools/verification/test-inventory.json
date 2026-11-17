@@ -22264,6 +22264,61 @@
         "typescript"
       ],
       "purpose": "worker retains compiler output and exits after extraction"
+    },
+    {
+      "id": "tests/test_rust_scheduling.py::RustScheduling.test_independent_groups_overlap_with_one_global_four_worker_budget",
+      "runner": "python",
+      "file": "tests/test_rust_scheduling.py",
+      "test_name": "test_rust_scheduling.RustScheduling.test_independent_groups_overlap_with_one_global_four_worker_budget",
+      "ignored": false,
+      "component": "tooling",
+      "category": "integration",
+      "requirements": [],
+      "purpose": "Real child libtest-protocol probes prove independent groups overlap with one global four worker budget; pure command checks cannot prove process scheduling or draining. These are runner fault probes, not analyzer/compiler success coverage."
+    },
+    {
+      "id": "tests/test_rust_scheduling.py::RustScheduling.test_same_serial_group_across_binaries_excludes_itself_only",
+      "runner": "python",
+      "file": "tests/test_rust_scheduling.py",
+      "test_name": "test_rust_scheduling.RustScheduling.test_same_serial_group_across_binaries_excludes_itself_only",
+      "ignored": false,
+      "component": "tooling",
+      "category": "integration",
+      "requirements": [],
+      "purpose": "Real child libtest-protocol probes prove same serial group across binaries excludes itself only; pure command checks cannot prove process scheduling or draining. These are runner fault probes, not analyzer/compiler success coverage."
+    },
+    {
+      "id": "tests/test_rust_scheduling.py::RustScheduling.test_native_and_performance_groups_are_exclusive_even_inside_one_binary",
+      "runner": "python",
+      "file": "tests/test_rust_scheduling.py",
+      "test_name": "test_rust_scheduling.RustScheduling.test_native_and_performance_groups_are_exclusive_even_inside_one_binary",
+      "ignored": false,
+      "component": "tooling",
+      "category": "integration",
+      "requirements": [],
+      "purpose": "Real child libtest-protocol probes prove native and performance groups are exclusive even inside one binary; pure command checks cannot prove process scheduling or draining. These are runner fault probes, not analyzer/compiler success coverage."
+    },
+    {
+      "id": "tests/test_rust_scheduling.py::RustScheduling.test_failure_stops_pending_groups_and_drains_started_children",
+      "runner": "python",
+      "file": "tests/test_rust_scheduling.py",
+      "test_name": "test_rust_scheduling.RustScheduling.test_failure_stops_pending_groups_and_drains_started_children",
+      "ignored": false,
+      "component": "tooling",
+      "category": "integration",
+      "requirements": [],
+      "purpose": "Real child libtest-protocol probes prove failure stops pending groups and drains started children; pure command checks cannot prove process scheduling or draining. These are runner fault probes, not analyzer/compiler success coverage."
+    },
+    {
+      "id": "tests/test_rust_scheduling.py::RustScheduling.test_missing_selected_executable_fails_before_any_test_is_started",
+      "runner": "python",
+      "file": "tests/test_rust_scheduling.py",
+      "test_name": "test_rust_scheduling.RustScheduling.test_missing_selected_executable_fails_before_any_test_is_started",
+      "ignored": false,
+      "component": "tooling",
+      "category": "integration",
+      "requirements": [],
+      "purpose": "Real child libtest-protocol probes prove missing selected executable fails before any test is started; pure command checks cannot prove process scheduling or draining. These are runner fault probes, not analyzer/compiler success coverage."
     }
   ],
   "gates": [

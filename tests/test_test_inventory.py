@@ -129,8 +129,8 @@ class InventoryPolicyTests(unittest.TestCase):
         self.assertNotEqual(rust_group_key(integration),
                             rust_group_key(integration | {'environment_append': {'MAVEN_OPTS': '-Dflag'}}))
         self.assertFalse(any(arg.startswith('--test-threads=') for arg in rust_test_command('tests', [unit])))
-        self.assertIn('--test-threads=4', rust_test_command('tests', [integration]))
-        self.assertIn('--test-threads=4', rust_test_command('tests', [acceptance]))
+        self.assertIn('--test-threads=1', rust_test_command('tests', [integration]))
+        self.assertIn('--test-threads=1', rust_test_command('tests', [acceptance]))
         self.assertIn('--test-threads=1', rust_test_command('tests', [serial]))
         ignored = integration | {'ignored': True}
         self.assertNotEqual(rust_group_key(integration), rust_group_key(ignored))
