@@ -2,9 +2,10 @@
 use serde_json::{Value, json};
 use std::{
     fs,
+    io::Write,
     os::unix::fs::symlink,
     path::{Path, PathBuf},
-    process::Command,
+    process::{Command, Stdio},
 };
 
 struct Fixture {
@@ -83,19 +84,41 @@ impl Fixture {
             .unwrap_or_else(|| {
                 Path::new(env!("CARGO_MANIFEST_DIR")).join("target/debug/codecallnavigator-engine")
             });
-        let result = Command::new(engine)
-            .args(["analyze", "--project"])
-            .arg(&self.project)
-            .arg("--root")
-            .arg(format!("ref={}", self.external.display()))
-            .arg("tsconfig.json")
-            .output()
+        let mut child = Command::new(engine)
+            .arg("serve-once")
+            .stdin(Stdio::piped())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .spawn()
             .unwrap();
+        // EOF cancels analysis: retain this handle through wait_with_output.
+        let mut input = child.stdin.take().unwrap();
+        writeln!(
+            input,
+            "{}",
+            json!({
+                "command":"analyze", "version":codecallnavigator_core::protocol::VERSION,
+                "project":self.project, "roots":[["ref",self.external]],
+                "infer_linked_roots":false,
+                "targets":[{"path":self.project.join("tsconfig.json"),
+                    "language":"typescript", "kind":"typescript", "label":"tsconfig.json"}]
+            })
+        )
+        .unwrap();
+        input.flush().unwrap();
+        let result = child.wait_with_output().unwrap();
+        drop(input);
         assert!(
             result.status.success(),
             "{}",
             String::from_utf8_lossy(&result.stderr)
         );
+        let events = String::from_utf8(result.stdout).unwrap();
+        let complete = events
+            .lines()
+            .map(|line| serde_json::from_str::<Value>(line).unwrap())
+            .find(|event| event["event"] == "complete")
+            .expect("analysis must complete");
         Snapshot {
             bytes: fs::read(self.project.join(".codecallnavigator/graph.json")).unwrap(),
             artifact: serde_json::to_value(
@@ -103,7 +126,11 @@ impl Fixture {
             )
             .unwrap(),
             config_hash,
+            roots: serde_json::from_value(complete["roots"].clone()).unwrap(),
+            fingerprints: serde_json::from_value(complete["fingerprints"].clone()).unwrap(),
+            digest: complete["digest"].as_str().unwrap().to_owned(),
         }
+        .check_runtime_coverage(self, alias)
     }
 }
 
@@ -111,9 +138,56 @@ struct Snapshot {
     bytes: Vec<u8>,
     artifact: Value,
     config_hash: String,
+    roots: Vec<(String, PathBuf)>,
+    fingerprints: Vec<codecallnavigator_core::model::FileFingerprint>,
+    digest: String,
 }
 
 impl Snapshot {
+    fn check_runtime_coverage(self, fixture: &Fixture, alias: bool) -> Self {
+        assert_eq!(self.digest, blake3::hash(&self.bytes).to_hex().to_string());
+        let config = fixture.project.join("tsconfig.json");
+        assert!(
+            self.roots
+                .iter()
+                .any(|(name, root)| name == "repo" && config.strip_prefix(root).is_ok())
+        );
+        let analysis = &self.artifact["graph"]["analysis"];
+        assert_eq!(analysis["targets"], json!(["@repo/tsconfig.json"]));
+        let unmapped = self
+            .fingerprints
+            .iter()
+            .filter(|input| {
+                !self
+                    .roots
+                    .iter()
+                    .any(|(_, root)| Path::new(&input.path).strip_prefix(root).is_ok())
+            })
+            .count();
+        assert!(
+            unmapped > 0,
+            "fixture must exercise unmapped input reporting"
+        );
+        assert_eq!(
+            analysis["limitations"],
+            json!([{"code":"unmapped_input","count":unmapped}])
+        );
+        for source in fixture.configuration(alias)["files"].as_array().unwrap() {
+            let lexical = Path::new(source.as_str().unwrap());
+            let physical = lexical.canonicalize().unwrap();
+            for expected in [lexical, physical.as_path()] {
+                assert!(
+                    self.fingerprints
+                        .iter()
+                        .any(|input| Path::new(&input.path) == expected),
+                    "Required source input missing: {}",
+                    expected.display()
+                );
+            }
+        }
+        self
+    }
+
     fn graph_and_checked_provenance(&self) -> (Value, Value) {
         let mut artifact = self.artifact.clone();
         let mut analysis = artifact["graph"]
@@ -151,6 +225,9 @@ impl Snapshot {
                 "Missing input coverage: {path}"
             );
         }
+        // Each request's complete runtime inventory independently proves its exact
+        // limitation count above. Distinct lexical probes need not have equal counts.
+        analysis.as_object_mut().unwrap().remove("limitations");
         // Artifact input order includes content hashes; the deliberately changed
         // config hash can move its row even when input coverage is identical.
         analysis["inputs"]

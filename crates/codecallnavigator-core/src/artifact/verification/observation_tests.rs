@@ -237,6 +237,7 @@ fn legacy_broken_link_retargets_change_revision_but_plain_missing_inputs_remain_
             crate::model::FileFingerprint {
                 path: path.to_string_lossy().into_owned(),
                 hash: current.hash,
+                kind: current.kind,
                 missing: current.kind == fingerprint::InputKind::Missing,
                 observation_policy: fingerprint::InputPolicy::Legacy,
                 ..Default::default()

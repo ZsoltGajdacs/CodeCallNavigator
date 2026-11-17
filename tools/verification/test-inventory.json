@@ -1594,10 +1594,10 @@
       "purpose": "legacy directory hashes keep hidden membership semantics; real filesystem entries and hashes require integration coverage"
     },
     {
-      "id": "codecallnavigator-core/lib:codecallnavigator_core::fingerprint::tests::absent_explicit_inputs_detect_creation_and_old_fingerprints_still_load",
+      "id": "codecallnavigator-core/lib:codecallnavigator_core::fingerprint::tests::absent_explicit_inputs_detect_creation_and_incomplete_fingerprints_are_rejected",
       "runner": "rust",
       "file": "crates/codecallnavigator-core/src/fingerprint.rs",
-      "test_name": "fingerprint::tests::absent_explicit_inputs_detect_creation_and_old_fingerprints_still_load",
+      "test_name": "fingerprint::tests::absent_explicit_inputs_detect_creation_and_incomplete_fingerprints_are_rejected",
       "ignored": false,
       "package": "codecallnavigator-core",
       "target_kind": "lib",
@@ -1605,7 +1605,7 @@
       "component": "core",
       "category": "integration",
       "requirements": [],
-      "purpose": "absent explicit inputs detect creation and old fingerprints still load"
+      "purpose": "absent explicit inputs detect creation and incomplete fingerprints are rejected"
     },
     {
       "id": "codecallnavigator-core/lib:codecallnavigator_core::fingerprint::tests::creating_ignored_build_outputs_does_not_stale_sources",
@@ -16496,7 +16496,7 @@
         "node",
         "typescript"
       ],
-      "purpose": "compiler source aliases match canonical spelling with named roots"
+      "purpose": "real compiler alias/canonical graph and portable-input parity, repeatable bytes, and exact per-request unmapped coverage from machine runtime inventories"
     },
     {
       "id": "tests/test_agent_integrations.py::AgentPackageTests.test_catalog_escape_is_rejected_before_publication",

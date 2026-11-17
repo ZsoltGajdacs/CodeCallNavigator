@@ -57,6 +57,8 @@ pub struct Edge {
 
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
 pub struct FileFingerprint {
+    /// Captured input kind distinguishes files from directories with equal hashes.
+    pub kind: crate::fingerprint::InputKind,
     #[serde(default)]
     pub observation_policy: crate::fingerprint::InputPolicy,
     pub path: String,

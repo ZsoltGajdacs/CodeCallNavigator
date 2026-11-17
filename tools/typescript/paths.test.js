@@ -7,6 +7,7 @@ const path=require('node:path');
 const {canonical}=require('./paths.js');
 const {trackingSystem}=require('./compiler.js');
 const {Observations}=require('./observations.js');
+const {dependencyInputs}=require('./dependency-inputs.js');
 const modules=process.env.CODECALLNAVIGATOR_TS_NODE_MODULES ||
   (process.env.CODECALLNAVIGATOR_TEST_TYPESCRIPT_ROOT && path.dirname(process.env.CODECALLNAVIGATOR_TEST_TYPESCRIPT_ROOT)) ||
   path.resolve(__dirname,'../../../PacificFateMapEditor/node_modules');
@@ -56,6 +57,7 @@ test('compiler input metadata records normalized missing paths',t=>{
   const {first,alias}=fixture(t), {inputs,system}=tracked();
   assert.equal(system.fileExists(path.join(alias,'missing.ts')),false);
   assert.deepEqual([...inputs].sort(),[path.join(first,'missing.ts'),path.join(alias,'missing.ts')].sort());
+  dependencyProbeInventories(t);
 });
 
 test('original compiler probes reject files appearing after preparation',t=>{
@@ -82,3 +84,27 @@ test('repeated preparation probes reject a changed physical input mapping',t=>{
   fs.unlinkSync(alias);fs.symlinkSync(second,alias,'dir');
   assert.throws(()=>system.fileExists(probe),/changed/);
 });
+
+function dependencyProbeInventories(t) {
+  const {first,second,alias}=fixture(t);
+  const project=path.join(first,'project');
+  fs.mkdirSync(project);
+  const local=path.join(project,'node_modules');
+  fs.symlinkSync(second,local,'dir');
+  const spellings=[path.join(second,'missing.d.ts'),path.join(local,'missing.d.ts'),
+    path.join(alias,'project/node_modules/missing.d.ts')];
+  const inventories=spellings.map(probe=>{
+    const {inputs,system,observations}=tracked();
+    assert.equal(system.fileExists(probe),false);
+    return dependencyInputs(inputs,[project],observations);
+  });
+  assert.deepEqual(inventories[0],inventories[1]);
+  assert.deepEqual(inventories[0],inventories[2]);
+  assert.deepEqual(inventories[0],[spellings[0],spellings[1]].sort());
+  const {inputs,system,observations}=tracked();
+  // Even physical-only probes must observe the completed local alias mapping.
+  system.fileExists(spellings[0]);
+  dependencyInputs(inputs,[project],observations);
+  fs.unlinkSync(local);fs.symlinkSync(first,local,'dir');
+  assert.throws(()=>observations.verify(),/changed/);
+}

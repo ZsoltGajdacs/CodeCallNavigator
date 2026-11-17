@@ -4,6 +4,7 @@ const path = require('node:path');
 const {projectInputs,packageVersion}=require('./dependencies.js');
 const {canonical} = require('./paths.js');
 const {configurationFiles}=require('./boundary-template.js');
+const {dependencyInputs}=require('./dependency-inputs.js');
 const OMITTED = new Set(['.git','node_modules','.next','dist','build','coverage','.backlog','.serena','target']);
 function includeRoot(config, pattern) {
   const prefix = pattern.split(/[?*]/,1)[0];
@@ -70,6 +71,6 @@ function metadata(context, inputs) {
     for (const source of program.getSourceFiles()) inputs.add(canonical(source.fileName));
   }
   return {configs:[...projects.keys()].sort(),sources:[...owners.keys()].sort(),owners:Object.fromEntries(owners),
-    inputs:[...inputs].sort(),watch_roots:context.observations.observe('watch-roots',()=>watchRoots(projects,owners)),output_roots:outputRoots(projects),versions};
+    inputs:dependencyInputs(inputs,[...projects.keys()].map(config=>path.dirname(config)),context.observations),watch_roots:context.observations.observe('watch-roots',()=>watchRoots(projects,owners)),output_roots:outputRoots(projects),versions};
 }
 module.exports = {metadata};

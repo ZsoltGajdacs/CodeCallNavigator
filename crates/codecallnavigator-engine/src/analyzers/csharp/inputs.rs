@@ -88,18 +88,22 @@ impl<'a> Preprocessor<'a> {
 
     pub fn capture(&self, project: &Path, sequence: usize) -> Result<Snapshot> {
         let inventory = self.inventory(project, &format!("{sequence}-discover"))?;
-        let paths = inventory.input_paths();
-        let mut roots = paths
-            .iter()
-            .cloned()
-            .map(crate::fingerprint::ScanRoot::Required)
-            .collect::<Vec<_>>();
-        roots.push(crate::fingerprint::ScanRoot::Required(
+        let mut paths = inventory.input_paths();
+        // Carry the already-observed project scope into final compiler inputs,
+        // including projects with no Compile items yet.
+        paths.push(
             project
                 .parent()
                 .context("C# project has no input scope")?
                 .into(),
-        ));
+        );
+        paths.sort();
+        paths.dedup();
+        let roots = paths
+            .iter()
+            .cloned()
+            .map(crate::fingerprint::ScanRoot::Required)
+            .collect::<Vec<_>>();
         // Evaluated imports are explicit inputs, including hidden and linked files.
         let fingerprints = crate::fingerprint::capture_excluding(
             crate::fingerprint::collect_inputs(&roots, &[], true)?,

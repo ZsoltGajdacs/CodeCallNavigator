@@ -112,6 +112,14 @@ fn repeated_preprocessing_rejects_new_external_conditional_imports() {
     let cancel = AtomicBool::new(false);
     let preprocessor = Preprocessor::new(&dotnet, &job, &cancel);
     let snapshot = preprocessor.capture(&project, 1).unwrap();
+    let parent = project.parent().unwrap();
+    assert!(snapshot.paths.iter().any(|path| path == parent));
+    assert!(
+        snapshot
+            .fingerprints
+            .iter()
+            .any(|input| Path::new(&input.path) == parent)
+    );
     fs::write(
         &imported,
         "<Project><PropertyGroup><Value>changed</Value></PropertyGroup></Project>",

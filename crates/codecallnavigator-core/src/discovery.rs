@@ -44,7 +44,6 @@ pub(crate) fn excluded_directory(name: &str) -> bool {
             | "vendor"
             | "node_modules"
             | "build"
-            | "dist"
             | "obj"
             | "bin"
             | "target"

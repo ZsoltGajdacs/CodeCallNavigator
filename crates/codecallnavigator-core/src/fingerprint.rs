@@ -106,11 +106,11 @@ fn classify_change(
         (true, false) => return Some("created"),
         _ => {}
     }
+    if before.kind != current.kind {
+        return Some("input kind changed");
+    }
     if before.hash != current.hash {
         return Some(hash_change(directory));
-    }
-    if before.size != current.size || before.modified_ns != current.modified_ns {
-        return Some("metadata changed");
     }
     None
 }
@@ -429,11 +429,12 @@ fn relevant_file(path: &Path) -> bool {
 }
 
 /// Content-only observation shared with portable artifact verification.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum InputKind {
     File,
     Directory,
+    #[default]
     Missing,
 }
 
@@ -503,6 +504,7 @@ fn fingerprint(
             return Ok(FileFingerprint {
                 path: path.to_string_lossy().into_owned(),
                 missing: true,
+                kind: InputKind::Missing,
                 observation_policy: policy,
                 excluded_children: excluded_children.to_vec(),
                 ..Default::default()
@@ -519,12 +521,13 @@ fn fingerprint(
             .as_nanos()
             .min(u64::MAX as u128) as u64
     };
-    let hash = observe_content_with_policy(path, excluded_children, policy)?.hash;
+    let observation = observe_content_with_policy(path, excluded_children, policy)?;
     Ok(FileFingerprint {
         path: path.to_string_lossy().into_owned(),
         size: if metadata.is_dir() { 0 } else { metadata.len() },
         modified_ns,
-        hash,
+        hash: observation.hash,
+        kind: observation.kind,
         excluded_children: excluded_children.to_vec(),
         missing: false,
         observation_policy: policy,
@@ -678,15 +681,8 @@ mod tests {
         let directory = tempfile::tempdir().unwrap();
         let file = directory.path().join("App.java");
         fs::write(&file, "class App {}").unwrap();
+        content_validity_ignores_metadata(&file);
         let capture_now = || capture(source_paths(&[directory.path().into()]).unwrap()).unwrap();
-        let original = capture_now();
-        assert!(!is_stale(&original).unwrap());
-        fs::write(&file, "class New {}").unwrap();
-        assert!(is_stale(&original).unwrap());
-        let error = require_unchanged(&original, "Analysis rejected").unwrap_err();
-        assert!(error.is::<InputsChanged>());
-        assert!(error.to_string().contains(file.to_str().unwrap()));
-        assert!(error.to_string().contains("content or link target changed"));
         let before_addition = capture_now();
         fs::write(directory.path().join("New.java"), "class New {}").unwrap();
         assert!(is_stale(&before_addition).unwrap());
@@ -704,6 +700,85 @@ mod tests {
         let error = require_unchanged(&file_before_delete, "Analysis rejected").unwrap_err();
         assert!(error.to_string().contains(file.to_str().unwrap()));
         assert!(error.to_string().contains("removed"));
+
+        empty_input_kind_replacements_are_rejected();
+    }
+
+    fn content_validity_ignores_metadata(file: &Path) {
+        // Deterministic timestamps prove validity follows bytes, without sleeps
+        // or depending on the filesystem clock resolution.
+        let original_time = UNIX_EPOCH + std::time::Duration::from_secs(10);
+        let touched_time = UNIX_EPOCH + std::time::Duration::from_secs(20);
+        let rewritten_time = UNIX_EPOCH + std::time::Duration::from_secs(30);
+        let set_modified = |time| {
+            fs::File::options()
+                .write(true)
+                .open(file)
+                .unwrap()
+                .set_modified(time)
+                .unwrap();
+        };
+        set_modified(original_time);
+        let original = capture([file.to_path_buf()]).unwrap();
+        assert!(!is_stale(&original).unwrap());
+        set_modified(touched_time);
+        assert!(
+            !is_stale(&original).unwrap(),
+            "touching an input preserves validity"
+        );
+        require_unchanged(&original, "Analysis rejected").unwrap();
+        fs::write(file, "class App {}").unwrap();
+        set_modified(rewritten_time);
+        assert!(
+            !is_stale(&original).unwrap(),
+            "same-byte rewrites preserve validity"
+        );
+        require_unchanged(&original, "Analysis rejected").unwrap();
+        // Same-length edits must still invalidate when metadata is restored.
+        fs::write(file, "class New {}").unwrap();
+        set_modified(original_time);
+        assert!(is_stale(&original).unwrap());
+        let error = require_unchanged(&original, "Analysis rejected").unwrap_err();
+        assert!(error.is::<InputsChanged>());
+        assert!(error.to_string().contains(file.to_str().unwrap()));
+        assert!(error.to_string().contains("content or link target changed"));
+    }
+
+    fn empty_input_kind_replacements_are_rejected() {
+        // Empty files and directories share the same content digest. Kind must
+        // distinguish replacements even when metadata cannot distinguish them.
+        let directory = tempfile::tempdir().unwrap();
+        let empty = directory.path().join("empty");
+        fs::write(&empty, "").unwrap();
+        fs::File::options()
+            .write(true)
+            .open(&empty)
+            .unwrap()
+            .set_modified(UNIX_EPOCH)
+            .unwrap();
+        let empty_file = capture([empty.clone()]).unwrap();
+        fs::remove_file(&empty).unwrap();
+        fs::create_dir(&empty).unwrap();
+        assert!(is_stale(&empty_file).unwrap(), "file replaced by directory");
+        let error = require_unchanged(&empty_file, "Analysis rejected").unwrap_err();
+        assert!(error.is::<InputsChanged>());
+        assert!(error.to_string().contains(empty.to_str().unwrap()));
+        let empty_directory = capture([empty.clone()]).unwrap();
+        fs::remove_dir(&empty).unwrap();
+        fs::write(&empty, "").unwrap();
+        fs::File::options()
+            .write(true)
+            .open(&empty)
+            .unwrap()
+            .set_modified(UNIX_EPOCH)
+            .unwrap();
+        assert!(
+            is_stale(&empty_directory).unwrap(),
+            "directory replaced by file"
+        );
+        let error = require_unchanged(&empty_directory, "Analysis rejected").unwrap_err();
+        assert!(error.is::<InputsChanged>());
+        assert!(error.to_string().contains(empty.to_str().unwrap()));
     }
 
     #[test]
@@ -714,24 +789,27 @@ mod tests {
         fs::create_dir(directory.path().join("build")).unwrap();
         fs::write(directory.path().join("build/output.class"), "compiled").unwrap();
         assert!(!is_stale(&before).unwrap());
-        // A fresh checkout has no frontend output until its first Maven build.
-        let frontend = directory.path().join("ui-backoffice");
+        // A fresh checkout has no declared frontend output until its first build.
+        let frontend = directory.path().join("frontend");
         fs::create_dir(&frontend).unwrap();
         fs::write(frontend.join("pom.xml"), "<project/>").unwrap();
-        let before = capture(source_paths(&[directory.path().into()]).unwrap()).unwrap();
         let dist = frontend.join("dist");
+        let outputs = vec![dist.clone()];
+        let paths = source_paths_excluding(&[directory.path().into()], &outputs).unwrap();
+        let before = capture_excluding(paths, &outputs).unwrap();
         fs::create_dir(&dist).unwrap();
-        fs::write(dist.join("Generated.java"), "class Generated {}").unwrap();
+        let generated = dist.join("Generated.java");
+        fs::write(&generated, "class Generated {}").unwrap();
         require_unchanged(&before, "Analysis rejected").unwrap();
         assert!(
-            !source_paths(&[directory.path().into()])
+            !source_paths_excluding(&[directory.path().into()], &outputs)
                 .unwrap()
-                .contains(&dist)
+                .contains(&generated)
         );
-        // Explicit compiler-required roots must retain coverage inside dist.
-        let explicit = source_paths_excluding(std::slice::from_ref(&dist), &[]).unwrap();
-        let required = capture_excluding(explicit, &[]).unwrap();
-        fs::write(dist.join("Generated.java"), "class Changed {}").unwrap();
+        // Explicit compiler-required roots retain coverage inside declared outputs.
+        let explicit = source_paths_excluding(std::slice::from_ref(&dist), &outputs).unwrap();
+        let required = capture_excluding(explicit, &outputs).unwrap();
+        fs::write(&generated, "class Changed {}").unwrap();
         assert!(require_unchanged(&required, "Analysis rejected").is_err());
         fs::write(directory.path().join("App.java"), "class Edited {}").unwrap();
         assert!(require_unchanged(&before, "Analysis rejected").is_err());
@@ -775,7 +853,7 @@ mod tests {
     }
 
     #[test]
-    fn absent_explicit_inputs_detect_creation_and_old_fingerprints_still_load() {
+    fn absent_explicit_inputs_detect_creation_and_incomplete_fingerprints_are_rejected() {
         let directory = tempfile::tempdir().unwrap();
         let absent = directory.path().join("external/settings.xml");
         let paths = source_paths_excluding(std::slice::from_ref(&absent), &[]).unwrap();
@@ -788,10 +866,10 @@ mod tests {
         let error = require_unchanged(&before, "Analysis rejected").unwrap_err();
         assert!(error.to_string().contains(absent.to_str().unwrap()));
         assert!(error.to_string().contains("created"));
-        let old: FileFingerprint =
-            serde_json::from_str(r#"{"path":"old","size":0,"modified_ns":0,"hash":"x"}"#).unwrap();
-        assert!(!old.missing);
-        assert!(old.excluded_children.is_empty());
+        let missing_kind = serde_json::from_str::<FileFingerprint>(
+            r#"{"path":"old","size":0,"modified_ns":0,"hash":"x"}"#,
+        );
+        assert!(missing_kind.unwrap_err().to_string().contains("kind"));
     }
 
     #[test]
