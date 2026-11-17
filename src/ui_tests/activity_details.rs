@@ -158,3 +158,83 @@ fn analysis_detail_warnings_use_full_width_above_actions() {
         assert!(runtime.state.ui.overlay.is_none());
     }
 }
+
+#[test]
+fn freshness_blocker_details_scroll_and_copy_complete_context() {
+    let mut runtime = details_runtime((600.0, 800.0));
+    let clipboard = rune::clipboard::memory();
+    runtime.use_clipboard(&clipboard);
+    runtime.update(|state, _| {
+        let mut observation = freshness_workspace::fixture(InputStatus::Stale, &"a".repeat(64));
+        observation.coverage.complete = false;
+        for index in 0..8 {
+            observation
+                .reasons
+                .push(codecallnavigator::artifact::verification::Reason::new(
+                    "unreadable_input",
+                    Some(format!(
+                        "@repo/required/{}/Input{index}.java",
+                        "long-directory/".repeat(8)
+                    )),
+                ));
+        }
+        observation.reasons_total = 11;
+        observation.omitted_reasons = 3;
+        state.freshness.accept(observation);
+    });
+    settle(&mut runtime);
+    reveal(&mut runtime, "freshness-diagnostics-scroll");
+    let viewport = element(&runtime, "freshness-diagnostics-scroll");
+    assert!(
+        viewport.rect[3] <= 201.0,
+        "Diagnostics must have a bounded viewport"
+    );
+    let first = element(&runtime, "freshness-diagnostic-0");
+    assert!(
+        first.rect[2] <= viewport.rect[2] + 1.0,
+        "Long paths must wrap within the viewport"
+    );
+    capture_blockers(&mut runtime, "freshness-blockers-first.png");
+    runtime.update(|_, tx| {
+        tx.scroll_into_view_in("freshness-diagnostics-scroll", "freshness-diagnostic-7");
+    });
+    settle(&mut runtime);
+    let tail = element(&runtime, "freshness-diagnostic-7");
+    assert!(
+        tail.visible[3] > 20.0,
+        "The last required-input failure must be reachable by scrolling"
+    );
+    capture_blockers(&mut runtime, "freshness-blockers-tail.png");
+    reveal(&mut runtime, "freshness-copy-details");
+    assert!(runtime.find("freshness-copy-details").is_some());
+    click(&mut runtime, "freshness-copy-details");
+    settle(&mut runtime);
+    let copied = clipboard.text().unwrap();
+    assert!(copied.contains("Input0.java"));
+    assert!(
+        copied.contains("Input7.java"),
+        "Copy must include details below the viewport"
+    );
+    assert!(copied.contains("3 additional diagnostics omitted"));
+    assert!(copied.contains("ccnavigator verify --project '/explicit-layout-fixture'"));
+    assert!(copied.contains("does not rebuild the graph"));
+    assert!(
+        copied.contains("permissions"),
+        "Recovery instructions must accompany the path"
+    );
+    assert!(
+        copied.contains(OWNERSHIP_WARNING),
+        "Coordinator failures must remain available"
+    );
+    capture_blockers(&mut runtime, "freshness-blockers-actions.png");
+}
+
+fn capture_blockers(runtime: &mut Runtime<State>, filename: &str) {
+    if let Some(output) = std::env::var_os("CODECALLNAVIGATOR_ACTIVITY_UI_CAPTURES") {
+        capture(
+            runtime,
+            (600.0, 800.0),
+            &std::path::PathBuf::from(output).join(filename),
+        );
+    }
+}

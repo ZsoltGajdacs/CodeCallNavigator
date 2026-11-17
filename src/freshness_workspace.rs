@@ -1,4 +1,5 @@
 //! UI observation lifetime bound to the loaded CLI descriptor, never the folder editor.
+pub(crate) mod diagnostics;
 mod worker;
 use crate::{
     app::State,
@@ -249,8 +250,11 @@ impl Workspace {
             .as_ref()
             .and_then(|last| last.reasons.first())
             .map(|reason| match &reason.path {
-                Some(path) => format!("{}: {path}", reason.code),
-                None => reason.code.clone(),
+                Some(path) => format!(
+                    "{}: {path} · open details for the cause and recovery",
+                    reason.code
+                ),
+                None => format!("{} · open details for the cause and recovery", reason.code),
             })
             .unwrap_or_else(|| "no complete input manifest".into())
     }

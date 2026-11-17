@@ -17,6 +17,8 @@ use std::{
 #[serde(rename_all = "camelCase")]
 pub(super) struct JavaSourceSet {
     pub project: String,
+    #[serde(default)]
+    pub input_policy: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub application: Option<String>,
     pub source_set: String,
@@ -57,7 +59,10 @@ pub(in crate::analyzers) fn prepare(
         context.runtime.java_home.is_some(),
         "Java analysis requires an installed JDK 25; configure JAVA_HOME or install JDK 25"
     );
-    let before = source_snapshot(std::slice::from_ref(&build.path))?;
+    let mut before = source_snapshot(std::slice::from_ref(&build.path))?;
+    if build.kind == "maven" {
+        before.extend(maven::configuration_snapshot(&build.path)?);
+    }
     let metadata = match build.kind.as_str() {
         "gradle" => gradle::metadata(build, context)?,
         "maven" => maven::metadata(build, context)?,
@@ -103,6 +108,10 @@ fn validate(metadata: &JavaBuildMetadata) -> Result<()> {
     let mut outputs = BTreeMap::new();
     for source in &metadata.source_sets {
         ensure!(
+            source.input_policy == "scoped_v1",
+            "Java adapter lacks scoped input policy; rebuild matching analyzer resources"
+        );
+        ensure!(
             modules.contains(&source.project_dir),
             "Source-set module ownership is missing"
         );
@@ -146,11 +155,15 @@ pub(super) fn snapshot(
     metadata: &JavaBuildMetadata,
     generated: bool,
 ) -> Result<Vec<FileFingerprint>> {
-    let mut roots = vec![build.path.clone()];
-    roots.extend(metadata.modules.clone());
-    roots.extend(metadata.build_inputs.clone());
+    let mut roots = vec![fingerprint::ScanRoot::Required(build.path.clone())];
+    roots.extend(
+        metadata
+            .modules
+            .iter()
+            .cloned()
+            .map(fingerprint::ScanRoot::Required),
+    );
     for source in &metadata.source_sets {
-        roots.extend(source.build_inputs.clone());
         roots.extend(
             source
                 .source_roots
@@ -162,23 +175,38 @@ pub(super) fn snapshot(
                             .iter()
                             .any(|output| root.starts_with(output))
                 })
-                .cloned(),
+                .cloned()
+                .map(fingerprint::ScanRoot::Required),
         );
         if generated {
-            roots.extend(source.generated_roots.clone());
+            roots.extend(
+                source
+                    .generated_roots
+                    .iter()
+                    .cloned()
+                    .map(fingerprint::ScanRoot::Required),
+            );
         }
     }
-    let mut paths = fingerprint::source_paths_excluding(&roots, &metadata.output_roots)?;
-    let mut inputs = metadata.build_inputs.clone();
-    inputs.extend(
-        metadata
-            .source_sets
-            .iter()
-            .flat_map(|source| source.build_inputs.clone()),
-    );
-    paths.extend(fingerprint::input_paths_excluding(
+    let mut paths = fingerprint::collect_inputs(&roots, &metadata.output_roots, true)?;
+    // Build-declared inputs include resources and configuration of every type,
+    // independently of broad source discovery exclusions.
+    let inputs = metadata
+        .build_inputs
+        .iter()
+        .chain(
+            metadata
+                .source_sets
+                .iter()
+                .flat_map(|source| &source.build_inputs),
+        )
+        .cloned()
+        .map(fingerprint::ScanRoot::Required)
+        .collect::<Vec<_>>();
+    paths.extend(fingerprint::collect_inputs(
         &inputs,
         &metadata.output_roots,
+        false,
     )?);
     fingerprint::capture_excluding(paths, &metadata.output_roots)
 }

@@ -4,7 +4,7 @@
 //! restore-generated obj files. Unknown/ambiguous framing fails closed. Missing
 //! conditional imports are not evaluated inputs and are not resolution probes.
 mod contexts;
-use super::super::{ensure_unchanged, process::run_process, source_snapshot};
+use super::super::{ensure_unchanged, process::run_process};
 use crate::model::FileFingerprint;
 use anyhow::{Context, Result, ensure};
 use contexts::EvaluationContext;
@@ -88,15 +88,23 @@ impl<'a> Preprocessor<'a> {
 
     pub fn capture(&self, project: &Path, sequence: usize) -> Result<Snapshot> {
         let inventory = self.inventory(project, &format!("{sequence}-discover"))?;
-        let mut paths = inventory.input_paths();
-        paths.push(
+        let paths = inventory.input_paths();
+        let mut roots = paths
+            .iter()
+            .cloned()
+            .map(crate::fingerprint::ScanRoot::Required)
+            .collect::<Vec<_>>();
+        roots.push(crate::fingerprint::ScanRoot::Required(
             project
                 .parent()
                 .context("C# project has no input scope")?
                 .into(),
-        );
-        // Scope membership plus explicit file roots retain imported obj/SDK files.
-        let fingerprints = source_snapshot(&paths)?;
+        ));
+        // Evaluated imports are explicit inputs, including hidden and linked files.
+        let fingerprints = crate::fingerprint::capture_excluding(
+            crate::fingerprint::collect_inputs(&roots, &[], true)?,
+            &[],
+        )?;
         let repeated = self.inventory(project, &format!("{sequence}-verify"))?;
         ensure!(
             inventory == repeated,

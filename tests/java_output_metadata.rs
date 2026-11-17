@@ -171,6 +171,22 @@ fn assert_alias(kind: &str) {
             .file_type()
             .is_symlink()
     );
+    if kind == "gradle" {
+        for source in &sets {
+            assert!(
+                source["buildInputs"]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .all(|input| {
+                        let input = Path::new(input.as_str().unwrap());
+                        !input.starts_with(output.join("output-alias"))
+                            && !input.starts_with(output.join("actual-output"))
+                    }),
+                "Owned outputs must not become authored alias inputs: {source}"
+            );
+        }
+    }
     // Gradle may replace its output symlink during compilation. Manual analysis
     // retains that existing build-tool behavior; only automatic policy rejects it.
     fixture.manual_analysis(kind);

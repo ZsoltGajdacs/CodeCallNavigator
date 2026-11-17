@@ -56,16 +56,31 @@ final class BuildMetadata {
 
     private static Set<String> sessionInputs(MavenExecutionRequest request) throws IOException {
         Set<String> inputs = new LinkedHashSet<>();
-        add(inputs, request.getUserSettingsFile());
-        add(inputs, request.getGlobalSettingsFile());
-        add(inputs, request.getUserToolchainsFile());
-        add(inputs, request.getGlobalToolchainsFile());
+        addInput(inputs, request.getUserSettingsFile());
+        addInput(inputs, request.getGlobalSettingsFile());
+        addInput(inputs, request.getUserToolchainsFile());
+        addInput(inputs, request.getGlobalToolchainsFile());
         File root = request.getMultiModuleProjectDirectory();
         if (root != null) {
-            add(inputs, new File(root, ".mvn"));
-            add(inputs, new File(root, "mvnw"));
+            File configuration = new File(root, ".mvn");
+            addInput(inputs, configuration);
+            for (String name : List.of("maven.config", "jvm.config", "extensions.xml",
+                    "wrapper/maven-wrapper.properties", "wrapper/maven-wrapper.jar")) {
+                addInput(inputs, new File(configuration, name));
+            }
+            addInput(inputs, new File(root, "mvnw"));
         }
         return inputs;
+    }
+
+    private static void addInput(Set<String> paths, File file) throws IOException {
+        if (file != null) {
+            String lexical = file.toPath().toAbsolutePath().normalize().toString();
+            if (!lexical.equals(path(file))) {
+                paths.add(lexical);
+            }
+            add(paths, file);
+        }
     }
 
     static void add(Set<String> paths, File file) throws IOException {

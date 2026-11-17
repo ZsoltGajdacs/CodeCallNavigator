@@ -11,7 +11,9 @@ const GRAPH_RESOURCE_NAMES: [&str; 4] = [
 fn graph_publication_does_not_invalidate_sources_but_configuration_does() {
     let project = tempfile::tempdir().unwrap();
     fs::write(project.path().join("App.java"), "class App {}").unwrap();
-    let before = capture(source_paths(&[project.path().into()]).unwrap()).unwrap();
+    let mut inputs = source_paths(&[project.path().into()]).unwrap();
+    inputs.push(project.path().join(".codecallnavigator/layers.yml"));
+    let before = capture_excluding(inputs, &[]).unwrap();
     let directory = project.path().join(".codecallnavigator");
     fs::create_dir(&directory).unwrap();
     for name in [
@@ -35,7 +37,7 @@ fn graph_publication_does_not_invalidate_sources_but_configuration_does() {
     assert!(!is_stale(&before).unwrap());
     fs::write(directory.join("layers.yml"), "version: 1\n").unwrap();
     assert!(is_stale(&before).unwrap());
-    let paths = source_paths(&[project.path().into()]).unwrap();
+    let paths = source_paths(&[project.path().into(), directory.join("layers.yml")]).unwrap();
     assert!(paths.contains(&directory.join("layers.yml")));
     let before = capture(paths).unwrap();
     fs::write(directory.join("graph.json"), "replacement").unwrap();
@@ -81,7 +83,7 @@ fn resource_collection_excludes_only_project_graph_outputs() {
     for name in GRAPH_RESOURCE_NAMES {
         fs::write(project.path().join(name), "authored resource").unwrap();
     }
-    let paths = input_paths_excluding(&[project.path().into()], &[]).unwrap();
+    let paths = input_paths_excluding(&[project.path().into(), directory.clone()], &[]).unwrap();
     assert!(paths.contains(&directory.join("layers.yml")));
     assert!(paths.contains(&directory.join("other.json")));
     for name in GRAPH_RESOURCE_NAMES {

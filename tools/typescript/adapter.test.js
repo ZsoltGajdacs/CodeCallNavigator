@@ -364,3 +364,16 @@ test('computed and quoted declaration names ignore spelling trivia in export ide
   assert.equal(new Set(keys(before)).size,5);
   assert.deepEqual(keys(after),keys(before));
 });
+
+// The real compiler determines required inputs; broad watch discovery must not
+// promote unrelated hidden worktrees or directory symlinks into input scopes.
+test('hidden incidental watch trees are skipped while explicit hidden inputs remain required', t => {
+  const root=fixture(t, {'tsconfig.json':{...config,files:['src/main.ts','.required/leaf.ts']},'src/main.ts':"import {leaf} from '../.required/leaf'; export function start(){return leaf();}",'.required/leaf.ts':'export function leaf(){return 1;}','.claude/worktrees/copy/Noise.ts':'export const noise=1;'});
+  fs.mkdirSync(path.join(root,'.claude/skills'),{recursive:true});
+  fs.symlinkSync(path.join(root,'.required'),path.join(root,'.claude/skills/alias'),'dir');
+  const metadata=run(root,'tsconfig.json','prepare');
+  assert.equal(metadata.versions.input_policy,'scoped_v1');
+  assert.ok(metadata.inputs.some(file=>file.endsWith('/.required/leaf.ts')));
+  assert.ok(metadata.watch_roots.some(file=>file.endsWith('/.required')));
+  assert.ok(metadata.watch_roots.every(file=>!file.includes('/.claude')));
+});

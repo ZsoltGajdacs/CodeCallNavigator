@@ -1034,6 +1034,20 @@
       "purpose": "global callatlas versions do not invalidate other languages"
     },
     {
+      "id": "codecallnavigator-core/lib:codecallnavigator_core::artifact::verification::diagnostic::tests::legacy_wire_reasons_gain_explanations_and_blockers_sort_first",
+      "runner": "rust",
+      "file": "crates/codecallnavigator-core/src/artifact/verification/diagnostic.rs",
+      "test_name": "artifact::verification::diagnostic::tests::legacy_wire_reasons_gain_explanations_and_blockers_sort_first",
+      "ignored": false,
+      "package": "codecallnavigator-core",
+      "target_kind": "lib",
+      "target": "codecallnavigator_core",
+      "component": "core",
+      "category": "unit",
+      "requirements": [],
+      "purpose": "Preserve actionable input blockers and compatible bounded wire diagnostics"
+    },
+    {
       "id": "codecallnavigator-core/lib:codecallnavigator_core::artifact::verification::live::tests::traversals_share_only_identical_absolute_output_policies",
       "runner": "rust",
       "file": "crates/codecallnavigator-core/src/artifact/verification/live.rs",
@@ -1046,20 +1060,6 @@
       "category": "unit",
       "requirements": [],
       "purpose": "Equivalent absolute exclusion policies share traversal while distinct policies retain separate scope roots."
-    },
-    {
-      "id": "codecallnavigator-core/lib:codecallnavigator_core::artifact::verification::observation_tests::broken_link_retargets_change_revision_but_plain_missing_inputs_remain_complete",
-      "runner": "rust",
-      "file": "crates/codecallnavigator-core/src/artifact/verification/observation_tests.rs",
-      "test_name": "artifact::verification::observation_tests::broken_link_retargets_change_revision_but_plain_missing_inputs_remain_complete",
-      "ignored": false,
-      "package": "codecallnavigator-core",
-      "target_kind": "lib",
-      "target": "codecallnavigator_core",
-      "component": "core",
-      "category": "integration",
-      "requirements": [],
-      "purpose": "broken link retargets change revision but plain missing inputs remain complete"
     },
     {
       "id": "codecallnavigator-core/lib:codecallnavigator_core::artifact::verification::observation_tests::directory_exclusion_names_do_not_hide_ordinary_file_contents",
@@ -1118,6 +1118,20 @@
       "purpose": "generated outputs do not change revision but explicit generated inputs do"
     },
     {
+      "id": "codecallnavigator-core/lib:codecallnavigator_core::artifact::verification::observation_tests::incidental_symlinks_are_ignored_and_required_link_bytes_are_observed",
+      "runner": "rust",
+      "file": "crates/codecallnavigator-core/src/artifact/verification/observation_tests.rs",
+      "test_name": "artifact::verification::observation_tests::incidental_symlinks_are_ignored_and_required_link_bytes_are_observed",
+      "ignored": false,
+      "package": "codecallnavigator-core",
+      "target_kind": "lib",
+      "target": "codecallnavigator_core",
+      "component": "core",
+      "category": "integration",
+      "requirements": [],
+      "purpose": "new file symlink bytes are observed and nested directory links are limited"
+    },
+    {
       "id": "codecallnavigator-core/lib:codecallnavigator_core::artifact::verification::observation_tests::known_stale_and_new_file_repairs_change_content_revision_without_timestamps",
       "runner": "rust",
       "file": "crates/codecallnavigator-core/src/artifact/verification/observation_tests.rs",
@@ -1130,6 +1144,20 @@
       "category": "integration",
       "requirements": [],
       "purpose": "known stale and new file repairs change content revision without timestamps"
+    },
+    {
+      "id": "codecallnavigator-core/lib:codecallnavigator_core::artifact::verification::observation_tests::legacy_broken_link_retargets_change_revision_but_plain_missing_inputs_remain_complete",
+      "runner": "rust",
+      "file": "crates/codecallnavigator-core/src/artifact/verification/observation_tests.rs",
+      "test_name": "artifact::verification::observation_tests::legacy_broken_link_retargets_change_revision_but_plain_missing_inputs_remain_complete",
+      "ignored": false,
+      "package": "codecallnavigator-core",
+      "target_kind": "lib",
+      "target": "codecallnavigator_core",
+      "component": "core",
+      "category": "integration",
+      "requirements": [],
+      "purpose": "broken link retargets change revision but plain missing inputs remain complete"
     },
     {
       "id": "codecallnavigator-core/lib:codecallnavigator_core::artifact::verification::observation_tests::maven_generated_marker_does_not_change_observed_revision",
@@ -1160,20 +1188,6 @@
       "purpose": "missing inputs and linked roots have explicit revision coverage"
     },
     {
-      "id": "codecallnavigator-core/lib:codecallnavigator_core::artifact::verification::observation_tests::new_file_symlink_bytes_are_observed_and_nested_directory_links_are_limited",
-      "runner": "rust",
-      "file": "crates/codecallnavigator-core/src/artifact/verification/observation_tests.rs",
-      "test_name": "artifact::verification::observation_tests::new_file_symlink_bytes_are_observed_and_nested_directory_links_are_limited",
-      "ignored": false,
-      "package": "codecallnavigator-core",
-      "target_kind": "lib",
-      "target": "codecallnavigator_core",
-      "component": "core",
-      "category": "integration",
-      "requirements": [],
-      "purpose": "new file symlink bytes are observed and nested directory links are limited"
-    },
-    {
       "id": "codecallnavigator-core/lib:codecallnavigator_core::artifact::verification::observation_tests::overlapping_scopes_reconcile_each_directory_once_and_keep_live_content",
       "runner": "rust",
       "file": "crates/codecallnavigator-core/src/artifact/verification/observation_tests.rs",
@@ -1186,6 +1200,20 @@
       "category": "integration",
       "requirements": [],
       "purpose": "Real overlapping directory scopes have bounded walk cost and detect deep content edits, additions and repairs."
+    },
+    {
+      "id": "codecallnavigator-core/lib:codecallnavigator_core::artifact::verification::observation_tests::permission_denied_required_source_reports_actionable_incomplete_coverage",
+      "runner": "rust",
+      "file": "crates/codecallnavigator-core/src/artifact/verification/observation_tests.rs",
+      "test_name": "artifact::verification::observation_tests::permission_denied_required_source_reports_actionable_incomplete_coverage",
+      "ignored": false,
+      "package": "codecallnavigator-core",
+      "target_kind": "lib",
+      "target": "codecallnavigator_core",
+      "component": "core",
+      "category": "integration",
+      "purpose": "Real permission denial preserves incomplete coverage and exact actionable path/OS cause; an in-memory test cannot prove filesystem access failures",
+      "requirements": []
     },
     {
       "id": "codecallnavigator-core/lib:codecallnavigator_core::artifact::verification::observation_tests::refresh_trigger_keeps_full_freshness_but_excludes_only_owned_bytecode",
@@ -1522,6 +1550,48 @@
       "category": "integration",
       "requirements": [],
       "purpose": "resource collection excludes only project graph outputs"
+    },
+    {
+      "id": "codecallnavigator-core/lib:codecallnavigator_core::fingerprint::policy_tests::hidden_directories_are_incidental_but_required_roots_and_hidden_files_are_observed",
+      "runner": "rust",
+      "file": "crates/codecallnavigator-core/src/fingerprint/policy_tests.rs",
+      "test_name": "fingerprint::policy_tests::hidden_directories_are_incidental_but_required_roots_and_hidden_files_are_observed",
+      "ignored": false,
+      "package": "codecallnavigator-core",
+      "target_kind": "lib",
+      "target": "codecallnavigator_core",
+      "component": "core",
+      "category": "integration",
+      "requirements": [],
+      "purpose": "hidden directories are incidental but required roots and hidden files are observed; real filesystem entries and hashes require integration coverage"
+    },
+    {
+      "id": "codecallnavigator-core/lib:codecallnavigator_core::fingerprint::policy_tests::incidental_links_are_skipped_but_required_link_retargeting_and_cycles_are_detected",
+      "runner": "rust",
+      "file": "crates/codecallnavigator-core/src/fingerprint/policy_tests.rs",
+      "test_name": "fingerprint::policy_tests::incidental_links_are_skipped_but_required_link_retargeting_and_cycles_are_detected",
+      "ignored": false,
+      "package": "codecallnavigator-core",
+      "target_kind": "lib",
+      "target": "codecallnavigator_core",
+      "component": "core",
+      "category": "integration",
+      "requirements": [],
+      "purpose": "incidental links are skipped but required link retargeting and cycles are detected; real filesystem entries and hashes require integration coverage"
+    },
+    {
+      "id": "codecallnavigator-core/lib:codecallnavigator_core::fingerprint::policy_tests::legacy_directory_hashes_keep_hidden_membership_semantics",
+      "runner": "rust",
+      "file": "crates/codecallnavigator-core/src/fingerprint/policy_tests.rs",
+      "test_name": "fingerprint::policy_tests::legacy_directory_hashes_keep_hidden_membership_semantics",
+      "ignored": false,
+      "package": "codecallnavigator-core",
+      "target_kind": "lib",
+      "target": "codecallnavigator_core",
+      "component": "core",
+      "category": "integration",
+      "requirements": [],
+      "purpose": "legacy directory hashes keep hidden membership semantics; real filesystem entries and hashes require integration coverage"
     },
     {
       "id": "codecallnavigator-core/lib:codecallnavigator_core::fingerprint::tests::absent_explicit_inputs_detect_creation_and_old_fingerprints_still_load",
@@ -4502,6 +4572,20 @@
       "purpose": "equivalent sibling layouts have stable aliases and keep explicit roots"
     },
     {
+      "id": "codecallnavigator-engine/bin:ccnavigator::entrypoints::query::freshness::tests::duplicate_staleness_cannot_hide_a_required_input_blocker",
+      "runner": "rust",
+      "file": "crates/codecallnavigator-engine/src/entrypoints/query/freshness.rs",
+      "test_name": "entrypoints::query::freshness::tests::duplicate_staleness_cannot_hide_a_required_input_blocker",
+      "ignored": false,
+      "package": "codecallnavigator-engine",
+      "target_kind": "bin",
+      "target": "ccnavigator",
+      "component": "engine",
+      "category": "unit",
+      "requirements": [],
+      "purpose": "Preserve actionable input blockers and compatible bounded wire diagnostics"
+    },
+    {
       "id": "codecallnavigator-engine/bin:ccnavigator::entrypoints::refresh_child::tests::explicit_cancel_overrides_internal_supersession_and_shutdown_is_final",
       "runner": "rust",
       "file": "crates/codecallnavigator-engine/src/entrypoints/refresh_child.rs",
@@ -4542,6 +4626,20 @@
       "category": "integration",
       "requirements": [],
       "purpose": "idle coordinator retains lease before any refresh"
+    },
+    {
+      "id": "codecallnavigator-engine/bin:ccnavigator::entrypoints::refresh_coordinator::tests::incomplete_coverage_explains_required_path_and_recovery_without_starting_analysis",
+      "runner": "rust",
+      "file": "crates/codecallnavigator-engine/src/entrypoints/refresh_coordinator.rs",
+      "test_name": "entrypoints::refresh_coordinator::tests::incomplete_coverage_explains_required_path_and_recovery_without_starting_analysis",
+      "ignored": false,
+      "package": "codecallnavigator-engine",
+      "target_kind": "bin",
+      "target": "ccnavigator",
+      "component": "engine",
+      "category": "unit",
+      "requirements": [],
+      "purpose": "Preserve actionable input blockers and compatible bounded wire diagnostics"
     },
     {
       "id": "codecallnavigator-engine/bin:ccnavigator::entrypoints::refresh_coordinator::tests::pending_source_changes_keep_nullable_public_revision_and_valid_trigger",
@@ -4684,6 +4782,20 @@
       "purpose": "equivalent sibling layouts have stable aliases and keep explicit roots"
     },
     {
+      "id": "codecallnavigator-engine/bin:codecallnavigator-engine::entrypoints::query::freshness::tests::duplicate_staleness_cannot_hide_a_required_input_blocker",
+      "runner": "rust",
+      "file": "crates/codecallnavigator-engine/src/entrypoints/query/freshness.rs",
+      "test_name": "entrypoints::query::freshness::tests::duplicate_staleness_cannot_hide_a_required_input_blocker",
+      "ignored": false,
+      "package": "codecallnavigator-engine",
+      "target_kind": "bin",
+      "target": "codecallnavigator-engine",
+      "component": "engine",
+      "category": "unit",
+      "requirements": [],
+      "purpose": "Preserve actionable input blockers and compatible bounded wire diagnostics"
+    },
+    {
       "id": "codecallnavigator-engine/bin:codecallnavigator-engine::entrypoints::refresh_child::tests::explicit_cancel_overrides_internal_supersession_and_shutdown_is_final",
       "runner": "rust",
       "file": "crates/codecallnavigator-engine/src/entrypoints/refresh_child.rs",
@@ -4724,6 +4836,20 @@
       "category": "integration",
       "requirements": [],
       "purpose": "idle coordinator retains lease before any refresh"
+    },
+    {
+      "id": "codecallnavigator-engine/bin:codecallnavigator-engine::entrypoints::refresh_coordinator::tests::incomplete_coverage_explains_required_path_and_recovery_without_starting_analysis",
+      "runner": "rust",
+      "file": "crates/codecallnavigator-engine/src/entrypoints/refresh_coordinator.rs",
+      "test_name": "entrypoints::refresh_coordinator::tests::incomplete_coverage_explains_required_path_and_recovery_without_starting_analysis",
+      "ignored": false,
+      "package": "codecallnavigator-engine",
+      "target_kind": "bin",
+      "target": "codecallnavigator-engine",
+      "component": "engine",
+      "category": "unit",
+      "requirements": [],
+      "purpose": "Preserve actionable input blockers and compatible bounded wire diagnostics"
     },
     {
       "id": "codecallnavigator-engine/bin:codecallnavigator-engine::entrypoints::refresh_coordinator::tests::pending_source_changes_keep_nullable_public_revision_and_valid_trigger",
@@ -6406,6 +6532,23 @@
       "purpose": "every roslyn target framework import is observed"
     },
     {
+      "id": "codecallnavigator-engine/test:csharp_inputs::hidden_imports_and_declared_sources_remain_observed",
+      "runner": "rust",
+      "file": "crates/codecallnavigator-engine/tests/csharp_inputs.rs",
+      "test_name": "hidden_imports_and_declared_sources_remain_observed",
+      "ignored": true,
+      "package": "codecallnavigator-engine",
+      "target_kind": "test",
+      "target": "csharp_inputs",
+      "component": "engine",
+      "category": "acceptance",
+      "requirements": [
+        "cli",
+        "dotnet"
+      ],
+      "purpose": "Real compiler required hidden input survives broad scanning exclusions; pure tests cannot establish compiler inventory semantics"
+    },
+    {
       "id": "codecallnavigator-engine/test:csharp_inputs::nested_external_property_imports_are_observed_and_failed_refresh_retains_artifact",
       "runner": "rust",
       "file": "crates/codecallnavigator-engine/tests/csharp_inputs.rs",
@@ -7070,6 +7213,24 @@
       "purpose": "machine preserves linked sources and human cli requires declared root"
     },
     {
+      "id": "codecallnavigator-engine/test:linked_sources::maven_required_hidden_source_roots_and_configuration_remain_observed",
+      "runner": "rust",
+      "file": "crates/codecallnavigator-engine/tests/linked_sources.rs",
+      "test_name": "maven_required_hidden_source_roots_and_configuration_remain_observed",
+      "ignored": true,
+      "package": "codecallnavigator-engine",
+      "target_kind": "test",
+      "target": "linked_sources",
+      "component": "engine",
+      "category": "acceptance",
+      "requirements": [
+        "cli",
+        "java",
+        "maven"
+      ],
+      "purpose": "Real compiler required hidden input survives broad scanning exclusions; pure tests cannot establish compiler inventory semantics"
+    },
+    {
       "id": "codecallnavigator-engine/test:process_protocol::analysis_eof_and_sigterm_reap_build_descendants_and_preserve_artifact",
       "runner": "rust",
       "file": "crates/codecallnavigator-engine/tests/process_protocol.rs",
@@ -7370,6 +7531,24 @@
       "purpose": "intervening manual publication rejects planned generation under child lock"
     },
     {
+      "id": "codecallnavigator-engine/test:typescript_facts::compiler_required_hidden_typescript_sources_remain_observed",
+      "runner": "rust",
+      "file": "crates/codecallnavigator-engine/tests/typescript_facts.rs",
+      "test_name": "compiler_required_hidden_typescript_sources_remain_observed",
+      "ignored": true,
+      "package": "codecallnavigator-engine",
+      "target_kind": "test",
+      "target": "typescript_facts",
+      "component": "engine",
+      "category": "acceptance",
+      "requirements": [
+        "node",
+        "typescript",
+        "cli"
+      ],
+      "purpose": "Real compiler required hidden input survives broad scanning exclusions; pure tests cannot establish compiler inventory semantics"
+    },
+    {
       "id": "codecallnavigator-engine/test:typescript_facts::real_typescript_facts_survive_stable_ids_cached_queries_and_excluded_targets",
       "runner": "rust",
       "file": "crates/codecallnavigator-engine/tests/typescript_facts.rs",
@@ -7628,6 +7807,20 @@
       "category": "unit",
       "requirements": [],
       "purpose": "successful bound queries require nonnull freshness"
+    },
+    {
+      "id": "codecallnavigator-mcp/bin:codecallnavigator-mcp::wire::observation::tests::actionable_optional_details_are_forward_compatible_and_count_toward_budget",
+      "runner": "rust",
+      "file": "crates/codecallnavigator-mcp/src/wire/observation.rs",
+      "test_name": "wire::observation::tests::actionable_optional_details_are_forward_compatible_and_count_toward_budget",
+      "ignored": false,
+      "package": "codecallnavigator-mcp",
+      "target_kind": "bin",
+      "target": "codecallnavigator-mcp",
+      "component": "mcp",
+      "category": "unit",
+      "requirements": [],
+      "purpose": "Preserve actionable input blockers and compatible bounded wire diagnostics"
     },
     {
       "id": "codecallnavigator-mcp/bin:codecallnavigator-mcp::wire::observation::tests::invalid_contract_requires_unverifiable_and_conversion_must_agree",
@@ -10145,6 +10338,20 @@
       "purpose": "matching controlled completion really reaches the publisher"
     },
     {
+      "id": "codecallnavigator/bin:codecallnavigator::freshness_workspace::diagnostics::tests::details_preserve_causes_omissions_and_shell_quoted_project",
+      "runner": "rust",
+      "file": "src/freshness_workspace/diagnostics.rs",
+      "test_name": "freshness_workspace::diagnostics::tests::details_preserve_causes_omissions_and_shell_quoted_project",
+      "ignored": false,
+      "package": "codecallnavigator",
+      "target_kind": "bin",
+      "target": "codecallnavigator",
+      "component": "engine",
+      "category": "unit",
+      "requirements": [],
+      "purpose": "Preserve actionable input blockers and compatible bounded wire diagnostics"
+    },
+    {
       "id": "codecallnavigator/bin:codecallnavigator::freshness_workspace::tests::deferred_manual_request_is_frozen_and_folder_edit_cancels_it",
       "runner": "rust",
       "file": "src/freshness_workspace.rs",
@@ -11537,6 +11744,22 @@
       "requirements": [
         "graphviz"
       ]
+    },
+    {
+      "id": "codecallnavigator/bin:codecallnavigator::ui_tests::activity_details::freshness_blocker_details_scroll_and_copy_complete_context",
+      "runner": "rust",
+      "file": "src/ui_tests/activity_details.rs",
+      "test_name": "ui_tests::activity_details::freshness_blocker_details_scroll_and_copy_complete_context",
+      "ignored": false,
+      "package": "codecallnavigator",
+      "target_kind": "bin",
+      "target": "codecallnavigator",
+      "component": "ui",
+      "category": "integration",
+      "requirements": [
+        "graphviz"
+      ],
+      "purpose": "Real Rune scroll and clipboard boundary preserves long actionable diagnostic details"
     },
     {
       "id": "codecallnavigator/bin:codecallnavigator::ui_tests::architectural_layers::layer_control_exposes_presets_tabs_and_restores_navigation",
@@ -13127,6 +13350,71 @@
       ]
     },
     {
+      "id": "codecallnavigator/bin:codecallnavigator::ui_tests::panel_progress::active_phase_stays_in_title_bar_while_warnings_and_panels_are_visible",
+      "runner": "rust",
+      "file": "src/ui_tests/panel_progress.rs",
+      "test_name": "ui_tests::panel_progress::active_phase_stays_in_title_bar_while_warnings_and_panels_are_visible",
+      "ignored": false,
+      "package": "codecallnavigator",
+      "target_kind": "bin",
+      "target": "codecallnavigator",
+      "component": "ui",
+      "category": "integration",
+      "purpose": "Real Rune title-bar bounds and presentation keep active progress visible while warnings and either popover are present; layout cannot be proved by copy-only unit tests.",
+      "requirements": [
+        "graphviz"
+      ]
+    },
+    {
+      "id": "codecallnavigator/bin:codecallnavigator::ui_tests::panel_progress::busy_loader_paint_rotates_across_frames_and_updates_then_stops",
+      "runner": "rust",
+      "file": "src/ui_tests/panel_progress.rs",
+      "test_name": "ui_tests::panel_progress::busy_loader_paint_rotates_across_frames_and_updates_then_stops",
+      "ignored": false,
+      "package": "codecallnavigator",
+      "target_kind": "bin",
+      "target": "codecallnavigator",
+      "component": "ui",
+      "category": "integration",
+      "purpose": "Inspect actual Rune glyph paint rotation across timed frames, progress updates, reduced motion and idle; loop metadata alone cannot prove visible rotation.",
+      "requirements": [
+        "graphviz"
+      ]
+    },
+    {
+      "id": "codecallnavigator/bin:codecallnavigator::ui_tests::panel_progress::graph_controls_center_in_canvas_and_avoid_activity_after_pane_changes",
+      "runner": "rust",
+      "file": "src/ui_tests/panel_progress.rs",
+      "test_name": "ui_tests::panel_progress::graph_controls_center_in_canvas_and_avoid_activity_after_pane_changes",
+      "ignored": false,
+      "package": "codecallnavigator",
+      "target_kind": "bin",
+      "target": "codecallnavigator",
+      "component": "ui",
+      "category": "integration",
+      "purpose": "Real Rune responsive layout verifies centered controls and nonoverlapping activity through window sizes and pane open/resize states.",
+      "requirements": [
+        "graphviz"
+      ]
+    },
+    {
+      "id": "codecallnavigator/bin:codecallnavigator::ui_tests::panel_progress::native_metal_panel_mockup_and_spinner_captures",
+      "runner": "rust",
+      "file": "src/ui_tests/panel_progress.rs",
+      "test_name": "ui_tests::panel_progress::native_metal_panel_mockup_and_spinner_captures",
+      "ignored": true,
+      "package": "codecallnavigator",
+      "target_kind": "bin",
+      "target": "codecallnavigator",
+      "component": "ui",
+      "category": "integration",
+      "purpose": "Offscreen Metal panel and timed-spinner captures prove clipping/compositing and provide matched visual review in light/dark and narrow windows; cheaper view-tree checks cannot prove pixel output.",
+      "requirements": [
+        "native",
+        "graphviz"
+      ]
+    },
+    {
       "id": "codecallnavigator/bin:codecallnavigator::ui_tests::project_explorer::closed_sidebar_sync_and_root_changes_do_not_publish_old_entries",
       "runner": "rust",
       "file": "src/ui_tests/project_explorer.rs",
@@ -13925,6 +14213,20 @@
         "graphviz"
       ],
       "purpose": "single click walks both sides and restores previous selection and camera"
+    },
+    {
+      "id": "codecallnavigator/bin:codecallnavigator::view::activity::model::tests::active_phase_stays_visible_alongside_a_warning",
+      "runner": "rust",
+      "file": "src/view/activity_model.rs",
+      "test_name": "view::activity::model::tests::active_phase_stays_visible_alongside_a_warning",
+      "ignored": false,
+      "package": "codecallnavigator",
+      "target_kind": "bin",
+      "target": "codecallnavigator",
+      "component": "ui",
+      "category": "unit",
+      "purpose": "Pure activity presentation preserves the active phase separately from warnings.",
+      "requirements": []
     },
     {
       "id": "codecallnavigator/bin:codecallnavigator::view::activity::model::tests::discovery_and_initial_empty_states_do_not_claim_a_graph_exists",
@@ -20456,6 +20758,20 @@
       "purpose": "framework evidence records distinct source sites and deferred versus referenced callbacks"
     },
     {
+      "id": "tools/typescript/adapter.test.js::hidden incidental watch trees are skipped while explicit hidden inputs remain required",
+      "runner": "node",
+      "file": "tools/typescript/adapter.test.js",
+      "test_name": "hidden incidental watch trees are skipped while explicit hidden inputs remain required",
+      "ignored": false,
+      "component": "engine",
+      "category": "integration",
+      "requirements": [
+        "node",
+        "typescript"
+      ],
+      "purpose": "Real TypeScript compiler preserves explicit hidden inputs while skipping incidental hidden watch trees"
+    },
+    {
       "id": "tools/typescript/adapter.test.js::instance and static field initializer scopes are excluded independently of module execution",
       "runner": "node",
       "file": "tools/typescript/adapter.test.js",
@@ -21848,85 +22164,6 @@
         "typescript"
       ],
       "purpose": "worker retains compiler output and exits after extraction"
-    },
-    {
-      "id": "codecallnavigator/bin:codecallnavigator::ui_tests::panel_progress::active_phase_stays_in_title_bar_while_warnings_and_panels_are_visible",
-      "runner": "rust",
-      "file": "src/ui_tests/panel_progress.rs",
-      "test_name": "ui_tests::panel_progress::active_phase_stays_in_title_bar_while_warnings_and_panels_are_visible",
-      "ignored": false,
-      "package": "codecallnavigator",
-      "target_kind": "bin",
-      "target": "codecallnavigator",
-      "component": "ui",
-      "category": "integration",
-      "purpose": "Real Rune title-bar bounds and presentation keep active progress visible while warnings and either popover are present; layout cannot be proved by copy-only unit tests.",
-      "requirements": [
-        "graphviz"
-      ]
-    },
-    {
-      "id": "codecallnavigator/bin:codecallnavigator::ui_tests::panel_progress::graph_controls_center_in_canvas_and_avoid_activity_after_pane_changes",
-      "runner": "rust",
-      "file": "src/ui_tests/panel_progress.rs",
-      "test_name": "ui_tests::panel_progress::graph_controls_center_in_canvas_and_avoid_activity_after_pane_changes",
-      "ignored": false,
-      "package": "codecallnavigator",
-      "target_kind": "bin",
-      "target": "codecallnavigator",
-      "component": "ui",
-      "category": "integration",
-      "purpose": "Real Rune responsive layout verifies centered controls and nonoverlapping activity through window sizes and pane open/resize states.",
-      "requirements": [
-        "graphviz"
-      ]
-    },
-    {
-      "id": "codecallnavigator/bin:codecallnavigator::ui_tests::panel_progress::busy_loader_paint_rotates_across_frames_and_updates_then_stops",
-      "runner": "rust",
-      "file": "src/ui_tests/panel_progress.rs",
-      "test_name": "ui_tests::panel_progress::busy_loader_paint_rotates_across_frames_and_updates_then_stops",
-      "ignored": false,
-      "package": "codecallnavigator",
-      "target_kind": "bin",
-      "target": "codecallnavigator",
-      "component": "ui",
-      "category": "integration",
-      "purpose": "Inspect actual Rune glyph paint rotation across timed frames, progress updates, reduced motion and idle; loop metadata alone cannot prove visible rotation.",
-      "requirements": [
-        "graphviz"
-      ]
-    },
-    {
-      "id": "codecallnavigator/bin:codecallnavigator::ui_tests::panel_progress::native_metal_panel_mockup_and_spinner_captures",
-      "runner": "rust",
-      "file": "src/ui_tests/panel_progress.rs",
-      "test_name": "ui_tests::panel_progress::native_metal_panel_mockup_and_spinner_captures",
-      "ignored": true,
-      "package": "codecallnavigator",
-      "target_kind": "bin",
-      "target": "codecallnavigator",
-      "component": "ui",
-      "category": "integration",
-      "purpose": "Offscreen Metal panel and timed-spinner captures prove clipping/compositing and provide matched visual review in light/dark and narrow windows; cheaper view-tree checks cannot prove pixel output.",
-      "requirements": [
-        "native",
-        "graphviz"
-      ]
-    },
-    {
-      "id": "codecallnavigator/bin:codecallnavigator::view::activity::model::tests::active_phase_stays_visible_alongside_a_warning",
-      "runner": "rust",
-      "file": "src/view/activity_model.rs",
-      "test_name": "view::activity::model::tests::active_phase_stays_visible_alongside_a_warning",
-      "ignored": false,
-      "package": "codecallnavigator",
-      "target_kind": "bin",
-      "target": "codecallnavigator",
-      "component": "ui",
-      "category": "unit",
-      "purpose": "Pure activity presentation preserves the active phase separately from warnings.",
-      "requirements": []
     }
   ],
   "gates": [

@@ -79,8 +79,8 @@ impl Authorization {
             Phase::Cancelled { reason, .. } => {
                 format!("Automatic refresh cancelled · {}", cancel_message(*reason))
             }
-            Phase::Unavailable { error } => {
-                format!("Automatic refresh unavailable · {}", error.message)
+            Phase::Unavailable { .. } => {
+                "Automatic refresh is blocked · open details for the cause and recovery".into()
             }
         })
     }

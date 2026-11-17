@@ -3,6 +3,8 @@ use super::build::JavaBuildMetadata;
 use crate::{
     analyzers::{AnalysisJob, choose_artifact, find_tool, process::run_process},
     discovery::BuildTarget,
+    fingerprint,
+    model::FileFingerprint,
 };
 use anyhow::{Context, Result};
 use std::{
@@ -10,6 +12,41 @@ use std::{
     path::{Path, PathBuf},
     process::Command,
 };
+
+/// Observe project configuration before Maven evaluates it. Required probes keep
+/// an absent .mvn root and linked files visible without scanning hidden trees.
+pub(super) fn configuration_snapshot(root: &Path) -> Result<Vec<FileFingerprint>> {
+    let mut directories = vec![root.join(".mvn")];
+    if let Some(parent) = root
+        .ancestors()
+        .skip(1)
+        .find(|parent| parent.join(".mvn").is_dir())
+    {
+        directories.push(parent.join(".mvn"));
+    }
+    let mut paths = directories
+        .iter()
+        .flat_map(|root| configuration_files(root))
+        .collect::<Vec<_>>();
+    let roots = directories
+        .into_iter()
+        .map(fingerprint::ScanRoot::Required)
+        .collect::<Vec<_>>();
+    paths.extend(fingerprint::collect_inputs(&roots, &[], false)?);
+    fingerprint::capture_excluding(paths, &[])
+}
+
+fn configuration_files(root: &Path) -> impl Iterator<Item = PathBuf> + '_ {
+    [
+        "maven.config",
+        "jvm.config",
+        "extensions.xml",
+        "wrapper/maven-wrapper.properties",
+        "wrapper/maven-wrapper.jar",
+    ]
+    .into_iter()
+    .map(|name| root.join(name))
+}
 
 pub(super) fn metadata(
     build: &BuildTarget,
@@ -216,12 +253,24 @@ mod tests {
     #[test]
     fn native_maven_config_uses_one_literal_argument_per_line() {
         let root = tempfile::tempdir().unwrap();
+        let absent = configuration_snapshot(root.path()).unwrap();
         fs::create_dir(root.path().join(".mvn")).unwrap();
         fs::write(
             root.path().join(".mvn/maven.config"),
             "# comment\n-Dmessage=don't\n-Dmaven.ext.class.path=/path with spaces/ext.jar\n",
         )
         .unwrap();
+        assert!(
+            fingerprint::is_stale(&absent).unwrap(),
+            "creating Maven configuration must invalidate the pre-evaluation snapshot"
+        );
+        let before = configuration_snapshot(root.path()).unwrap();
+        assert!(
+            before
+                .iter()
+                .any(|input| input.path.ends_with(".mvn/maven.config"))
+        );
+        assert!(!fingerprint::is_stale(&before).unwrap());
         assert_eq!(
             project_arguments(root.path()).unwrap().maven,
             vec![

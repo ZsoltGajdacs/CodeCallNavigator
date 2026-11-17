@@ -442,6 +442,7 @@ mod tests {
         JavaInput {
             path: classes.clone(),
             source_set: Some(JavaSourceSet {
+                input_policy: "scoped_v1".into(),
                 application: None,
                 project: "fixture".into(),
                 source_set: "main".into(),

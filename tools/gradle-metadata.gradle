@@ -12,12 +12,29 @@ def taskSourceInputs = { first ->
             def outputRoot = task.project.layout.buildDirectory.get().asFile.toPath()
             task.inputs.files.files.findAll {
                 it.isFile() && !it.name.endsWith('.jar') && !it.name.endsWith('.class') && !it.toPath().startsWith(outputRoot)
-            }.each { files.add(it.canonicalPath) }
+            }.each {
+                files.add(it.canonicalPath)
+                if (it.absolutePath != it.canonicalPath) { files.add(it.absolutePath) }
+            }
             task.taskDependencies.getDependencies(task).each { visit(it) }
         }
     }
     visit(first)
     files.toList()
+}
+
+// Classpath entries produced by this build are observed after compilation, not
+// as authored inputs: Gradle may replace an output symlink while compiling.
+def requiredAliases = { sources, generatedRoots, ownedOutputs ->
+    def externalClasspath = sources.compileClasspath.files.findAll { input ->
+        !ownedOutputs.any { output ->
+            input.toPath().startsWith(output.toPath()) ||
+                input.canonicalFile.toPath().startsWith(output.canonicalFile.toPath())
+        }
+    }
+    (sources.allJava.srcDirs + generatedRoots + externalClasspath).findAll {
+        it.absolutePath != it.canonicalPath
+    }.collect { it.absolutePath }
 }
 
 gradle.projectsEvaluated {
@@ -39,6 +56,9 @@ gradle.projectsEvaluated {
         doLast {
             def destination = root.findProperty('codecallnavigatorMetadataFile')
             if (!destination) { throw new GradleException('codecallnavigatorMetadataFile is required') }
+            def ownedOutputs = javaProjects.collectMany { project ->
+                project.sourceSets.collectMany { sources -> sources.output.classesDirs.files as List }
+            }
             def entries = javaProjects.collectMany { project ->
                 def testClassDirs = project.tasks.withType(Test).collectMany {
                     it.testClassesDirs.files.collect { directory -> directory.canonicalPath }
@@ -54,7 +74,7 @@ gradle.projectsEvaluated {
                         testClassDirs.contains(it.canonicalPath)
                     }
                     [project: project.path, projectDir: project.projectDir.canonicalPath,
-                     sourceSet: sources.name, isTest: testOwned,
+                     sourceSet: sources.name, isTest: testOwned, inputPolicy: "scoped_v1",
                      compileClasspath: sources.compileClasspath.files.collect { it.canonicalPath },
                      classpathAliases: project.tasks.withType(Jar).findAll { archive ->
                          def classes = archive.source.files.findAll { it.name.endsWith('.class') }
@@ -64,7 +84,8 @@ gradle.projectsEvaluated {
                      }.collect { it.archiveFile.get().asFile.canonicalPath },
                      sourceRoots: sources.allJava.srcDirs.collect { it.canonicalPath },
                      generatedRoots: generatedRoots.collect { it.canonicalPath }.unique(),
-                     buildInputs: compile ? taskSourceInputs(compile) : [],
+                     buildInputs: ((compile ? taskSourceInputs(compile) : []) +
+                         requiredAliases(sources, generatedRoots, ownedOutputs)).unique(),
                      // Keep the evaluated spelling so refresh policy can detect output aliases.
                      rawClassDirs: sources.output.classesDirs.files.collect { it.absolutePath },
                      classDirs: sources.output.classesDirs.files.collect { it.canonicalPath }]

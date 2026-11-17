@@ -1,6 +1,6 @@
 //! Query metadata stays bounded; the explicit verify command retains every reason.
 use codecallnavigator_core::{
-    artifact::verification::Report,
+    artifact::verification::{Reason, Report},
     query::{self, Error},
 };
 use serde_json::Value;
@@ -25,6 +25,8 @@ pub(in crate::entrypoints) fn summary(report: Report) -> query::Result<Value> {
 }
 
 pub(in crate::entrypoints) fn bounded(mut report: Report) -> query::Result<Bounded> {
+    Reason::normalize(&mut report.reasons);
+    report.reasons.iter_mut().for_each(bound_reason);
     let total = report.reasons.len();
     let mut bytes = 2; // JSON array brackets.
     let mut retained = 0;
@@ -47,6 +49,65 @@ pub(in crate::entrypoints) fn bounded(mut report: Report) -> query::Result<Bound
     })
 }
 
+fn bound_reason(reason: &mut Reason) {
+    bound_text(&mut reason.code, 128);
+    for (field, limit) in [
+        (&mut reason.path, 1024),
+        (&mut reason.operation, 256),
+        (&mut reason.detail, 1536),
+        (&mut reason.recovery, 768),
+    ] {
+        if let Some(text) = field {
+            bound_text(text, limit);
+        }
+    }
+}
+
+fn bound_text(text: &mut String, limit: usize) {
+    if text.len() <= limit {
+        return;
+    }
+    let mut end = limit;
+    while !text.is_char_boundary(end) {
+        end -= 1;
+    }
+    text.truncate(end);
+    text.push_str(" … [truncated; run verify for full text]");
+}
+
 fn serialization_error(error: serde_json::Error) -> Error {
     Error::new("serialization_failed", error.to_string())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn duplicate_staleness_cannot_hide_a_required_input_blocker() {
+        let changed = Reason::new("input_changed", Some("@repo/generated.java".into()));
+        let mut reasons = vec![changed; 100];
+        reasons.push(Reason::new("unavailable_root", Some("@linked/".into())));
+        let report = Report {
+            version: 1,
+            contract_valid: true,
+            input_status: codecallnavigator_core::artifact::verification::InputStatus::Stale,
+            digest: "a".repeat(64),
+            reasons,
+        };
+        let result = bounded(report).unwrap();
+        assert_eq!(result.total, 2);
+        assert_eq!(result.omitted, 0);
+        assert_eq!(result.report.reasons[0].code, "unavailable_root");
+        let mut report = result.report;
+        report.reasons[0].detail = Some("é".repeat(9000));
+        let bounded = bounded(report).unwrap();
+        assert_eq!(bounded.report.reasons[0].code, "unavailable_root");
+        assert!(
+            bounded.report.reasons[0]
+                .detail
+                .as_ref()
+                .unwrap()
+                .contains("truncated")
+        );
+    }
 }

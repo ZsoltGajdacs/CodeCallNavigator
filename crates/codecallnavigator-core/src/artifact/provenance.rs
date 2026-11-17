@@ -11,6 +11,8 @@ pub const CSHARP_INPUT_POLICY: &str = "msbuild-preprocess.v2";
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Analysis {
+    #[serde(default)]
+    pub observation_policy: crate::fingerprint::InputPolicy,
     pub version: u32,
     pub targets: Vec<String>,
     #[serde(
@@ -57,6 +59,11 @@ pub fn build(
     let paths = Paths::new(roots)?;
     let mut analysis = Analysis {
         version: 1,
+        observation_policy: fingerprints
+            .first()
+            .map_or(crate::fingerprint::InputPolicy::ScopedV1, |input| {
+                input.observation_policy
+            }),
         targets: Vec::new(),
         selection: None,
         refresh_inputs: None,
@@ -65,6 +72,12 @@ pub fn build(
         inputs: Vec::new(),
         limitations: Vec::new(),
     };
+    ensure!(
+        fingerprints
+            .iter()
+            .all(|input| input.observation_policy == analysis.observation_policy),
+        "Mixed analysis input-observation policies"
+    );
     analysis.targets = targets
         .iter()
         .filter_map(|target| paths.portable(target).ok())

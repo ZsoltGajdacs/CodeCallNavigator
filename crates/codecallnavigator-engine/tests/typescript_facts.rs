@@ -175,3 +175,50 @@ fn query(root: &Path, symbol: &str) -> Value {
     );
     serde_json::from_slice(&output.stdout).unwrap()
 }
+
+/// Compiler resolution must retain hidden source inputs even when broad scans
+/// skip hidden folders; this needs the real TypeScript worker's file inventory.
+#[test]
+#[ignore = "requires installed TypeScript 6 and Node 24+"]
+fn compiler_required_hidden_typescript_sources_remain_observed() {
+    let temporary = fixture();
+    let root = temporary.path().canonicalize().unwrap();
+    fs::create_dir(root.join(".required")).unwrap();
+    fs::rename(root.join("leaf.ts"), root.join(".required/leaf.ts")).unwrap();
+    let source = fs::read_to_string(root.join("main.ts")).unwrap();
+    fs::write(
+        root.join("main.ts"),
+        source.replace("'./leaf'", "'./.required/leaf'"),
+    )
+    .unwrap();
+    let config = fs::read_to_string(root.join("tsconfig.json")).unwrap();
+    fs::write(
+        root.join("tsconfig.json"),
+        config.replace("\"leaf.ts\"", "\".required/leaf.ts\""),
+    )
+    .unwrap();
+    let (saved, _) = analyze(&root);
+    let analysis = artifact::provenance::read(&saved.graph).unwrap().unwrap();
+    assert!(
+        analysis
+            .inputs
+            .iter()
+            .any(|input| input.path == "@repo/.required/leaf.ts")
+    );
+    fs::write(
+        root.join(".required/leaf.ts"),
+        "export function leaf(value = 0) { return value + 2; }",
+    )
+    .unwrap();
+    let report = artifact::verification::verify(&root, &[("repo".into(), root.clone())]).unwrap();
+    assert_eq!(
+        report.input_status,
+        artifact::verification::InputStatus::Stale
+    );
+    assert!(
+        report
+            .reasons
+            .iter()
+            .any(|reason| reason.path.as_deref() == Some("@repo/.required/leaf.ts"))
+    );
+}

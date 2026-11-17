@@ -295,13 +295,18 @@ impl Drop for JobDirectory {
 }
 
 fn source_snapshot(roots: &[PathBuf]) -> Result<Vec<FileFingerprint>> {
-    fingerprint::capture(fingerprint::source_paths(roots)?)
+    let roots = roots
+        .iter()
+        .cloned()
+        .map(fingerprint::ScanRoot::Required)
+        .collect::<Vec<_>>();
+    fingerprint::capture_excluding(fingerprint::collect_inputs(&roots, &[], true)?, &[])
 }
 
 fn engine_versions() -> Result<String> {
     let lock: serde_json::Value =
         serde_json::from_str(include_str!("../../../analyzers.lock.json"))?;
-    Ok(serde_json::json!({"callatlas": lock["callatlas"], "callatlas_protocol": "callatlas.ir.v3", "csharp_input_policy": codecallnavigator_core::artifact::provenance::CSHARP_INPUT_POLICY, "callatlas_framework_facts": "1", "callatlas_http_facts": "1", "java-callgraph2": lock["java-callgraph2"]}).to_string())
+    Ok(serde_json::json!({"input_observation_policy":"scoped_v1", "callatlas": lock["callatlas"], "callatlas_protocol": "callatlas.ir.v3", "csharp_input_policy": codecallnavigator_core::artifact::provenance::CSHARP_INPUT_POLICY, "callatlas_framework_facts": "1", "callatlas_http_facts": "1", "java-callgraph2": lock["java-callgraph2"]}).to_string())
 }
 
 fn ensure_unchanged(before: &[FileFingerprint]) -> Result<()> {

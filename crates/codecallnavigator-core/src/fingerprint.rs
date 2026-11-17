@@ -14,6 +14,10 @@ use std::{
 
 #[cfg(test)]
 mod output_tests;
+mod policy;
+pub use policy::{InputPolicy, ScanRoot};
+#[cfg(test)]
+mod policy_tests;
 
 pub fn capture(paths: impl IntoIterator<Item = PathBuf>) -> Result<Vec<FileFingerprint>> {
     let _stage = crate::metrics::stage("fingerprints.capture");
@@ -22,7 +26,7 @@ pub fn capture(paths: impl IntoIterator<Item = PathBuf>) -> Result<Vec<FileFinge
         .collect::<BTreeSet<_>>()
         .into_iter()
         .filter(|path| !generated_graph_output(path))
-        .map(|path| fingerprint(&path, &[], false))
+        .map(|path| fingerprint(&path, &[], false, InputPolicy::ScopedV1))
         .collect()
 }
 
@@ -40,7 +44,7 @@ pub fn capture_excluding(
         .filter(|path| !generated_graph_output(path))
         .map(|path| {
             let excluded_children = excluded_children(&path, output_roots);
-            fingerprint(&path, &excluded_children, true)
+            fingerprint(&path, &excluded_children, true, InputPolicy::ScopedV1)
         })
         .collect()
 }
@@ -66,7 +70,7 @@ pub fn is_stale(items: &[FileFingerprint]) -> Result<bool> {
     let _stage = crate::metrics::stage("fingerprints.verify");
     for item in items {
         let path = Path::new(&item.path);
-        let current = fingerprint(path, &item.excluded_children, true)?;
+        let current = fingerprint(path, &item.excluded_children, true, item.observation_policy)?;
         if (
             current.missing,
             current.size,
@@ -97,6 +101,7 @@ pub fn input_paths_excluding(roots: &[PathBuf], output_roots: &[PathBuf]) -> Res
 
 /// Recursive observed scopes include all file types and symlink entries, without
 /// descending nested directory symlinks. Explicit scope roots remain traversable.
+#[cfg(test)]
 pub(crate) fn observation_paths(
     roots: &[PathBuf],
     output_roots: &[PathBuf],
@@ -108,6 +113,84 @@ pub(crate) fn observation_paths(
         true,
         FilePolicy::ObservedScopes(cancel),
     )
+}
+
+/// Discover roots with explicit ownership intent. Required roots remain eligible
+/// inside hidden/generated directories; all descendants use the shared policy.
+pub fn collect_inputs(
+    roots: &[ScanRoot],
+    outputs: &[PathBuf],
+    sources_only: bool,
+) -> Result<Vec<PathBuf>> {
+    let paths = roots
+        .iter()
+        .filter_map(|root| match root.eligible() {
+            Ok(true) => Some(Ok(root.path().to_path_buf())),
+            Ok(false) => None,
+            Err(error) => Some(Err(error)),
+        })
+        .collect::<Result<Vec<_>>>()?;
+    collect_roots(
+        &paths,
+        outputs,
+        true,
+        if sources_only {
+            FilePolicy::Sources
+        } else {
+            FilePolicy::BuildInputs
+        },
+    )
+}
+
+fn collect_roots(
+    roots: &[PathBuf],
+    outputs: &[PathBuf],
+    include_missing: bool,
+    policy: FilePolicy<'_>,
+) -> Result<Vec<PathBuf>> {
+    collect_roots_with_policy(
+        roots,
+        outputs,
+        include_missing,
+        TraversalPolicy {
+            files: policy,
+            observation: InputPolicy::ScopedV1,
+        },
+    )
+}
+
+pub(crate) fn observation_paths_with_policy(
+    roots: &[PathBuf],
+    outputs: &[PathBuf],
+    cancel: &AtomicBool,
+    policy: InputPolicy,
+) -> Result<Vec<PathBuf>> {
+    collect_roots_with_policy(
+        roots,
+        outputs,
+        true,
+        TraversalPolicy {
+            files: FilePolicy::ObservedScopes(cancel),
+            observation: policy,
+        },
+    )
+}
+
+pub fn observe_content_with_policy(
+    path: &Path,
+    excluded_children: &[String],
+    policy: InputPolicy,
+) -> Result<ContentObservation> {
+    observe_content_controlled(path, excluded_children, None, policy)
+}
+
+pub(crate) fn observe_content_cancellable_with_policy(
+    path: &Path,
+    excluded_children: &[String],
+    cancel: &AtomicBool,
+    policy: InputPolicy,
+) -> Result<ContentObservation> {
+    observe_content_controlled(path, excluded_children, Some(cancel), policy)
 }
 
 #[derive(Clone, Copy)]
@@ -133,20 +216,26 @@ impl FilePolicy<'_> {
     }
 }
 
-fn collect_roots(
+struct TraversalPolicy<'a> {
+    files: FilePolicy<'a>,
+    observation: InputPolicy,
+}
+
+fn collect_roots_with_policy(
     roots: &[PathBuf],
     output_roots: &[PathBuf],
     include_missing: bool,
-    policy: FilePolicy<'_>,
+    policy: TraversalPolicy<'_>,
 ) -> Result<Vec<PathBuf>> {
     let _stage = crate::metrics::stage("fingerprints.discover");
     let mut collector = SourceCollector {
         paths: BTreeSet::new(),
         visited: BTreeSet::new(),
-        policy,
+        policy: policy.files,
+        observation_policy: policy.observation,
     };
     for root in roots {
-        policy.check()?;
+        policy.files.check()?;
         if generated_graph_output(root) {
             continue;
         }
@@ -168,6 +257,7 @@ struct SourceCollector<'a> {
     paths: BTreeSet<PathBuf>,
     visited: BTreeSet<(PathBuf, Vec<PathBuf>)>,
     policy: FilePolicy<'a>,
+    observation_policy: InputPolicy,
 }
 
 impl SourceCollector<'_> {
@@ -215,6 +305,9 @@ impl SourceCollector<'_> {
 
     fn excluded_entry(&self, entry: &fs::DirEntry, output_roots: &[PathBuf]) -> Result<bool> {
         let path = entry.path();
+        if self.observation_policy.excludes(entry)? {
+            return Ok(true);
+        }
         if generated_graph_output(&path)
             || output_roots.iter().any(|output| path.starts_with(output))
         {
@@ -312,15 +405,7 @@ pub struct ContentObservation {
 }
 
 pub fn observe_content(path: &Path, excluded_children: &[String]) -> Result<ContentObservation> {
-    observe_content_controlled(path, excluded_children, None)
-}
-
-pub(crate) fn observe_content_cancellable(
-    path: &Path,
-    excluded_children: &[String],
-    cancel: &AtomicBool,
-) -> Result<ContentObservation> {
-    observe_content_controlled(path, excluded_children, Some(cancel))
+    observe_content_with_policy(path, excluded_children, InputPolicy::ScopedV1)
 }
 
 fn check_cancel(cancel: Option<&AtomicBool>) -> Result<()> {
@@ -335,11 +420,13 @@ fn observe_content_controlled(
     path: &Path,
     excluded_children: &[String],
     cancel: Option<&AtomicBool>,
+    policy: InputPolicy,
 ) -> Result<ContentObservation> {
     check_cancel(cancel)?;
     let metadata = match fs::metadata(path) {
         Ok(value) => value,
         Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
+            policy.bind_links(path, String::new())?;
             return Ok(ContentObservation {
                 kind: InputKind::Missing,
                 hash: String::new(),
@@ -350,7 +437,7 @@ fn observe_content_controlled(
     let (kind, hash) = if metadata.is_dir() {
         (
             InputKind::Directory,
-            directory_hash_controlled(path, excluded_children, cancel)?,
+            directory_hash_controlled(path, excluded_children, cancel, policy)?,
         )
     } else {
         anyhow::ensure!(
@@ -360,28 +447,24 @@ fn observe_content_controlled(
         );
         (InputKind::File, file_hash_controlled(path, cancel)?)
     };
+    let hash = policy.bind_links(path, hash)?;
     Ok(ContentObservation { kind, hash })
-}
-
-fn content_hash(path: &Path, excluded_children: &[String], directory: bool) -> Result<String> {
-    if directory {
-        directory_hash(path, excluded_children)
-    } else {
-        file_hash(path)
-    }
 }
 
 fn fingerprint(
     path: &Path,
     excluded_children: &[String],
     allow_missing: bool,
+    policy: InputPolicy,
 ) -> Result<FileFingerprint> {
     let metadata = match fs::metadata(path) {
         Ok(metadata) => metadata,
         Err(error) if allow_missing && error.kind() == std::io::ErrorKind::NotFound => {
+            policy.bind_links(path, String::new())?;
             return Ok(FileFingerprint {
                 path: path.to_string_lossy().into_owned(),
                 missing: true,
+                observation_policy: policy,
                 excluded_children: excluded_children.to_vec(),
                 ..Default::default()
             });
@@ -397,7 +480,7 @@ fn fingerprint(
             .as_nanos()
             .min(u64::MAX as u128) as u64
     };
-    let hash = content_hash(path, excluded_children, metadata.is_dir())?;
+    let hash = observe_content_with_policy(path, excluded_children, policy)?.hash;
     Ok(FileFingerprint {
         path: path.to_string_lossy().into_owned(),
         size: if metadata.is_dir() { 0 } else { metadata.len() },
@@ -405,6 +488,7 @@ fn fingerprint(
         hash,
         excluded_children: excluded_children.to_vec(),
         missing: false,
+        observation_policy: policy,
     })
 }
 
@@ -418,20 +502,20 @@ pub(crate) fn excluded_children(path: &Path, outputs: &[PathBuf]) -> Vec<String>
         .collect()
 }
 
-fn directory_hash(path: &Path, excluded_children: &[String]) -> Result<String> {
-    directory_hash_controlled(path, excluded_children, None)
-}
-
 fn directory_hash_controlled(
     path: &Path,
     excluded_children: &[String],
     cancel: Option<&AtomicBool>,
+    policy: InputPolicy,
 ) -> Result<String> {
     let mut names = BTreeSet::new();
     for entry in fs::read_dir(path)? {
         check_cancel(cancel)?;
         let entry = entry?;
         let name = entry.file_name().to_string_lossy().into_owned();
+        if policy.excludes(&entry)? {
+            continue;
+        }
         if excluded_directory(&name) || excluded_children.contains(&name) {
             continue;
         }
@@ -481,10 +565,6 @@ fn maven_configuration_present(path: &Path) -> Result<bool> {
     Ok(false)
 }
 
-fn file_hash(path: &Path) -> Result<String> {
-    file_hash_controlled(path, None)
-}
-
 fn file_hash_controlled(path: &Path, cancel: Option<&AtomicBool>) -> Result<String> {
     check_cancel(cancel)?;
     let mut options = fs::OpenOptions::new();
@@ -526,7 +606,9 @@ mod tests {
     fn maven_root_marker_creation_keeps_sources_current_but_configuration_stales_them() {
         let root = tempfile::tempdir().unwrap();
         fs::write(root.path().join("pom.xml"), "<project/>").unwrap();
-        let before = capture(source_paths(&[root.path().into()]).unwrap()).unwrap();
+        let mut inputs = source_paths(&[root.path().into()]).unwrap();
+        inputs.push(root.path().join(".mvn/maven.config"));
+        let before = capture_excluding(inputs, &[]).unwrap();
         fs::create_dir(root.path().join(".mvn")).unwrap();
         assert!(!is_stale(&before).unwrap());
         fs::create_dir_all(root.path().join(".mvn/target/project-local-repo")).unwrap();
@@ -649,7 +731,8 @@ mod tests {
         ] {
             fs::write(directory.path().join(name), "original").unwrap();
         }
-        let paths = source_paths(&[directory.path().into()]).unwrap();
+        let paths =
+            source_paths(&[directory.path().into(), directory.path().join(".mvn")]).unwrap();
         assert!(!paths.contains(&directory.path().join("irrelevant.xml")));
         let before = capture(paths).unwrap();
         fs::write(directory.path().join(".mvn/maven.config"), "-Pcustom").unwrap();

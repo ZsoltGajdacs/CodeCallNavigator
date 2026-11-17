@@ -85,7 +85,7 @@ impl Coordinator {
         let Some(revision) = revision.filter(|_| complete) else {
             self.unavailable(auto_error(
                 "incomplete_observation",
-                "Automatic refresh requires readable recorded input scopes",
+                incomplete_details(observation, plan.trigger.as_ref()),
             ));
             return;
         };
@@ -370,11 +370,56 @@ impl Drop for Coordinator {
     }
 }
 
+fn incomplete_details(
+    observation: &FreshnessObservation,
+    trigger: Option<&artifact::verification::Observation>,
+) -> String {
+    let reasons = trigger.map_or(observation.reasons.as_slice(), |value| {
+        value.report.reasons.as_slice()
+    });
+    let mut message = String::from(
+        "Automatic refresh is blocked because required input coverage is incomplete. The previous graph remains available.\n",
+    );
+    let mut retained = 0;
+    for reason in reasons.iter().filter(|reason| reason.is_blocker()) {
+        let detail = reason.describe();
+        // Leave room for the omitted-count and recovery explanation within the
+        // activity error limit. Full reasons remain available through verify.
+        if message.chars().count() + detail.chars().count() > 3400 {
+            break;
+        }
+        message.push_str(&detail);
+        message.push('\n');
+        retained += 1;
+    }
+    let total = reasons.iter().filter(|reason| reason.is_blocker()).count();
+    let omitted = total - retained
+        + if trigger.is_none() {
+            observation.omitted_reasons
+        } else {
+            0
+        };
+    if omitted > 0 {
+        message.push_str(&format!(
+            "{omitted} further reasons omitted. Use CLI verify for the complete report.\n"
+        ));
+    }
+    if total == 0 {
+        message.push_str("The recorded input inventory or graph contract is incomplete. Perform a manual Refresh with a compatible engine to regenerate it.\n");
+    }
+    message.push_str("Retry freshness checks observation again; it does not rebuild the graph.");
+    message
+}
+
 fn scheduling_complete(
     observation: &FreshnessObservation,
     trigger: Option<&artifact::verification::Observation>,
 ) -> bool {
     observation.contract_valid
+        && !observation
+            .reasons
+            .iter()
+            .any(|reason| reason.code == "legacy_input_policy")
         && trigger.map_or(observation.coverage.complete, |trigger| trigger.complete)
 }
 
@@ -423,6 +468,23 @@ mod tests {
             mode: Mode::default(),
             verification_milliseconds: 0.0,
         }
+    }
+
+    #[test]
+    fn incomplete_coverage_explains_required_path_and_recovery_without_starting_analysis() {
+        let mut observation = incomplete_public();
+        observation
+            .reasons
+            .push(artifact::verification::Reason::new(
+                "unreadable_input",
+                Some("@repo/.required/source.java".into()),
+            ));
+        observation.reasons_total = 1;
+        let details = incomplete_details(&observation, None);
+        assert!(details.contains("@repo/.required/source.java"));
+        assert!(details.contains("permissions"));
+        assert!(details.contains("does not rebuild"));
+        assert!(details.contains("previous graph remains available"));
     }
 
     fn queued_plan(

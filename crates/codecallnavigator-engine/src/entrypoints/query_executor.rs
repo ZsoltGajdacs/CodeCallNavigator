@@ -123,6 +123,12 @@ impl Executor {
                         "Legacy graph has no exact build selection; run a manual refresh"
                     )
                 })?;
+            anyhow::ensure!(
+                analysis.observation_policy
+                    == codecallnavigator_core::fingerprint::InputPolicy::ScopedV1,
+                "{}",
+                artifact::verification::Reason::new("legacy_input_policy", None).describe()
+            );
             let targets = artifact::selection::resolve(analysis.selection.as_ref(), &loaded.roots)?
                 .iter()
                 .map(codecallnavigator_core::discovery::rediscover_exact)

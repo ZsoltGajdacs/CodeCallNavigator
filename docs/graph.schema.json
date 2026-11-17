@@ -1386,6 +1386,11 @@
     "analysisInput": {
       "type": "object",
       "properties": {
+        "observation_policy": {
+          "type": "string",
+          "enum": ["legacy", "scoped_v1"],
+          "description": "Absent means legacy fingerprint semantics; scoped_v1 skips incidental dot directories and symlinks while preserving required roots."
+        },
         "path": {
           "$ref": "#/$defs/path"
         },

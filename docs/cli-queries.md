@@ -534,3 +534,33 @@ requests retain the same manifest generation binding.
 Ordinary-query freshness `contract_valid` covers the manifest and structural
 content validated for that query. Flow integrity and references are checked when
 flows load. Use the explicit `verify` command to validate both saved objects.
+
+## Input scanning policy and recovery
+
+New analyses record the `scoped_v1` input-observation policy. Broad discovery
+and recursive directory observations skip dot-prefixed directories and symlinks;
+dot-prefixed files remain eligible. Compiler/build-declared inputs and explicitly
+selected roots remain tracked, including required inputs beneath hidden folders
+and required link targets. Changes to ignored entries do not trigger refresh.
+
+Graphs without this policy remain readable using their original fingerprint
+semantics. Automatic refresh requests one manual **Refresh** to regenerate input
+records; clearing the cache is unnecessary. Read-only queries never upgrade graphs.
+
+Incomplete observations retain the last successful graph and block automatic
+scheduling. Reasons include a stable `code`, optional `path`, and optional
+`operation`, `detail`, and `recovery` fields. Older clients may ignore the additional
+fields. Reasons are deduplicated and blockers precede ordinary changed-input notices;
+bounded responses report total and omitted counts. Run
+`ccnavigator verify --project /absolute/project/path` for the complete read-only
+report. The desktop exposes scrollable, selectable details and **Copy details**.
+**Retry freshness** retries observation; **Refresh** reruns analysis. Restore missing
+required paths, link targets, permissions, or root mappings before retrying; when
+inputs were intentionally removed by a build change, perform a manual Refresh.
+
+A known deletion or rename is an observable stale state (`input_missing`), so it
+can trigger reanalysis. It is distinct from an unreadable input or unresolved
+required symlink. If the compiler still requires a deleted input, analysis fails
+and preserves the previous graph. Coverage refers to recorded observable scopes;
+unmapped build-environment limitations remain explicitly `unverifiable` and
+`certifies_build` remains false even when those scopes are completely observed.

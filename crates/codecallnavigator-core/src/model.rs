@@ -57,6 +57,8 @@ pub struct Edge {
 
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
 pub struct FileFingerprint {
+    #[serde(default)]
+    pub observation_policy: crate::fingerprint::InputPolicy,
     pub path: String,
     pub size: u64,
     pub modified_ns: u64,

@@ -168,3 +168,87 @@ fn copy_fixture(source: &std::path::Path, target: &std::path::Path) {
         }
     }
 }
+
+/// Maven's evaluated source roots and .mvn configuration must survive broad-scan
+/// exclusions; only a real Maven/bytecode journey proves these adapter boundaries.
+#[test]
+#[ignore = "requires pinned Java analyzer, Maven and installed JDK25"]
+fn maven_required_hidden_source_roots_and_configuration_remain_observed() {
+    let temporary = tempfile::tempdir().unwrap();
+    let checkout = temporary.path().canonicalize().unwrap();
+    copy_fixture(
+        &std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../fixtures/maven"),
+        &checkout,
+    );
+    configure_maven_wrapper(&checkout);
+    let library = checkout.join("library");
+    fs::rename(
+        library.join("src/main/java"),
+        library.join(".required-java"),
+    )
+    .unwrap();
+    let pom = fs::read_to_string(library.join("pom.xml")).unwrap();
+    fs::write(
+        library.join("pom.xml"),
+        pom.replace(
+            "<build>",
+            "<build><sourceDirectory>.required-java</sourceDirectory>",
+        ),
+    )
+    .unwrap();
+    let project = checkout.join("reactor");
+    fs::create_dir_all(project.join(".mvn")).unwrap();
+    fs::write(
+        project.join(".mvn/maven.config"),
+        "-Dhidden.input.test=true\n",
+    )
+    .unwrap();
+    let response = machine_analysis(
+        &project,
+        json!({"path":project,"language":"java","kind":"maven","label":"reactor"}),
+    );
+    let roots: Vec<(String, std::path::PathBuf)> =
+        serde_json::from_value(response["roots"].clone()).unwrap();
+    let saved = codecallnavigator_core::artifact::load(&project).unwrap();
+    let analysis = codecallnavigator_core::artifact::provenance::read(&saved.graph)
+        .unwrap()
+        .unwrap();
+    assert!(
+        analysis
+            .inputs
+            .iter()
+            .any(|input| input.path.contains("/.required-java/") && input.path.ends_with(".java"))
+    );
+    assert!(
+        analysis
+            .inputs
+            .iter()
+            .any(|input| input.path.ends_with("/.mvn/maven.config"))
+    );
+    fs::write(
+        project.join(".mvn/maven.config"),
+        "-Dhidden.input.test=false\n",
+    )
+    .unwrap();
+    let report = codecallnavigator_core::artifact::verification::verify(&project, &roots).unwrap();
+    assert_eq!(
+        report.input_status,
+        codecallnavigator_core::artifact::verification::InputStatus::Stale
+    );
+    assert!(report.reasons.iter().any(|reason| {
+        reason
+            .path
+            .as_deref()
+            .is_some_and(|path| path.ends_with("/.mvn/maven.config"))
+    }));
+}
+
+fn configure_maven_wrapper(checkout: &std::path::Path) {
+    if let Some(maven) = std::env::var_os("CODECALLNAVIGATOR_TEST_MAVEN") {
+        use std::os::unix::fs::PermissionsExt;
+        let wrapper = checkout.join("mvnw");
+        let executable = maven.to_string_lossy().replace('\'', "'\\''");
+        fs::write(&wrapper, format!("#!/bin/sh\nexec '{executable}' \"$@\"\n")).unwrap();
+        fs::set_permissions(wrapper, fs::Permissions::from_mode(0o755)).unwrap();
+    }
+}

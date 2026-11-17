@@ -23,7 +23,7 @@ pub(super) fn append(state: &State, k: &Kit, mut body: El, mut actions: El) -> E
     );
     if enabled && let Some(activity) = state.freshness.automatic.message() {
         body = body.child(
-            text(&activity)
+            text(state.freshness.automatic.details().unwrap_or(&activity))
                 .help(state.freshness.automatic.details().unwrap_or(&activity))
                 .w_full()
                 .min_w(0.0)
@@ -49,7 +49,7 @@ pub(super) fn append(state: &State, k: &Kit, mut body: El, mut actions: El) -> E
                 .key("freshness-auto-cancel"),
         );
     }
-    cleanup_warning(state, k, body).child(actions)
+    super::freshness_diagnostics::append(state, k, cleanup_warning(state, k, body)).child(actions)
 }
 
 fn cleanup_warning(state: &State, k: &Kit, mut bar: El) -> El {

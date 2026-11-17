@@ -246,7 +246,9 @@ fn discover_directory(
         let path = entry.path();
         let name = entry.file_name().to_string_lossy().into_owned();
         let kind = entry.file_type()?;
-        if generated_graph_output(&path) {
+        if crate::fingerprint::InputPolicy::ScopedV1.excludes(&entry)?
+            || generated_graph_output(&path)
+        {
             continue;
         }
         if kind.is_dir() && !excluded_directory(&name) {

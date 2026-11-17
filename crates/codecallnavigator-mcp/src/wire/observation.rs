@@ -190,6 +190,18 @@ mod tests {
     }
 
     #[test]
+    fn actionable_optional_details_are_forward_compatible_and_count_toward_budget() {
+        let mut value = valid();
+        value["reasons"][0]["operation"] = json!("Read required input");
+        value["reasons"][0]["detail"] = json!("Permission denied");
+        value["reasons"][0]["recovery"] = json!("Restore read permissions, then retry observation");
+        validate(&value, Some(&"a".repeat(64))).unwrap();
+        assert_eq!(value["reasons"][0]["detail"], "Permission denied");
+        value["reasons"][0]["detail"] = json!("x".repeat(MAX_REASON_BYTES));
+        assert!(validate(&value, Some(&"a".repeat(64))).is_err());
+    }
+
+    #[test]
     fn typed_observation_requires_binding_shape_counts_and_finite_time() {
         let generation = "a".repeat(64);
         validate(&valid(), Some(&generation)).unwrap();

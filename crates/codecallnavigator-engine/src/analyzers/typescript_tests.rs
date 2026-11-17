@@ -27,9 +27,24 @@ fn stale_missing_and_future_typescript_adapters_require_matching_resources() {
 
 #[test]
 fn current_typescript_adapter_is_accepted_with_unchanged_prepare_contract() {
-    validate_capabilities(&json!({"adapter":"7","boundary_rules":"1"})).unwrap();
+    validate_capabilities(&json!({"adapter":"7","boundary_rules":"1","input_policy":"scoped_v1"}))
+        .unwrap();
     for boundary in [json!(null), json!(1), json!("2")] {
-        assert!(validate_capabilities(&json!({"adapter":"7","boundary_rules":boundary})).is_err());
+        assert!(
+            validate_capabilities(
+                &json!({"adapter":"7","boundary_rules":boundary,"input_policy":"scoped_v1"})
+            )
+            .is_err()
+        );
     }
     assert!(validate_capabilities(&json!({"adapter":"7"})).is_err());
+    for policy in [json!(null), json!("legacy"), json!("future"), json!(1)] {
+        assert!(
+            validate_capabilities(
+                &json!({"adapter":"7","boundary_rules":"1","input_policy":policy})
+            )
+            .is_err()
+        );
+    }
+    assert!(validate_capabilities(&json!({"adapter":"7","boundary_rules":"1"})).is_err());
 }

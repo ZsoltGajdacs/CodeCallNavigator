@@ -41,6 +41,7 @@ final class ProjectMetadata {
         result.put("projectDir", BuildMetadata.path(project.getBasedir()));
         result.put("isTest", test);
         result.put("sourceSet", test ? "test" : "main");
+        result.put("inputPolicy", "scoped_v1");
         result.put("compileClasspath", evaluated ? compileClasspath(test) : List.of());
         result.put("classpathAliases", classpathAliases(test));
         result.put("sourceRoots", roots);
@@ -86,11 +87,11 @@ final class ProjectMetadata {
 
     private void collectBuildPaths() throws IOException {
         for (MavenProject parent = project; parent != null; parent = parent.getParent()) {
-            BuildMetadata.add(inputs, parent.getFile());
-            BuildMetadata.add(inputs, parent.getParentFile());
+            addInput(parent.getFile());
+            addInput(parent.getParentFile());
         }
         for (Resource resource : combinedResources()) {
-            BuildMetadata.add(inputs, resolve(resource.getDirectory()));
+            addInput(resolve(resource.getDirectory()));
         }
         inputs.addAll(paths(project.getFilters()));
         for (String value : List.of(project.getBuild().getDirectory(), project.getBuild().getOutputDirectory(),
@@ -143,7 +144,7 @@ final class ProjectMetadata {
         if (value != null && !value.isBlank()) {
             File candidate = resolve(value);
             if (candidate.exists() && outputs.stream().noneMatch(output -> candidate.toPath().startsWith(output))) {
-                BuildMetadata.add(inputs, candidate);
+                addInput(candidate);
             }
         }
         for (Xpp3Dom child : tree.getChildren()) {
@@ -154,9 +155,27 @@ final class ProjectMetadata {
     private Set<String> paths(List<String> values) throws IOException {
         Set<String> result = new LinkedHashSet<>();
         for (String value : values) {
-            BuildMetadata.add(result, resolve(value));
+            File file = resolve(value);
+            retainAlias(file);
+            BuildMetadata.add(result, file);
         }
         return result;
+    }
+
+    // Canonical paths own source attribution. Keep lexical aliases separately so
+    // freshness can detect a declared link being retargeted between analyses.
+    private void retainAlias(File file) throws IOException {
+        String lexical = file.toPath().toAbsolutePath().normalize().toString();
+        if (!lexical.equals(BuildMetadata.path(file))) {
+            inputs.add(lexical);
+        }
+    }
+
+    private void addInput(File file) throws IOException {
+        if (file != null) {
+            retainAlias(file);
+            BuildMetadata.add(inputs, file);
+        }
     }
 
     private File resolve(String value) {

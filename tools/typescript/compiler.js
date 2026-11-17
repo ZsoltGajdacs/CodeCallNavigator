@@ -26,6 +26,10 @@ function trackingSystem(ts, inputs, observations) {
     // a symlink may change destination while both fileExists results stay false.
     const normalized=observations.observe(JSON.stringify(['input-path',file]),()=>canonical(file));
     inputs.add(normalized);
+    // Preserve compiler-required aliases as inputs too; source ownership keeps
+    // canonical paths, while freshness records lexical symlink identity.
+    const lexical=path.resolve(file);
+    if (lexical!==normalized) inputs.add(lexical);
   };
   const system={...ts.sys};
   for (const name of ['readFile','fileExists','directoryExists','readDirectory','getDirectories','realpath']) {

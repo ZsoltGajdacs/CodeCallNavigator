@@ -5,6 +5,7 @@ mod automatic_refresh;
 mod build_picker;
 mod drawer;
 mod explorer;
+mod freshness_diagnostics;
 mod graph_canvas;
 mod graph_controls;
 pub(crate) mod pane_controls;

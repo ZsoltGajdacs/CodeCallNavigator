@@ -35,6 +35,7 @@ mod tests {
     fn analysis(targets: &[&str], versions: Value) -> Analysis {
         Analysis {
             version: 1,
+            observation_policy: crate::fingerprint::InputPolicy::Legacy,
             targets: targets.iter().map(|value| (*value).into()).collect(),
             selection: None,
             refresh_inputs: None,

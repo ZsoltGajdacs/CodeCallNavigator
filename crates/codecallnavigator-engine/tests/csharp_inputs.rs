@@ -362,3 +362,52 @@ fn solution_paths_with_property_separators_and_percent_retain_real_compiler_impo
             .any(|path| path == "@imports/Solution.props")
     );
 }
+
+/// Real MSBuild evaluation proves hidden imports and explicitly included source
+/// files remain required inputs; a filesystem-only test cannot prove the adapter inventory.
+#[test]
+#[ignore = "requires pinned CallAtlas and installed .NET 11 SDK"]
+fn hidden_imports_and_declared_sources_remain_observed() {
+    let temporary = tempfile::tempdir().unwrap();
+    let root = temporary.path().canonicalize().unwrap();
+    project(&root);
+    fs::create_dir(root.join(".required")).unwrap();
+    fs::write(root.join(".required/Build.props"), "<Project><PropertyGroup><DefineConstants>$(DefineConstants);HIDDEN_INPUT</DefineConstants></PropertyGroup></Project>").unwrap();
+    fs::write(
+        root.join(".required/Hidden.cs"),
+        "public class Hidden { public static int Leaf() => 7; }",
+    )
+    .unwrap();
+    fs::write(root.join("Fixture.csproj"), PROJECT.replace("</Project>", "<Import Project=\".required/Build.props\"/><ItemGroup><Compile Include=\".required/Hidden.cs\" /></ItemGroup></Project>")).unwrap();
+    fs::write(
+        root.join("App.cs"),
+        "public class App { public static int Start() => Hidden.Leaf(); }",
+    )
+    .unwrap();
+    let saved = analyze(&root);
+    let paths = input_paths(&saved);
+    assert!(
+        paths.contains(&"@repo/.required/Build.props".into()),
+        "{paths:?}"
+    );
+    assert!(
+        paths.contains(&"@repo/.required/Hidden.cs".into()),
+        "{paths:?}"
+    );
+    fs::write(
+        root.join(".required/Hidden.cs"),
+        "public class Hidden { public static int Leaf() => 8; }",
+    )
+    .unwrap();
+    let report = artifact::verification::verify(&root, &[("repo".into(), root.clone())]).unwrap();
+    assert_eq!(
+        report.input_status,
+        artifact::verification::InputStatus::Stale
+    );
+    assert!(
+        report
+            .reasons
+            .iter()
+            .any(|reason| reason.path.as_deref() == Some("@repo/.required/Hidden.cs"))
+    );
+}

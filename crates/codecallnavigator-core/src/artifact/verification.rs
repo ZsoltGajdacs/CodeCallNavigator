@@ -1,10 +1,11 @@
 //! Read-only verification of observed inputs; this does not certify a build environment.
 mod csharp_policy;
+mod diagnostic;
+pub use diagnostic::Reason;
 mod live;
 #[cfg(test)]
 mod observation_tests;
 use super::{Artifact, Roots, paths::Paths, provenance, storage};
-use crate::fingerprint::observe_content;
 use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
 #[cfg(test)]
@@ -17,13 +18,6 @@ pub enum InputStatus {
     Match,
     Stale,
     Unverifiable,
-}
-
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
-pub struct Reason {
-    pub code: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub path: Option<String>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -45,10 +39,7 @@ impl Report {
         }
     }
     fn reason(&mut self, code: &str, path: Option<String>) {
-        self.reasons.push(Reason {
-            code: code.into(),
-            path,
-        });
+        self.reasons.push(Reason::new(code, path));
     }
 }
 
@@ -59,7 +50,7 @@ pub fn verify(project: &Path, roots: &Roots) -> Result<Report> {
     let digest = blake3::hash(&bytes).to_hex().to_string();
     match captured.and_then(|captured| captured.complete()) {
         Ok(artifact) => verify_artifact(&artifact, &digest, roots),
-        Err(_) => Ok(invalid_report(&digest)),
+        Err(error) => Ok(invalid_report(&digest, &error)),
     }
 }
 
@@ -69,15 +60,20 @@ pub fn verify_bytes(bytes: &[u8], roots: &Roots) -> Result<Report> {
     let digest = blake3::hash(bytes).to_hex().to_string();
     match Artifact::from_bytes(bytes) {
         Ok(artifact) => verify_artifact(&artifact, &digest, roots),
-        Err(_) => Ok(invalid_report(&digest)),
+        Err(error) => Ok(invalid_report(&digest, &error)),
     }
 }
 
-fn invalid_report(digest: &str) -> Report {
+fn invalid_report(digest: &str, error: &anyhow::Error) -> Report {
     let mut report = report(digest);
     report.contract_valid = false;
     report.input_status = InputStatus::Unverifiable;
-    report.reason("invalid_contract", None);
+    report.reasons.push(Reason::failure(
+        "invalid_contract",
+        None,
+        "Validate saved graph contract and objects",
+        error,
+    ));
     report
 }
 
@@ -117,6 +113,7 @@ pub fn observe_artifact(
 struct Mappings<'a> {
     roots: &'a Roots,
     paths: Paths,
+    policy: crate::fingerprint::InputPolicy,
 }
 
 fn inspect(
@@ -169,6 +166,9 @@ impl Inspection<'_> {
         let mappings = Mappings {
             roots: self.roots,
             paths: Paths::new(self.roots)?,
+            policy: analysis.map_or(crate::fingerprint::InputPolicy::Legacy, |value| {
+                value.observation_policy
+            }),
         };
         let mut report = report(self.digest);
         let Some(analysis) = analysis else {
@@ -180,11 +180,20 @@ impl Inspection<'_> {
                 complete: false,
             });
         };
+        if analysis.observation_policy == crate::fingerprint::InputPolicy::Legacy {
+            report.reason("legacy_input_policy", None);
+        }
         if csharp_policy::legacy(&self.artifact.graph, analysis) {
             report.reason("legacy_csharp_input_policy", None);
         }
-        let mut live =
-            cancel.map(|cancel| live::Inputs::excluding(&mappings.paths, cancel, outputs));
+        let mut live = cancel.map(|cancel| {
+            live::Inputs::excluding(
+                &mappings.paths,
+                cancel,
+                outputs,
+                analysis.observation_policy,
+            )
+        });
         let stale = verify_manifest(analysis, &mappings, &mut report, live.as_mut())?;
         let (input_revision, complete) = match live {
             Some(live) => {
@@ -197,6 +206,7 @@ impl Inspection<'_> {
             }
             None => (None, false),
         };
+        Reason::normalize(&mut report.reasons);
         report.input_status = if stale {
             InputStatus::Stale
         } else if !report.reasons.is_empty() {
@@ -212,15 +222,26 @@ impl Inspection<'_> {
     }
 }
 
+fn limitation_reason(limitation: &provenance::Limitation) -> Reason {
+    let mut reason = Reason::new(&limitation.code, None);
+    if limitation.code == "unmapped_input" {
+        reason.detail = Some(format!(
+            "{} required targets or input fingerprints could not be mapped when this graph was saved. Their paths were not retained in portable provenance, so the engine cannot verify them.",
+            limitation.count
+        ));
+    }
+    reason
+}
+
 fn verify_manifest(
     analysis: &provenance::Analysis,
     mappings: &Mappings<'_>,
     report: &mut Report,
     mut live: Option<&mut live::Inputs<'_>>,
 ) -> Result<bool> {
-    for limitation in &analysis.limitations {
-        report.reason(&limitation.code, None);
-    }
+    report
+        .reasons
+        .extend(analysis.limitations.iter().map(limitation_reason));
     if analysis.inputs.is_empty() {
         report.reason("no_observed_inputs", None);
     }
@@ -239,7 +260,7 @@ fn verify_manifest(
             .split_once('/')
             .is_some_and(|(root, _)| available.contains(root))
     }) {
-        stale |= verify_input(input, &mappings.paths, report, live.as_deref_mut())?;
+        stale |= verify_input(input, mappings, report, live.as_deref_mut())?;
     }
     Ok(stale)
 }
@@ -265,14 +286,14 @@ fn available_roots(
 
 fn verify_input(
     input: &provenance::Input,
-    paths: &Paths,
+    mappings: &Mappings<'_>,
     report: &mut Report,
     live: Option<&mut live::Inputs<'_>>,
 ) -> Result<bool> {
     if let Some(live) = &live {
         live.check()?;
     }
-    let local = match paths.local(&input.path) {
+    let local = match mappings.paths.local(&input.path) {
         Ok(path) => path,
         Err(_) => {
             report.reason("unavailable_root", Some(input.path.clone()));
@@ -281,20 +302,42 @@ fn verify_input(
     };
     let current = match &live {
         Some(live) => live.observe(Path::new(&local), &input.excluded_children),
-        None => observe_content(Path::new(&local), &input.excluded_children),
+        None => crate::fingerprint::observe_content_with_policy(
+            Path::new(&local),
+            &input.excluded_children,
+            mappings.policy,
+        ),
     };
     if let Some(live) = live {
         live.record(input, Path::new(&local), current.as_ref())?;
     }
+    Ok(report_input(input, current, report))
+}
+
+fn report_input(
+    input: &provenance::Input,
+    current: Result<crate::fingerprint::ContentObservation>,
+    report: &mut Report,
+) -> bool {
     match current {
-        Ok(current) if current.kind == input.kind && current.hash == input.hash => Ok(false),
-        Ok(_) => {
-            report.reason("input_changed", Some(input.path.clone()));
-            Ok(true)
+        Ok(current) if current.kind == input.kind && current.hash == input.hash => false,
+        Ok(current) => {
+            let code = if current.kind == crate::fingerprint::InputKind::Missing {
+                "input_missing"
+            } else {
+                "input_changed"
+            };
+            report.reason(code, Some(input.path.clone()));
+            true
         }
-        Err(_) => {
-            report.reason("unreadable_input", Some(input.path.clone()));
-            Ok(false)
+        Err(error) => {
+            report.reasons.push(Reason::failure(
+                "unreadable_input",
+                Some(input.path.clone()),
+                "Read required analysis input",
+                &error,
+            ));
+            false
         }
     }
 }

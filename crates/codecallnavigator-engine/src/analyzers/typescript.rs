@@ -72,6 +72,13 @@ fn validate_capabilities(versions: &serde_json::Value) -> Result<()> {
     );
     ensure!(
         versions
+            .get("input_policy")
+            .and_then(|value| value.as_str())
+            == Some("scoped_v1"),
+        "TypeScript adapter lacks scoped input policy; rebuild matching analyzer resources"
+    );
+    ensure!(
+        versions
             .get("boundary_rules")
             .and_then(|value| value.as_str())
             == Some("1"),

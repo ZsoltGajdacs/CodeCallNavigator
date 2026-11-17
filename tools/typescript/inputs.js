@@ -14,6 +14,9 @@ function includeRoot(config, pattern) {
 function excludedOutput(directory, outputs) {
   return outputs.some(output=>directory === output || directory.startsWith(`${output}${path.sep}`));
 }
+function watchableDirectory(entry) {
+  return entry.isDirectory() && !entry.name.startsWith('.') && !OMITTED.has(entry.name);
+}
 function descendants(directory, outputs, result) {
   if (!fs.existsSync(directory)) return;
   if (!fs.statSync(directory).isDirectory()) return;
@@ -21,7 +24,7 @@ function descendants(directory, outputs, result) {
   if (result.has(directory) || excludedOutput(directory,outputs)) return;
   result.add(directory);
   for (const entry of fs.readdirSync(directory,{withFileTypes:true})) {
-    if (!entry.isDirectory() || OMITTED.has(entry.name)) continue;
+    if (!watchableDirectory(entry)) continue;
     descendants(path.join(directory,entry.name),outputs,result);
   }
 }
@@ -57,7 +60,7 @@ function outputRoots(projects) {
 }
 function metadata(context, inputs) {
   const {ts,projects,owners,programs} = context;
-  const versions = {typescript:ts.version,node:process.versions.node,adapter:'7',react_rules:'1',next_rules:'1',boundary_rules:'1'};
+  const versions = {typescript:ts.version,node:process.versions.node,adapter:'7',input_policy:'scoped_v1',react_rules:'1',next_rules:'1',boundary_rules:'1'};
   for (const {config} of projects.values()) {
     projectInputs(config,inputs);
     for(const file of configurationFiles(config)) inputs.add(file);

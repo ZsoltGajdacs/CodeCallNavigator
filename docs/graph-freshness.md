@@ -49,3 +49,15 @@ guarantee for every project.
 
 See the [CLI observation and refresh contract](cli-queries.md#saved-input-freshness-observations)
 and [MCP freshness tool](mcp.md#responses-refresh-and-cancellation).
+
+## Input scanning policy and recovery
+
+Broad scans skip dot folders and symlinks; explicitly required build/compiler
+inputs remain tracked. Older graphs need one manual **Refresh** before automatic
+refresh can use the new policy. The previous graph is preserved on failure.
+
+When required inputs cannot be observed, open freshness details for paths, causes,
+and recovery instructions, or use **Copy details**. **Retry freshness** checks
+inputs again; it does not rebuild the graph. See the
+[CLI input policy and recovery contract](cli-queries.md#input-scanning-policy-and-recovery)
+for compatibility and complete-report instructions.

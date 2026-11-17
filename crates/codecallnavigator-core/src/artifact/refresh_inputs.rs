@@ -131,7 +131,11 @@ fn directory_override(
         return Ok(None);
     }
     let local = PathBuf::from(paths.local(&input.path)?);
-    let current = fingerprint::observe_content(&local, &input.excluded_children)?;
+    let current = fingerprint::observe_content_with_policy(
+        &local,
+        &input.excluded_children,
+        crate::fingerprint::InputPolicy::ScopedV1,
+    )?;
     ensure!(
         current.kind == input.kind && current.hash == input.hash,
         "Input membership changed before refresh policy capture"

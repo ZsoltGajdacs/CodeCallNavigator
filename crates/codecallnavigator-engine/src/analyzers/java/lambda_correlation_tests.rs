@@ -230,6 +230,7 @@ fn binding_keeps_complete_native_nodes_and_edges_unchanged_for_legacy_and_v8() {
         label: "fixture".into(),
     };
     let source_set = super::build::JavaSourceSet {
+        input_policy: "scoped_v1".into(),
         project: "fixture".into(),
         application: None,
         source_set: "main".into(),

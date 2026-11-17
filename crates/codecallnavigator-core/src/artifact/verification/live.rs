@@ -1,7 +1,7 @@
 //! Current recorded inputs plus recursive file contents, separate from certification.
 use super::{Paths, Reason, provenance};
-use crate::fingerprint::{self, ContentObservation, InputKind};
-use anyhow::{Context, Result, ensure};
+use crate::fingerprint::{self, ContentObservation, InputKind, InputPolicy};
+use anyhow::{Result, ensure};
 use std::{
     collections::{BTreeMap, BTreeSet},
     fs,
@@ -75,13 +75,20 @@ pub(super) struct Inputs<'a> {
     complete: bool,
     reasons: Vec<Reason>,
     ignored_outputs: Vec<PathBuf>,
+    policy: InputPolicy,
 }
 
 impl<'a> Inputs<'a> {
-    pub fn excluding(paths: &'a Paths, cancel: &'a AtomicBool, outputs: &[PathBuf]) -> Self {
+    pub fn excluding(
+        paths: &'a Paths,
+        cancel: &'a AtomicBool,
+        outputs: &[PathBuf],
+        policy: InputPolicy,
+    ) -> Self {
         Self {
             paths,
             cancel,
+            policy,
             values: BTreeMap::new(),
             scopes: BTreeSet::new(),
             scope_paths: BTreeSet::new(),
@@ -92,7 +99,12 @@ impl<'a> Inputs<'a> {
     }
 
     pub fn observe(&self, path: &Path, excluded: &[String]) -> Result<ContentObservation> {
-        fingerprint::observe_content_cancellable(path, excluded, self.cancel)
+        fingerprint::observe_content_cancellable_with_policy(
+            path,
+            excluded,
+            self.cancel,
+            self.policy,
+        )
     }
 
     pub fn check(&self) -> Result<()> {
@@ -191,10 +203,10 @@ impl<'a> Inputs<'a> {
 
     fn issue(&mut self, code: &str, local: &Path) {
         self.complete = false;
-        self.reasons.push(Reason {
-            code: code.into(),
-            path: self.paths.portable(&local.to_string_lossy()).ok(),
-        });
+        self.reasons.push(Reason::new(
+            code,
+            self.paths.portable(&local.to_string_lossy()).ok(),
+        ));
     }
 
     pub fn finish(mut self) -> Result<Revision> {
@@ -202,9 +214,28 @@ impl<'a> Inputs<'a> {
         for traversal in traversals(&self.scopes) {
             let mut traversal_outputs = traversal.outputs.clone();
             traversal_outputs.extend_from_slice(&self.ignored_outputs);
-            let paths =
-                fingerprint::observation_paths(&traversal.roots, &traversal_outputs, self.cancel)
-                    .context("Cannot reconcile observed input scopes")?;
+            let paths = match fingerprint::observation_paths_with_policy(
+                &traversal.roots,
+                &traversal_outputs,
+                self.cancel,
+                self.policy,
+            ) {
+                Ok(paths) => paths,
+                Err(error) => {
+                    self.check()?;
+                    self.complete = false;
+                    self.reasons.push(Reason::failure(
+                        "unreadable_scope",
+                        traversal
+                            .roots
+                            .first()
+                            .and_then(|root| self.paths.portable(&root.to_string_lossy()).ok()),
+                        "Traverse required input scope",
+                        &error,
+                    ));
+                    continue;
+                }
+            };
             for path in paths {
                 self.observe_path(&path, &traversal.outputs)?;
             }

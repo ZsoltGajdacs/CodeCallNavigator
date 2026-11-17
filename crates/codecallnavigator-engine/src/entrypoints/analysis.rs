@@ -113,9 +113,11 @@ pub fn analyze_with_linked_roots(
     targets.dedup_by(|a, b| a.identity() == b.identity());
     let (boundaries, boundary_inputs) =
         codecallnavigator_core::boundary::Configuration::load(&project, &targets)?;
+    let application_inputs = application_inputs(&project)?;
     let selection = targets.clone();
     let mut graph = native(targets, progress)?;
     graph.fingerprints.extend(boundary_inputs);
+    graph.fingerprints.extend(application_inputs);
     let cache = super::inference::resolve(&project, &mut graph, &boundaries)?;
     let roots = if options.infer_linked {
         super::linked_roots::infer(&graph, &project, roots)?
@@ -158,4 +160,16 @@ pub fn analyze_with_linked_roots(
         engine_versions: graph.engine_versions,
         metrics: serde_json::to_value(metrics.report())?,
     })
+}
+
+fn application_inputs(
+    project: &Path,
+) -> Result<Vec<codecallnavigator_core::model::FileFingerprint>> {
+    codecallnavigator_core::fingerprint::capture_excluding(
+        [
+            project.join(".codecallnavigator/layers.yml"),
+            project.join(".interactive-review/layers.yml"),
+        ],
+        &[],
+    )
 }

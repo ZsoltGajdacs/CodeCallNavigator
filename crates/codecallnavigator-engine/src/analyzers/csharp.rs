@@ -22,6 +22,24 @@ use std::{
     sync::atomic::AtomicBool,
 };
 
+/// Compiler inputs retain hidden/linked paths, while directory descendants use
+/// the shared broad-scan exclusions.
+fn compiler_input_snapshot(
+    paths: &[PathBuf],
+    root: &Path,
+) -> Result<Vec<crate::model::FileFingerprint>> {
+    let mut roots = paths
+        .iter()
+        .cloned()
+        .map(crate::fingerprint::ScanRoot::Required)
+        .collect::<Vec<_>>();
+    roots.push(crate::fingerprint::ScanRoot::Required(root.into()));
+    crate::fingerprint::capture_excluding(
+        crate::fingerprint::collect_inputs(&roots, &[], true)?,
+        &[],
+    )
+}
+
 #[derive(Deserialize)]
 struct AtlasMap {
     schema: String,
@@ -165,13 +183,12 @@ pub(super) fn analyze_csharp(build: &BuildTarget, context: &AnalysisJob<'_>) -> 
     }
     let root = build.path.parent().context("Build has no parent folder")?;
     let before_metadata = source_snapshot(&[root.into()])?;
-    let mut sources = {
+    let sources = {
         let _timer = crate::metrics::stage("csharp.metadata");
         csharp_sources(build, &dotnet, job, cancel)?
     };
     ensure_unchanged(&before_metadata)?;
-    sources.inputs.push(root.into());
-    let before_engine = source_snapshot(&sources.inputs)?;
+    let before_engine = compiler_input_snapshot(&sources.inputs, root)?;
     let output = job.join("callatlas.json");
     progress(format!("Reading compiler call graph for {}…", build.label));
     {

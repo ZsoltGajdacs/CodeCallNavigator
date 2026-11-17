@@ -119,12 +119,32 @@ fn missing_inputs_and_linked_roots_have_explicit_revision_coverage() {
         &[],
     );
     let initial = inspect(&artifact, &roots);
+    assert!(initial.complete);
+    assert_unmapped_environment_preserves_observed_scope_coverage(&artifact, &roots);
     fs::write(&missing, "export const created = 1;").unwrap();
     assert_ne!(
         initial.input_revision,
         inspect(&artifact, &roots).input_revision
     );
     fs::remove_file(missing).unwrap();
+    let renamed = shared.join("renamed.ts");
+    fs::rename(&source, &renamed).unwrap();
+    let renamed_observation = inspect(&artifact, &roots);
+    assert!(renamed_observation.complete);
+    assert_eq!(renamed_observation.report.input_status, InputStatus::Stale);
+    assert_ne!(initial.input_revision, renamed_observation.input_revision);
+    fs::remove_file(&renamed).unwrap();
+    let removed = inspect(&artifact, &roots);
+    assert!(removed.complete);
+    assert_eq!(removed.report.input_status, InputStatus::Stale);
+    assert_ne!(renamed_observation.input_revision, removed.input_revision);
+    assert!(
+        removed
+            .report
+            .reasons
+            .iter()
+            .any(|reason| reason.code == "input_missing" && !reason.is_blocker())
+    );
     fs::rename(&shared, base.path().join("unavailable")).unwrap();
     let unavailable = inspect(&artifact, &roots);
     assert!(!unavailable.complete);
@@ -138,9 +158,28 @@ fn missing_inputs_and_linked_roots_have_explicit_revision_coverage() {
     );
 }
 
+fn assert_unmapped_environment_preserves_observed_scope_coverage(
+    artifact: &Artifact,
+    roots: &Roots,
+) {
+    let mut unmapped = artifact.clone();
+    unmapped.graph["analysis"]["limitations"] =
+        serde_json::json!([{"code":"unmapped_input","count":3}]);
+    let observed = inspect(&unmapped, &roots);
+    assert!(observed.complete);
+    assert_eq!(observed.report.input_status, InputStatus::Unverifiable);
+    assert!(
+        observed
+            .report
+            .reasons
+            .iter()
+            .any(|reason| reason.describe().contains("3 required"))
+    );
+}
+
 #[cfg(unix)]
 #[test]
-fn new_file_symlink_bytes_are_observed_and_nested_directory_links_are_limited() {
+fn incidental_symlinks_are_ignored_and_required_link_bytes_are_observed() {
     use std::os::unix::fs::symlink;
     let root = tempfile::tempdir().unwrap();
     let external = tempfile::tempdir().unwrap();
@@ -148,47 +187,81 @@ fn new_file_symlink_bytes_are_observed_and_nested_directory_links_are_limited() 
     fs::write(&target, "export const value = 1;").unwrap();
     let roots = [("repo".into(), root.path().into())];
     let artifact = artifact_for(&roots, vec![root.path().into()], &[]);
-    symlink(&target, root.path().join("linked.ts")).unwrap();
-    let before = inspect(&artifact, &roots);
+    let initial = inspect(&artifact, &roots);
+    let alias = root.path().join("linked.ts");
+    symlink(&target, &alias).unwrap();
+    let ignored = inspect(&artifact, &roots);
+    assert_eq!(initial.input_revision, ignored.input_revision);
+    let required = artifact_for(&roots, vec![root.path().into(), alias], &[]);
+    let before = inspect(&required, &roots);
     fs::write(&target, "export const value = 2;").unwrap();
-    let after = inspect(&artifact, &roots);
+    let after = inspect(&required, &roots);
     assert_ne!(before.input_revision, after.input_revision);
     assert!(after.complete);
     symlink(external.path(), root.path().join("directory-link")).unwrap();
-    let limited = inspect(&artifact, &roots);
-    assert!(!limited.complete);
+    let ignored = inspect(&artifact, &roots);
+    assert!(ignored.complete);
+    assert_eq!(initial.input_revision, ignored.input_revision);
+    fs::remove_file(&target).unwrap();
+    let broken_required = inspect(&required, &roots);
+    assert!(!broken_required.complete);
     assert!(
-        limited
+        broken_required
             .report
             .reasons
             .iter()
-            .any(|reason| reason.code == "unfollowed_directory_link")
+            .any(|reason| reason.code == "unreadable_input" && reason.is_blocker())
     );
 }
 
 #[cfg(unix)]
 #[test]
-fn broken_link_retargets_change_revision_but_plain_missing_inputs_remain_complete() {
+fn legacy_broken_link_retargets_change_revision_but_plain_missing_inputs_remain_complete() {
     use std::os::unix::fs::symlink;
     let root = tempfile::tempdir().unwrap();
     let alias = root.path().join("alias.ts");
     let missing = root.path().join("plain-missing.ts");
     symlink("absent-one.ts", &alias).unwrap();
     let roots = [("repo".into(), root.path().into())];
-    let artifact = artifact_for(
-        &roots,
-        vec![root.path().into(), alias.clone(), missing],
-        &[],
-    );
+    // Persist a genuine legacy inventory: those graphs retain their previous
+    // link semantics even though a new analysis rejects broken required links.
+    let captured = [root.path().to_path_buf(), alias.clone(), missing]
+        .into_iter()
+        .map(|path| {
+            let current = fingerprint::observe_content_with_policy(
+                &path,
+                &[],
+                fingerprint::InputPolicy::Legacy,
+            )
+            .unwrap();
+            crate::model::FileFingerprint {
+                path: path.to_string_lossy().into_owned(),
+                hash: current.hash,
+                missing: current.kind == fingerprint::InputKind::Missing,
+                observation_policy: fingerprint::InputPolicy::Legacy,
+                ..Default::default()
+            }
+        })
+        .collect::<Vec<_>>();
+    let mut artifact = artifact::canonical(&GraphData::default(), &roots).unwrap();
+    artifact.graph["analysis"] =
+        serde_json::to_value(provenance::build(&captured, &[], "{}", &roots).unwrap()).unwrap();
     let before = inspect(&artifact, &roots);
     assert!(before.complete);
-    assert_eq!(before.report.input_status, InputStatus::Match);
+    assert!(
+        before
+            .report
+            .reasons
+            .iter()
+            .any(|reason| reason.code == "legacy_input_policy")
+    );
+    assert_eq!(before.report.input_status, InputStatus::Unverifiable);
     fs::remove_file(&alias).unwrap();
     symlink("absent-two.ts", &alias).unwrap();
     let after = inspect(&artifact, &roots);
     assert_ne!(before.input_revision, after.input_revision);
     assert!(after.complete);
-    assert_eq!(after.report.input_status, InputStatus::Match);
+    assert_eq!(after.report.input_status, InputStatus::Unverifiable);
 }
 
 #[test]
@@ -443,4 +516,62 @@ fn shared_traversal_keeps_explicit_generated_and_symlink_directory_roots() {
     let alias_change = inspect(&artifact, &roots);
     assert!(alias_change.complete);
     assert_ne!(generated_change.input_revision, alias_change.input_revision);
+}
+
+// Permission failures require the operating system boundary; a fake read error
+// would not prove that real source observation preserves the path and OS cause.
+#[cfg(unix)]
+#[test]
+fn permission_denied_required_source_reports_actionable_incomplete_coverage() {
+    use std::os::unix::fs::PermissionsExt;
+    let root = tempfile::tempdir().unwrap();
+    let source = root.path().join("Required.java");
+    fs::write(&source, "class Required {}").unwrap();
+    let roots = [("repo".into(), root.path().into())];
+    let artifact = artifact_for(&roots, vec![source.clone()], &[]);
+    let original_permissions = fs::metadata(&source).unwrap().permissions();
+    fs::set_permissions(&source, fs::Permissions::from_mode(0)).unwrap();
+    let permission_denied = fs::File::open(&source)
+        .is_err_and(|error| error.kind() == std::io::ErrorKind::PermissionDenied);
+    let observed = observe_artifact(
+        &artifact,
+        "saved-generation",
+        &roots,
+        &AtomicBool::new(false),
+    );
+    // Always restore before evaluating either the fixture prerequisite or results.
+    fs::set_permissions(&source, original_permissions).unwrap();
+    assert!(
+        permission_denied,
+        "Unavailable fixture prerequisite: this user bypasses chmod-denied file reads; run permission coverage as an unprivileged user"
+    );
+    let observed = observed.unwrap();
+    assert!(!observed.complete);
+    assert_eq!(observed.report.input_status, InputStatus::Unverifiable);
+    let reason = observed
+        .report
+        .reasons
+        .iter()
+        .find(|reason| {
+            reason.code == "unreadable_input"
+                && reason.path.as_deref() == Some("@repo/Required.java")
+        })
+        .expect("Read failure retains the exact portable source path");
+    assert!(
+        reason
+            .operation
+            .as_deref()
+            .is_some_and(|operation| operation.contains("Read"))
+    );
+    let detail = reason
+        .detail
+        .as_deref()
+        .expect("Read failure retains OS detail");
+    assert!(
+        detail.contains("Permission denied") || detail.contains("os error 13"),
+        "Unexpected OS cause: {detail}"
+    );
+    assert!(reason.recovery.as_deref().is_some_and(
+        |recovery| recovery.contains("permissions") && recovery.contains("Retry freshness")
+    ));
 }
