@@ -423,7 +423,9 @@ class VerificationPlans(unittest.TestCase):
             (root / "fixtures/gradle/gradlew").write_text("#!/bin/sh\n")
             environment = {"CODECALLNAVIGATOR_TS_NODE_MODULES": str(modules), "CODECALLNAVIGATOR_RECURRING_BILLING": str(private)}
             self.assertEqual(prerequisites.dependencies(root, environment), [])
-            (modules / "typescript/package.json").write_text('{"version": "5.9.0"}')
+            (modules / "typescript/package.json").write_text('{"version": "5.9.3"}')
+            self.assertEqual(prerequisites.dependencies(root, environment), [])
+            (modules / "typescript/package.json").write_text('{"version": "5.8.3"}')
             self.assertTrue(any("typescript" in error for error in prerequisites.dependencies(root, environment)))
 
     def test_full_preflight_reports_independent_missing_inputs(self):

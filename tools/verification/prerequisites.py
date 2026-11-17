@@ -13,6 +13,7 @@ import sys
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from verification.profile import validate
+from verification.typescript_compatibility import compiler_problems
 
 
 def checked(check):
@@ -43,8 +44,8 @@ def typescript_problems(environment):
     if not modules:
         return ["Set CODECALLNAVIGATOR_TS_NODE_MODULES to installed TypeScript/React/Next node_modules"]
     modules = Path(modules).resolve()
-    errors = []
-    for package, expected in [("typescript", "6.0."), ("react", "19."), ("next", "16.")]:
+    errors = checked(lambda: compiler_problems(modules))
+    for package, expected in [("react", "19."), ("next", "16.")]:
         errors.extend(checked(lambda: package_version(modules, package, expected)))
     typescript = environment.get("CODECALLNAVIGATOR_TEST_TYPESCRIPT_ROOT")
     if typescript and Path(typescript).resolve() != modules / "typescript":

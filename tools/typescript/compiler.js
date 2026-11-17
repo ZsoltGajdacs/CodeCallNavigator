@@ -3,6 +3,7 @@ const path=require('node:path');
 const fs=require('node:fs');
 const {createRequire}=require('node:module');
 const {canonical}=require('./paths.js');
+const {supportsVersion,supportedVersions,loadCompatibility}=require('./compatibility.js');
 function failDiagnostics(ts, diagnostics) {
   const errors = diagnostics.filter(d => d.category === ts.DiagnosticCategory.Error);
   if (!errors.length) return;
@@ -10,14 +11,16 @@ function failDiagnostics(ts, diagnostics) {
 }
 function toolchain(config, observations) {
   if (Number(process.versions.node.split('.')[0]) < 24) throw new Error('TypeScript analysis requires Node 24+');
+  const {policyFile,supportedMinors}=loadCompatibility(observations);
+  const expected=supportedVersions(supportedMinors);
   const localRequire = createRequire(path.join(path.dirname(config), '__codecallnavigator__.js'));
   let entry;
   try { entry = localRequire.resolve('typescript'); }
-  catch { throw new Error(`Install project TypeScript 6.0.x dependencies before analyzing ${config}`); }
+  catch { throw new Error(`Install project TypeScript ${expected} dependencies before analyzing ${config}`); }
   observations.observe(`compiler:${entry}`,()=>fs.readFileSync(entry,'utf8'));
   const ts = localRequire(entry);
-  if (!/^6\.0\./.test(ts.version)) throw new Error(`Unsupported TypeScript ${ts.version}; expected project-installed 6.0.x`);
-  return { ts, entry: canonical(entry), localRequire };
+  if (!supportsVersion(ts.version,supportedMinors)) throw new Error(`Unsupported TypeScript ${ts.version}; expected project-installed ${expected}`);
+  return { ts, entry: canonical(entry), localRequire, policyFile };
 }
 function trackingSystem(ts, inputs, observations) {
   const track = file => {

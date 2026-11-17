@@ -60,7 +60,7 @@ You can also open `dist/CodeCallNavigator.app` directly. This local build is ad 
 signed, not notarized. The packaged minimum macOS version is 27.0; broader OS
 certification and Intel support are deferred.
 
-Installed toolchains remain prerequisites: Node 24+ and project-installed TypeScript 6.0.x for TypeScript analysis, .NET 11 to run CallAtlas, the SDKs and
+Installed toolchains remain prerequisites: Node 24+ and project-installed TypeScript 5.9.x or 6.0.x for TypeScript analysis, .NET 11 to run CallAtlas, the SDKs and
 reference packs needed by your .NET projects, and JDK 25 to run the Java analyzer.
 Bootstrap applies the recorded CallAtlas patch targeting both its CLI and core
 projects at `net11.0`, then uses the standard build command. Upstream changes are
@@ -311,7 +311,7 @@ and builds without debug lines use readable contextual fallbacks. Original bytec
 signatures remain available in the inspector and search. Refresh existing workspaces
 to rebuild cached graphs with these labels.
 
-TypeScript uses the selected project's installed TypeScript 6.0.x compiler with
+TypeScript uses the selected project's installed TypeScript 5.9.x or 6.0.x compiler with
 Node 24+. The bundled bridge uses public compiler APIs, configured source ownership
 and source redirects for project references; no JavaScript is emitted. Install
 project dependencies beforehand. CodeCallNavigator does not run npm scripts, compiler

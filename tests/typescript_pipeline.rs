@@ -1,5 +1,5 @@
 //! Compiler-backed acceptance. No dependency installation or project build is performed.
-//! Set CODECALLNAVIGATOR_TEST_TYPESCRIPT_ROOT to an installed TypeScript 6.0.x package.
+//! Set CODECALLNAVIGATOR_TEST_TYPESCRIPT_ROOT to an installed TypeScript 5.9.x or 6.0.x package.
 use codecallnavigator_engine::{
     analyzers::{AnalyzerRuntime, analyze},
     discovery::{BuildTarget, target_from_file},
@@ -27,7 +27,9 @@ fn fixture() -> tempfile::TempDir {
                 .join("../PacificFateMapEditor/node_modules/typescript")
         })
         .canonicalize()
-        .expect("Set CODECALLNAVIGATOR_TEST_TYPESCRIPT_ROOT to installed TypeScript 6.0.x");
+        .expect(
+            "Set CODECALLNAVIGATOR_TEST_TYPESCRIPT_ROOT to installed TypeScript 5.9.x or 6.0.x",
+        );
     fs::create_dir(temporary.path().join("node_modules")).unwrap();
     symlink(engine, temporary.path().join("node_modules/typescript")).unwrap();
     write(
@@ -64,7 +66,7 @@ fn has_edge(graph: &GraphData, from: &str, to: &str) -> bool {
 }
 
 #[test]
-#[ignore = "requires Node 24+ and installed TypeScript 6.0.x"]
+#[ignore = "requires Node 24+ and installed TypeScript 5.9.x or 6.0.x"]
 fn real_compiler_keeps_callback_calls_on_the_callback_and_roundtrips_provenance() {
     let fixture = fixture();
     write(
@@ -83,7 +85,15 @@ fn real_compiler_keeps_callback_calls_on_the_callback_and_roundtrips_provenance(
     assert!(graph.nodes.iter().any(|node| node.label == "disconnected"));
     assert!(graph.edges.iter().all(|edge| !edge.provenance.is_empty()
         && edge.classification().kind == codecallnavigator::model::RelationshipKind::Call));
-    assert!(graph.engine_versions.contains("6.0."));
+    let compiler: serde_json::Value = serde_json::from_slice(
+        &fs::read(fixture.path().join("node_modules/typescript/package.json")).unwrap(),
+    )
+    .unwrap();
+    assert!(
+        graph
+            .engine_versions
+            .contains(compiler["version"].as_str().unwrap())
+    );
     let facts = graph.architecture.as_ref().unwrap();
     let source = facts
         .files
@@ -106,7 +116,7 @@ fn real_compiler_keeps_callback_calls_on_the_callback_and_roundtrips_provenance(
 }
 
 #[test]
-#[ignore = "requires Node 24+ and installed TypeScript 6.0.x"]
+#[ignore = "requires Node 24+ and installed TypeScript 5.9.x or 6.0.x"]
 fn source_project_references_need_no_outputs_and_duplicate_selections_share_symbols() {
     let fixture = fixture();
     write(
@@ -156,7 +166,7 @@ fn source_project_references_need_no_outputs_and_duplicate_selections_share_symb
 }
 
 #[test]
-#[ignore = "requires Node 24+ and installed TypeScript 6.0.x"]
+#[ignore = "requires Node 24+ and installed TypeScript 5.9.x or 6.0.x"]
 fn overlapping_configs_are_rejected_before_graph_publication() {
     let fixture = fixture();
     write(
@@ -181,7 +191,7 @@ fn overlapping_configs_are_rejected_before_graph_publication() {
 }
 
 #[test]
-#[ignore = "requires Node 24+ and installed TypeScript 6.0.x"]
+#[ignore = "requires Node 24+ and installed TypeScript 5.9.x or 6.0.x"]
 fn type_errors_and_cancellation_preserve_the_previous_generation() {
     let fixture = fixture();
     write(
@@ -227,7 +237,7 @@ fn type_errors_and_cancellation_preserve_the_previous_generation() {
 }
 
 #[test]
-#[ignore = "requires built CLI, Node24 and installed TypeScript6"]
+#[ignore = "requires built CLI, Node24 and installed TypeScript 5.9.x or 6.0.x"]
 fn root_cli_retains_a_profiling_cache_for_a_fresh_metadata_only_store() {
     let fixture = fixture();
     write(
@@ -358,7 +368,7 @@ fn query_cli_snapshot(context: &serde_json::Value) -> serde_json::Value {
 }
 
 #[test]
-#[ignore = "requires Node 24+ and installed TypeScript 6.0.x"]
+#[ignore = "requires Node 24+ and installed TypeScript 5.9.x or 6.0.x"]
 fn consumed_dependency_types_and_new_source_files_mark_graphs_stale() {
     let fixture = fixture();
     write(
@@ -403,7 +413,7 @@ fn consumed_dependency_types_and_new_source_files_mark_graphs_stale() {
 }
 
 #[test]
-#[ignore = "requires Node 24+ and installed TypeScript 6.0.x"]
+#[ignore = "requires Node 24+ and installed TypeScript 5.9.x or 6.0.x"]
 fn framework_entries_and_render_edges_survive_the_production_pipeline() {
     let fixture = fixture();
     write(
@@ -477,13 +487,26 @@ fn assert_react_render(graph: &GraphData, render: &codecallnavigator::model::Edg
 }
 
 #[test]
-#[ignore = "requires Node 24+ and installed TypeScript 6.0.x"]
+#[ignore = "requires Node 24+ and installed TypeScript 5.9.x or 6.0.x"]
 fn packaged_resource_layout_runs_without_development_adapter_fallback() {
     let fixture = fixture();
     write(
         fixture.path(),
         "src/main.ts",
         "export function main() { return 1; }\n",
+    );
+    // Own the compiler copy: mutating shared installed dependencies would corrupt other runs.
+    let compiler = fixture.path().join("node_modules/typescript");
+    let installed = fs::canonicalize(&compiler).unwrap();
+    fs::remove_file(&compiler).unwrap();
+    assert!(
+        std::process::Command::new("cp")
+            .arg("-R")
+            .arg(&installed)
+            .arg(&compiler)
+            .status()
+            .unwrap()
+            .success()
     );
     let bundle = tempfile::tempdir().unwrap();
     let resources = bundle
@@ -508,10 +531,29 @@ fn packaged_resource_layout_runs_without_development_adapter_fallback() {
     )
     .unwrap();
     assert!(graph.nodes.iter().any(|node| node.label == "main"));
+    assert!(!fingerprint::is_stale(&graph.fingerprints).unwrap());
+    // Shipped policy changes must invalidate a published graph, even if eligibility is unchanged.
+    let entry = compiler.join("lib/typescript.js");
+    let original = fs::read(&entry).unwrap();
+    let modified = fs::metadata(&entry).unwrap().modified().unwrap();
+    let mut changed = original.clone();
+    changed.extend_from_slice(b"\n// compiler update\n");
+    fs::write(&entry, changed).unwrap();
+    assert!(fingerprint::is_stale(&graph.fingerprints).unwrap());
+    fs::write(&entry, original).unwrap();
+    fs::File::open(&entry)
+        .unwrap()
+        .set_times(fs::FileTimes::new().set_modified(modified))
+        .unwrap();
+    assert!(!fingerprint::is_stale(&graph.fingerprints).unwrap());
+    let policy = destination.join("compatibility.json");
+    let contents = fs::read_to_string(&policy).unwrap();
+    fs::write(&policy, format!("{contents}\n")).unwrap();
+    assert!(fingerprint::is_stale(&graph.fingerprints).unwrap());
 }
 
 #[test]
-#[ignore = "requires Node 24+ and installed TypeScript 6.0.x"]
+#[ignore = "requires Node 24+ and installed TypeScript 5.9.x or 6.0.x"]
 fn source_method_policy_applies_before_storage_search_and_traversal() {
     let fixture = fixture();
     write(
@@ -583,7 +625,7 @@ export function start() { toString(); new Base(); new Implicit(); new Other().to
 }
 
 #[test]
-#[ignore = "requires Node 24+ and installed TypeScript 6.0.x"]
+#[ignore = "requires Node 24+ and installed TypeScript 5.9.x or 6.0.x"]
 fn multiple_selected_configs_bound_live_compiler_workers_and_preserve_graphs() {
     use std::{sync::atomic::Ordering, thread, time::Duration};
     let fixture = fixture();

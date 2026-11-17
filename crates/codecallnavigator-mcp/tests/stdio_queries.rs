@@ -115,7 +115,7 @@ fn failed_refresh_preserves_graph(client: &mut Client, root: &Path) {
 }
 
 #[test]
-#[ignore = "requires built real CLI, Node24 and pinned TypeScript6 modules"]
+#[ignore = "requires built real CLI, Node24 and pinned TypeScript 5.9.x or 6.0.x modules"]
 fn real_stdio_refresh_queries_and_errors_preserve_the_cli_contract() {
     let directory = tempfile::tempdir().unwrap();
     let root = directory.path().canonicalize().unwrap();

@@ -165,7 +165,7 @@ fn assert_unmapped_environment_preserves_observed_scope_coverage(
     let mut unmapped = artifact.clone();
     unmapped.graph["analysis"]["limitations"] =
         serde_json::json!([{"code":"unmapped_input","count":3}]);
-    let observed = inspect(&unmapped, &roots);
+    let observed = inspect(&unmapped, roots);
     assert!(observed.complete);
     assert_eq!(observed.report.input_status, InputStatus::Unverifiable);
     assert!(
@@ -530,7 +530,7 @@ fn permission_denied_required_source_reports_actionable_incomplete_coverage() {
     let roots = [("repo".into(), root.path().into())];
     let artifact = artifact_for(&roots, vec![source.clone()], &[]);
     let original_permissions = fs::metadata(&source).unwrap().permissions();
-    fs::set_permissions(&source, fs::Permissions::from_mode(0)).unwrap();
+    fs::set_permissions(&source, fs::Permissions::from_mode(0o0)).unwrap();
     let permission_denied = fs::File::open(&source)
         .is_err_and(|error| error.kind() == std::io::ErrorKind::PermissionDenied);
     let observed = observe_artifact(

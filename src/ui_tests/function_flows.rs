@@ -188,7 +188,22 @@ fn flow_header_respects_native_titlebar_controls_at_minimum_size() {
 fn flow_source_and_chart_remain_inside_minimum_window() {
     let mut runtime = runtime();
     runtime.set_viewport((1050.0, 680.0), 1.0);
-    runtime.frame(1.0 / 60.0);
+    install_long_notice(&mut runtime);
+    for dark in [false, true] {
+        runtime.set_system_dark(dark);
+        settle_notice_layout(&mut runtime);
+        assert_minimum_flow_controls(&runtime);
+        assert_notice_content_reachable(&mut runtime);
+    }
+}
+
+fn settle_notice_layout(runtime: &mut Runtime<State>) {
+    for _ in 0..60 {
+        runtime.frame(1.0 / 60.0);
+    }
+}
+
+fn assert_minimum_flow_controls(runtime: &Runtime<State>) {
     for key in ["flow-close", "flow-canvas", "flow-source-pane", "flow-fit"] {
         let element = runtime
             .elements()
@@ -200,11 +215,76 @@ fn flow_source_and_chart_remain_inside_minimum_window() {
             "{key}: {:?}",
             element.rect
         );
+        let minimum_height = if key == "flow-canvas" { 150.0 } else { 15.0 };
         assert!(
-            element.visible[2] > 20.0 && element.visible[3] > 15.0,
-            "{key} is clipped"
+            element.visible[2] > 20.0 && element.visible[3] > minimum_height,
+            "{key} is clipped: {:?}",
+            element.visible
         );
     }
+}
+
+fn assert_notice_content_reachable(runtime: &mut Runtime<State>) {
+    let notice = runtime
+        .elements()
+        .into_iter()
+        .find(|e| e.key.as_deref() == Some("flow-notice-scroll"))
+        .unwrap();
+    assert!(notice.rect[3] <= 180.5);
+    runtime.update(|_, tx| tx.scroll_into_view_in("flow-notice-scroll", "freshness-copy-details"));
+    settle_notice_layout(runtime);
+    let action = runtime
+        .elements()
+        .into_iter()
+        .find(|e| e.key.as_deref() == Some("freshness-copy-details"))
+        .unwrap();
+    assert!(
+        action.visible[2] > 20.0 && action.visible[3] > 15.0,
+        "Notice content must remain reachable: {:?}",
+        action.visible
+    );
+}
+
+// This is an explicit presentation state; only real Rune layout is exercised.
+fn install_long_notice(runtime: &mut Runtime<State>) {
+    use crate::engine_client::{Descriptor, QueryContext};
+    use codecallnavigator::{
+        artifact::verification::InputStatus,
+        query::Error,
+        refresh::{Activity, Phase},
+    };
+    runtime.poll = None;
+    runtime.update(|state, _| {
+        let generation = "a".repeat(64);
+        state.generation = Some(generation.clone());
+        let descriptor = Descriptor {
+            project: "/snapshot".into(),
+            generation: Some(generation.clone()),
+            ..Default::default()
+        };
+        let backend = crate::runtime::Runtime {
+            engine: "/unused".into(),
+            resources: "/".into(),
+            dot: "/unused".into(),
+        };
+        state.query_context = Some(QueryContext::new(&backend, descriptor.clone()));
+        state.freshness.automatic.toggle(&descriptor);
+        state.freshness.automatic.activity = Some(Activity {
+            version: 1,
+            runs_started: 0,
+            phase: Phase::Unavailable {
+                error: Error::new(
+                    "selection_unavailable",
+                    "Compiler-output ownership is incomplete; manual refresh is required. "
+                        .repeat(20),
+                ),
+            },
+        });
+        state.freshness.accept(crate::freshness_workspace::fixture(
+            InputStatus::Unverifiable,
+            &generation,
+        ));
+    });
 }
 
 fn assert_source_highlight(runtime: &mut Runtime<State>, selected: usize, unselected: usize) {

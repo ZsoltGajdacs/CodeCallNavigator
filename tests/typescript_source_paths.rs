@@ -162,7 +162,7 @@ impl Snapshot {
 }
 
 #[test]
-#[ignore = "requires prebuilt standalone engine and installed TypeScript6/React/Next dependencies"]
+#[ignore = "requires prebuilt standalone engine and installed TypeScript5.9-or-6.0/React/Next dependencies"]
 fn compiler_source_aliases_match_canonical_spelling_with_named_roots() {
     let fixture = Fixture::new();
     let aliased = fixture.analyze(true);

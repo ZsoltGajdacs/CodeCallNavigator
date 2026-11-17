@@ -343,7 +343,7 @@ fn class_search_does_not_expand_all_member_identities() {
 }
 
 #[test]
-#[ignore = "requires TypeScript 6 compiler and Node 24 installed"]
+#[ignore = "requires TypeScript 5.9.x or 6.0.x compiler and Node 24 installed"]
 fn real_typescript_analysis_is_queryable_without_reanalysis() {
     let root = tempfile::tempdir().unwrap();
     let root = root.path().canonicalize().unwrap();

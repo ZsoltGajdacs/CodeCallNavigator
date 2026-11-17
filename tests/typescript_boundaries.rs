@@ -46,7 +46,7 @@ fn flow_targets(value: &serde_json::Value) -> Vec<serde_json::Value> {
     targets
 }
 #[test]
-#[ignore = "requires installed Node24, TypeScript6, React19 and Next16 fixture dependencies"]
+#[ignore = "requires installed Node24, TypeScript 5.9.x or 6.0.x, React19 and Next16 fixture dependencies"]
 fn next_navigation_and_fetch_agree_with_flow_without_synchronous_call_edges() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR"));
     let fixture = root.join("fixtures/typescript-corpus");

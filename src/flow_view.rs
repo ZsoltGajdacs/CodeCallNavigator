@@ -97,7 +97,17 @@ fn navigation(state: &State, k: &Kit, titlebar_inset: f32) -> El {
 }
 
 fn notice(state: &State, session: &Session, k: &Kit) -> El {
-    let mut content = col().w_full().px(12.0).gap(3.0);
+    let mut content = col()
+        .key("flow-notice-scroll")
+        .w_full()
+        .max_h(180.0)
+        .min_h(0.0)
+        .shrink()
+        .scroll(rune::ScrollSpec {
+            stick_bottom: false,
+        })
+        .px(12.0)
+        .gap(3.0);
     let explanation = "Analyzed source snapshot · source-derived paths; callbacks and exceptions may be conditional";
     if let Some(notice) = crate::view::freshness_notice(state, k) {
         content = content.child(notice);

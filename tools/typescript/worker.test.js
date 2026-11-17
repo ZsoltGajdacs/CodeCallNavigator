@@ -15,7 +15,7 @@ async function waitFor(predicate,process) {
     await delay(10);
   }
 }
-async function fixture(t,source='export function leaf(){return 1;}') {
+async function fixture(t,source='export function leaf(){return 1;}',copyAdapter=false) {
   const temporary=fs.mkdtempSync(path.join(os.tmpdir(),'codecallnavigator-worker-'));
   const root=path.join(temporary,'project'); fs.mkdirSync(root);
   fs.mkdirSync(path.join(root,'src'));
@@ -23,12 +23,14 @@ async function fixture(t,source='export function leaf(){return 1;}') {
   fs.writeFileSync(path.join(root,'tsconfig.json'),JSON.stringify({compilerOptions:{strict:true,skipLibCheck:true,target:'ES2023',module:'esnext',moduleResolution:'bundler',types:[]},include:['src/**/*.ts']}));
   const file=path.join(root,'src/main.ts'); fs.writeFileSync(file,source);
   const metadata=path.join(temporary,'metadata.json'), output=path.join(temporary,'graph.json');
-  const child=spawn(process.execPath,[path.join(__dirname,'analyze.js'),'worker',path.join(root,'tsconfig.json'),metadata],{stdio:['pipe','pipe','pipe']});
+  const adapter=copyAdapter?path.join(temporary,'adapter'):__dirname;
+  if(copyAdapter) fs.cpSync(__dirname,adapter,{recursive:true});
+  const child=spawn(process.execPath,[path.join(adapter,'analyze.js'),'worker',path.join(root,'tsconfig.json'),metadata],{stdio:['pipe','pipe','pipe']});
   let errors=''; child.stderr.on('data',data=>{errors+=data;});
   const exited=new Promise(resolve=>child.on('exit',(code,signal)=>resolve({code,signal})));
   t.after(async()=>{if(child.exitCode===null && child.signalCode===null) {child.kill();await exited;} fs.rmSync(temporary,{recursive:true,force:true});});
   await waitFor(()=>fs.existsSync(metadata),child);
-  return {root,file,output,metadata,child,errors:()=>errors,exited};
+  return {root,file,output,metadata,child,adapter,errors:()=>errors,exited};
 }
 async function analyze(worker) {
   worker.child.stdin.end(JSON.stringify({command:'analyze',output:worker.output})+'\n');
@@ -67,5 +69,17 @@ test('worker rejects invalid requests without graph output',async t=>{
   worker.child.stdin.end('{"command":"other"}\n');
   assert.notEqual((await worker.exited).code,0);
   assert.match(worker.errors(),/Invalid TypeScript worker request/);
+  assert.equal(fs.existsSync(worker.output),false);
+});
+
+// A real retained compiler worker is required to prove policy edits cannot publish output.
+test('worker rejects compatibility policy changes after preparation',async t=>{
+  const worker=await fixture(t,'export function leaf(){return 1;}',true);
+  const policy=path.join(worker.adapter,'compatibility.json');
+  const metadata=JSON.parse(fs.readFileSync(worker.metadata,'utf8'));
+  assert.ok(metadata.inputs.includes(fs.realpathSync(policy)));
+  fs.appendFileSync(policy,'\n');
+  assert.notEqual((await analyze(worker)).code,0);
+  assert.match(worker.errors(),/changed after preparation: compatibility:/);
   assert.equal(fs.existsSync(worker.output),false);
 });

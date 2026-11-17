@@ -67,13 +67,78 @@ fn click(runtime: &mut Runtime<State>, key: &str) {
         settle_revealed_control(runtime);
     }
     reveal_graph_control(runtime, key);
-    let (x, y) = runtime
-        .find(key)
+    let freshness_position = reveal_freshness_control(runtime, key);
+    let (x, y) = freshness_position
+        .or_else(|| runtime.find(key))
         .unwrap_or_else(|| panic!("Missing control {key}"));
     runtime.pointer_down(x, y);
     runtime.pointer_up(x, y);
     runtime.frame(1.0 / 60.0);
     runtime.frame(1.0 / 60.0);
+}
+
+// Freshness details can exceed the dialog or flow-notice viewport.
+// Reveal the action through the same scroll operation a person uses before clicking it.
+fn reveal_freshness_control(runtime: &mut Runtime<State>, key: &str) -> Option<(f32, f32)> {
+    if !key.starts_with("freshness-") {
+        return None;
+    }
+    let container = if runtime.state.ui.overlay == Some(crate::presentation::Overlay::Activity) {
+        "activity-popover-content"
+    } else if runtime.find("flow-notice-scroll").is_some() {
+        "flow-notice-scroll"
+    } else {
+        return None;
+    };
+    // Freshness can change the body while the dialog settles. Keep the reveal
+    // bound to the active element's full path through those layout changes.
+    for _ in 0..60 {
+        let target = active_freshness_control(runtime, key).path;
+        runtime.update(move |_, tx| tx.scroll_into_view_in(container, target));
+        runtime.frame(1.0 / 60.0);
+    }
+    let element = active_freshness_control(runtime, key);
+    assert!(
+        element.visible[2] >= element.rect[2] - 1.0 && element.visible[3] >= element.rect[3] - 1.0,
+        "{key} is clipped: {}",
+        freshness_scroll_geometry(runtime, key)
+    );
+    Some((
+        element.rect[0] + element.rect[2] / 2.0,
+        element.rect[1] + element.rect[3] / 2.0,
+    ))
+}
+
+fn active_freshness_control(runtime: &Runtime<State>, key: &str) -> rune::ElementInfo {
+    runtime
+        .elements()
+        .into_iter()
+        .find(|element| element.key.as_deref() == Some(key) && !element.exiting && !element.inert)
+        .unwrap_or_else(|| panic!("Missing active freshness control {key}"))
+}
+
+fn freshness_scroll_geometry(runtime: &Runtime<State>, key: &str) -> String {
+    let geometry = runtime
+        .elements()
+        .into_iter()
+        .filter(|element| {
+            element.key.as_deref().is_some_and(|name| {
+                name == key || name == "activity-popover-content" || name.contains("scroll")
+            })
+        })
+        .map(|element| {
+            (
+                element.path,
+                element.inert,
+                element.exiting,
+                element.rect,
+                element.target,
+                element.visible,
+                element.scrolled,
+            )
+        })
+        .collect::<Vec<_>>();
+    format!("{geometry:?}")
 }
 
 // Switching between modal control surfaces follows the same Escape path as a user.

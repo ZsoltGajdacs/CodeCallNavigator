@@ -55,7 +55,7 @@ test('normalization reads current symlink targets without a path cache',t=>{
 test('compiler input metadata records normalized missing paths',t=>{
   const {first,alias}=fixture(t), {inputs,system}=tracked();
   assert.equal(system.fileExists(path.join(alias,'missing.ts')),false);
-  assert.deepEqual([...inputs],[path.join(first,'missing.ts')]);
+  assert.deepEqual([...inputs].sort(),[path.join(first,'missing.ts'),path.join(alias,'missing.ts')].sort());
 });
 
 test('original compiler probes reject files appearing after preparation',t=>{

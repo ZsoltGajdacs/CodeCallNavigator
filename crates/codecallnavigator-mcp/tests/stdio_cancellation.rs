@@ -75,7 +75,7 @@ impl Drop for SlowBuild {
 }
 
 #[test]
-#[ignore = "requires built real CLI, Node24/TypeScript6 and Java25"]
+#[ignore = "requires built real CLI, Node24/TypeScript5.9-or-6.0 and Java25"]
 fn cancelling_real_analysis_reaps_build_and_preserves_the_last_graph() {
     let temporary = tempfile::tempdir().unwrap();
     let root = temporary.path().canonicalize().unwrap();
@@ -105,7 +105,7 @@ fn cancelling_real_analysis_reaps_build_and_preserves_the_last_graph() {
 }
 
 #[test]
-#[ignore = "requires built real CLI, Node24/TypeScript6 and Java25"]
+#[ignore = "requires built real CLI, Node24/TypeScript5.9-or-6.0 and Java25"]
 fn disconnecting_mcp_drains_real_analysis_before_the_runtime_exits() {
     let temporary = tempfile::tempdir().unwrap();
     let root = temporary.path().canonicalize().unwrap();

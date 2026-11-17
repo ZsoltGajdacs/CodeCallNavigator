@@ -17,7 +17,7 @@ support is available with [documented limits](docs/function-flowcharts.md).
 - For C#: .NET 11 plus the SDKs and reference packs your projects need.
 - For Java: JDK 25, plus a working Gradle wrapper or Maven 3.9+/4 and the
   toolchains your projects need.
-- For TypeScript: Node 24+ and project-installed TypeScript 6.0.x.
+- For TypeScript: Node 24+ and project-installed TypeScript 5.9.x or 6.0.x.
 
 Analysis can restore dependencies and compile source sets, including tests.
 It does not run applications or test-execution tasks. Toolchains must already

@@ -3,6 +3,7 @@ const path = require('node:path');
 const {sourcePath}=require('./paths.js');
 const {methodVisibility} = require('./visibility.js');
 const {mergeEvidence}=require('./evidence.js');
+const {signatureText}=require('./signature.js');
 class Graph {
   constructor(context) {
     this.context=context;
@@ -21,7 +22,7 @@ class Graph {
     const generatedFolders=['/.next/','/generated/','/__generated__/'];
     const generatedOutput=this.context.metadata.output_roots.some(root=>source.startsWith(`${root}/`));
     this.nodes.push({id,project:path.basename(path.dirname(owner)),build:owner,language:'typescript',kind,label,
-      signature:signature ? checker.signatureToString(signature,declaration) : label,visibility:methodVisibility(this.context.ts,declaration),namespace:path.dirname(relative),container:relative,file:source,
+      signature:signature ? signatureText(this.context.ts,checker,signature,declaration) : label,visibility:methodVisibility(this.context.ts,declaration),namespace:path.dirname(relative),container:relative,file:source,
       line:file.getLineAndCharacterOfPosition(position).line+1,is_test:/(?:^|\/)(?:__tests__|tests?|test-support|test-fixtures)(?:\/|$)|\.(?:test|spec)\.[cm]?tsx?$/.test(relative),
       is_generated:generatedOutput || generatedFolders.some(root=>source.includes(root)),body_unavailable:!['module','implicit-constructor','initializer'].includes(kind) && !declaration.body});
     this.indices.set(id,index); return index;

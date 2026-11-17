@@ -12569,7 +12569,7 @@
       "requirements": [
         "graphviz"
       ],
-      "purpose": "flow source and chart remain inside minimum window"
+      "purpose": "Real Rune layout preserves chart/source space at minimum viewport with long scrollable freshness diagnostics in both themes, including reachability of the final notice action"
     },
     {
       "id": "codecallnavigator/bin:codecallnavigator::ui_tests::function_flows::flow_step_highlights_snapshot_and_back_preserves_call_graph",
@@ -16394,7 +16394,7 @@
         "node",
         "typescript"
       ],
-      "purpose": "packaged resource layout runs without development adapter fallback"
+      "purpose": "Real compiler and packaged adapter produce a graph and fingerprint compiler/policy edits; pure tests cannot prove shipped resource loading or filesystem freshness"
     },
     {
       "id": "codecallnavigator/test:typescript_pipeline::real_compiler_keeps_callback_calls_on_the_callback_and_roundtrips_provenance",
@@ -18577,6 +18577,28 @@
       "category": "integration",
       "requirements": [],
       "purpose": "test upstream bundle restores exact revision without network"
+    },
+    {
+      "id": "tests/test_suite_prerequisites.py::CompilerCompatibilityTests.test_labels_and_eligibility_follow_supplied_policy",
+      "runner": "python",
+      "file": "tests/test_suite_prerequisites.py",
+      "test_name": "test_suite_prerequisites.CompilerCompatibilityTests.test_labels_and_eligibility_follow_supplied_policy",
+      "ignored": false,
+      "component": "tooling",
+      "category": "unit",
+      "purpose": "Strict compiler version eligibility uses explicit in-memory policy inputs",
+      "requirements": []
+    },
+    {
+      "id": "tests/test_suite_prerequisites.py::CompilerCompatibilityTests.test_stable_versions_follow_supported_minor_families",
+      "runner": "python",
+      "file": "tests/test_suite_prerequisites.py",
+      "test_name": "test_suite_prerequisites.CompilerCompatibilityTests.test_stable_versions_follow_supported_minor_families",
+      "ignored": false,
+      "component": "tooling",
+      "category": "unit",
+      "purpose": "Strict compiler version eligibility uses explicit in-memory policy inputs",
+      "requirements": []
     },
     {
       "id": "tests/test_suite_prerequisites.py::RequirementPolicyTests.test_node_version_rejects_old_and_malformed_versions",
@@ -21192,6 +21214,28 @@
       "purpose": "spread, dynamic registries and arbitrary return wrappers retain unresolved diagnostics"
     },
     {
+      "id": "tools/typescript/compatibility.test.js::compiler support labels follow the supplied policy",
+      "runner": "node",
+      "file": "tools/typescript/compatibility.test.js",
+      "test_name": "compiler support labels follow the supplied policy",
+      "ignored": false,
+      "component": "engine",
+      "category": "unit",
+      "purpose": "Strict compiler eligibility and policy-derived diagnostics with explicit in-memory version inputs",
+      "requirements": []
+    },
+    {
+      "id": "tools/typescript/compatibility.test.js::stable compiler versions accept only supported minor families",
+      "runner": "node",
+      "file": "tools/typescript/compatibility.test.js",
+      "test_name": "stable compiler versions accept only supported minor families",
+      "ignored": false,
+      "component": "engine",
+      "category": "unit",
+      "purpose": "Strict compiler eligibility and policy-derived diagnostics with explicit in-memory version inputs",
+      "requirements": []
+    },
+    {
       "id": "tools/typescript/flow-export.test.js::accessor flow targets reuse analyzer getter and setter policy",
       "runner": "node",
       "file": "tools/typescript/flow-export.test.js",
@@ -21981,7 +22025,7 @@
         "node",
         "typescript"
       ],
-      "purpose": "compiler input metadata records normalized missing paths"
+      "purpose": "Real filesystem probes retain both physical missing paths and lexical symlink aliases for compiler input observations"
     },
     {
       "id": "tools/typescript/paths.test.js::existing source paths retain their physical spelling",
@@ -22093,7 +22137,63 @@
         "node",
         "typescript"
       ],
-      "purpose": "contextual compiler signatures keep import types relative and source literal types unchanged"
+      "purpose": "Real compiler signatures and semantic keys remain stable across checkout roots and linked source includes while authored literals are retained; string-only normalizer inputs cannot prove canonical source wiring"
+    },
+    {
+      "id": "tools/typescript/signature.test.js::signature scanner preserves nested template text and interpolation braces",
+      "runner": "node",
+      "file": "tools/typescript/signature.test.js",
+      "test_name": "signature scanner preserves nested template text and interpolation braces",
+      "ignored": false,
+      "component": "engine",
+      "category": "integration",
+      "purpose": "Real compiler scanner preserves authored literals/templates while normalizing complete module references, including truncated rendered signatures; fake scanner tokens cannot establish compiler grammar compatibility",
+      "requirements": [
+        "node",
+        "typescript"
+      ]
+    },
+    {
+      "id": "tools/typescript/signature.test.js::signature scanner retains truncation and incomplete module literals",
+      "runner": "node",
+      "file": "tools/typescript/signature.test.js",
+      "test_name": "signature scanner retains truncation and incomplete module literals",
+      "ignored": false,
+      "component": "engine",
+      "category": "integration",
+      "purpose": "Real compiler scanner preserves authored literals/templates while normalizing complete module references, including truncated rendered signatures; fake scanner tokens cannot establish compiler grammar compatibility",
+      "requirements": [
+        "node",
+        "typescript"
+      ]
+    },
+    {
+      "id": "tools/typescript/signature.test.js::signature scanner rewrites only absolute import-type module arguments",
+      "runner": "node",
+      "file": "tools/typescript/signature.test.js",
+      "test_name": "signature scanner rewrites only absolute import-type module arguments",
+      "ignored": false,
+      "component": "engine",
+      "category": "integration",
+      "purpose": "Real compiler scanner preserves authored literals/templates while normalizing complete module references, including truncated rendered signatures; fake scanner tokens cannot establish compiler grammar compatibility",
+      "requirements": [
+        "node",
+        "typescript"
+      ]
+    },
+    {
+      "id": "tools/typescript/worker.test.js::worker rejects compatibility policy changes after preparation",
+      "runner": "node",
+      "file": "tools/typescript/worker.test.js",
+      "test_name": "worker rejects compatibility policy changes after preparation",
+      "ignored": false,
+      "component": "engine",
+      "category": "integration",
+      "purpose": "Real compiler worker rejects shipped compatibility policy mutation between preparation and extraction; pure validation cannot prove retained worker observation",
+      "requirements": [
+        "node",
+        "typescript"
+      ]
     },
     {
       "id": "tools/typescript/worker.test.js::worker rejects invalid requests without graph output",

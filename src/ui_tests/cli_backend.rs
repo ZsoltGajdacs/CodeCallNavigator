@@ -244,7 +244,7 @@ fn assert_flow_residency(runtime: &Runtime<State>, expected: bool) {
 }
 
 #[test]
-#[ignore = "requires built CLI, Node24/TypeScript6; optional captures require Metal"]
+#[ignore = "requires built CLI, Node24/TypeScript5.9-or-6.0; optional captures require Metal"]
 fn actual_cli_keeps_graph_context_across_edited_root_and_drives_search_source_flow() {
     let directory = tempfile::tempdir().unwrap();
     let project = directory.path().canonicalize().unwrap();

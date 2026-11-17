@@ -43,8 +43,7 @@ fn adapter(context: &AnalysisJob<'_>) -> Result<PathBuf> {
 }
 
 fn start_worker(build: &BuildTarget, context: &AnalysisJob<'_>) -> Result<(Worker, PathBuf)> {
-    let node = find_tool("node")
-        .context("TypeScript analysis requires installed Node 24+ and project TypeScript 6.0.x")?;
+    let node = find_tool("node").context("TypeScript analysis requires installed Node 24+")?;
     let output = context.path.join("typescript-prepare.json");
     // Re-preparation must wait for this worker's atomic output, never the prior file.
     if output.exists() {

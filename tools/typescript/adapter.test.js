@@ -160,7 +160,8 @@ test('type errors reject analysis and config preparation reports engine inputs',
   assert.throws(()=>run(root));
   const metadata=run(root,'tsconfig.json','prepare');
   assert.ok(metadata.inputs.some(p=>p.endsWith('typescript.js')));
-  assert.match(metadata.versions.typescript,/^6\.0\./);
+  assert.equal(metadata.versions.typescript,JSON.parse(fs.readFileSync(path.join(engineModules,'typescript/package.json'),'utf8')).version);
+  assert.ok(metadata.inputs.includes(path.join(__dirname,'compatibility.json')));
   assert.equal(metadata.versions.adapter,'7');
 });
 

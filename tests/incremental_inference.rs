@@ -175,7 +175,7 @@ fn targets(root: &Path, bytes: &[u8], caller: &str, provenance: &str) -> BTreeSe
 }
 
 #[test]
-#[ignore = "requires prebuilt standalone engine and installed Node24/TypeScript6/Next16"]
+#[ignore = "requires prebuilt standalone engine and installed Node24/TypeScript5.9-or-6.0/Next16"]
 fn cached_inference_matches_full_analysis_after_compiler_facts_change() {
     let fixture = Fixture::new();
     let cold = fixture.analyze(false);
@@ -355,7 +355,7 @@ fn assert_configuration_invalidation(fixture: &Fixture, initial: &[u8]) {
 }
 
 #[test]
-#[ignore = "requires prebuilt standalone engine and installed Node24/TypeScript6/Next16"]
+#[ignore = "requires prebuilt standalone engine and installed Node24/TypeScript5.9-or-6.0/Next16"]
 fn failed_and_cancelled_incremental_runs_preserve_the_published_graph() {
     let fixture = Fixture::new();
     fixture.analyze(false);
@@ -381,7 +381,7 @@ fn counter(complete: &Value, name: &str) -> u64 {
 }
 
 #[test]
-#[ignore = "requires prebuilt standalone engine and installed Node24/TypeScript6/Next16"]
+#[ignore = "requires prebuilt standalone engine and installed Node24/TypeScript5.9-or-6.0/Next16"]
 fn publication_failure_does_not_commit_new_inference_decisions() {
     let fixture = Fixture::new();
     fixture.analyze(false);

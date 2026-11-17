@@ -3,7 +3,7 @@ id: doc-21
 title: Verification prerequisites and operations
 type: guide
 created_date: '2026-11-16T07:06:00Z'
-updated_date: '2026-11-16T18:08:00Z'
+updated_date: '2026-11-17T08:10:00Z'
 ---
 # Verification prerequisites and operations
 
@@ -66,7 +66,7 @@ export CODECALLNAVIGATOR_VERIFY_PROFILE_SOURCE="/absolute/path/to/saved-applicat
 ./verify-changes.sh --run
 ```
 
-The modules directory must contain TypeScript 6.0.x, React 19 and Next 16 fixture
+The modules directory must contain stable TypeScript 5.9.x or 6.0.x, React 19 and Next 16 fixture
 dependencies. The runner supplies the matching
 `CODECALLNAVIGATOR_TEST_TYPESCRIPT_ROOT` and engine binary paths; conflicting
 TypeScript settings fail preflight. The private Recurring Billing acceptance

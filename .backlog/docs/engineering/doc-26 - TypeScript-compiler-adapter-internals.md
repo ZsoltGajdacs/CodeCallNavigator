@@ -3,7 +3,7 @@ id: doc-26
 title: TypeScript compiler adapter internals
 type: guide
 created_date: '2026-11-16T07:08:00Z'
-updated_date: '2026-11-16T07:08:00Z'
+updated_date: '2026-11-17T10:36:00Z'
 ---
 # TypeScript compiler adapter
 
@@ -18,7 +18,7 @@ The standalone `prepare` and `analyze` modes remain available for adapter checks
 
 The worker verifies the file contents, missing resolution probes and directory
 queries observed while constructing its programs before and after extraction.
-The project must already have TypeScript 6.0.x installed and Node must be version
+The project must already have stable TypeScript 5.9.x or 6.0.x installed and Node must be version
 24 or newer. No packages, project scripts, application code, compiler plugins or
 framework configs run.
 
@@ -44,21 +44,28 @@ so excluding their nodes never assigns their calls to a module or enclosing meth
 Authored nested callbacks retain their own callable scopes.
 `graph.js` owns identities, edge aggregation and serialization.
 
+`signature.js` normalizes complete absolute import-type module arguments in
+compiler-rendered signatures relative to the canonical declaration source. Public
+compiler tokenization preserves authored string and template literal types and the
+printer's formatting, including truncated siblings. Directory aliases reuse the
+shared path policy; extensionless module stems are retained. The same signature
+feeds presentation and semantic export keys, keeping both compiler families stable
+across checkout locations and linked source includes.
+
 Framework relationships are static possibilities. Passing or returning a callback
 does not invoke it. Mutation through refs/maps, arbitrary higher-order wrappers,
 dynamic keys, spread-prop delegation and framework routing configuration are not
 reconstructed. Counts for unresolved bindings remain in graph diagnostics.
 
-Run the real-compiler fixture suite with:
+Compiler compatibility is owned by `tools/typescript/compatibility.json`, shipped beside the adapter and read by verification prerequisites. Pure JS and Python helpers enforce stable patch versions in the listed minor families. Compiler loading observes the policy contents and adds its path to metadata inputs, so policy edits invalidate freshness and reject changes during a retained worker job. The graph schema and adapter capability version remain unchanged.
+
+Run the complete deterministic verification plan for each compiler installation:
 
 ```sh
-CODECALLNAVIGATOR_TEST_TYPESCRIPT_ROOT=/path/to/node_modules/typescript node --test tools/typescript/*.test.js
+CODECALLNAVIGATOR_TS_NODE_MODULES=/path/to/node_modules CODECALLNAVIGATOR_TEST_TYPESCRIPT_ROOT=/path/to/node_modules/typescript ./verify-changes.sh --run
 ```
 
-The fixture suite uses the installed TypeScript, React types and Next.js package;
-`CODECALLNAVIGATOR_TS_NODE_MODULES` can alternatively select the modules directory;
-when neither variable is present it uses the sibling PacificFateMapEditor installation.
-Tests create temporary projects and link those dependencies without modifying them.
+Compatibility coverage uses isolated TypeScript 5.9.3 and 6.0.3 installations with the same React/Next dependencies. The fixture suite creates temporary projects and links those dependencies without modifying them. Compiler version metadata must match the selected installation exactly.
 
 `observer.js` adds possible invocation targets for append-only callback `Set`
 channels after ordinary bindings and React props are collected. The collection,

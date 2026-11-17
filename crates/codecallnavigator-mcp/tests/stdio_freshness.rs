@@ -13,7 +13,7 @@ fn without_timing(mut envelope: Value) -> Value {
 }
 
 #[test]
-#[ignore = "requires built real CLI, Node24 and pinned TypeScript6 modules"]
+#[ignore = "requires built real CLI, Node24 and pinned TypeScript 5.9.x or 6.0.x modules"]
 fn real_freshness_preserves_cli_observations_and_generation_errors() {
     let directory = tempfile::tempdir().unwrap();
     let root = directory.path().canonicalize().unwrap();

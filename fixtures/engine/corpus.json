@@ -1,7 +1,7 @@
 {
   "version": 1,
   "reference_commit": "fb54f5f789d94c6cbc5fe86bf20010edea815b33",
-  "toolchains": {"java": "JDK 25", "csharp": ".NET 10", "typescript": "Node 24+ and project TypeScript 6.0.x", "analyzers": "analyzers.lock.json"},
+  "toolchains": {"java": "JDK 25", "csharp": ".NET 10", "typescript": "Node 24+ and project TypeScript 5.9.x or 6.0.x", "analyzers": "analyzers.lock.json"},
   "workloads": [
     {"name": "maven", "source": "fixtures/maven", "targets": ["reactor/pom.xml"], "checks": "tests/java_builds.rs"},
     {"name": "gradle", "source": "fixtures/gradle-regression", "targets": ["."], "wrapper": "fixtures/gradle/gradlew", "checks": "tests/java_builds.rs"},

@@ -6,6 +6,23 @@ import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'tools'))
 from verification.suite_prerequisites import configured_problems, node_supported, requirements_for, tools_for
+from verification.typescript_compatibility import supports_version, supported_versions
+
+
+class CompilerCompatibilityTests(unittest.TestCase):
+    def test_stable_versions_follow_supported_minor_families(self):
+        minors = ['5.9', '6.0']
+        for version in ['5.9.0', '5.9.3', '5.9.99', '6.0.0', '6.0.3']:
+            self.assertTrue(supports_version(version, minors), version)
+        for version in ['5.8.3', '6.1.0', '7.0.0', '5.9', 'v5.9.3', '5.9.3-beta',
+                        '6.0.0-dev.1', '5.9.3+build', '5.9.3\n', '05.9.3',
+                        '5.09.3', '5.9.03', '5.9.3.1', '', None, 593]:
+            self.assertFalse(supports_version(version, minors), version)
+
+    def test_labels_and_eligibility_follow_supplied_policy(self):
+        self.assertEqual(supported_versions(['5.9', '6.0']), '5.9.x or 6.0.x')
+        self.assertEqual(supported_versions(['6.0']), '6.0.x')
+        self.assertFalse(supports_version('5.9.3', ['6.0']))
 
 
 class RequirementPolicyTests(unittest.TestCase):
@@ -57,10 +74,12 @@ class SelectedResourceTests(unittest.TestCase):
                 (root / name).mkdir()
                 (root / name / 'package.json').write_text('{"version":"' + version + '"}')
             self.assertEqual(configured_problems(root, {'typescript'}, None, environment), [])
-            (root / 'typescript/package.json').write_text('{"version":"5.9.0"}')
+            (root / 'typescript/package.json').write_text('{"version":"5.9.3"}')
+            self.assertEqual(configured_problems(root, {'typescript'}, None, environment), [])
+            (root / 'typescript/package.json').write_text('{"version":"5.8.3"}')
             errors = configured_problems(root, {'typescript'}, None, environment)
             self.assertEqual(len(errors), 1)
-            self.assertIn('expected 6.0.', errors[0])
+            self.assertIn('5.9.x or 6.0.x', errors[0])
 
 
 if __name__ == '__main__':

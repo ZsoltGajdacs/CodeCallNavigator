@@ -249,7 +249,7 @@ fn deleted_selection_and_project_switch(
 }
 
 #[test]
-#[ignore = "requires built CLI, Node24/TypeScript6; optional captures require Metal"]
+#[ignore = "requires built CLI, Node24/TypeScript5.9-or-6.0; optional captures require Metal"]
 fn actual_cli_freshness_reload_preserves_loaded_binding_camera_and_discards_obsolete_jobs() {
     let directory = tempfile::tempdir().unwrap();
     let project = directory.path().canonicalize().unwrap();
@@ -305,7 +305,7 @@ fn automatic_refresh_is_an_explicit_loaded_project_action() {
 }
 
 #[test]
-#[ignore = "requires built CLI with automatic refresh, Node24/TypeScript6; optional captures require Metal"]
+#[ignore = "requires built CLI with automatic refresh, Node24/TypeScript5.9-or-6.0; optional captures require Metal"]
 fn actual_cli_automatic_refresh_requires_opt_in_and_preserves_loaded_context() {
     let directory = tempfile::tempdir().unwrap();
     let project = directory.path().canonicalize().unwrap();

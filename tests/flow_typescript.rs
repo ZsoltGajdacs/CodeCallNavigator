@@ -42,7 +42,9 @@ fn fixture() -> tempfile::TempDir {
                 .join("../PacificFateMapEditor/node_modules/typescript")
         })
         .canonicalize()
-        .expect("Set CODECALLNAVIGATOR_TEST_TYPESCRIPT_ROOT to installed TypeScript 6.0.x");
+        .expect(
+            "Set CODECALLNAVIGATOR_TEST_TYPESCRIPT_ROOT to installed TypeScript 5.9.x or 6.0.x",
+        );
     fs::create_dir(temporary.path().join("node_modules")).unwrap();
     symlink(engine, temporary.path().join("node_modules/typescript")).unwrap();
     fs::write(temporary.path().join("tsconfig.json"),r#"{"compilerOptions":{"strict":true,"target":"ES2023","module":"esnext","moduleResolution":"bundler","types":[],"noEmit":true},"files":["main.ts"]}"#).unwrap();
@@ -82,7 +84,7 @@ fn chart_traces(chart: &FlowChart) -> HashSet<Vec<String>> {
 }
 
 #[test]
-#[ignore = "requires Node 24+ and installed TypeScript 6.0.x"]
+#[ignore = "requires Node 24+ and installed TypeScript 5.9.x or 6.0.x"]
 fn actual_typescript_traces_follow_finally_and_never_resume_after_return() {
     let fixture = fixture();
     let execution = Command::new("node")
@@ -131,7 +133,7 @@ fn actual_typescript_traces_follow_finally_and_never_resume_after_return() {
 }
 
 #[test]
-#[ignore = "requires Node 24+ and installed TypeScript 6.0.x"]
+#[ignore = "requires Node 24+ and installed TypeScript 5.9.x or 6.0.x"]
 fn deep_source_flow_is_partial_without_breaking_graph_deserialization() {
     let fixture = fixture();
     let source = format!(

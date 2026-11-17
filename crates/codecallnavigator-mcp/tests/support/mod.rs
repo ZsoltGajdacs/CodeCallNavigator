@@ -202,8 +202,9 @@ pub fn cli_query(engine: &Path, project: &Path, operation: Value) -> Value {
 }
 
 pub fn typescript(root: &Path) {
-    let modules = std::env::var_os("CODECALLNAVIGATOR_TS_NODE_MODULES")
-        .expect("Set CODECALLNAVIGATOR_TS_NODE_MODULES to pinned TypeScript6 modules");
+    let modules = std::env::var_os("CODECALLNAVIGATOR_TS_NODE_MODULES").expect(
+        "Set CODECALLNAVIGATOR_TS_NODE_MODULES to pinned TypeScript 5.9.x or 6.0.x modules",
+    );
     std::os::unix::fs::symlink(modules, root.join("node_modules")).unwrap();
     std::fs::write(
         root.join("tsconfig.json"),

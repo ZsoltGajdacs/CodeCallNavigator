@@ -19,7 +19,7 @@ use std::{
 mod compiler_expansion;
 
 #[test]
-#[ignore = "requires installed TypeScript 6 and Node 24+"]
+#[ignore = "requires installed TypeScript 5.9.x or 6.0.x and Node 24+"]
 fn real_typescript_facts_survive_stable_ids_cached_queries_and_excluded_targets() {
     let directory = fixture();
     let root = directory.path().canonicalize().unwrap();
@@ -179,7 +179,7 @@ fn query(root: &Path, symbol: &str) -> Value {
 /// Compiler resolution must retain hidden source inputs even when broad scans
 /// skip hidden folders; this needs the real TypeScript worker's file inventory.
 #[test]
-#[ignore = "requires installed TypeScript 6 and Node 24+"]
+#[ignore = "requires installed TypeScript 5.9.x or 6.0.x and Node 24+"]
 fn compiler_required_hidden_typescript_sources_remain_observed() {
     let temporary = fixture();
     let root = temporary.path().canonicalize().unwrap();

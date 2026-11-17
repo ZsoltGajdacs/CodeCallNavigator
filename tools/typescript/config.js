@@ -40,8 +40,8 @@ function ownedSources(projects) {
 function prepare(config) {
   config = canonical(config);
   const observations=new Observations();
-  const {ts,entry,localRequire} = toolchain(config,observations);
-  const inputs = new Set([entry]);
+  const {ts,entry,localRequire,policyFile} = toolchain(config,observations);
+  const inputs = new Set([entry,canonical(policyFile)]);
   const system = trackingSystem(ts,inputs,observations);
   const projects = configuredProjects(ts,config,system);
   const owners = ownedSources(projects);
