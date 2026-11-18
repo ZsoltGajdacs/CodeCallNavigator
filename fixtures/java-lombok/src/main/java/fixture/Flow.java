@@ -1,12 +1,19 @@
 package fixture;
 
+import java.util.Optional;
 import lombok.Builder;
+import lombok.Getter;
 import lombok.experimental.SuperBuilder;
 
 public class Flow {
     public static void main(String[] args) { recordBuilder(); classBuilder(); childBuilder(); }
     public static Value.ValueBuilder recordBuilder() { leaf(); return Value.builder(); }
-    public static Item.ItemBuilder classBuilder() { return Item.builder(); }
+    public static Item.ItemBuilder classBuilder() {
+        Optional.<Item>empty().flatMap(item -> {
+            return Optional.of(item).map(Item::getText);
+        });
+        return Item.builder();
+    }
     public static Child.ChildBuilder<String, ?, ?> childBuilder() { return Child.<String>builder(); }
     public static Value.ValueBuilder[] arrays(Value.ValueBuilder[] builders) { return builders; }
     public static <B extends Item.ItemBuilder> B bounded(B builder) { return builder; }
@@ -17,6 +24,7 @@ public class Flow {
 record Value(String text) {}
 
 @Builder
+@Getter
 class Item { private String text; }
 
 @SuperBuilder

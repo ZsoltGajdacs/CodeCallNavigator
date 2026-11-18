@@ -14960,7 +14960,7 @@
       "requirements": [
         "java"
       ],
-      "purpose": "gradle lombok generated signature types preserve authored methods"
+      "purpose": "Gradle Lombok signature types preserve authored methods and unresolved getter references preserve source flow"
     },
     {
       "id": "codecallnavigator/test:java_lombok::maven_lombok_generated_signature_types_preserve_authored_methods",
@@ -14976,7 +14976,7 @@
       "requirements": [
         "java"
       ],
-      "purpose": "maven lombok generated signature types preserve authored methods"
+      "purpose": "Maven Lombok signature types preserve authored methods and unresolved getter references preserve source flow"
     },
     {
       "id": "codecallnavigator/test:java_output_metadata::ordinary_source_sets_export_raw_outputs_too",

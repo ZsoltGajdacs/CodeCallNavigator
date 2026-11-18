@@ -16,7 +16,10 @@ final class SourceSignatures {
     record Method(String signature, String returns) { String key() { return signature + "|" + returns; } }
 
     static Method method(ExecutableElement method, JavacTask task, CompiledTypes compiled) throws IOException {
-        String owner = task.getElements().getBinaryName((TypeElement) method.getEnclosingElement()).toString();
+        if (!(method.getEnclosingElement() instanceof TypeElement declaringType)) {
+            throw new IOException("Compiler target has no declaring type");
+        }
+        String owner = task.getElements().getBinaryName(declaringType).toString();
         var arguments = new ArrayList<String>();
         for (var parameter : method.getParameters()) arguments.add(type(parameter.asType(), task, compiled));
         return new Method(owner + ":" + method.getSimpleName() + "(" + String.join(",", arguments) + ")",

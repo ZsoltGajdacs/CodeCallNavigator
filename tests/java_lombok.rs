@@ -1,6 +1,7 @@
 //! Real Lombok compiler outputs must retain authored signatures, not generated helpers.
 #[path = "support/java.rs"]
 mod support;
+use codecallnavigator::{flow, model::GraphData};
 use std::{
     fs,
     path::{Path, PathBuf},
@@ -35,10 +36,15 @@ fn lombok_acceptance(kind: &str) {
         );
     }
     assert_eq!(
-        graph.nodes.len(),
+        graph
+            .nodes
+            .iter()
+            .filter(|node| node.visibility.is_some())
+            .count(),
         7,
-        "Only seven authored methods should survive"
+        "Only seven authored method declarations should survive"
     );
+    assert_unresolved_getter_reference(&graph, root.path());
     let main = graph
         .nodes
         .iter()
@@ -68,6 +74,39 @@ fn lombok_acceptance(kind: &str) {
             .iter()
             .any(|edge| edge.from == builder && edge.to == leaf)
     );
+}
+
+fn assert_unresolved_getter_reference(graph: &GraphData, fixture_root: &Path) {
+    let class_builder = graph
+        .nodes
+        .iter()
+        .find(|node| node.signature == "fixture.Flow:classBuilder() -> fixture.Item$ItemBuilder")
+        .unwrap();
+    let mut function = graph
+        .flow_inventory
+        .as_ref()
+        .unwrap()
+        .functions
+        .iter()
+        .find(|function| function.symbol == class_builder.id)
+        .unwrap()
+        .clone();
+    let source = fs::read_to_string(fixture_root.join("src/main/java/fixture/Flow.java")).unwrap();
+    let mut references = 0;
+    flow::visit_calls_mut(&mut function, &mut |call| {
+        if call.label == "Item::getText" {
+            references += 1;
+            assert_eq!(&source[call.span.start..call.span.end], "Item::getText");
+            assert!(call.targets.is_empty());
+            assert_eq!(
+                call.diagnostic.as_deref(),
+                Some(
+                    "Compiler target signature is unavailable: Compiler target has no declaring type"
+                )
+            );
+        }
+    });
+    assert_eq!(references, 1);
 }
 
 #[test]
