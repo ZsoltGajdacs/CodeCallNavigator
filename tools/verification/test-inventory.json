@@ -7244,7 +7244,7 @@
       "requirements": [
         "cli"
       ],
-      "purpose": "analysis eof and sigterm reap build descendants and preserve artifact"
+      "purpose": "Actual CLI EOF and SIGTERM cancellation reap a stalled build wrapper and its descendant while preserving prior artifact bytes. Placeholder resources are unevaluated fault-probe prerequisites, never successful compiler evidence; real process lifetime cannot be proved by pure unit inputs."
     },
     {
       "id": "codecallnavigator-engine/test:process_protocol::initial_request_eof_and_malformed_protocol_fail_without_replacing_graph",
@@ -14560,7 +14560,7 @@
       "requirements": [
         "java"
       ],
-      "purpose": "gradle refactoring preserves module graph and classification"
+      "purpose": "Real Gradle/JDK boundary proves fresh generation, unchanged native task actions, isolated FROM-CACHE restoration and NO-SOURCE handling, equal-metadata late source mutation rejection and recovery while preserving graph ownership; pure tests cannot prove native incremental outcomes."
     },
     {
       "id": "codecallnavigator/test:java_builds::maven_architecture_facts_preserve_graph_and_source_annotations",
@@ -14608,7 +14608,7 @@
       "requirements": [
         "java"
       ],
-      "purpose": "maven reactor preserves graph ownership and does not execute tests"
+      "purpose": "Real Maven reactor proves fresh generated roots and precompiler producer rewrites, a second native invocation retains unchanged compiler outputs, and a later equal-metadata rewrite of an earlier compiled generated source is rejected without replacing the prior artifact. Preserves ownership and required resource/parent observations; pure tests cannot prove native lifecycle ordering."
     },
     {
       "id": "codecallnavigator/test:java_builds::maven_rejects_authored_edits_during_compilation_and_honors_cancellation",
@@ -14624,7 +14624,7 @@
       "requirements": [
         "java"
       ],
-      "purpose": "maven rejects authored edits during compilation and honors cancellation"
+      "purpose": "Real Maven accepts a source edit before compiler consumption, rejects an equal-metadata source rewrite in a later lifecycle phase and recovers; cancellation remains enforced. Native lifecycle ordering cannot be proved by an in-memory test."
     },
     {
       "id": "codecallnavigator/test:java_builds::maven_skipped_compilation_rejects_missing_expected_outputs",
@@ -14640,7 +14640,7 @@
       "requirements": [
         "java"
       ],
-      "purpose": "maven skipped compilation rejects missing expected outputs"
+      "purpose": "Real Maven skipMain rejects fresh missing compiler outputs and rejects reuse of preexisting class bytes after an authored Java edit. Serial attempts in one owned fixture prove native skip cannot certify stale bytecode; pure wire validation cannot prove real compiler suppression."
     },
     {
       "id": "codecallnavigator/test:java_builds::maven_standalone_changes_and_failed_refresh_preserve_cached_graph",
@@ -15047,7 +15047,7 @@
       "requirements": [
         "java"
       ],
-      "purpose": "real maven output alias retains raw spelling and manual analysis"
+      "purpose": "Real Maven retains evaluated class-output alias spelling while a real JSR269 processor emits Java through configured AP output reachable by a nested source-root alias, alongside an alias to the former empty output location after native cleanup rebinds the configured path. Generated node/file and active-alias identity assertions prove physical output ownership without assuming Maven preserves its output symlink; metadata-only tests cannot prove compiler-time file creation. No extra Maven analysis journey."
     },
     {
       "id": "codecallnavigator/test:java_spring::raw_generic_payloads_and_raw_enclosing_owners_are_deferred",
@@ -22374,6 +22374,67 @@
       "category": "integration",
       "requirements": [],
       "purpose": "Real child-command probes prove four-case harness scheduling, owned working directories and records, ordered reports and fail-stop draining; this is process/harness coverage, not fabricated successful compiler analysis."
+    },
+    {
+      "id": "codecallnavigator/test:java_builds::maven_generation_precedes_selected_typescript_consumer",
+      "runner": "rust",
+      "file": "tests/java_builds.rs",
+      "test_name": "maven_generation_precedes_selected_typescript_consumer",
+      "ignored": true,
+      "package": "codecallnavigator",
+      "target_kind": "test",
+      "target": "java_builds",
+      "component": "engine",
+      "category": "integration",
+      "requirements": [
+        "java",
+        "maven",
+        "node",
+        "typescript"
+      ],
+      "purpose": "Real Maven lifecycle rewrites an existing imported JSON input before the selected-first TypeScript consumer observes it; two compiler adapters in one analysis are necessary to prove producer-before-consumer scheduling. No simulated analyzer success."
+    },
+    {
+      "id": "codecallnavigator-engine/lib:codecallnavigator_engine::analyzers::java::compile_observation::tests::consumed_aliases_stay_protected_when_unused_directory_bindings_change",
+      "runner": "rust",
+      "file": "crates/codecallnavigator-engine/src/analyzers/java/compile_observation/tests.rs",
+      "test_name": "analyzers::java::compile_observation::tests::consumed_aliases_stay_protected_when_unused_directory_bindings_change",
+      "ignored": false,
+      "package": "codecallnavigator-engine",
+      "target_kind": "lib",
+      "target": "codecallnavigator_engine",
+      "component": "engine",
+      "category": "unit",
+      "requirements": [],
+      "purpose": "Pure captured-snapshot comparison ignores unused directory link bindings while retaining typed exact-path rejection for equal-content selected-input alias retargeting. In-memory evidence validates link projection only; real annotation processing remains integration coverage."
+    },
+    {
+      "id": "codecallnavigator-engine/lib:codecallnavigator_engine::analyzers::java::compile_observation::tests::wire_rejects_stale_unknown_and_incomplete_compilation_evidence",
+      "runner": "rust",
+      "file": "crates/codecallnavigator-engine/src/analyzers/java/compile_observation/tests.rs",
+      "test_name": "analyzers::java::compile_observation::tests::wire_rejects_stale_unknown_and_incomplete_compilation_evidence",
+      "ignored": false,
+      "package": "codecallnavigator-engine",
+      "target_kind": "lib",
+      "target": "codecallnavigator_engine",
+      "component": "engine",
+      "category": "unit",
+      "requirements": [],
+      "purpose": "Pure untrusted compilation-observation wire validation rejects stale attempts, unknown variants and incomplete paths/digests; synthetic documents exercise validation only, not successful compiler execution."
+    },
+    {
+      "id": "codecallnavigator-engine/lib:codecallnavigator_engine::analyzers::java::compile_observation::tests::typed_diagnostic_preserves_the_changed_input_and_native_operation",
+      "runner": "rust",
+      "file": "crates/codecallnavigator-engine/src/analyzers/java/compile_observation/tests.rs",
+      "test_name": "analyzers::java::compile_observation::tests::typed_diagnostic_preserves_the_changed_input_and_native_operation",
+      "ignored": false,
+      "package": "codecallnavigator-engine",
+      "target_kind": "lib",
+      "target": "codecallnavigator_engine",
+      "component": "engine",
+      "category": "unit",
+      "requirements": [],
+      "purpose": "Pure wire diagnostic translation preserves the exact changed input, native operation and typed InputsChanged error; no simulated compiler execution."
     }
   ],
   "gates": [

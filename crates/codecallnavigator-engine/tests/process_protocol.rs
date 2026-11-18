@@ -124,6 +124,10 @@ fn slow_build(root: &Path) {
     fs::write(root.join("jdk/release"), "JAVA_VERSION=\"25\"\n").unwrap();
     fs::create_dir_all(root.join("resources/tools")).unwrap();
     fs::write(root.join("resources/tools/gradle-metadata.gradle"), "").unwrap();
+    fs::create_dir_all(root.join("resources/analyzers")).unwrap();
+    // This stalled wrapper never evaluates Gradle/helper resources or supplies
+    // successful compiler facts. These files satisfy fault-probe prerequisites.
+    fs::write(root.join("resources/analyzers/maven-metadata.jar"), "").unwrap();
     fs::write(root.join("build.gradle"), "").unwrap();
     let wrapper = root.join("gradlew");
     fs::write(&wrapper, "#!/bin/sh\nsleep 30 &\nchild=$!\nprintf '%s' \"$child\" > child.pid.tmp\nmv child.pid.tmp child.pid\ntrap 'kill \"$child\" 2>/dev/null; wait \"$child\" 2>/dev/null; exit 143' TERM INT\nwait \"$child\"\n").unwrap();
@@ -201,6 +205,15 @@ fn analysis_eof_and_sigterm_reap_build_descendants_and_preserve_artifact() {
         );
         let start = Instant::now();
         while !project.path().join("child.pid").exists() {
+            if let Some(status) = child.try_wait().unwrap() {
+                let stdout = output.stdout.join().unwrap();
+                let stderr = output.stderr.join().unwrap();
+                panic!(
+                    "engine exited before build startup ({status}); stdout: {}; stderr: {}",
+                    String::from_utf8_lossy(&stdout),
+                    String::from_utf8_lossy(&stderr)
+                );
+            }
             assert!(
                 start.elapsed() < Duration::from_secs(5),
                 "build never started"

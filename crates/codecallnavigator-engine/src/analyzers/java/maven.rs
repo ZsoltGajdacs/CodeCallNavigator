@@ -1,21 +1,30 @@
 //! Maven build execution; evaluated ownership comes from the bundled extension.
-use super::build::JavaBuildMetadata;
+use super::{
+    build::{JavaBuildMetadata, JavaCompilation},
+    compile_observation::Attempt,
+};
+#[cfg(test)]
+use crate::model::FileFingerprint;
 use crate::{
     analyzers::{AnalysisJob, choose_artifact, find_tool, process::run_process},
     discovery::BuildTarget,
     fingerprint,
-    model::FileFingerprint,
 };
 use anyhow::{Context, Result};
 use std::{
     fs,
     path::{Path, PathBuf},
     process::Command,
+    sync::atomic::Ordering,
 };
 
-/// Observe project configuration before Maven evaluates it. Required probes keep
-/// an absent .mvn root and linked files visible without scanning hidden trees.
-pub(super) fn configuration_snapshot(root: &Path) -> Result<Vec<FileFingerprint>> {
+/// Observe only configuration files; generators may change unrelated children.
+#[cfg(test)]
+fn configuration_snapshot(root: &Path) -> Result<Vec<FileFingerprint>> {
+    fingerprint::capture_excluding(configuration_paths(root)?, &[])
+}
+
+pub(super) fn configuration_paths(root: &Path) -> Result<Vec<PathBuf>> {
     let mut directories = vec![root.join(".mvn")];
     if let Some(parent) = root
         .ancestors()
@@ -28,12 +37,19 @@ pub(super) fn configuration_snapshot(root: &Path) -> Result<Vec<FileFingerprint>
         .iter()
         .flat_map(|root| configuration_files(root))
         .collect::<Vec<_>>();
-    let roots = directories
-        .into_iter()
-        .map(fingerprint::ScanRoot::Required)
-        .collect::<Vec<_>>();
-    paths.extend(fingerprint::collect_inputs(&roots, &[], false)?);
-    fingerprint::capture_excluding(paths, &[])
+    paths.extend([root.join("mvnw"), root.join("mvnw.cmd")]);
+    if let Some(home) = std::env::var_os("MAVEN_USER_HOME")
+        .map(PathBuf::from)
+        .or_else(|| std::env::var_os("HOME").map(|home| PathBuf::from(home).join(".m2")))
+    {
+        paths.extend([home.join("settings.xml"), home.join("toolchains.xml")]);
+    }
+    paths.extend(
+        fingerprint::source_paths(&[root.to_path_buf()])?
+            .into_iter()
+            .filter(|path| path.file_name().is_some_and(|name| name == "pom.xml")),
+    );
+    Ok(paths)
 }
 
 fn configuration_files(root: &Path) -> impl Iterator<Item = PathBuf> + '_ {
@@ -56,18 +72,23 @@ pub(super) fn metadata(
         "Reading Maven reactor ownership for {}…",
         build.label
     ));
-    task(build, context, "validate", "maven-metadata")?;
+    task(build, context, MavenTask::Metadata)?;
     read(context, "maven-initial.json")
 }
 
-pub(super) fn compile(build: &BuildTarget, context: &AnalysisJob<'_>) -> Result<JavaBuildMetadata> {
+pub(super) fn compile(build: &BuildTarget, context: &AnalysisJob<'_>) -> Result<JavaCompilation> {
     // Never accept metadata left behind by an earlier, failed invocation.
     let final_path = context.path.join("maven-final.json");
     if final_path.exists() {
         fs::remove_file(&final_path)?;
     }
-    task(build, context, "test-compile", "maven-compile")?;
-    read(context, "maven-final.json")
+    let attempt = Attempt::new(context.path)?;
+    let native = task(build, context, MavenTask::Compile(&attempt));
+    let observations = attempt.finish(native, context.cancel.load(Ordering::Relaxed))?;
+    Ok(JavaCompilation {
+        metadata: read(context, "maven-final.json")?,
+        observations,
+    })
 }
 
 fn read(context: &AnalysisJob<'_>, name: &str) -> Result<JavaBuildMetadata> {
@@ -77,10 +98,32 @@ fn read(context: &AnalysisJob<'_>, name: &str) -> Result<JavaBuildMetadata> {
             format!("Maven did not export complete metadata: {}", path.display())
         })?,
     )
-    .context("Invalid Maven ownership metadata")
+    .context(
+        "Invalid Maven ownership/compile-observation metadata; rebuild matching analyzer resources",
+    )
 }
 
-fn task(build: &BuildTarget, context: &AnalysisJob<'_>, goal: &str, log: &str) -> Result<()> {
+enum MavenTask<'a> {
+    Metadata,
+    Compile(&'a Attempt),
+}
+
+impl MavenTask<'_> {
+    fn goal(&self) -> &'static str {
+        match self {
+            Self::Metadata => "validate",
+            Self::Compile(_) => "test-compile",
+        }
+    }
+    fn log(&self) -> &'static str {
+        match self {
+            Self::Metadata => "maven-metadata",
+            Self::Compile(_) => "maven-compile",
+        }
+    }
+}
+
+fn task(build: &BuildTarget, context: &AnalysisJob<'_>, task: MavenTask<'_>) -> Result<()> {
     let executable = maven_command(&build.path)?;
     let extension = choose_artifact(
         &context.runtime.bundle_root,
@@ -123,9 +166,12 @@ fn task(build: &BuildTarget, context: &AnalysisJob<'_>, goal: &str, log: &str) -
             "-DskipITs=true",
             "-Dmaven.test.skip=false",
             "-Dmaven.main.skip=false",
-        ])
-        .arg(goal);
-    run_process(&mut command, context.path, log, context.cancel)?;
+        ]);
+    if let MavenTask::Compile(observation) = &task {
+        observation.configure(&mut command);
+    }
+    command.arg(task.goal());
+    run_process(&mut command, context.path, task.log(), context.cancel)?;
     Ok(())
 }
 

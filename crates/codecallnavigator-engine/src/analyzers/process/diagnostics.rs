@@ -4,12 +4,54 @@ use std::{
     fs::File,
     io::{Read, Seek, SeekFrom},
     path::{Path, PathBuf},
+    process::ExitStatus,
     sync::atomic::{AtomicBool, Ordering},
     time::{Duration, Instant},
 };
 
 pub(super) const PROCESS_TIMEOUT: Duration = Duration::from_secs(1800);
 const LOG_TAIL_BYTES: u64 = 4000;
+
+/// Only a reaped native command's exit is eligible for adapter diagnostics.
+/// Timeouts, cancellation, spawn and I/O failures retain their own classification.
+#[derive(Debug)]
+pub(crate) struct NativeExitFailure {
+    status: ExitStatus,
+    message: String,
+}
+
+impl NativeExitFailure {
+    pub(super) fn require_success(logs: &ProcessLogs, status: ExitStatus) -> Result<()> {
+        if status.success() {
+            Ok(())
+        } else {
+            Err(Self::new(logs, status).into())
+        }
+    }
+
+    fn new(logs: &ProcessLogs, status: ExitStatus) -> Self {
+        Self {
+            status,
+            message: format!(
+                "{} failed ({status}). {}",
+                logs.name,
+                log_tail(&logs.stderr)
+            ),
+        }
+    }
+
+    pub(crate) fn exited(&self) -> bool {
+        self.status.code().is_some()
+    }
+}
+
+impl std::fmt::Display for NativeExitFailure {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter.write_str(&self.message)
+    }
+}
+
+impl std::error::Error for NativeExitFailure {}
 
 pub(super) struct ProcessLogs {
     pub(super) name: String,

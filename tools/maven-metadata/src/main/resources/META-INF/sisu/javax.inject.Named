@@ -1,1 +1,2 @@
 codecallnavigator.maven.MetadataParticipant
+codecallnavigator.maven.CompilerObservationListener

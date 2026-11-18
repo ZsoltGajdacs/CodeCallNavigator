@@ -58,14 +58,14 @@ impl InputPolicy {
         if self == Self::Legacy {
             return Ok(hash);
         }
-        let links = required_link_targets(path)?;
+        let links = required_link_bindings(path)?;
         if links.is_empty() {
             return Ok(hash);
         }
         let mut digest = blake3::Hasher::new();
         digest.update(hash.as_bytes());
         for link in links {
-            let bytes = link.as_os_str().as_encoded_bytes();
+            let bytes = link.target.as_os_str().as_encoded_bytes();
             digest.update(&(bytes.len() as u64).to_le_bytes());
             digest.update(bytes);
         }
@@ -73,9 +73,16 @@ impl InputPolicy {
     }
 }
 
-/// Walk lexical ancestors and each target chain. Metadata resolution rejects
-/// broken/cyclic links; the visited set avoids repeatedly inspecting shared tails.
-fn required_link_targets(path: &Path) -> Result<Vec<PathBuf>> {
+/// One lexical link used to resolve a required input, including indirect targets.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct LinkBinding {
+    pub path: PathBuf,
+    pub target: PathBuf,
+}
+
+/// Observe lexical ancestors and their target chains without discarding aliases.
+/// Broken/cyclic links fail with path context; ordinary missing inputs are allowed.
+pub fn required_link_bindings(path: &Path) -> Result<Vec<LinkBinding>> {
     let mut links = Vec::new();
     let mut pending = path.ancestors().map(Path::to_path_buf).collect::<Vec<_>>();
     let mut visited = BTreeSet::new();
@@ -87,7 +94,7 @@ fn required_link_targets(path: &Path) -> Result<Vec<PathBuf>> {
             continue;
         };
         let resolved = resolved_link(&path, &target);
-        links.push(target);
+        links.push(LinkBinding { path, target });
         pending.extend(resolved.ancestors().map(Path::to_path_buf));
     }
     Ok(links)

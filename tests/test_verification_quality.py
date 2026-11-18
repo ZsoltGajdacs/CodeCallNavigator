@@ -102,22 +102,24 @@ class QualitySessionTests(unittest.TestCase):
         return run_checks(self.root, files or ['changed.py'], str(self.command), timeout)
 
     def test_complete_reviews_and_safeguard_pass_with_banner_and_notifications(self):
-        self.assert_quality_cli_starts_without_pythonpath()
+        self.assert_standalone_entrypoints_start_without_pythonpath()
         report = self.check()
         self.assertEqual(report['status'], 'passed', report)
         self.assertEqual(report['reviews'][0]['score'], 10)
         self.assertEqual(report['safeguard']['metadata']['checked-file-count'], 1)
         self.assertEqual(report['errors'], [])
 
-    def assert_quality_cli_starts_without_pythonpath(self):
-        command = Path(__file__).resolve().parents[1] / 'tools/verification/quality.py'
+    def assert_standalone_entrypoints_start_without_pythonpath(self):
+        directory = Path(__file__).resolve().parents[1] / 'tools/verification'
         environment = dict(os.environ)
         environment.pop('PYTHONPATH', None)
-        result = subprocess.run([sys.executable, str(command), '--help'], cwd=self.root,
-                                env=environment, capture_output=True, text=True, check=False)
-        self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertIn('--root', result.stdout)
-        self.assertIn('--files', result.stdout)
+        for script, option in [('quality.py', '--files'), ('cleanup.py', '--output')]:
+            with self.subTest(entrypoint=script):
+                result = subprocess.run([sys.executable, str(directory / script), '--help'], cwd=self.root,
+                                        env=environment, capture_output=True, text=True, check=False)
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertIn('--root', result.stdout)
+                self.assertIn(option, result.stdout)
 
     def test_committed_source_is_reviewed_without_requiring_local_safeguard_coverage(self):
         self.commit_source()

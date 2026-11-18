@@ -257,6 +257,7 @@ def notice_file(source):
 
 def copy_analyzers(resources):
     verify_java_adapter(ROOT / "tools/java-bytecode/build/install/codecallnavigator-bytecode")
+    verify_compiler_observer(ROOT / "tools/maven-metadata/build/libs/codecallnavigator-maven-metadata.jar")
     analyzers = resources / "analyzers"
     analyzers.mkdir()
     copy_tree(callatlas_output(ROOT), analyzers / "callatlas")
@@ -283,6 +284,23 @@ def verify_java_adapter(distribution):
         raise RuntimeError("Java adapter is missing or invalid; rebuild matching analyzer resources") from error
     if not current:
         raise RuntimeError("Java adapter lacks kind_v9 compiler execution/invocation facts; rebuild matching analyzer resources")
+
+
+def verify_compiler_observer(jar):
+    package = "codecallnavigator/maven/"
+    required = {package + name + ".class" for name in
+                ("CompilerJournal", "CompilerJournal$Owner", "CompilerJournal$Inputs", "CompilerJournal$Outcome",
+                 "CompileSnapshot", "RequiredLinks", "CompilerObservationListener", "MavenCompilerInputs")}
+    try:
+        with zipfile.ZipFile(jar) as archive:
+            complete = required.issubset(archive.namelist())
+            current = complete and b"compiler_observation_v1" in archive.read(package + "CompilerJournal.class")
+            registered = b"codecallnavigator.maven.CompilerObservationListener" in archive.read(
+                "META-INF/sisu/javax.inject.Named")
+    except (OSError, KeyError, zipfile.BadZipFile) as error:
+        raise RuntimeError("Compiler observation helper is missing or invalid; rebuild analyzer resources") from error
+    if not current or not registered:
+        raise RuntimeError("Compiler observation helper lacks native boundary version1; rebuild analyzer resources")
 
 
 def make_engine(destination):

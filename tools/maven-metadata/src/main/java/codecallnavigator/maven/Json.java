@@ -15,6 +15,9 @@ final class Json {
         if (value instanceof Boolean flag) {
             return flag.toString();
         }
+        if (value instanceof Number number) {
+            return number.toString();
+        }
         return container(value);
     }
 

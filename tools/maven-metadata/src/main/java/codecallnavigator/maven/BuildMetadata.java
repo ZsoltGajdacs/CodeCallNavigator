@@ -32,11 +32,44 @@ final class BuildMetadata {
             }
         }
         Map<String, Object> result = new LinkedHashMap<>();
+        result.put("compileObservationVersion", 1);
+        result.put("configurationInputs", configurationInputs(session));
         result.put("modules", modules);
         result.put("sourceSets", sourceSets);
         result.put("buildInputs", inputs);
         result.put("outputRoots", outputs);
         return result;
+    }
+
+    private static Set<String> configurationInputs(MavenSession session) throws IOException {
+        MavenExecutionRequest request = session.getRequest();
+        Set<String> inputs = new LinkedHashSet<>();
+        addInput(inputs, request.getUserSettingsFile());
+        addInput(inputs, request.getGlobalSettingsFile());
+        addInput(inputs, request.getUserToolchainsFile());
+        addInput(inputs, request.getGlobalToolchainsFile());
+        addConfigurationFiles(inputs, request.getMultiModuleProjectDirectory());
+        for (MavenProject project : session.getProjects()) {
+            addParentConfigurations(inputs, project);
+        }
+        return inputs;
+    }
+
+    private static void addConfigurationFiles(Set<String> inputs, File root) throws IOException {
+        if (root == null) {
+            return;
+        }
+        for (String name : List.of(".mvn/maven.config", ".mvn/jvm.config", ".mvn/extensions.xml",
+                ".mvn/wrapper/maven-wrapper.properties", ".mvn/wrapper/maven-wrapper.jar", "mvnw", "mvnw.cmd")) {
+            addInput(inputs, new File(root, name));
+        }
+    }
+
+    private static void addParentConfigurations(Set<String> inputs, MavenProject project) throws IOException {
+        for (MavenProject current = project; current != null; current = current.getParent()) {
+            addInput(inputs, current.getFile());
+            addInput(inputs, current.getParentFile());
+        }
     }
 
     private static Map<String, Object> sourceSet(MavenProject project, ProjectMetadata metadata,

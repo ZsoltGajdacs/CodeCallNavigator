@@ -1,3 +1,14 @@
+// This public JDK-only helper is shared with Maven; no Gradle implementation is packaged.
+initscript {
+    def observerJar = System.getProperty('codecallnavigator.observerJar')
+    if (!observerJar) { throw new GradleException('codecallnavigator.observerJar is required') }
+    dependencies { classpath files(observerJar) }
+}
+
+import codecallnavigator.maven.CompilerJournal
+import org.gradle.api.execution.TaskExecutionListener
+import org.gradle.api.tasks.TaskState
+import org.gradle.api.tasks.compile.JavaCompile
 // Build-tool metadata only. This init script performs no Java parsing or call resolution.
 import groovy.json.JsonOutput
 import org.gradle.api.tasks.testing.Test
@@ -37,9 +48,70 @@ def requiredAliases = { sources, generatedRoots, ownedOutputs ->
     }.collect { it.absolutePath }
 }
 
+def settingsDirectory
+gradle.settingsEvaluated { settings -> settingsDirectory = settings.settingsDir }
+
+def configurationInputs = { projects ->
+    def files = projects.collectMany { project -> [project.buildFile, new File(project.projectDir, 'gradle.properties')] }
+    files.addAll(['settings.gradle', 'settings.gradle.kts', 'gradle.properties', 'gradlew', 'gradlew.bat',
+                  'gradle/wrapper/gradle-wrapper.properties', 'gradle/wrapper/gradle-wrapper.jar'].collect {
+        new File(settingsDirectory, it)
+    })
+    files.collectMany { file -> [file.absolutePath, file.canonicalPath] }.unique().sort()
+}
+
 gradle.projectsEvaluated {
     def root = gradle.rootProject
     def javaProjects = root.allprojects.findAll { it.extensions.findByName('sourceSets') != null }
+    def observationFile = System.getProperty('codecallnavigator.observation.file')
+    if (observationFile) {
+        def journal = new CompilerJournal(new File(observationFile).toPath(), System.getProperty('codecallnavigator.observation.attempt'))
+        def selections = javaProjects.collectMany { project ->
+            project.sourceSets.collect { sources ->
+                [task: project.tasks.named(sources.compileJavaTaskName).get(), sources: sources]
+            }
+        }.collectEntries { entry -> [(entry.task.path): entry.sources] }
+        def compilerInputs = { JavaCompile task, sources ->
+            def generated = task.options.generatedSourceOutputDirectory.orNull?.asFile
+            new CompilerJournal.Inputs(sources.allJava.srcDirs.collect { it.absolutePath },
+                task.classpath.files.collect { it.absolutePath },
+                [task.destinationDirectory.get().asFile.absolutePath],
+                generated ? [generated.absolutePath] : [])
+        }
+        // Task boundaries preserve native UP-TO-DATE/cache/no-source behavior.
+        // A task's own doFirst mutation is an observed in-task consistency change;
+        // we never reorder actions or claim to certify individual javac reads.
+        gradle.taskGraph.addTaskExecutionListener(new TaskExecutionListener() {
+            void beforeExecute(Task task) {
+                if (!(task instanceof JavaCompile)) { return }
+                def sources = selections[task.path]
+                if (!sources) { throw new GradleException("Unowned JavaCompile task: ${task.path}") }
+                def inputs = compilerInputs(task, sources)
+                def owner = new CompilerJournal.Owner(task.project.projectDir.absolutePath, sources.name, task.path)
+                if (!task.includes.isEmpty() || !task.excludes.isEmpty()) {
+                    journal.unsupported(owner, inputs, "Custom JavaCompile source filters are unsupported")
+                } else {
+                    journal.before(owner, inputs)
+                    journal.requireSourceSelection(owner, task.source.files.findAll { it.name.endsWith('.java') }
+                        .collect { it.absolutePath })
+                }
+            }
+            void afterExecute(Task task, TaskState state) {
+                if (!(task instanceof JavaCompile)) { return }
+                def sources = selections[task.path]
+                def owner = new CompilerJournal.Owner(task.project.projectDir.absolutePath, sources.name, task.path)
+                if (state.failure) { journal.failed(owner); return }
+                def outcome = state.noSource ? CompilerJournal.Outcome.NO_SOURCE :
+                    state.skipMessage == 'FROM-CACHE' ? CompilerJournal.Outcome.FROM_CACHE :
+                    state.upToDate ? CompilerJournal.Outcome.UP_TO_DATE :
+                    state.skipped ? CompilerJournal.Outcome.UNSUPPORTED : CompilerJournal.Outcome.SUCCESS
+                journal.after(owner, compilerInputs(task, sources), outcome)
+            }
+        })
+        gradle.buildFinished { result ->
+            if (!result.failure) { journal.finish() }
+        }
+    }
     root.tasks.register('codecallnavigatorCompileSources') {
         def compileTasks = javaProjects.collectMany { project ->
             project.sourceSets.collect { sources -> project.tasks.named(sources.compileJavaTaskName) }
@@ -91,7 +163,13 @@ gradle.projectsEvaluated {
                      classDirs: sources.output.classesDirs.files.collect { it.canonicalPath }]
                 }
             }
-            new File(destination.toString()).setText(JsonOutput.prettyPrint(JsonOutput.toJson(entries)), 'UTF-8')
+            def outputs = (javaProjects.collect { it.layout.buildDirectory.get().asFile.canonicalPath } +
+                ownedOutputs.collect { it.canonicalPath }).unique().sort()
+            def metadata = [compileObservationVersion: 1,
+                modules: javaProjects.collect { it.projectDir.canonicalPath }.unique().sort(),
+                sourceSets: entries, buildInputs: entries.collectMany { it.buildInputs }.unique().sort(),
+                outputRoots: outputs, configurationInputs: configurationInputs(root.allprojects)]
+            new File(destination.toString()).setText(JsonOutput.prettyPrint(JsonOutput.toJson(metadata)), 'UTF-8')
         }
     }
 }

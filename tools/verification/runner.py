@@ -8,7 +8,10 @@ from pathlib import Path
 import signal
 import subprocess
 import time
-from verification.process_groups import confirm_group_absent, signal_denial_detail
+if __package__:
+    from .process_groups import confirm_group_absent, signal_denial_detail
+else:
+    from process_groups import confirm_group_absent, signal_denial_detail
 
 
 @contextmanager

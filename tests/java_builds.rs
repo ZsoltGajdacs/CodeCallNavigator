@@ -1,4 +1,6 @@
 //! Real build-tool acceptance checks.
+#[path = "support/java_boundaries.rs"]
+mod boundaries;
 #[path = "support/java.rs"]
 mod support;
 use codecallnavigator_engine::{
@@ -55,13 +57,17 @@ fn assert_project_graph(graph: &GraphData) {
         );
     }
     assert_ne!(main.project, service.project);
-    assert_eq!(main.project, generated.project);
-    assert_eq!(main.project, test.project);
-    assert!(!main.is_test && !main.is_generated);
-    assert!(test.is_test && !test.is_generated);
-    assert!(generated.is_generated && !generated.is_test);
-    assert!(Path::new(&main.file).is_file());
-    assert!(main.line > 0);
+    for (node, is_test, is_generated) in [
+        (main, false, false),
+        (test, true, false),
+        (generated, false, true),
+    ] {
+        assert_eq!(
+            (&node.project, node.is_test, node.is_generated),
+            (&main.project, is_test, is_generated)
+        );
+    }
+    assert!(Path::new(&main.file).is_file() && main.line > 0);
     let entries = graph.entry_points.as_ref().unwrap();
     assert!(entries.application_starts.contains(&main.id));
     assert!(entries.candidates.contains(&disconnected.id));
@@ -95,11 +101,35 @@ fn gradle_refactoring_preserves_module_graph_and_classification() {
     let fixture = fixture("gradle-regression");
     let wrapper = Path::new(env!("CARGO_MANIFEST_DIR")).join("fixtures/gradle/gradlew");
     install_wrapper(fixture.path(), &wrapper);
+    let produced = boundaries::gradle_producer_and_cache(fixture.path());
+    assert!(
+        !fixture
+            .path()
+            .join("app/build/generated/sources/fixture")
+            .exists()
+    );
     let build = target(fixture.path(), "gradle");
     let first = run(vec![build.clone()]).unwrap();
+    assert!(
+        fs::read_to_string(produced)
+            .unwrap()
+            .contains("generated()")
+    );
+    method(&first, "Produced", "generated");
+    let class = fixture
+        .path()
+        .join("app/build/classes/java/main/fixture/App.class");
+    let modified = fs::metadata(&class).unwrap().modified().unwrap();
+    let actions = fs::read(fixture.path().join("app/build/compile-actions.txt")).unwrap();
     assert_project_graph(&first);
     assert!(!fixture.path().join("tests-executed").exists());
-    let second = run(vec![build]).unwrap();
+    let second = run(vec![build.clone()]).unwrap();
+    assert_eq!(fs::metadata(&class).unwrap().modified().unwrap(), modified);
+    assert_eq!(
+        fs::read(fixture.path().join("app/build/compile-actions.txt")).unwrap(),
+        actions
+    );
+    assert_gradle_cache_and_late_mutation(fixture.path(), &build);
     let ids = |graph: &GraphData| {
         graph
             .nodes
@@ -109,6 +139,64 @@ fn gradle_refactoring_preserves_module_graph_and_classification() {
     };
     assert_eq!(ids(&first), ids(&second));
     assert_eq!(first.entry_points, second.entry_points);
+}
+
+fn assert_gradle_cache_and_late_mutation(
+    root: &Path,
+    build: &codecallnavigator_engine::discovery::BuildTarget,
+) {
+    let classes = root.join("app/build/classes/java/main");
+    // The prior native build returned; this TempDir owns these inactive outputs.
+    fs::remove_dir_all(&classes).unwrap();
+    let restored = run(vec![build.clone()]).unwrap();
+    assert_project_graph(&restored);
+    let outcomes = fs::read_to_string(root.join("build/native-outcomes.txt")).unwrap();
+    assert!(
+        outcomes.contains(":app:compileJava\tUP-TO-DATE"),
+        "{outcomes}"
+    );
+    assert!(
+        outcomes.contains(":app:compileJava\tFROM-CACHE"),
+        "{outcomes}"
+    );
+    assert!(
+        outcomes.contains(":library:compileTestJava\tNO-SOURCE"),
+        "{outcomes}"
+    );
+    let script = boundaries::gradle_late_source_mutation(root);
+    let source = root.join("app/src/main/java/fixture/App.java");
+    let before = fs::read(&source).unwrap();
+    let modified = fs::metadata(&source).unwrap().modified().unwrap();
+    let error = run(vec![build.clone()]).unwrap_err();
+    assert_input_change_diagnostic(&error, &source);
+    assert_equal_metadata_source_mutation(&source, &before, modified);
+    fs::write(root.join("build.gradle"), script).unwrap();
+    fs::write(source, before).unwrap();
+    assert_project_graph(&run(vec![build.clone()]).unwrap());
+}
+
+fn assert_input_change_diagnostic(error: &anyhow::Error, source: &Path) {
+    assert!(error.is::<fingerprint::InputsChanged>(), "{error:#}");
+    assert!(format!("{error:#}").contains(source.to_str().unwrap()));
+}
+
+fn assert_equal_metadata_source_mutation(
+    source: &Path,
+    before: &[u8],
+    modified: std::time::SystemTime,
+) {
+    let after = fs::read(source).unwrap();
+    assert_eq!(
+        (
+            after.len(),
+            fs::metadata(source).unwrap().modified().unwrap()
+        ),
+        (before.len(), modified)
+    );
+    assert_ne!(
+        after, before,
+        "The native late-mutation probe must change consumed bytes"
+    );
 }
 
 fn maven_fixture() -> tempfile::TempDir {
@@ -123,7 +211,32 @@ fn maven_fixture() -> tempfile::TempDir {
 #[ignore = "requires pinned Java analyzer, Maven and JDK 25"]
 fn maven_reactor_preserves_graph_ownership_and_does_not_execute_tests() {
     let fixture = maven_fixture();
-    let graph = run(vec![target(&fixture.path().join("reactor"), "maven")]).unwrap();
+    let root = fixture.path().join("reactor");
+    let produced = boundaries::maven_producer(&root);
+    assert!(!root.join("app/target/generated-sources/fixture").exists());
+    count_native_builds(&root);
+    let build = target(&root, "maven");
+    let graph = run(vec![build.clone()]).unwrap();
+    assert!(
+        fs::read_to_string(produced)
+            .unwrap()
+            .contains("generated()")
+    );
+    method(&graph, "Produced", "generated");
+    let class = root.join("app/target/classes/fixture/GeneratedThing.class");
+    let modified = fs::metadata(&class).unwrap().modified().unwrap();
+    let invocations = native_build_count(&root);
+    let repeated = run(vec![build.clone()]).unwrap();
+    assert_project_graph(&repeated);
+    assert!(
+        native_build_count(&root) > invocations,
+        "The native lifecycle must actually run"
+    );
+    assert_eq!(
+        fs::metadata(class).unwrap().modified().unwrap(),
+        modified,
+        "A no-change Maven invocation must retain its native compiler outputs"
+    );
     assert_project_graph(&graph);
     let generated = method(&graph, "GeneratedThing", "generated");
     assert!(
@@ -132,22 +245,47 @@ fn maven_reactor_preserves_graph_ownership_and_does_not_execute_tests() {
             .iter()
             .any(|item| item.path == generated.file)
     );
-    assert!(
-        graph
-            .nodes
-            .iter()
-            .any(|node| node.signature.contains("fixture.ProfileOnly:"))
-    );
-    assert!(
-        !graph
-            .nodes
-            .iter()
-            .any(|node| node.signature.contains("fixture.Inactive:"))
-    );
+    let profile = graph
+        .nodes
+        .iter()
+        .any(|node| node.signature.contains("fixture.ProfileOnly:"));
+    let inactive = graph
+        .nodes
+        .iter()
+        .any(|node| node.signature.contains("fixture.Inactive:"));
+    assert_eq!((profile, inactive), (true, false));
     assert!(!fixture.path().join("reactor/app/tests-executed").exists());
     assert!(!fingerprint::is_stale(&graph.fingerprints).unwrap());
+    assert_late_generated_rewrite_preserves_graph(&root, &build, &graph);
+    assert_maven_required_inputs(fixture.path(), &graph);
+}
+
+fn assert_late_generated_rewrite_preserves_graph(
+    root: &Path,
+    build: &codecallnavigator_engine::discovery::BuildTarget,
+    graph: &GraphData,
+) {
+    let cache = tempfile::tempdir().unwrap();
+    let store = SqliteStore::open(cache.path()).unwrap();
+    let generation = store.publish(graph, &AtomicBool::new(false)).unwrap();
+    let artifact = cache.path().join(generation);
+    let saved = fs::read(&artifact).unwrap();
+    let source = root.join("app/target/generated-sources/fixture/fixture/GeneratedThing.java");
+    let before = fs::read(&source).unwrap();
+    let modified = fs::metadata(&source).unwrap().modified().unwrap();
+    let original = boundaries::maven_late_generated_mutation(root);
+    let error = run(vec![build.clone()]).unwrap_err();
+    assert_input_change_diagnostic(&error, &source);
+    assert_equal_metadata_source_mutation(&source, &before, modified);
+    assert_eq!(fs::read(artifact).unwrap(), saved);
+    assert_eq!(store.load_active().unwrap().unwrap().nodes, graph.nodes);
+    fs::write(root.join("app/pom.xml"), original).unwrap();
+    fs::write(source, before).unwrap();
+    fs::remove_file(root.join("app/SourceMutation.java")).unwrap();
+}
+
+fn assert_maven_required_inputs(fixture: &Path, graph: &GraphData) {
     let resource = fixture
-        .path()
         .join("resources/fixture.txt")
         .canonicalize()
         .unwrap();
@@ -158,11 +296,7 @@ fn maven_reactor_preserves_graph_ownership_and_does_not_execute_tests() {
         .expect("External resource contents must be fingerprinted");
     fs::write(resource, "edited external resource input").unwrap();
     assert!(fingerprint::is_stale(std::slice::from_ref(resource_fingerprint)).unwrap());
-    let parent = fixture
-        .path()
-        .join("parent/pom.xml")
-        .canonicalize()
-        .unwrap();
+    let parent = fixture.join("parent/pom.xml").canonicalize().unwrap();
     let parent_fingerprint = graph
         .fingerprints
         .iter()
@@ -170,6 +304,36 @@ fn maven_reactor_preserves_graph_ownership_and_does_not_execute_tests() {
         .expect("External parent POM must be fingerprinted");
     fs::write(parent, "changed").unwrap();
     assert!(fingerprint::is_stale(std::slice::from_ref(parent_fingerprint)).unwrap());
+}
+
+/// Risk: a native producer rewrites a compiler-required non-Java input. Only two
+/// real compiler adapters in one selected analysis can prove preparation order.
+#[test]
+#[ignore = "requires Maven, JDK 25, pinned analyzers and a supported project TypeScript compiler"]
+fn maven_generation_precedes_selected_typescript_consumer() {
+    let fixture = maven_fixture();
+    let root = fixture.path().join("standalone");
+    let config = boundaries::maven_json_producer(&root);
+    let typescript = codecallnavigator_engine::discovery::target_from_file(&config).unwrap();
+    // The consumer is deliberately first; build selection order is not execution order.
+    let graph = run(vec![typescript, target(&root, "maven")]).unwrap();
+    method(&graph, "Standalone", "main");
+    let produced_kind = graph
+        .nodes
+        .iter()
+        .find(|node| node.language == "typescript" && node.label == "producedKind")
+        .unwrap();
+    assert_eq!(produced_kind.signature, "(): number");
+    let generated = root.join("frontend/value.json");
+    let value: serde_json::Value = serde_json::from_slice(&fs::read(&generated).unwrap()).unwrap();
+    assert_eq!(value["kind"], 1);
+    assert!(
+        graph
+            .fingerprints
+            .iter()
+            .any(|item| Path::new(&item.path) == generated)
+    );
+    assert!(!fingerprint::is_stale(&graph.fingerprints).unwrap());
 }
 
 #[test]
@@ -355,18 +519,19 @@ fn overlapping_maven_reactors_fail_before_compilation() {
         "{error:#}"
     );
     assert!(!compiled.load(Ordering::Relaxed));
-    assert!(!root.join("app/target/classes/fixture/App.class").exists());
-    assert!(
-        !root
-            .join("app/target/generated-sources/fixture/fixture/GeneratedThing.java")
-            .exists()
-    );
-    assert!(
-        !fixture
+    for output in [
+        root.join("app/target/classes/fixture/App.class"),
+        root.join("app/target/generated-sources/fixture/fixture/GeneratedThing.java"),
+        fixture
             .path()
-            .join("library/target/bytecode/main/fixture/Service.class")
-            .exists()
-    );
+            .join("library/target/bytecode/main/fixture/Service.class"),
+    ] {
+        assert!(
+            !output.exists(),
+            "Overlapping builds produced {}",
+            output.display()
+        );
+    }
 }
 
 #[test]
@@ -404,7 +569,7 @@ fn maven_rejects_authored_edits_during_compilation_and_honors_cancellation() {
     let build = target(&root, "maven");
     let runtime = AnalyzerRuntime::discover().unwrap();
     let edited = AtomicBool::new(false);
-    let result = analyze(
+    let graph = analyze(
         vec![build.clone()],
         &runtime,
         &AtomicBool::new(false),
@@ -415,13 +580,23 @@ fn maven_rejects_authored_edits_during_compilation_and_honors_cancellation() {
                 fs::write(&source, content).unwrap();
             }
         },
-    );
+    )
+    .unwrap();
     assert!(
         edited.load(Ordering::Relaxed),
         "Compilation checkpoint was not observed"
     );
-    let error = format!("{:#}", result.unwrap_err());
-    assert!(error.contains("changed during analysis"), "{error}");
+    assert!(!fingerprint::is_stale(&graph.fingerprints).unwrap());
+    let original_pom = boundaries::maven_late_source_mutation(&root, &source);
+    let before = fs::read(&source).unwrap();
+    let modified = fs::metadata(&source).unwrap().modified().unwrap();
+    let error = run(vec![build.clone()]).unwrap_err();
+    assert_input_change_diagnostic(&error, &source);
+    assert_equal_metadata_source_mutation(&source, &before, modified);
+    fs::write(root.join("pom.xml"), original_pom).unwrap();
+    fs::write(&source, before).unwrap();
+    let recovered = run(vec![build.clone()]).unwrap();
+    method(&recovered, "Standalone", "disconnected");
     let cancel = AtomicBool::new(false);
     let result = analyze(vec![build], &runtime, &cancel, &|message| {
         if message.contains("Compiling") {
@@ -456,13 +631,40 @@ fn maven_skipped_compilation_rejects_missing_expected_outputs() {
     let fixture = maven_fixture();
     let root = fixture.path().join("standalone");
     let pom = root.join("pom.xml");
-    let content = fs::read_to_string(&pom).unwrap().replace(
+    let original = fs::read_to_string(&pom).unwrap();
+    let skipped = original.replace(
         "</project>",
         "<build><plugins><plugin><groupId>org.apache.maven.plugins</groupId><artifactId>maven-compiler-plugin</artifactId><configuration><skipMain>true</skipMain></configuration></plugin></plugins></build></project>",
     );
-    fs::write(pom, content).unwrap();
+    fs::write(&pom, &skipped).unwrap();
     let error = format!("{:#}", run(vec![target(&root, "maven")]).unwrap_err());
-    assert!(error.contains("compiled Java output"), "{error}");
+    assert!(
+        error.contains("Unsupported Java compiler observation"),
+        "{error}"
+    );
+    assert!(error.contains("skipMain=true"), "{error}");
+    let class = root.join("target/classes/fixture/Standalone.class");
+    assert!(!class.exists());
+    fs::write(&pom, &original).unwrap();
+    let graph = run(vec![target(&root, "maven")]).unwrap();
+    method(&graph, "Standalone", "leaf");
+    let bytecode = fs::read(&class).unwrap();
+    let source = root.join("src/main/java/fixture/Standalone.java");
+    let authored = fs::read_to_string(&source).unwrap();
+    assert!(authored.contains("void leaf() {}"));
+    fs::write(
+        &source,
+        authored.replace("void leaf() {}", "void leaf() { System.out.println(1); }"),
+    )
+    .unwrap();
+    fs::write(&pom, skipped).unwrap();
+    let error = format!("{:#}", run(vec![target(&root, "maven")]).unwrap_err());
+    assert!(
+        error.contains("Unsupported Java compiler observation"),
+        "{error}"
+    );
+    assert!(error.contains("skipMain=true"), "{error}");
+    assert_eq!(fs::read(class).unwrap(), bytecode);
 }
 
 #[test]

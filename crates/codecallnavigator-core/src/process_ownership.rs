@@ -197,7 +197,7 @@ mod tests {
         let directory = tempfile::tempdir().unwrap();
         let marker = directory.path().join("worker.pid");
         let program = r#"import subprocess,sys,time
-subprocess.Popen([sys.executable,'-c','import signal,time,os,pathlib,sys; signal.signal(signal.SIGTERM,signal.SIG_IGN); pathlib.Path(sys.argv[1]).write_text(str(os.getpid())); time.sleep(30)',sys.argv[1]],start_new_session=True)
+subprocess.Popen([sys.executable,'-c','import signal,time,os,pathlib,sys; signal.signal(signal.SIGTERM,signal.SIG_IGN); marker=pathlib.Path(sys.argv[1]); temporary=marker.with_name(marker.name+".tmp"); temporary.write_text(str(os.getpid())); temporary.replace(marker); time.sleep(30)',sys.argv[1]],start_new_session=True)
 time.sleep(30)
 "#;
         let mut child = Command::new("python3")

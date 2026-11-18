@@ -15,7 +15,7 @@ use std::{
 #[cfg(test)]
 mod output_tests;
 mod policy;
-pub use policy::{InputPolicy, ScanRoot};
+pub use policy::{InputPolicy, LinkBinding, ScanRoot, required_link_bindings};
 #[cfg(test)]
 mod policy_tests;
 

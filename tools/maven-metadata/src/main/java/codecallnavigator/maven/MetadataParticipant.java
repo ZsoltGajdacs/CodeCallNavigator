@@ -31,6 +31,11 @@ public final class MetadataParticipant extends AbstractMavenLifecycleParticipant
     @Override
     public void afterSessionEnd(MavenSession session) throws MavenExecutionException {
         if (!session.getResult().hasExceptions()) {
+            try {
+                CompilerObservationListener.finish(session);
+            } catch (IOException failure) {
+                throw new MavenExecutionException("Compiler input observation failed: " + failure.getMessage(), failure);
+            }
             export(session, "codecallnavigator.metadata.final");
         }
     }

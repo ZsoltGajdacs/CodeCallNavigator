@@ -12,6 +12,7 @@ use std::{
 
 mod build;
 mod class_facts;
+mod compile_observation;
 mod compose;
 mod contexts;
 mod engine;
@@ -75,17 +76,19 @@ pub(in crate::analyzers) fn compile(
     context: &AnalysisJob<'_>,
     prepared: PreparedJava,
 ) -> Result<CompiledJava> {
-    ensure_unchanged(&prepared.authored_before)?;
+    ensure_unchanged(&prepared.configuration_before)?;
     (context.progress)(format!(
         "Compiling all Java source sets for {}…",
         build.label
     ));
-    let metadata = build::compile(build, context)?;
+    let compilation = build::compile(build, context)?;
+    let metadata = compilation.metadata;
     prepared.verify_compiled(build, &metadata)?;
     let contexts = contexts::plan(&metadata.source_sets)?;
-    let mut fingerprints = prepared.authored_before.clone();
+    let mut fingerprints = prepared.configuration_before.clone();
     fingerprints.extend(build::snapshot(build, &metadata, true)?);
     fingerprints.extend(contexts::snapshot(&contexts)?);
+    fingerprints.extend(compilation.observations.fingerprints(&metadata)?);
     let compiled = CompiledJava {
         preflight: prepared,
         metadata,
@@ -101,8 +104,9 @@ pub(in crate::analyzers) fn extract_java(
     compiled: &CompiledJava,
 ) -> Result<GraphData> {
     compiled.verify()?;
-    let graph = analyze_compiled(build, context, &compiled.metadata)?;
+    let mut graph = analyze_compiled(build, context, &compiled.metadata)?;
     compiled.verify()?;
+    graph.fingerprints.extend(compiled.fingerprints.clone());
     Ok(graph)
 }
 
@@ -562,7 +566,7 @@ mod compiled_acceptance {
         };
         let metadata = match std::env::var_os("CODECALLNAVIGATOR_COMPILED_METADATA") {
             Some(manifest) => serde_json::from_slice(&fs::read(manifest).unwrap()).unwrap(),
-            None => build::compile(&build, &context).unwrap(),
+            None => build::compile(&build, &context).unwrap().metadata,
         };
         let graph = analyze_compiled(&build, &context, &metadata).unwrap();
         assert!(graph.nodes.iter().all(|node| !node.file.is_empty() && Path::new(&node.file).starts_with(&build.path)), "Every declaration must belong to an actual selected-project source file");

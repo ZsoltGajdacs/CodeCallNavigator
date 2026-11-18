@@ -16,6 +16,7 @@ anyhow = "1"
 serde = { version = "1", features = ["derive", "rc"] }
 serde_json = "1"
 blake3 = "1"
+sha2 = "=0.10.9"
 shlex = "=2.0.1"
 libc = "0.2"
 tempfile = "3"

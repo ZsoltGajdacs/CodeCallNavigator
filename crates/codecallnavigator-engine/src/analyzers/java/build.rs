@@ -1,7 +1,7 @@
 //! Shared, validated build ownership and preparation stages for Java analyzers.
-use super::{gradle, maven};
+use super::{compile_observation, gradle, maven};
 use crate::{
-    analyzers::{AnalysisJob, ensure_unchanged, source_snapshot},
+    analyzers::{AnalysisJob, ensure_unchanged},
     discovery::BuildTarget,
     fingerprint,
     model::FileFingerprint,
@@ -39,6 +39,8 @@ pub(super) struct JavaSourceSet {
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub(super) struct JavaBuildMetadata {
+    pub compile_observation_version: u32,
+    pub configuration_inputs: Vec<PathBuf>,
     pub modules: Vec<PathBuf>,
     pub source_sets: Vec<JavaSourceSet>,
     pub build_inputs: Vec<PathBuf>,
@@ -47,7 +49,12 @@ pub(super) struct JavaBuildMetadata {
 
 pub(in crate::analyzers) struct PreparedJava {
     metadata: JavaBuildMetadata,
-    pub(super) authored_before: Vec<FileFingerprint>,
+    pub(super) configuration_before: Vec<FileFingerprint>,
+}
+
+pub(super) struct JavaCompilation {
+    pub metadata: JavaBuildMetadata,
+    pub observations: compile_observation::Observations,
 }
 
 pub(in crate::analyzers) fn prepare(
@@ -59,10 +66,7 @@ pub(in crate::analyzers) fn prepare(
         context.runtime.java_home.is_some(),
         "Java analysis requires an installed JDK 25; configure JAVA_HOME or install JDK 25"
     );
-    let mut before = source_snapshot(std::slice::from_ref(&build.path))?;
-    if build.kind == "maven" {
-        before.extend(maven::configuration_snapshot(&build.path)?);
-    }
+    let before = configuration_snapshot(build)?;
     let metadata = match build.kind.as_str() {
         "gradle" => gradle::metadata(build, context)?,
         "maven" => maven::metadata(build, context)?,
@@ -70,43 +74,96 @@ pub(in crate::analyzers) fn prepare(
     };
     ensure_unchanged(&before)?;
     validate(&metadata)?;
-    let authored_before = snapshot(build, &metadata, false)?;
+    let known = before
+        .iter()
+        .map(|input| PathBuf::from(&input.path))
+        .collect::<BTreeSet<_>>();
+    let mut configuration_before = before;
+    configuration_before.extend(fingerprint::capture_excluding(
+        metadata
+            .configuration_inputs
+            .iter()
+            .filter(|path| !known.contains(*path))
+            .cloned(),
+        &[],
+    )?);
+    ensure_unchanged(&configuration_before)?;
     Ok(PreparedJava {
         metadata,
-        authored_before,
+        configuration_before,
     })
 }
 
-pub(super) fn compile(build: &BuildTarget, context: &AnalysisJob<'_>) -> Result<JavaBuildMetadata> {
+fn configuration_snapshot(build: &BuildTarget) -> Result<Vec<FileFingerprint>> {
+    let mut paths = match build.kind.as_str() {
+        "maven" => {
+            let mut paths = vec![build.path.join("pom.xml")];
+            paths.extend(maven::configuration_paths(&build.path)?);
+            paths
+        }
+        "gradle" => gradle::configuration_paths(&build.path)?,
+        other => bail!("Unsupported Java build kind: {other}"),
+    };
+    // Only explicit configuration files enter the guard. In particular, the
+    // project directory's membership must not freeze generators out of a build.
+    paths.sort();
+    paths.dedup();
+    fingerprint::capture_excluding(paths, &[])
+}
+
+pub(super) fn compile(build: &BuildTarget, context: &AnalysisJob<'_>) -> Result<JavaCompilation> {
     let _stage = crate::metrics::stage("java.compilation");
     let metadata = match build.kind.as_str() {
         "gradle" => gradle::compile(build, context)?,
         "maven" => maven::compile(build, context)?,
         other => bail!("Unsupported Java build kind: {other}"),
     };
-    validate(&metadata)?;
+    validate(&metadata.metadata)?;
     Ok(metadata)
 }
 
 fn validate(metadata: &JavaBuildMetadata) -> Result<()> {
     ensure!(
-        !metadata.modules.is_empty(),
-        "Build metadata contains no modules"
+        metadata.compile_observation_version == compile_observation::VERSION,
+        "Java adapter lacks current compile observation capability; rebuild matching analyzer resources"
     );
-    let modules = metadata.modules.iter().collect::<BTreeSet<_>>();
+    let modules = validate_modules(&metadata.modules)?;
+    validate_source_sets(&metadata.source_sets, &modules)?;
+    for path in metadata
+        .build_inputs
+        .iter()
+        .chain(&metadata.output_roots)
+        .chain(&metadata.configuration_inputs)
+    {
+        ensure!(
+            path.is_absolute(),
+            "Build input/output path must be absolute: {}",
+            path.display()
+        );
+    }
+    Ok(())
+}
+
+fn validate_modules(paths: &[PathBuf]) -> Result<BTreeSet<&PathBuf>> {
+    ensure!(!paths.is_empty(), "Build metadata contains no modules");
+    let modules = paths.iter().collect::<BTreeSet<_>>();
     ensure!(
-        modules.len() == metadata.modules.len(),
+        modules.len() == paths.len(),
         "Build metadata contains duplicate module ownership"
     );
-    for module in &metadata.modules {
+    for module in paths {
         ensure!(
             module.is_absolute() && module.is_dir(),
             "Invalid module directory: {}",
             module.display()
         );
     }
+    Ok(modules)
+}
+
+fn validate_source_sets(sources: &[JavaSourceSet], modules: &BTreeSet<&PathBuf>) -> Result<()> {
     let mut outputs = BTreeMap::new();
-    for source in &metadata.source_sets {
+    for source in sources {
         ensure!(
             source.input_policy == "scoped_v1",
             "Java adapter lacks scoped input policy; rebuild matching analyzer resources"
@@ -139,13 +196,6 @@ fn validate(metadata: &JavaBuildMetadata) -> Result<()> {
                 path.display()
             );
         }
-    }
-    for path in metadata.build_inputs.iter().chain(&metadata.output_roots) {
-        ensure!(
-            path.is_absolute(),
-            "Build input/output path must be absolute: {}",
-            path.display()
-        );
     }
     Ok(())
 }
@@ -217,7 +267,24 @@ impl PreparedJava {
         build: &BuildTarget,
         metadata: &JavaBuildMetadata,
     ) -> Result<()> {
-        ensure_unchanged(&self.authored_before)?;
+        ensure_unchanged(&self.configuration_before)?;
+        let before_configuration = self
+            .metadata
+            .configuration_inputs
+            .iter()
+            .collect::<BTreeSet<_>>();
+        let after_configuration = metadata
+            .configuration_inputs
+            .iter()
+            .collect::<BTreeSet<_>>();
+        if before_configuration != after_configuration {
+            return Err(fingerprint::InputsChanged::new(
+                "Build configuration inputs changed during compilation.",
+                build.path.to_string_lossy().into_owned(),
+                "evaluated configuration membership changed",
+            )
+            .into());
+        }
         let before = self.metadata.modules.iter().collect::<BTreeSet<_>>();
         let after = metadata.modules.iter().collect::<BTreeSet<_>>();
         if before != after {

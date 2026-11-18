@@ -1,7 +1,8 @@
 mod diagnostics;
 pub(super) mod worker;
 use anyhow::{Context, Result, ensure};
-use diagnostics::{PROCESS_TIMEOUT, ProcessLogs, log_tail};
+pub(super) use diagnostics::NativeExitFailure;
+use diagnostics::{PROCESS_TIMEOUT, ProcessLogs};
 use std::os::unix::process::CommandExt;
 use std::{
     fs,
@@ -56,12 +57,7 @@ fn run_process_with_timeout(
         }
         match child.try_wait() {
             Ok(Some(status)) => {
-                ensure!(
-                    status.success(),
-                    "{} failed ({status}). {}",
-                    logs.name,
-                    log_tail(&logs.stderr)
-                );
+                NativeExitFailure::require_success(&logs, status)?;
                 break;
             }
             Ok(None) => thread::sleep(Duration::from_millis(100)),
@@ -153,8 +149,12 @@ mod tests {
             &AtomicBool::new(false),
             Duration::from_millis(200),
         )
-        .unwrap_err()
-        .to_string();
+        .unwrap_err();
+        assert!(
+            !error.is::<NativeExitFailure>(),
+            "Timeouts cannot become compiler consistency failures"
+        );
+        let error = error.to_string();
         assert!(error.contains("deadline-child timed out after"), "{error}");
         assert!(error.contains("limit 0.20s"), "{error}");
         assert!(error.contains("deadline-child.stdout"), "{error}");
@@ -179,8 +179,12 @@ mod tests {
                 &AtomicBool::new(cancelled),
                 Duration::ZERO,
             )
-            .unwrap_err()
-            .to_string();
+            .unwrap_err();
+            assert!(
+                !error.is::<NativeExitFailure>(),
+                "Cancellation/deadlines cannot become compiler consistency failures"
+            );
+            let error = error.to_string();
             assert!(
                 error.contains(&format!("zero-deadline {expected} after")),
                 "{error}"

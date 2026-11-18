@@ -1,4 +1,6 @@
 //! Real build exporters preserve evaluated output spelling alongside canonical ownership.
+#[path = "support/java_processor.rs"]
+mod processor;
 use codecallnavigator_engine::{
     analyzers::{AnalyzerRuntime, analyze},
     discovery::BuildTarget,
@@ -15,6 +17,7 @@ struct Fixture {
     _directory: tempfile::TempDir,
     root: PathBuf,
     metadata: PathBuf,
+    generated: Option<PathBuf>,
 }
 
 impl Fixture {
@@ -34,10 +37,18 @@ impl Fixture {
             fs::create_dir_all(output.join("actual-output")).unwrap();
             std::os::unix::fs::symlink("actual-output", output.join("output-alias")).unwrap();
         }
+        // JSR269 creates files during javac, unlike a precompiler generator.
+        // Reuse the existing aliased Maven journey to exercise physical exclusions.
+        let generated = if kind == "maven" && aliased {
+            Some(processor::maven_generated_output_alias(&root))
+        } else {
+            None
+        };
         Self {
             _directory: directory,
             root,
             metadata: base.join("metadata.json"),
+            generated,
         }
     }
 
@@ -66,10 +77,23 @@ impl Fixture {
         } else {
             let mut command = Command::new(repository.join("fixtures/gradle/gradlew"));
             command
-                .args(["--no-daemon", "--console=plain", "-p"])
+                .args([
+                    "--no-daemon",
+                    "--no-configuration-cache",
+                    "--console=plain",
+                    "-p",
+                ])
                 .arg(&self.root)
                 .arg("-I")
                 .arg(repository.join("tools/gradle-metadata.gradle"))
+                .arg(format!(
+                    "-Dcodecallnavigator.observerJar={}",
+                    repository
+                        .join(
+                            "tools/maven-metadata/build/libs/codecallnavigator-maven-metadata.jar"
+                        )
+                        .display()
+                ))
                 .arg(format!(
                     "-PcodecallnavigatorMetadataFile={}",
                     self.metadata.display()
@@ -89,11 +113,9 @@ impl Fixture {
             String::from_utf8_lossy(&output.stderr)
         );
         let exported: Value = serde_json::from_slice(&fs::read(&self.metadata).unwrap()).unwrap();
-        if kind == "maven" {
-            exported["sourceSets"].as_array().unwrap().clone()
-        } else {
-            exported.as_array().unwrap().clone()
-        }
+        assert_eq!(exported["compileObservationVersion"], 1);
+        assert!(exported["configurationInputs"].is_array());
+        exported["sourceSets"].as_array().unwrap().clone()
     }
 
     fn manual_analysis(&self, kind: &str) {
@@ -115,6 +137,30 @@ impl Fixture {
                 .iter()
                 .any(|node| node.signature.contains("probe.App:main("))
         );
+        if let Some(source) = &self.generated {
+            assert!(
+                source.is_file(),
+                "The real processor must emit its source through the output alias"
+            );
+            let generated = graph
+                .nodes
+                .iter()
+                .find(|node| node.signature.contains("probe.Generated:generated("))
+                .expect("Missing actual annotation-processor output");
+            assert!(generated.is_generated);
+            assert_eq!(
+                Path::new(&generated.file).canonicalize().unwrap(),
+                source.canonicalize().unwrap()
+            );
+            let source_alias = self
+                .root
+                .join("src/main/java/generated-source-link/probe/Generated.java");
+            assert_eq!(
+                source_alias.canonicalize().unwrap(),
+                source.canonicalize().unwrap(),
+                "The active source-root alias must reach the actual processor output"
+            );
+        }
     }
 }
 
