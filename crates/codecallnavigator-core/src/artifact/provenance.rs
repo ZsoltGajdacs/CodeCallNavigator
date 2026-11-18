@@ -48,6 +48,26 @@ pub struct Limitation {
     pub count: usize,
 }
 
+/// Resolve recorded inputs for a local analysis session without reading new bytes.
+pub fn local_inputs(analysis: &Analysis, roots: &Roots) -> Result<Vec<FileFingerprint>> {
+    let paths = Paths::new(roots)?;
+    analysis
+        .inputs
+        .iter()
+        .map(|input| {
+            Ok(FileFingerprint {
+                path: paths.local(&input.path)?,
+                kind: input.kind,
+                observation_policy: analysis.observation_policy,
+                hash: input.hash.clone(),
+                excluded_children: input.excluded_children.clone(),
+                missing: input.kind == InputKind::Missing,
+                ..Default::default()
+            })
+        })
+        .collect()
+}
+
 /// Use hashes captured during analysis, never substitute newer source contents.
 /// The coordinator must still reject changed runtime fingerprints before publication.
 pub fn build(

@@ -1,5 +1,6 @@
 //! Human CLI and one-request machine protocol share the same analysis operation.
 mod analysis;
+mod analysis_session;
 mod arguments;
 mod cancellation;
 mod comparison;
@@ -18,6 +19,9 @@ mod refresh_child;
 mod refresh_coordinator;
 mod refresh_policy;
 mod response_encoding;
+mod session_child;
+mod session_inputs;
+mod session_stream;
 mod verification;
 use anyhow::Result;
 use arguments::Command;
@@ -73,6 +77,7 @@ pub fn run() -> Result<i32> {
         }
         Command::Verify(arguments) => verification::run(arguments),
         Command::Analyze(arguments) => run_analysis(arguments),
+        Command::Watch(arguments) => session_stream::cli(arguments),
         Command::Compare {
             project,
             base,
@@ -83,6 +88,7 @@ pub fn run() -> Result<i32> {
             Ok(i32::from(!result.equal))
         }
         Command::Serve => machine::serve_once(),
+        Command::ServeAnalysisSession => session_stream::serve(),
         // Hidden reference-runner hook; not an alternate persistent graph output.
         Command::AnalyzeNative(paths) => {
             let project = std::env::current_dir()?;
@@ -120,6 +126,6 @@ fn print_help() {
         "codecallnavigator-engine"
     };
     println!(
-        "{program} capabilities\n{program} query < request.json\n{program} query-session < requests.ndjson\n{program} observe [--auto-refresh] < observation-request.ndjson\n{program} discover PROJECT\n{program} analyze --project PROJECT [--root NAME=PATH] TARGET...\n{program} clear-cache --project PROJECT\n{program} verify --project PROJECT [--root NAME=PATH]\n{program} compare --project PROJECT --base REF --head REF|WORKTREE"
+        "{program} capabilities\n{program} query < request.json\n{program} query-session < requests.ndjson\n{program} observe [--auto-refresh] < observation-request.ndjson\n{program} discover PROJECT\n{program} analyze --project PROJECT [--root NAME=PATH] TARGET...\n{program} watch --project PROJECT [--root NAME=PATH] TARGET...\n{program} clear-cache --project PROJECT\n{program} verify --project PROJECT [--root NAME=PATH]\n{program} compare --project PROJECT --base REF --head REF|WORKTREE"
     );
 }

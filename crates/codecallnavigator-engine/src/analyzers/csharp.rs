@@ -16,13 +16,26 @@ use crate::{
 };
 use anyhow::{Context, Result, ensure};
 use serde::Deserialize;
+#[cfg(test)]
+use std::sync::atomic::AtomicBool;
 use std::{
     collections::{HashMap, HashSet},
     fs,
     path::{Path, PathBuf},
+    process::Command,
 };
-#[cfg(test)]
-use std::{process::Command, sync::atomic::AtomicBool};
+
+fn dotnet_command(dotnet: &Path) -> Command {
+    let mut command = Command::new(dotnet);
+    // These invocations own their build processes. Do not start reusable
+    // servers that may outlive the invocation and serve unrelated clients.
+    command.envs([
+        ("DOTNET_CLI_USE_MSBUILD_SERVER", "0"),
+        ("MSBUILDDISABLENODEREUSE", "1"),
+        ("UseSharedCompilation", "false"),
+    ]);
+    command
+}
 
 #[derive(Deserialize)]
 struct AtlasMap {
@@ -513,7 +526,7 @@ mod acceptance {
         let runtime = super::super::AnalyzerRuntime::discover().unwrap();
         let output = root.path().join("graph.json");
         run_process(
-            Command::new(find_tool("dotnet").unwrap())
+            dotnet_command(&find_tool("dotnet").unwrap())
                 .arg(runtime.callatlas().unwrap())
                 .arg("map")
                 .arg(root.path())

@@ -13,6 +13,7 @@ use std::{
 mod build;
 mod class_facts;
 mod compile_observation;
+mod compiled;
 mod compose;
 mod contexts;
 mod engine;
@@ -40,6 +41,8 @@ mod tables;
 mod visibility_tests;
 use build::JavaSourceSet;
 pub(super) use build::{PreparedJava, prepare, reject_overlaps};
+pub(super) use compiled::{CompiledJava, ExtractionOutputsChanged, compile, extract_java};
+pub(super) use maven::MavenSources;
 #[cfg(test)]
 use metadata::unescape as tsv_unescape;
 #[cfg(test)]
@@ -51,63 +54,6 @@ use normalize::{java_certainty, method_key};
 struct JavaInput {
     path: PathBuf,
     source_set: Option<JavaSourceSet>,
-}
-
-/// A compiler result remains reusable only while all of its consumed inputs and
-/// original classpath outputs match. Extraction never advances this baseline.
-pub(in crate::analyzers) struct CompiledJava {
-    preflight: PreparedJava,
-    metadata: build::JavaBuildMetadata,
-    fingerprints: Vec<crate::model::FileFingerprint>,
-}
-
-impl CompiledJava {
-    pub(in crate::analyzers) fn verify(&self) -> Result<()> {
-        ensure_unchanged(&self.fingerprints)
-    }
-
-    pub(in crate::analyzers) fn preflight(&self) -> &PreparedJava {
-        &self.preflight
-    }
-}
-
-pub(in crate::analyzers) fn compile(
-    build: &BuildTarget,
-    context: &AnalysisJob<'_>,
-    prepared: PreparedJava,
-) -> Result<CompiledJava> {
-    ensure_unchanged(&prepared.configuration_before)?;
-    (context.progress)(format!(
-        "Compiling all Java source sets for {}…",
-        build.label
-    ));
-    let compilation = build::compile(build, context)?;
-    let metadata = compilation.metadata;
-    prepared.verify_compiled(build, &metadata)?;
-    let contexts = contexts::plan(&metadata.source_sets)?;
-    let mut fingerprints = prepared.configuration_before.clone();
-    fingerprints.extend(build::snapshot(build, &metadata, true)?);
-    fingerprints.extend(contexts::snapshot(&contexts)?);
-    fingerprints.extend(compilation.observations.fingerprints(&metadata)?);
-    let compiled = CompiledJava {
-        preflight: prepared,
-        metadata,
-        fingerprints,
-    };
-    compiled.verify()?;
-    Ok(compiled)
-}
-
-pub(in crate::analyzers) fn extract_java(
-    build: &BuildTarget,
-    context: &AnalysisJob<'_>,
-    compiled: &CompiledJava,
-) -> Result<GraphData> {
-    compiled.verify()?;
-    let mut graph = analyze_compiled(build, context, &compiled.metadata)?;
-    compiled.verify()?;
-    graph.fingerprints.extend(compiled.fingerprints.clone());
-    Ok(graph)
 }
 
 fn analyze_compiled(

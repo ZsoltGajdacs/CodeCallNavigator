@@ -12,6 +12,7 @@ use codecallnavigator_engine::{
 use std::{
     fs,
     path::{Path, PathBuf},
+    process::Command,
     sync::atomic::AtomicBool,
 };
 use support::{fixture, install_wrapper, run, target};
@@ -336,6 +337,22 @@ fn maven_generation_precedes_selected_typescript_consumer() {
     assert!(!fingerprint::is_stale(&graph.fingerprints).unwrap());
 }
 
+fn assert_missing_java_output_rejected(session: &mut PreparedAnalysis, root: &Path) {
+    let output = root.join("target/classes/fixture/Standalone.class");
+    let existing = fs::read(&output).unwrap();
+    fs::remove_file(&output).unwrap();
+    let count = native_build_count(root);
+    let error = session
+        .analyze(&AtomicBool::new(false), &|_| {})
+        .unwrap_err();
+    assert!(
+        format!("{error:#}").contains("No compiled Java output"),
+        "{error:#}"
+    );
+    assert_eq!(native_build_count(root), count);
+    fs::write(output, existing).unwrap();
+}
+
 #[test]
 #[ignore = "requires pinned Java analyzer, Maven and JDK 25"]
 fn maven_standalone_changes_and_failed_refresh_preserve_cached_graph() {
@@ -369,7 +386,10 @@ fn maven_standalone_changes_and_failed_refresh_preserve_cached_graph() {
     let store = SqliteStore::open(cache.path()).unwrap();
     let generation = store.publish(&graph, &AtomicBool::new(false)).unwrap();
     assert_only_changed_build_is_prepared(&mut session, &root, &other_root);
-    assert_changed_bytecode_rejects_extraction(&mut session, &root);
+    let original_class = assert_changed_bytecode_rejects_extraction(&mut session, &root);
+    assert_output_only_change_reuses_java_build(&mut session, &root, &other_root, &original_class);
+    assert_missing_java_output_rejected(&mut session, &root);
+    assert_maven_rejects_unadvanced_source_timestamp(&mut session, &root);
     fs::write(
         root.join("src/main/java/fixture/Standalone.java"),
         "invalid Java",
@@ -485,15 +505,83 @@ fn assert_only_changed_build_is_prepared(
     assert_eq!(native_build_count(second), counts[1]);
 }
 
-fn assert_changed_bytecode_rejects_extraction(session: &mut PreparedAnalysis, root: &Path) {
+fn assert_changed_bytecode_rejects_extraction(
+    session: &mut PreparedAnalysis,
+    root: &Path,
+) -> Vec<u8> {
     let classes = root.join("target/classes/fixture/Standalone.class");
     let mut bytes = fs::read(&classes).unwrap();
     bytes.push(0);
-    fs::write(classes, bytes).unwrap();
+    fs::write(classes, &bytes).unwrap();
     let error = session
         .extract(&AtomicBool::new(false), &|_| {})
         .unwrap_err();
     assert!(error.is::<fingerprint::InputsChanged>());
+    bytes.truncate(bytes.len() - 1);
+    bytes
+}
+
+fn assert_output_only_change_reuses_java_build(
+    session: &mut PreparedAnalysis,
+    root: &Path,
+    other: &Path,
+    original_class: &[u8],
+) {
+    let old_counts = [native_build_count(root), native_build_count(other)];
+    let compiled = tempfile::tempdir().unwrap();
+    let runtime = AnalyzerRuntime::discover().unwrap();
+    let result = Command::new(runtime.java_home.unwrap().join("bin/javac"))
+        .args(["--release", "17", "-g:lines,source", "-parameters", "-d"])
+        .arg(compiled.path())
+        .arg(root.join("src/main/java/fixture/Standalone.java"))
+        .output()
+        .unwrap();
+    assert!(
+        result.status.success(),
+        "{}",
+        String::from_utf8_lossy(&result.stderr)
+    );
+    let updated = fs::read(compiled.path().join("fixture/Standalone.class")).unwrap();
+    assert_ne!(updated.as_slice(), original_class);
+    fs::write(
+        root.join("target/classes/fixture/Standalone.class"),
+        updated,
+    )
+    .unwrap();
+    let graph = session.analyze(&AtomicBool::new(false), &|_| {}).unwrap();
+    method(&graph, "Standalone", "revisedLeaf");
+    assert_eq!(
+        old_counts,
+        [native_build_count(root), native_build_count(other)]
+    );
+    assert!(!fingerprint::is_stale(&graph.fingerprints).unwrap());
+}
+
+fn assert_maven_rejects_unadvanced_source_timestamp(session: &mut PreparedAnalysis, root: &Path) {
+    let count = native_build_count(root);
+    let source = root.join("src/main/java/fixture/Standalone.java");
+    let modified = fs::metadata(&source).unwrap().modified().unwrap();
+    let before = fs::read_to_string(&source).unwrap();
+    let edited = before.replace("revisedLeaf", "updatedLeaf");
+    assert_ne!(before, edited);
+    assert_eq!(before.len(), edited.len());
+    fs::write(&source, edited).unwrap();
+    fs::File::options()
+        .write(true)
+        .open(&source)
+        .unwrap()
+        .set_times(fs::FileTimes::new().set_modified(modified))
+        .unwrap();
+    let error = session
+        .prepare(&AtomicBool::new(false), &|_| {})
+        .unwrap_err();
+    let message = format!("{error:#}");
+    assert!(
+        message.contains("content changed without a newer source timestamp"),
+        "{message}"
+    );
+    assert!(message.contains(source.to_str().unwrap()), "{message}");
+    assert_eq!(native_build_count(root), count);
 }
 
 #[test]

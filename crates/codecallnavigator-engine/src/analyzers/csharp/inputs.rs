@@ -5,6 +5,7 @@
 //! conditional imports are not evaluated inputs and are not resolution probes.
 mod contexts;
 use super::super::{ensure_unchanged, process::run_process};
+use super::dotnet_command;
 use crate::model::FileFingerprint;
 use anyhow::{Context, Result, ensure};
 use contexts::EvaluationContext;
@@ -144,7 +145,7 @@ impl<'a> Preprocessor<'a> {
     }
 
     fn command(&self, project: &Path, context: &EvaluationContext) -> Command {
-        let mut command = Command::new(self.dotnet);
+        let mut command = dotnet_command(self.dotnet);
         command.arg("msbuild").arg(project).arg("-nologo");
         context.apply(&mut command);
         if let Some(directory) = &self.solution_dir {

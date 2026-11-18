@@ -111,7 +111,7 @@ impl Executor {
         &self,
         cancel: &std::sync::atomic::AtomicBool,
     ) -> codecallnavigator_core::query::Result<super::refresh_coordinator::Plan> {
-        use codecallnavigator_core::{artifact, protocol, query::Error};
+        use codecallnavigator_core::{artifact, query::Error, refresh};
         let loaded = self
             .loaded
             .as_ref()
@@ -154,18 +154,15 @@ impl Executor {
                 .to_hex()
                 .to_string();
             Ok::<_, anyhow::Error>(super::refresh_coordinator::Plan {
-                request: protocol::Request::Analyze {
-                    version: protocol::VERSION,
+                request: refresh::SessionRequest {
+                    version: refresh::SESSION_VERSION,
                     project: project.clone(),
                     roots: loaded.roots.clone(),
                     targets,
                     infer_linked_roots: false,
-                    failure_version: Some(1),
                     expected_generation: Some(loaded.generation.clone()),
                 },
-                generation: loaded.generation.clone(),
                 selection,
-                project,
                 trigger,
             })
         })();

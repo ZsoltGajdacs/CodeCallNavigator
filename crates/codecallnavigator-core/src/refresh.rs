@@ -1,9 +1,23 @@
 //! Opt-in automatic-refresh activity is volatile and separate from input validity.
-use crate::query::Error;
+use crate::{discovery::BuildTarget, query::Error};
 use serde::{Deserialize, Serialize};
+use std::path::PathBuf;
 
 pub const VERSION: u32 = 1;
 pub const DEBOUNCE_MILLISECONDS: u64 = 300;
+pub const SESSION_VERSION: u32 = 1;
+
+/// Start a session with a fixed selection, including projects without a graph.
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct SessionRequest {
+    pub version: u32,
+    pub project: PathBuf,
+    pub roots: Vec<(String, PathBuf)>,
+    pub targets: Vec<BuildTarget>,
+    pub infer_linked_roots: bool,
+    pub expected_generation: Option<String>,
+}
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Activity {

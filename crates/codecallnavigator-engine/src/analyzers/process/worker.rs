@@ -1,25 +1,21 @@
 //! Owned, cancellable two-phase adapter process. Protocol payloads stay adapter-specific.
-use super::{
-    diagnostics::{PROCESS_TIMEOUT, ProcessLogs, log_tail},
-    stop_process_group,
-};
+use super::diagnostics::{PROCESS_TIMEOUT, ProcessLogs, log_tail};
+use crate::process_ownership::OwnedProcess;
 use anyhow::{Context, Result, bail, ensure};
 use std::{
     fs,
     io::Write,
-    os::unix::process::CommandExt,
     path::Path,
-    process::{Child, Command, Stdio},
+    process::{Command, Stdio},
     sync::atomic::AtomicBool,
     thread,
     time::{Duration, Instant},
 };
 
 pub(in crate::analyzers) struct Worker {
-    child: Child,
+    child: OwnedProcess,
     logs: ProcessLogs,
     timeout: Duration,
-    finished: bool,
 }
 
 impl Worker {
@@ -31,20 +27,17 @@ impl Worker {
     ) -> Result<Self> {
         let logs = ProcessLogs::new(job, name);
         logs.check_wait(cancel, Instant::now(), PROCESS_TIMEOUT)?;
-        let child = command
+        command
             .stdin(Stdio::piped())
             .stdout(Stdio::from(fs::File::create(&logs.stdout)?))
-            .stderr(Stdio::from(fs::File::create(&logs.stderr)?))
-            .process_group(0)
-            .spawn()
-            .context("Cannot start analysis worker")?;
+            .stderr(Stdio::from(fs::File::create(&logs.stderr)?));
+        let child = OwnedProcess::spawn(command).context("Cannot start analysis worker")?;
         crate::metrics::count("worker_processes", 1);
         crate::metrics::count("subprocesses", 1);
         Ok(Self {
             child,
             logs,
             timeout: PROCESS_TIMEOUT,
-            finished: false,
         })
     }
 
@@ -59,19 +52,25 @@ impl Worker {
             if output.is_file() {
                 return Ok(());
             }
-            if let Some(status) = self.child.try_wait()? {
-                bail!(
-                    "Analysis worker exited before output ({status}): {}",
-                    log_tail(&self.logs.stderr)
-                );
+            let Some(status) = self.child.try_wait()? else {
+                thread::sleep(Duration::from_millis(20));
+                continue;
+            };
+            // The worker may publish between the first check and process exit.
+            if status.success() && output.is_file() {
+                return Ok(());
             }
-            thread::sleep(Duration::from_millis(20));
+            bail!(
+                "Analysis worker exited before output ({status}): {}",
+                log_tail(&self.logs.stderr)
+            );
         }
     }
 
     pub(in crate::analyzers) fn request(&mut self, request: &str) -> Result<()> {
         let input = self
             .child
+            .child_mut()
             .stdin
             .as_mut()
             .context("Analysis worker input is closed")?;
@@ -81,12 +80,20 @@ impl Worker {
     }
 
     pub(in crate::analyzers) fn finish(&mut self, cancel: &AtomicBool) -> Result<()> {
-        self.child.stdin.take();
+        self.child.child_mut().stdin.take();
+        let result = self.wait_for_exit(cancel);
+        self.child.complete(result)
+    }
+
+    pub(in crate::analyzers) fn complete<T>(&mut self, result: Result<T>) -> Result<T> {
+        self.child.complete(result)
+    }
+
+    fn wait_for_exit(&mut self, cancel: &AtomicBool) -> Result<()> {
         let started = Instant::now();
         loop {
             self.check_wait(cancel, started)?;
             if let Some(status) = self.child.try_wait()? {
-                self.finished = true;
                 ensure!(
                     status.success(),
                     "Analysis worker failed ({status}): {}",
@@ -103,14 +110,6 @@ impl Worker {
     }
 }
 
-impl Drop for Worker {
-    fn drop(&mut self) {
-        if !self.finished {
-            stop_process_group(&mut self.child);
-        }
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -124,7 +123,7 @@ mod tests {
             &AtomicBool::new(false),
         )
         .unwrap();
-        let pid = worker.child.id();
+        let pid = worker.child.child_mut().id();
         worker.request("waiting").unwrap();
         drop(worker);
         assert_eq!(unsafe { libc::kill(pid as i32, 0) }, -1);
@@ -139,7 +138,7 @@ mod tests {
             &AtomicBool::new(false),
         )
         .unwrap();
-        let pid = worker.child.id();
+        let pid = worker.child.child_mut().id();
         let error = worker
             .wait_for_output(&directory.path().join("absent"), &AtomicBool::new(true))
             .unwrap_err()
@@ -166,7 +165,7 @@ mod tests {
         )
         .unwrap();
         worker.timeout = Duration::from_millis(200);
-        let pid = worker.child.id();
+        let pid = worker.child.child_mut().id();
         let error = worker
             .wait_for_output(&directory.path().join("absent"), &AtomicBool::new(false))
             .unwrap_err()
@@ -190,7 +189,7 @@ mod tests {
         )
         .unwrap();
         worker.timeout = Duration::from_millis(20);
-        let pid = worker.child.id();
+        let pid = worker.child.child_mut().id();
         let error = worker
             .finish(&AtomicBool::new(false))
             .unwrap_err()

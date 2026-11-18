@@ -26,14 +26,14 @@ pub(super) struct Scope {
     pub members: Vec<PathBuf>,
 }
 
-#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Deserialize)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub(super) enum Selection {
     Java,
     Class,
 }
 
-#[derive(Clone, PartialEq, Eq, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub(super) struct Input {
     pub path: PathBuf,
@@ -128,6 +128,22 @@ impl Snapshot {
             .chain(self.links.iter().map(|link| &link.path))
     }
 
+    /// A no-source operation observes source membership and aliases, but does
+    /// not consume classpath entries just because the build supplied them.
+    pub fn source_paths(&self) -> impl Iterator<Item = &PathBuf> {
+        self.scopes
+            .iter()
+            .filter(|scope| scope.selection == Selection::Java)
+            .flat_map(|scope| {
+                std::iter::once(&scope.path).chain(&scope.members).chain(
+                    self.links.iter().filter_map(|link| {
+                        (scope.path.starts_with(&link.path) || link.path.starts_with(&scope.path))
+                            .then_some(&link.path)
+                    }),
+                )
+            })
+    }
+
     fn input_paths(&self) -> impl Iterator<Item = &PathBuf> {
         self.inputs
             .iter()
@@ -185,6 +201,12 @@ impl Snapshot {
         Ok(())
     }
 
+    pub fn consumed_key(&self) -> String {
+        blake3::hash(format!("{:?}", self.consumed()).as_bytes())
+            .to_hex()
+            .to_string()
+    }
+
     fn consumed(&self) -> Consumed {
         let inputs: BTreeMap<_, _> = self
             .inputs
@@ -215,6 +237,7 @@ impl Snapshot {
     }
 }
 
+#[derive(Debug)]
 struct Consumed {
     inputs: BTreeMap<PathBuf, Input>,
     scopes: BTreeMap<(PathBuf, Selection), BTreeSet<PathBuf>>,

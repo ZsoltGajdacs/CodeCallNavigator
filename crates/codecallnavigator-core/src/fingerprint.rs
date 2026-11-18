@@ -79,22 +79,41 @@ impl std::fmt::Display for InputsChanged {
 impl std::error::Error for InputsChanged {}
 
 pub fn require_unchanged(items: &[FileFingerprint], message: &'static str) -> Result<()> {
-    if let Some((item, change)) = first_changed(items)? {
+    require_current(items, message, None)
+}
+
+pub fn require_unchanged_cancellable(
+    items: &[FileFingerprint],
+    message: &'static str,
+    cancel: &AtomicBool,
+) -> Result<()> {
+    require_current(items, message, Some(cancel))
+}
+
+fn require_current(
+    items: &[FileFingerprint],
+    message: &'static str,
+    cancel: Option<&AtomicBool>,
+) -> Result<()> {
+    if let Some((item, change)) = first_changed(items, cancel)? {
         return Err(InputsChanged::new(message, item.path.clone(), change).into());
     }
     Ok(())
 }
 
 pub fn is_stale(items: &[FileFingerprint]) -> Result<bool> {
-    Ok(first_changed(items)?.is_some())
+    Ok(first_changed(items, None)?.is_some())
 }
 
-fn first_changed(items: &[FileFingerprint]) -> Result<Option<(&FileFingerprint, &'static str)>> {
+fn first_changed<'a>(
+    items: &'a [FileFingerprint],
+    cancel: Option<&AtomicBool>,
+) -> Result<Option<(&'a FileFingerprint, &'static str)>> {
     let _stage = crate::metrics::stage("fingerprints.verify");
+    check_cancel(cancel)?;
     for item in items {
-        let path = Path::new(&item.path);
-        let current = fingerprint(path, &item.excluded_children, true, item.observation_policy)?;
-        let change = classify_change(item, &current, path.is_dir());
+        let current = reobserve(item, cancel)?;
+        let change = classify_change(item, &current);
         if let Some(change) = change {
             return Ok(Some((item, change)));
         }
@@ -102,12 +121,23 @@ fn first_changed(items: &[FileFingerprint]) -> Result<Option<(&FileFingerprint, 
     Ok(None)
 }
 
-fn classify_change(
-    before: &FileFingerprint,
-    current: &FileFingerprint,
-    directory: bool,
-) -> Option<&'static str> {
-    match (before.missing, current.missing) {
+/// Reconcile a captured lexical input using its existing selection policy.
+pub fn reobserve(
+    item: &FileFingerprint,
+    cancel: Option<&AtomicBool>,
+) -> Result<ContentObservation> {
+    let path = Path::new(&item.path);
+    observe_content_controlled(
+        path,
+        &item.excluded_children,
+        cancel,
+        item.observation_policy,
+    )
+    .with_context(|| format!("Cannot verify analysis input {}", path.display()))
+}
+
+fn classify_change(before: &FileFingerprint, current: &ContentObservation) -> Option<&'static str> {
+    match (before.missing, current.kind == InputKind::Missing) {
         (false, true) => return Some("removed"),
         (true, false) => return Some("created"),
         _ => {}
@@ -116,7 +146,7 @@ fn classify_change(
         return Some("input kind changed");
     }
     if before.hash != current.hash {
-        return Some(hash_change(directory));
+        return Some(hash_change(current.kind == InputKind::Directory));
     }
     None
 }

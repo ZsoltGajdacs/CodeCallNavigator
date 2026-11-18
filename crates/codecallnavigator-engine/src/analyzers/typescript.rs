@@ -63,7 +63,9 @@ fn start_worker(build: &BuildTarget, context: &AnalysisJob<'_>) -> Result<(Worke
         "typescript-worker",
         context.cancel,
     )?;
-    worker.wait_for_output(&output, context.cancel)?;
+    if let Err(error) = worker.wait_for_output(&output, context.cancel) {
+        return worker.complete(Err(error));
+    }
     Ok((worker, output))
 }
 
@@ -95,7 +97,21 @@ pub(super) fn prepare(
     context: &AnalysisJob<'_>,
 ) -> Result<PreparedTypeScript> {
     let _timing = crate::metrics::stage("typescript.prepare");
-    let (worker, output) = start_worker(build, context)?;
+    let (mut worker, output) = start_worker(build, context)?;
+    let (metadata, before) = match prepare_inputs(output) {
+        Ok(inputs) => inputs,
+        Err(error) => return worker.complete(Err(error)),
+    };
+    Ok(PreparedTypeScript {
+        metadata,
+        before,
+        worker: Some(worker),
+        raw_output: None,
+        raw_fingerprints: Vec::new(),
+    })
+}
+
+fn prepare_inputs(output: PathBuf) -> Result<(Metadata, Vec<FileFingerprint>)> {
     let metadata: Metadata = serde_json::from_slice(&fs::read(output)?)?;
     validate_capabilities(&metadata.versions)?;
     ensure!(
@@ -131,20 +147,16 @@ pub(super) fn prepare(
         .cloned()
         .collect::<BTreeSet<_>>();
     let before = fingerprint::capture_excluding(paths, &metadata.output_roots)?;
-    Ok(PreparedTypeScript {
-        metadata,
-        before,
-        worker: Some(worker),
-        raw_output: None,
-        raw_fingerprints: Vec::new(),
-    })
+    Ok((metadata, before))
 }
 
 impl PreparedTypeScript {
-    /// Multi-target preparation retains guards, not one compiler Program per
-    /// selected target. Dropping the owned worker stops and reaps it synchronously.
-    pub(super) fn release_worker(&mut self) {
-        self.worker.take();
+    /// Multi-target preparation retains guards, not a Program per selected target.
+    pub(super) fn release_worker(&mut self) -> Result<()> {
+        match self.worker.take() {
+            Some(mut worker) => worker.complete(Ok(())),
+            None => Ok(()),
+        }
     }
 
     pub(super) fn verify(&self) -> Result<()> {
@@ -157,13 +169,17 @@ impl PreparedTypeScript {
         if let Some(output) = &self.raw_output {
             return Ok(output.clone());
         }
-        let mut worker = self.resume(build, context)?;
         let output = context.path.join("typescript-analyze.json");
         if output.exists() {
             fs::remove_file(&output)?;
         }
-        worker.request(&serde_json::json!({"command":"analyze","output":output}).to_string())?;
-        worker.wait_for_output(&output, context.cancel)?;
+        let mut worker = self.resume(build, context)?;
+        let result = worker
+            .request(&serde_json::json!({"command":"analyze","output":output}).to_string())
+            .and_then(|()| worker.wait_for_output(&output, context.cancel));
+        if let Err(error) = result {
+            return worker.complete(Err(error));
+        }
         worker.finish(context.cancel)?;
         self.verify()?;
         self.raw_fingerprints = fingerprint::capture([output.clone()])?;
@@ -177,7 +193,14 @@ impl PreparedTypeScript {
         }
         let _timing = crate::metrics::stage("typescript.reprepare");
         ensure_unchanged(&self.before)?;
-        let (worker, output) = start_worker(build, context)?;
+        let (mut worker, output) = start_worker(build, context)?;
+        if let Err(error) = self.check_resume(build, output) {
+            return worker.complete(Err(error));
+        }
+        Ok(worker)
+    }
+
+    fn check_resume(&self, build: &BuildTarget, output: PathBuf) -> Result<()> {
         let metadata: Metadata = serde_json::from_slice(&fs::read(output)?)?;
         validate_capabilities(&metadata.versions)?;
         if metadata != self.metadata {
@@ -188,8 +211,7 @@ impl PreparedTypeScript {
             )
             .into());
         }
-        ensure_unchanged(&self.before)?;
-        Ok(worker)
+        ensure_unchanged(&self.before)
     }
 }
 

@@ -19,6 +19,7 @@ pub fn capabilities() -> serde_json::Value {
         "query_version": VERSION,
         "operations": ["flow_resources", "status", "freshness", "snapshot", "inspect", "live_source", "architecture", "search", "symbol", "source", "explorer", "selection", "render_selection", "neighbors", "flow", "compare", "flow_comparison", "flow_expansion"],
         "automatic_refresh": {"version":crate::refresh::VERSION,"activity_version":crate::refresh::VERSION,"observe_flag":"--auto-refresh","debounce_milliseconds":crate::refresh::DEBOUNCE_MILLISECONDS,"cancel_command":"cancel_refresh"},
+        "analysis_session": {"version":crate::refresh::SESSION_VERSION,"command":"analysis-session","activity_version":crate::refresh::VERSION,"cancel_command":"cancel_refresh"},
         "flow_comparison": {"version":1,"selections":["catalog","detail"],"default_limit":50,"maximum_limit":500,"maximum_text_bytes":1024,"maximum_symbol_bytes":16384,"maximum_response_bytes":crate::artifact::difference::MAX_RESPONSE_BYTES,"maximum_source_bytes":MAX_SOURCE_BYTES,"snapshot_binding":true,"correspondence":"exact_identity","manual_counterpart":true},
         "comparison": {"version":1,"default_limit":100,"maximum_limit":500,"maximum_response_bytes":24*1024*1024,"snapshot_binding":true},
         "freshness": {"version":crate::freshness::VERSION,"streaming":true,"mode":"verified_polling","limited":true,"reconcile_milliseconds":crate::freshness::RECONCILE_MILLISECONDS,"heartbeat_milliseconds":crate::freshness::HEARTBEAT_MILLISECONDS},

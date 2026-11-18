@@ -26,6 +26,7 @@ counterpart option; see the [saved-revision contract](cli-queries.md#saved-revis
 ```sh
 ccnavigator discover /checkout
 ccnavigator analyze --project /checkout backend/pom.xml frontend/tsconfig.json
+ccnavigator watch --project /checkout backend/pom.xml frontend/tsconfig.json
 ccnavigator clear-cache --project /checkout
 ccnavigator compare --project /checkout --base HEAD~1 --head WORKTREE
 ```
@@ -106,8 +107,27 @@ envelope. Unknown failure versions are rejected before analysis. Optional
 `expected_generation` binds an analysis request to the current canonical digest;
 the engine checks it while holding the analysis lock, before build preparation.
 A mismatch reports `generation_changed` without replacing the artifact. Manual
-analysis omits this precondition. Automatic refresh uses a fresh `serve-once`
-process for every run, so cancellation never resets process-global state.
+analysis omits this precondition.
+
+`ccnavigator watch` starts continuous analysis for the chosen builds, including
+in a checkout without a saved graph. The engine waits for edits to settle,
+keeps validated compiler preparation, and follows new saved inputs. It publishes
+only a complete, consistent graph. Stop the session with Ctrl-C.
+
+Machine clients can open the same session with `ccnavigator analysis-session`.
+Keep stdin open and send one newline-delimited request. Capabilities advertises
+the command and its version under `analysis_session`.
+
+```json
+{"version":1,"project":"/checkout","roots":[],"targets":[{"path":"/checkout/backend","kind":"maven","language":"java","label":"Backend"}],"infer_linked_roots":false,"expected_generation":null}
+```
+
+A null `expected_generation` requests initial analysis. A digest follows the
+matching saved selection. Stdout carries versioned activity frames with
+monotonic sequence numbers. Publication reports a digest and leaves the
+session open. Send `{"command":"cancel_refresh","version":1}` to cancel the
+current attempt. Close stdin to stop the session and its owned processes.
+`observe --auto-refresh` forwards activity from this same engine session.
 
 Protocol version 2 also accepts
 `{"command":"clear_cache","version":2,"project":"/checkout"}`.

@@ -6,6 +6,22 @@ mod java;
 mod process;
 mod session;
 pub use session::PreparedAnalysis;
+
+/// A stable key for the inputs a failed native operation consumed.
+#[derive(Debug)]
+pub struct ConsumedRevision(String);
+
+impl ConsumedRevision {
+    pub fn as_str(&self) -> &str {
+        &self.0
+    }
+}
+
+impl std::fmt::Display for ConsumedRevision {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter.write_str("Native analysis retained its consumed-input observation")
+    }
+}
 mod typescript;
 use crate::{
     discovery::BuildTarget,

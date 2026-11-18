@@ -1,25 +1,36 @@
 //! Process-owned observer I/O. Delivery is bounded and coalesced, never a journal.
 use codecallnavigator_core::{
     freshness::StreamEvent,
-    query::{Error, Request, Result},
+    query::{Error, Result},
 };
+use serde::de::DeserializeOwned;
 use std::{
     io::{self, BufRead, Read, Write},
     sync::{
         Arc,
         atomic::{AtomicBool, AtomicU64, Ordering},
-        mpsc::{self, Receiver, SyncSender, TrySendError},
+        mpsc::{self, Receiver, RecvTimeoutError, SyncSender, TrySendError},
     },
     time::{Duration, Instant},
 };
 
-pub(super) struct Input {
-    pub requests: Receiver<Result<Request>>,
+pub(super) struct Input<T> {
+    pub requests: Receiver<Result<T>>,
     pub stopped: Arc<AtomicBool>,
     pub cancel_refresh: Arc<AtomicBool>,
 }
 
-impl Input {
+impl<T: DeserializeOwned + Send + 'static> Input<T> {
+    pub fn receive_initial(&self) -> Option<Result<T>> {
+        loop {
+            match self.requests.recv_timeout(Duration::from_millis(20)) {
+                Ok(request) => return Some(request),
+                Err(RecvTimeoutError::Timeout) if !self.stopped.load(Ordering::Acquire) => {}
+                Err(_) => return None,
+            }
+        }
+    }
+
     pub fn start(automatic: bool) -> Self {
         let (send, requests) = mpsc::sync_channel(2);
         let stopped = Arc::new(AtomicBool::new(false));
@@ -27,7 +38,7 @@ impl Input {
         let cancel_refresh = Arc::new(AtomicBool::new(false));
         let control = cancel_refresh.clone();
         if automatic {
-            bridge_signals(stopped.clone());
+            bridge_stop(stopped.clone(), cancel_refresh.clone());
         }
         std::thread::spawn(move || {
             consume_input(automatic, &send, &control);
@@ -41,7 +52,7 @@ impl Input {
     }
 }
 
-fn bridge_signals(stopped: Arc<AtomicBool>) {
+pub(super) fn bridge_stop(stopped: Arc<AtomicBool>, cancel_attempt: Arc<AtomicBool>) {
     std::thread::spawn(move || {
         while !stopped.load(Ordering::Acquire) {
             if super::cancellation::CANCELLED.load(Ordering::Acquire) {
@@ -50,10 +61,15 @@ fn bridge_signals(stopped: Arc<AtomicBool>) {
             }
             std::thread::sleep(Duration::from_millis(10));
         }
+        cancel_attempt.store(true, Ordering::Release);
     });
 }
 
-fn consume_input(automatic: bool, send: &SyncSender<Result<Request>>, control: &AtomicBool) {
+fn consume_input<T: DeserializeOwned>(
+    automatic: bool,
+    send: &SyncSender<Result<T>>,
+    control: &AtomicBool,
+) {
     let mut input = io::stdin().lock();
     let Some(request) = first_request(&mut input, automatic) else {
         return;
@@ -68,7 +84,10 @@ fn consume_input(automatic: bool, send: &SyncSender<Result<Request>>, control: &
     }
 }
 
-fn first_request(input: &mut impl BufRead, automatic: bool) -> Option<Result<Request>> {
+fn first_request<T: DeserializeOwned>(
+    input: &mut impl BufRead,
+    automatic: bool,
+) -> Option<Result<T>> {
     match read_request(input) {
         Ok(Some(request)) => Some(Ok(request)),
         Ok(None) if automatic => None,
@@ -80,7 +99,7 @@ fn first_request(input: &mut impl BufRead, automatic: bool) -> Option<Result<Req
     }
 }
 
-fn read_request(input: &mut impl BufRead) -> Result<Option<Request>> {
+fn read_request<T: DeserializeOwned>(input: &mut impl BufRead) -> Result<Option<T>> {
     let mut bytes = Vec::new();
     input
         .take(4 * 1024 * 1024 + 1)

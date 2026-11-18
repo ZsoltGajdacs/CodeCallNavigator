@@ -172,12 +172,14 @@ class Case:
     def edit(self, value):
         self.project.source.write_text(self.project.text(value))
 
-    def reference(self, value):
+    def reference(self, value, additional_source=None):
         with tempfile.TemporaryDirectory(prefix="ccn-auto-accept-reference-") as directory:
             project = Project(Path(directory), "typescript", self.project.modules,
                               self.project.repository)
             project.reset()
             project.source.write_text(project.text(value))
+            if additional_source is not None:
+                project.extra.write_text(additional_source)
             complete = Session(self.executable, project, self.timeout).analyze()
             raw = (project.root / ".codecallnavigator/graph.json").read_bytes()
             return complete["generation"], raw
@@ -394,6 +396,101 @@ def future_observation_version(case):
     case.unchanged()
 
 
+class FreshSessionMonitor(Monitor):
+    """The real machine session uses activity frames, including first publication."""
+    def __init__(self, case):
+        self.case, self.events, self.report = case, [], None
+        initial = {"version": 1, "project": str(case.project.root),
+                   "roots": case.project.roots, "targets": case.session.targets,
+                   "infer_linked_roots": False, "expected_generation": None}
+        self.observer = Observer([str(case.executable), "analysis-session"], initial,
+                                 case.timeout)
+
+    def publish(self, generation):
+        return self.until(lambda event: activity(event).get("state") == "published"
+                          and activity(event).get("generation") == generation)
+
+
+class FreshSessionCase(Case):
+    """Own a real compiler project without seeding a prior successful graph."""
+    def __init__(self, arguments, name):
+        self.arguments, self.name = arguments, name
+        self.executable, self.timeout = arguments.executable, arguments.timeout
+        self.directory = tempfile.TemporaryDirectory(prefix="ccn-fresh-session-")
+        self.project = Project(Path(self.directory.name), "typescript", arguments.typescript_modules,
+                               Path(__file__).resolve().parents[1])
+        self.project.reset()
+        self.project.source.write_text("export function broken(\n")
+        self.session = Session(self.executable, self.project, self.timeout)
+        self.artifact = self.project.root / ".codecallnavigator/graph.json"
+        self.monitors = []
+
+    def monitor(self):
+        monitor = FreshSessionMonitor(self)
+        self.monitors.append(monitor)
+        return monitor
+
+
+def fresh_session(case):
+    # Only an actual compiler failure followed by two independent clean-reference
+    # publications proves recovery without a preexisting graph or session restart.
+    require(not case.artifact.exists(), "Fresh session unexpectedly has a graph")
+    monitor = case.monitor()
+    process = monitor.observer.measurement.process
+    failed = activity(monitor.state("failed"))
+    require(failed["error"]["code"] == "analysis_failed", f"Wrong failure: {failed}")
+    require("error TS" in failed["error"]["message"] and "app.ts" in failed["error"]["message"],
+            f"Missing actual TypeScript source diagnostic: {failed}")
+    require(not case.artifact.exists(), "Invalid initial source published a graph")
+    require(monitor.runs() == 1, "Initial invalid state did not attempt exactly once")
+    monitor.quiet()
+    require(monitor.runs() == 1, "Unchanged initial failure was repeatedly retried")
+    require(not case.artifact.exists(), "Unchanged invalid source published a graph")
+    evidence = {"initial_failure": failed, "unchanged_failure_runs": monitor.runs(),
+                "session_pid": process.pid, "publications": []}
+    for value, attempts in [(2, 2), (3, 3)]:
+        generation, expected = case.reference(value)
+        case.edit(value)
+        published = activity(monitor.publish(generation))
+        case.equivalent(expected)
+        require(monitor.runs() == attempts, "An edit caused duplicate/missing analysis attempts")
+        require(process.poll() is None, "Published ended the continuous session")
+        evidence["publications"].append(published)
+        if value == 2:
+            before = case.artifact.read_bytes()
+            case.project.source.write_bytes(case.project.source.read_bytes())
+            os.utime(case.project.source, None)
+            monitor.quiet()
+            require(monitor.runs() == attempts, "Identical bytes/touch caused another analysis")
+            require(case.artifact.read_bytes() == before, "Identical inputs changed graph bytes")
+    before = case.artifact.read_bytes()
+    case.project.extra.write_text("export function newlyBroken(\n")
+    added_failure = activity(monitor.state("failed"))
+    require(added_failure["error"]["code"] == "analysis_failed",
+            f"New source omitted compiler failure: {added_failure}")
+    require(monitor.runs() == 4, "New invalid source did not cause one attempt")
+    require(case.artifact.read_bytes() == before, "Invalid new source replaced previous graph")
+    monitor.quiet()
+    require(monitor.runs() == 4, "Unchanged invalid added source was repeatedly retried")
+    repaired_extra = "export function newlyRepaired() { return 7; }\n"
+    generation, expected = case.reference(3, repaired_extra)
+    case.project.extra.write_text(repaired_extra)
+    published = activity(monitor.publish(generation))
+    case.equivalent(expected)
+    require(monitor.runs() == 5, "Repairing the same added source did not publish once")
+    require(process.poll() is None, "Added-source repair ended the original session")
+    evidence["added_source_failure"] = added_failure
+    evidence["publications"].append(published)
+    generations = [item["generation"] for item in evidence["publications"]]
+    require(len(set(generations)) == 3, "Distinct saved edits reused the previous generation")
+    case.arguments.output.joinpath("fresh-session-checks.json").write_text(
+        json.dumps(evidence, indent=2) + "\n")
+
+
+# Replaces removed coordinator-only lease/reason tests with actual process cases:
+# coordinator-lease holds the lease while idle; user-cancel checks explicit reason
+# and later-edit recovery; eof/sigterm/broken-pipe prove final active shutdown;
+# concurrent-edit proves supersession without replacing the previous artifact.
 CASES = {
     "burst-latest": burst_latest,
     "invalid-repair": invalid_then_repair,
@@ -409,6 +506,7 @@ CASES = {
     "legacy-selection": legacy_selection,
     "future-selection": future_selection,
     "future-version": future_observation_version,
+    "fresh-session": fresh_session,
 }
 
 
@@ -430,7 +528,8 @@ def execute(arguments):
     for name in arguments.cases:
         case = None
         try:
-            case = Case(arguments, name)
+            case_type = FreshSessionCase if name == "fresh-session" else Case
+            case = case_type(arguments, name)
             CASES[name](case)
             results[name] = {"passed": True}
         except (AssertionError, OSError, RuntimeError, ValueError, subprocess.SubprocessError) as error:

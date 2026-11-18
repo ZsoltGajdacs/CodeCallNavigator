@@ -4,7 +4,7 @@
 //! boundaries, so helpers must not repeat full MSBuild evaluation internally.
 use super::*;
 use crate::model::FileFingerprint;
-use std::{collections::VecDeque, process::Command, sync::atomic::AtomicBool};
+use std::{collections::VecDeque, sync::atomic::AtomicBool};
 
 pub(in crate::analyzers) struct PreparedCsharp {
     output: PathBuf,
@@ -98,7 +98,7 @@ fn restore(build: &BuildTarget, context: &AnalysisJob<'_>, dotnet: &Path) -> Res
     (context.progress)(format!("Restoring {}…", build.label));
     let _timer = crate::metrics::stage("csharp.restore");
     run_process(
-        Command::new(dotnet)
+        dotnet_command(dotnet)
             .arg("restore")
             .arg(&build.path)
             .arg("--nologo")
@@ -119,7 +119,7 @@ fn compiler_map(
     (context.progress)(format!("Reading compiler call graph for {}…", build.label));
     let _timer = crate::metrics::stage("csharp.engine");
     run_process(
-        Command::new(dotnet)
+        dotnet_command(dotnet)
             .arg(context.runtime.callatlas()?)
             .arg("map")
             .arg(&build.path)
@@ -158,7 +158,10 @@ fn csharp_projects(
         return Ok(vec![build.path.clone()]);
     }
     let output = run_process(
-        Command::new(dotnet).arg("sln").arg(&build.path).arg("list"),
+        dotnet_command(dotnet)
+            .arg("sln")
+            .arg(&build.path)
+            .arg("list"),
         job,
         "solution-projects",
         cancel,

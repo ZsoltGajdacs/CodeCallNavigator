@@ -3,6 +3,7 @@ use super::{
     AnalysisJob, AnalyzerRuntime, JobDirectory, compose, csharp, engine_versions, ensure_unchanged,
     java, process::check_cancel, typescript,
 };
+use crate::process_ownership::CleanupFailure;
 use crate::{discovery::BuildTarget, model::GraphData};
 use anyhow::{Context, Result, bail, ensure};
 use std::{fs, path::PathBuf, sync::atomic::AtomicBool};
@@ -10,7 +11,6 @@ use std::{fs, path::PathBuf, sync::atomic::AtomicBool};
 /// Retains compiler preparation independently from graph inference/publication.
 /// Selection and runtime are fixed; changing either requires a new session.
 pub struct PreparedAnalysis {
-    // Drop owned workers before the directory that contains their logs.
     jobs: Vec<SelectedJob>,
     runtime: AnalyzerRuntime,
     // Helper inventories are cleared between extraction passes. A continuous
@@ -18,6 +18,7 @@ pub struct PreparedAnalysis {
     directory: JobDirectory,
     generation: u64,
     failed: bool,
+    cleanup_failure: Option<CleanupFailure>,
 }
 
 struct SelectedJob {
@@ -27,12 +28,22 @@ struct SelectedJob {
     preparation: Option<Preparation>,
     graph: Option<GraphData>,
     preserve_logs: bool,
+    maven_sources: Option<java::MavenSources>,
 }
 
 enum Preparation {
     Csharp(csharp::PreparedCsharp),
     Java(java::CompiledJava),
     TypeScript(typescript::PreparedTypeScript),
+}
+
+impl Drop for PreparedAnalysis {
+    fn drop(&mut self) {
+        if let Err(error) = self.shutdown() {
+            self.directory.remove_on_drop = false;
+            eprintln!("{error:#}");
+        }
+    }
 }
 
 #[derive(Clone, Copy)]
@@ -53,20 +64,41 @@ impl ValidationMode {
     }
 }
 
+impl Preparation {
+    /// Return true when native preparation is reusable but extraction changed.
+    fn verify(
+        &mut self,
+        build: &BuildTarget,
+        context: &AnalysisJob<'_>,
+        mode: ValidationMode,
+    ) -> Result<bool> {
+        match self {
+            Self::Csharp(prepared)
+                if matches!(
+                    mode,
+                    ValidationMode::ReprepareChanged | ValidationMode::RequireCurrent
+                ) =>
+            {
+                prepared.verify_context(build, context)?;
+            }
+            Self::Csharp(prepared) => prepared.verify()?,
+            Self::Java(prepared) if matches!(mode, ValidationMode::ReprepareChanged) => {
+                return prepared.reconcile_outputs();
+            }
+            Self::Java(prepared) => prepared.verify()?,
+            Self::TypeScript(prepared) => prepared.verify()?,
+        }
+        Ok(false)
+    }
+}
+
 impl SelectedJob {
-    fn verify(&self, context: &AnalysisJob<'_>, mode: ValidationMode) -> Result<()> {
-        match &self.preparation {
-            Some(Preparation::Csharp(prepared)) => match mode {
-                ValidationMode::ReprepareChanged | ValidationMode::RequireCurrent => {
-                    prepared.verify_context(&self.build, context)?;
-                }
-                ValidationMode::AfterNativeProducers | ValidationMode::BeforeExtraction => {
-                    prepared.verify()?;
-                }
-            },
-            Some(Preparation::Java(prepared)) => prepared.verify()?,
-            Some(Preparation::TypeScript(prepared)) => prepared.verify()?,
-            None => return Ok(()),
+    fn verify(&mut self, context: &AnalysisJob<'_>, mode: ValidationMode) -> Result<()> {
+        let Some(preparation) = &mut self.preparation else {
+            return Ok(());
+        };
+        if preparation.verify(&self.build, context, mode)? {
+            self.graph = None;
         }
         if let Some(graph) = &self.graph {
             ensure_unchanged(&graph.fingerprints)?;
@@ -75,14 +107,24 @@ impl SelectedJob {
     }
 
     fn invalidate(&mut self) -> Result<()> {
+        if let Some(Preparation::TypeScript(prepared)) = &mut self.preparation {
+            prepared.release_worker()?;
+        }
         self.graph = None;
-        // Dropping preparation stops and reaps its owned worker before deletion.
         self.preparation = None;
         self.preflight = None;
-        if !self.preserve_logs && !self.path.as_os_str().is_empty() {
+        if !self.preserve_logs {
+            self.retire_directory()?;
+        }
+        Ok(())
+    }
+
+    fn retire_directory(&mut self) -> Result<()> {
+        if !self.path.as_os_str().is_empty() {
             fs::remove_dir_all(&self.path).with_context(|| {
                 format!("Cannot remove obsolete preparation {}", self.path.display())
             })?;
+            self.path.clear();
         }
         Ok(())
     }
@@ -108,9 +150,7 @@ impl SelectedJob {
                 self.preserve_logs = true;
                 // Semantic metadata may have changed beyond the recorded path
                 // guards. Do not let a subsequent prepare retain that baseline.
-                if error.is::<crate::fingerprint::InputsChanged>()
-                    && check_cancel(context.cancel).is_ok()
-                {
+                if compilation_invalidated(&error) && check_cancel(context.cancel).is_ok() {
                     self.invalidate()?;
                 }
                 return Err(error);
@@ -120,6 +160,10 @@ impl SelectedJob {
         self.graph = Some(graph);
         Ok(())
     }
+}
+
+fn compilation_invalidated(error: &anyhow::Error) -> bool {
+    error.is::<crate::fingerprint::InputsChanged>() && !error.is::<java::ExtractionOutputsChanged>()
 }
 
 impl PreparedAnalysis {
@@ -141,6 +185,7 @@ impl PreparedAnalysis {
                 preparation: None,
                 graph: None,
                 preserve_logs: false,
+                maven_sources: None,
             })
             .collect();
         Ok(Self {
@@ -149,12 +194,14 @@ impl PreparedAnalysis {
             directory: JobDirectory::new()?,
             generation: 0,
             failed: false,
+            cleanup_failure: None,
         })
     }
 
     /// Prepare all compiler outputs. Java ownership is checked before compilation;
     /// all Java builds complete before TypeScript captures frontend inputs.
     pub fn prepare(&mut self, cancel: &AtomicBool, progress: &dyn Fn(String)) -> Result<()> {
+        self.require_reusable()?;
         let result = self.prepare_inner(cancel, progress);
         self.record_result(&result);
         result
@@ -163,6 +210,7 @@ impl PreparedAnalysis {
     /// Extract an independent raw aggregate. Cached parts never receive inference
     /// or publication mutations; their only copy is consumed by composition.
     pub fn extract(&mut self, cancel: &AtomicBool, progress: &dyn Fn(String)) -> Result<GraphData> {
+        self.require_reusable()?;
         let result = self.extract_inner(cancel, progress, false);
         self.record_result(&result);
         result
@@ -186,9 +234,48 @@ impl PreparedAnalysis {
         result
     }
 
+    /// Confirm all owned workers stopped before retiring this preparation.
+    /// Uncertain cleanup remains typed and preserves the attempt's diagnostics.
+    pub fn shutdown(&mut self) -> Result<()> {
+        let result = self.stop_workers().and_then(|()| self.require_reusable());
+        self.record_result(&result);
+        result
+    }
+
+    fn stop_workers(&mut self) -> Result<()> {
+        let mut failure = None;
+        for job in &mut self.jobs {
+            if let Some(Preparation::TypeScript(prepared)) = &mut job.preparation {
+                let result = prepared.release_worker().with_context(|| {
+                    format!(
+                        "Cannot stop {} preparation; logs: {}",
+                        job.build.label,
+                        job.path.display()
+                    )
+                });
+                if let Err(error) = result {
+                    failure.get_or_insert(error);
+                }
+            }
+        }
+        failure.map_or(Ok(()), Err)
+    }
+
     fn record_result<T>(&mut self, result: &Result<T>) {
+        if let Err(error) = result
+            && let Some(failure) = error.downcast_ref::<CleanupFailure>()
+        {
+            self.cleanup_failure = Some(failure.clone());
+        }
         self.failed |= result.is_err();
         self.directory.remove_on_drop = !self.failed;
+    }
+
+    fn require_reusable(&self) -> Result<()> {
+        match &self.cleanup_failure {
+            Some(failure) => Err(failure.clone().into()),
+            None => Ok(()),
+        }
     }
 
     fn context<'a>(
@@ -215,12 +302,23 @@ impl PreparedAnalysis {
         check_cancel(cancel)?;
         let mut failure = None;
         for index in 0..self.jobs.len() {
-            let context = self.context(&self.jobs[index].path, cancel, progress);
+            let path = self.jobs[index].path.clone();
+            let context = AnalysisJob {
+                runtime: &self.runtime,
+                path: &path,
+                shared_path: &self.directory.path,
+                cancel,
+                progress,
+            };
             if let Err(error) = self.jobs[index].verify(&context, mode) {
                 // Cancellation interrupts verification; it does not prove the
                 // retained compiler state invalid.
                 check_cancel(cancel)?;
                 if !error.is::<crate::fingerprint::InputsChanged>() {
+                    return Err(error);
+                }
+                if error.is::<java::ExtractionOutputsChanged>() {
+                    self.jobs[index].graph = None;
                     return Err(error);
                 }
                 let reprepare = mode.permits_reprepare(&self.jobs[index].preparation);
@@ -237,6 +335,9 @@ impl PreparedAnalysis {
     }
 
     fn begin(&mut self, index: usize) -> Result<()> {
+        // Every preceding operation either confirmed cleanup or made this
+        // session terminal. Keep the last failed directory until a replacement.
+        self.jobs[index].retire_directory()?;
         self.generation += 1;
         let path = self
             .directory
@@ -291,7 +392,7 @@ impl PreparedAnalysis {
             if self.jobs.len() > 1
                 && let Preparation::TypeScript(prepared) = &mut preparation
             {
-                prepared.release_worker();
+                prepared.release_worker()?;
             }
             self.jobs[index].preparation = Some(preparation);
         }
@@ -304,6 +405,9 @@ impl PreparedAnalysis {
             let job = &self.jobs[index];
             if job.build.language != "java" || job.preparation.is_some() {
                 continue;
+            }
+            if let Some(sources) = &job.maven_sources {
+                sources.require_newer_edits(cancel)?;
             }
             self.begin(index)?;
             let context = self.context(&self.jobs[index].path, cancel, progress);
@@ -327,6 +431,9 @@ impl PreparedAnalysis {
             };
             let context = self.context(&self.jobs[index].path, cancel, progress);
             let prepared = java::compile(&self.jobs[index].build, &context, preflight)?;
+            if self.jobs[index].build.kind == "maven" {
+                self.jobs[index].maven_sources = Some(prepared.maven_sources());
+            }
             self.jobs[index].preparation = Some(Preparation::Java(prepared));
         }
         Ok(())

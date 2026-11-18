@@ -17,16 +17,8 @@ use std::{
 pub(super) fn run(automatic: bool) -> anyhow::Result<i32> {
     let input = Input::start(automatic);
     let output = Output::start(input.stopped.clone());
-    let request = loop {
-        match input.requests.recv_timeout(Duration::from_millis(20)) {
-            Ok(request) => break request,
-            Err(std::sync::mpsc::RecvTimeoutError::Timeout)
-                if !input.stopped.load(Ordering::Acquire) =>
-            {
-                continue;
-            }
-            Err(_) => return Ok(0),
-        }
+    let Some(request) = input.receive_initial() else {
+        return Ok(0);
     };
     let request = match request.and_then(|request| validate(request, automatic)) {
         Ok(request) => request,
@@ -74,19 +66,15 @@ impl Monitor {
         }
     }
 
-    fn run(&mut self, request: &Request, input: &Input, output: &Output) -> i32 {
+    fn run(&mut self, request: &Request, input: &Input<Request>, output: &Output) -> i32 {
         while !input.stopped.load(Ordering::Acquire) {
             let started = Instant::now();
             self.apply_control(input);
-            match self.executor.observation(request, &input.stopped) {
-                Ok(observed) => {
-                    self.deliver(observed.current.clone(), output);
-                    self.refresh(&observed.current, &input.stopped);
-                    self.deliver_activity(output);
-                }
+            match self.reconcile(request, input, output) {
+                Ok(true) => {}
+                Ok(false) => return 2,
                 Err(error) if !input.stopped.load(Ordering::Acquire) => {
-                    self.shutdown(output);
-                    output.finish(event(self.sequence + 1, EventPayload::Failed { error }));
+                    self.fail(error, output);
                     return 2;
                 }
                 Err(_) => break,
@@ -94,18 +82,37 @@ impl Monitor {
             self.wait(started, input);
         }
         let clean = self.shutdown(output);
-        if let Ok(Err(error)) = input.requests.try_recv() {
+        if clean && let Ok(Err(error)) = input.requests.try_recv() {
             output.finish(event(self.sequence + 1, EventPayload::Failed { error }));
             return 2;
         }
         if clean { 0 } else { 2 }
     }
 
-    fn apply_control(&mut self, input: &Input) {
+    fn reconcile(
+        &mut self,
+        request: &Request,
+        input: &Input<Request>,
+        output: &Output,
+    ) -> codecallnavigator_core::query::Result<bool> {
+        let observed = self.executor.observation(request, &input.stopped)?;
+        self.deliver(observed.current.clone(), output);
+        self.refresh(&observed.current, &input.stopped);
+        self.deliver_activity(output);
+        Ok(!self.terminal(output))
+    }
+
+    fn fail(&mut self, error: Error, output: &Output) {
+        if self.shutdown(output) {
+            output.finish(event(self.sequence + 1, EventPayload::Failed { error }));
+        }
+    }
+
+    fn apply_control(&mut self, input: &Input<Request>) {
         if input.cancel_refresh.swap(false, Ordering::AcqRel)
             && let Some(coordinator) = &mut self.coordinator
         {
-            coordinator.cancel(codecallnavigator_core::refresh::CancelReason::UserCancelled);
+            coordinator.cancel();
         }
     }
 
@@ -115,14 +122,35 @@ impl Monitor {
         cancel: &std::sync::atomic::AtomicBool,
     ) {
         if let Some(coordinator) = &mut self.coordinator {
-            coordinator.observe(observation, self.executor.refresh_plan(cancel));
+            coordinator.observe(observation, || self.executor.refresh_plan(cancel));
         }
     }
 
     fn shutdown(&mut self, output: &Output) -> bool {
         let clean = self.coordinator.as_mut().is_none_or(Coordinator::shutdown);
         self.deliver_activity(output);
-        clean
+        let failed = self.terminal(output);
+        clean && !failed
+    }
+
+    fn terminal(&mut self, output: &Output) -> bool {
+        let Some(coordinator) = &mut self.coordinator else {
+            return false;
+        };
+        let Some(mut error) = coordinator.take_terminal() else {
+            return false;
+        };
+        coordinator.shutdown();
+        if let Some(cleanup) = coordinator.take_terminal()
+            && cleanup.message != error.message
+        {
+            error
+                .message
+                .push_str(&format!("; session shutdown: {}", cleanup.message));
+        }
+        output.finish(event(self.sequence + 1, EventPayload::Failed { error }));
+        self.sequence += 1;
+        true
     }
 
     fn deliver_activity(&mut self, output: &Output) {
@@ -132,13 +160,22 @@ impl Monitor {
         let Some(coordinator) = &self.coordinator else {
             return;
         };
-        let activity = coordinator.activity();
+        let publication = coordinator.publication().cloned();
+        let activity = publication
+            .clone()
+            .unwrap_or_else(|| coordinator.activity());
         let key = serde_json::to_vec(&activity).expect("typed activity serializes");
         let changed = self.delivered_activity.as_ref() != Some(&key);
         let heartbeat = self.activity_at.is_none_or(|at| {
             at.elapsed() >= Duration::from_millis(freshness::HEARTBEAT_MILLISECONDS)
         });
         if !changed && !heartbeat {
+            if publication.is_some() {
+                self.coordinator
+                    .as_mut()
+                    .expect("selected coordinator")
+                    .publication_delivered();
+            }
             return;
         }
         if output.offer(event(
@@ -148,6 +185,12 @@ impl Monitor {
             self.sequence += 1;
             self.delivered_activity = Some(key);
             self.activity_at = Some(Instant::now());
+            if publication.is_some() {
+                self.coordinator
+                    .as_mut()
+                    .expect("selected coordinator")
+                    .publication_delivered();
+            }
         }
     }
 
@@ -174,7 +217,7 @@ impl Monitor {
         }
     }
 
-    fn wait(&self, started: Instant, input: &Input) {
+    fn wait(&self, started: Instant, input: &Input<Request>) {
         let deadline = started + Duration::from_millis(freshness::RECONCILE_MILLISECONDS);
         while !input.stopped.load(Ordering::Acquire) && Instant::now() < deadline {
             std::thread::sleep(Duration::from_millis(10));

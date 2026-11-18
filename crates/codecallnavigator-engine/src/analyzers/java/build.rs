@@ -295,30 +295,32 @@ impl PreparedJava {
             )
             .into());
         }
-        for source in &metadata.source_sets {
-            let java = fingerprint::source_paths(&source.source_roots)?
-                .iter()
-                .any(|path| path.extension().is_some_and(|ext| ext == "java"));
-            if java {
-                let complete =
-                    source
-                        .class_dirs
-                        .iter()
-                        .map(|path| {
-                            Ok(path.join("module-info.class").is_file()
-                                || super::contains_class(path)?)
-                        })
-                        .collect::<Result<Vec<_>>>()?;
-                ensure!(
-                    complete.iter().any(|found| *found),
-                    "No compiled Java output for {} ({})",
-                    source.project,
-                    if source.is_test { "test" } else { "production" }
-                );
-            }
-        }
-        Ok(())
+        require_compiled_outputs(metadata)
     }
+}
+
+pub(super) fn require_compiled_outputs(metadata: &JavaBuildMetadata) -> Result<()> {
+    for source in &metadata.source_sets {
+        let java = fingerprint::source_paths(&source.source_roots)?
+            .iter()
+            .any(|path| path.extension().is_some_and(|ext| ext == "java"));
+        if java {
+            let complete = source
+                .class_dirs
+                .iter()
+                .map(|path| {
+                    Ok(path.join("module-info.class").is_file() || super::contains_class(path)?)
+                })
+                .collect::<Result<Vec<_>>>()?;
+            ensure!(
+                complete.iter().any(|found| *found),
+                "No compiled Java output for {} ({})",
+                source.project,
+                if source.is_test { "test" } else { "production" }
+            );
+        }
+    }
+    Ok(())
 }
 
 pub(in crate::analyzers) fn reject_overlaps<'a>(

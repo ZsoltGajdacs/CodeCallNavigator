@@ -10,13 +10,44 @@ use crate::{
     discovery::BuildTarget,
     fingerprint,
 };
-use anyhow::{Context, Result};
+use anyhow::{Context, Result, ensure};
 use std::{
     fs,
     path::{Path, PathBuf},
     process::Command,
     sync::atomic::Ordering,
 };
+
+/// Retain the authored source timestamps Maven's native staleness check relies on.
+pub(in crate::analyzers) struct MavenSources(Vec<crate::model::FileFingerprint>);
+
+impl MavenSources {
+    pub(super) fn new(inputs: Vec<crate::model::FileFingerprint>) -> Self {
+        Self(inputs)
+    }
+
+    pub(in crate::analyzers) fn require_newer_edits(
+        &self,
+        cancel: &std::sync::atomic::AtomicBool,
+    ) -> Result<()> {
+        for input in &self.0 {
+            let path = Path::new(&input.path);
+            let current = crate::fingerprint::reobserve(input, Some(cancel))?;
+            if current.kind != crate::fingerprint::InputKind::File || current.hash == input.hash {
+                continue;
+            }
+            let modified = fs::metadata(path)?
+                .modified()?
+                .duration_since(std::time::UNIX_EPOCH)?;
+            ensure!(
+                modified.as_nanos() > u128::from(input.modified_ns),
+                "Maven cannot establish current compilation for {:?}: content changed without a newer source timestamp. Save the file with a newer timestamp or rebuild with Maven and restart analysis.",
+                path
+            );
+        }
+        Ok(())
+    }
+}
 
 /// Observe only configuration files; generators may change unrelated children.
 #[cfg(test)]

@@ -4586,20 +4586,6 @@
       "purpose": "Preserve actionable input blockers and compatible bounded wire diagnostics"
     },
     {
-      "id": "codecallnavigator-engine/bin:ccnavigator::entrypoints::refresh_child::tests::explicit_cancel_overrides_internal_supersession_and_shutdown_is_final",
-      "runner": "rust",
-      "file": "crates/codecallnavigator-engine/src/entrypoints/refresh_child.rs",
-      "test_name": "entrypoints::refresh_child::tests::explicit_cancel_overrides_internal_supersession_and_shutdown_is_final",
-      "ignored": false,
-      "package": "codecallnavigator-engine",
-      "target_kind": "bin",
-      "target": "ccnavigator",
-      "component": "engine",
-      "category": "unit",
-      "requirements": [],
-      "purpose": "explicit cancel overrides internal supersession and shutdown is final"
-    },
-    {
       "id": "codecallnavigator-engine/bin:ccnavigator::entrypoints::refresh_child::tests::reader_shutdown_does_not_require_pipe_holder_exit",
       "runner": "rust",
       "file": "crates/codecallnavigator-engine/src/entrypoints/refresh_child.rs",
@@ -4612,20 +4598,6 @@
       "category": "integration",
       "requirements": [],
       "purpose": "reader shutdown does not require pipe holder exit"
-    },
-    {
-      "id": "codecallnavigator-engine/bin:ccnavigator::entrypoints::refresh_coordinator::tests::idle_coordinator_retains_lease_before_any_refresh",
-      "runner": "rust",
-      "file": "crates/codecallnavigator-engine/src/entrypoints/refresh_coordinator.rs",
-      "test_name": "entrypoints::refresh_coordinator::tests::idle_coordinator_retains_lease_before_any_refresh",
-      "ignored": false,
-      "package": "codecallnavigator-engine",
-      "target_kind": "bin",
-      "target": "ccnavigator",
-      "component": "engine",
-      "category": "integration",
-      "requirements": [],
-      "purpose": "idle coordinator retains lease before any refresh"
     },
     {
       "id": "codecallnavigator-engine/bin:ccnavigator::entrypoints::refresh_coordinator::tests::incomplete_coverage_explains_required_path_and_recovery_without_starting_analysis",
@@ -4651,9 +4623,9 @@
       "target_kind": "bin",
       "target": "ccnavigator",
       "component": "engine",
-      "category": "integration",
+      "category": "unit",
       "requirements": [],
-      "purpose": "pending source changes keep nullable public revision and valid trigger"
+      "purpose": "Pure activity forwarding removes private trigger revisions while preserving nullable public revision, debounce duration and retained attempt count."
     },
     {
       "id": "codecallnavigator-engine/bin:ccnavigator::entrypoints::refresh_coordinator::tests::published_metrics_survive_observing_their_own_generation",
@@ -4667,7 +4639,7 @@
       "component": "engine",
       "category": "unit",
       "requirements": [],
-      "purpose": "published metrics survive observing their own generation"
+      "purpose": "Pure notification forwarding retains successful publication generation, metrics and elapsed analysis evidence independently from the latest watching activity until delivery."
     },
     {
       "id": "codecallnavigator-engine/bin:ccnavigator::entrypoints::refresh_coordinator::tests::validated_trigger_coverage_survives_incomplete_public_compiler_outputs",
@@ -4698,10 +4670,10 @@
       "purpose": "bursts coalesce cancel suppresses pending and new generation releases failure"
     },
     {
-      "id": "codecallnavigator-engine/bin:ccnavigator::entrypoints::refresh_policy::tests::observing_a_publication_supersedes_only_changed_compiler_inputs",
+      "id": "codecallnavigator-engine/bin:ccnavigator::entrypoints::refresh_policy::tests::published_baseline_clears_pending_work_but_a_new_edit_requeues",
       "runner": "rust",
       "file": "crates/codecallnavigator-engine/src/entrypoints/refresh_policy.rs",
-      "test_name": "entrypoints::refresh_policy::tests::observing_a_publication_supersedes_only_changed_compiler_inputs",
+      "test_name": "entrypoints::refresh_policy::tests::published_baseline_clears_pending_work_but_a_new_edit_requeues",
       "ignored": false,
       "package": "codecallnavigator-engine",
       "target_kind": "bin",
@@ -4709,7 +4681,7 @@
       "component": "engine",
       "category": "unit",
       "requirements": [],
-      "purpose": "observing a publication supersedes only changed compiler inputs"
+      "purpose": "Pure scheduler policy clears pending work when it matches a successful publication baseline, while preserving a newly observed input revision for another attempt; real concurrent-edit acceptance proves latest-generation recovery."
     },
     {
       "id": "codecallnavigator-engine/bin:codecallnavigator-engine::entrypoints::arguments::tests::clear_cache_requires_one_explicit_project",
@@ -4796,20 +4768,6 @@
       "purpose": "Preserve actionable input blockers and compatible bounded wire diagnostics"
     },
     {
-      "id": "codecallnavigator-engine/bin:codecallnavigator-engine::entrypoints::refresh_child::tests::explicit_cancel_overrides_internal_supersession_and_shutdown_is_final",
-      "runner": "rust",
-      "file": "crates/codecallnavigator-engine/src/entrypoints/refresh_child.rs",
-      "test_name": "entrypoints::refresh_child::tests::explicit_cancel_overrides_internal_supersession_and_shutdown_is_final",
-      "ignored": false,
-      "package": "codecallnavigator-engine",
-      "target_kind": "bin",
-      "target": "codecallnavigator-engine",
-      "component": "engine",
-      "category": "unit",
-      "requirements": [],
-      "purpose": "explicit cancel overrides internal supersession and shutdown is final"
-    },
-    {
       "id": "codecallnavigator-engine/bin:codecallnavigator-engine::entrypoints::refresh_child::tests::reader_shutdown_does_not_require_pipe_holder_exit",
       "runner": "rust",
       "file": "crates/codecallnavigator-engine/src/entrypoints/refresh_child.rs",
@@ -4822,20 +4780,6 @@
       "category": "integration",
       "requirements": [],
       "purpose": "reader shutdown does not require pipe holder exit"
-    },
-    {
-      "id": "codecallnavigator-engine/bin:codecallnavigator-engine::entrypoints::refresh_coordinator::tests::idle_coordinator_retains_lease_before_any_refresh",
-      "runner": "rust",
-      "file": "crates/codecallnavigator-engine/src/entrypoints/refresh_coordinator.rs",
-      "test_name": "entrypoints::refresh_coordinator::tests::idle_coordinator_retains_lease_before_any_refresh",
-      "ignored": false,
-      "package": "codecallnavigator-engine",
-      "target_kind": "bin",
-      "target": "codecallnavigator-engine",
-      "component": "engine",
-      "category": "integration",
-      "requirements": [],
-      "purpose": "idle coordinator retains lease before any refresh"
     },
     {
       "id": "codecallnavigator-engine/bin:codecallnavigator-engine::entrypoints::refresh_coordinator::tests::incomplete_coverage_explains_required_path_and_recovery_without_starting_analysis",
@@ -4861,9 +4805,9 @@
       "target_kind": "bin",
       "target": "codecallnavigator-engine",
       "component": "engine",
-      "category": "integration",
+      "category": "unit",
       "requirements": [],
-      "purpose": "pending source changes keep nullable public revision and valid trigger"
+      "purpose": "Pure activity forwarding removes private trigger revisions while preserving nullable public revision, debounce duration and retained attempt count."
     },
     {
       "id": "codecallnavigator-engine/bin:codecallnavigator-engine::entrypoints::refresh_coordinator::tests::published_metrics_survive_observing_their_own_generation",
@@ -4877,7 +4821,7 @@
       "component": "engine",
       "category": "unit",
       "requirements": [],
-      "purpose": "published metrics survive observing their own generation"
+      "purpose": "Pure notification forwarding retains successful publication generation, metrics and elapsed analysis evidence independently from the latest watching activity until delivery."
     },
     {
       "id": "codecallnavigator-engine/bin:codecallnavigator-engine::entrypoints::refresh_coordinator::tests::validated_trigger_coverage_survives_incomplete_public_compiler_outputs",
@@ -4908,10 +4852,10 @@
       "purpose": "bursts coalesce cancel suppresses pending and new generation releases failure"
     },
     {
-      "id": "codecallnavigator-engine/bin:codecallnavigator-engine::entrypoints::refresh_policy::tests::observing_a_publication_supersedes_only_changed_compiler_inputs",
+      "id": "codecallnavigator-engine/bin:codecallnavigator-engine::entrypoints::refresh_policy::tests::published_baseline_clears_pending_work_but_a_new_edit_requeues",
       "runner": "rust",
       "file": "crates/codecallnavigator-engine/src/entrypoints/refresh_policy.rs",
-      "test_name": "entrypoints::refresh_policy::tests::observing_a_publication_supersedes_only_changed_compiler_inputs",
+      "test_name": "entrypoints::refresh_policy::tests::published_baseline_clears_pending_work_but_a_new_edit_requeues",
       "ignored": false,
       "package": "codecallnavigator-engine",
       "target_kind": "bin",
@@ -4919,7 +4863,7 @@
       "component": "engine",
       "category": "unit",
       "requirements": [],
-      "purpose": "observing a publication supersedes only changed compiler inputs"
+      "purpose": "Pure scheduler policy clears pending work when it matches a successful publication baseline, while preserving a newly observed input revision for another attempt; real concurrent-edit acceptance proves latest-generation recovery."
     },
     {
       "id": "codecallnavigator-engine/lib:codecallnavigator_engine::analyzers::compose::tests::inconsistent_shared_declarations_and_non_typescript_duplicates_are_rejected",
@@ -14656,7 +14600,7 @@
       "requirements": [
         "java"
       ],
-      "purpose": "Real Maven prepared-result reuse, cancellation retry, independent-build invalidation, changed bytecode rejection and failed publication preserve prior graph; native invocation counters distinguish reuse from no-op rebuilds"
+      "purpose": "Real independent Maven projects retain prepared compiler state across extraction retries, cancellation and unaffected selections; actual wrapper counts prove output-only class replacement avoids native rebuild, missing class output is rejected, unmatched authored content/timestamp edits reject before invocation, and failed refresh preserves prior publication. Real javac/Maven/filesystem boundaries cannot be proved with synthetic analyzer success."
     },
     {
       "id": "codecallnavigator/test:java_builds::maven_success_without_metadata_is_rejected",

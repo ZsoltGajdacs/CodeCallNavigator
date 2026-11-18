@@ -4,22 +4,12 @@ use std::time::{Duration, Instant};
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub(super) struct Key {
-    pub generation: String,
-    pub selection: String,
+    pub generation: Option<String>,
     pub revision: String,
 }
-impl Key {
-    pub fn supersedes(&self, active: &Self) -> bool {
-        // A child may have atomically published before its terminal event is
-        // consumed. A generation change alone must not cancel that handoff.
-        self.selection != active.selection || self.revision != active.revision
-    }
-}
-#[derive(Clone)]
 pub(super) struct Pending {
     pub key: Key,
     pub changed: Instant,
-    pub observed_revision: Option<String>,
 }
 impl Pending {
     // Exclusive time after configured debounce, including scan/scheduling and
@@ -39,32 +29,24 @@ pub(super) struct Policy {
 }
 
 impl Policy {
-    pub fn observe(&mut self, key: Key, refresh: bool, now: Instant) -> bool {
+    pub fn observe(&mut self, key: Key, refresh: bool, now: Instant) {
         if self.current.as_ref() == Some(&key) {
             if !refresh {
                 self.pending = None;
             }
-            return false;
+            return;
         }
         self.current = Some(key.clone());
         self.pending = if refresh && self.handled.as_ref() != Some(&key) {
-            Some(Pending {
-                observed_revision: None,
-                key,
-                changed: now,
-            })
+            Some(Pending { key, changed: now })
         } else {
             None
         };
-        true
     }
-    pub fn due(&self, now: Instant) -> Option<Pending> {
-        self.pending
-            .as_ref()
-            .filter(|pending| {
-                now.duration_since(pending.changed) >= Duration::from_millis(DEBOUNCE_MILLISECONDS)
-            })
-            .cloned()
+    pub fn due(&self, now: Instant) -> Option<&Pending> {
+        self.pending.as_ref().filter(|pending| {
+            now.duration_since(pending.changed) >= Duration::from_millis(DEBOUNCE_MILLISECONDS)
+        })
     }
     pub fn take(&mut self) -> Option<Pending> {
         self.pending.take()
@@ -79,22 +61,18 @@ impl Policy {
         }
         self.handled = Some(key);
     }
-    pub fn cancel(&mut self) -> Option<Key> {
-        let key = self.current.clone();
-        if let Some(key) = &key {
-            self.handled = Some(key.clone());
-        }
+    pub fn cancel(&mut self) {
+        self.handled.clone_from(&self.current);
         self.pending = None;
-        key
     }
     pub fn retry(&mut self, pending: Pending) {
         if self.pending.is_none() && self.current.as_ref() == Some(&pending.key) {
             self.pending = Some(pending);
         }
     }
-    pub fn unavailable(&mut self) {
-        self.pending = None;
-        self.current = None;
+    pub fn reschedule(&mut self, key: Key, now: Instant) {
+        self.current = Some(key.clone());
+        self.pending = Some(Pending { key, changed: now });
     }
 }
 
@@ -103,27 +81,20 @@ mod tests {
     use super::*;
     fn key(generation: &str, revision: &str) -> Key {
         Key {
-            generation: generation.into(),
-            selection: "selection".into(),
+            generation: Some(generation.into()),
             revision: revision.into(),
         }
     }
     #[test]
-    fn observing_a_publication_supersedes_only_changed_compiler_inputs() {
-        let active = key("old", "saved");
-        let published = key("new", "saved");
-        assert_ne!(
-            active, published,
-            "Generation still binds retry suppression"
-        );
-        assert!(
-            !published.supersedes(&active),
-            "Own publication must finish its terminal handoff"
-        );
-        assert!(key("new", "newer-save").supersedes(&active));
-        let mut changed_selection = published;
-        changed_selection.selection = "different-targets".into();
-        assert!(changed_selection.supersedes(&active));
+    fn published_baseline_clears_pending_work_but_a_new_edit_requeues() {
+        let now = Instant::now();
+        let mut policy = Policy::default();
+        policy.observe(key("old", "edit"), true, now);
+        assert!(policy.pending.is_some());
+        policy.observe(key("new", "edit"), false, now);
+        assert!(policy.pending.is_none());
+        policy.observe(key("new", "newer edit"), true, now);
+        assert!(policy.pending.is_some());
     }
     #[test]
     fn bursts_coalesce_cancel_suppresses_pending_and_new_generation_releases_failure() {

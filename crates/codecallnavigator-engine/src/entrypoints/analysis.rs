@@ -4,13 +4,14 @@ use codecallnavigator_core::{
     artifact,
     discovery::{self, BuildTarget},
     metrics,
-    model::GraphData,
+    model::{FileFingerprint, GraphData},
     protocol::Event,
 };
 use codecallnavigator_engine::analyzers::{self, AnalyzerRuntime};
 use std::{
     collections::BTreeMap,
     path::{Path, PathBuf},
+    sync::atomic::AtomicBool,
 };
 
 pub fn select_targets(project: &Path, paths: Vec<PathBuf>) -> Result<Vec<BuildTarget>> {
@@ -44,10 +45,28 @@ fn default_targets(project: &Path) -> Result<Vec<BuildTarget>> {
 }
 
 pub fn native(targets: Vec<BuildTarget>, progress: &dyn Fn(String)) -> Result<GraphData> {
-    analyzers::analyze(targets, &AnalyzerRuntime::discover()?, &CANCELLED, progress)
+    native_attempt(
+        targets,
+        &Attempt {
+            cancel: &CANCELLED,
+            progress,
+        },
+    )
 }
 
-fn roots(project: &Path, configured: Vec<(String, PathBuf)>) -> Result<Vec<(String, PathBuf)>> {
+fn native_attempt(targets: Vec<BuildTarget>, attempt: &Attempt<'_>) -> Result<GraphData> {
+    analyzers::analyze(
+        targets,
+        &AnalyzerRuntime::discover()?,
+        attempt.cancel,
+        attempt.progress,
+    )
+}
+
+pub(super) fn roots(
+    project: &Path,
+    configured: Vec<(String, PathBuf)>,
+) -> Result<Vec<(String, PathBuf)>> {
     let mut roots = Vec::new();
     for (name, path) in configured {
         let path = project
@@ -99,6 +118,48 @@ pub fn analyze_with_linked_roots(
     targets: Vec<BuildTarget>,
     progress: &dyn Fn(String),
 ) -> Result<Event> {
+    publish(
+        Publication {
+            project,
+            options,
+            targets,
+        },
+        Attempt {
+            cancel: &CANCELLED,
+            progress,
+        },
+        native_attempt,
+    )
+}
+
+/// The selected project and roots belong to the same locked publication attempt.
+pub(super) struct Publication<'a> {
+    pub project: &'a Path,
+    pub options: RootOptions,
+    pub targets: Vec<BuildTarget>,
+}
+
+/// Cancellation and reporting belong to one attempt, independent of native state.
+pub(super) struct Attempt<'a> {
+    pub cancel: &'a AtomicBool,
+    pub progress: &'a dyn Fn(String),
+}
+
+/// Produce native data only after acquiring the project lock and generation guard.
+/// The resulting owned graph is mutated by inference, never a retained raw cache.
+pub(super) fn publish<F>(
+    publication: Publication<'_>,
+    attempt: Attempt<'_>,
+    produce: F,
+) -> Result<Event>
+where
+    F: FnOnce(Vec<BuildTarget>, &Attempt<'_>) -> Result<GraphData>,
+{
+    let Publication {
+        project,
+        options,
+        targets,
+    } = publication;
     let project = project.canonicalize().context("Cannot open project")?;
     ensure!(project.is_dir(), "Project must be a directory");
     let roots = roots(&project, options.configured)?;
@@ -115,7 +176,7 @@ pub fn analyze_with_linked_roots(
         codecallnavigator_core::boundary::Configuration::load(&project, &targets)?;
     let application_inputs = application_inputs(&project)?;
     let selection = targets.clone();
-    let mut graph = native(targets, progress)?;
+    let mut graph = produce(targets, &attempt)?;
     graph.fingerprints.extend(boundary_inputs);
     graph.fingerprints.extend(application_inputs);
     let cache = super::inference::resolve(&project, &mut graph, &boundaries)?;
@@ -132,26 +193,13 @@ pub fn analyze_with_linked_roots(
         &graph.engine_versions,
         &roots,
     )?;
-    let mut refresh_validation = Vec::new();
-    if let Some(outputs) = &graph.refresh_outputs {
-        let safe = selection.iter().all(|target| target.language == "java");
-        let captured = artifact::refresh_inputs::capture(&provenance, outputs, safe, &roots)?;
-        provenance.refresh_inputs = Some(captured.value);
-        refresh_validation = captured.validation;
-    }
+    let refresh_validation = refresh_inputs(&graph, &selection, &roots, &mut provenance)?;
     artifact.graph["analysis"] = serde_json::to_value(provenance)?;
     let bytes = artifact.encode()?;
     let digest = blake3::hash(bytes.as_ref()).to_hex().to_string();
-    codecallnavigator_core::fingerprint::require_unchanged(
-        &graph.fingerprints,
-        "Project inputs changed before graph publication",
-    )?;
-    codecallnavigator_core::fingerprint::require_unchanged(
-        &refresh_validation,
-        "Input membership changed before graph publication",
-    )?;
-    lock.publish_encoded(&bytes, &CANCELLED)?;
-    super::inference::finish(cache, progress);
+    verify_inputs(&graph.fingerprints, &refresh_validation, attempt.cancel)?;
+    lock.publish_encoded(&bytes, attempt.cancel)?;
+    super::inference::finish(cache, attempt.progress);
     metrics.finish();
     Ok(Event::Complete {
         roots,
@@ -162,9 +210,39 @@ pub fn analyze_with_linked_roots(
     })
 }
 
-fn application_inputs(
-    project: &Path,
-) -> Result<Vec<codecallnavigator_core::model::FileFingerprint>> {
+fn verify_inputs(
+    analysis: &[FileFingerprint],
+    refresh: &[FileFingerprint],
+    cancel: &AtomicBool,
+) -> Result<()> {
+    codecallnavigator_core::fingerprint::require_unchanged_cancellable(
+        analysis,
+        "Project inputs changed before graph publication",
+        cancel,
+    )?;
+    codecallnavigator_core::fingerprint::require_unchanged_cancellable(
+        refresh,
+        "Input membership changed before graph publication",
+        cancel,
+    )
+}
+
+fn refresh_inputs(
+    graph: &GraphData,
+    selection: &[BuildTarget],
+    roots: &artifact::Roots,
+    provenance: &mut artifact::provenance::Analysis,
+) -> Result<Vec<FileFingerprint>> {
+    let Some(outputs) = &graph.refresh_outputs else {
+        return Ok(Vec::new());
+    };
+    let safe = selection.iter().all(|target| target.language == "java");
+    let captured = artifact::refresh_inputs::capture(provenance, outputs, safe, roots)?;
+    provenance.refresh_inputs = Some(captured.value);
+    Ok(captured.validation)
+}
+
+fn application_inputs(project: &Path) -> Result<Vec<FileFingerprint>> {
     codecallnavigator_core::fingerprint::capture_excluding(
         [
             project.join(".codecallnavigator/layers.yml"),

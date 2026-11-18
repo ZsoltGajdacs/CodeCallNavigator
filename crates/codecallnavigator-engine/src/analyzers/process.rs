@@ -1,13 +1,13 @@
 mod diagnostics;
 pub(super) mod worker;
+use crate::process_ownership::OwnedProcess;
 use anyhow::{Context, Result, ensure};
 pub(super) use diagnostics::NativeExitFailure;
 use diagnostics::{PROCESS_TIMEOUT, ProcessLogs};
-use std::os::unix::process::CommandExt;
 use std::{
     fs,
     path::{Path, PathBuf},
-    process::{Command, Stdio},
+    process::{Command, ExitStatus, Stdio},
     sync::atomic::{AtomicBool, Ordering},
     thread,
     time::{Duration, Instant},
@@ -44,34 +44,29 @@ fn run_process_with_timeout(
     command
         .stdin(Stdio::null())
         .stdout(Stdio::from(fs::File::create(&logs.stdout)?))
-        .stderr(Stdio::from(fs::File::create(&logs.stderr)?))
-        .process_group(0);
-    let mut child = command
-        .spawn()
+        .stderr(Stdio::from(fs::File::create(&logs.stderr)?));
+    let mut child = OwnedProcess::spawn(command)
         .with_context(|| format!("Cannot start {}", command.get_program().to_string_lossy()))?;
-    let started = Instant::now();
-    loop {
-        if let Err(error) = logs.check_wait(cancel, started, timeout) {
-            stop_process_group(&mut child);
-            return Err(error);
-        }
-        match child.try_wait() {
-            Ok(Some(status)) => {
-                NativeExitFailure::require_success(&logs, status)?;
-                break;
-            }
-            Ok(None) => thread::sleep(Duration::from_millis(100)),
-            Err(error) => {
-                stop_process_group(&mut child);
-                return Err(error.into());
-            }
-        }
-    }
+    let result = wait_for_exit(&mut child, &logs, cancel, timeout)
+        .and_then(|status| NativeExitFailure::require_success(&logs, status));
+    child.complete(result)?;
     Ok(logs.stdout)
 }
 
-fn stop_process_group(child: &mut std::process::Child) {
-    crate::process_ownership::stop_group(child);
+fn wait_for_exit(
+    child: &mut OwnedProcess,
+    logs: &ProcessLogs,
+    cancel: &AtomicBool,
+    timeout: Duration,
+) -> Result<ExitStatus> {
+    let started = Instant::now();
+    loop {
+        logs.check_wait(cancel, started, timeout)?;
+        if let Some(status) = child.try_wait()? {
+            return Ok(status);
+        }
+        thread::sleep(Duration::from_millis(100));
+    }
 }
 
 #[cfg(test)]

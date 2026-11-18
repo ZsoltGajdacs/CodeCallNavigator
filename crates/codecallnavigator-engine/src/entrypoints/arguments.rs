@@ -12,6 +12,7 @@ pub enum Command {
     Discover(PathBuf),
     ClearCache(PathBuf),
     Analyze(Analysis),
+    Watch(Analysis),
     Verify(Analysis),
     Compare {
         project: PathBuf,
@@ -19,6 +20,7 @@ pub enum Command {
         head: String,
     },
     Serve,
+    ServeAnalysisSession,
     AnalyzeNative(Vec<PathBuf>),
 }
 
@@ -32,15 +34,7 @@ pub fn parse(values: impl Iterator<Item = String>) -> Result<Command> {
     let mut values = values.peekable();
     let command = values.next().unwrap_or_else(|| "--help".into());
     match command.as_str() {
-        "observe" => {
-            let automatic = match values.next().as_deref() {
-                None => false,
-                Some("--auto-refresh") => true,
-                Some(_) => bail!("observe accepts only --auto-refresh"),
-            };
-            ensure!(values.next().is_none(), "Unexpected observe argument");
-            Ok(Command::Observe { automatic })
-        }
+        "observe" => parse_observe(values),
         "query-session" => {
             ensure!(values.next().is_none(), "query-session takes no arguments");
             Ok(Command::QuerySession)
@@ -62,11 +56,10 @@ pub fn parse(values: impl Iterator<Item = String>) -> Result<Command> {
             ensure!(values.next().is_none(), "discover accepts one PROJECT");
             Ok(Command::Discover(project.into()))
         }
-        "analyze" => parse_analyze(values),
+        "analyze" => parse_analyze(values).map(Command::Analyze),
+        "watch" => parse_analyze(values).map(Command::Watch),
         "verify" => {
-            let Command::Analyze(arguments) = parse_analyze(values)? else {
-                unreachable!()
-            };
+            let arguments = parse_analyze(values)?;
             ensure!(
                 arguments.targets.is_empty(),
                 "verify accepts no analysis targets"
@@ -87,6 +80,13 @@ pub fn parse(values: impl Iterator<Item = String>) -> Result<Command> {
             ensure!(values.next().is_none(), "serve-once takes no arguments");
             Ok(Command::Serve)
         }
+        "analysis-session" => {
+            ensure!(
+                values.next().is_none(),
+                "analysis-session takes no arguments"
+            );
+            Ok(Command::ServeAnalysisSession)
+        }
         "analyze-native" => {
             let paths: Vec<_> = values.map(PathBuf::from).collect();
             ensure!(!paths.is_empty(), "analyze-native requires TARGET...");
@@ -94,6 +94,16 @@ pub fn parse(values: impl Iterator<Item = String>) -> Result<Command> {
         }
         other => bail!("Unknown engine command: {other}"),
     }
+}
+
+fn parse_observe(mut values: impl Iterator<Item = String>) -> Result<Command> {
+    let automatic = match values.next().as_deref() {
+        None => false,
+        Some("--auto-refresh") => true,
+        Some(_) => bail!("observe accepts only --auto-refresh"),
+    };
+    ensure!(values.next().is_none(), "Unexpected observe argument");
+    Ok(Command::Observe { automatic })
 }
 
 fn take_value(values: &mut impl Iterator<Item = String>, option: &str) -> Result<String> {
@@ -108,7 +118,7 @@ fn project_option(project: &mut Option<PathBuf>, value: String) -> Result<()> {
     Ok(())
 }
 
-fn parse_analyze(mut values: impl Iterator<Item = String>) -> Result<Command> {
+fn parse_analyze(mut values: impl Iterator<Item = String>) -> Result<Analysis> {
     let (mut project, mut roots, mut targets) = (None, Vec::new(), Vec::new());
     let mut options = true;
     while let Some(value) = values.next() {
@@ -130,11 +140,11 @@ fn parse_analyze(mut values: impl Iterator<Item = String>) -> Result<Command> {
             _ => targets.push(PathBuf::from(value)),
         }
     }
-    Ok(Command::Analyze(Analysis {
+    Ok(Analysis {
         project: project.context("analyze requires --project PROJECT")?,
         roots,
         targets,
-    }))
+    })
 }
 
 fn parse_compare(mut values: impl Iterator<Item = String>) -> Result<Command> {

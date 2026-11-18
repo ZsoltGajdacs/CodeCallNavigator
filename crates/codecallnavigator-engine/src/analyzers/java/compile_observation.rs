@@ -78,12 +78,16 @@ impl Attempt {
                 .is_some_and(|failure| failure.exited())
                 && let Ok(observed) = &evidence
             {
-                observed.require_no_failure()?;
+                return Err(observed.with_consumption(
+                    observed.require_no_failure().err().unwrap_or(native_error),
+                ));
             }
             return Err(native_error);
         }
         let observed = evidence?;
-        observed.require_no_failure()?;
+        observed
+            .require_no_failure()
+            .map_err(|error| observed.with_consumption(error))?;
         observed.require_supported()?;
         Ok(observed)
     }
@@ -188,6 +192,14 @@ fn decode(bytes: &[u8], attempt: &str) -> Result<Observations> {
 }
 
 impl Operation {
+    fn compiler_guard_paths(&self) -> impl Iterator<Item = &PathBuf> {
+        let no_source = self.outcome == Outcome::NoSource;
+        self.after
+            .paths()
+            .filter(move |_| !no_source)
+            .chain(self.after.source_paths().filter(move |_| no_source))
+    }
+
     fn validate(&self) -> Result<()> {
         absolute(&self.project)?;
         ensure!(
@@ -240,6 +252,21 @@ impl Operation {
 }
 
 impl Observations {
+    pub fn with_consumption(&self, error: anyhow::Error) -> anyhow::Error {
+        if self.operations.is_empty() {
+            return error;
+        }
+        let keys = self
+            .operations
+            .iter()
+            .map(|operation| (&operation.operation, operation.before.consumed_key()))
+            .collect::<std::collections::BTreeMap<_, _>>();
+        let digest = blake3::hash(format!("{keys:?}").as_bytes())
+            .to_hex()
+            .to_string();
+        error.context(crate::analyzers::ConsumedRevision(digest))
+    }
+
     fn require_supported(&self) -> Result<()> {
         for operation in &self.operations {
             operation.require_supported()?;
@@ -293,7 +320,7 @@ impl Observations {
         let paths = self
             .operations
             .iter()
-            .flat_map(|operation| operation.after.paths().cloned());
+            .flat_map(|operation| operation.compiler_guard_paths().cloned());
         let fingerprints = fingerprint::capture_excluding(paths, &metadata.output_roots)?;
         // Bridge native SHA-256 observations to core's existing BLAKE3/link policy
         // without accepting a newly captured baseline after a concurrent edit.
