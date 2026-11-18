@@ -257,6 +257,7 @@ impl State {
     pub fn toggle_build(&mut self, index: usize) {
         if let Some(choice) = self.targets.get_mut(index) {
             choice.selected = !choice.selected;
+            self.refresh_build_selection_changed();
             self.dirty_session = true;
         }
     }

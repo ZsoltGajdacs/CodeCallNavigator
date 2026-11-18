@@ -16,6 +16,7 @@ enum NativeState {
 pub(super) struct AnalysisSession {
     project: PathBuf,
     configured_roots: Vec<(String, PathBuf)>,
+    published_roots: Option<Vec<(String, PathBuf)>>,
     targets: Vec<BuildTarget>,
     infer_linked: bool,
     native: NativeState,
@@ -27,7 +28,15 @@ impl AnalysisSession {
     }
 
     pub(super) fn latest_saved_inputs(&self) -> Result<(Inputs, String)> {
-        Inputs::saved(&self.project, &self.configured_roots, None, &self.targets)
+        let roots = self
+            .published_roots
+            .as_deref()
+            .unwrap_or(&self.configured_roots);
+        Inputs::saved(&self.project, roots, None, &self.targets)
+    }
+
+    pub fn record_published_roots(&mut self, roots: &[(String, PathBuf)]) {
+        self.published_roots = Some(roots.to_vec());
     }
 
     pub fn new(
@@ -44,6 +53,7 @@ impl AnalysisSession {
         Ok(Self {
             project,
             configured_roots,
+            published_roots: None,
             targets,
             infer_linked,
             native: NativeState::Pending,

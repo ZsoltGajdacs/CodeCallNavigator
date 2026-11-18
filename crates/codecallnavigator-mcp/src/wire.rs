@@ -41,7 +41,43 @@ struct WireCapabilities {
 #[derive(Clone)]
 pub struct Capabilities {
     pub freshness: FreshnessSupport,
+    pub analysis_session: AnalysisSessionSupport,
 }
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum AnalysisSessionSupport {
+    Supported,
+    Unsupported,
+}
+
+#[derive(Deserialize)]
+struct AnalysisSessionCapabilities {
+    version: u32,
+    command: String,
+    activity_version: u32,
+    cancel_command: String,
+}
+
+fn analysis_session(value: Option<&Value>) -> AnalysisSessionSupport {
+    let Some(value) = value else {
+        return AnalysisSessionSupport::Unsupported;
+    };
+    let Ok(capability) = serde_json::from_value::<AnalysisSessionCapabilities>(value.clone())
+    else {
+        return AnalysisSessionSupport::Unsupported;
+    };
+    match capability {
+        AnalysisSessionCapabilities {
+            version: 1,
+            activity_version: 1,
+            command,
+            cancel_command,
+        } if command == "analysis-session" && cancel_command == "cancel_refresh" => {
+            AnalysisSessionSupport::Supported
+        }
+        _ => AnalysisSessionSupport::Unsupported,
+    }
+}
+
 #[derive(Deserialize)]
 struct ComparisonCapabilities {
     version: u32,
@@ -66,6 +102,7 @@ pub fn capabilities(value: &Value) -> Result<Capabilities> {
     }
     Ok(Capabilities {
         freshness: observation::negotiate(value.get("freshness"), &capabilities.operations),
+        analysis_session: analysis_session(value.get("analysis_session")),
     })
 }
 
@@ -176,6 +213,30 @@ mod tests {
                 &json!({"query_version":999,"generation_binding":true,"operations":OPERATIONS})
             )
             .is_err()
+        );
+        let mut value = json!({"query_version":2,"generation_binding":true,"comparison":{"version":1,"snapshot_binding":true},"operations":OPERATIONS});
+        assert_eq!(
+            capabilities(&value).unwrap().analysis_session,
+            AnalysisSessionSupport::Unsupported
+        );
+        for capability in [
+            json!(null),
+            json!({}),
+            json!("unknown"),
+            json!({"version":2,"command":"analysis-session","activity_version":1,"cancel_command":"cancel_refresh"}),
+            json!({"version":1,"command":"unknown","activity_version":1,"cancel_command":"cancel_refresh"}),
+            json!({"version":1,"command":"analysis-session","activity_version":1}),
+        ] {
+            value["analysis_session"] = capability;
+            assert_eq!(
+                capabilities(&value).unwrap().analysis_session,
+                AnalysisSessionSupport::Unsupported
+            );
+        }
+        value["analysis_session"] = json!({"version":1,"command":"analysis-session","activity_version":1,"cancel_command":"cancel_refresh"});
+        assert_eq!(
+            capabilities(&value).unwrap().analysis_session,
+            AnalysisSessionSupport::Supported
         );
     }
     #[test]

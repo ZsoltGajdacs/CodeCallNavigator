@@ -113,17 +113,15 @@ fn indicator(summary: &model::Presentation, k: &Kit) -> El {
 
 fn presentation(state: &State) -> model::Presentation {
     let freshness = state.freshness.message(state.generation.as_deref());
-    let automatic_enabled = state.query_context.as_ref().is_some_and(|context| {
-        state
-            .freshness
-            .automatic
-            .enabled(&context.descriptor.project)
-    });
+    let automatic_enabled = state.automatic_refresh_enabled();
     let automatic = automatic_enabled
         .then(|| state.freshness.automatic.message())
         .flatten();
-    let warning = if state.warning.is_empty() && automatic_enabled {
-        state.freshness.automatic.details().unwrap_or_default()
+    let automatic_warning = automatic_enabled
+        .then(|| state.freshness.automatic.details())
+        .flatten();
+    let warning = if state.warning.is_empty() {
+        automatic_warning.as_deref().unwrap_or_default()
     } else {
         &state.warning
     };
@@ -246,17 +244,21 @@ pub(super) fn titlebar(state: &State, k: &Kit) -> El {
 }
 
 pub(super) fn freshness_notice(state: &State, k: &Kit) -> Option<El> {
-    let message = state.freshness.message(state.generation.as_deref())?;
-    let bar = col().key("freshness-status").w_full().gap(8.0).child(
-        text(&message)
-            .key("freshness-message")
-            .w_full()
-            .help(message.clone())
-            .font(k.ty.ui)
-            .color(k.c.text_muted)
-            .wrap()
-            .min_w(0.0),
-    );
+    let mut bar = col().key("freshness-status").w_full().gap(8.0);
+    if let Some(message) = state.freshness.message(state.generation.as_deref()) {
+        bar = bar.child(
+            text(&message)
+                .key("freshness-message")
+                .w_full()
+                .help(message.clone())
+                .font(k.ty.ui)
+                .color(k.c.text_muted)
+                .wrap()
+                .min_w(0.0),
+        );
+    } else if !state.can_toggle_automatic_refresh() {
+        return None;
+    }
     let mut actions = row().w_full().gap(8.0).center_y().flex_wrap();
     if state
         .freshness

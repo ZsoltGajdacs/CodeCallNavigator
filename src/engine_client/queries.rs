@@ -153,36 +153,15 @@ impl QueryContext {
     pub fn observe_automatic(
         &self,
         cancel: &AtomicBool,
-        controls: &std::sync::mpsc::Receiver<codecallnavigator::refresh::Control>,
-        receive: &dyn Fn(super::Notice),
+        options: super::ObservationOptions<'_>,
     ) -> Result<bool> {
-        if !self.client.automatic_refresh_supported(cancel)? {
-            receive(super::Notice::Activity(
-                codecallnavigator::refresh::Activity::new(
-                    codecallnavigator::refresh::Phase::Unavailable {
-                        error: query::Error::new(
-                            "automatic_refresh_unsupported",
-                            "Update the CLI for automatic refresh; saved-input observation remains available",
-                        ),
-                    },
-                ),
-            ));
-            return self.observe(cancel, &|observation| {
-                receive(super::Notice::Observation(observation))
-            });
-        }
+        ensure!(
+            self.client.automatic_refresh_supported(cancel)?,
+            "unsupported_capability: update the CLI to use continuous analysis"
+        );
         let mut descriptor = self.descriptor.clone();
         descriptor.generation = None;
-        super::observation_process::run(
-            self.client.runtime(),
-            descriptor,
-            cancel,
-            super::ObservationOptions {
-                automatic: true,
-                receive,
-                controls: Some(controls),
-            },
-        )?;
+        super::observation_process::run(self.client.runtime(), descriptor, cancel, options)?;
         Ok(true)
     }
 }

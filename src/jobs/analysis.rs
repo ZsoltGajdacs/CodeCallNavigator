@@ -12,26 +12,29 @@ impl State {
         if self.project_job_busy() {
             return;
         }
+        let Some(selection) = self.selected_analysis() else {
+            self.warning =
+                "Select at least one solution, project, Java build or TypeScript configuration."
+                    .into();
+            return;
+        };
+        if self.defer_manual_analysis(&selection) {
+            return;
+        }
+        self.start_selected_analysis(selection);
+    }
+
+    pub(crate) fn selected_analysis(&self) -> Option<engine_client::Analysis> {
         let targets: Vec<_> = self
             .targets
             .iter()
             .filter(|choice| choice.selected)
             .map(|choice| choice.target.clone())
             .collect();
-        if targets.is_empty() {
-            self.warning =
-                "Select at least one solution, project, Java build or TypeScript configuration."
-                    .into();
-            return;
-        }
-        let selection = engine_client::Analysis {
+        (!targets.is_empty()).then(|| engine_client::Analysis {
             project: PathBuf::from(self.root.text.trim()),
             targets,
-        };
-        if self.defer_manual_analysis(&selection) {
-            return;
-        }
-        self.start_selected_analysis(selection);
+        })
     }
 
     pub(crate) fn start_selected_analysis(&mut self, selection: engine_client::Analysis) {

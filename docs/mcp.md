@@ -44,6 +44,11 @@ capabilities process prevent startup. MCP negotiation is handled by the SDK;
 stdout carries MCP messages only and startup failures go to stderr.
 Freshness observation v1 is optional at startup: older compatible CLIs retain
 their existing tools, while `graph_freshness` returns `unsupported_capability`.
+Explicit refresh also requires advertised `analysis_session` v1 support. A missing
+or incompatible capability makes `refresh_graph` return `unsupported_capability`
+without discovery or compilation; read-only tools remain available. Refresh stays
+a bounded one-shot operation and preserves the CLI typed failure code and message
+(`busy`, `inputs_changed`, `generation_changed`, `cancelled`, or `failed`).
 Capabilities are negotiated for the server lifetime; restart the MCP server
 after upgrading the configured CLI.
 

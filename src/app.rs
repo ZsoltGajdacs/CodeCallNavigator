@@ -339,6 +339,7 @@ impl State {
     }
 
     pub fn root_edited(&mut self) {
+        self.stop_selected_refresh();
         self.freshness.cancel_pending_manual();
         self.jobs.file_focus_cancel.store(true, Ordering::Release);
         self.jobs.file_focus.cancel();

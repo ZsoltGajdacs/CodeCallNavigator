@@ -70,7 +70,7 @@ pub fn analyze_snapshot(
         project: project.clone(),
         roots: Vec::new(),
         infer_linked_roots: true,
-        failure_version: None,
+        failure_version: Some(1),
         expected_generation: None,
         targets: selection.targets,
     };
@@ -120,7 +120,10 @@ fn exchange(
 ) -> Result<Event> {
     ensure!(!cancel.load(Ordering::Relaxed), "Analysis cancelled");
     let mut child = process::Session::start(runtime, request)?;
-    let mut conversation = Conversation::default();
+    let mut conversation = Conversation {
+        typed_failure: matches!(request, Request::Analyze { .. }),
+        ..Default::default()
+    };
     while let Some(event) = child.next(cancel)? {
         if let Some(message) = conversation.receive(event)? {
             progress(message);
@@ -143,6 +146,7 @@ fn exchange(
 
 #[derive(Default)]
 struct Conversation {
+    typed_failure: bool,
     hello: bool,
     terminal: Option<Event>,
 }
@@ -167,7 +171,15 @@ impl Conversation {
         match event {
             Event::Hello { .. } => bail!("Engine sent a duplicate hello"),
             Event::Progress { message } => Ok(Some(message)),
-            Event::Failed { message, .. } => bail!("Engine analysis failed: {message}"),
+            Event::Failed { message, code } => match code {
+                Some(code) => bail!("{}: {message}", code.as_str()),
+                None if self.typed_failure => {
+                    bail!(
+                        "unsupported_capability: configured CLI omitted the typed analysis failure"
+                    )
+                }
+                None => bail!("Engine request failed: {message}"),
+            },
             terminal => {
                 self.terminal = Some(terminal);
                 Ok(None)

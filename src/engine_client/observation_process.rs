@@ -7,7 +7,7 @@ use codecallnavigator::{
     freshness::{self, EventPayload, FreshnessObservation, StreamEvent},
     process_ownership::Descendants,
     query::{self, Query},
-    refresh::{Activity, Control},
+    refresh::{Activity, Control, ObserveSession},
 };
 use std::{
     io::{BufRead, BufReader, Read},
@@ -44,6 +44,7 @@ pub(crate) enum Notice {
 
 pub(crate) struct ObservationOptions<'a> {
     pub automatic: bool,
+    pub selection: Option<&'a ObserveSession>,
     pub receive: &'a dyn Fn(Notice),
     pub controls: Option<&'a mpsc::Receiver<Control>>,
 }
@@ -52,6 +53,7 @@ impl<'a> ObservationOptions<'a> {
     pub fn passive(receive: &'a dyn Fn(Notice)) -> Self {
         Self {
             automatic: false,
+            selection: None,
             receive,
             controls: None,
         }
@@ -66,14 +68,20 @@ pub(super) fn run(
 ) -> Result<()> {
     let mut session = Session::start(runtime, options.automatic)?;
     let result = (|| {
-        let bytes = request_bytes(descriptor)?;
+        let bytes = match options.selection {
+            Some(request) => encode_request(request)?,
+            None => request_bytes(descriptor)?,
+        };
         query_process::write_request(
             session.input.as_mut().expect("owned monitor stdin"),
             &bytes,
             cancel,
             Instant::now(),
         )?;
-        let mut conversation = Conversation::default();
+        let mut conversation = Conversation {
+            selected: options.selection.is_some(),
+            ..Default::default()
+        };
         let mut last_event = Instant::now();
         while !cancel.load(Ordering::Acquire) {
             session.update_owned()?;
@@ -128,7 +136,11 @@ fn request_bytes(descriptor: Descriptor) -> Result<Vec<u8>> {
             observation_version: freshness::VERSION,
         },
     };
-    let mut bytes = serde_json::to_vec(&request)?;
+    encode_request(&request)
+}
+
+fn encode_request(request: &impl serde::Serialize) -> Result<Vec<u8>> {
+    let mut bytes = serde_json::to_vec(request)?;
     ensure!(
         bytes.len() < 4 * 1024 * 1024,
         "Observation request exceeds 4 MiB"
@@ -139,6 +151,7 @@ fn request_bytes(descriptor: Descriptor) -> Result<Vec<u8>> {
 
 #[derive(Default)]
 struct Conversation {
+    selected: bool,
     sequence: u64,
     generation: Option<String>,
     revision: Option<String>,
@@ -155,10 +168,14 @@ impl Conversation {
             frame.sequence > self.sequence,
             "Freshness event sequence did not increase"
         );
+        ensure!(
+            self.sequence != 0 || frame.sequence == 1,
+            "Unexpected initial freshness sequence"
+        );
         let observation = match frame.payload {
             EventPayload::Activity { activity } => {
                 ensure!(
-                    self.sequence != 0,
+                    self.selected || self.generation.is_some(),
                     "Refresh activity preceded initial observation"
                 );
                 activity::validate(&activity)?;
@@ -172,14 +189,14 @@ impl Conversation {
             }
             EventPayload::Initial { observation } => {
                 ensure!(
-                    self.sequence == 0 && frame.sequence == 1,
+                    self.generation.is_none() && (self.selected || frame.sequence == 1),
                     "Unexpected initial freshness event"
                 );
                 observation
             }
             EventPayload::Change { observation } => {
                 ensure!(
-                    self.sequence != 0,
+                    self.generation.is_some(),
                     "Freshness monitor omitted initial event"
                 );
                 observation

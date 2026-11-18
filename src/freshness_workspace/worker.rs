@@ -1,11 +1,27 @@
 //! Bounded monitor delivery and owned background cleanup, independent of UI state.
 use super::{Pending, Status};
-use crate::engine_client::{Notice, QueryContext};
+use crate::engine_client::{Notice, ObservationOptions, QueryContext};
+use codecallnavigator::refresh::{ObserveSession, Phase};
 use std::sync::{
     Arc, Mutex,
     atomic::{AtomicBool, Ordering},
     mpsc,
 };
+
+pub(super) enum Mode {
+    Passive,
+    Saved,
+    Selected(ObserveSession),
+}
+
+impl Mode {
+    fn selection(&self) -> Option<&ObserveSession> {
+        match self {
+            Self::Selected(selection) => Some(selection),
+            _ => None,
+        }
+    }
+}
 
 pub(super) struct Worker {
     pub automatic: bool,
@@ -25,12 +41,12 @@ impl Worker {
     pub fn start(
         context: QueryContext,
         wake: Option<rune::Waker>,
-        automatic: bool,
+        mode: Mode,
         previous: Vec<Arc<AtomicBool>>,
     ) -> Self {
         let (controls, commands) = mpsc::sync_channel(1);
         let worker = Self {
-            automatic,
+            automatic: !matches!(mode, Mode::Passive),
             cancel: Arc::new(AtomicBool::new(false)),
             finished: Arc::new(AtomicBool::new(false)),
             pending: Arc::new(Mutex::new(Pending::default())),
@@ -39,7 +55,7 @@ impl Worker {
         let task = Task {
             context,
             wake,
-            automatic,
+            mode,
             previous,
             commands,
             cancel: worker.cancel.clone(),
@@ -54,7 +70,7 @@ impl Worker {
 struct Task {
     context: QueryContext,
     wake: Option<rune::Waker>,
-    automatic: bool,
+    mode: Mode,
     previous: Vec<Arc<AtomicBool>>,
     commands: mpsc::Receiver<codecallnavigator::refresh::Control>,
     cancel: Arc<AtomicBool>,
@@ -89,21 +105,34 @@ impl Task {
         if self.cancel.load(Ordering::Acquire) {
             return Ok(true);
         }
-        if self.automatic {
-            self.context
-                .observe_automatic(&self.cancel, &self.commands, &|notice| self.publish(notice))
-        } else {
-            self.context.observe(&self.cancel, &|observation| {
+        if matches!(self.mode, Mode::Passive) {
+            return self.context.observe(&self.cancel, &|observation| {
                 self.publish(Notice::Observation(observation))
-            })
+            });
         }
+        self.context.observe_automatic(
+            &self.cancel,
+            ObservationOptions {
+                automatic: true,
+                selection: self.mode.selection(),
+                receive: &|notice| self.publish(notice),
+                controls: Some(&self.commands),
+            },
+        )
     }
 
     fn publish(&self, notice: Notice) {
         if let Ok(mut pending) = self.pending.lock() {
             match notice {
                 Notice::Observation(observation) => pending.observation = Some(observation),
-                Notice::Activity(activity) => pending.activity = Some(activity),
+                Notice::Activity(activity) => {
+                    if self.mode.selection().is_some()
+                        && matches!(activity.phase, Phase::Published { .. })
+                    {
+                        pending.publication = Some(activity.clone());
+                    }
+                    pending.activity = Some(activity);
+                }
             }
         }
         self.wake();

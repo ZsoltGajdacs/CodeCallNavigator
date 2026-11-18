@@ -23,7 +23,7 @@ impl Details {
             .map(|reason| reason.describe())
             .collect::<Vec<_>>();
         if let Some(error) = workspace.automatic.details()
-            && !entries.iter().any(|entry| entry == error)
+            && !entries.iter().any(|entry| entry == &error)
         {
             if workspace.automatic.activity.as_ref().is_some_and(|activity| {
                 matches!(&activity.phase, codecallnavigator::refresh::Phase::Unavailable { error } if error.code == "incomplete_observation")
@@ -33,7 +33,7 @@ impl Details {
                 // verbatim in the coordinator report; retain truncated matches.
                 entries.retain(|entry| !error.contains(entry.as_str()));
             }
-            entries.push(error.into());
+            entries.push(error);
         }
         let omitted = observation.map_or(0, |last| last.omitted_reasons);
         if entries.is_empty() && omitted == 0 {

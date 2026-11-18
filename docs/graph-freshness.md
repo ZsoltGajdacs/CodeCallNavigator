@@ -1,8 +1,7 @@
 # Saved-edit graph freshness
 
-CodeCallNavigator observes saved analysis inputs through verified polling. Event-based
-monitoring, unsaved editor buffers and cross-edit compiler reuse are outside the
-supported observation contract.
+CodeCallNavigator observes saved analysis inputs through verified polling.
+Continuous analysis reuses validated compiler work across saved edits.
 
 ## What current means
 
@@ -28,18 +27,21 @@ unverifiable, unsupported and failed states separately from analysis activity.
 A newer saved generation offers **Reload saved graph**; reloading reads saved
 artifacts and does not run analysis.
 
-**Enable automatic refresh** explicitly opts the currently loaded project into
-compiler-backed refresh for this application session. It is off at startup and
-after switching projects. Editing the pending folder does not move that authorization.
-The engine coalesces saved changes and owns at most one analysis per project.
-Invalid code, cancellation and changed inputs preserve the last successful graph.
-After a failed refresh it waits for a relevant new saved-input revision or an
-explicit request instead of repeatedly compiling the same invalid state.
+Choose **Enable automatic refresh** in Analysis details to follow the loaded
+graph's build selection. For a fresh checkout or a changed selection, choose the
+builds first and select **Analyze with automatic refresh**. The engine starts
+analysis and watches saved edits before the first graph is available. Authorization
+lasts for the current application session. Selecting a different project or build
+set for continuous analysis requires a new opt-in.
 
-**Cancel automatic refresh** cancels current/pending work while leaving monitoring
-enabled. **Disable automatic refresh** returns to passive observation. Manual
-refresh remains available. Upgrading an older compatible CLI may be needed for
-freshness or automatic-refresh capabilities.
+The engine coalesces saved changes and reuses valid compiler preparation. A
+relevant change during analysis queues another attempt. Invalid code and
+cancellation preserve the last successful graph. The engine waits for a relevant
+saved change after a compiler failure.
+
+**Cancel current attempt** leaves the session available for later edits.
+**Disable automatic refresh** stops the session and returns to passive
+observation of a loaded graph. Manual analysis remains available.
 
 Queries remain bound to one artifact generation. A generation mismatch requires a
 new status/snapshot before combining results; prior IDs cannot be silently reused.

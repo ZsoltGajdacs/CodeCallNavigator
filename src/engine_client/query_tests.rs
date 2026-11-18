@@ -338,28 +338,27 @@ time.sleep(30)
     let runtime = executable(root.path(), &source);
     let context = QueryContext::for_project(&runtime, root.path().into());
     let cancel = AtomicBool::new(false);
-    let unavailable = AtomicBool::new(false);
-    let observed = AtomicBool::new(false);
     let (_send, controls) = std::sync::mpsc::channel();
+    let error = context
+        .observe_automatic(
+            &cancel,
+            ObservationOptions {
+                automatic: true,
+                selection: None,
+                receive: &|_| panic!("Unsupported automatic refresh emitted activity"),
+                controls: Some(&controls),
+            },
+        )
+        .unwrap_err();
+    assert!(error.to_string().contains("unsupported_capability"));
+    let observed = AtomicBool::new(false);
     assert!(
         context
-            .observe_automatic(&cancel, &controls, &|notice| {
-                match notice {
-                    Notice::Activity(activity) => {
-                        assert!(matches!(
-                            activity.phase,
-                            codecallnavigator::refresh::Phase::Unavailable { .. }
-                        ));
-                        unavailable.store(true, Ordering::Release);
-                    }
-                    Notice::Observation(_) => {
-                        observed.store(true, Ordering::Release);
-                        cancel.store(true, Ordering::Release);
-                    }
-                }
+            .observe(&cancel, &|_| {
+                observed.store(true, Ordering::Release);
+                cancel.store(true, Ordering::Release);
             })
             .unwrap()
     );
-    assert!(unavailable.load(Ordering::Acquire));
     assert!(observed.load(Ordering::Acquire));
 }

@@ -2,6 +2,7 @@
 use anyhow::{Context, Result};
 use std::{
     collections::BTreeSet,
+    ffi::OsStr,
     fs,
     path::{Path, PathBuf},
 };
@@ -30,11 +31,9 @@ impl ScanRoot {
         match self {
             Self::Required(_) => Ok(true),
             Self::Broad(path) => match fs::symlink_metadata(path) {
-                Ok(metadata) => Ok(!metadata.is_symlink()
-                    && !(metadata.is_dir()
-                        && path
-                            .file_name()
-                            .is_some_and(|name| name.as_encoded_bytes().starts_with(b".")))),
+                Ok(metadata) => Ok(!incidental(metadata.file_type(), || {
+                    path.file_name().is_some_and(hidden_name)
+                })),
                 Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(true),
                 Err(error) => Err(error)
                     .with_context(|| format!("Cannot inspect scan root {}", path.display())),
@@ -47,9 +46,9 @@ impl InputPolicy {
         if self == Self::Legacy {
             return Ok(false);
         }
-        let kind = entry.file_type()?;
-        Ok(kind.is_symlink()
-            || (kind.is_dir() && entry.file_name().as_encoded_bytes().starts_with(b".")))
+        Ok(incidental(entry.file_type()?, || {
+            hidden_name(&entry.file_name())
+        }))
     }
 
     /// Include every lexical ancestor link, so retargeting a required directory
@@ -71,6 +70,14 @@ impl InputPolicy {
         }
         Ok(digest.finalize().to_hex().to_string())
     }
+}
+
+fn incidental(kind: fs::FileType, hidden: impl FnOnce() -> bool) -> bool {
+    kind.is_symlink() || (kind.is_dir() && hidden())
+}
+
+fn hidden_name(name: &OsStr) -> bool {
+    name.as_encoded_bytes().starts_with(b".")
 }
 
 /// One lexical link used to resolve a required input, including indirect targets.

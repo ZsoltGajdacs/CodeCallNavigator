@@ -3,11 +3,15 @@ pub(crate) mod diagnostics;
 mod worker;
 use crate::{
     app::State,
-    engine_client::{Descriptor, QueryContext},
+    engine_client::{Analysis, Descriptor, QueryContext},
 };
-use codecallnavigator::{artifact::verification::InputStatus, freshness::FreshnessObservation};
-use std::sync::atomic::Ordering;
-use worker::Worker;
+use codecallnavigator::{
+    artifact::verification::InputStatus,
+    freshness::FreshnessObservation,
+    refresh::{self, Activity, ObserveSession, Phase, SessionRequest},
+};
+use std::{path::Path, sync::atomic::Ordering};
+use worker::{Mode, Worker};
 
 #[derive(Default)]
 pub enum Status {
@@ -28,9 +32,17 @@ pub struct Workspace {
     automatic_worker: bool,
     manual_pending: Option<PendingManual>,
     manual_running: bool,
+    build_selection_changed: bool,
+    selected: Option<ObserveSession>,
+    publication: Option<Publication>,
     binding: Option<Descriptor>,
     worker: Option<Worker>,
     retired: Vec<Worker>,
+}
+
+struct Publication {
+    descriptor: Descriptor,
+    metrics: serde_json::Value,
 }
 
 struct PendingManual {
@@ -42,7 +54,8 @@ struct PendingManual {
 struct Pending {
     observation: Option<FreshnessObservation>,
     terminal: Option<Status>,
-    activity: Option<codecallnavigator::refresh::Activity>,
+    activity: Option<Activity>,
+    publication: Option<Activity>,
     cleanup_warning: Option<String>,
 }
 
@@ -52,6 +65,7 @@ impl Pending {
             || self.observation.is_some()
             || self.terminal.is_some()
             || self.activity.is_some()
+            || self.publication.is_some()
     }
 }
 
@@ -62,28 +76,37 @@ impl Workspace {
             self.retired.push(worker);
         }
         self.retired_cleanup();
+        self.publication = None;
         if self.binding.as_ref() != Some(&context.descriptor) {
             self.last = None;
         }
         self.automatic.reconcile(Some(&context.descriptor));
-        self.automatic_worker = self.automatic.enabled(&context.descriptor.project);
+        self.automatic_worker =
+            self.selected.is_some() || self.automatic.enabled(&context.descriptor.project);
         self.automatic.activity = None;
         self.binding = Some(context.descriptor.clone());
-        self.status = Status::Checking;
+        self.status = if self.selected.is_some() {
+            Status::Idle
+        } else {
+            Status::Checking
+        };
         let previous = self
             .retired
             .iter()
             .map(|worker| worker.finished.clone())
             .collect();
-        self.worker = Some(Worker::start(
-            context,
-            wake,
-            self.automatic_worker,
-            previous,
-        ));
+        let mode = match (&self.selected, self.automatic_worker) {
+            (Some(selected), _) => Mode::Selected(selected.clone()),
+            (None, true) => Mode::Saved,
+            (None, false) => Mode::Passive,
+        };
+        self.worker = Some(Worker::start(context, wake, mode, previous));
     }
 
     fn sync(&mut self, context: Option<QueryContext>, wake: Option<rune::Waker>) {
+        if self.selected.is_some() {
+            return;
+        }
         self.automatic
             .reconcile(context.as_ref().map(|context| &context.descriptor));
         if let Some(context) = context.filter(|context| {
@@ -97,6 +120,11 @@ impl Workspace {
     }
 
     pub fn installed(&mut self, descriptor: Option<&Descriptor>) {
+        self.build_selection_changed = false;
+        if self.selected.is_some() {
+            self.binding = descriptor.cloned();
+            return;
+        }
         self.automatic.reconcile(descriptor);
         if descriptor.is_none_or(|next| {
             self.binding
@@ -164,10 +192,38 @@ impl Workspace {
         if let Some(activity) = pending.activity {
             self.automatic.activity = Some(activity);
         }
+        if let Some(publication) = pending.publication {
+            self.record_publication(publication);
+        }
         if let Some(terminal) = pending.terminal {
             self.status = terminal;
         }
         changed
+    }
+
+    fn record_publication(&mut self, activity: Activity) {
+        if let (
+            Some(selected),
+            Phase::Published {
+                generation,
+                roots,
+                metrics,
+                ..
+            },
+        ) = (&self.selected, activity.phase)
+        {
+            self.publication = Some(Publication {
+                descriptor: Descriptor {
+                    project: selected.session.project.clone(),
+                    roots: roots
+                        .into_iter()
+                        .filter(|(name, _)| name != "repo")
+                        .collect(),
+                    generation: Some(generation),
+                },
+                metrics,
+            });
+        }
     }
 
     fn retired_cleanup(&mut self) -> bool {
@@ -268,14 +324,10 @@ impl State {
         if self.freshness.manual_running {
             return false;
         }
-        let enabled = self.query_context.as_ref().is_some_and(|context| {
-            self.freshness
-                .automatic
-                .enabled(&context.descriptor.project)
-        });
-        if !enabled && !self.freshness.automatic_cleanup_pending() {
+        if !self.automatic_refresh_enabled() && !self.freshness.automatic_cleanup_pending() {
             return false;
         }
+        self.stop_selected_refresh();
         self.freshness.manual_pending = Some(PendingManual {
             selection: selection.clone(),
             binding: crate::workspace::Binding::capture(self),
@@ -285,7 +337,32 @@ impl State {
         true
     }
 
+    pub fn automatic_refresh_enabled(&self) -> bool {
+        self.freshness.selected.is_some()
+            || self.query_context.as_ref().is_some_and(|context| {
+                self.freshness
+                    .automatic
+                    .enabled(&context.descriptor.project)
+            })
+    }
+
+    pub fn can_toggle_automatic_refresh(&self) -> bool {
+        !self.closing
+            && (self.automatic_refresh_enabled()
+                || self.query_context.is_some()
+                || (self.runtime.is_some()
+                    && !self.project_job_busy()
+                    && self.targets.iter().any(|choice| choice.selected)))
+    }
+
     pub fn toggle_automatic_refresh(&mut self) {
+        if self.stop_selected_refresh() {
+            return;
+        }
+        if let Some((selection, runtime)) = self.selected_refresh_to_start() {
+            self.start_selected_refresh(selection, &runtime);
+            return;
+        }
         let Some(context) = self.query_context.clone() else {
             return;
         };
@@ -298,6 +375,81 @@ impl State {
             return;
         }
         self.freshness.start(context, self.jobs.waker.clone());
+    }
+
+    fn selected_refresh_to_start(
+        &self,
+    ) -> Option<(Analysis, std::sync::Arc<crate::runtime::Runtime>)> {
+        if self.automatic_refresh_enabled() || self.project_job_busy() {
+            return None;
+        }
+        if !self.refresh_uses_selected_builds() {
+            return None;
+        }
+        Some((self.selected_analysis()?, self.runtime.clone()?))
+    }
+
+    pub(crate) fn refresh_uses_selected_builds(&self) -> bool {
+        let different_project = self
+            .query_context
+            .as_ref()
+            .is_none_or(|context| context.descriptor.project != Path::new(self.root.text.trim()));
+        (different_project || self.freshness.build_selection_changed)
+            && self.targets.iter().any(|choice| choice.selected)
+    }
+
+    pub(crate) fn refresh_build_selection_changed(&mut self) {
+        self.stop_selected_refresh();
+        self.freshness.build_selection_changed = true;
+        if let Some(descriptor) = self.authorized_picker_project() {
+            self.freshness.automatic.toggle(&descriptor);
+            self.freshness.stop();
+        }
+    }
+
+    fn authorized_picker_project(&self) -> Option<Descriptor> {
+        let descriptor = &self.query_context.as_ref()?.descriptor;
+        let picker_project = Path::new(self.root.text.trim());
+        let authorized = self.freshness.automatic.enabled(&descriptor.project);
+        (descriptor.project == picker_project && authorized).then(|| descriptor.clone())
+    }
+
+    fn start_selected_refresh(&mut self, selection: Analysis, runtime: &crate::runtime::Runtime) {
+        let project = selection.project;
+        self.freshness.selected = Some(ObserveSession {
+            version: refresh::OBSERVE_SESSION_VERSION,
+            session: SessionRequest {
+                version: refresh::SESSION_VERSION,
+                project: project.clone(),
+                roots: Vec::new(),
+                targets: selection.targets,
+                infer_linked_roots: true,
+                expected_generation: None,
+            },
+        });
+        self.warning.clear();
+        self.freshness.start(
+            QueryContext::for_project(runtime, project),
+            self.jobs.waker.clone(),
+        );
+    }
+
+    pub(crate) fn stop_selected_refresh(&mut self) -> bool {
+        if self.freshness.selected.take().is_none() {
+            return false;
+        }
+        self.reload.stop();
+        self.reload.job.cancel();
+        self.freshness.stop();
+        if let Some(worker) = self.freshness.worker.take() {
+            self.freshness.retired.push(worker);
+        }
+        self.freshness.publication = None;
+        self.freshness.automatic = Default::default();
+        self.freshness.binding = None;
+        self.freshness.status = Status::Idle;
+        self.freshness.last = None;
+        true
     }
 
     pub fn cancel_automatic_refresh(&mut self) {
@@ -314,7 +466,14 @@ impl State {
         if self.freshness.manual_pending() || self.freshness.manual_running {
             return;
         }
-        if let Some(context) = self.query_context.clone() {
+        let context = match (&self.freshness.selected, &self.runtime) {
+            (Some(selected), Some(runtime)) => Some(QueryContext::for_project(
+                runtime,
+                selected.session.project.clone(),
+            )),
+            _ => self.query_context.clone(),
+        };
+        if let Some(context) = context {
             self.freshness.start(context, self.jobs.waker.clone());
         }
     }
@@ -372,6 +531,16 @@ fn resume_after_manual(state: &mut State) -> Option<bool> {
 
 fn automatic_adoption(state: &mut State) -> bool {
     if state.project_job_busy() {
+        return false;
+    }
+    if state.freshness.selected.is_some() {
+        let Some(publication) = state.freshness.publication.take() else {
+            return false;
+        };
+        if state.generation != publication.descriptor.generation {
+            state.load_generation(publication.descriptor, Some(publication.metrics));
+            return true;
+        }
         return false;
     }
     let Some(context) = state.query_context.as_ref() else {
@@ -485,6 +654,28 @@ mod tests {
                 .automatic
                 .enabled(std::path::Path::new("/loaded"))
         );
+    }
+
+    #[test]
+    fn changing_loaded_builds_requires_opt_in_for_the_new_selection() {
+        let mut state = opted_state();
+        state.root = rune::TextEdit::new("/loaded");
+        state.targets.push(crate::app::TargetChoice {
+            target: codecallnavigator::discovery::BuildTarget {
+                path: "/loaded/tsconfig.second.json".into(),
+                language: "typescript".into(),
+                kind: "tsconfig".into(),
+                label: "Second build".into(),
+            },
+            selected: false,
+        });
+        let descriptor = state.query_context.as_ref().unwrap().descriptor.clone();
+        assert!(state.automatic_refresh_enabled());
+        state.toggle_build(0);
+        assert!(!state.automatic_refresh_enabled());
+        assert!(state.refresh_uses_selected_builds());
+        state.freshness.installed(Some(&descriptor));
+        assert!(!state.refresh_uses_selected_builds());
     }
 
     #[test]

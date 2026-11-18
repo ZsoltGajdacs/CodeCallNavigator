@@ -4,6 +4,7 @@ use crate::{
     process, wire,
 };
 use anyhow::{Context, Result, ensure};
+use serde::Deserialize;
 use serde_json::{Value, json};
 use std::time::Duration;
 use tokio_util::sync::CancellationToken;
@@ -128,9 +129,15 @@ impl Backend {
         Ok(value)
     }
     pub async fn refresh(&self, args: RefreshArgs, cancel: &CancellationToken) -> Result<Reply> {
+        if self.capabilities.analysis_session == wire::AnalysisSessionSupport::Unsupported {
+            return Ok(Reply {
+                value: json!({"version":2,"generation":null,"freshness":null,"result":null,"error":{"code":"unsupported_capability","message":"Explicit refresh requires CLI analysis_session v1; upgrade the configured CLI and restart the MCP server"}}),
+                is_error: true,
+            });
+        }
         let discovered: wire::Discovery = serde_json::from_value(self.discovery(cancel).await?)?;
         let targets = choose_targets(&discovered, args)?;
-        let request = json!({"command":"analyze","version":2,"project":self.config.project,"roots":self.config.roots,"targets":targets,"infer_linked_roots":false});
+        let request = json!({"command":"analyze","version":2,"project":self.config.project,"roots":self.config.roots,"targets":targets,"infer_linked_roots":false,"failure_version":1});
         let mut bytes = serde_json::to_vec(&request)?;
         bytes.push(b'\n');
         let output = self
@@ -184,6 +191,36 @@ fn choose_targets(discovered: &wire::Discovery, args: RefreshArgs) -> Result<Vec
     Ok(targets)
 }
 
+// Independent CLI wire contract; MCP deliberately imports no engine/core types.
+#[derive(Deserialize, serde::Serialize)]
+#[serde(rename_all = "snake_case")]
+enum AnalysisFailureCode {
+    Busy,
+    InputsChanged,
+    GenerationChanged,
+    Cancelled,
+    Failed,
+}
+
+#[derive(Deserialize)]
+struct AnalysisFailure {
+    code: AnalysisFailureCode,
+    message: String,
+}
+
+fn failed_analysis(terminal: Value, cleanup_diagnostic: Option<String>) -> Result<Reply> {
+    let failure: AnalysisFailure =
+        serde_json::from_value(terminal.clone()).context("Malformed typed CLI failure event")?;
+    ensure!(
+        !failure.message.is_empty(),
+        "CLI failure omitted its message"
+    );
+    Ok(Reply {
+        value: json!({"version":2,"generation":null,"freshness":null,"result":null,"error":{"code":failure.code,"message":failure.message},"cli_event":terminal,"cleanup_diagnostic":cleanup_diagnostic}),
+        is_error: true,
+    })
+}
+
 fn analysis_reply(output: process::Output) -> Result<Reply> {
     let text = std::str::from_utf8(&output.stdout).context("CLI analysis output is not UTF-8")?;
     let mut events = text.lines();
@@ -209,13 +246,7 @@ fn analysis_reply(output: process::Output) -> Result<Reply> {
     }
     let terminal = terminal.context("CLI omitted terminal analysis event")?;
     if terminal["event"] == "failed" {
-        let message = terminal["message"]
-            .as_str()
-            .context("Malformed CLI failure event")?;
-        return Ok(Reply {
-            value: json!({"version":2,"generation":null,"freshness":null,"result":null,"error":{"code":"analysis_failed","message":message},"cli_event":terminal,"cleanup_diagnostic":output.cleanup_diagnostic}),
-            is_error: true,
-        });
+        return failed_analysis(terminal, output.cleanup_diagnostic);
     }
     validate_complete(&terminal)?;
     process::require_success(&output)?;
@@ -262,6 +293,41 @@ mod tests {
             "{\"event\":\"hello\",\"version\":1}\n{\"event\":\"complete\",\"digest\":\"bad\"}\n",
         ] {
             assert!(analysis_reply(output(text)).is_err());
+        }
+        for code in [
+            "busy",
+            "inputs_changed",
+            "generation_changed",
+            "cancelled",
+            "failed",
+        ] {
+            let text = format!(
+                "{}\n{}\n",
+                json!({"event":"hello","version":2}),
+                json!({"event":"failed","code":code,"message":"native diagnostic"})
+            );
+            let mut captured = output(&text);
+            captured.success = false;
+            captured.cleanup_diagnostic = Some("owned cleanup diagnostic".into());
+            let reply = analysis_reply(captured).unwrap();
+            assert!(reply.is_error);
+            assert_eq!(reply.value["error"]["code"], code);
+            assert_eq!(reply.value["error"]["message"], "native diagnostic");
+            assert_eq!(reply.value["cli_event"]["code"], code);
+            assert_eq!(
+                reply.value["cleanup_diagnostic"],
+                "owned cleanup diagnostic"
+            );
+        }
+        for terminal in [
+            json!({"event":"failed","message":"missing code"}),
+            json!({"event":"failed","code":"unknown","message":"unknown code"}),
+            json!({"event":"failed","code":null,"message":"null code"}),
+            json!({"event":"failed","code":"failed","message":""}),
+            json!({"event":"failed","code":"failed"}),
+        ] {
+            let text = format!("{}\n{terminal}\n", json!({"event":"hello","version":2}));
+            assert!(analysis_reply(output(&text)).is_err());
         }
     }
     #[test]

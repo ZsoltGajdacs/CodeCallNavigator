@@ -93,17 +93,24 @@ impl Coordinator {
             ));
             return;
         }
-        self.start(plan, &observation.generation);
+        self.start(
+            &plan.request,
+            Some((plan.selection, &observation.generation)),
+        );
     }
 
-    fn start(&mut self, plan: Plan, generation: &str) {
+    pub fn start_explicit(&mut self, request: &SessionRequest) {
+        self.start(request, None);
+    }
+
+    fn start(&mut self, request: &SessionRequest, binding: Option<(String, &str)>) {
         if !self.shutdown() {
             return;
         }
-        self.selection = Some(plan.selection);
-        match SessionChild::start(&plan.request) {
+        self.selection = binding.as_ref().map(|(selection, _)| selection.clone());
+        match SessionChild::start(request) {
             Ok(child) => {
-                self.validated_generation = Some(generation.into());
+                self.validated_generation = binding.map(|(_, generation)| generation.into());
                 self.child = Some(child);
             }
             Err(error)
@@ -120,7 +127,7 @@ impl Coordinator {
         }
     }
 
-    fn poll(&mut self) {
+    pub fn poll(&mut self) {
         let Some(child) = &mut self.child else {
             return;
         };
@@ -377,6 +384,7 @@ mod tests {
                 run: 1,
                 input_revision: Some("private".into()),
                 generation: "new".into(),
+                roots: Vec::new(),
                 analysis_milliseconds: 123.0,
                 metrics: serde_json::json!({"complete":true}),
             },

@@ -12,7 +12,7 @@ use codecallnavigator_core::{
     artifact::{CoordinatorLease, GenerationChanged, LockBusy},
     fingerprint::InputsChanged,
     freshness::{self, EventPayload, StreamEvent},
-    protocol::Event,
+    protocol::{AnalysisFailureCode, Event},
     query::Error,
     refresh::{self, Activity, CancelReason, Phase, SessionRequest},
 };
@@ -356,6 +356,7 @@ impl<'a> Monitor<'a> {
     fn published(&mut self, event: Event, active: ActiveAttempt, notice: &mut Notice<'_>) {
         let Event::Complete {
             digest,
+            roots,
             fingerprints,
             metrics,
             ..
@@ -365,6 +366,7 @@ impl<'a> Monitor<'a> {
         };
         let input_revision = active.revision();
         let analysis_milliseconds = active.milliseconds();
+        self.session.record_published_roots(&roots);
         self.inputs = Inputs::captured(fingerprints);
         self.failed_inputs = None;
         self.baseline = Some(self.inputs.expected());
@@ -378,6 +380,7 @@ impl<'a> Monitor<'a> {
                 run: self.runs,
                 input_revision,
                 generation: digest,
+                roots,
                 analysis_milliseconds,
                 metrics,
             },
@@ -401,10 +404,11 @@ impl<'a> Monitor<'a> {
                 input_revision,
                 error: bounded_error(
                     if changed {
-                        "inputs_changed"
+                        AnalysisFailureCode::InputsChanged
                     } else {
-                        "analysis_failed"
-                    },
+                        AnalysisFailureCode::Failed
+                    }
+                    .as_str(),
                     &format!("{error:#}"),
                 ),
                 analysis_milliseconds,

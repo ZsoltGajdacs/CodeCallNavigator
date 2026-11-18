@@ -102,7 +102,7 @@ fn validate(bytes: &[u8]) -> Result<Capabilities> {
     let flow_languages = serde_json::from_value(capabilities["flow_languages"].clone())
         .context("CLI omitted supported flow languages")?;
     let observation = supports_observation(&capabilities, operations);
-    let automatic_refresh = observation && supports_automatic(&capabilities["automatic_refresh"]);
+    let automatic_refresh = observation && supports_automatic(&capabilities);
     Ok(Capabilities {
         flow_languages,
         flow_comparison: flow_comparison::supported(&capabilities, operations),
@@ -128,12 +128,31 @@ fn supports_observation(
             == codecallnavigator::freshness::HEARTBEAT_MILLISECONDS
 }
 
-fn supports_automatic(automatic: &serde_json::Value) -> bool {
-    automatic["version"] == 1
+fn supports_automatic(capabilities: &serde_json::Value) -> bool {
+    let automatic = &capabilities["automatic_refresh"];
+    let session = &capabilities["analysis_session"];
+    supports_session(session)
+        && automatic["initial_session_version"]
+            == codecallnavigator::refresh::OBSERVE_SESSION_VERSION
+        && automatic["version"] == 1
         && automatic["activity_version"] == 1
         && automatic["observe_flag"] == "--auto-refresh"
         && automatic["debounce_milliseconds"] == 300
         && automatic["cancel_command"] == "cancel_refresh"
+}
+
+fn supports_session(session: &serde_json::Value) -> bool {
+    use codecallnavigator::refresh::{SESSION_VERSION, VERSION};
+    let versions = (
+        session["version"].as_u64(),
+        session["activity_version"].as_u64(),
+    );
+    let commands = (
+        session["command"].as_str(),
+        session["cancel_command"].as_str(),
+    );
+    versions == (Some(u64::from(SESSION_VERSION)), Some(u64::from(VERSION)))
+        && commands == (Some("analysis-session"), Some("cancel_refresh"))
 }
 
 fn require_exit(child: &mut Child, cancel: &AtomicBool, started: Instant) -> Result<()> {
@@ -160,10 +179,20 @@ mod tests {
         let mut value = codecallnavigator::query::capabilities();
         value["automatic_refresh"] = serde_json::json!({
             "version":1,"activity_version":1,"observe_flag":"--auto-refresh",
-            "debounce_milliseconds":300,"cancel_command":"cancel_refresh"
+            "initial_session_version":1,"debounce_milliseconds":300,"cancel_command":"cancel_refresh"
         });
         assert!(
             validate(&serde_json::to_vec(&value).unwrap())
+                .unwrap()
+                .automatic_refresh
+        );
+        let mut stale = value.clone();
+        stale["automatic_refresh"]
+            .as_object_mut()
+            .unwrap()
+            .remove("initial_session_version");
+        assert!(
+            !validate(&serde_json::to_vec(&stale).unwrap())
                 .unwrap()
                 .automatic_refresh
         );

@@ -7582,7 +7582,7 @@
       "component": "mcp",
       "category": "unit",
       "requirements": [],
-      "purpose": "analysis requires compatible hello terminal and successful exit"
+      "purpose": "analysis requires compatible hello, terminal exit, and exact typed failure codes"
     },
     {
       "id": "codecallnavigator-mcp/bin:codecallnavigator-mcp::backend::tests::unknown_refresh_identity_is_not_invented_by_adapter",
@@ -7862,7 +7862,7 @@
       "component": "mcp",
       "category": "unit",
       "requirements": [],
-      "purpose": "malformed or incompatible envelopes are rejected"
+      "purpose": "malformed or incompatible envelopes are rejected and refresh session capability is validated"
     },
     {
       "id": "codecallnavigator-mcp/bin:codecallnavigator-mcp::wire::tests::structured_cli_failures_keep_original_codes_and_generation_metadata",
@@ -8069,7 +8069,7 @@
       "component": "mcp",
       "category": "integration",
       "requirements": [],
-      "purpose": "optional missing or future capability keeps legacy tools usable"
+      "purpose": "missing or future capabilities keep read-only tools usable and reject unsupported refresh before launching native work"
     },
     {
       "id": "codecallnavigator-mcp/test:stdio_queries::real_stdio_refresh_queries_and_errors_preserve_the_cli_contract",
@@ -8087,7 +8087,7 @@
         "node",
         "typescript"
       ],
-      "purpose": "real stdio refresh queries and errors preserve the cli contract"
+      "purpose": "real stdio refresh preserves typed CLI failure codes and prior artifact bytes"
     },
     {
       "id": "codecallnavigator/bin:codecallnavigator::architecture_workspace::tests::changing_graph_epoch_rejects_previous_configuration_job_and_forces_reload",
@@ -8950,7 +8950,7 @@
       "component": "ui",
       "category": "integration",
       "requirements": [],
-      "purpose": "automatic capability absence preserves passive freshness"
+      "purpose": "missing automatic capability fails explicitly while a separate passive observation works"
     },
     {
       "id": "codecallnavigator/bin:codecallnavigator::engine_client::query_tests::blocked_stdin_write_is_cancellable_and_restarts_without_a_stale_request",
@@ -10294,6 +10294,20 @@
       "category": "unit",
       "requirements": [],
       "purpose": "Preserve actionable input blockers and compatible bounded wire diagnostics"
+    },
+    {
+      "id": "codecallnavigator/bin:codecallnavigator::freshness_workspace::tests::changing_loaded_builds_requires_opt_in_for_the_new_selection",
+      "runner": "rust",
+      "file": "src/freshness_workspace.rs",
+      "test_name": "freshness_workspace::tests::changing_loaded_builds_requires_opt_in_for_the_new_selection",
+      "ignored": false,
+      "package": "codecallnavigator",
+      "target_kind": "bin",
+      "target": "codecallnavigator",
+      "component": "ui",
+      "category": "unit",
+      "requirements": [],
+      "purpose": "changing the loaded project selection cancels old authorization and requires an explicit new session"
     },
     {
       "id": "codecallnavigator/bin:codecallnavigator::freshness_workspace::tests::deferred_manual_request_is_frozen_and_folder_edit_cancels_it",
@@ -12019,6 +12033,25 @@
         "typescript"
       ],
       "purpose": "actual cli keeps graph context across edited root and drives search source flow"
+    },
+    {
+      "id": "codecallnavigator/bin:codecallnavigator::ui_tests::cli_freshness::actual_cli_automatic_refresh_adopts_first_graph_and_keeps_inferred_roots",
+      "runner": "rust",
+      "file": "src/ui_tests/cli_freshness.rs",
+      "test_name": "ui_tests::cli_freshness::actual_cli_automatic_refresh_adopts_first_graph_and_keeps_inferred_roots",
+      "ignored": true,
+      "package": "codecallnavigator",
+      "target_kind": "bin",
+      "target": "codecallnavigator",
+      "component": "ui",
+      "category": "integration",
+      "requirements": [
+        "cli",
+        "graphviz",
+        "node",
+        "typescript"
+      ],
+      "purpose": "graphless opt-in recovers a real compiler, keeps inferred roots across publication, and reaps owned session on shutdown"
     },
     {
       "id": "codecallnavigator/bin:codecallnavigator::ui_tests::cli_freshness::actual_cli_automatic_refresh_requires_opt_in_and_preserves_loaded_context",

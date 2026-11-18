@@ -357,6 +357,130 @@ fn actual_cli_automatic_refresh_requires_opt_in_and_preserves_loaded_context() {
     settle(&mut runtime, |state| state.freshness.stopped());
 }
 
+/// Risk: graphless opt-in, mixed source roots and first adoption cross the real
+/// desktop, observer, retained Node compiler and saved-generation boundaries.
+#[test]
+#[ignore = "requires built CLI with automatic refresh, Node24/TypeScript5.9-or-6.0"]
+fn actual_cli_automatic_refresh_adopts_first_graph_and_keeps_inferred_roots() {
+    use codecallnavigator::refresh::Phase;
+
+    let fixture = tempfile::tempdir().unwrap();
+    let (project, shared) = fresh_project_with_linked_source(fixture.path());
+    let mut ui = desktop_without_graph(&project);
+    settle(&mut ui, |state| {
+        state.targets.iter().any(|choice| choice.selected)
+    });
+    click(&mut ui, "freshness-auto-toggle");
+    settle(&mut ui, |state| {
+        state.freshness.automatic.activity.as_ref().is_some_and(|activity| {
+            matches!(&activity.phase, Phase::Failed { error, .. } if error.code == "failed")
+        })
+    });
+    assert!(ui.state.graph.is_none());
+    assert!(ui.state.freshness.last.is_none());
+    assert!(
+        !project
+            .join(codecallnavigator::artifact::GRAPH_PATH)
+            .exists()
+    );
+
+    fs::write(
+        project.join("main.ts"),
+        "import { leaf } from '../shared/leaf'; export function main() { return leaf(); }",
+    )
+    .unwrap();
+    settle(&mut ui, |state| {
+        state.graph.is_some() && state.view_is_current()
+    });
+    let context = ui.state.query_context.as_ref().unwrap();
+    assert_eq!(context.descriptor.project, project);
+    assert!(
+        context
+            .descriptor
+            .roots
+            .iter()
+            .any(|(_, root)| shared.starts_with(root))
+    );
+    let graph = ui.state.graph.as_ref().unwrap();
+    assert!(graph.data.nodes.iter().any(|node| node.label == "leaf"));
+    assert!(ui.state.automatic_refresh_enabled());
+    let first = ui.state.generation.clone();
+    fs::write(
+        shared.join("leaf.ts"),
+        "export function leaf() { return 'fresh'; }",
+    )
+    .unwrap();
+    settle(&mut ui, |state| {
+        state.generation != first && state.view_is_current()
+    });
+    assert!(
+        ui.state
+            .freshness
+            .automatic
+            .activity
+            .as_ref()
+            .unwrap()
+            .runs_started
+            >= 3
+    );
+    assert_opt_out_stops_analysis(&mut ui, &shared);
+    ui.update(jobs::close);
+    settle(&mut ui, |state| state.freshness.stopped());
+    assert!(ui.state.freshness.cleanup_warning.is_none());
+}
+
+fn assert_opt_out_stops_analysis(ui: &mut Runtime<State>, shared: &Path) {
+    click(ui, "freshness-auto-toggle");
+    assert!(!ui.state.automatic_refresh_enabled());
+    wait_observation(ui);
+    let last = ui.state.generation.clone();
+    fs::write(
+        shared.join("leaf.ts"),
+        "export function leaf() { return 17; }",
+    )
+    .unwrap();
+    settle(ui, |state| state.freshness.is_stale());
+    assert_eq!(ui.state.generation, last);
+}
+
+fn fresh_project_with_linked_source(base: &Path) -> (PathBuf, PathBuf) {
+    let root = base.canonicalize().unwrap();
+    let project = root.join("checkout");
+    let shared = root.join("shared");
+    fs::create_dir(&project).unwrap();
+    fs::create_dir(&shared).unwrap();
+    fs::write(
+        project.join("tsconfig.json"),
+        r#"{"compilerOptions":{"strict":true,"target":"ES2022","rootDir":"..","types":[]},"files":["main.ts","../shared/leaf.ts"]}"#,
+    )
+    .unwrap();
+    fs::write(project.join("main.ts"), "export function broken( {").unwrap();
+    fs::write(
+        shared.join("leaf.ts"),
+        "export function leaf() { return 1; }",
+    )
+    .unwrap();
+    let modules =
+        std::env::var_os("CODECALLNAVIGATOR_TS_NODE_MODULES").expect("Installed TypeScript");
+    std::os::unix::fs::symlink(modules, project.join("node_modules")).unwrap();
+    (project, shared)
+}
+
+fn desktop_without_graph(project: &Path) -> Runtime<State> {
+    let mut state = State::new();
+    state.runtime = Some(Arc::new(crate::runtime::Runtime::discover().unwrap()));
+    state.root = rune::TextEdit::new(project.to_string_lossy());
+    state.discover_root();
+    let mut runtime = Runtime::new(
+        state,
+        crate::view::view,
+        (1420.0, 900.0),
+        rune::Env::new(true, 1.0),
+    );
+    runtime.poll = Some(jobs::poll);
+    runtime
+}
+
 fn invalid_automatic_code_recovers(runtime: &mut Runtime<State>, project: &Path) {
     use codecallnavigator::refresh::Phase;
     let successful = runtime.state.generation.clone();

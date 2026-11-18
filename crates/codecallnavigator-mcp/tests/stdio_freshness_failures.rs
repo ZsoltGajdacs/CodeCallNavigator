@@ -18,6 +18,8 @@ capabilities = dict(query_version=2, generation_binding=True, operations=operati
 if mode != 'legacy':
     capabilities['operations'] = operations + ['freshness']
     capabilities['freshness'] = dict(version=2 if mode=='future' else 1,mode='verified_polling',limited=True)
+if mode == 'future':
+    capabilities['analysis_session'] = dict(version=2,command='analysis-session',activity_version=1,cancel_command='cancel_refresh')
 if sys.argv[1] == 'capabilities':
     print(json.dumps(capabilities))
     sys.exit(0)
@@ -58,6 +60,16 @@ fn optional_missing_or_future_capability_keeps_legacy_tools_usable() {
         assert_eq!(
             reply["structuredContent"]["error"]["code"],
             "unsupported_capability"
+        );
+        let refresh = client.call("refresh_graph", json!({}));
+        assert_eq!(refresh["isError"], true, "{mode}: {refresh}");
+        assert_eq!(
+            refresh["structuredContent"]["error"]["code"],
+            "unsupported_capability"
+        );
+        assert_eq!(
+            client.graph("graph_status", json!({}))["result"]["nodes"],
+            0
         );
         assert!(client.request("ping", json!({})).get("result").is_some());
     }

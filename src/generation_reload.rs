@@ -1,5 +1,9 @@
 //! Explicit adoption loads exactly the advertised saved generation, without analysis.
-use crate::{app::State, engine_client::QueryContext, workspace::LoadedGraph};
+use crate::{
+    app::State,
+    engine_client::{Descriptor, QueryContext},
+    workspace::LoadedGraph,
+};
 use rune::Latest;
 use std::sync::{
     Arc,
@@ -28,8 +32,7 @@ impl State {
         if self.project_job_busy() {
             return;
         }
-        let (Some(context), Some(runtime)) = (self.query_context.clone(), self.runtime.clone())
-        else {
+        let Some(context) = self.query_context.clone() else {
             return;
         };
         let Some(generation) = self
@@ -39,19 +42,40 @@ impl State {
         else {
             return;
         };
+        let mut target = context.descriptor;
+        target.generation = Some(generation);
+        self.load_generation(target, None);
+    }
+
+    pub(crate) fn load_generation(
+        &mut self,
+        target: Descriptor,
+        report: Option<serde_json::Value>,
+    ) {
+        let (Some(runtime), Some(generation)) = (self.runtime.clone(), target.generation.clone())
+        else {
+            return;
+        };
         self.reload.stop();
         self.reload.cancel = Arc::new(AtomicBool::new(false));
         let cancel = self.reload.cancel.clone();
         let binding = crate::workspace::Binding::capture(self);
-        let mut target = context.descriptor;
-        target.generation = Some(generation.clone());
         self.warning.clear();
         self.status = "Loading the saved graph generation…".into();
         self.reload.job.request(target, move |target| {
-            let result = QueryContext::new(&runtime, target)
-                .snapshot(&cancel)
-                .map(crate::workspace::from_snapshot)
-                .map_err(|error| format!("{error:#}"));
+            let result = (|| {
+                let metrics = codecallnavigator::metrics::Metrics::default();
+                let _scope = metrics.enter();
+                if let Some(report) = &report {
+                    codecallnavigator::metrics::absorb(report)?;
+                }
+                let mut loaded = crate::workspace::from_snapshot(
+                    QueryContext::new(&runtime, target).snapshot(&cancel)?,
+                );
+                loaded.metrics = report.is_some().then_some(metrics);
+                Ok::<_, anyhow::Error>(loaded)
+            })()
+            .map_err(|error| format!("{error:#}"));
             Output {
                 binding,
                 requested: generation,
@@ -79,7 +103,8 @@ pub fn poll(state: &mut State) -> bool {
     }
     match output.result {
         Ok(loaded) => {
-            crate::graph_install::install(state, loaded, crate::graph_install::Mode::Adopt)
+            let mode = crate::graph_install::mode(state, &loaded);
+            crate::graph_install::install(state, loaded, mode);
         }
         Err(error) => {
             state.warning =

@@ -4,27 +4,25 @@ use rune::{El, text};
 use rune_kit::{Button, Kit};
 
 pub(super) fn append(state: &State, k: &Kit, mut body: El, mut actions: El) -> El {
-    let enabled = state.query_context.as_ref().is_some_and(|context| {
-        state
-            .freshness
-            .automatic
-            .enabled(&context.descriptor.project)
-    });
+    let enabled = state.automatic_refresh_enabled();
     actions = actions.child(
         Button::new(if enabled {
             "Disable automatic refresh"
+        } else if state.refresh_uses_selected_builds() {
+            "Analyze with automatic refresh"
         } else {
             "Enable automatic refresh"
         })
-        .disabled(state.query_context.is_none() || state.closing)
+        .disabled(!state.can_toggle_automatic_refresh())
         .on_press(State::toggle_automatic_refresh)
         .build(k)
         .key("freshness-auto-toggle"),
     );
     if enabled && let Some(activity) = state.freshness.automatic.message() {
+        let detail = state.freshness.automatic.details().unwrap_or(activity);
         body = body.child(
-            text(state.freshness.automatic.details().unwrap_or(&activity))
-                .help(state.freshness.automatic.details().unwrap_or(&activity))
+            text(&detail)
+                .help(&detail)
                 .w_full()
                 .min_w(0.0)
                 .font(k.ty.ui)
@@ -43,7 +41,7 @@ pub(super) fn append(state: &State, k: &Kit, mut body: El, mut actions: El) -> E
     }
     if enabled && state.freshness.automatic.can_cancel() {
         actions = actions.child(
-            Button::new("Cancel automatic refresh")
+            Button::new("Cancel current attempt")
                 .on_press(State::cancel_automatic_refresh)
                 .build(k)
                 .key("freshness-auto-cancel"),

@@ -135,29 +135,7 @@ fn validate(event: &StreamEvent, sequence: u64, runs: u64) -> Result<()> {
             activity.runs_started >= runs,
             "Analysis-session run count decreased"
         );
-        validate_publication(&activity.phase)?;
-    }
-    Ok(())
-}
-
-fn validate_publication(phase: &Phase) -> Result<()> {
-    if let Phase::Published {
-        generation,
-        metrics,
-        ..
-    } = phase
-    {
-        ensure!(
-            generation.len() == 64
-                && generation
-                    .bytes()
-                    .all(|byte| byte.is_ascii_hexdigit() && !byte.is_ascii_uppercase()),
-            "Invalid analysis-session publication digest"
-        );
-        ensure!(
-            metrics.is_object(),
-            "Invalid analysis-session publication metrics"
-        );
+        activity.phase.validate_publication()?;
     }
     Ok(())
 }

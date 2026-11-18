@@ -37,12 +37,11 @@ pub(super) fn validate(activity: &Activity) -> Result<()> {
         Phase::Published {
             run,
             input_revision,
-            generation,
             analysis_milliseconds,
             ..
         } => {
             running(Some(*run), input_revision, *analysis_milliseconds)?;
-            revision(generation)
+            activity.phase.validate_publication()
         }
         Phase::Failed {
             run,
@@ -75,14 +74,6 @@ fn observed_revision(value: &Option<String>) -> Result<()> {
     ensure!(
         value.as_deref().is_none_or(digest),
         "Invalid refresh input revision"
-    );
-    Ok(())
-}
-
-fn revision(value: &str) -> Result<()> {
-    ensure!(
-        digest(value),
-        "Invalid refresh generation or input revision"
     );
     Ok(())
 }

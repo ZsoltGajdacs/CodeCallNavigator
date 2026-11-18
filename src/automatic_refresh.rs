@@ -56,9 +56,11 @@ impl Authorization {
         })
     }
 
-    pub fn details(&self) -> Option<&str> {
+    pub fn details(&self) -> Option<String> {
         match &self.activity.as_ref()?.phase {
-            Phase::Failed { error, .. } | Phase::Unavailable { error } => Some(&error.message),
+            Phase::Failed { error, .. } | Phase::Unavailable { error } => {
+                Some(format!("{}: {}", error.code, error.message))
+            }
             _ => None,
         }
     }
@@ -68,9 +70,7 @@ impl Authorization {
         Some(match &activity.phase {
             Phase::Watching => "Automatic refresh is watching saved inputs".into(),
             Phase::Debouncing { .. } => "Automatic refresh is waiting for edits to settle…".into(),
-            Phase::Running { .. } => {
-                "Automatically analyzing saved changes · previous graph remains available".into()
-            }
+            Phase::Running { .. } => "Analyzing saved inputs…".into(),
             Phase::Busy { .. } => "Automatic refresh is waiting for another analysis".into(),
             Phase::Published { .. } => "Automatic refresh published a saved graph".into(),
             Phase::Failed { .. } => {

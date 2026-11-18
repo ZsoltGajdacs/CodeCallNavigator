@@ -437,7 +437,7 @@ def fresh_session(case):
     monitor = case.monitor()
     process = monitor.observer.measurement.process
     failed = activity(monitor.state("failed"))
-    require(failed["error"]["code"] == "analysis_failed", f"Wrong failure: {failed}")
+    require(failed["error"]["code"] == "failed", f"Wrong failure: {failed}")
     require("error TS" in failed["error"]["message"] and "app.ts" in failed["error"]["message"],
             f"Missing actual TypeScript source diagnostic: {failed}")
     require(not case.artifact.exists(), "Invalid initial source published a graph")
@@ -466,7 +466,7 @@ def fresh_session(case):
     before = case.artifact.read_bytes()
     case.project.extra.write_text("export function newlyBroken(\n")
     added_failure = activity(monitor.state("failed"))
-    require(added_failure["error"]["code"] == "analysis_failed",
+    require(added_failure["error"]["code"] == "failed",
             f"New source omitted compiler failure: {added_failure}")
     require(monitor.runs() == 4, "New invalid source did not cause one attempt")
     require(case.artifact.read_bytes() == before, "Invalid new source replaced previous graph")

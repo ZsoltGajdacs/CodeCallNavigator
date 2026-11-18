@@ -131,6 +131,12 @@ monotonic sequence numbers. Publication reports a digest and leaves the
 session open. Send `{"command":"cancel_refresh","version":1}` to cancel the
 current attempt. Close stdin to stop the session and its owned processes.
 `observe --auto-refresh` forwards activity from this same engine session.
+For initial analysis, send `{"version":1,"session":{...}}` with an unpinned
+session request. Capabilities advertises this envelope as
+`automatic_refresh.initial_session_version`. The stream can deliver activity
+before the first graph. A publication carries the generation and the effective
+root mappings, including compiler-inferred linked roots. The first freshness
+observation follows publication.
 
 Protocol version 2 also accepts
 `{"command":"clear_cache","version":2,"project":"/checkout"}`.

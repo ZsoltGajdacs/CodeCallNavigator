@@ -444,67 +444,41 @@ never compiles, publishes, or writes caches.
 
 ## Opt-in automatic refresh
 
-Check the separate `capabilities.automatic_refresh` contract before starting
+Check `capabilities.automatic_refresh` before starting
 `ccnavigator observe --auto-refresh`. Version 1 advertises `activity_version: 1`,
-`debounce_milliseconds: 300` and `cancel_command: "cancel_refresh"`. Send the same
-initial freshness request and keep stdin open; omit `expected_generation`, since
-this mode follows subsequent saved generations. Passive observation and one-shot
-queries retain their existing behavior.
+`initial_session_version: 1`, `debounce_milliseconds: 300` and
+`cancel_command: "cancel_refresh"`. Keep stdin open and send an unpinned
+freshness request to follow the saved build selection. To start with an
+explicit selection, use the [initial analysis session envelope](standalone-engine.md#executables-and-process-protocol).
 
-Automatic mode verifies saved inputs, waits for edits to settle, and runs full
-analysis using the artifact's exact recorded build selection and root mappings.
-It keeps one active analysis child and one coalesced latest pending revision.
-A separate project coordinator lease prevents competing automatic schedulers;
-each child still acquires the existing publication lock shared by manual and
-agent analyses. The child checks its planned generation under that lock before
-starting, so an intervening manual publication cannot be overwritten using an
-obsolete selection. Contention uses bounded backoff. Unchanged failed or
-user-cancelled input bindings are suppressed until another saved revision or
-publication, or an explicit monitor restart.
+The engine owns one session for the project and coalesces pending revisions.
+A shared publication lock protects manual and automatic work. The session
+retains valid compiler preparation and checks the current generation and
+compiler inputs before publishing. Contention and requeued input changes use
+bounded backoff. An unchanged compiler failure or cancelled revision waits
+for another relevant saved edit.
 
-The stream begins with its normal `initial` observation. Additional
-`kind: "activity"` events carry `activity.version`, retained cumulative
-`runs_started`, and a tagged `state`: `watching`, `debouncing`, `running`, `busy`,
-`published`, `failed`, `cancelled`, or `unavailable`. Running and terminal phases
-carry their run identity and the nullable full observation revision seen when
-work was queued; queued cancellation and contention can have no run identity.
-The full revision can be null while a validated filtered scheduling view remains
-usable. It does not replace the current observation's revision. Published
-activity carries the resulting generation, supervised analysis duration
-(including cleanup), and compiler metrics. Running timing separates configured
-debounce from additional scheduling/queue wait. These notifications can be coalesced;
-the counter counts actual child starts for this monitor lifetime and is not a
-persistent journal. Refresh activity does not certify input validity or desktop
-adoption. Consumers adopt through generation-bound observations and snapshots.
+A saved-graph stream begins with an `initial` freshness observation. Explicit
+initial analysis can report activity before publication, followed by the first
+real freshness observation. The `kind: "activity"` frame carries the cumulative
+`runs_started` and a tagged state. States include `watching`, `debouncing`,
+`running`, `busy`, `published`, `failed`, `cancelled` and `unavailable`.
+Published activity includes the resulting generation, effective root mappings,
+attempt duration and compiler metrics. Running timing separates configured
+debounce from queue wait. Activity frames can coalesce. Freshness verification
+and generation-bound graph snapshots establish what clients can display.
 
-Send a later line `{"version":1,"command":"cancel_refresh"}` to cancel only the
-current refresh and pending revision while retaining observation. Cancellation
-reasons distinguish `user_cancelled`, `superseded`, and `shutdown`. EOF, SIGINT,
-SIGTERM and broken output pipes shut down the monitor and clean up its owned
-analysis processes. Each refresh uses a fresh one-shot child; no process-global
-cancellation flag is reset to permit another analysis. Cleanup uses bounded
-deadlines and reports uncertainty if termination cannot be confirmed.
+Send a later line `{"version":1,"command":"cancel_refresh"}` to cancel the
+current attempt and pending revision. EOF, SIGINT, SIGTERM and broken output
+pipes stop the session and clean up owned processes. The engine reports any
+cleanup it cannot confirm.
 
-Invalid code keeps the last successful graph available. Generated graph, cache,
-lock and owned bytecode outputs do not schedule another refresh. Java scheduling
-uses recorded evaluated class-directory ownership, with a separately filtered
-trigger revision and validity; full public freshness still verifies those
-outputs. Generated sources and dependency bytecode remain triggering inputs.
-A missing, incomplete or
-unsupported exact selection reports unavailable automatic refresh while passive
-observation continues; one explicit manual refresh can upgrade legacy metadata.
-Java also requires complete `analysis.refresh_inputs` ownership metadata with
-`binding_policy: "direct.v1"`. Missing or future policy markers require manual
-refresh. Unsafe
-source/configuration/dependency overlaps, symlink-bearing output bindings, and
-mixed Java with another language currently require explicit manual refresh.
-Output bindings are checked at capture and again during observation. Multiple
-selected Java builds retain their exact build identities.
-Complete scheduling-input coverage is required; public output coverage can be
-temporarily incomplete while compilation replaces owned outputs. The existing
-saved-input limitations still apply. Unsaved editor buffers remain outside this contract.
-Publication latency depends on the selected compiler and workload; automatic
-refresh does not promise a universal one-second publication target.
+Saved-graph automation requires a complete, supported exact build selection.
+Java uses evaluated compiler input and bytecode output bindings. Generated
+sources and dependency bytecode remain inputs. A changed owned class output
+can trigger graph extraction without invoking the build. The public freshness
+observation still verifies the recorded outputs. Missing or unsupported
+selection or binding metadata can be regenerated with explicit analysis.
 
 ## Flow inventory residency
 

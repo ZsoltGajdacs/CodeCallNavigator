@@ -81,3 +81,15 @@ pub enum AnalysisFailureCode {
     Cancelled,
     Failed,
 }
+
+impl AnalysisFailureCode {
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            Self::Busy => "busy",
+            Self::InputsChanged => "inputs_changed",
+            Self::GenerationChanged => "generation_changed",
+            Self::Cancelled => "cancelled",
+            Self::Failed => "failed",
+        }
+    }
+}

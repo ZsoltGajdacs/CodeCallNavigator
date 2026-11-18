@@ -96,7 +96,8 @@ fn failed_refresh_preserves_graph(client: &mut Client, root: &Path) {
     let failure = client.call("refresh_graph", json!({}));
     assert_eq!(failure["isError"], true, "{failure}");
     let envelope = &failure["structuredContent"];
-    assert_eq!(envelope["error"]["code"], "analysis_failed", "{failure}");
+    assert_eq!(envelope["error"]["code"], "failed", "{failure}");
+    assert_eq!(envelope["error"]["code"], envelope["cli_event"]["code"]);
     assert_eq!(envelope["cli_event"]["event"], "failed");
     assert_eq!(
         envelope["error"]["message"],
