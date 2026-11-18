@@ -6,7 +6,12 @@ use super::{
 use crate::process_ownership::CleanupFailure;
 use crate::{discovery::BuildTarget, model::GraphData};
 use anyhow::{Context, Result, bail, ensure};
-use std::{fs, path::PathBuf, sync::atomic::AtomicBool};
+use codecallnavigator_core::protocol::{AnalysisPhase, TargetFailure};
+use std::{
+    fs,
+    path::PathBuf,
+    sync::atomic::{AtomicBool, Ordering},
+};
 
 /// Retains compiler preparation independently from graph inference/publication.
 /// Selection and runtime are fixed; changing either requires a new session.
@@ -93,6 +98,23 @@ impl Preparation {
 }
 
 impl SelectedJob {
+    fn failure(
+        &self,
+        error: anyhow::Error,
+        phase: AnalysisPhase,
+        cancel: &AtomicBool,
+    ) -> anyhow::Error {
+        crate::failure::attribute(
+            error,
+            TargetFailure {
+                target: self.build.identity(),
+                phase,
+                logs: self.path.is_absolute().then(|| self.path.clone()),
+            },
+            cancel.load(Ordering::Acquire),
+        )
+    }
+
     fn needs_typescript_update(&self) -> bool {
         matches!(&self.preparation, Some(Preparation::TypeScript(prepared)) if prepared.needs_update())
     }
@@ -330,6 +352,7 @@ impl PreparedAnalysis {
                 progress,
             };
             if let Err(error) = self.jobs[index].verify(&context, mode) {
+                let error = self.jobs[index].failure(error, AnalysisPhase::Validation, cancel);
                 // Cancellation interrupts verification; it does not prove the
                 // retained compiler state invalid.
                 check_cancel(cancel)?;
@@ -416,15 +439,17 @@ impl PreparedAnalysis {
         if self.jobs[index].build.language == "typescript" {
             self.release_other_typescript_workers(index)?;
         }
-        self.begin(index)?;
+        self.begin(index)
+            .map_err(|error| self.jobs[index].failure(error, AnalysisPhase::Preparation, cancel))?;
         let context = self.context(&self.jobs[index].path, cancel, progress);
         let preparation = match self.jobs[index].build.language.as_str() {
-            "csharp" => Preparation::Csharp(csharp::prepare(&self.jobs[index].build, &context)?),
+            "csharp" => csharp::prepare(&self.jobs[index].build, &context).map(Preparation::Csharp),
             "typescript" => {
-                Preparation::TypeScript(typescript::prepare(&self.jobs[index].build, &context)?)
+                typescript::prepare(&self.jobs[index].build, &context).map(Preparation::TypeScript)
             }
             other => bail!("Unsupported language: {other}"),
-        };
+        }
+        .map_err(|error| self.jobs[index].failure(error, AnalysisPhase::Preparation, cancel))?;
         self.jobs[index].preparation = Some(preparation);
         Ok(())
     }
@@ -447,7 +472,8 @@ impl PreparedAnalysis {
         let Some(Preparation::TypeScript(prepared)) = &mut job.preparation else {
             unreachable!("only retained TypeScript state can be updated");
         };
-        prepared.update(&job.build, &context)
+        let result = prepared.update(&job.build, &context);
+        result.map_err(|error| job.failure(error, AnalysisPhase::Preparation, cancel))
     }
 
     /// At most one live Node compiler per analysis session, including mixed builds.
@@ -472,9 +498,13 @@ impl PreparedAnalysis {
             if let Some(sources) = &job.maven_sources {
                 sources.require_newer_edits(cancel)?;
             }
-            self.begin(index)?;
+            self.begin(index).map_err(|error| {
+                self.jobs[index].failure(error, AnalysisPhase::Preparation, cancel)
+            })?;
             let context = self.context(&self.jobs[index].path, cancel, progress);
-            let preflight = java::prepare(&self.jobs[index].build, &context)?;
+            let preflight = java::prepare(&self.jobs[index].build, &context).map_err(|error| {
+                self.jobs[index].failure(error, AnalysisPhase::Preparation, cancel)
+            })?;
             self.jobs[index].preflight = Some(preflight);
         }
         java::reject_overlaps(self.jobs.iter().filter_map(|job| {
@@ -493,7 +523,10 @@ impl PreparedAnalysis {
                 continue;
             };
             let context = self.context(&self.jobs[index].path, cancel, progress);
-            let prepared = java::compile(&self.jobs[index].build, &context, preflight)?;
+            let prepared =
+                java::compile(&self.jobs[index].build, &context, preflight).map_err(|error| {
+                    self.jobs[index].failure(error, AnalysisPhase::Compilation, cancel)
+                })?;
             if self.jobs[index].build.kind == "maven" {
                 self.jobs[index].maven_sources = Some(prepared.maven_sources());
             }
@@ -577,6 +610,7 @@ impl PreparedAnalysis {
             progress,
         };
         job.extract(&context)
+            .map_err(|error| job.failure(error, AnalysisPhase::Extraction, cancel))
             .with_context(|| format!("Analysis failed. Logs: {}", job.path.display()))
     }
 

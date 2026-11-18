@@ -78,6 +78,7 @@ pub(crate) fn clear(state: &mut State) {
 }
 
 fn reset_generation(state: &mut State) {
+    state.analysis_failure = None;
     state.flow_residency.retire(state.query_context.clone());
     invalidate(state);
     state.epoch += 1;

@@ -1,6 +1,7 @@
 //! The desktop consumes the same published artifact as standalone CLI users.
 #[cfg(test)]
 use codecallnavigator::model::GraphData;
+mod analysis_failure;
 mod capabilities;
 pub mod flow_comparison;
 mod flow_expansion;
@@ -10,6 +11,7 @@ pub(crate) use observation_process::{CleanupFailure, Notice, ObservationOptions}
 mod process;
 mod queries;
 mod query_process;
+pub(crate) use analysis_failure::AnalysisFailure;
 pub(crate) use queries::QueryFailure;
 pub use queries::{Descriptor, QueryContext, Snapshot};
 #[cfg(test)]
@@ -172,15 +174,23 @@ impl Conversation {
         match event {
             Event::Hello { .. } => bail!("Engine sent a duplicate hello"),
             Event::Progress { message } => Ok(Some(message)),
-            Event::Failed { message, code } => match code {
-                Some(code) => bail!("{}: {message}", code.as_str()),
-                None if self.typed_failure => {
+            Event::Failed {
+                message,
+                code,
+                target,
+            } => {
+                if code.is_none() && self.typed_failure {
                     bail!(
                         "unsupported_capability: configured CLI omitted the typed analysis failure"
                     )
                 }
-                None => bail!("Engine request failed: {message}"),
-            },
+                Err(AnalysisFailure {
+                    code,
+                    message,
+                    target,
+                }
+                .into())
+            }
             terminal => {
                 self.terminal = Some(terminal);
                 Ok(None)

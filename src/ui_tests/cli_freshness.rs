@@ -324,7 +324,7 @@ fn same_folder_analysis_preserves_graph(runtime: &mut Runtime<State>, project: &
         assert_previous_graph(state);
     });
     settle(runtime, |state| !state.analyzing);
-    assert!(!runtime.state.warning.is_empty());
+    assert!(runtime.state.feedback().is_some());
     assert_previous_graph(&runtime.state);
 
     source(project, 4, true);
@@ -558,6 +558,193 @@ fn actual_cli_automatic_refresh_adopts_first_graph_and_keeps_inferred_roots() {
     ui.update(jobs::close);
     settle(&mut ui, |state| state.freshness.stopped());
     assert!(ui.state.freshness.cleanup_warning.is_none());
+}
+
+/// Only the real compiler-to-desktop journey proves target attribution and
+/// that the recovery control can publish a graph the CLI search index serves.
+#[test]
+#[ignore = "requires built CLI, Maven/Java and Node/TypeScript"]
+fn actual_cli_mixed_analysis_failure_can_retry_java_only() {
+    let fixture = tempfile::tempdir().unwrap();
+    let root = fixture.path().canonicalize().unwrap();
+    let project = mixed_failure_project(&root);
+    let mut ui = desktop_without_graph(&project);
+    settle(&mut ui, |state| {
+        !state.project_open.loading()
+            && state
+                .targets
+                .iter()
+                .filter(|choice| choice.selected)
+                .count()
+                == 2
+    });
+    ui.update(|state, _| state.analyze_selected());
+    settle(&mut ui, |state| state.analysis_failure.is_some());
+    let manual = assert_typescript_failure(&ui, &project);
+    assert_visible_failure(&mut ui);
+    ui.update(|state, _| assert_retry_scope(state));
+
+    // The recovery button is the interaction under test. Start the real
+    // automatic session through the same action used by its toolbar control.
+    ui.update(|state, _| state.toggle_automatic_refresh());
+    assert!(
+        ui.state.automatic_refresh_enabled(),
+        "automatic session did not start"
+    );
+    settle(&mut ui, |state| {
+        state.analysis_failure.is_none() && state.feedback().is_some()
+    });
+    assert_eq!(assert_typescript_failure(&ui, &project), manual);
+    click(&mut ui, "retry-remaining-builds");
+    assert!(!ui.state.automatic_refresh_enabled());
+    assert!(
+        ui.state
+            .selected_analysis()
+            .unwrap()
+            .targets
+            .iter()
+            .all(|target| target.language == "java")
+    );
+    settle(&mut ui, |state| {
+        (state.graph.is_some() && state.view_is_current()) || state.analysis_failure.is_some()
+    });
+    assert!(
+        ui.state.graph.is_some(),
+        "Java-only retry failed: {:?}",
+        ui.state.feedback().map(|failure| failure.diagnostic)
+    );
+    assert!(ui.state.feedback().is_none());
+
+    click(&mut ui, "open-search");
+    ui.update(|state, _| {
+        state.search.input = rune::TextEdit::new("Standalone");
+        state.request_search();
+    });
+    settle(&mut ui, |state| !state.search.hits().is_empty());
+    assert!(
+        ui.state
+            .search
+            .hits()
+            .iter()
+            .any(|hit| hit.name.contains("Standalone"))
+    );
+    ui.update(jobs::close);
+    settle(&mut ui, |state| state.freshness.stopped());
+    assert!(ui.state.freshness.cleanup_warning.is_none());
+}
+
+fn mixed_failure_project(root: &Path) -> PathBuf {
+    let project = root.join("standalone");
+    let java_source = project.join("src/main/java/fixture");
+    let ui = project.join("ui");
+    for dir in [&java_source, &ui, &root.join("parent")] {
+        fs::create_dir_all(dir).unwrap();
+    }
+    fs::write(
+        root.join("parent/pom.xml"),
+        include_str!("../../fixtures/maven/parent/pom.xml"),
+    )
+    .unwrap();
+    fs::write(
+        project.join("pom.xml"),
+        include_str!("../../fixtures/maven/standalone/pom.xml"),
+    )
+    .unwrap();
+    fs::write(
+        java_source.join("Standalone.java"),
+        include_str!("../../fixtures/maven/standalone/src/main/java/fixture/Standalone.java"),
+    )
+    .unwrap();
+    fs::write(
+        ui.join("tsconfig.json"),
+        r#"{"compilerOptions":{"strict":true,"types":[]},"files":["broken.ts"]}"#,
+    )
+    .unwrap();
+    let broken: String = (0..100)
+        .map(|index| format!("export const broken{index}: number = 'text';\n"))
+        .collect();
+    fs::write(ui.join("broken.ts"), broken).unwrap();
+    let modules =
+        std::env::var_os("CODECALLNAVIGATOR_TS_NODE_MODULES").expect("Installed TypeScript");
+    std::os::unix::fs::symlink(modules, ui.join("node_modules")).unwrap();
+    project
+}
+
+fn assert_typescript_failure(ui: &Runtime<State>, project: &Path) -> String {
+    let feedback = ui.state.feedback().expect("visible analysis failure");
+    let target = feedback.target.expect("identified failing target");
+    assert_eq!(target.target.path, project.join("ui/tsconfig.json"));
+    assert!(
+        feedback.diagnostic.contains("TS2322"),
+        "{}",
+        feedback.diagnostic
+    );
+    assert!(feedback.diagnostic.ends_with("[truncated]"));
+    assert!(feedback.summary().contains("No graph was created."));
+    assert!(ui.find("retry-remaining-builds").is_some());
+    assert!(ui.state.graph.is_none());
+    assert!(
+        !project
+            .join(codecallnavigator::artifact::GRAPH_PATH)
+            .exists()
+    );
+    feedback.summary()
+}
+
+fn assert_visible_failure(ui: &mut Runtime<State>) {
+    ui.update(|state, _| state.ui.sidebar.set_open(true));
+    for viewport in [(720.0, 680.0), (1960.0, 900.0)] {
+        ui.set_viewport(viewport, 1.0);
+        for _ in 0..60 {
+            ui.frame(1.0 / 60.0);
+        }
+        let elements = ui.elements();
+        for key in ["retry-remaining-builds", "failed-analysis-details"] {
+            assert_recovery_control_visible(&elements, key, viewport);
+        }
+    }
+    click(ui, "failed-analysis-details");
+    assert!(ui.find("analysis-failure-diagnostic").is_some());
+    ui.update(|state, _| state.close_overlay());
+    ui.set_viewport((1420.0, 900.0), 1.0);
+    for _ in 0..60 {
+        ui.frame(1.0 / 60.0);
+    }
+}
+
+fn assert_recovery_control_visible(
+    elements: &[rune::ElementInfo],
+    key: &str,
+    viewport: (f32, f32),
+) {
+    let action = elements
+        .iter()
+        .find(|element| element.key.as_deref() == Some(key) && !element.inert && !element.exiting)
+        .unwrap_or_else(|| panic!("Missing {key}"));
+    assert!(
+        action.visible[2] >= action.rect[2] - 1.0 && action.visible[3] >= action.rect[3] - 1.0,
+        "{key} clipped at {viewport:?}"
+    );
+}
+
+fn assert_retry_scope(state: &mut State) {
+    let retry = state.retry_analysis().expect("mixed selection can recover");
+    let before = state.selected_analysis().unwrap().targets;
+    let folder = state.project_open.folder.replace("/other-project".into());
+    state.retry_without_build(&retry.target);
+    assert_eq!(state.selected_analysis().unwrap().targets, before);
+    state.project_open.folder = folder;
+
+    let maven = state
+        .targets
+        .iter()
+        .position(|choice| choice.target.kind == "maven")
+        .unwrap();
+    state.targets[maven].selected = false;
+    state.retry_without_build(&retry.target);
+    assert_eq!(state.selected_analysis().unwrap().targets.len(), 1);
+    assert!(state.retry_analysis().is_none());
+    state.targets[maven].selected = true;
 }
 
 fn assert_opt_out_stops_analysis(ui: &mut Runtime<State>, shared: &Path) {

@@ -1,6 +1,7 @@
 //! Graph Studio shell. Content and application actions live in focused modules.
 mod activity;
 mod activity_details;
+mod analysis_failure;
 mod automatic_refresh;
 mod build_picker;
 mod drawer;

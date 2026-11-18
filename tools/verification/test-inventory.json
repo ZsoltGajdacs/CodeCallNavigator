@@ -6093,6 +6093,34 @@
       "requirements": []
     },
     {
+      "id": "codecallnavigator-engine/lib:codecallnavigator_engine::failure::tests::one_shot_and_activity_failures_share_operational_context",
+      "runner": "rust",
+      "file": "crates/codecallnavigator-engine/src/failure.rs",
+      "test_name": "failure::tests::one_shot_and_activity_failures_share_operational_context",
+      "ignored": false,
+      "package": "codecallnavigator-engine",
+      "target_kind": "lib",
+      "target": "codecallnavigator_engine",
+      "component": "engine",
+      "category": "unit",
+      "requirements": [],
+      "purpose": "One-shot and automatic failure descriptions preserve the same exact target, phase, logs, code and bounded Unicode diagnostic without filesystem or compiler work"
+    },
+    {
+      "id": "codecallnavigator-engine/lib:codecallnavigator_engine::failure::tests::typed_nonoperational_failures_do_not_inherit_target_context",
+      "runner": "rust",
+      "file": "crates/codecallnavigator-engine/src/failure.rs",
+      "test_name": "failure::tests::typed_nonoperational_failures_do_not_inherit_target_context",
+      "ignored": false,
+      "package": "codecallnavigator-engine",
+      "target_kind": "lib",
+      "target": "codecallnavigator_engine",
+      "component": "engine",
+      "category": "unit",
+      "requirements": [],
+      "purpose": "Busy, changed input/generation and cancellation codes remain typed without blaming a build; legacy/global messages omit optional attribution"
+    },
+    {
       "id": "codecallnavigator-engine/test:automatic_refresh::automatic_refresh_eof_before_first_request_exits_successfully",
       "runner": "rust",
       "file": "crates/codecallnavigator-engine/tests/automatic_refresh.rs",
@@ -12052,6 +12080,27 @@
         "typescript"
       ],
       "purpose": "graphless opt-in recovers a real compiler, keeps inferred roots across publication, and reaps owned session on shutdown"
+    },
+    {
+      "id": "codecallnavigator/bin:codecallnavigator::ui_tests::cli_freshness::actual_cli_mixed_analysis_failure_can_retry_java_only",
+      "runner": "rust",
+      "file": "src/ui_tests/cli_freshness.rs",
+      "test_name": "ui_tests::cli_freshness::actual_cli_mixed_analysis_failure_can_retry_java_only",
+      "ignored": true,
+      "package": "codecallnavigator",
+      "target_kind": "bin",
+      "target": "codecallnavigator",
+      "component": "ui",
+      "category": "integration",
+      "requirements": [
+        "cli",
+        "graphviz",
+        "java",
+        "maven",
+        "node",
+        "typescript"
+      ],
+      "purpose": "real mixed target failure reaches desktop in both modes, then explicit recovery publishes and searches Java graph"
     },
     {
       "id": "codecallnavigator/bin:codecallnavigator::ui_tests::cli_freshness::actual_cli_automatic_refresh_requires_opt_in_and_preserves_loaded_context",

@@ -4,6 +4,7 @@ pub use codecallnavigator_core::{
     store,
 };
 pub mod analyzers;
+pub mod failure;
 pub mod process_ownership;
 
 /// Development resource root; packaged runs discover adjacent Resources first.

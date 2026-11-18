@@ -6,7 +6,8 @@ mod cards;
 
 pub fn graph_canvas(state: &State, cx: &mut Cx<State>, k: &Kit) -> El {
     state.graph_motion.reduced.set(cx.is_reduced_motion());
-    el().key("graph-canvas")
+    let canvas = el()
+        .key("graph-canvas")
         .focusable(true)
         .grow(1.0)
         .min_w(0.0)
@@ -40,7 +41,14 @@ pub fn graph_canvas(state: &State, cx: &mut Cx<State>, k: &Kit) -> El {
             state.nav.camera.drag(drag);
             state.dirty_session = true;
         })
-        .child(graph_content(state, k))
+        .child(graph_content(state, k));
+    if state.graph_view.nodes.is_empty() {
+        // Actions in the empty state stay interactive even before the first
+        // layout, when the graph world deliberately ignores pointer input.
+        canvas.child(empty_canvas(state, k))
+    } else {
+        canvas
+    }
 }
 
 fn graph_content(state: &State, k: &Kit) -> El {
@@ -76,9 +84,6 @@ fn graph_content(state: &State, k: &Kit) -> El {
     for (node, opacity) in state.graph_motion.ghosts() {
         content = content.child(cards::ghost(state, node, opacity, k));
     }
-    if state.graph_view.nodes.is_empty() {
-        content = content.child(empty_canvas(state, k));
-    }
     content
 }
 
@@ -102,8 +107,14 @@ fn layer_band(state: &State, index: usize, band: &crate::projection::LayerBand, 
 }
 
 fn empty_canvas(state: &State, k: &Kit) -> El {
-    let (title, description) = empty_message(state);
-    col()
+    let feedback = state.graph.is_none().then(|| state.feedback()).flatten();
+    let description = feedback.as_ref().map(|failure| failure.summary());
+    let (title, description) = description.as_deref().map_or_else(
+        || empty_message(state),
+        |description| ("Analysis failed", description),
+    );
+    let panel = col()
+        .key("empty-canvas")
         .absolute(0.0, 0.0)
         .w_full()
         .h_full()
@@ -123,7 +134,21 @@ fn empty_canvas(state: &State, k: &Kit) -> El {
                 .color(k.c.text_muted)
                 .max_w(580.0)
                 .wrap(),
-        )
+        );
+    if let Some(failure) = feedback {
+        panel
+            .child(
+                text(failure.excerpt())
+                    .key("analysis-failure-excerpt")
+                    .font(k.ty.small)
+                    .color(k.c.warning.fg)
+                    .max_w(580.0)
+                    .wrap_anywhere(),
+            )
+            .child(super::analysis_failure::actions(state, k, true))
+    } else {
+        panel
+    }
 }
 
 fn empty_message(state: &State) -> (&str, &str) {

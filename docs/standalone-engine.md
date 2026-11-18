@@ -109,6 +109,13 @@ the engine checks it while holding the analysis lock, before build preparation.
 A mismatch reports `generation_changed` without replacing the artifact. Manual
 analysis omits this precondition.
 
+A typed `failed` event may also include `target` when the engine can attribute
+the failure to a single selected build. It contains the build identity
+(`target.path` and `target.kind`), its failing `phase` (`preparation`,
+`compilation`, `extraction`, or `validation`), and an optional `logs` directory.
+The same optional object appears on failed continuous activity. A failure
+leaves the last published graph available, if one exists.
+
 `ccnavigator watch` starts continuous analysis for the chosen builds, including
 in a checkout without a saved graph. The engine waits for edits to settle,
 keeps validated compiler preparation, and follows new saved inputs. It publishes

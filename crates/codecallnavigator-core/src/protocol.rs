@@ -1,5 +1,8 @@
 //! Versioned process boundary; runtime observations never enter graph.json.
-use crate::{discovery::BuildTarget, model::FileFingerprint};
+use crate::{
+    discovery::{BuildIdentity, BuildTarget},
+    model::FileFingerprint,
+};
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 
@@ -69,6 +72,8 @@ pub enum Event {
         message: String,
         #[serde(default, skip_serializing_if = "Option::is_none")]
         code: Option<AnalysisFailureCode>,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        target: Option<TargetFailure>,
     },
 }
 
@@ -92,4 +97,23 @@ impl AnalysisFailureCode {
             Self::Failed => "failed",
         }
     }
+}
+
+/// Attribution is present only when an operational failure belongs to one build.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct TargetFailure {
+    pub target: BuildIdentity,
+    pub phase: AnalysisPhase,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub logs: Option<PathBuf>,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum AnalysisPhase {
+    Preparation,
+    Compilation,
+    Extraction,
+    Validation,
 }

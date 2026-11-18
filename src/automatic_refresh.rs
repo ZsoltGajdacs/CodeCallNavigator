@@ -58,9 +58,7 @@ impl Authorization {
 
     pub fn details(&self) -> Option<String> {
         match &self.activity.as_ref()?.phase {
-            Phase::Failed { error, .. } | Phase::Unavailable { error } => {
-                Some(format!("{}: {}", error.code, error.message))
-            }
+            Phase::Unavailable { error } => Some(format!("{}: {}", error.code, error.message)),
             _ => None,
         }
     }

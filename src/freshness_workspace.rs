@@ -70,6 +70,15 @@ impl Pending {
 }
 
 impl Workspace {
+    pub(crate) fn matches_selected_session(&self, selection: &Analysis) -> bool {
+        self.selected.as_ref().is_some_and(|selected| {
+            crate::analysis_feedback::Selection::capture(
+                &selected.session.project,
+                &selected.session.targets,
+            ) == crate::analysis_feedback::Selection::for_analysis(selection)
+        })
+    }
+
     fn start(&mut self, context: QueryContext, wake: Option<rune::Waker>) {
         self.retire_worker();
         self.retired_cleanup();
@@ -418,6 +427,7 @@ impl State {
     }
 
     pub(crate) fn refresh_build_selection_changed(&mut self) {
+        self.analysis_failure = None;
         self.stop_selected_refresh();
         self.freshness.build_selection_changed = true;
         if let Some(descriptor) = self.authorized_picker_project() {
@@ -435,6 +445,7 @@ impl State {
     }
 
     fn start_selected_refresh(&mut self, selection: Analysis, runtime: &crate::runtime::Runtime) {
+        self.analysis_failure = None;
         let project = selection.project;
         self.freshness.selected = Some(ObserveSession {
             version: refresh::OBSERVE_SESSION_VERSION,

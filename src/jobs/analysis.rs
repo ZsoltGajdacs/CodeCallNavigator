@@ -4,7 +4,8 @@ use std::{path::PathBuf, sync::Arc};
 
 pub struct Output {
     binding: crate::workspace::Binding,
-    result: Result<LoadedGraph, String>,
+    selection: crate::analysis_feedback::Selection,
+    result: anyhow::Result<LoadedGraph>,
 }
 
 impl State {
@@ -18,6 +19,7 @@ impl State {
                     .into();
             return;
         };
+        self.analysis_failure = None;
         if self.defer_manual_analysis(&selection) {
             return;
         }
@@ -54,6 +56,7 @@ impl State {
         let epoch = self.epoch;
         let binding = crate::workspace::Binding::capture(self);
         self.jobs.analysis.request(selection, move |selection| {
+            let selection_binding = crate::analysis_feedback::Selection::for_analysis(&selection);
             let metrics = codecallnavigator::metrics::Metrics::default();
             let _scope = metrics.enter();
             let report = |message| {
@@ -71,7 +74,8 @@ impl State {
             })();
             Output {
                 binding,
-                result: result.map_err(|error| format!("{error:#}")),
+                selection: selection_binding,
+                result,
             }
         });
     }
@@ -90,7 +94,25 @@ pub(super) fn poll_analysis(state: &mut State) -> bool {
             install_graph(state, graph);
         }
         Err(error) => {
-            state.warning = error;
+            if !output.selection.matches(state) {
+                return true;
+            }
+            let failure = error
+                .downcast::<engine_client::AnalysisFailure>()
+                .unwrap_or_else(|error| engine_client::AnalysisFailure {
+                    code: None,
+                    message: format!("{error:#}"),
+                    target: None,
+                });
+            if state.cancel.load(std::sync::atomic::Ordering::Acquire) {
+                state.warning = failure.to_string();
+                state.status = "Analysis cancelled".into();
+                return true;
+            }
+            state.analysis_failure = Some(crate::analysis_feedback::FailedSelection {
+                selection: output.selection,
+                error: failure,
+            });
             state.status = if state.graph.is_some() {
                 "Analysis did not complete; the previous graph is preserved"
             } else {

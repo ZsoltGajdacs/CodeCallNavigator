@@ -120,8 +120,12 @@ fn presentation(state: &State) -> model::Presentation {
     let automatic_warning = automatic_enabled
         .then(|| state.freshness.automatic.details())
         .flatten();
+    let analysis_warning = state.feedback().map(|failure| failure.summary());
     let warning = if state.warning.is_empty() {
-        automatic_warning.as_deref().unwrap_or_default()
+        analysis_warning
+            .as_deref()
+            .or(automatic_warning.as_deref())
+            .unwrap_or_default()
     } else {
         &state.warning
     };

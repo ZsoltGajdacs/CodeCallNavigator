@@ -80,6 +80,8 @@ pub enum Phase {
         input_revision: Option<String>,
         error: Error,
         analysis_milliseconds: f64,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        target: Option<crate::protocol::TargetFailure>,
     },
     Cancelled {
         run: Option<u64>,

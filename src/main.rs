@@ -1,4 +1,5 @@
 pub use codecallnavigator::{discovery, fingerprint};
+mod analysis_feedback;
 mod app;
 mod architecture_workspace;
 mod automatic_refresh;

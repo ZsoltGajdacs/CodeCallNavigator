@@ -48,6 +48,7 @@ pub(super) fn validate(activity: &Activity) -> Result<()> {
             input_revision,
             error,
             analysis_milliseconds,
+            ..
         } => {
             running(Some(*run), input_revision, *analysis_milliseconds)?;
             failure(error)

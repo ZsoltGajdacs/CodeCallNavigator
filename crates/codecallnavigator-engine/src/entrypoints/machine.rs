@@ -40,10 +40,13 @@ pub fn serve_once() -> Result<i32> {
             Ok(0)
         }
         Err(error) => {
-            emit(&Event::Failed {
-                message: format!("{error:#}"),
-                code: typed.then(|| failure_code(&error)),
-            })?;
+            emit(
+                &codecallnavigator_engine::failure::describe(
+                    &error,
+                    CANCELLED.load(Ordering::Acquire),
+                )
+                .event(typed),
+            )?;
             Err(error)
         }
     }
@@ -102,21 +105,6 @@ fn perform(request: Request, input: BufReader<io::Stdin>) -> Result<Event> {
                 },
             )
         }
-    }
-}
-
-fn failure_code(error: &anyhow::Error) -> protocol::AnalysisFailureCode {
-    use protocol::AnalysisFailureCode as Code;
-    if error.is::<codecallnavigator_core::artifact::LockBusy>() {
-        Code::Busy
-    } else if error.is::<codecallnavigator_core::artifact::GenerationChanged>() {
-        Code::GenerationChanged
-    } else if error.is::<codecallnavigator_core::fingerprint::InputsChanged>() {
-        Code::InputsChanged
-    } else if CANCELLED.load(Ordering::Acquire) {
-        Code::Cancelled
-    } else {
-        Code::Failed
     }
 }
 

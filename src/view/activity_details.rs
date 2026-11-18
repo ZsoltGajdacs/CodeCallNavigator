@@ -22,6 +22,12 @@ pub(super) fn view(state: &State, k: &Kit, phase: &str) -> El {
         .child(divider(k))
         .child(heading("Relationship legend", k))
         .child(super::graph_controls::legend(k));
+    if let Some(failure) = super::analysis_failure::details(state, k) {
+        body = body
+            .child(divider(k))
+            .child(heading("Analysis failure", k))
+            .child(failure);
+    }
     let notice = super::activity::freshness_notice(state, k);
     if !state.warning.is_empty() || notice.is_some() {
         body = body.child(divider(k)).child(heading("Freshness", k));

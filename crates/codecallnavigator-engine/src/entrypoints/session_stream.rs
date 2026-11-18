@@ -12,7 +12,7 @@ use codecallnavigator_core::{
     artifact::{CoordinatorLease, GenerationChanged, LockBusy},
     fingerprint::InputsChanged,
     freshness::{self, EventPayload, StreamEvent},
-    protocol::{AnalysisFailureCode, Event},
+    protocol::Event,
     query::Error,
     refresh::{self, Activity, CancelReason, Phase, SessionRequest},
 };
@@ -395,24 +395,14 @@ impl<'a> Monitor<'a> {
     ) -> Result<()> {
         let analysis_milliseconds = active.milliseconds();
         let input_revision = active.revision();
-        let changed = error.is::<InputsChanged>();
         self.settle_failure(&error, active.pending)?;
         notice.activity(
             self.runs,
-            Phase::Failed {
-                run: self.runs,
+            codecallnavigator_engine::failure::describe(&error, false).phase(
+                self.runs,
                 input_revision,
-                error: bounded_error(
-                    if changed {
-                        AnalysisFailureCode::InputsChanged
-                    } else {
-                        AnalysisFailureCode::Failed
-                    }
-                    .as_str(),
-                    &format!("{error:#}"),
-                ),
                 analysis_milliseconds,
-            },
+            ),
         );
         Ok(())
     }
