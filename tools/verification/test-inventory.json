@@ -16406,7 +16406,7 @@
         "node",
         "typescript"
       ],
-      "purpose": "source project references need no outputs and duplicate selections share symbols"
+      "purpose": "source project references need no outputs, share symbols across selections, and refresh ownership when reference topology changes"
     },
     {
       "id": "codecallnavigator/test:typescript_pipeline::type_errors_and_cancellation_preserve_the_previous_generation",
@@ -22379,6 +22379,23 @@
       "category": "unit",
       "requirements": [],
       "purpose": "Pure wire diagnostic translation preserves the exact changed input, native operation and typed InputsChanged error; no simulated compiler execution."
+    },
+    {
+      "id": "codecallnavigator/test:typescript_pipeline::retained_builder_rechecks_affected_files_and_matches_cold_graph_without_emission",
+      "runner": "rust",
+      "file": "tests/typescript_pipeline.rs",
+      "test_name": "retained_builder_rechecks_affected_files_and_matches_cold_graph_without_emission",
+      "ignored": true,
+      "package": "codecallnavigator",
+      "target_kind": "test",
+      "target": "typescript_pipeline",
+      "component": "engine",
+      "category": "integration",
+      "requirements": [
+        "node",
+        "typescript"
+      ],
+      "purpose": "Real retained TypeScript builder over independent modules performs fewer native affected-file diagnostics after a body-only edit without starting another Node worker, preserves the entire graph against independent cold compilation, propagates exported type edits to consumers and emits neither JS/declarations nor build metadata. Native compiler incrementality and semantic equivalence cannot be proved by fake worker output or pure units."
     }
   ],
   "gates": [

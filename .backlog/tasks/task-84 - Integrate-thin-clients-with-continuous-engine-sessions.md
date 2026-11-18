@@ -5,7 +5,7 @@ status: To Do
 assignee:
   - '@codex'
 created_date: '2026-11-17T14:02:00Z'
-updated_date: '2026-11-18T12:33:00Z'
+updated_date: '2026-11-18T14:08:00Z'
 labels: []
 dependencies:
   - TASK-83
@@ -33,4 +33,6 @@ The final checkpoint must resolve the accepted locked-desktop deferrals from Sli
 Slice 3 replacement run changes-q97ej3qj passed 58 stages through automatic-refresh acceptance. The pre-window guard interrupted C# cleanup acceptance before native-window startup. C# cleanup acceptance and all later native windows, CLI ingestion, installed CLI, agent/MCP journeys, performance and late CodeScene checks remain pending for the final checkpoint. Category/global cleanup itself passed. User reconfirmed that the desktop will be locked and that these checks can wait until the end.
 
 Slice 4 final exact run changes-6jx6ktlw passed 74 stages through all 15 automatic-refresh cases. The guard interrupted C# cleanup acceptance prior to desktop startup. C# cleanup acceptance, native windows, subsequent CLI and MCP journeys, performance and late CodeScene remain part of the final checkpoint. All category cleanup reports recorded zero errors.
+
+Slice 5 exact TypeScript 5.9.3 and 6.0.3 matrix passed 48 stages per selector through all 15 refresh cases. At both agreed guard cutoffs C# cleanup acceptance and eight later selected stages were deferred. All category cleanup reports recorded zero errors. Run the complete combined selected plan at the final checkpoint.
 <!-- SECTION:NOTES:END -->

@@ -113,6 +113,9 @@ analysis omits this precondition.
 in a checkout without a saved graph. The engine waits for edits to settle,
 keeps validated compiler preparation, and follows new saved inputs. It publishes
 only a complete, consistent graph. Stop the session with Ctrl-C.
+Within a TypeScript worker, edits to the same project use the installed
+compiler’s affected-file diagnostics in memory. Configuration and project
+reference changes update the compiler inputs. Analysis emits no build files.
 
 Machine clients can open the same session with `ccnavigator analysis-session`.
 Keep stdin open and send one newline-delimited request. Capabilities advertises

@@ -37,16 +37,24 @@ function ownedSources(projects) {
   }
   return owners;
 }
-function prepare(config) {
+function topology(projects) {
+  return JSON.stringify([...projects.values()].map(({config,parsed})=>({
+    config,raw:parsed.raw,options:{...parsed.options,configFile:undefined},
+    references:(parsed.projectReferences||[]).map(reference=>reference.path),
+  })));
+}
+function prepare(config, previous) {
   config = canonical(config);
   const observations=new Observations();
-  const {ts,entry,localRequire,policyFile} = toolchain(config,observations);
-  const inputs = new Set([entry,canonical(policyFile)]);
+  const {ts,localRequire,identity,inputPaths} = toolchain(config,observations,previous?.toolchain);
+  const inputs = new Set(inputPaths);
   const system = trackingSystem(ts,inputs,observations);
   const projects = configuredProjects(ts,config,system);
   const owners = ownedSources(projects);
-  const programs = createPrograms(ts,projects,system);
-  const context = {ts,config,projects,owners,programs,localRequire,observations};
+  const configuration=topology(projects);
+  const retained=previous?.configuration===configuration ? previous.programs : [];
+  const programs = createPrograms(ts,projects,system,retained);
+  const context = {ts,config,projects,owners,programs,localRequire,observations,toolchain:identity,configuration};
   context.metadata = metadata(context,inputs);
   return context;
 }

@@ -406,9 +406,8 @@ class FreshSessionMonitor(Monitor):
         self.observer = Observer([str(case.executable), "analysis-session"], initial,
                                  case.timeout)
 
-    def publish(self, generation):
-        return self.until(lambda event: activity(event).get("state") == "published"
-                          and activity(event).get("generation") == generation)
+    def publish(self):
+        return self.until(lambda event: activity(event).get("state") == "published")
 
 
 class FreshSessionCase(Case):
@@ -451,8 +450,9 @@ def fresh_session(case):
     for value, attempts in [(2, 2), (3, 3)]:
         generation, expected = case.reference(value)
         case.edit(value)
-        published = activity(monitor.publish(generation))
+        published = activity(monitor.publish())
         case.equivalent(expected)
+        require(published["generation"] == generation, f"Wrong published generation: {published}")
         require(monitor.runs() == attempts, "An edit caused duplicate/missing analysis attempts")
         require(process.poll() is None, "Published ended the continuous session")
         evidence["publications"].append(published)
@@ -475,8 +475,9 @@ def fresh_session(case):
     repaired_extra = "export function newlyRepaired() { return 7; }\n"
     generation, expected = case.reference(3, repaired_extra)
     case.project.extra.write_text(repaired_extra)
-    published = activity(monitor.publish(generation))
+    published = activity(monitor.publish())
     case.equivalent(expected)
+    require(published["generation"] == generation, f"Wrong published generation: {published}")
     require(monitor.runs() == 5, "Repairing the same added source did not publish once")
     require(process.poll() is None, "Added-source repair ended the original session")
     evidence["added_source_failure"] = added_failure

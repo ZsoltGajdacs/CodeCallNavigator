@@ -93,6 +93,22 @@ impl Preparation {
 }
 
 impl SelectedJob {
+    fn needs_typescript_update(&self) -> bool {
+        matches!(&self.preparation, Some(Preparation::TypeScript(prepared)) if prepared.needs_update())
+    }
+
+    fn needs_typescript_extraction(&self) -> bool {
+        self.graph.is_none() && matches!(self.preparation, Some(Preparation::TypeScript(_)))
+    }
+
+    fn graph_for_composition(&mut self, consume: bool) -> GraphData {
+        if consume {
+            self.graph.take().unwrap()
+        } else {
+            self.graph.as_ref().unwrap().clone()
+        }
+    }
+
     fn verify(&mut self, context: &AnalysisJob<'_>, mode: ValidationMode) -> Result<()> {
         let Some(preparation) = &mut self.preparation else {
             return Ok(());
@@ -107,10 +123,11 @@ impl SelectedJob {
     }
 
     fn invalidate(&mut self) -> Result<()> {
-        if let Some(Preparation::TypeScript(prepared)) = &mut self.preparation {
-            prepared.release_worker()?;
-        }
         self.graph = None;
+        if let Some(Preparation::TypeScript(prepared)) = &mut self.preparation {
+            prepared.invalidate_for_update();
+            return Ok(());
+        }
         self.preparation = None;
         self.preflight = None;
         if !self.preserve_logs {
@@ -231,6 +248,8 @@ impl PreparedAnalysis {
         self.prepare(cancel, progress)?;
         let result = self.extract_inner(cancel, progress, true);
         self.record_result(&result);
+        let cleanup = self.shutdown();
+        cleanup?;
         result
     }
 
@@ -374,27 +393,71 @@ impl PreparedAnalysis {
     ) -> Result<()> {
         for index in 0..self.jobs.len() {
             check_cancel(cancel)?;
-            if self.jobs[index].preparation.is_some() || self.jobs[index].build.language != language
-            {
+            if self.jobs[index].build.language != language {
                 continue;
             }
-            self.begin(index)?;
-            let context = self.context(&self.jobs[index].path, cancel, progress);
-            let mut preparation = match self.jobs[index].build.language.as_str() {
-                "csharp" => {
-                    Preparation::Csharp(csharp::prepare(&self.jobs[index].build, &context)?)
-                }
-                "typescript" => {
-                    Preparation::TypeScript(typescript::prepare(&self.jobs[index].build, &context)?)
-                }
-                other => bail!("Unsupported language: {other}"),
-            };
-            if self.jobs.len() > 1
-                && let Preparation::TypeScript(prepared) = &mut preparation
+            self.prepare_selected(index, cancel, progress)?;
+        }
+        Ok(())
+    }
+
+    fn prepare_selected(
+        &mut self,
+        index: usize,
+        cancel: &AtomicBool,
+        progress: &dyn Fn(String),
+    ) -> Result<()> {
+        if self.jobs[index].needs_typescript_update() {
+            return self.update_typescript(index, cancel, progress);
+        }
+        if self.jobs[index].preparation.is_some() {
+            return Ok(());
+        }
+        if self.jobs[index].build.language == "typescript" {
+            self.release_other_typescript_workers(index)?;
+        }
+        self.begin(index)?;
+        let context = self.context(&self.jobs[index].path, cancel, progress);
+        let preparation = match self.jobs[index].build.language.as_str() {
+            "csharp" => Preparation::Csharp(csharp::prepare(&self.jobs[index].build, &context)?),
+            "typescript" => {
+                Preparation::TypeScript(typescript::prepare(&self.jobs[index].build, &context)?)
+            }
+            other => bail!("Unsupported language: {other}"),
+        };
+        self.jobs[index].preparation = Some(preparation);
+        Ok(())
+    }
+
+    fn update_typescript(
+        &mut self,
+        index: usize,
+        cancel: &AtomicBool,
+        progress: &dyn Fn(String),
+    ) -> Result<()> {
+        self.release_other_typescript_workers(index)?;
+        let job = &mut self.jobs[index];
+        let context = AnalysisJob {
+            runtime: &self.runtime,
+            path: &job.path,
+            shared_path: &self.directory.path,
+            cancel,
+            progress,
+        };
+        let Some(Preparation::TypeScript(prepared)) = &mut job.preparation else {
+            unreachable!("only retained TypeScript state can be updated");
+        };
+        prepared.update(&job.build, &context)
+    }
+
+    /// At most one live Node compiler per analysis session, including mixed builds.
+    fn release_other_typescript_workers(&mut self, retained: usize) -> Result<()> {
+        for (index, job) in self.jobs.iter_mut().enumerate() {
+            if index != retained
+                && let Some(Preparation::TypeScript(prepared)) = &mut job.preparation
             {
                 prepared.release_worker()?;
             }
-            self.jobs[index].preparation = Some(preparation);
         }
         Ok(())
     }
@@ -470,37 +533,59 @@ impl PreparedAnalysis {
             self.jobs.iter().all(|job| job.preparation.is_some()),
             "Prepare analysis before extraction"
         );
-        for job in &mut self.jobs {
-            check_cancel(cancel)?;
-            progress(format!("Extracting {}", job.build.label));
-            let path = job.path.clone();
-            let context = AnalysisJob {
-                runtime: &self.runtime,
-                path: &path,
-                shared_path: &self.directory.path,
-                cancel,
-                progress,
-            };
-            job.extract(&context)
-                .with_context(|| format!("Analysis failed. Logs: {}", job.path.display()))?;
-        }
+        self.extract_selected_jobs(cancel, progress)?;
         // Even cached raw graphs require fresh semantic import membership before
         // the aggregate can leave the engine-owned preparation boundary.
         self.validate(cancel, progress, ValidationMode::RequireCurrent)?;
+        let graph = self.compose_graphs(consume)?;
+        graph.validate()?;
+        check_cancel(cancel)?;
+        crate::metrics::count("symbols", graph.nodes.len() as u64);
+        crate::metrics::count("relationships", graph.edges.len() as u64);
+        Ok(graph)
+    }
+
+    fn extract_selected_jobs(
+        &mut self,
+        cancel: &AtomicBool,
+        progress: &dyn Fn(String),
+    ) -> Result<()> {
+        for index in 0..self.jobs.len() {
+            check_cancel(cancel)?;
+            if self.jobs[index].needs_typescript_extraction() {
+                self.release_other_typescript_workers(index)?;
+            }
+            self.extract_selected(index, cancel, progress)?;
+        }
+        Ok(())
+    }
+
+    fn extract_selected(
+        &mut self,
+        index: usize,
+        cancel: &AtomicBool,
+        progress: &dyn Fn(String),
+    ) -> Result<()> {
+        let job = &mut self.jobs[index];
+        progress(format!("Extracting {}", job.build.label));
+        let path = job.path.clone();
+        let context = AnalysisJob {
+            runtime: &self.runtime,
+            path: &path,
+            shared_path: &self.directory.path,
+            cancel,
+            progress,
+        };
+        job.extract(&context)
+            .with_context(|| format!("Analysis failed. Logs: {}", job.path.display()))
+    }
+
+    fn compose_graphs(&mut self, consume: bool) -> Result<GraphData> {
         let mut composition = compose::GraphComposition::default();
         let mut versions = serde_json::Map::new();
         for job in &mut self.jobs {
-            let graph = if consume {
-                job.graph.take().unwrap()
-            } else {
-                job.graph.as_ref().unwrap().clone()
-            };
-            if !graph.engine_versions.is_empty() {
-                versions.insert(
-                    job.build.path.to_string_lossy().into_owned(),
-                    serde_json::from_str(&graph.engine_versions)?,
-                );
-            }
+            let graph = job.graph_for_composition(consume);
+            record_project_versions(&mut versions, &job.build, &graph)?;
             composition.append(graph)?;
         }
         let mut graph = composition.finish();
@@ -510,10 +595,20 @@ impl PreparedAnalysis {
             engines["projects"] = serde_json::Value::Object(versions);
         }
         graph.engine_versions = engines.to_string();
-        graph.validate()?;
-        check_cancel(cancel)?;
-        crate::metrics::count("symbols", graph.nodes.len() as u64);
-        crate::metrics::count("relationships", graph.edges.len() as u64);
         Ok(graph)
     }
+}
+
+fn record_project_versions(
+    versions: &mut serde_json::Map<String, serde_json::Value>,
+    build: &BuildTarget,
+    graph: &GraphData,
+) -> Result<()> {
+    if !graph.engine_versions.is_empty() {
+        versions.insert(
+            build.path.to_string_lossy().into_owned(),
+            serde_json::from_str(&graph.engine_versions)?,
+        );
+    }
+    Ok(())
 }

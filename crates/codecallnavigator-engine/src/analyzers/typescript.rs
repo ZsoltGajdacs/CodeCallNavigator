@@ -1,17 +1,17 @@
 //! Installed TypeScript compiler bridge. Ownership and binding belong to the Node adapter.
-use super::{AnalysisJob, ensure_unchanged, find_tool, process::worker::Worker};
+use super::{AnalysisJob, ensure_unchanged};
+mod session_worker;
 use crate::{
     discovery::BuildTarget,
     fingerprint,
     model::{FileFingerprint, GraphData},
 };
-use anyhow::{Context, Result, bail, ensure};
+use anyhow::{Result, bail, ensure};
 use serde::Deserialize;
+use session_worker::{CompilerWorker, Diagnostic, Operation, Reply, Status};
 use std::{
     collections::{BTreeMap, BTreeSet, HashSet},
-    fs,
     path::PathBuf,
-    process::Command,
 };
 
 #[derive(Deserialize, PartialEq, Eq)]
@@ -29,9 +29,8 @@ struct Metadata {
 pub(super) struct PreparedTypeScript {
     metadata: Metadata,
     before: Vec<FileFingerprint>,
-    worker: Option<Worker>,
-    raw_output: Option<PathBuf>,
-    raw_fingerprints: Vec<FileFingerprint>,
+    worker: Option<CompilerWorker>,
+    stale: bool,
 }
 
 fn adapter(context: &AnalysisJob<'_>) -> Result<PathBuf> {
@@ -42,31 +41,6 @@ fn adapter(context: &AnalysisJob<'_>) -> Result<PathBuf> {
             "tools/typescript/analyze.js",
         ],
     )
-}
-
-fn start_worker(build: &BuildTarget, context: &AnalysisJob<'_>) -> Result<(Worker, PathBuf)> {
-    let node = find_tool("node").context("TypeScript analysis requires installed Node 24+")?;
-    let output = context.path.join("typescript-prepare.json");
-    // Callers hold no prior worker: preparation uses a fresh generation and
-    // resume reaches here only after its previous worker was dropped and reaped.
-    // Re-preparation must wait for this worker's atomic output, never the prior file.
-    if output.exists() {
-        fs::remove_file(&output)?;
-    }
-    let mut worker = Worker::start(
-        Command::new(node)
-            .arg(adapter(context)?)
-            .arg("worker")
-            .arg(&build.path)
-            .arg(&output),
-        context.path,
-        "typescript-worker",
-        context.cancel,
-    )?;
-    if let Err(error) = worker.wait_for_output(&output, context.cancel) {
-        return worker.complete(Err(error));
-    }
-    Ok((worker, output))
 }
 
 /// Validate fresh resource compatibility independently of process preparation.
@@ -97,22 +71,20 @@ pub(super) fn prepare(
     context: &AnalysisJob<'_>,
 ) -> Result<PreparedTypeScript> {
     let _timing = crate::metrics::stage("typescript.prepare");
-    let (mut worker, output) = start_worker(build, context)?;
-    let (metadata, before) = match prepare_inputs(output) {
+    let (mut worker, metadata) = CompilerWorker::start(build, context)?;
+    let before = match prepare_inputs(&metadata) {
         Ok(inputs) => inputs,
-        Err(error) => return worker.complete(Err(error)),
+        Err(error) => return worker.stop(Err(error)),
     };
     Ok(PreparedTypeScript {
         metadata,
         before,
         worker: Some(worker),
-        raw_output: None,
-        raw_fingerprints: Vec::new(),
+        stale: false,
     })
 }
 
-fn prepare_inputs(output: PathBuf) -> Result<(Metadata, Vec<FileFingerprint>)> {
-    let metadata: Metadata = serde_json::from_slice(&fs::read(output)?)?;
+fn prepare_inputs(metadata: &Metadata) -> Result<Vec<FileFingerprint>> {
     validate_capabilities(&metadata.versions)?;
     ensure!(
         !metadata.configs.is_empty(),
@@ -146,62 +118,104 @@ fn prepare_inputs(output: PathBuf) -> Result<(Metadata, Vec<FileFingerprint>)> {
         .chain(&metadata.watch_roots)
         .cloned()
         .collect::<BTreeSet<_>>();
-    let before = fingerprint::capture_excluding(paths, &metadata.output_roots)?;
-    Ok((metadata, before))
+    fingerprint::capture_excluding(paths, &metadata.output_roots)
 }
 
 impl PreparedTypeScript {
-    /// Multi-target preparation retains guards, not a Program per selected target.
     pub(super) fn release_worker(&mut self) -> Result<()> {
         match self.worker.take() {
-            Some(mut worker) => worker.complete(Ok(())),
+            Some(mut worker) => worker.close(),
             None => Ok(()),
         }
     }
 
+    pub(super) fn invalidate_for_update(&mut self) {
+        self.stale = true;
+    }
+
+    pub(super) fn needs_update(&self) -> bool {
+        self.stale
+    }
+
     pub(super) fn verify(&self) -> Result<()> {
-        ensure_unchanged(&self.before)?;
-        ensure_unchanged(&self.raw_fingerprints)
+        ensure_unchanged(&self.before)
     }
 
-    fn output(&mut self, build: &BuildTarget, context: &AnalysisJob<'_>) -> Result<PathBuf> {
+    pub(super) fn update(&mut self, build: &BuildTarget, context: &AnalysisJob<'_>) -> Result<()> {
+        let Some(mut worker) = self.worker.take() else {
+            *self = prepare(build, context)?;
+            return Ok(());
+        };
+        let reply = match worker.request(Operation::Update, context) {
+            Ok(reply) => reply,
+            Err(error) => return worker.stop(Err(error)),
+        };
+        match reply.status {
+            Status::Success => {
+                let result = reply.into_metadata().and_then(|metadata| {
+                    let before = prepare_inputs(&metadata)?;
+                    Ok((metadata, before))
+                });
+                let (metadata, before) = match result {
+                    Ok(inputs) => inputs,
+                    Err(error) => return worker.stop(Err(error)),
+                };
+                self.metadata = metadata;
+                self.before = before;
+                self.worker = Some(worker);
+                self.stale = false;
+            }
+            Status::Error => {
+                self.worker = Some(worker);
+                return Err(native_error(reply, build));
+            }
+            Status::Restart => {
+                worker.stop(Ok(()))?;
+                *self = prepare(build, context)?;
+            }
+        }
+        Ok(())
+    }
+
+    fn output(&mut self, build: &BuildTarget, context: &AnalysisJob<'_>) -> Result<Output> {
         self.verify()?;
-        if let Some(output) = &self.raw_output {
-            return Ok(output.clone());
-        }
-        let output = context.path.join("typescript-analyze.json");
-        if output.exists() {
-            fs::remove_file(&output)?;
-        }
         let mut worker = self.resume(build, context)?;
-        let result = worker
-            .request(&serde_json::json!({"command":"analyze","output":output}).to_string())
-            .and_then(|()| worker.wait_for_output(&output, context.cancel));
-        if let Err(error) = result {
-            return worker.complete(Err(error));
+        let reply = match worker.request(Operation::Analyze, context) {
+            Ok(reply) => reply,
+            Err(error) => return worker.stop(Err(error)),
+        };
+        match reply.status {
+            Status::Success => {
+                self.worker = Some(worker);
+                self.verify()?;
+                reply.into_graph()
+            }
+            Status::Error => {
+                self.worker = Some(worker);
+                Err(native_error(reply, build))
+            }
+            Status::Restart => {
+                self.stale = true;
+                worker.stop(Err(native_error(reply, build)))
+            }
         }
-        worker.finish(context.cancel)?;
-        self.verify()?;
-        self.raw_fingerprints = fingerprint::capture([output.clone()])?;
-        self.raw_output = Some(output.clone());
-        Ok(output)
     }
 
-    fn resume(&mut self, build: &BuildTarget, context: &AnalysisJob<'_>) -> Result<Worker> {
+    fn resume(&mut self, build: &BuildTarget, context: &AnalysisJob<'_>) -> Result<CompilerWorker> {
         if let Some(worker) = self.worker.take() {
             return Ok(worker);
         }
         let _timing = crate::metrics::stage("typescript.reprepare");
         ensure_unchanged(&self.before)?;
-        let (mut worker, output) = start_worker(build, context)?;
-        if let Err(error) = self.check_resume(build, output) {
-            return worker.complete(Err(error));
+        let (mut worker, metadata) = CompilerWorker::start(build, context)?;
+        let result = self.check_resume(build, metadata);
+        match result {
+            Ok(()) => Ok(worker),
+            Err(error) => worker.stop(Err(error)),
         }
-        Ok(worker)
     }
 
-    fn check_resume(&self, build: &BuildTarget, output: PathBuf) -> Result<()> {
-        let metadata: Metadata = serde_json::from_slice(&fs::read(output)?)?;
+    fn check_resume(&self, build: &BuildTarget, metadata: Metadata) -> Result<()> {
         validate_capabilities(&metadata.versions)?;
         if metadata != self.metadata {
             return Err(fingerprint::InputsChanged::new(
@@ -213,6 +227,24 @@ impl PreparedTypeScript {
         }
         ensure_unchanged(&self.before)
     }
+}
+
+fn native_error(reply: Reply, build: &BuildTarget) -> anyhow::Error {
+    let Diagnostic {
+        code,
+        message,
+        path,
+    } = reply.error.expect("validated failure response");
+    if matches!(code.as_str(), "inputs_changed" | "restart_required") {
+        let path = path.as_deref().unwrap_or(&build.path);
+        return anyhow::Error::new(fingerprint::InputsChanged::new(
+            "TypeScript inputs changed during analysis.",
+            path.to_string_lossy(),
+            "compiler input changed",
+        ))
+        .context(message);
+    }
+    anyhow::anyhow!("{message}")
 }
 
 /// Identical referenced configurations share ownership; different configurations cannot own a file.
@@ -249,8 +281,7 @@ pub(super) fn extract(
     prepared: &mut PreparedTypeScript,
 ) -> Result<GraphData> {
     let _timing = crate::metrics::stage("typescript.extract");
-    let output = prepared.output(build, context)?;
-    let result: Output = serde_json::from_slice(&fs::read(output)?)?;
+    let result = prepared.output(build, context)?;
     ensure!(
         result.schema == "codecallnavigator.typescript.v2",
         "Unsupported TypeScript adapter schema"

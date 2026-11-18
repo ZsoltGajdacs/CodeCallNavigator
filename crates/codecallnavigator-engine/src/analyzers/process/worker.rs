@@ -79,9 +79,13 @@ impl Worker {
         Ok(())
     }
 
-    pub(in crate::analyzers) fn finish(&mut self, cancel: &AtomicBool) -> Result<()> {
+    pub(in crate::analyzers) fn finish(
+        &mut self,
+        cancel: &AtomicBool,
+        timeout: Duration,
+    ) -> Result<()> {
         self.child.child_mut().stdin.take();
-        let result = self.wait_for_exit(cancel);
+        let result = self.wait_for_exit(cancel, timeout);
         self.child.complete(result)
     }
 
@@ -89,10 +93,10 @@ impl Worker {
         self.child.complete(result)
     }
 
-    fn wait_for_exit(&mut self, cancel: &AtomicBool) -> Result<()> {
+    fn wait_for_exit(&mut self, cancel: &AtomicBool, timeout: Duration) -> Result<()> {
         let started = Instant::now();
         loop {
-            self.check_wait(cancel, started)?;
+            self.logs.check_wait(cancel, started, timeout)?;
             if let Some(status) = self.child.try_wait()? {
                 ensure!(
                     status.success(),
@@ -188,10 +192,9 @@ mod tests {
             &AtomicBool::new(false),
         )
         .unwrap();
-        worker.timeout = Duration::from_millis(20);
         let pid = worker.child.child_mut().id();
         let error = worker
-            .finish(&AtomicBool::new(false))
+            .finish(&AtomicBool::new(false), Duration::from_millis(20))
             .unwrap_err()
             .to_string();
         assert!(error.contains("finish-worker timed out after"), "{error}");

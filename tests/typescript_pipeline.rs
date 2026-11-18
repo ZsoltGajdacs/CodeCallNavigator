@@ -1,9 +1,10 @@
 //! Compiler-backed acceptance. No dependency installation or project build is performed.
 //! Set CODECALLNAVIGATOR_TEST_TYPESCRIPT_ROOT to an installed TypeScript 5.9.x or 6.0.x package.
 use codecallnavigator_engine::{
-    analyzers::{AnalyzerRuntime, analyze},
+    analyzers::{AnalyzerRuntime, PreparedAnalysis, analyze},
     discovery::{BuildTarget, target_from_file},
     fingerprint,
+    metrics::{Metrics, Report},
     model::GraphData,
     store::SqliteStore,
 };
@@ -145,7 +146,10 @@ fn source_project_references_need_no_outputs_and_duplicate_selections_share_symb
         "import { service } from '../lib/service'; export function main() { return service(); }\n",
     );
     let root = target(fixture.path(), "tsconfig.json");
-    let graph = run(vec![root.clone()]).unwrap();
+    let selected = vec![root.clone()];
+    let mut session =
+        PreparedAnalysis::new(selected.clone(), AnalyzerRuntime::discover().unwrap()).unwrap();
+    let (graph, _) = measured_prepared_graph(&mut session);
     assert!(has_edge(&graph, "main", "service"));
     assert!(
         !fixture.path().join("output").exists(),
@@ -162,6 +166,38 @@ fn source_project_references_need_no_outputs_and_duplicate_selections_share_symb
             .collect::<HashSet<_>>()
             .len(),
         combined.nodes.len()
+    );
+    change_project_reference(fixture.path());
+    let (updated, warm) = measured_prepared_graph(&mut session);
+    assert_eq!(counter(&warm, "worker_processes"), 0);
+    assert!(has_edge(&updated, "main", "replacement"));
+    assert!(updated.nodes.iter().all(|node| node.label != "service"));
+    session.shutdown().unwrap();
+    assert_complete_cold_equivalence(&updated, selected);
+    assert!(!fixture.path().join("output").exists());
+}
+
+fn change_project_reference(root: &Path) {
+    fs::rename(root.join("lib"), root.join("replacement")).unwrap();
+    write(
+        root,
+        "replacement/service.ts",
+        "export function replacement() { return 'new reference'; }",
+    );
+    write(
+        root,
+        "tsconfig.json",
+        r#"{"files":[],"references":[{"path":"replacement"},{"path":"app"}]}"#,
+    );
+    write(
+        root,
+        "app/tsconfig.json",
+        r#"{"compilerOptions":{"composite":true,"strict":true,"target":"ES2022","module":"NodeNext","outDir":"../output/app"},"references":[{"path":"../replacement"}],"include":["*.ts"]}"#,
+    );
+    write(
+        root,
+        "app/main.ts",
+        "import { replacement } from '../replacement/service'; export function main() { return replacement(); }",
     );
 }
 
@@ -696,4 +732,119 @@ fn live_typescript_workers(scope: &str) -> usize {
         .lines()
         .filter(|line| line.contains("analyze.js worker ") && line.contains(scope))
         .count()
+}
+
+/// Risk: only the actual retained TypeScript builder can prove affected-file
+/// diagnostics shrink while complete semantic output stays equal to cold analysis.
+#[test]
+#[ignore = "requires Node 24+ and installed TypeScript 5.9.x or 6.0.x"]
+fn retained_builder_rechecks_affected_files_and_matches_cold_graph_without_emission() {
+    let fixture = independent_builder_fixture();
+    let root = fixture.path();
+    let selected = vec![target(root, "tsconfig.json")];
+    let mut session =
+        PreparedAnalysis::new(selected.clone(), AnalyzerRuntime::discover().unwrap()).unwrap();
+    let (_, cold) = measured_prepared_graph(&mut session);
+    assert_eq!(counter(&cold, "worker_processes"), 1);
+    let cold_affected = counter(&cold, "typescript.affected_diagnostics");
+    assert!(
+        cold_affected >= 10,
+        "Cold compilation must check the independent authored sources: {cold_affected}"
+    );
+
+    write(
+        root,
+        "src/leaf.ts",
+        "export function leaf(): number { return 2; }\n",
+    );
+    let (body, warm) = measured_prepared_graph(&mut session);
+    let warm_affected = counter(&warm, "typescript.affected_diagnostics");
+    assert!(
+        warm_affected > 0 && warm_affected < cold_affected,
+        "Native affected diagnostics did not shrink: cold={cold_affected}, warm={warm_affected}"
+    );
+    assert_eq!(
+        counter(&warm, "worker_processes"),
+        0,
+        "A body edit restarted the retained Node worker"
+    );
+    assert_complete_cold_equivalence(&body, selected.clone());
+
+    write(
+        root,
+        "src/leaf.ts",
+        "export function leaf(): string { return 'changed'; }\n",
+    );
+    let (changed_type, updated) = measured_prepared_graph(&mut session);
+    assert_eq!(counter(&updated, "worker_processes"), 0);
+    assert!(counter(&updated, "typescript.affected_diagnostics") > 0);
+    let start = changed_type
+        .nodes
+        .iter()
+        .find(|node| node.label == "start")
+        .unwrap();
+    assert_eq!(
+        start.signature, "(): string",
+        "An exported type edit did not reach its consumer"
+    );
+    assert_complete_cold_equivalence(&changed_type, selected);
+    assert!(
+        !root.join("output").exists(),
+        "Analysis emitted configured JavaScript/declaration output"
+    );
+    assert!(
+        !root.join("tsconfig.tsbuildinfo").exists(),
+        "Analysis emitted build metadata"
+    );
+    session.shutdown().unwrap();
+}
+
+fn independent_builder_fixture() -> tempfile::TempDir {
+    let fixture = fixture();
+    let root = fixture.path();
+    write(
+        root,
+        "tsconfig.json",
+        r#"{"compilerOptions":{"strict":true,"target":"ES2022","module":"NodeNext","moduleResolution":"NodeNext","skipLibCheck":true,"declaration":true,"incremental":true,"outDir":"output"},"include":["src/**/*.ts"]}"#,
+    );
+    write(
+        root,
+        "src/leaf.ts",
+        "export function leaf(): number { return 1; }\n",
+    );
+    write(
+        root,
+        "src/main.ts",
+        "import {leaf} from './leaf.js'; export function start() { return leaf(); }\n",
+    );
+    for index in 0..8 {
+        write(
+            root,
+            &format!("src/independent{index}.ts"),
+            &format!("export function independent{index}(): number {{ return {index}; }}\n"),
+        );
+    }
+    fixture
+}
+
+fn measured_prepared_graph(session: &mut PreparedAnalysis) -> (GraphData, Report) {
+    let measurement = Metrics::default();
+    let scope = measurement.enter();
+    let graph = session.analyze(&AtomicBool::new(false), &|_| {}).unwrap();
+    drop(scope);
+    measurement.finish();
+    (graph, measurement.report())
+}
+
+fn counter(report: &Report, name: &str) -> u64 {
+    report.counters.get(name).copied().unwrap_or(0)
+}
+
+fn assert_complete_cold_equivalence(actual: &GraphData, selected: Vec<BuildTarget>) {
+    let expected = run(selected).unwrap();
+    assert_eq!(
+        serde_json::to_value(actual).unwrap(),
+        serde_json::to_value(expected).unwrap(),
+        "Retained builder changed the complete compiler-backed graph"
+    );
 }

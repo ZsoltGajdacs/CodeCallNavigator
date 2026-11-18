@@ -22,64 +22,88 @@ async function fixture(t,source='export function leaf(){return 1;}',copyAdapter=
   fs.symlinkSync(engineModules,path.join(root,'node_modules'),'dir');
   fs.writeFileSync(path.join(root,'tsconfig.json'),JSON.stringify({compilerOptions:{strict:true,skipLibCheck:true,target:'ES2023',module:'esnext',moduleResolution:'bundler',types:[]},include:['src/**/*.ts']}));
   const file=path.join(root,'src/main.ts'); fs.writeFileSync(file,source);
-  const metadata=path.join(temporary,'metadata.json'), output=path.join(temporary,'graph.json');
+  const response=path.join(temporary,'response.json');
   const adapter=copyAdapter?path.join(temporary,'adapter'):__dirname;
   if(copyAdapter) fs.cpSync(__dirname,adapter,{recursive:true});
-  const child=spawn(process.execPath,[path.join(adapter,'analyze.js'),'worker',path.join(root,'tsconfig.json'),metadata],{stdio:['pipe','pipe','pipe']});
+  const child=spawn(process.execPath,[path.join(adapter,'analyze.js'),'worker',path.join(root,'tsconfig.json'),response],{stdio:['pipe','pipe','pipe']});
   let errors=''; child.stderr.on('data',data=>{errors+=data;});
   const exited=new Promise(resolve=>child.on('exit',(code,signal)=>resolve({code,signal})));
   t.after(async()=>{if(child.exitCode===null && child.signalCode===null) {child.kill();await exited;} fs.rmSync(temporary,{recursive:true,force:true});});
-  await waitFor(()=>fs.existsSync(metadata),child);
-  return {root,file,output,metadata,child,adapter,errors:()=>errors,exited};
+  const worker={root,file,response,child,adapter,errors:()=>errors,exited};
+  const initial=await reply(worker,0);
+  assert.equal(initial.status,'success',initial.error?.message);
+  return {...worker,metadata:initial.metadata};
 }
-async function analyze(worker) {
-  worker.child.stdin.end(JSON.stringify({command:'analyze',output:worker.output})+'\n');
-  return worker.exited;
+async function reply(worker,sequence) {
+  let result;
+  await waitFor(()=>{
+    if (!fs.existsSync(worker.response)) return false;
+    result=JSON.parse(fs.readFileSync(worker.response,'utf8'));
+    return result.sequence===sequence;
+  },worker.child);
+  assert.equal(result.version,1);
+  return result;
+}
+async function request(worker,command,sequence=1) {
+  worker.child.stdin.write(JSON.stringify({version:1,sequence,command})+'\n');
+  return reply(worker,sequence);
+}
+function changed(result,file) {
+  assert.equal(result.status,'error');
+  assert.equal(result.error.code,'inputs_changed');
+  assert.match(result.error.message,/changed/);
+  if (file) assert.equal(result.error.path,file);
+  assert.equal(result.graph,undefined);
 }
 test('worker retains compiler output and exits after extraction',async t=>{
   const worker=await fixture(t,'export function leaf(){} export function start(){leaf()}');
-  assert.equal((await analyze(worker)).code,0,worker.errors());
-  const graph=JSON.parse(fs.readFileSync(worker.output,'utf8'));
+  const result=await request(worker,'analyze');
+  assert.equal(result.status,'success',result.error?.message);
+  const graph=result.graph;
   assert.ok(graph.edges.some(edge=>graph.nodes[edge.from].label==='start' && graph.nodes[edge.to].label==='leaf'));
   assert.equal(fs.existsSync(path.join(worker.root,'src/main.js')),false);
+  worker.child.stdin.end();
+  assert.equal((await worker.exited).code,0,worker.errors());
 });
 test('worker rejects retained source changes with restored size and timestamp',async t=>{
   const worker=await fixture(t), before=fs.statSync(worker.file);
   fs.writeFileSync(worker.file,'export function leaf(){return 2;}');
   fs.utimesSync(worker.file,before.atime,before.mtime);
-  assert.notEqual((await analyze(worker)).code,0);
-  assert.match(worker.errors(),/changed/);
-  assert.equal(fs.existsSync(worker.output),false);
+  changed(await request(worker,'analyze'),fs.realpathSync(worker.file));
+  const update=await request(worker,'update',2);
+  assert.equal(update.status,'success',update.error?.message);
+  assert.ok(update.affected>0);
+  assert.equal((await request(worker,'analyze',3)).status,'success');
 });
 test('worker rejects source membership added after preparation',async t=>{
   const worker=await fixture(t);
   fs.writeFileSync(path.join(worker.root,'src/new.ts'),'export function added(){}');
-  assert.notEqual((await analyze(worker)).code,0);
-  assert.match(worker.errors(),/changed/);
-  assert.equal(fs.existsSync(worker.output),false);
+  changed(await request(worker,'analyze'));
 });
 test('worker rejects newly appearing module-resolution candidates',async t=>{
   const worker=await fixture(t,'// @ts-ignore\nimport {leaf} from "./missing"; export function start(){leaf()}');
   fs.writeFileSync(path.join(worker.root,'src/missing.ts'),'export function leaf(){}');
-  assert.notEqual((await analyze(worker)).code,0);
-  assert.match(worker.errors(),/changed/);
+  changed(await request(worker,'analyze'));
 });
 test('worker rejects invalid requests without graph output',async t=>{
   const worker=await fixture(t);
-  worker.child.stdin.end('{"command":"other"}\n');
+  worker.child.stdin.end('{"version":1,"sequence":1,"command":"other"}\n');
   assert.notEqual((await worker.exited).code,0);
   assert.match(worker.errors(),/Invalid TypeScript worker request/);
-  assert.equal(fs.existsSync(worker.output),false);
+  const result=JSON.parse(fs.readFileSync(worker.response,'utf8'));
+  assert.equal(result.status,'error');
+  assert.equal(result.graph,undefined);
 });
 
 // A real retained compiler worker is required to prove policy edits cannot publish output.
 test('worker rejects compatibility policy changes after preparation',async t=>{
   const worker=await fixture(t,'export function leaf(){return 1;}',true);
   const policy=path.join(worker.adapter,'compatibility.json');
-  const metadata=JSON.parse(fs.readFileSync(worker.metadata,'utf8'));
-  assert.ok(metadata.inputs.includes(fs.realpathSync(policy)));
+  assert.ok(worker.metadata.inputs.includes(fs.realpathSync(policy)));
   fs.appendFileSync(policy,'\n');
-  assert.notEqual((await analyze(worker)).code,0);
-  assert.match(worker.errors(),/changed after preparation: compatibility:/);
-  assert.equal(fs.existsSync(worker.output),false);
+  const result=await request(worker,'analyze');
+  assert.equal(result.status,'restart');
+  assert.equal(result.error.code,'restart_required');
+  assert.match(result.error.message,/compatibility policy changed/);
+  assert.equal(result.graph,undefined);
 });
