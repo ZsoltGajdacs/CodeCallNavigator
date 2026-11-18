@@ -1,10 +1,14 @@
 use crate::{
     app::SavedSession,
-    engine_client::{Descriptor, QueryContext},
+    engine_client::{Descriptor, QueryContext, QueryFailure},
     runtime::Runtime as AnalyzerRuntime,
 };
 use codecallnavigator::{graph::GraphIndex, store::SqliteStore};
-use std::{path::PathBuf, sync::Arc};
+use serde_json::Value;
+use std::{
+    path::PathBuf,
+    sync::{Arc, atomic::AtomicBool},
+};
 
 /// Identity of the currently displayed workspace, independent of the folder editor.
 #[derive(Clone)]
@@ -46,6 +50,7 @@ pub struct Boot {
     pub graph: Option<LoadedGraph>,
     pub session: Option<SavedSession>,
     pub editable_root: Option<String>,
+    pub active_folder: Option<String>,
     pub runtime: Arc<AnalyzerRuntime>,
     pub warnings: Vec<String>,
 }
@@ -61,8 +66,9 @@ pub fn data_directory() -> PathBuf {
 
 pub(crate) fn load_boot(directory: PathBuf) -> anyhow::Result<Boot> {
     let store = Arc::new(SqliteStore::open(directory)?);
+    let saved = store.load_session()?.unwrap_or(Value::Null);
     let mut warnings = Vec::new();
-    let session = match read_session(&store) {
+    let session = match serde_json::from_value::<Option<SavedSession>>(saved.clone()) {
         Ok(session) => session,
         Err(error) => {
             warnings.push(format!(
@@ -71,11 +77,19 @@ pub(crate) fn load_boot(directory: PathBuf) -> anyhow::Result<Boot> {
             None
         }
     };
-    let editable_root = store
-        .load_session()?
-        .and_then(|saved| saved.get("root")?.as_str().map(str::to_owned));
+    let editable_root = saved.get("root").and_then(Value::as_str).map(str::to_owned);
+    // The graph descriptor identifies the active project in legacy sessions whose
+    // editable path was a draft. Read addressing separately from navigation.
+    let active_folder = saved
+        .get("active_folder")
+        .and_then(Value::as_str)
+        .or_else(|| saved.get("graph_context")?.get("project")?.as_str())
+        .or(editable_root.as_deref())
+        .map(str::trim)
+        .filter(|folder| !folder.is_empty())
+        .map(str::to_owned);
     let runtime = Arc::new(AnalyzerRuntime::discover()?);
-    let graph = match read_graph(&runtime, &store) {
+    let graph = match read_graph(&runtime, &saved, active_folder.as_deref()) {
         Ok(graph) => graph,
         Err(error) => {
             warnings.push(format!(
@@ -89,53 +103,58 @@ pub(crate) fn load_boot(directory: PathBuf) -> anyhow::Result<Boot> {
         graph,
         session,
         editable_root,
+        active_folder,
         runtime,
         warnings,
     })
 }
 
-fn read_session(store: &SqliteStore) -> anyhow::Result<Option<SavedSession>> {
-    store
-        .load_session()?
-        .map(serde_json::from_value)
-        .transpose()
-        .map_err(Into::into)
-}
-
-fn saved_descriptor(store: &SqliteStore) -> anyhow::Result<Option<Descriptor>> {
-    let Some(saved) = store.load_session()? else {
-        return Ok(None);
-    };
-    if let Some(context) = saved.get("graph_context").filter(|value| !value.is_null()) {
-        return Ok(Some(serde_json::from_value(context.clone())?));
-    }
-    Ok(saved
-        .get("root")
-        .and_then(serde_json::Value::as_str)
-        .map(str::trim)
-        .filter(|root| !root.is_empty())
-        .map(|root| Descriptor {
-            project: root.into(),
-            ..Default::default()
-        }))
-}
-
 fn read_graph(
     runtime: &AnalyzerRuntime,
-    store: &SqliteStore,
+    saved: &Value,
+    active_folder: Option<&str>,
 ) -> anyhow::Result<Option<LoadedGraph>> {
-    // Addressing survives corrupt navigation. A graph descriptor is preferred
-    // over the editable legacy root, which may refer to another pending project.
-    let descriptor = saved_descriptor(store)?;
-    let Some(mut descriptor) = descriptor else {
-        return Ok(None);
+    let descriptor = match saved.get("graph_context").filter(|value| !value.is_null()) {
+        Some(context) => serde_json::from_value(context.clone())?,
+        None => {
+            let Some(folder) = active_folder else {
+                return Ok(None);
+            };
+            Descriptor {
+                project: folder.into(),
+                roots: saved
+                    .get("linked_roots")
+                    .and_then(|roots| roots.get(crate::source_path::identity(folder)))
+                    .cloned()
+                    .map(serde_json::from_value)
+                    .transpose()?
+                    .unwrap_or_default(),
+                ..Default::default()
+            }
+        }
     };
-    // Restore the latest published graph for the saved project; persisted navigation
-    // is retained only for symbols present in this returned immutable generation.
+    load_saved_graph(runtime, descriptor, &AtomicBool::new(false))
+}
+
+pub(crate) fn load_saved_graph(
+    runtime: &AnalyzerRuntime,
+    mut descriptor: Descriptor,
+    cancel: &AtomicBool,
+) -> anyhow::Result<Option<LoadedGraph>> {
+    // Opening restores the latest saved graph. Generation-specific reloads use
+    // the original descriptor with its expected digest.
     descriptor.generation = None;
-    let snapshot = QueryContext::new(runtime, descriptor)
-        .snapshot(&std::sync::atomic::AtomicBool::new(false))?;
-    Ok(Some(from_snapshot(snapshot)))
+    match QueryContext::new(runtime, descriptor).snapshot(cancel) {
+        Ok(snapshot) => Ok(Some(from_snapshot(snapshot))),
+        Err(error)
+            if error
+                .downcast_ref::<QueryFailure>()
+                .is_some_and(|failure| failure.0.code == "graph_missing") =>
+        {
+            Ok(None)
+        }
+        Err(error) => Err(error),
+    }
 }
 
 pub(crate) fn from_snapshot(snapshot: crate::engine_client::Snapshot) -> LoadedGraph {

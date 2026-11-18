@@ -37,6 +37,7 @@ mod navigation;
 mod pan_profile;
 mod presentation;
 mod presentation_cache;
+mod project_open;
 mod projection;
 mod recent_projects;
 mod relationship;

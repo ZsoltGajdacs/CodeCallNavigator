@@ -75,6 +75,7 @@ pub fn setup(state: &mut State, waker: Waker) {
     state.flow_comparison.set_waker(waker.clone());
     state.architecture_workspace.job.set_waker(waker.clone());
     state.jobs.discovery.set_waker(waker.clone());
+    state.project_open.set_waker(waker.clone());
     state.jobs.analysis.set_waker(waker.clone());
     state.reload.job.set_waker(waker.clone());
     state.jobs.cache_clear.set_waker(waker.clone());
@@ -96,15 +97,16 @@ pub fn setup(state: &mut State, waker: Waker) {
 
 impl State {
     pub fn choose_folder(&mut self, tx: &mut Tx) {
+        if self.project_job_busy() {
+            return;
+        }
         let options = rune::FileDialogOptions {
             title: "Choose a project folder".into(),
             ..Default::default()
         };
         tx.open_folder(options, |state: &mut State, answer, _| match answer {
             Ok(Some(path)) => {
-                state.root = rune::TextEdit::new(path.to_string_lossy());
-                state.root_edited();
-                state.discover_root();
+                state.open_project(path.to_string_lossy().into_owned());
             }
             Ok(None) => {}
             Err(error) => state.warning = format!("Could not open the folder chooser: {error}"),
@@ -143,6 +145,7 @@ pub fn poll(state: &mut State, time: f64, tx: &mut Tx) -> bool {
         | poll_progress(state)
         | poll_boot(state)
         | crate::build_discovery::poll(state)
+        | crate::project_open::poll(state)
         | poll_analysis(state)
         | crate::generation_reload::poll(state)
         | crate::cache_jobs::poll(state)
@@ -199,6 +202,7 @@ fn ready_to_quit(state: &State) -> bool {
 fn foreground_finished(state: &State) -> bool {
     !state.jobs.analysis.is_pending()
         && !state.jobs.cache_clear.is_pending()
+        && !state.project_open.worker_pending()
         && !state.reload.job.is_pending()
         && !state.jobs.persistence.is_pending()
 }
@@ -215,34 +219,75 @@ fn poll_boot(state: &mut State) -> bool {
         return false;
     };
     match result {
-        Ok(boot) => {
-            if !boot.warnings.is_empty() {
-                state.warning = boot.warnings.join("\n");
-            }
-            state.store = Some(boot.store);
-            state.runtime = Some(boot.runtime);
-            restore_navigation(state, boot.session, boot.editable_root);
-            if let Some(graph) = boot.graph {
-                crate::graph_install::install(state, graph, crate::graph_install::Mode::Restore);
-            } else {
-                state.nav.selected = None;
-                state.nav.focus = None;
-                state.nav.focus_target = None;
-                state.nav.path_from = None;
-                state.nav.path_to = None;
-                state.nav.show_path = false;
-                state.status = "Choose a project folder to begin".into();
-            }
-            if !state.root_was_edited && !state.root.text.is_empty() {
-                state.discover_root();
-            }
-        }
+        Ok(boot) => restore_workspace(state, boot),
         Err(error) => {
             state.warning = error;
             state.status = "Could not open the saved workspace".into();
         }
     }
     true
+}
+
+fn restore_workspace(state: &mut State, mut boot: Boot) {
+    state.store = Some(boot.store);
+    state.runtime = Some(boot.runtime);
+    if state.closing {
+        return;
+    }
+    if let Some(session) = &mut boot.session {
+        restore_project_history(state, session, boot.active_folder.as_deref());
+    }
+    if state.project_open.folder.is_some() {
+        state.open_saved_project_graph();
+        state.dirty_session = true;
+        return;
+    }
+    if !boot.warnings.is_empty() {
+        state.warning = boot.warnings.join("\n");
+    }
+    state.project_open.folder = boot.active_folder;
+    restore_navigation(state, boot.session, boot.editable_root);
+    if let Some(graph) = boot.graph {
+        crate::graph_install::install(state, graph, crate::graph_install::Mode::Restore);
+    } else {
+        state.nav.selected = None;
+        state.nav.focus = None;
+        state.nav.focus_target = None;
+        state.nav.path_from = None;
+        state.nav.path_to = None;
+        state.nav.show_path = false;
+        state.status = "Choose a project folder to begin".into();
+    }
+    state.discover_root();
+}
+
+fn restore_project_history(
+    state: &mut State,
+    session: &mut crate::app::SavedSession,
+    folder: Option<&str>,
+) {
+    let mut projects = std::mem::take(&mut session.recent_projects);
+    for recent in state.recent_projects.iter().rev() {
+        crate::recent_projects::remember(&mut projects, recent);
+    }
+    state.recent_projects = crate::recent_projects::restore(
+        projects,
+        state
+            .project_open
+            .folder
+            .as_deref()
+            .or(folder)
+            .unwrap_or_default(),
+    );
+    state.project_open.linked_roots = std::mem::take(&mut session.linked_roots);
+    if let (Some(folder), Some(descriptor)) = (folder, &session.graph_context)
+        && !descriptor.roots.is_empty()
+    {
+        state.project_open.linked_roots.insert(
+            crate::source_path::identity(folder),
+            descriptor.roots.clone(),
+        );
+    }
 }
 
 fn restore_navigation(
@@ -257,11 +302,13 @@ fn restore_navigation(
         state.root = rune::TextEdit::new(root);
     }
     if let Some(session) = session {
-        state.recent_projects =
-            crate::recent_projects::restore(session.recent_projects, &session.root);
-        state.root = rune::TextEdit::new(session.root);
-        state.saved_builds = session.selected_builds;
-        state.saved_targets = session.selected_targets;
+        let active = state.project_open.folder.as_deref().unwrap_or_default();
+        if session.active_folder.is_some()
+            || crate::source_path::identity(&session.root) == crate::source_path::identity(active)
+        {
+            state.saved_builds = session.selected_builds;
+            state.saved_targets = session.selected_targets;
+        }
         state.nav = session.navigation;
         state.architecture_selection = session.architecture_selection;
         state.ui.restore(session.presentation);
@@ -271,6 +318,7 @@ fn restore_navigation(
 
 pub fn close(state: &mut State, _: &mut Tx) {
     state.closing = true;
+    state.project_open.stop();
     state.cancel.store(true, Ordering::Release);
     state.jobs.layout_cancel.store(true, Ordering::Release);
     state.jobs.neighbors_cancel.store(true, Ordering::Release);

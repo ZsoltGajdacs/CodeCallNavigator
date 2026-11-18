@@ -19,17 +19,9 @@ pub(crate) fn mode(state: &State, loaded: &LoadedGraph) -> Mode {
 }
 
 pub(crate) fn install(state: &mut State, loaded: LoadedGraph, mode: Mode) {
-    state.flow_residency.retire(state.query_context.clone());
-    invalidate(state);
-    state.epoch += 1;
-    state.revision += 1;
+    reset_generation(state);
     match mode {
-        Mode::NewWorkspace => {
-            state.nav = Navigation::default();
-            state.back.clear();
-            state.forward.clear();
-            state.auto_fit = true;
-        }
+        Mode::NewWorkspace => reset_navigation(state),
         Mode::Adopt => {
             state.auto_fit = false;
         }
@@ -49,6 +41,7 @@ pub(crate) fn install(state: &mut State, loaded: LoadedGraph, mode: Mode) {
             .map(|context| context.descriptor.project.as_path()),
     );
     state.query_context = loaded.context;
+    state.remember_linked_roots();
     state.freshness.installed(
         state
             .query_context
@@ -59,12 +52,6 @@ pub(crate) fn install(state: &mut State, loaded: LoadedGraph, mode: Mode) {
     state.graph = Some(loaded.graph);
     state.analysis_metrics = loaded.metrics;
     state.generation = Some(loaded.generation);
-    state.architecture = None;
-    state.selected_edge = None;
-    state.replace_graph_view(projection::GraphView::default());
-    state.visible_revision = None;
-    state.visual_selection = None;
-    state.graph_interaction.center_after_layout = false;
     let graph = state.graph.as_ref().expect("installed graph");
     state.status = format!(
         "{} symbols · {} relationships",
@@ -72,9 +59,48 @@ pub(crate) fn install(state: &mut State, loaded: LoadedGraph, mode: Mode) {
         graph.data.edges.len()
     );
     state.needs_layout = true;
-    state.dirty_session = true;
     state.request_neighbors();
     crate::cache_retention::request(state, loaded.navigation);
+}
+
+pub(crate) fn clear(state: &mut State) {
+    reset_generation(state);
+    reset_navigation(state);
+    state.preserve_adoption_camera = false;
+    state.flow_comparison.project_installed(None);
+    state.freshness.clear_project();
+    state.query_context = None;
+    state.presentation_cache = None;
+    state.graph = None;
+    state.analysis_metrics = None;
+    state.generation = None;
+    state.needs_layout = false;
+}
+
+fn reset_generation(state: &mut State) {
+    state.flow_residency.retire(state.query_context.clone());
+    invalidate(state);
+    state.epoch += 1;
+    state.revision += 1;
+    state.architecture = None;
+    state.selected_edge = None;
+    state.replace_graph_view(projection::GraphView::default());
+    state.visible_revision = None;
+    state.visual_selection = None;
+    state.graph_interaction.center_after_layout = false;
+    state.dirty_session = true;
+}
+
+fn reset_navigation(state: &mut State) {
+    state.nav = Navigation::default();
+    state.back.clear();
+    state.forward.clear();
+    state.neighbors = (Vec::new(), Vec::new());
+    state.neighbor_pages = [0, 0];
+    state.relationships.clear();
+    state.relationship_classifications.clear();
+    state.relationship_page = 0;
+    state.auto_fit = true;
 }
 
 fn invalidate(state: &mut State) {

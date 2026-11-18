@@ -90,18 +90,23 @@ impl State {
     pub fn open_builds(&mut self) {
         self.cancel_graph_press();
         self.close_source();
-        self.ui.overlay = Some(Overlay::Builds);
-        self.discover_root();
+        if self.open_project(self.root.text.clone()) {
+            self.ui.overlay = Some(Overlay::Builds);
+        }
     }
 
     pub fn discover_root(&mut self) {
-        let root = self.root.text.trim().to_owned();
+        let Some(root) = self.project_open.folder.clone() else {
+            return;
+        };
         if self.build_discovery.root != root {
             self.targets.clear();
         }
         self.clear_discovery_error();
         self.build_discovery.begin(&root, &self.targets);
-        self.status = "Finding solutions, Java builds and TypeScript projects…".into();
+        if self.graph.is_none() {
+            self.status = "Finding solutions, Java builds and TypeScript projects…".into();
+        }
         let runtime = self.runtime.clone();
         self.jobs
             .discovery
@@ -126,7 +131,7 @@ pub fn poll(state: &mut State) -> bool {
     let Some(output) = state.jobs.discovery.take() else {
         return false;
     };
-    if output.root != state.root.text.trim() {
+    if state.project_open.folder.as_deref() != Some(output.root.as_str()) {
         return false;
     }
     match output.result {
@@ -134,7 +139,9 @@ pub fn poll(state: &mut State) -> bool {
             crate::recent_projects::remember(&mut state.recent_projects, &output.root);
             state.targets = state.build_discovery.choices(state, targets);
             state.build_discovery.phase = Phase::Ready;
-            state.status = format!("{} build targets found", state.targets.len());
+            if state.graph.is_none() {
+                state.status = format!("{} build targets found", state.targets.len());
+            }
             state.dirty_session = true;
         }
         Err(error) => {
@@ -192,14 +199,13 @@ mod tests {
     #[test]
     fn changing_root_discards_old_targets_even_when_discovery_fails() {
         let mut state = State::new();
-        state.root = rune::TextEdit::new("/old");
+        state.project_open.folder = Some("/old".into());
         state.build_discovery.root = "/old".into();
         state.targets = vec![TargetChoice {
             target: target("Old"),
             selected: true,
         }];
-        state.root = rune::TextEdit::new("/new");
-        state.discover_root();
+        state.open_project("/new".into());
         assert!(state.targets.is_empty());
         state.jobs.discovery.request((), |_| Output {
             root: "/new".into(),
@@ -218,16 +224,16 @@ mod tests {
         state.jobs.discovery.cancel();
     }
     #[test]
-    fn root_edit_clears_discovery_error_but_keeps_unrelated_warning() {
+    fn discovery_reset_clears_discovery_error_but_keeps_unrelated_warning() {
         let mut state = State::new();
         state.build_discovery.phase = Phase::Failed("Old folder error".into());
         state.warning = "Old folder error".into();
-        state.root_edited();
+        state.reset_build_discovery();
         assert!(state.warning.is_empty());
         assert!(matches!(state.build_discovery.phase, Phase::Idle));
         state.build_discovery.phase = Phase::Failed("Old folder error".into());
         state.warning = "Unrelated warning".into();
-        state.root_edited();
+        state.reset_build_discovery();
         assert_eq!(state.warning, "Unrelated warning");
     }
 }

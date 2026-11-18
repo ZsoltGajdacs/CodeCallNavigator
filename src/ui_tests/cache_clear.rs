@@ -4,6 +4,7 @@ use std::sync::Arc;
 fn cache_runtime(project: &std::path::Path) -> Runtime<State> {
     let mut runtime = runtime();
     runtime.state.root = rune::TextEdit::new(project.to_string_lossy());
+    runtime.state.project_open.folder = Some(runtime.state.root.text.clone());
     runtime.state.runtime = Some(Arc::new(crate::runtime::Runtime::discover().unwrap()));
     runtime.frame(1.0 / 60.0);
     runtime

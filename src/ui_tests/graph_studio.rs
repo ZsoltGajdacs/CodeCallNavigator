@@ -492,7 +492,7 @@ fn empty_workspace_shows_discovery_progress_and_a_real_directory_error() {
     runtime.update(|state, _| {
         state.root =
             rune::TextEdit::new(directory.path().join("missing-project").to_string_lossy());
-        state.discover_root();
+        state.open_project(state.root.text.clone());
     });
     // Render the actual queued discovery's progress before polling its result.
     settle(&mut runtime);

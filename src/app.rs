@@ -28,6 +28,7 @@ pub struct State {
     pub flow_residency: crate::flow_residency::Workspace,
     pub flow_comparison: crate::flow_comparison::Workspace,
     pub root: TextEdit,
+    pub project_open: crate::project_open::Workspace,
     pub search: crate::search::Workspace,
     pub targets: Vec<TargetChoice>,
     pub build_discovery: crate::build_discovery::Workspace,
@@ -96,6 +97,7 @@ impl State {
             flow_residency: Default::default(),
             flow_comparison: Default::default(),
             root: TextEdit::new(""),
+            project_open: Default::default(),
             search: crate::search::Workspace::default(),
             targets: Vec::new(),
             build_discovery: Default::default(),
@@ -304,6 +306,8 @@ impl State {
     pub fn session(&self) -> SavedSession {
         SavedSession {
             recent_projects: self.recent_projects.clone(),
+            active_folder: self.project_open.folder.clone(),
+            linked_roots: self.project_open.linked_roots.clone(),
             presentation_cache: self.presentation_cache.clone(),
             graph_context: self
                 .query_context
@@ -344,17 +348,7 @@ impl State {
         self.jobs.file_focus_cancel.store(true, Ordering::Release);
         self.jobs.file_focus.cancel();
         self.root_was_edited = true;
-        self.reset_build_discovery();
-        self.close_overlay();
-        self.saved_builds.clear();
-        self.saved_targets = None;
         self.dirty_session = true;
-        self.status = if self.graph.is_some() {
-            "Folder changed · the last successful graph remains until refresh"
-        } else {
-            "Folder changed · find builds to choose what to analyze"
-        }
-        .into();
     }
 
     pub fn view_is_current(&self) -> bool {

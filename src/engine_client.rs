@@ -10,6 +10,7 @@ pub(crate) use observation_process::{CleanupFailure, Notice, ObservationOptions}
 mod process;
 mod queries;
 mod query_process;
+pub(crate) use queries::QueryFailure;
 pub use queries::{Descriptor, QueryContext, Snapshot};
 #[cfg(test)]
 mod query_tests;

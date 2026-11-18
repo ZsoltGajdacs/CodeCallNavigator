@@ -1,7 +1,7 @@
 //! Typed desktop operations over the public CLI wire contract.
 use super::query_process::Client;
 use crate::runtime::Runtime;
-use anyhow::{Context, Result, bail, ensure};
+use anyhow::{Context, Result, ensure};
 use codecallnavigator::{
     graph::GraphIndex,
     model::GraphData,
@@ -9,9 +9,21 @@ use codecallnavigator::{
 };
 use serde::{Deserialize, Serialize, de::DeserializeOwned};
 use std::{
+    fmt,
     path::PathBuf,
     sync::{Arc, atomic::AtomicBool},
 };
+
+#[derive(Debug)]
+pub(crate) struct QueryFailure(pub query::Error);
+
+impl fmt::Display for QueryFailure {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(formatter, "{}: {}", self.0.code, self.0.message)
+    }
+}
+
+impl std::error::Error for QueryFailure {}
 
 #[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Descriptor {
@@ -50,8 +62,8 @@ impl QueryContext {
     pub fn response(&self, query: Query, cancel: &AtomicBool) -> Result<Response> {
         let request = self.wire_request(query);
         let response = self.client.query(&request, cancel)?;
-        if let Some(error) = &response.error {
-            bail!("{}: {}", error.code, error.message);
+        if let Some(error) = response.error {
+            return Err(QueryFailure(error).into());
         }
         if let Some(expected) = &self.descriptor.generation {
             ensure!(

@@ -139,6 +139,8 @@ pub struct SavedSession {
     pub presentation_cache: Option<crate::presentation_cache::PresentationCache>,
     pub graph_context: Option<crate::engine_client::Descriptor>,
     pub root: String,
+    pub active_folder: Option<String>,
+    pub linked_roots: std::collections::BTreeMap<String, Vec<(String, PathBuf)>>,
     pub selected_builds: Vec<PathBuf>,
     pub selected_targets: Option<Vec<crate::discovery::BuildIdentity>>,
     pub navigation: Navigation,

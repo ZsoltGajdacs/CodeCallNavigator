@@ -40,7 +40,7 @@ fn assert_workspace_identity(runtime: &Runtime<State>, expected: &Path) {
     assert_eq!(
         shown.as_deref(),
         Some(label.as_ref()),
-        "Workspace header must name the displayed graph's binding"
+        "Workspace header must name the selected analysis folder"
     );
 }
 
@@ -214,11 +214,7 @@ fn compact_failure_and_manual_retry(runtime: &mut Runtime<State>, project: &Path
     runtime.set_system_dark(true);
 }
 
-fn deleted_selection_and_project_switch(
-    runtime: &mut Runtime<State>,
-    project: &Path,
-    other: &Path,
-) {
+fn deleted_selection_and_manual_retry(runtime: &mut Runtime<State>, project: &Path) {
     source(project, 3, false);
     drop(analyze_existing(project));
     let epoch = runtime.state.epoch;
@@ -231,21 +227,151 @@ fn deleted_selection_and_project_switch(
     runtime.update(|state, _| state.fit_graph());
     capture_state(runtime, "fitted-view");
     compact_failure_and_manual_retry(runtime, project);
-    drop(analyze(other));
-    runtime.update(|state, _| state.discover_root());
-    settle(runtime, |state| !state.targets.is_empty());
-    click(runtime, "analyze");
+}
+
+fn assert_graphless(state: &State) {
+    assert!(
+        state.graph.is_none() && state.query_context.is_none() && state.generation.is_none(),
+        "The previous graph and its binding must be released"
+    );
+    assert!(state.graph_view.nodes.is_empty());
+    assert!(
+        state.back.is_empty() && state.forward.is_empty() && state.nav.selected.is_none(),
+        "The previous graph's navigation must be cleared"
+    );
+}
+
+fn select_folder(runtime: &mut Runtime<State>, project: &Path) {
+    runtime.update(|state, _| state.select_recent_project(project.to_string_lossy().into_owned()));
+    runtime.frame(1.0 / 60.0);
+    assert_workspace_identity(runtime, project);
+}
+
+fn switch_to_graphless(runtime: &mut Runtime<State>, graphless: &Path) {
+    runtime.update(|state, _| {
+        state.select_recent_project(graphless.to_string_lossy().into_owned());
+        assert_graphless(state);
+    });
+    runtime.frame(1.0 / 60.0);
+    assert_workspace_identity(runtime, graphless);
+    assert!(runtime.find("graph-node-0").is_none());
     settle(runtime, |state| {
-        !state.analyzing
+        !state.targets.is_empty() && !state.project_open.loading()
+    });
+    assert_graphless(&runtime.state);
+    assert!(
+        runtime.state.warning.is_empty(),
+        "{}",
+        runtime.state.warning
+    );
+    assert!(
+        !graphless
+            .join(codecallnavigator::artifact::GRAPH_PATH)
+            .exists()
+    );
+    capture_state(runtime, "graphless-project");
+    click(runtime, "project-picker-trigger");
+    super::settle_revealed_control(runtime);
+    assert!(runtime.elements().iter().any(|element| {
+        element.key.as_deref() == Some("analyze")
+            && element.label.as_deref() == Some("Generate graph")
+            && element.focusable
+    }));
+    super::dismiss_control_surface(runtime);
+}
+
+fn reopen_saved_graph(runtime: &mut Runtime<State>, project: &Path, graphless: &Path) {
+    let manifest = project.join(codecallnavigator::artifact::GRAPH_PATH);
+    let saved = fs::read(&manifest).unwrap();
+    runtime.update(|state, _| {
+        for folder in [project, graphless, project] {
+            state.select_recent_project(folder.to_string_lossy().into_owned());
+            assert_graphless(state);
+        }
+    });
+    runtime.frame(1.0 / 60.0);
+    assert_workspace_identity(runtime, project);
+    settle(runtime, |state| {
+        state.view_is_current()
+            && !state.analyzing
+            && !state.targets.is_empty()
             && state
                 .query_context
                 .as_ref()
-                .is_some_and(|context| context.descriptor.project == other)
+                .is_some_and(|context| context.descriptor.project == project)
     });
-    assert!(runtime.state.back.is_empty());
-    assert!(runtime.state.forward.is_empty());
-    assert!(runtime.state.nav.selected.is_none());
-    assert_workspace_identity(runtime, other);
+    assert_eq!(fs::read(manifest).unwrap(), saved);
+}
+
+fn same_folder_analysis_preserves_graph(runtime: &mut Runtime<State>, project: &Path) {
+    let graph = runtime.state.graph.clone().unwrap();
+    let generation = runtime.state.generation.clone();
+    let assert_previous_graph = |state: &State| {
+        assert!(Arc::ptr_eq(state.graph.as_ref().unwrap(), &graph));
+        assert_eq!(state.generation, generation);
+        assert!(state.view_is_current() && !state.graph_view.nodes.is_empty());
+    };
+    select_folder(runtime, project);
+    assert_previous_graph(&runtime.state);
+    settle(runtime, |state| {
+        !state.targets.is_empty() && !state.project_job_busy()
+    });
+
+    fs::write(project.join("example.ts"), "export function broken( {\n").unwrap();
+    runtime.update(|state, _| {
+        state.analyze_selected();
+        assert!(state.analyzing);
+        assert_previous_graph(state);
+    });
+    settle(runtime, |state| !state.analyzing);
+    assert!(!runtime.state.warning.is_empty());
+    assert_previous_graph(&runtime.state);
+
+    source(project, 4, true);
+    runtime.update(|state, _| {
+        state.analyze_selected();
+        assert!(state.analyzing);
+        state.cancel_analysis();
+        assert_previous_graph(state);
+    });
+    settle(runtime, |state| !state.analyzing);
+    assert!(runtime.state.warning.to_lowercase().contains("cancel"));
+    assert_previous_graph(&runtime.state);
+    assert_workspace_identity(runtime, project);
+}
+
+fn close_project(runtime: &mut Runtime<State>) {
+    runtime.update(jobs::close);
+    settle(runtime, |state| {
+        state.freshness.stopped()
+            && state.cache_retention.stopped()
+            && !state.jobs.persistence.is_pending()
+    });
+}
+
+fn restart_graphless(cache: PathBuf, project: &Path) {
+    let state = State::new();
+    state.jobs.boot.request(cache, |cache| {
+        jobs::load_boot(cache).map_err(|error| error.to_string())
+    });
+    let mut runtime = Runtime::new(
+        state,
+        crate::view::view,
+        (1420.0, 900.0),
+        rune::Env::new(true, 1.0),
+    );
+    runtime.poll = Some(jobs::poll);
+    settle(&mut runtime, |state| {
+        state.store.is_some() && !state.targets.is_empty() && !state.project_open.loading()
+    });
+    assert_workspace_identity(&runtime, project);
+    assert_graphless(&runtime.state);
+    assert!(
+        runtime.state.warning.is_empty(),
+        "{}",
+        runtime.state.warning
+    );
+    close_project(&mut runtime);
 }
 
 #[test]
@@ -255,13 +381,17 @@ fn actual_cli_freshness_reload_preserves_loaded_binding_camera_and_discards_obso
     let project = directory.path().canonicalize().unwrap();
     let other_directory = tempfile::tempdir().unwrap();
     let other = other_directory.path().canonicalize().unwrap();
+    fs::write(other.join("tsconfig.json"), r#"{"files":["example.ts"]}"#).unwrap();
+    source(&other, 1, false);
     let cache = tempfile::tempdir().unwrap();
     let mut runtime = desktop(analyze(&project), &project);
+    runtime.state.project_open.folder = Some(project.to_string_lossy().into_owned());
     assert_workspace_identity(&runtime, &project);
     runtime.update(|state, _| {
         state.root = rune::TextEdit::new(other.to_string_lossy());
         state.root_edited();
     });
+    runtime.frame(1.0 / 60.0);
     assert_workspace_identity(&runtime, &project);
     runtime.state.store = Some(Arc::new(
         codecallnavigator::store::SqliteStore::open(cache.path()).unwrap(),
@@ -270,13 +400,13 @@ fn actual_cli_freshness_reload_preserves_loaded_binding_camera_and_discards_obso
     wait_observation(&mut runtime);
     preserve_context_across_publication(&mut runtime, &project, &symbol);
     legacy_saved_graph_is_unverifiable(&mut runtime, &project);
-    deleted_selection_and_project_switch(&mut runtime, &project, &other);
-    runtime.update(jobs::close);
-    settle(&mut runtime, |state| {
-        state.freshness.stopped()
-            && state.cache_retention.stopped()
-            && !state.jobs.persistence.is_pending()
-    });
+    deleted_selection_and_manual_retry(&mut runtime, &project);
+    switch_to_graphless(&mut runtime, &other);
+    reopen_saved_graph(&mut runtime, &project, &other);
+    same_folder_analysis_preserves_graph(&mut runtime, &project);
+    switch_to_graphless(&mut runtime, &other);
+    close_project(&mut runtime);
+    restart_graphless(cache.path().into(), &other);
 }
 
 #[test]
@@ -313,6 +443,7 @@ fn actual_cli_automatic_refresh_requires_opt_in_and_preserves_loaded_context() {
     let snapshot = analyze(&project);
     let original = snapshot.context.descriptor.generation.clone();
     let mut runtime = desktop(snapshot, pending.path());
+    runtime.state.project_open.folder = Some(project.to_string_lossy().into_owned());
     wait_observation(&mut runtime);
     source(&project, 2, true);
     settle(&mut runtime, |state| state.freshness.is_stale());
@@ -368,7 +499,7 @@ fn actual_cli_automatic_refresh_adopts_first_graph_and_keeps_inferred_roots() {
     let (project, shared) = fresh_project_with_linked_source(fixture.path());
     let mut ui = desktop_without_graph(&project);
     settle(&mut ui, |state| {
-        state.targets.iter().any(|choice| choice.selected)
+        !state.project_open.loading() && state.targets.iter().any(|choice| choice.selected)
     });
     click(&mut ui, "freshness-auto-toggle");
     settle(&mut ui, |state| {
@@ -469,8 +600,7 @@ fn fresh_project_with_linked_source(base: &Path) -> (PathBuf, PathBuf) {
 fn desktop_without_graph(project: &Path) -> Runtime<State> {
     let mut state = State::new();
     state.runtime = Some(Arc::new(crate::runtime::Runtime::discover().unwrap()));
-    state.root = rune::TextEdit::new(project.to_string_lossy());
-    state.discover_root();
+    state.open_project(project.to_string_lossy().into_owned());
     let mut runtime = Runtime::new(
         state,
         crate::view::view,
@@ -514,7 +644,6 @@ fn manual_analysis_waits_for_automatic_cleanup(runtime: &mut Runtime<State>, pro
     let engine = crate::runtime::Runtime::discover().unwrap();
     let targets = crate::engine_client::discover(&engine, project).unwrap();
     runtime.update(|state, _| {
-        state.root = rune::TextEdit::new(project.to_string_lossy());
         state.targets = targets
             .into_iter()
             .map(|target| crate::app::TargetChoice {

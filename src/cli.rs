@@ -130,7 +130,6 @@ fn run(paths: Vec<PathBuf>, layers: layers::Arguments, project: Option<PathBuf>)
     let targets = discover(paths, &runtime)?;
     let cancelled = AtomicBool::new(false);
     let selected_targets = targets.clone();
-    let saved_root = project.clone();
     let snapshot = crate::engine_client::analyze_snapshot(
         &runtime,
         crate::engine_client::Analysis { project, targets },
@@ -147,11 +146,35 @@ fn run(paths: Vec<PathBuf>, layers: layers::Arguments, project: Option<PathBuf>)
         .generation
         .as_deref()
         .context("CLI omitted generation")?;
+    save_analyzed_workspace(&store, &snapshot, presentation_cache, &selected_targets)?;
+    println!(
+        "Published {generation}: {} symbols, {} relationships",
+        graph.nodes.len(),
+        graph.edges.len()
+    );
+    for diagnostic in &graph.diagnostics {
+        eprintln!("Analysis note: {diagnostic}");
+    }
+    Ok(())
+}
+
+fn save_analyzed_workspace(
+    store: &SqliteStore,
+    snapshot: &crate::engine_client::Snapshot,
+    presentation_cache: crate::presentation_cache::PresentationCache,
+    selected_targets: &[discovery::BuildTarget],
+) -> Result<()> {
     let mut session = store
         .load_session()?
         .and_then(|value| serde_json::from_value::<crate::app::SavedSession>(value).ok())
         .unwrap_or_default();
-    session.root = saved_root.to_string_lossy().into_owned();
+    session.root = snapshot
+        .context
+        .descriptor
+        .project
+        .to_string_lossy()
+        .into_owned();
+    session.active_folder = Some(session.root.clone());
     session.graph_context = Some(snapshot.context.descriptor.clone());
     session.presentation_cache = Some(presentation_cache);
     session.selected_builds = selected_targets
@@ -164,16 +187,7 @@ fn run(paths: Vec<PathBuf>, layers: layers::Arguments, project: Option<PathBuf>)
             .map(|target| target.identity())
             .collect(),
     );
-    crate::workspace::save_session(&store, serde_json::to_value(session)?)?;
-    println!(
-        "Published {generation}: {} symbols, {} relationships",
-        graph.nodes.len(),
-        graph.edges.len()
-    );
-    for diagnostic in &graph.diagnostics {
-        eprintln!("Analysis note: {diagnostic}");
-    }
-    Ok(())
+    crate::workspace::save_session(store, serde_json::to_value(session)?)
 }
 
 fn discover(

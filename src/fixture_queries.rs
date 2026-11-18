@@ -96,6 +96,7 @@ pub fn cached_boot(directory: std::path::PathBuf) -> anyhow::Result<crate::works
         graph,
         session,
         editable_root: None,
+        active_folder: None,
         runtime: Arc::new(crate::runtime::Runtime::discover()?),
         warnings: Vec::new(),
     })

@@ -5,18 +5,27 @@ use rune::{Align, El, Side, col, el, icon, row, text};
 use rune_kit::{Button, ButtonVariant, ControlSize, Kit, TextInput, glyphs, popover};
 
 pub(super) fn button(state: &State, k: &Kit) -> El {
-    let displayed = state
-        .query_context
-        .as_ref()
-        .map(|context| context.descriptor.project.to_string_lossy().into_owned())
+    let path = state
+        .project_open
+        .folder
+        .as_deref()
         .or_else(|| {
             state
-                .graph
+                .query_context
                 .as_ref()
-                .and_then(|graph| graph.data.roots.first().cloned())
+                .and_then(|context| context.descriptor.project.to_str())
         })
-        .unwrap_or_else(|| state.root.text.trim().to_owned());
-    let path = displayed.as_str();
+        .unwrap_or_else(|| {
+            if state.uses_fixture_queries() {
+                state
+                    .graph
+                    .as_ref()
+                    .and_then(|graph| graph.data.roots.first())
+                    .map_or(state.root.text.trim(), String::as_str)
+            } else {
+                ""
+            }
+        });
     let title = std::path::Path::new(path)
         .file_name()
         .and_then(|name| name.to_str())
@@ -145,7 +154,9 @@ fn repository(state: &State, k: &Kit) -> El {
                     s.root_edited();
                     s.ui.overlay = Some(Overlay::Projects);
                 })
-                .on_submit(|s: &mut State, _| s.discover_root())
+                .on_submit(|s: &mut State, _| {
+                    s.open_project(s.root.text.clone());
+                })
                 .build(k)
                 .key("root-path"),
         )
@@ -155,7 +166,9 @@ fn repository(state: &State, k: &Kit) -> El {
 fn analysis_help(state: &State) -> &'static str {
     if state.jobs.boot.is_pending() {
         "Opening the saved workspace…"
-    } else if state.analyzing {
+    } else if state.project_open.loading() {
+        "Opening the saved graph…"
+    } else if state.analyzing && state.graph.is_some() {
         "Analyzing selected builds; the previous graph remains available."
     } else if state.targets.iter().all(|t| !t.selected) {
         "Select one or more builds, then generate or refresh the graph."

@@ -22,10 +22,12 @@ impl State {
                 },
             )
         } else {
-            if self.root.text.trim().is_empty() {
-                return Err("Choose a project folder first".into());
-            }
-            QueryContext::for_project(runtime, self.root.text.clone().into())
+            let folder = self
+                .project_open
+                .folder
+                .as_deref()
+                .ok_or("Choose a project folder first")?;
+            QueryContext::for_project(runtime, folder.into())
         };
         self.flow_comparison.open(Project {
             context,

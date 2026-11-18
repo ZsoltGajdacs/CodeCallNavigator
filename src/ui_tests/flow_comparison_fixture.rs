@@ -33,6 +33,7 @@ pub(super) fn runtime(
     fs::remove_file(root.join(artifact::GRAPH_PATH)).unwrap();
     let mut state = State::new();
     state.root = rune::TextEdit::new(root.to_string_lossy());
+    state.project_open.folder = Some(state.root.text.clone());
     state.runtime = Some(std::sync::Arc::new(
         crate::runtime::Runtime::discover().unwrap(),
     ));

@@ -448,7 +448,7 @@ fn a_late_discovery_result_cannot_populate_builds_for_a_different_root() {
     runtime.frame(1.0 / 60.0);
     assert!(runtime.state.targets.is_empty());
     assert_eq!(runtime.state.root.text, "/project/B");
-    assert!(runtime.state.status.contains("Folder changed"));
+    assert!(runtime.state.warning.is_empty());
 }
 
 #[test]
@@ -690,8 +690,9 @@ fn restore_discovered_builds(
     runtime: &mut Runtime<State>,
     session: &crate::navigation::SavedSession,
 ) {
-    runtime.state.root_edited();
+    runtime.state.reset_build_discovery();
     runtime.state.root = rune::TextEdit::new(&session.root);
+    runtime.state.project_open.folder = Some(session.root.clone());
     runtime.state.saved_builds = session.selected_builds.clone();
     runtime.state.saved_targets = session.selected_targets.clone();
     runtime.state.discover_root();

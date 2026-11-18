@@ -22,12 +22,7 @@ pub(crate) fn restore(projects: Vec<String>, root: &str) -> Vec<String> {
 
 impl crate::app::State {
     pub(crate) fn select_recent_project(&mut self, root: String) {
-        if self.project_job_busy() {
-            return;
-        }
-        self.root = rune::TextEdit::new(root);
-        self.root_edited();
-        self.discover_root();
+        self.open_project(root);
     }
 }
 

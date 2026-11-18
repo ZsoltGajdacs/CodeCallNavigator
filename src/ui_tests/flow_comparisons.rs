@@ -36,6 +36,7 @@ pub(super) fn project_runtime(dark: bool) -> (Runtime<State>, tempfile::TempDir)
     crate::flow_comparison::tests::project(project.path());
     let mut state = State::new();
     state.root = rune::TextEdit::new(project.path().to_string_lossy());
+    state.project_open.folder = Some(state.root.text.clone());
     state.runtime = Some(std::sync::Arc::new(
         crate::runtime::Runtime::discover().unwrap(),
     ));

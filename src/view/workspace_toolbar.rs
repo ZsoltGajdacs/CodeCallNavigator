@@ -86,7 +86,7 @@ pub(super) fn analysis_action(state: &State, k: &Kit) -> El {
         })
         .variant(ButtonVariant::Outline)
         .disabled(
-            state.project_job_busy()
+            state.analysis_job_busy()
                 || state.store.is_none()
                 || state.targets.iter().all(|t| !t.selected),
         )

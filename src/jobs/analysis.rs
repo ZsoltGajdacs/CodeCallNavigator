@@ -9,7 +9,7 @@ pub struct Output {
 
 impl State {
     pub fn analyze_selected(&mut self) {
-        if self.project_job_busy() {
+        if self.analysis_job_busy() {
             return;
         }
         let Some(selection) = self.selected_analysis() else {
@@ -25,16 +25,14 @@ impl State {
     }
 
     pub(crate) fn selected_analysis(&self) -> Option<engine_client::Analysis> {
+        let project = PathBuf::from(self.project_open.folder.as_deref()?);
         let targets: Vec<_> = self
             .targets
             .iter()
             .filter(|choice| choice.selected)
             .map(|choice| choice.target.clone())
             .collect();
-        (!targets.is_empty()).then(|| engine_client::Analysis {
-            project: PathBuf::from(self.root.text.trim()),
-            targets,
-        })
+        (!targets.is_empty()).then_some(engine_client::Analysis { project, targets })
     }
 
     pub(crate) fn start_selected_analysis(&mut self, selection: engine_client::Analysis) {
@@ -93,7 +91,12 @@ pub(super) fn poll_analysis(state: &mut State) -> bool {
         }
         Err(error) => {
             state.warning = error;
-            state.status = "Analysis did not complete; the previous graph is preserved".into();
+            state.status = if state.graph.is_some() {
+                "Analysis did not complete; the previous graph is preserved"
+            } else {
+                "Analysis did not complete"
+            }
+            .into();
         }
     }
     true

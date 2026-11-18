@@ -10,7 +10,7 @@ use codecallnavigator::{
     freshness::FreshnessObservation,
     refresh::{self, Activity, ObserveSession, Phase, SessionRequest},
 };
-use std::{path::Path, sync::atomic::Ordering};
+use std::sync::atomic::Ordering;
 use worker::{Mode, Worker};
 
 #[derive(Default)]
@@ -71,10 +71,7 @@ impl Pending {
 
 impl Workspace {
     fn start(&mut self, context: QueryContext, wake: Option<rune::Waker>) {
-        self.stop();
-        if let Some(worker) = self.worker.take() {
-            self.retired.push(worker);
-        }
+        self.retire_worker();
         self.retired_cleanup();
         self.publication = None;
         if self.binding.as_ref() != Some(&context.descriptor) {
@@ -140,6 +137,32 @@ impl Workspace {
             worker.cancel.store(true, Ordering::Release);
         }
     }
+
+    fn retire_worker(&mut self) {
+        self.stop();
+        if let Some(worker) = self.worker.take() {
+            self.retired.push(worker);
+        }
+    }
+
+    pub(crate) fn clear_project(&mut self) {
+        self.clear_observation();
+        self.build_selection_changed = false;
+        self.manual_pending = None;
+        self.manual_running = false;
+    }
+
+    fn clear_observation(&mut self) {
+        self.retire_worker();
+        self.selected = None;
+        self.publication = None;
+        self.automatic = Default::default();
+        self.automatic_worker = false;
+        self.binding = None;
+        self.status = Status::Idle;
+        self.last = None;
+    }
+
     pub fn cancel_pending_manual(&mut self) -> bool {
         let cancelled = self.manual_pending.take().is_some();
         if cancelled {
@@ -351,7 +374,7 @@ impl State {
             && (self.automatic_refresh_enabled()
                 || self.query_context.is_some()
                 || (self.runtime.is_some()
-                    && !self.project_job_busy()
+                    && !self.analysis_job_busy()
                     && self.targets.iter().any(|choice| choice.selected)))
     }
 
@@ -380,7 +403,7 @@ impl State {
     fn selected_refresh_to_start(
         &self,
     ) -> Option<(Analysis, std::sync::Arc<crate::runtime::Runtime>)> {
-        if self.automatic_refresh_enabled() || self.project_job_busy() {
+        if self.automatic_refresh_enabled() || self.analysis_job_busy() {
             return None;
         }
         if !self.refresh_uses_selected_builds() {
@@ -390,11 +413,7 @@ impl State {
     }
 
     pub(crate) fn refresh_uses_selected_builds(&self) -> bool {
-        let different_project = self
-            .query_context
-            .as_ref()
-            .is_none_or(|context| context.descriptor.project != Path::new(self.root.text.trim()));
-        (different_project || self.freshness.build_selection_changed)
+        (self.query_context.is_none() || self.freshness.build_selection_changed)
             && self.targets.iter().any(|choice| choice.selected)
     }
 
@@ -409,9 +428,10 @@ impl State {
 
     fn authorized_picker_project(&self) -> Option<Descriptor> {
         let descriptor = &self.query_context.as_ref()?.descriptor;
-        let picker_project = Path::new(self.root.text.trim());
-        let authorized = self.freshness.automatic.enabled(&descriptor.project);
-        (descriptor.project == picker_project && authorized).then(|| descriptor.clone())
+        self.freshness
+            .automatic
+            .enabled(&descriptor.project)
+            .then(|| descriptor.clone())
     }
 
     fn start_selected_refresh(&mut self, selection: Analysis, runtime: &crate::runtime::Runtime) {
@@ -435,20 +455,12 @@ impl State {
     }
 
     pub(crate) fn stop_selected_refresh(&mut self) -> bool {
-        if self.freshness.selected.take().is_none() {
+        if self.freshness.selected.is_none() {
             return false;
         }
         self.reload.stop();
         self.reload.job.cancel();
-        self.freshness.stop();
-        if let Some(worker) = self.freshness.worker.take() {
-            self.freshness.retired.push(worker);
-        }
-        self.freshness.publication = None;
-        self.freshness.automatic = Default::default();
-        self.freshness.binding = None;
-        self.freshness.status = Status::Idle;
-        self.freshness.last = None;
+        self.freshness.clear_observation();
         true
     }
 

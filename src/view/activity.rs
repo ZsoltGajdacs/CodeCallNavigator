@@ -161,7 +161,7 @@ fn work(state: &State, automatic_enabled: bool) -> Work {
 }
 
 fn graph_work(state: &State) -> Work {
-    if state.reload.job.is_pending() {
+    if state.project_open.loading() || state.reload.job.is_pending() {
         Work::Reload
     } else if state.jobs.layout.is_pending() || state.needs_layout {
         Work::Layout

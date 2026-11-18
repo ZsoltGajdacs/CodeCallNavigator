@@ -8216,10 +8216,10 @@
       "purpose": "rescan keeps deselections and defaults new targets"
     },
     {
-      "id": "codecallnavigator/bin:codecallnavigator::build_discovery::tests::root_edit_clears_discovery_error_but_keeps_unrelated_warning",
+      "id": "codecallnavigator/bin:codecallnavigator::build_discovery::tests::discovery_reset_clears_discovery_error_but_keeps_unrelated_warning",
       "runner": "rust",
       "file": "src/build_discovery.rs",
-      "test_name": "build_discovery::tests::root_edit_clears_discovery_error_but_keeps_unrelated_warning",
+      "test_name": "build_discovery::tests::discovery_reset_clears_discovery_error_but_keeps_unrelated_warning",
       "ignored": false,
       "package": "codecallnavigator",
       "target_kind": "bin",
@@ -12089,7 +12089,7 @@
         "node",
         "typescript"
       ],
-      "purpose": "actual cli freshness reload preserves loaded binding camera and discards obsolete jobs"
+      "purpose": "Real CLI and Rune workspace adoption preserves same-folder navigation and refresh, switches immediately to a saved or graphless folder, rejects superseded work, and restores the graphless selection on restart."
     },
     {
       "id": "codecallnavigator/bin:codecallnavigator::ui_tests::cli_freshness::automatic_refresh_is_an_explicit_loaded_project_action",

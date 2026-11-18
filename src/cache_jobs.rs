@@ -19,17 +19,21 @@ impl State {
     }
 
     pub(crate) fn can_clear_cache(&self) -> bool {
-        !self.project_job_busy() && self.runtime.is_some() && !self.root.text.trim().is_empty()
+        !self.project_job_busy() && self.runtime.is_some() && self.project_open.folder.is_some()
+    }
+
+    pub(crate) fn analysis_job_busy(&self) -> bool {
+        self.project_job_busy() || self.project_open.loading()
     }
 
     pub(crate) fn clear_cache(&mut self) {
         if !self.can_clear_cache() {
             return;
         }
-        let Some(runtime) = self.runtime.clone() else {
+        let (Some(runtime), Some(root)) = (self.runtime.clone(), self.project_open.folder.clone())
+        else {
             return;
         };
-        let root = self.root.text.trim().to_owned();
         self.clearing_cache = true;
         self.warning.clear();
         self.status = "Clearing project analysis cache…".into();
@@ -46,8 +50,7 @@ pub(crate) fn poll(state: &mut State) -> bool {
         return false;
     };
     state.clearing_cache = false;
-    // A folder edit must not make another project's cache look cleared.
-    if output.root != state.root.text.trim() {
+    if state.project_open.folder.as_deref() != Some(output.root.as_str()) {
         if let Err(error) = output.result {
             state.warning = format!("Could not clear cache for {}: {error}", output.root);
         }

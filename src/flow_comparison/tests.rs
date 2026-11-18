@@ -42,6 +42,7 @@ pub(crate) fn project(root: &Path) {
 pub(crate) fn state(root: &Path) -> State {
     let mut state = State::new();
     state.root = rune::TextEdit::new(root.to_string_lossy());
+    state.project_open.folder = Some(state.root.text.clone());
     state.runtime = Some(Arc::new(Runtime::discover().unwrap()));
     state
 }
