@@ -141,7 +141,7 @@ fn presentation(state: &State) -> model::Presentation {
         has_graph: state.graph.is_some(),
         warning,
         status,
-        freshness: &state.freshness.status,
+        freshness: state.freshness.display_status(),
         freshness_message: freshness.as_deref(),
         newer_graph: state
             .freshness

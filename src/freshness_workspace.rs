@@ -299,53 +299,6 @@ impl Workspace {
             .filter(|last| last.contract_valid && last.generation != loaded)
             .map(|last| last.generation.as_str())
     }
-
-    pub fn message(&self, loaded: Option<&str>) -> Option<String> {
-        match &self.status {
-            Status::Idle => None,
-            Status::Checking => Some("Checking saved-input freshness…".into()),
-            Status::Unsupported => {
-                Some("Continuous freshness unavailable · update the CLI or refresh manually".into())
-            }
-            Status::Failed(error) => Some(format!("Freshness check failed · {error}")),
-            Status::Observed(_) if self.new_generation(loaded).is_some() => {
-                Some("A newer saved graph is available".into())
-            }
-            Status::Observed(InputStatus::Match) => {
-                Some("Recorded inputs match · observed scope only".into())
-            }
-            Status::Observed(InputStatus::Stale) => {
-                Some("Source files changed · refresh to update this graph".into())
-            }
-            Status::Observed(InputStatus::Unverifiable) => Some(format!(
-                "Saved inputs are unverifiable · {}",
-                self.reason_context()
-            )),
-        }
-    }
-
-    pub fn attention(&self, loaded: Option<&str>) -> Option<String> {
-        if matches!(self.status, Status::Observed(InputStatus::Match))
-            && self.new_generation(loaded).is_none()
-        {
-            return None;
-        }
-        self.message(loaded)
-    }
-
-    fn reason_context(&self) -> String {
-        self.last
-            .as_ref()
-            .and_then(|last| last.reasons.first())
-            .map(|reason| match &reason.path {
-                Some(path) => format!(
-                    "{}: {path} · open details for the cause and recovery",
-                    reason.code
-                ),
-                None => format!("{} · open details for the cause and recovery", reason.code),
-            })
-            .unwrap_or_else(|| "no complete input manifest".into())
-    }
 }
 
 impl State {

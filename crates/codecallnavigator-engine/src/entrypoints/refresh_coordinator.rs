@@ -227,11 +227,15 @@ fn incomplete_details(
     let reasons = trigger.map_or(observation.reasons.as_slice(), |value| {
         value.report.reasons.as_slice()
     });
+    let blockers = reasons
+        .iter()
+        .filter(|reason| reason.is_blocker() && reason.code != "unmapped_input")
+        .collect::<Vec<_>>();
     let mut message = String::from(
         "Automatic refresh is blocked because required input coverage is incomplete. The previous graph remains available.\n",
     );
     let mut retained = 0;
-    for reason in reasons.iter().filter(|reason| reason.is_blocker()) {
+    for reason in &blockers {
         let detail = reason.describe();
         // Leave room for the omitted-count and recovery explanation within the
         // activity error limit. Full reasons remain available through verify.
@@ -242,7 +246,7 @@ fn incomplete_details(
         message.push('\n');
         retained += 1;
     }
-    let total = reasons.iter().filter(|reason| reason.is_blocker()).count();
+    let total = blockers.len();
     let omitted = total - retained
         + if trigger.is_none() {
             observation.omitted_reasons
@@ -315,16 +319,21 @@ mod tests {
         let mut observation = incomplete_public();
         observation
             .reasons
+            .push(artifact::verification::Reason::new("unmapped_input", None));
+        observation
+            .reasons
             .push(artifact::verification::Reason::new(
                 "unreadable_input",
                 Some("@repo/.required/source.java".into()),
             ));
-        observation.reasons_total = 1;
+        observation.reasons_total = 2;
         let details = incomplete_details(&observation, None);
         assert!(details.contains("@repo/.required/source.java"));
         assert!(details.contains("permissions"));
         assert!(details.contains("does not rebuild"));
         assert!(details.contains("previous graph remains available"));
+        assert!(!details.contains("unmapped_input"));
+        assert!(!details.contains("further reasons omitted"));
     }
 
     #[test]
