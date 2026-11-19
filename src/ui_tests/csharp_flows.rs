@@ -8,31 +8,20 @@ use crate::{
     app::State, engine_client, flow_workspace::Session, graph_interaction::SelectionAction,
 };
 use rune::Runtime;
-use std::{fs, path::PathBuf, sync::atomic::AtomicBool};
+use std::{
+    fs,
+    path::{Path, PathBuf},
+    sync::atomic::AtomicBool,
+};
 
 const SOURCE: &[u8] = include_bytes!("../../fixtures/flow/csharp-desktop/Example.cs");
 const PROJECT: &[u8] = include_bytes!("../../fixtures/flow/csharp-desktop/DesktopFlow.csproj");
 
-struct Fixture {
-    _directory: tempfile::TempDir,
-    project: PathBuf,
-}
-
-impl Fixture {
-    fn new() -> Self {
-        let directory = tempfile::tempdir().unwrap();
-        let project = directory.path().canonicalize().unwrap();
-        fs::write(project.join("DesktopFlow.csproj"), PROJECT).unwrap();
-        fs::write(project.join("Example.cs"), SOURCE).unwrap();
-        Self {
-            _directory: directory,
-            project,
-        }
-    }
-
-    fn desktop(&self) -> Runtime<State> {
-        desktop(analyze_existing(&self.project), &self.project)
-    }
+fn open_snapshot(project: &Path) -> engine_client::Snapshot {
+    let runtime = crate::runtime::Runtime::discover().unwrap();
+    engine_client::QueryContext::for_project(&runtime, project.into())
+        .snapshot(&AtomicBool::new(false))
+        .unwrap()
 }
 
 fn session(runtime: &Runtime<State>) -> &Session {
@@ -237,9 +226,24 @@ fn navigate_target_and_back(runtime: &mut Runtime<State>, leaf: &str, step: usiz
 
 #[test]
 #[ignore = "requires built CLI, .NET11 SDK and Graphviz; optional captures require Metal"]
-fn real_csharp_controls_keep_exact_source_cleanup_targets_and_history() {
-    let fixture = Fixture::new();
-    let mut runtime = fixture.desktop();
+fn real_csharp_desktop_flows_reuse_one_analysis() {
+    let directory = tempfile::tempdir().unwrap();
+    let project = directory.path().canonicalize().unwrap();
+    fs::write(project.join("DesktopFlow.csproj"), PROJECT).unwrap();
+    let source = project.join("Example.cs");
+    fs::write(&source, SOURCE).unwrap();
+
+    exact_source_cleanup_targets_and_history(desktop(analyze_existing(&project), &project));
+    cached_source_partial_flow_and_missing_body(
+        desktop(open_snapshot(&project), &project),
+        &source,
+    );
+    // Restore live inputs for dispatch. Replacing the published inventory is the final scenario.
+    fs::write(&source, SOURCE).unwrap();
+    possible_dispatch_and_old_inventory(&project);
+}
+
+fn exact_source_cleanup_targets_and_history(mut runtime: Runtime<State>) {
     let run = symbol(&runtime, "Example::Run(System.Boolean,DesktopFlow.IWorker)");
     let leaf = symbol(&runtime, "Example::Leaf(System.Int32)");
     open(&mut runtime, &run);
@@ -284,21 +288,13 @@ fn real_csharp_controls_keep_exact_source_cleanup_targets_and_history() {
     );
 }
 
-#[test]
-#[ignore = "requires built CLI, .NET11 SDK and Graphviz"]
-fn real_csharp_cached_source_partial_flow_and_missing_body_remain_explicit() {
-    let fixture = Fixture::new();
-    let mut runtime = fixture.desktop();
+fn cached_source_partial_flow_and_missing_body(mut runtime: Runtime<State>, source: &Path) {
     let run = symbol(&runtime, "Example::Run(System.Boolean,DesktopFlow.IWorker)");
-    fs::write(
-        fixture.project.join("Example.cs"),
-        "// a different live file\n",
-    )
-    .unwrap();
+    fs::write(source, "// a different live file\n").unwrap();
     open(&mut runtime, &run);
     exact_snapshot(&runtime);
     click(&mut runtime, "flow-close");
-    fs::remove_file(fixture.project.join("Example.cs")).unwrap();
+    fs::remove_file(source).unwrap();
     let suspended = symbol(&runtime, "Example::Suspended()");
     open(&mut runtime, &suspended);
     let ready = session(&runtime).ready.as_ref().unwrap();
@@ -346,11 +342,8 @@ fn real_csharp_cached_source_partial_flow_and_missing_body_remain_explicit() {
     );
 }
 
-#[test]
-#[ignore = "requires built CLI, .NET11 SDK and Graphviz"]
-fn real_csharp_possible_dispatch_and_old_inventory_keep_uncertainty_and_refresh_guidance() {
-    let fixture = Fixture::new();
-    let mut runtime = fixture.desktop();
+fn possible_dispatch_and_old_inventory(project: &Path) {
+    let mut runtime = desktop(open_snapshot(project), project);
     let run = symbol(&runtime, "Example::Run(System.Boolean,DesktopFlow.IWorker)");
     open(&mut runtime, &run);
     let step = call_step(&runtime, "worker.Work()");
@@ -365,23 +358,15 @@ fn real_csharp_possible_dispatch_and_old_inventory_keep_uncertainty_and_refresh_
     frames(&mut runtime);
     assert!(visible_text(&runtime, "possible"));
     click(&mut runtime, "flow-close");
-    let mut artifact = codecallnavigator::artifact::load(&fixture.project).unwrap();
+    drop(runtime);
+    let mut artifact = codecallnavigator::artifact::load(project).unwrap();
     artifact
         .graph
         .as_object_mut()
         .unwrap()
         .remove("flow_inventory");
-    codecallnavigator::artifact::publish(
-        &fixture.project,
-        &artifact,
-        &std::sync::atomic::AtomicBool::new(false),
-    )
-    .unwrap();
-    let environment = crate::runtime::Runtime::discover().unwrap();
-    let snapshot = engine_client::QueryContext::for_project(&environment, fixture.project.clone())
-        .snapshot(&AtomicBool::new(false))
-        .unwrap();
-    let mut old = desktop(snapshot, &fixture.project);
+    codecallnavigator::artifact::publish(project, &artifact, &AtomicBool::new(false)).unwrap();
+    let mut old = desktop(open_snapshot(project), project);
     select(&mut old, &run);
     click(&mut old, "open-flowchart");
     settle(&mut old, |state| {

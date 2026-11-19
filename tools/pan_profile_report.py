@@ -140,9 +140,7 @@ def valid_gpu_sample(channels):
     return "gpu_sample" in channels and channels.get("gpu_ms", 0) > 0
 
 
-def timing_summary(directory, frames):
-    path = directory / "encoded.jsonl"
-    encoded = read_rows(path) if path.is_file() else []
+def timing_summary(encoded, frames):
     active = {channels.get("sample") for _, channels in frames if channels.get("drag", -1) >= 0}
     encoded = [row for row in encoded if row.get("sample") in active]
     gpu = gpu_samples(frames)
@@ -169,7 +167,16 @@ def summarize(directory, expected_scale=None):
     trace = directory / "native.jsonl"
     if not trace.is_file():
         return {"status": "unavailable", "reason": "No native trace was produced; GPU/window creation may have failed."}
-    rows = read_rows(trace)
+    return summarize_rows(read_rows(trace), expected_scale,
+                          encoded=optional_rows(directory / "encoded.jsonl"))
+
+
+def optional_rows(path):
+    if path.is_file():
+        yield from read_rows(path)
+
+
+def summarize_rows(rows, expected_scale=None, *, encoded=()):
     header = next((row for row in rows if row.get("type") == "header"), {})
     error = validate_header(header)
     if error:
@@ -187,6 +194,6 @@ def summarize(directory, expected_scale=None):
               "startup_header": header,
               "input_model": "Synthetic pointer events queued through production Runtime drag handlers; OS mouse delivery is not measured.",
               "drags": drags}
-    result.update(timing_summary(directory, frames))
+    result.update(timing_summary(encoded, frames))
     availability(result, frames)
     return result

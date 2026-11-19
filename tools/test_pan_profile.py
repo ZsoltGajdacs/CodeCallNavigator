@@ -16,7 +16,7 @@ class NativeAcceptance(unittest.TestCase):
             binary.write_bytes(b"native-release-binary")
             self.assertEqual(pan_profile.binary_hash(binary), hashlib.sha256(binary.read_bytes()).hexdigest())
 
-    def trace(self, directory, **options):
+    def trace(self, **options):
         fps = options.get("fps", 60)
         clock = options.get("clock", "wall")
         moving = options.get("moving", True)
@@ -36,22 +36,27 @@ class NativeAcceptance(unittest.TestCase):
                 if presents:
                     row["present_ms"] = row["t"] + 8
                 rows.append(row)
-        (directory / "native.jsonl").write_text("\n".join(json.dumps(row) for row in rows))
+        return rows
 
     def evaluate(self, **kwargs):
-        with tempfile.TemporaryDirectory() as temporary:
-            directory = Path(temporary)
-            self.trace(directory, **kwargs)
-            return pan_profile.summarize(directory)
+        return pan_profile_report.summarize_rows(self.trace(**kwargs))
 
     def evaluate_modified(self, mutate, expected_scale=None):
+        rows = self.trace()
+        mutate(rows)
+        return pan_profile_report.summarize_rows(rows, expected_scale)
+
+    def test_report_loads_native_and_optional_encoded_traces(self):
         with tempfile.TemporaryDirectory() as temporary:
             directory = Path(temporary)
-            self.trace(directory)
-            rows = pan_profile.read_rows(directory / "native.jsonl")
-            mutate(rows)
-            (directory / "native.jsonl").write_text("\n".join(json.dumps(row) for row in rows))
-            return pan_profile.summarize(directory, expected_scale)
+            self.assertEqual(pan_profile.summarize(directory)["status"], "unavailable")
+            native = directory / "native.jsonl"
+            native.write_text("\n".join(json.dumps(row) for row in self.trace()))
+            report = pan_profile.summarize(directory)
+            self.assertEqual(report["status"], "passed")
+            self.assertEqual(report["update_ms"]["samples"], 0)
+            (directory / "encoded.jsonl").write_text(json.dumps({"sample": 1, "update_ms": 2}))
+            self.assertEqual(pan_profile.summarize(directory)["update_ms"]["median"], 2)
 
     def test_native_changed_camera_at_sixty_fps_passes(self):
         result = self.evaluate()
@@ -85,10 +90,7 @@ class NativeAcceptance(unittest.TestCase):
         self.assertLess(result["drags"][0]["fps"], 30)
 
     def test_native_scale_must_match_the_requested_monitor(self):
-        with tempfile.TemporaryDirectory() as temporary:
-            directory = Path(temporary)
-            self.trace(directory)
-            self.assertEqual(pan_profile.summarize(directory, 1)["status"], "invalid")
+        self.assertEqual(pan_profile_report.summarize_rows(self.trace(), 1)["status"], "invalid")
 
     def test_live_surface_scale_and_size_override_the_startup_header(self):
         result = self.evaluate_modified(lambda rows: rows[0].update(scale=1, width=800, height=600), 2)

@@ -1981,7 +1981,7 @@
       "target_kind": "test",
       "target": "architecture",
       "component": "core",
-      "category": "integration",
+      "category": "unit",
       "requirements": [],
       "purpose": "build relative rules keep dotted java directory names"
     },
@@ -2051,7 +2051,7 @@
       "target_kind": "test",
       "target": "architecture",
       "component": "core",
-      "category": "integration",
+      "category": "unit",
       "requirements": [],
       "purpose": "native semantic rules are conjunctive first match and normalize attributes"
     },
@@ -2149,7 +2149,7 @@
       "target_kind": "test",
       "target": "artifact_flows",
       "component": "core",
-      "category": "integration",
+      "category": "unit",
       "requirements": [],
       "purpose": "ordinary flow response and error are preserved"
     },
@@ -2163,7 +2163,7 @@
       "target_kind": "test",
       "target": "artifact_flows",
       "component": "core",
-      "category": "integration",
+      "category": "unit",
       "requirements": [],
       "purpose": "ordinary flow source limit build and availability errors are preserved"
     },
@@ -2275,7 +2275,7 @@
       "target_kind": "test",
       "target": "artifact_flows",
       "component": "core",
-      "category": "integration",
+      "category": "unit",
       "requirements": [],
       "purpose": "unicode bom crlf flow matches current query after explicit owner rebasing"
     },
@@ -2401,7 +2401,7 @@
       "target_kind": "test",
       "target": "boundaries",
       "component": "core",
-      "category": "integration",
+      "category": "unit",
       "requirements": [],
       "purpose": "invalid versions and overlapping client scopes are rejected independent of facts"
     },
@@ -5854,7 +5854,7 @@
       "target_kind": "lib",
       "target": "codecallnavigator_engine",
       "component": "engine",
-      "category": "integration",
+      "category": "unit",
       "requirements": [],
       "purpose": "invalid utf8 in header or body is rejected"
     },
@@ -8565,7 +8565,7 @@
       "target_kind": "bin",
       "target": "codecallnavigator",
       "component": "ui",
-      "category": "integration",
+      "category": "unit",
       "requirements": [],
       "purpose": "rendering paints dim strokes and arrows before incident edges"
     },
@@ -12320,10 +12320,10 @@
       "purpose": "corrupt session is recoverable while the cached graph still opens"
     },
     {
-      "id": "codecallnavigator/bin:codecallnavigator::ui_tests::csharp_flows::real_csharp_cached_source_partial_flow_and_missing_body_remain_explicit",
+      "id": "codecallnavigator/bin:codecallnavigator::ui_tests::csharp_flows::real_csharp_desktop_flows_reuse_one_analysis",
       "runner": "rust",
       "file": "src/ui_tests/csharp_flows.rs",
-      "test_name": "ui_tests::csharp_flows::real_csharp_cached_source_partial_flow_and_missing_body_remain_explicit",
+      "test_name": "ui_tests::csharp_flows::real_csharp_desktop_flows_reuse_one_analysis",
       "ignored": true,
       "package": "codecallnavigator",
       "target_kind": "bin",
@@ -12335,43 +12335,7 @@
         "dotnet",
         "graphviz"
       ],
-      "purpose": "real csharp cached source partial flow and missing body remain explicit"
-    },
-    {
-      "id": "codecallnavigator/bin:codecallnavigator::ui_tests::csharp_flows::real_csharp_controls_keep_exact_source_cleanup_targets_and_history",
-      "runner": "rust",
-      "file": "src/ui_tests/csharp_flows.rs",
-      "test_name": "ui_tests::csharp_flows::real_csharp_controls_keep_exact_source_cleanup_targets_and_history",
-      "ignored": true,
-      "package": "codecallnavigator",
-      "target_kind": "bin",
-      "target": "codecallnavigator",
-      "component": "ui",
-      "category": "integration",
-      "requirements": [
-        "cli",
-        "dotnet",
-        "graphviz"
-      ],
-      "purpose": "real csharp controls keep exact source cleanup targets and history"
-    },
-    {
-      "id": "codecallnavigator/bin:codecallnavigator::ui_tests::csharp_flows::real_csharp_possible_dispatch_and_old_inventory_keep_uncertainty_and_refresh_guidance",
-      "runner": "rust",
-      "file": "src/ui_tests/csharp_flows.rs",
-      "test_name": "ui_tests::csharp_flows::real_csharp_possible_dispatch_and_old_inventory_keep_uncertainty_and_refresh_guidance",
-      "ignored": true,
-      "package": "codecallnavigator",
-      "target_kind": "bin",
-      "target": "codecallnavigator",
-      "component": "ui",
-      "category": "integration",
-      "requirements": [
-        "cli",
-        "dotnet",
-        "graphviz"
-      ],
-      "purpose": "real csharp possible dispatch and old inventory keep uncertainty and refresh guidance"
+      "purpose": "Exercise real CLI-backed desktop flow history and exact source, live source edits and deletion, possible dispatch, and legacy inventory guidance with one compiler analysis."
     },
     {
       "id": "codecallnavigator/bin:codecallnavigator::ui_tests::failed_freshness_check_preserves_matching_state_instead_of_claiming_stale",
@@ -20635,7 +20599,7 @@
       "test_name": "test_pan_profile.NativeAcceptance.test_live_surface_scale_and_size_override_the_startup_header",
       "ignored": false,
       "component": "tooling",
-      "category": "integration",
+      "category": "unit",
       "requirements": [],
       "purpose": "test live surface scale and size override the startup header"
     },
@@ -20646,7 +20610,7 @@
       "test_name": "test_pan_profile.NativeAcceptance.test_long_missing_presentation_gap_is_not_hidden_by_cpu_fps",
       "ignored": false,
       "component": "tooling",
-      "category": "integration",
+      "category": "unit",
       "requirements": [],
       "purpose": "test long missing presentation gap is not hidden by cpu fps"
     },
@@ -20657,7 +20621,7 @@
       "test_name": "test_pan_profile.NativeAcceptance.test_multiple_camera_rows_with_the_same_present_time_do_not_pass",
       "ignored": false,
       "component": "tooling",
-      "category": "integration",
+      "category": "unit",
       "requirements": [],
       "purpose": "test multiple camera rows with the same present time do not pass"
     },
@@ -20668,7 +20632,7 @@
       "test_name": "test_pan_profile.NativeAcceptance.test_native_changed_camera_at_sixty_fps_passes",
       "ignored": false,
       "component": "tooling",
-      "category": "integration",
+      "category": "unit",
       "requirements": [],
       "purpose": "test native changed camera at sixty fps passes"
     },
@@ -20679,7 +20643,7 @@
       "test_name": "test_pan_profile.NativeAcceptance.test_native_scale_must_match_the_requested_monitor",
       "ignored": false,
       "component": "tooling",
-      "category": "integration",
+      "category": "unit",
       "requirements": [],
       "purpose": "test native scale must match the requested monitor"
     },
@@ -20690,7 +20654,7 @@
       "test_name": "test_pan_profile.NativeAcceptance.test_no_presentation_timestamps_are_unavailable",
       "ignored": false,
       "component": "tooling",
-      "category": "integration",
+      "category": "unit",
       "requirements": [],
       "purpose": "test no presentation timestamps are unavailable"
     },
@@ -20701,7 +20665,7 @@
       "test_name": "test_pan_profile.NativeAcceptance.test_rare_long_presentation_stall_extends_the_measured_duration",
       "ignored": false,
       "component": "tooling",
-      "category": "integration",
+      "category": "unit",
       "requirements": [],
       "purpose": "test rare long presentation stall extends the measured duration"
     },
@@ -20712,9 +20676,20 @@
       "test_name": "test_pan_profile.NativeAcceptance.test_repeated_idle_camera_cannot_count_as_fps",
       "ignored": false,
       "component": "tooling",
-      "category": "integration",
+      "category": "unit",
       "requirements": [],
       "purpose": "test repeated idle camera cannot count as fps"
+    },
+    {
+      "id": "tools/test_pan_profile.py::NativeAcceptance.test_report_loads_native_and_optional_encoded_traces",
+      "runner": "python",
+      "file": "tools/test_pan_profile.py",
+      "test_name": "test_pan_profile.NativeAcceptance.test_report_loads_native_and_optional_encoded_traces",
+      "ignored": false,
+      "component": "tooling",
+      "category": "integration",
+      "requirements": [],
+      "purpose": "Read native and optional encoded JSONL traces from the report directory and preserve missing-trace behavior."
     },
     {
       "id": "tools/test_pan_profile.py::NativeAcceptance.test_twenty_fps_fails",
@@ -20723,7 +20698,7 @@
       "test_name": "test_pan_profile.NativeAcceptance.test_twenty_fps_fails",
       "ignored": false,
       "component": "tooling",
-      "category": "integration",
+      "category": "unit",
       "requirements": [],
       "purpose": "test twenty fps fails"
     },
@@ -20734,7 +20709,7 @@
       "test_name": "test_pan_profile.NativeAcceptance.test_virtual_clock_never_passes_even_with_present_fields",
       "ignored": false,
       "component": "tooling",
-      "category": "integration",
+      "category": "unit",
       "requirements": [],
       "purpose": "test virtual clock never passes even with present fields"
     },
