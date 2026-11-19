@@ -110,11 +110,15 @@ pub(super) fn log_tail(path: &Path) -> String {
 }
 
 fn read_log_tail(path: &Path) -> std::io::Result<String> {
-    let mut file = File::open(path)?;
+    let file = File::open(path)?;
     let length = file.metadata()?.len();
-    file.seek(SeekFrom::Start(length.saturating_sub(LOG_TAIL_BYTES)))?;
+    read_tail(file, length)
+}
+
+fn read_tail(mut input: impl Read + Seek, length: u64) -> std::io::Result<String> {
+    input.seek(SeekFrom::Start(length.saturating_sub(LOG_TAIL_BYTES)))?;
     let mut bytes = Vec::new();
-    file.take(LOG_TAIL_BYTES).read_to_end(&mut bytes)?;
+    input.take(LOG_TAIL_BYTES).read_to_end(&mut bytes)?;
     Ok(String::from_utf8_lossy(&bytes).into_owned())
 }
 
@@ -124,12 +128,20 @@ mod tests {
 
     #[test]
     fn stderr_tail_is_bounded_and_tolerates_a_split_utf8_character() {
-        let directory = tempfile::tempdir().unwrap();
-        let path = directory.path().join("large.stderr");
-        std::fs::write(&path, format!("{}END", "é".repeat(10000))).unwrap();
-        let tail = log_tail(&path);
+        let input = format!("{}END", "é".repeat(10000));
+        let tail = read_tail(std::io::Cursor::new(input.as_bytes()), input.len() as u64).unwrap();
         assert!(tail.starts_with('\u{fffd}'));
         assert!(tail.ends_with("END"));
         assert!(tail.len() <= LOG_TAIL_BYTES as usize + 2);
+    }
+
+    #[test]
+    fn stderr_tail_reads_real_logs_and_reports_unavailable_paths() {
+        let directory = tempfile::tempdir().unwrap();
+        let path = directory.path().join("process.stderr");
+        std::fs::write(&path, "compiler error\n").unwrap();
+        assert_eq!(log_tail(&path), "compiler error\n");
+        std::fs::remove_file(&path).unwrap();
+        assert!(log_tail(&path).starts_with(&format!("Cannot read {}: ", path.display())));
     }
 }

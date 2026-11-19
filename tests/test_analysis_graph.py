@@ -7,7 +7,10 @@ import tempfile
 import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'tools'))
-from analysis_graph import compare, volatile_generated_hashes
+from analysis_graph import (
+    compare, compare_snapshots, graph_snapshot, snapshot_from_facts,
+    volatile_generated_hashes, volatile_hashes_from_snapshots,
+)
 
 
 class GraphComparisonTest(unittest.TestCase):
@@ -48,6 +51,10 @@ class GraphComparisonTest(unittest.TestCase):
         self.assertTrue(result['equal'])
         self.assertEqual(result['baseline_sha256'], result['current_sha256'])
         self.assertEqual((result['nodes'], result['edges']), (2, 1))
+        edge = graph_snapshot(self.current)['edges'][0]
+        self.assertEqual((edge['from'], edge['to'], edge['provenance']),
+                         ('caller', 'target', 'compiler'))
+        self.assertEqual(volatile_generated_hashes([self.reference, self.current]), set())
 
     def test_changed_label_or_edge_count_is_detected_without_scale_change(self):
         with sqlite3.connect(self.current / 'graph.sqlite3') as connection:
@@ -66,15 +73,6 @@ class GraphComparisonTest(unittest.TestCase):
             connection.execute('UPDATE metadata SET value=?', (json.dumps(metadata),))
         self.assertEqual(compare(self.reference, self.current)['different_fields'], ['edges', 'diagnostics'])
 
-    def test_flow_and_architecture_payloads_are_compared(self):
-        with sqlite3.connect(self.current / 'graph.sqlite3') as connection:
-            metadata = json.loads(connection.execute('SELECT value FROM metadata').fetchone()[0])
-            metadata['flow_inventory'] = {'version': 1, 'functions': []}
-            metadata['architecture'] = {'version': 1, 'files': []}
-            connection.execute('UPDATE metadata SET value=?', (json.dumps(metadata),))
-        self.assertEqual(compare(self.reference, self.current)['different_fields'],
-                         ['architecture', 'flow_inventory'])
-
     def test_relationship_evidence_changes_are_compared_but_empty_legacy_evidence_is_not_added(self):
         with sqlite3.connect(self.current / 'graph.sqlite3') as connection:
             metadata = json.loads(connection.execute('SELECT value FROM metadata').fetchone()[0])
@@ -86,48 +84,61 @@ class GraphComparisonTest(unittest.TestCase):
             connection.execute('UPDATE metadata SET value=?', (json.dumps(metadata),))
         self.assertEqual(compare(self.reference, self.current)['different_fields'], ['edges'])
 
+
+class GraphComparisonPolicyTest(unittest.TestCase):
+    def metadata(self, modified_ns=100, **overrides):
+        return {
+            'diagnostics': ['known limitation'], 'roots': ['/fixture'],
+            'method_policy': 2, 'engine_versions': 'pinned',
+            'fingerprints': [{'path': '/fixture/source', 'hash': 'content', 'size': 10,
+                              'modified_ns': modified_ns}],
+        } | overrides
+
+    def snapshot(self, metadata, *, generated=False):
+        nodes = [{'id': 'caller', 'file': '/fixture/source', 'is_generated': generated}]
+        return snapshot_from_facts(nodes, [], metadata)
+
+    def test_flow_and_architecture_payloads_are_compared(self):
+        before = self.snapshot(self.metadata())
+        after = self.snapshot(self.metadata(flow_inventory={'version': 1, 'functions': []},
+                                            architecture={'version': 1, 'files': []}))
+        self.assertEqual(compare_snapshots(before, after)['different_fields'],
+                         ['architecture', 'flow_inventory'])
+
     def test_boundary_inventory_changes_are_compared(self):
-        with sqlite3.connect(self.current / 'graph.sqlite3') as connection:
-            metadata = json.loads(connection.execute('SELECT value FROM metadata').fetchone()[0])
-            metadata['boundaries'] = {'version': 1, 'routes': [{'path': '/items/{id}',
-                                      'methods': ['POST', 'GET'], 'restrictions': ['condition']}], 'uses': []}
-            connection.execute('UPDATE metadata SET value=?', (json.dumps(metadata),))
-        self.assertEqual(compare(self.reference, self.current)['different_fields'], ['boundaries'])
-        with sqlite3.connect(self.reference / 'graph.sqlite3') as connection:
-            before = json.loads(connection.execute('SELECT value FROM metadata').fetchone()[0])
-            before['boundaries'] = metadata['boundaries']
-            before['boundaries']['routes'][0]['methods'].reverse()
-            connection.execute('UPDATE metadata SET value=?', (json.dumps(before),))
-        self.assertTrue(compare(self.reference, self.current)['equal'])
+        def with_methods(methods):
+            return self.snapshot(self.metadata(boundaries={
+                'version': 1, 'routes': [{'path': '/items/{id}', 'methods': methods,
+                                          'restrictions': ['condition']}], 'uses': [],
+            }))
+
+        after = with_methods(['POST', 'GET'])
+        self.assertEqual(compare_snapshots(self.snapshot(self.metadata()), after)['different_fields'],
+                         ['boundaries'])
+        self.assertTrue(compare_snapshots(with_methods(['GET', 'POST']), after)['equal'])
 
     def test_dropping_freshness_inputs_is_detected_but_observation_times_are_ignored(self):
-        self.assertTrue(compare(self.reference, self.current)['equal'])
-        with sqlite3.connect(self.current / 'graph.sqlite3') as connection:
-            metadata = json.loads(connection.execute('SELECT value FROM metadata').fetchone()[0])
-            metadata['fingerprints'] = []
-            connection.execute('UPDATE metadata SET value=?', (json.dumps(metadata),))
-        self.assertEqual(compare(self.reference, self.current)['different_fields'], ['fingerprints'])
-
-    def change_fingerprint(self, cache, values):
-        with sqlite3.connect(cache / 'graph.sqlite3') as connection:
-            metadata = json.loads(connection.execute('SELECT value FROM metadata').fetchone()[0])
-            metadata['fingerprints'][0].update(values)
-            connection.execute('UPDATE metadata SET value=?', (json.dumps(metadata),))
+        before = self.snapshot(self.metadata())
+        self.assertTrue(compare_snapshots(before, self.snapshot(self.metadata(modified_ns=200)))['equal'])
+        after = self.snapshot(self.metadata(fingerprints=[]))
+        self.assertEqual(compare_snapshots(before, after)['different_fields'], ['fingerprints'])
 
     def test_baseline_volatility_applies_only_to_generated_hashes_and_preserves_sizes(self):
-        self.change_fingerprint(self.current, {'hash': 'another generator timestamp'})
-        self.assertEqual(volatile_generated_hashes([self.reference, self.current]), set())
-        self.assertFalse(compare(self.reference, self.current)['equal'])
-        for cache in [self.reference, self.current]:
-            with sqlite3.connect(cache / 'graph.sqlite3') as connection:
-                connection.execute("UPDATE nodes SET is_generated=1 WHERE id='caller'")
-        allowed = volatile_generated_hashes([self.reference, self.current])
+        changed = self.metadata()
+        changed['fingerprints'][0]['hash'] = 'another generator timestamp'
+        before, after = self.snapshot(self.metadata()), self.snapshot(changed)
+        self.assertEqual(volatile_hashes_from_snapshots([before, after]), set())
+        self.assertFalse(compare_snapshots(before, after)['equal'])
+
+        before = self.snapshot(self.metadata(), generated=True)
+        after = self.snapshot(changed, generated=True)
+        allowed = volatile_hashes_from_snapshots([before, after])
         self.assertEqual(allowed, {'/fixture/source'})
-        result = compare(self.reference, self.current, allowed)
+        result = compare_snapshots(before, after, allowed)
         self.assertTrue(result['equal'])
         self.assertEqual(result['volatile_generated_hash_changes'], ['/fixture/source'])
-        self.change_fingerprint(self.current, {'size': 999})
-        self.assertFalse(compare(self.reference, self.current, allowed)['equal'])
+        changed['fingerprints'][0]['size'] = 999
+        self.assertFalse(compare_snapshots(before, self.snapshot(changed, generated=True), allowed)['equal'])
 
 
 if __name__ == '__main__':

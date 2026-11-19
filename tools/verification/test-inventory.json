@@ -5233,7 +5233,7 @@
       "target_kind": "lib",
       "target": "codecallnavigator_engine",
       "component": "engine",
-      "category": "integration",
+      "category": "unit",
       "requirements": [],
       "purpose": "changed owned utf8 compiler text is rejected"
     },
@@ -5247,7 +5247,7 @@
       "target_kind": "lib",
       "target": "codecallnavigator_engine",
       "component": "engine",
-      "category": "integration",
+      "category": "unit",
       "requirements": [],
       "purpose": "compiler encoding is context specific even when original bytes are valid utf8"
     },
@@ -5289,7 +5289,7 @@
       "target_kind": "lib",
       "target": "codecallnavigator_engine",
       "component": "engine",
-      "category": "integration",
+      "category": "unit",
       "requirements": [],
       "purpose": "repeated graph only contexts cannot conflict on compiler text"
     },
@@ -5962,9 +5962,23 @@
       "target_kind": "lib",
       "target": "codecallnavigator_engine",
       "component": "engine",
-      "category": "integration",
+      "category": "unit",
       "requirements": [],
       "purpose": "stderr tail is bounded and tolerates a split utf8 character"
+    },
+    {
+      "id": "codecallnavigator-engine/lib:codecallnavigator_engine::analyzers::process::diagnostics::tests::stderr_tail_reads_real_logs_and_reports_unavailable_paths",
+      "runner": "rust",
+      "file": "crates/codecallnavigator-engine/src/analyzers/process/diagnostics.rs",
+      "test_name": "analyzers::process::diagnostics::tests::stderr_tail_reads_real_logs_and_reports_unavailable_paths",
+      "ignored": false,
+      "package": "codecallnavigator-engine",
+      "target_kind": "lib",
+      "target": "codecallnavigator_engine",
+      "component": "engine",
+      "category": "integration",
+      "requirements": [],
+      "purpose": "Read a real subprocess log file and report its path when opening it fails."
     },
     {
       "id": "codecallnavigator-engine/lib:codecallnavigator_engine::analyzers::process::tests::already_cancelled_process_never_starts",
@@ -16757,26 +16771,48 @@
       "purpose": "test unexpected hook file is rejected before output is created"
     },
     {
-      "id": "tests/test_analysis_graph.py::GraphComparisonTest.test_baseline_volatility_applies_only_to_generated_hashes_and_preserves_sizes",
+      "id": "tests/test_analysis_graph.py::GraphComparisonPolicyTest.test_baseline_volatility_applies_only_to_generated_hashes_and_preserves_sizes",
       "runner": "python",
       "file": "tests/test_analysis_graph.py",
-      "test_name": "test_analysis_graph.GraphComparisonTest.test_baseline_volatility_applies_only_to_generated_hashes_and_preserves_sizes",
+      "test_name": "test_analysis_graph.GraphComparisonPolicyTest.test_baseline_volatility_applies_only_to_generated_hashes_and_preserves_sizes",
       "ignored": false,
       "component": "tooling",
-      "category": "integration",
+      "category": "unit",
       "requirements": [],
       "purpose": "test baseline volatility applies only to generated hashes and preserves sizes"
     },
     {
-      "id": "tests/test_analysis_graph.py::GraphComparisonTest.test_boundary_inventory_changes_are_compared",
+      "id": "tests/test_analysis_graph.py::GraphComparisonPolicyTest.test_boundary_inventory_changes_are_compared",
       "runner": "python",
       "file": "tests/test_analysis_graph.py",
-      "test_name": "test_analysis_graph.GraphComparisonTest.test_boundary_inventory_changes_are_compared",
+      "test_name": "test_analysis_graph.GraphComparisonPolicyTest.test_boundary_inventory_changes_are_compared",
       "ignored": false,
       "component": "tooling",
-      "category": "integration",
+      "category": "unit",
       "requirements": [],
       "purpose": "test boundary inventory changes are compared"
+    },
+    {
+      "id": "tests/test_analysis_graph.py::GraphComparisonPolicyTest.test_dropping_freshness_inputs_is_detected_but_observation_times_are_ignored",
+      "runner": "python",
+      "file": "tests/test_analysis_graph.py",
+      "test_name": "test_analysis_graph.GraphComparisonPolicyTest.test_dropping_freshness_inputs_is_detected_but_observation_times_are_ignored",
+      "ignored": false,
+      "component": "tooling",
+      "category": "unit",
+      "requirements": [],
+      "purpose": "test dropping freshness inputs is detected but observation times are ignored"
+    },
+    {
+      "id": "tests/test_analysis_graph.py::GraphComparisonPolicyTest.test_flow_and_architecture_payloads_are_compared",
+      "runner": "python",
+      "file": "tests/test_analysis_graph.py",
+      "test_name": "test_analysis_graph.GraphComparisonPolicyTest.test_flow_and_architecture_payloads_are_compared",
+      "ignored": false,
+      "component": "tooling",
+      "category": "unit",
+      "requirements": [],
+      "purpose": "test flow and architecture payloads are compared"
     },
     {
       "id": "tests/test_analysis_graph.py::GraphComparisonTest.test_changed_label_or_edge_count_is_detected_without_scale_change",
@@ -16788,28 +16824,6 @@
       "category": "integration",
       "requirements": [],
       "purpose": "test changed label or edge count is detected without scale change"
-    },
-    {
-      "id": "tests/test_analysis_graph.py::GraphComparisonTest.test_dropping_freshness_inputs_is_detected_but_observation_times_are_ignored",
-      "runner": "python",
-      "file": "tests/test_analysis_graph.py",
-      "test_name": "test_analysis_graph.GraphComparisonTest.test_dropping_freshness_inputs_is_detected_but_observation_times_are_ignored",
-      "ignored": false,
-      "component": "tooling",
-      "category": "integration",
-      "requirements": [],
-      "purpose": "test dropping freshness inputs is detected but observation times are ignored"
-    },
-    {
-      "id": "tests/test_analysis_graph.py::GraphComparisonTest.test_flow_and_architecture_payloads_are_compared",
-      "runner": "python",
-      "file": "tests/test_analysis_graph.py",
-      "test_name": "test_analysis_graph.GraphComparisonTest.test_flow_and_architecture_payloads_are_compared",
-      "ignored": false,
-      "component": "tooling",
-      "category": "integration",
-      "requirements": [],
-      "purpose": "test flow and architecture payloads are compared"
     },
     {
       "id": "tests/test_analysis_graph.py::GraphComparisonTest.test_node_numbering_does_not_change_equivalence",

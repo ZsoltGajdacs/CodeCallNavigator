@@ -32,6 +32,10 @@ def graph_snapshot(cache):
     for node in nodes:
         del node["idx"]
         decode_visibility(node)
+    return snapshot_from_facts(nodes, edges, metadata)
+
+
+def snapshot_from_facts(nodes, edges, metadata):
     return normalize_sets({
         "nodes": sorted(nodes, key=lambda node: node["id"]),
         "edges": sorted(edges, key=canonical),
@@ -104,7 +108,10 @@ def digest(snapshot):
 
 
 def volatile_generated_hashes(caches):
-    snapshots = [graph_snapshot(cache) for cache in caches]
+    return volatile_hashes_from_snapshots([graph_snapshot(cache) for cache in caches])
+
+
+def volatile_hashes_from_snapshots(snapshots):
     if len(snapshots) < 2:
         return set()
     generated = set.intersection(*({node["file"] for node in snapshot["nodes"] if node.get("is_generated")}
@@ -123,19 +130,25 @@ def hash_varies_only(path, records):
 
 
 def compare(reference, current, volatile_hashes=()):
-    old, new = graph_snapshot(reference), graph_snapshot(current)
+    return compare_snapshots(graph_snapshot(reference), graph_snapshot(current), volatile_hashes)
+
+
+def compare_snapshots(old, new, volatile_hashes=()):
     volatile_hashes = set(volatile_hashes)
     changes = volatile_changes(old, new, volatile_hashes)
-    for snapshot in (old, new):
-        for item in snapshot["fingerprints"]:
-            if item["path"] in volatile_hashes:
-                item["hash"] = "baseline-proven-volatile-generated-content"
-        snapshot["fingerprints"].sort(key=canonical)
+    old = mask_volatile_hashes(old, volatile_hashes)
+    new = mask_volatile_hashes(new, volatile_hashes)
     differences = [key for key in old if old[key] != new[key]]
     return {"equal": not differences, "different_fields": differences,
             "baseline_sha256": digest(old), "current_sha256": digest(new),
             "volatile_generated_hash_changes": changes,
             "nodes": len(new["nodes"]), "edges": len(new["edges"])}
+
+
+def mask_volatile_hashes(snapshot, allowed):
+    fingerprints = [dict(item, hash="baseline-proven-volatile-generated-content")
+                    if item["path"] in allowed else item for item in snapshot["fingerprints"]]
+    return dict(snapshot, fingerprints=sorted(fingerprints, key=canonical))
 
 
 def volatile_changes(old, new, allowed):

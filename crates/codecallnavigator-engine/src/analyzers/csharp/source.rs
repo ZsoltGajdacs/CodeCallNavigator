@@ -215,52 +215,54 @@ mod tests {
             Binding::Unavailable(Unavailable::Missing)
         ));
     }
+    fn captured_source(file: &Path, original: Original) -> Snapshots {
+        Snapshots {
+            files: HashMap::from([(file.into(), original)]),
+            ..Default::default()
+        }
+    }
+
     #[test]
     fn changed_owned_utf8_compiler_text_is_rejected() {
-        let root = tempfile::tempdir().unwrap();
-        let file = root.path().join("Source.cs");
-        fs::write(&file, "new source").unwrap();
+        let file = Path::new("Source.cs");
+        let mut snapshots = captured_source(file, Original::Utf8("new source".into()));
         assert!(
-            Snapshots::default()
-                .content(context(&file), "old compiler source")
+            snapshots
+                .content(context(file), "old compiler source")
                 .is_err()
         );
     }
     #[test]
     fn compiler_encoding_is_context_specific_even_when_original_bytes_are_valid_utf8() {
-        let root = tempfile::tempdir().unwrap();
-        let file = root.path().join("Source.cs");
-        fs::write(&file, "é").unwrap();
-        let mut snapshots = Snapshots::default();
+        let file = Path::new("Source.cs");
+        let mut snapshots = captured_source(file, Original::Utf8("é".into()));
         let utf8 = CompilerContext {
-            file: &file,
+            file: file,
             assembly: "Utf8",
             code_page: Some(65001),
         };
         assert_eq!(snapshots.content(utf8, "é").unwrap(), "é");
         let latin1 = CompilerContext {
-            file: &file,
+            file: file,
             assembly: "Latin1",
             code_page: Some(28591),
         };
         assert_eq!(snapshots.content(latin1, "Ã©").unwrap(), "Ã©");
         assert!(matches!(
-            snapshots.binding(&file, "Utf8").unwrap(),
+            snapshots.binding(file, "Utf8").unwrap(),
             Binding::Exact("é")
         ));
         assert!(matches!(
-            snapshots.binding(&file, "Latin1").unwrap(),
+            snapshots.binding(file, "Latin1").unwrap(),
             Binding::Unavailable(Unavailable::CompilerEncoding(28591))
         ));
     }
     #[test]
     fn repeated_graph_only_contexts_cannot_conflict_on_compiler_text() {
-        let root = tempfile::tempdir().unwrap();
-        let file = root.path().join("Source.cs");
-        fs::write(&file, [0xff, 0xfe, b'A', 0]).unwrap();
-        let mut snapshots = Snapshots::default();
+        let file = Path::new("Source.cs");
+        let mut snapshots = captured_source(file, Original::Unavailable(Unavailable::NonUtf8));
         let context = || CompilerContext {
-            file: &file,
+            file,
             assembly: "Assembly",
             code_page: Some(1200),
         };
