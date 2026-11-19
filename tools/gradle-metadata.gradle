@@ -64,8 +64,9 @@ gradle.projectsEvaluated {
     def root = gradle.rootProject
     def javaProjects = root.allprojects.findAll { it.extensions.findByName('sourceSets') != null }
     def observationFile = System.getProperty('codecallnavigator.observation.file')
-    if (observationFile) {
-        def journal = new CompilerJournal(new File(observationFile).toPath(), System.getProperty('codecallnavigator.observation.attempt'))
+    def journal = observationFile ?
+        new CompilerJournal(new File(observationFile).toPath(), System.getProperty('codecallnavigator.observation.attempt')) : null
+    if (journal != null) {
         def selections = javaProjects.collectMany { project ->
             project.sourceSets.collect { sources ->
                 [task: project.tasks.named(sources.compileJavaTaskName).get(), sources: sources]
@@ -108,9 +109,6 @@ gradle.projectsEvaluated {
                 journal.after(owner, compilerInputs(task, sources), outcome)
             }
         })
-        gradle.buildFinished { result ->
-            if (!result.failure) { journal.finish() }
-        }
     }
     root.tasks.register('codecallnavigatorCompileSources') {
         def compileTasks = javaProjects.collectMany { project ->
@@ -123,9 +121,14 @@ gradle.projectsEvaluated {
         dependsOn(compileSources)
         finalizedBy('codecallnavigatorExportMetadata')
     }
+    def exportRequested = false
     root.tasks.register('codecallnavigatorExportMetadata') {
         mustRunAfter(compileSources)
-        doLast {
+        doLast { exportRequested = true }
+    }
+    gradle.buildFinished { result ->
+        if (result.failure) { return }
+        def exportMetadata = {
             def destination = root.findProperty('codecallnavigatorMetadataFile')
             if (!destination) { throw new GradleException('codecallnavigatorMetadataFile is required') }
             def ownedOutputs = javaProjects.collectMany { project ->
@@ -170,6 +173,13 @@ gradle.projectsEvaluated {
                 sourceSets: entries, buildInputs: entries.collectMany { it.buildInputs }.unique().sort(),
                 outputRoots: outputs, configurationInputs: configurationInputs(root.allprojects)]
             new File(destination.toString()).setText(JsonOutput.prettyPrint(JsonOutput.toJson(metadata)), 'UTF-8')
+        } as Runnable
+        if (exportRequested) {
+            // The root task cannot access all project models while parallel tasks
+            // hold individual locks. Use Gradle's internal cross-project lock
+            // after task execution, while this build's evaluated state is available.
+            gradle.owner.projects.withMutableStateOfAllProjects(exportMetadata)
         }
+        journal?.finish()
     }
 }

@@ -4,7 +4,9 @@ use super::{
     compile_observation::Attempt,
 };
 use crate::{
-    analyzers::{AnalysisJob, choose_artifact, find_tool, process::run_process},
+    analyzers::{
+        AnalysisJob, build_worker_count, choose_artifact, find_tool, process::run_process,
+    },
     discovery::BuildTarget,
     fingerprint,
 };
@@ -122,6 +124,9 @@ fn task(
             metadata.display()
         ));
     if let Some(observation) = observation {
+        command
+            .args(["--parallel", "--max-workers"])
+            .arg(build_worker_count().to_string());
         observation.configure(&mut command);
     }
     command.arg(task);

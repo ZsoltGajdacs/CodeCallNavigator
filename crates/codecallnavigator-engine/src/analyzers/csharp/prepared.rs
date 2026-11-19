@@ -3,6 +3,7 @@
 //! evaluates fresh import membership at reuse and completed preparation/extraction
 //! boundaries, so helpers must not repeat full MSBuild evaluation internally.
 use super::*;
+use crate::analyzers::build_worker_count;
 use crate::model::FileFingerprint;
 use std::{collections::VecDeque, sync::atomic::AtomicBool};
 
@@ -102,6 +103,7 @@ fn restore(build: &BuildTarget, context: &AnalysisJob<'_>, dotnet: &Path) -> Res
             .arg("restore")
             .arg(&build.path)
             .arg("--nologo")
+            .env("DOTNET_PROCESSOR_COUNT", build_worker_count().to_string())
             .env("DOTNET_CLI_TELEMETRY_OPTOUT", "1"),
         context.path,
         "restore",
@@ -124,7 +126,8 @@ fn compiler_map(
             .arg("map")
             .arg(&build.path)
             .arg("-o")
-            .arg(output),
+            .arg(output)
+            .env("DOTNET_PROCESSOR_COUNT", build_worker_count().to_string()),
         context.path,
         "callatlas",
         context.cancel,

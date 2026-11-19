@@ -34,8 +34,13 @@ use std::{
     path::{Path, PathBuf},
     process::Command,
     sync::atomic::{AtomicBool, AtomicU64, Ordering},
+    thread::available_parallelism,
     time::{SystemTime, UNIX_EPOCH},
 };
+
+fn build_worker_count() -> usize {
+    available_parallelism().map_or(1, |cpus| (cpus.get() / 2).max(1))
+}
 
 #[derive(Clone, Debug)]
 pub struct AnalyzerRuntime {

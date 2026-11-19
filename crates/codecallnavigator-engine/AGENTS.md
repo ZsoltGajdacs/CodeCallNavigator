@@ -34,6 +34,9 @@ the desktop, Rune or WGPU. Keep the standalone build independent of UI resources
 - Propagate cancellation and client disconnects to owned subprocesses. One-shot
   commands receive closed stdin; persistent worker protocol pipes remain explicit.
   Keep machine-readable stdout free of logging and report failures contextually.
+- Run heavy operations in parallel where work can safely run concurrently. Use
+  the tool's native scheduling and CPU detection where they support the target
+  of half the available logical CPUs, rounded down to a minimum of one worker.
 - Preserve the versioned process protocol, artifact digest verification and
   atomic publication contract. Failed or cancelled work retains prior results.
 - Update resource capability/version checks, bootstrap locks and packaging

@@ -199,6 +199,7 @@ fn task(build: &BuildTarget, context: &AnalysisJob<'_>, task: MavenTask<'_>) -> 
             "-Dmaven.main.skip=false",
         ]);
     if let MavenTask::Compile(observation) = &task {
+        command.args(["-T", "0.5C"]);
         observation.configure(&mut command);
     }
     command.arg(task.goal());
