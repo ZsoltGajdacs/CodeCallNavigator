@@ -248,7 +248,8 @@ def gate_execution_steps(context, gate, bindings):
     else:
         command = [sys.executable, str(context.root / gate['file']),
                    *[argument.format_map(bindings) for argument in gate['arguments']]]
-    steps.append(Step('gate-' + gate['test_name'], command, context.selection.timeout))
+    steps.append(Step('gate-' + gate['test_name'], command, context.selection.timeout,
+                      requires_desktop=gate.get('requires_desktop', False)))
     return steps
 
 

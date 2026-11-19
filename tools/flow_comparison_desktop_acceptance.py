@@ -10,7 +10,7 @@ import subprocess
 import uuid
 
 from csharp_flow_acceptance import require
-from csharp_desktop_acceptance import (clean_environment, require_bundled_runtime,
+from csharp_desktop_acceptance import (clean_environment, defer_for_desktop, require_bundled_runtime,
                                        require_viewport, setup_window, write_json)
 from comparison_desktop_fixture import prepare, git, HEAD_REF
 from comparison_desktop_gate import Gate
@@ -106,6 +106,8 @@ def main():
     args = parser.parse_args()
     require(30 <= args.timeout <= 300, "Timeout must be 30..300 seconds")
     output = args.output.resolve()
+    if status := defer_for_desktop(output, version=2):
+        return status
     try:
         report = acceptance(args.app.resolve(), output, args.timeout)
     except Exception as error:
@@ -117,4 +119,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

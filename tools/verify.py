@@ -11,7 +11,7 @@ import tempfile
 
 from verification.checks import changed_files, docs_only, static_steps
 from verification.suites import BUILD_SERVER_ENVIRONMENT, CATEGORIES, COMPONENTS, category_steps
-from verification.runner import Runner, Step, exclusive
+from verification.runner import RESULT_LABELS, Runner, Step, exclusive
 from verification.inventory import validate_inventory
 from verification.reporting import write_summary
 from verification.category_cleanup import temporary_path
@@ -147,7 +147,8 @@ def main():
     if args.dry_run:
         output = (args.output or ROOT / "target/verification/DRY-RUN").resolve()
         print(json.dumps([dict(name=s.name, command=s.command, environment=s.environment,
-                               timeout=s.timeout, always=s.always) for s in plan(args, paths, output)], indent=2))
+                               timeout=s.timeout, always=s.always, requires_desktop=s.requires_desktop)
+                          for s in plan(args, paths, output)], indent=2))
         return 0
     output = evidence_output(args)
     runner = Runner(ROOT, output, plan(args, paths, output))
@@ -158,7 +159,7 @@ def main():
     (output / "changes.json").write_text(json.dumps(dict(mode=args.mode, base=args.base,
                                                        files=paths, scope=scope), indent=2) + "\n")
     write_summary(ROOT, output)
-    print(f"{args.mode.capitalize()} verification {'PASSED' if result == 0 else 'FAILED'}; {output / 'results.json'}")
+    print(f"{args.mode.capitalize()} verification {RESULT_LABELS[result].upper()}; {output / 'results.json'}")
     return result
 
 

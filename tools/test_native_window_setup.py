@@ -1,14 +1,51 @@
 """Ownership checks must reject another application's window before any mutation."""
 import unittest
 import json
+import plistlib
+import subprocess
 from types import SimpleNamespace
 from unittest.mock import patch
 
 from native_window_setup import WindowIdentity, WindowLease, select_owned
+from verification.desktop_session import DesktopStatus, desktop_status, parse_console_sessions
 
 
 def reply(rows=None):
     return SimpleNamespace(returncode=0, stdout=json.dumps(rows or []), stderr="")
+
+
+class DesktopSessionTests(unittest.TestCase):
+    def registry(self, sessions):
+        return plistlib.dumps([{"IORegistryEntryChildren": [{"IOConsoleUsers": sessions}]}])
+
+    def test_locked_console(self):
+        session = {"kCGSSessionOnConsoleKey": True, "kCGSessionLoginDoneKey": True,
+                   "CGSSessionScreenIsLocked": True}
+        self.assertEqual(parse_console_sessions(self.registry([session])), DesktopStatus.LOCKED)
+
+    def test_unlocked_console(self):
+        for lock in ({}, {"CGSSessionScreenIsLocked": False}):
+            session = {"kCGSSessionOnConsoleKey": True, "kCGSessionLoginDoneKey": True} | lock
+            self.assertEqual(parse_console_sessions(self.registry([session])), DesktopStatus.READY)
+
+    def test_missing_console(self):
+        inactive = {"kCGSSessionOnConsoleKey": False, "kCGSessionLoginDoneKey": True}
+        login_window = {"kCGSSessionOnConsoleKey": True, "kCGSessionLoginDoneKey": False}
+        self.assertEqual(parse_console_sessions(self.registry([inactive, login_window])),
+                         DesktopStatus.UNAVAILABLE)
+
+    def test_malformed_registry(self):
+        session = {"kCGSSessionOnConsoleKey": True, "kCGSessionLoginDoneKey": True,
+                   "CGSSessionScreenIsLocked": "invalid"}
+        for payload in (b"invalid plist", self.registry([session]), self.registry("invalid list"),
+                        b"<plist><key>bad</key></plist>",
+                        b"<plist><date>invalid</date></plist>"):
+            self.assertEqual(parse_console_sessions(payload), DesktopStatus.UNAVAILABLE)
+
+    @patch("verification.desktop_session.subprocess.run", side_effect=subprocess.TimeoutExpired("ioreg", 3))
+    def test_probe_timeout(self, run):
+        self.assertEqual(desktop_status(), DesktopStatus.UNAVAILABLE)
+        self.assertEqual(run.call_args.kwargs["timeout"], 3)
 
 
 class WindowSetupTests(unittest.TestCase):

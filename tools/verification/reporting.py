@@ -8,6 +8,7 @@ import platform
 import shutil
 import subprocess
 import sys
+from verification.runner import RESULT_LABELS, result_code
 
 CATEGORIES = ('unit', 'integration', 'acceptance', 'performance')
 PHASES = ('compile', 'setup', 'test', 'cleanup', 'other')
@@ -59,9 +60,16 @@ def recorded_costs(results):
 
 def category_summary(results, category, selection):
     stages = [row for row in results if row['name'].startswith(category + '-')]
-    return selection_counts(selection) | dict(
+    counts = selection_counts(selection)
+    counts['not_run_gates'] += len(deferred_stages(stages))
+    return counts | dict(
         seconds=recorded_costs(stages),
         stage_statuses=dict(Counter(row['status'] for row in stages)))
+
+
+def deferred_stages(results):
+    return [dict(name=row['name'], reason=row['reason']) for row in results
+            if row['status'] == 'not-run' and 'reason' in row]
 
 
 def summarize_results(results, selections):
@@ -70,6 +78,7 @@ def summarize_results(results, selections):
     categories = {category: category_summary(results, category, selection)
                   for category, selection in selections.items()}
     return dict(seconds=timings, recorded_stage_seconds=round(sum(timings.values()), 3),
+                result=RESULT_LABELS[result_code(results)], deferred=deferred_stages(results),
                 stage_statuses=dict(Counter(row['status'] for row in results)), categories=categories,
                 timing_goal='Approximately one minute of warm unit execution is aspirational, never a pass/fail gate.',
                 execution_note='Selection counts are registrations, not passing-test counts; failed/interrupted stages may execute only part of a selection.',

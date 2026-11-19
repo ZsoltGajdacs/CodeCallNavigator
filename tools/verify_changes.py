@@ -17,7 +17,7 @@ from verification.change_policy import INVENTORY, read_json, select_changes, val
 from verification.change_plan import ChangePlan, build_steps, report_plan
 from verification.inventory import validate_inventory
 from verification.reporting import write_summary
-from verification.runner import Runner, exclusive
+from verification.runner import RESULT_LABELS, Runner, exclusive
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -100,7 +100,8 @@ def display(report, form):
         print(f"  Required: {selection['category']} / {selection['component']}")
     print('Requirements: ' + (', '.join(report['requirements']) or 'none'))
     for stage in report['stages']:
-        print(f"  {stage['name']}: {shlex.join(stage['command'])}")
+        desktop = " (requires accessible desktop)" if stage['requires_desktop'] else ""
+        print(f"  {stage['name']}{desktop}: {shlex.join(stage['command'])}")
     print('Execute: ' + report['execution_command'])
     if 'result' in report:
         print(f"Result: {report['result']}; evidence: {report['evidence']}")
@@ -127,7 +128,7 @@ def main():
     report, steps = prepare(settings, output)
     with contextlib.redirect_stdout(sys.stderr):
         result = run(settings, report, steps, output)
-    report.update(result='failed' if result else 'passed', evidence=str(output))
+    report.update(result=RESULT_LABELS[result], evidence=str(output))
     display(report, args.format)
     return result
 

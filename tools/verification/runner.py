@@ -9,9 +9,22 @@ import signal
 import subprocess
 import time
 if __package__:
+    from .desktop_session import DEFERRED_DESKTOP_EXITS
     from .process_groups import confirm_group_absent, signal_denial_detail
 else:
+    from desktop_session import DEFERRED_DESKTOP_EXITS
     from process_groups import confirm_group_absent, signal_denial_detail
+
+
+RESULT_LABELS = {0: "passed", 1: "failed", 3: "incomplete"}
+
+
+def result_code(results):
+    if any(row.get("interrupted") or row["status"] not in ("passed", "not-run") for row in results):
+        return 1
+    if any(row["status"] == "not-run" for row in results):
+        return 3
+    return 0
 
 
 @contextmanager
@@ -34,6 +47,12 @@ class Step:
     timeout: int = 600
     environment: dict[str, str] = field(default_factory=dict)
     always: bool = False
+    requires_desktop: bool = False
+
+    def deferred_reason(self, status, code):
+        if self.requires_desktop and status == "failed":
+            return DEFERRED_DESKTOP_EXITS.get(code)
+        return None
 
 
 class Runner:
@@ -53,11 +72,12 @@ class Runner:
             try:
                 if failed and not step.always:
                     continue
-                failed = self.run_step(index, step) or failed
+                status = self.run_step(index, step)
+                failed = failed or status not in ("passed", "not-run")
             except KeyboardInterrupt:
                 self.record_interruption(index)
                 failed = True
-        return int(failed)
+        return result_code(self.results)
 
     def run_step(self, index, step):
         result = self.results[index]
@@ -68,13 +88,24 @@ class Runner:
         began = time.monotonic()
         with (self.output / result["log"]).open("w") as log:
             status, code = execute(step, self.root, log)
+        reason = step.deferred_reason(status, code)
+        if reason:
+            status = "not-run"
+            result["reason"] = reason
         result.update(status=status, exit_code=code,
                       seconds=round(time.monotonic() - began, 3))
         self.save()
-        if status != "passed":
-            print(f"{step.name}: {status}; inspect {self.output / result['log']}", flush=True)
-            print((self.output / result["log"]).read_text(errors="replace")[-6000:])
-        return status != "passed"
+        self.print_stage_outcome(result)
+        return status
+
+    def print_stage_outcome(self, result):
+        name, status = result["name"], result["status"]
+        if status == "not-run":
+            print(f"{name}: not performed ({result['reason']})", flush=True)
+        elif status != "passed":
+            log = self.output / result["log"]
+            print(f"{name}: {status}; inspect {log}", flush=True)
+            print(log.read_text(errors="replace")[-6000:])
 
     def record_interruption(self, index):
         result = self.results[index]

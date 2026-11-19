@@ -66,6 +66,45 @@ class SubprocessStages(unittest.TestCase):
             code = Runner(root, output, steps).run()
         return code, json.loads((output / "results.json").read_text())
 
+    def test_desktop_deferral_continues_verification_and_reports_incomplete(self):
+        from verification.reporting import summarize_results
+
+        for exit_code, reason in [(3, "locked"), (4, "unavailable")]:
+            with self.subTest(exit_code=exit_code), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                code, results = self.run_steps(root, [
+                    Step("acceptance-gate-desktop", [sys.executable, "-c", f"raise SystemExit({exit_code})"],
+                         requires_desktop=True),
+                    Step("acceptance-gate-cli", [sys.executable, "-c", "pass"]),
+                    Step("acceptance-category-cleanup", [sys.executable, "-c", "pass"], always=True),
+                ])
+                self.assertEqual(code, 3)
+                self.assertEqual([row["status"] for row in results], ["not-run", "passed", "passed"])
+                self.assertIn(reason, results[0]["reason"].lower())
+                summary = summarize_results(results, {"acceptance": {}})
+                self.assertEqual(summary["result"], "incomplete")
+                self.assertEqual(summary["categories"]["acceptance"]["not_run_gates"], 1)
+                self.assertEqual(summary["deferred"], [
+                    {"name": "acceptance-gate-desktop", "reason": results[0]["reason"]},
+                ])
+
+    def test_failure_takes_precedence_over_desktop_deferral(self):
+        from verification.reporting import summarize_results
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            exit_three = [sys.executable, "-c", "raise SystemExit(3)"]
+            code, results = self.run_steps(root, [
+                Step("desktop", exit_three, requires_desktop=True),
+                Step("ordinary", exit_three),
+                Step("later", [sys.executable, "-c", "pass"]),
+                Step("cleanup", [sys.executable, "-c", "pass"], always=True),
+            ])
+            self.assertEqual(code, 1)
+            self.assertEqual([row["status"] for row in results], ["not-run", "failed", "not-run", "passed"])
+            self.assertNotIn("reason", results[2])
+            self.assertEqual(summarize_results(results, {})["result"], "failed")
+
     def test_failure_preserves_logs_and_does_not_run_later_stages(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

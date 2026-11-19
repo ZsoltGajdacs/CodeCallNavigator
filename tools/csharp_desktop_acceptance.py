@@ -17,6 +17,7 @@ from csharp_flow_acceptance import require
 from csharp_flow_ingestion_acceptance import Client
 from native_window_setup import WindowIdentity, WindowLease
 from native_fixture import NativeFixture
+from verification.desktop_session import DEFERRED_DESKTOP_EXITS, DesktopStatus, desktop_status
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -48,6 +49,17 @@ def write_json(path, value):
     temporary = path.with_suffix(".tmp")
     temporary.write_text(json.dumps(value, indent=2) + "\n")
     temporary.replace(path)
+
+
+def defer_for_desktop(output, version):
+    status = desktop_status()
+    if status == DesktopStatus.READY:
+        return status
+    reason = DEFERRED_DESKTOP_EXITS[status]
+    output.mkdir(parents=True, exist_ok=True)
+    write_json(output / "result.json", {"version": version, "status": "not-run", "reason": reason})
+    print(f"Desktop acceptance not performed. {reason}.")
+    return status
 
 
 def clean_environment():
@@ -260,6 +272,8 @@ def main():
     args = parser.parse_args()
     require(30 <= args.timeout <= 300, "Timeout must be between30 and300seconds")
     output = args.output.resolve()
+    if status := defer_for_desktop(output, version=1):
+        return status
     try:
         report = acceptance(args.app.resolve(), output, args.timeout)
     except Exception as error:
@@ -271,4 +285,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

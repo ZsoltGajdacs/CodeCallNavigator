@@ -18,7 +18,7 @@ import subprocess
 import time
 
 from csharp_flow_acceptance import require
-from csharp_desktop_acceptance import (VIEWPORT, capture_window, clean_environment,
+from csharp_desktop_acceptance import (VIEWPORT, capture_window, clean_environment, defer_for_desktop,
                                        require_bundled_runtime,
                                        require_viewport, seed_session, setup_window,
                                        wait_request, write_json)
@@ -147,6 +147,8 @@ def main():
     args = parser.parse_args()
     require(30 <= args.timeout <= 300, "Timeout must be 30..300 seconds")
     output = args.output.resolve()
+    if status := defer_for_desktop(output, version=3):
+        return status
     try:
         report = acceptance(args.app.resolve(), output, args.timeout)
     except Exception as error:
@@ -158,4 +160,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

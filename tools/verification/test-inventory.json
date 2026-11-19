@@ -18946,6 +18946,28 @@
       "purpose": "test checkout lock excludes competing process and releases after close"
     },
     {
+      "id": "tests/test_verification.py::SubprocessStages.test_desktop_deferral_continues_verification_and_reports_incomplete",
+      "runner": "python",
+      "file": "tests/test_verification.py",
+      "test_name": "test_verification.SubprocessStages.test_desktop_deferral_continues_verification_and_reports_incomplete",
+      "ignored": false,
+      "component": "tooling",
+      "category": "integration",
+      "requirements": [],
+      "purpose": "Check real subprocess defer codes preserve later checks and cleanup and report incomplete evidence."
+    },
+    {
+      "id": "tests/test_verification.py::SubprocessStages.test_failure_takes_precedence_over_desktop_deferral",
+      "runner": "python",
+      "file": "tests/test_verification.py",
+      "test_name": "test_verification.SubprocessStages.test_failure_takes_precedence_over_desktop_deferral",
+      "ignored": false,
+      "component": "tooling",
+      "category": "integration",
+      "requirements": [],
+      "purpose": "Check an ordinary subprocess returning a reserved desktop code fails the run and preserves cleanup."
+    },
+    {
       "id": "tests/test_verification.py::SubprocessStages.test_cleanup_failure_fails_an_otherwise_successful_run",
       "runner": "python",
       "file": "tests/test_verification.py",
@@ -20293,6 +20315,61 @@
       "category": "unit",
       "requirements": [],
       "purpose": "test retained real compiler graph has resolvable edges and preserved evidence"
+    },
+    {
+      "id": "tools/test_native_window_setup.py::DesktopSessionTests.test_locked_console",
+      "runner": "python",
+      "file": "tools/test_native_window_setup.py",
+      "test_name": "test_native_window_setup.DesktopSessionTests.test_locked_console",
+      "ignored": false,
+      "component": "tooling",
+      "category": "unit",
+      "requirements": [],
+      "purpose": "Classify the locked active console from registry plist data."
+    },
+    {
+      "id": "tools/test_native_window_setup.py::DesktopSessionTests.test_malformed_registry",
+      "runner": "python",
+      "file": "tools/test_native_window_setup.py",
+      "test_name": "test_native_window_setup.DesktopSessionTests.test_malformed_registry",
+      "ignored": false,
+      "component": "tooling",
+      "category": "unit",
+      "requirements": [],
+      "purpose": "Reject malformed registry plist data."
+    },
+    {
+      "id": "tools/test_native_window_setup.py::DesktopSessionTests.test_missing_console",
+      "runner": "python",
+      "file": "tools/test_native_window_setup.py",
+      "test_name": "test_native_window_setup.DesktopSessionTests.test_missing_console",
+      "ignored": false,
+      "component": "tooling",
+      "category": "unit",
+      "requirements": [],
+      "purpose": "Handle registry data with no active console session."
+    },
+    {
+      "id": "tools/test_native_window_setup.py::DesktopSessionTests.test_probe_timeout",
+      "runner": "python",
+      "file": "tools/test_native_window_setup.py",
+      "test_name": "test_native_window_setup.DesktopSessionTests.test_probe_timeout",
+      "ignored": false,
+      "component": "tooling",
+      "category": "integration",
+      "requirements": [],
+      "purpose": "Classify a timed-out desktop probe as unavailable."
+    },
+    {
+      "id": "tools/test_native_window_setup.py::DesktopSessionTests.test_unlocked_console",
+      "runner": "python",
+      "file": "tools/test_native_window_setup.py",
+      "test_name": "test_native_window_setup.DesktopSessionTests.test_unlocked_console",
+      "ignored": false,
+      "component": "tooling",
+      "category": "unit",
+      "requirements": [],
+      "purpose": "Classify the unlocked active console from registry plist data."
     },
     {
       "id": "tools/test_native_window_setup.py::WindowSetupTests.test_closed_process_needs_no_restore_command",
@@ -22523,6 +22600,7 @@
     },
     {
       "id": "gate::tools/csharp_desktop_acceptance.py",
+      "requires_desktop": true,
       "runner": "harness",
       "file": "tools/csharp_desktop_acceptance.py",
       "test_name": "csharp_desktop_acceptance",
@@ -22578,6 +22656,7 @@
     },
     {
       "id": "gate::tools/flow_comparison_desktop_acceptance.py",
+      "requires_desktop": true,
       "runner": "harness",
       "file": "tools/flow_comparison_desktop_acceptance.py",
       "test_name": "flow_comparison_desktop_acceptance",
@@ -22695,6 +22774,7 @@
     },
     {
       "id": "gate::tools/flow_expansion_desktop_acceptance.py",
+      "requires_desktop": true,
       "runner": "harness",
       "file": "tools/flow_expansion_desktop_acceptance.py",
       "test_name": "flow_expansion_desktop_acceptance",

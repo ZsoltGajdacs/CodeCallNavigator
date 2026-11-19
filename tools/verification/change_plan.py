@@ -114,4 +114,5 @@ def report_plan(context, steps):
                 selections=[dict(category=c, component=p) for c, p in context.decision.pairs],
                 **selected_identities(context.inventory, context.decision),
                 stages=[dict(name=s.name, command=s.command, environment=s.environment,
-                             timeout=s.timeout, always=s.always) for s in steps])
+                             timeout=s.timeout, always=s.always,
+                             requires_desktop=s.requires_desktop) for s in steps])

@@ -16,6 +16,7 @@ import tempfile
 
 from pan_profile_report import read_rows, summarize
 from profile_cache import validate_presentation_cache
+from verification.desktop_session import DEFERRED_DESKTOP_EXITS, DesktopStatus, desktop_status
 
 
 def snapshot_store(source, destination):
@@ -44,6 +45,9 @@ def binary_hash(binary):
 def run_profile(args):
     binary, output = args.binary.resolve(), args.output.resolve()
     output.mkdir(parents=True, exist_ok=False)
+    status = desktop_status()
+    if status != DesktopStatus.READY:
+        return {"status": "not-run", "reason": DEFERRED_DESKTOP_EXITS[status]}
     metadata = {"binary": str(binary), "sha256": binary_hash(binary), "scene": args.scene,
                 "requested_size": args.size, "expected_native_scale": args.expected_scale}
     (output / "run.json").write_text(json.dumps(metadata, indent=2) + "\n")

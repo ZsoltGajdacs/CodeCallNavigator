@@ -3,7 +3,7 @@ id: doc-21
 title: Verification prerequisites and operations
 type: guide
 created_date: '2026-11-16T07:06:00Z'
-updated_date: '2026-11-17T08:10:00Z'
+updated_date: '2026-11-19T05:46:00Z'
 ---
 # Verification prerequisites and operations
 
@@ -120,6 +120,14 @@ clean-tree invocations create no evidence directory or builds.
 
 Failed, timed-out and not-run stages remain distinct; policy exclusions are not
 failed or passing tests. A failed/incomplete run never reports success.
+The three real-window acceptance journeys check the active macOS console before
+preparing fixtures or opening a window. A locked desktop or unavailable console
+is recorded as not performed, with a reason in the gate result, stage log,
+`results.json` and `summary.json`. Remaining checks and cleanup continue. If
+nothing fails, a run with deferred checks reports `incomplete` and exits with
+code 3. A stage or cleanup failure still reports `failed` and exits with code 1.
+Headless and offscreen Metal checks have their usual prerequisites. The
+standalone native pan profiler also checks the console before a new measurement.
 `--timeout SECONDS` bounds each build/test/package stage (default 1800);
 interruption/timeout stops the process group. If OS restrictions prevent descendant
 cleanup, the script reports `cleanup-unavailable` and fails.
