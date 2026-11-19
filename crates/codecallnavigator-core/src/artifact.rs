@@ -29,6 +29,7 @@ pub use publish::{
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::{collections::HashMap, path::PathBuf};
+pub use storage::local_snapshots;
 
 pub type Roots = [(String, PathBuf)];
 pub const SCHEMA: &str = "codecallnavigator.graph.v2";

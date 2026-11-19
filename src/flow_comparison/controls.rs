@@ -35,12 +35,12 @@ impl State {
     }
     pub fn load_flow_comparison(&mut self) {
         self.flow_residency.activity();
-        let base = self.flow_comparison.controls.base.text.clone();
-        let head = self.flow_comparison.controls.head.text.clone();
+        self.flow_comparison.snapshots.graph_open = false;
+        let refs = self.flow_comparison.control_refs();
         let result = if self.flow_comparison.descriptor().is_some() {
-            self.flow_comparison.load_refs(base, head)
+            self.flow_comparison.load_refs(refs)
         } else {
-            self.open_flow_comparison(base, head)
+            self.open_selected_flow_comparison(refs)
         };
         if let Err(error) = result {
             self.flow_comparison.controls.message = error;
@@ -65,6 +65,10 @@ impl Workspace {
         self.action(result);
     }
     pub fn cancel_control(&mut self) {
+        if self.snapshots.pending() {
+            self.snapshots.cancel();
+            return;
+        }
         self.close();
         self.controls.visible = true;
         self.controls.message = "Comparison loading cancelled".into();

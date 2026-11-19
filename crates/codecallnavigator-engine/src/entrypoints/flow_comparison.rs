@@ -17,6 +17,8 @@ pub(super) fn respond(request: &Request) -> Option<Response> {
     let Query::FlowComparison {
         base,
         head,
+        base_snapshot,
+        head_snapshot,
         expected_comparison,
         selection,
     } = &request.query
@@ -26,6 +28,8 @@ pub(super) fn respond(request: &Request) -> Option<Response> {
     let endpoints = EndpointRequest {
         base,
         head,
+        base_snapshot: base_snapshot.as_deref(),
+        head_snapshot: head_snapshot.as_deref(),
         expected: expected_comparison.as_deref(),
     };
     Some(

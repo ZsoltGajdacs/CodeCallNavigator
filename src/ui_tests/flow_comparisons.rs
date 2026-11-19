@@ -20,10 +20,25 @@ fn global_comparison_entry_opens_revision_controls_without_a_loaded_graph() {
         "comparison-head",
         "comparison-load",
         "comparison-close",
+        "comparison-snapshots",
+        "comparison-graph-differences",
     ] {
         assert!(
             runtime.find(key).is_some(),
             "Missing comparison control {key}"
+        );
+    }
+    click(&mut runtime, "comparison-snapshots");
+    for key in [
+        "comparison-snapshot-base-lookup",
+        "comparison-snapshot-base-prepare",
+        "comparison-snapshot-after-lookup",
+        "comparison-snapshot-after-prepare",
+        "comparison-snapshot-target",
+    ] {
+        assert!(
+            runtime.find(key).is_some(),
+            "Missing snapshot control {key}"
         );
     }
     click(&mut runtime, "comparison-close");

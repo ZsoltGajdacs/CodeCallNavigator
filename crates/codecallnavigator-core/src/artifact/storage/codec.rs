@@ -97,11 +97,20 @@ impl Manifest {
 
     /// Reconstruct a complete artifact from independently retrieved immutable objects.
     pub fn complete_with(&self, mut read: impl FnMut(&str) -> Result<Vec<u8>>) -> Result<Artifact> {
-        let bytes = read(&self.structure.path("structure"))?;
-        let mut artifact = decode_structure(&self.structure.decode(bytes.as_slice())?)?;
-        let bytes = read(&self.flows.path("flows"))?;
+        self.complete_from(|path| read(path).map(std::io::Cursor::new))
+    }
+
+    pub(super) fn complete_from<R: Read>(
+        &self,
+        mut open: impl FnMut(&str) -> Result<R>,
+    ) -> Result<Artifact> {
+        let mut artifact = decode_structure(
+            &self
+                .structure
+                .decode(open(&self.structure.path("structure"))?)?,
+        )?;
         artifact.graph["flow_inventory"] =
-            serde_json::from_slice(&self.flows.decode(bytes.as_slice())?)?;
+            serde_json::from_slice(&self.flows.decode(open(&self.flows.path("flows"))?)?)?;
         let recorded: FlowCatalogue =
             serde_json::from_value(artifact.graph["flow_catalogue"].clone())?;
         ensure!(

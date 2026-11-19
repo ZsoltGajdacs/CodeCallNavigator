@@ -18,7 +18,11 @@ pub enum Command {
         project: PathBuf,
         base: String,
         head: String,
+        base_snapshot: Option<String>,
+        head_snapshot: Option<String>,
     },
+    SnapshotStatus(Snapshot),
+    PrepareSnapshot(Snapshot),
     Serve,
     ServeAnalysisSession,
     AnalyzeNative(Vec<PathBuf>),
@@ -27,6 +31,12 @@ pub enum Command {
 pub struct Analysis {
     pub project: PathBuf,
     pub roots: Vec<(String, PathBuf)>,
+    pub targets: Vec<PathBuf>,
+}
+
+pub struct Snapshot {
+    pub project: PathBuf,
+    pub revision: String,
     pub targets: Vec<PathBuf>,
 }
 
@@ -76,6 +86,8 @@ pub fn parse(values: impl Iterator<Item = String>) -> Result<Command> {
             Ok(Command::ClearCache(project.into()))
         }
         "compare" => parse_compare(values),
+        "snapshot-status" => parse_snapshot(values, false).map(Command::SnapshotStatus),
+        "prepare-snapshot" => parse_snapshot(values, true).map(Command::PrepareSnapshot),
         "serve-once" => {
             ensure!(values.next().is_none(), "serve-once takes no arguments");
             Ok(Command::Serve)
@@ -149,6 +161,7 @@ fn parse_analyze(mut values: impl Iterator<Item = String>) -> Result<Analysis> {
 
 fn parse_compare(mut values: impl Iterator<Item = String>) -> Result<Command> {
     let (mut project, mut base, mut head) = (None, None, None);
+    let (mut base_snapshot, mut head_snapshot) = (None, None);
     while let Some(option) = values.next() {
         let value = take_value(&mut values, &option)?;
         match option.as_str() {
@@ -161,6 +174,8 @@ fn parse_compare(mut values: impl Iterator<Item = String>) -> Result<Command> {
                 ensure!(head.is_none(), "Repeated --head");
                 head = Some(value);
             }
+            "--base-snapshot" if base_snapshot.is_none() => base_snapshot = Some(value),
+            "--head-snapshot" if head_snapshot.is_none() => head_snapshot = Some(value),
             _ => bail!("Unknown compare option: {option}"),
         }
     }
@@ -168,6 +183,25 @@ fn parse_compare(mut values: impl Iterator<Item = String>) -> Result<Command> {
         project: project.context("compare requires --project")?,
         base: base.context("compare requires --base")?,
         head: head.context("compare requires --head")?,
+        base_snapshot,
+        head_snapshot,
+    })
+}
+
+fn parse_snapshot(mut values: impl Iterator<Item = String>, prepare: bool) -> Result<Snapshot> {
+    let (mut project, mut revision, mut targets) = (None, None, Vec::new());
+    while let Some(value) = values.next() {
+        match value.as_str() {
+            "--project" => project_option(&mut project, take_value(&mut values, &value)?)?,
+            "--revision" if revision.is_none() => revision = Some(take_value(&mut values, &value)?),
+            "--target" if prepare => targets.push(take_value(&mut values, &value)?.into()),
+            _ => bail!("Unknown snapshot argument: {value}"),
+        }
+    }
+    Ok(Snapshot {
+        project: project.context("Snapshot command requires --project")?,
+        revision: revision.context("Snapshot command requires --revision")?,
+        targets,
     })
 }
 

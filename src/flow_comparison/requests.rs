@@ -76,18 +76,21 @@ impl CatalogWork {
     pub fn run(self) -> CatalogOutput {
         let mut physical_project = None;
         let result = match self.operation {
-            CatalogOperation::Open { project, identity } => identity
-                .resolve(project.context)
-                .map_err(Error::Invalid)
-                .and_then(|context| {
-                    physical_project = Some(context.descriptor.project.clone());
-                    context
-                        .flow_comparison()
-                        .open(&project.base, &project.head, &self.cancel)
-                        .map(|(bound, page)| {
-                            CatalogAnswer::Opened(Box::new(Opened { bound, page }))
-                        })
-                }),
+            CatalogOperation::Open { project, identity } => {
+                let super::Project { context, refs, .. } = *project;
+                identity
+                    .resolve(context)
+                    .map_err(Error::Invalid)
+                    .and_then(|context| {
+                        physical_project = Some(context.descriptor.project.clone());
+                        context
+                            .flow_comparison()
+                            .open_selected(refs, &self.cancel)
+                            .map(|(bound, page)| {
+                                CatalogAnswer::Opened(Box::new(Opened { bound, page }))
+                            })
+                    })
+            }
             CatalogOperation::Page {
                 bound,
                 page,

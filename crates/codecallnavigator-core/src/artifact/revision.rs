@@ -1,18 +1,22 @@
 //! Read-only saved graph snapshots from immutable Git blobs or the working tree.
 mod inspection;
+mod repository;
 use super::{Artifact, GRAPH_PATH, storage};
 use anyhow::{Context, Result};
 pub use inspection::{
     ArtifactFailure, ArtifactResult, InspectedEndpoint, Inspection, ObservedSchema, inspect,
+    inspect_cached,
 };
+pub use repository::{Repository, TreeEntry};
 use serde::Serialize;
 #[cfg(test)]
 use std::fs;
 use std::{
     fmt,
-    io::{Read, Seek, SeekFrom},
+    io::{Read, Seek, SeekFrom, Write},
     path::Path,
     process::{Child, Command, Stdio},
+    sync::atomic::{AtomicBool, Ordering},
     thread,
     time::{Duration, Instant},
 };
@@ -35,6 +39,8 @@ pub struct Endpoint {
     pub path: String,
     pub schema: String,
     pub digest: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub snapshot: Option<super::local_snapshots::SnapshotRecord>,
 }
 
 pub struct Snapshot {
@@ -79,6 +85,7 @@ struct ReadSnapshot {
     commit: Option<String>,
     kind: EndpointKind,
     path: String,
+    snapshot: Option<super::local_snapshots::SnapshotRecord>,
 }
 
 fn read_snapshot(project: &Path, revision: &str) -> Result<ReadSnapshot> {
@@ -100,9 +107,7 @@ fn read_snapshot(project: &Path, revision: &str) -> Result<ReadSnapshot> {
         let path = working_path(project_prefix(project))?;
         (bytes, decoded, None, EndpointKind::Worktree, path)
     } else {
-        let (bytes, commit, path) = committed(project, revision)?;
-        let decoded = decode_committed(project, &bytes, &commit, &path);
-        (bytes, decoded, Some(commit), EndpointKind::Commit, path)
+        return read_commit(project, resolve_commit(project, revision)?);
     };
     Ok(ReadSnapshot {
         bytes,
@@ -110,6 +115,7 @@ fn read_snapshot(project: &Path, revision: &str) -> Result<ReadSnapshot> {
         commit,
         kind,
         path,
+        snapshot: None,
     })
 }
 
@@ -124,7 +130,22 @@ fn decode_committed(project: &Path, bytes: &[u8], commit: &str, path: &str) -> R
     })
 }
 
-fn committed(project: &Path, revision: &str) -> Result<(Vec<u8>, String, String)> {
+fn read_commit(project: &Path, commit: String) -> Result<ReadSnapshot> {
+    let path = format!("{}{GRAPH_PATH}", project_prefix(project)?);
+    let object = format!("{commit}:{path}");
+    let bytes = git(project, &["cat-file", "blob", &object], "graph_missing")?;
+    let decoded = decode_committed(project, &bytes, &commit, &path);
+    Ok(ReadSnapshot {
+        bytes,
+        decoded,
+        commit: Some(commit),
+        kind: EndpointKind::Commit,
+        path,
+        snapshot: None,
+    })
+}
+
+fn resolve_commit(project: &Path, revision: &str) -> Result<String> {
     if invalid_revision(revision) {
         return Err(failure("invalid_request", "Invalid Git revision"));
     }
@@ -144,10 +165,7 @@ fn committed(project: &Path, revision: &str) -> Result<(Vec<u8>, String, String)
             "Git returned an invalid commit identity",
         ));
     }
-    let path = format!("{}{GRAPH_PATH}", project_prefix(project)?);
-    let object = format!("{commit}:{path}");
-    let bytes = git(project, &["cat-file", "blob", &object], "graph_missing")?;
-    Ok((bytes, commit, path))
+    Ok(commit)
 }
 
 fn invalid_revision(revision: &str) -> bool {
@@ -185,8 +203,34 @@ fn not_repository(error: &anyhow::Error) -> bool {
 /// Git writes into anonymous temporary files instead of pipes, avoiding deadlocks
 /// on large graphs. It inherits the CLI process group for cancellation ownership.
 fn git(project: &Path, arguments: &[&str], code: &'static str) -> Result<Vec<u8>> {
+    let mut output = git_output(project, arguments, code, GitInput::default())?;
+    let mut bytes = Vec::new();
+    output.read_to_end(&mut bytes)?;
+    Ok(bytes)
+}
+
+#[derive(Default)]
+struct GitInput<'a> {
+    bytes: &'a [u8],
+    cancel: Option<&'a AtomicBool>,
+}
+
+fn git_output(
+    project: &Path,
+    arguments: &[&str],
+    code: &'static str,
+    input: GitInput<'_>,
+) -> Result<std::fs::File> {
     let mut output = tempfile::tempfile().context("Cannot capture Git output")?;
     let mut errors = tempfile::tempfile().context("Cannot capture Git diagnostics")?;
+    let stdin = if input.bytes.is_empty() {
+        Stdio::null()
+    } else {
+        let mut file = tempfile::tempfile().context("Cannot prepare Git input")?;
+        file.write_all(input.bytes)?;
+        file.rewind()?;
+        file.into()
+    };
     let child = Command::new("git")
         .arg("--no-pager")
         .arg("-C")
@@ -196,7 +240,7 @@ fn git(project: &Path, arguments: &[&str], code: &'static str) -> Result<Vec<u8>
         .env("GIT_NO_LAZY_FETCH", "1")
         .env("GIT_TERMINAL_PROMPT", "0")
         .env("LC_ALL", "C")
-        .stdin(Stdio::null())
+        .stdin(stdin)
         .stdout(output.try_clone()?)
         .stderr(errors.try_clone()?)
         .spawn()
@@ -204,6 +248,12 @@ fn git(project: &Path, arguments: &[&str], code: &'static str) -> Result<Vec<u8>
     let mut child = OwnedChild(child);
     let start = Instant::now();
     let status = loop {
+        if input
+            .cancel
+            .is_some_and(|flag| flag.load(Ordering::Acquire))
+        {
+            return Err(failure("cancelled", "Git snapshot read cancelled"));
+        }
         if let Some(status) = child.0.try_wait().context("Cannot observe Git")? {
             break status;
         }
@@ -225,9 +275,7 @@ fn git(project: &Path, arguments: &[&str], code: &'static str) -> Result<Vec<u8>
         ));
     }
     output.seek(SeekFrom::Start(0))?;
-    let mut bytes = Vec::new();
-    output.read_to_end(&mut bytes)?;
-    Ok(bytes)
+    Ok(output)
 }
 
 struct OwnedChild(Child);

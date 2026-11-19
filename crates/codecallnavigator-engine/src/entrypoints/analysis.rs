@@ -1,4 +1,5 @@
 use super::cancellation::CANCELLED;
+use super::snapshot_retention::{Candidate, Observations};
 use anyhow::{Context, Result, ensure};
 use codecallnavigator_core::{
     artifact,
@@ -158,18 +159,18 @@ where
     let Publication {
         project,
         options,
-        targets,
+        mut targets,
     } = publication;
     let project = project.canonicalize().context("Cannot open project")?;
     ensure!(project.is_dir(), "Project must be a directory");
     let roots = roots(&project, options.configured)?;
     let lock = artifact::AnalysisLock::acquire(&project)?;
+    let snapshot = Candidate::capture(&project, attempt.progress);
     if let Some(expected) = &options.expected_generation {
         lock.require_generation(expected)?;
     }
     let metrics = metrics::Metrics::default();
     let _scope = metrics.enter();
-    let mut targets = targets;
     targets.sort_by_key(BuildTarget::identity);
     targets.dedup_by(|a, b| a.identity() == b.identity());
     let (boundaries, boundary_inputs) =
@@ -185,20 +186,26 @@ where
     } else {
         roots
     };
-    let mut artifact =
-        artifact::canonical_with_identities(&graph, &roots, &graph.export_identities)?;
-    let mut provenance = artifact::provenance::build_selected(
-        &graph.fingerprints,
-        &selection,
-        &graph.engine_versions,
-        &roots,
-    )?;
-    let refresh_validation = refresh_inputs(&graph, &selection, &roots, &mut provenance)?;
-    artifact.graph["analysis"] = serde_json::to_value(provenance)?;
-    let bytes = artifact.encode()?;
+    let (bytes, provenance, refresh_validation) = encode_publication(&graph, &selection, &roots)?;
     let digest = blake3::hash(bytes.as_ref()).to_hex().to_string();
     verify_inputs(&graph.fingerprints, &refresh_validation, attempt.cancel)?;
     lock.publish_encoded(&bytes, attempt.cancel)?;
+    retain_snapshot(
+        snapshot,
+        Observations {
+            analysis: &provenance,
+            roots: &roots,
+            analyzer: &graph.fingerprints,
+            refresh: &refresh_validation,
+            targets: &selection,
+            generated_sources: graph
+                .refresh_outputs
+                .as_ref()
+                .map_or(&[], |output| output.generated_source_directories.as_slice()),
+        },
+        &bytes,
+        &attempt,
+    );
     super::inference::finish(cache, attempt.progress);
     metrics.finish();
     Ok(Event::Complete {
@@ -208,6 +215,40 @@ where
         engine_versions: graph.engine_versions,
         metrics: serde_json::to_value(metrics.report())?,
     })
+}
+
+fn encode_publication(
+    graph: &GraphData,
+    selection: &[BuildTarget],
+    roots: &artifact::Roots,
+) -> Result<(
+    artifact::EncodedArtifact,
+    artifact::provenance::Analysis,
+    Vec<FileFingerprint>,
+)> {
+    let mut artifact = artifact::canonical_with_identities(graph, roots, &graph.export_identities)?;
+    let mut provenance = artifact::provenance::build_selected(
+        &graph.fingerprints,
+        selection,
+        &graph.engine_versions,
+        roots,
+    )?;
+    let validation = refresh_inputs(graph, selection, roots, &mut provenance)?;
+    artifact.graph["analysis"] = serde_json::to_value(&provenance)?;
+    Ok((artifact.encode()?, provenance, validation))
+}
+
+fn retain_snapshot(
+    candidate: Option<Candidate>,
+    observed: Observations<'_>,
+    bytes: &artifact::EncodedArtifact,
+    attempt: &Attempt<'_>,
+) {
+    if let Some(candidate) = candidate
+        && let Err(error) = candidate.retain(observed, bytes, attempt.cancel)
+    {
+        (attempt.progress)(format!("Local snapshot was not retained: {error:#}"));
+    }
 }
 
 fn verify_inputs(

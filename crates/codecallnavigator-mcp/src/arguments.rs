@@ -16,6 +16,8 @@ pub struct CompareArgs {
     pub base: String,
     #[serde(default = "comparison_head")]
     pub head: String,
+    pub base_snapshot: Option<String>,
+    pub head_snapshot: Option<String>,
     #[serde(default)]
     pub offset: u32,
     #[serde(default = "comparison_limit")]
@@ -24,11 +26,75 @@ pub struct CompareArgs {
     pub expected_comparison: Option<String>,
     pub expected_generation: Option<String>,
 }
+#[derive(Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+pub struct FlowComparisonArgs {
+    pub base: String,
+    #[serde(default = "comparison_head")]
+    pub head: String,
+    pub base_snapshot: Option<String>,
+    pub head_snapshot: Option<String>,
+    pub expected_comparison: Option<String>,
+    pub selection: FlowComparisonSelection,
+}
+#[derive(Deserialize, Serialize, JsonSchema)]
+#[serde(tag = "kind", rename_all = "snake_case", deny_unknown_fields)]
+pub enum FlowComparisonSelection {
+    Catalog {
+        #[serde(default)]
+        text: String,
+        #[serde(default)]
+        offset: u32,
+        #[serde(default = "flow_catalog_limit")]
+        #[schemars(range(min = 1, max = 500))]
+        limit: u32,
+    },
+    Detail {
+        symbol: String,
+        head_symbol: Option<String>,
+    },
+}
+#[derive(Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+pub struct SnapshotStatusArgs {
+    pub revision: String,
+}
+#[derive(Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+pub struct PrepareSnapshotArgs {
+    pub revision: String,
+    /// Project-relative build paths at the requested revision. Empty uses CLI defaults.
+    #[serde(default)]
+    pub targets: Vec<String>,
+}
+impl PrepareSnapshotArgs {
+    pub fn validate(&self) -> Result<()> {
+        text(&self.revision)?;
+        ensure!(self.targets.len() <= 1000, "Too many snapshot build paths");
+        for target in &self.targets {
+            text(target)?;
+            ensure!(
+                !target.contains('\0')
+                    && std::path::Path::new(target)
+                        .components()
+                        .all(|part| matches!(
+                            part,
+                            std::path::Component::Normal(_) | std::path::Component::CurDir
+                        )),
+                "Snapshot build paths must be project-relative"
+            );
+        }
+        Ok(())
+    }
+}
 fn comparison_head() -> String {
     "WORKTREE".into()
 }
 fn comparison_limit() -> u32 {
     100
+}
+fn flow_catalog_limit() -> u32 {
+    50
 }
 #[derive(Deserialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
@@ -208,6 +274,15 @@ impl Query {
 pub fn parse(name: &str, value: Value) -> Result<Query> {
     match name {
         "compare_graphs" => comparison(serde_json::from_value(value)?),
+        "compare_function_flows" => flow_comparison(serde_json::from_value(value)?),
+        "graph_snapshot_status" => {
+            let args: SnapshotStatusArgs = serde_json::from_value(value)?;
+            text(&args.revision)?;
+            Query::new(
+                json!({"kind":"snapshot_status","revision":args.revision}),
+                None,
+            )
+        }
         "graph_status" | "graph_freshness" => {
             let args: GraphArgs = serde_json::from_value(value)?;
             let query = if name == "graph_freshness" {
@@ -257,10 +332,57 @@ fn comparison(args: CompareArgs) -> Result<Query> {
         "Paged comparisons require expected_comparison"
     );
     validate_generation(args.expected_comparison.as_deref())?;
-    Query::new(
-        json!({"kind":"compare","base":args.base,"head":args.head,"offset":args.offset,"limit":args.limit,"expected_comparison":args.expected_comparison}),
-        args.expected_generation,
-    )
+    let mut query = json!({"kind":"compare","base":args.base,"head":args.head,"offset":args.offset,"limit":args.limit,"expected_comparison":args.expected_comparison});
+    snapshot_selectors(&mut query, args.base_snapshot, args.head_snapshot)?;
+    Query::new(query, args.expected_generation)
+}
+fn flow_comparison(args: FlowComparisonArgs) -> Result<Query> {
+    text(&args.base)?;
+    text(&args.head)?;
+    validate_generation(args.expected_comparison.as_deref())?;
+    match &args.selection {
+        FlowComparisonSelection::Catalog {
+            text,
+            offset,
+            limit,
+        } => {
+            ensure!(text.len() <= 1024, "Flow catalog text exceeds 1024 bytes");
+            ensure!(
+                (1..=500).contains(limit),
+                "Flow catalog limit must be 1..500"
+            );
+            ensure!(
+                *offset == 0 || args.expected_comparison.is_some(),
+                "Paged flow catalogs require expected_comparison"
+            );
+        }
+        FlowComparisonSelection::Detail {
+            symbol,
+            head_symbol,
+        } => {
+            flow_symbol(symbol)?;
+            if let Some(symbol) = head_symbol {
+                flow_symbol(symbol)?;
+            }
+        }
+    }
+    let mut query = json!({"kind":"flow_comparison","base":args.base,"head":args.head,"expected_comparison":args.expected_comparison,"selection":args.selection});
+    snapshot_selectors(&mut query, args.base_snapshot, args.head_snapshot)?;
+    Query::new(query, None)
+}
+fn flow_symbol(symbol: &str) -> Result<()> {
+    text(symbol)?;
+    ensure!(!symbol.contains(['\0', '\n', '\r']), "Invalid flow symbol");
+    Ok(())
+}
+fn snapshot_selectors(query: &mut Value, base: Option<String>, head: Option<String>) -> Result<()> {
+    for (field, selector) in [("base_snapshot", base), ("head_snapshot", head)] {
+        if let Some(selector) = selector {
+            ensure!(crate::wire::generation(&selector), "Invalid {field} digest");
+            query[field] = json!(selector);
+        }
+    }
+    Ok(())
 }
 fn search(args: SearchArgs) -> Result<Query> {
     ensure!(args.text.len() <= 16384, "Search text exceeds 16 KiB");

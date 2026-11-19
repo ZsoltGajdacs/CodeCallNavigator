@@ -13,12 +13,16 @@ use std::{
     time::{Duration, Instant},
 };
 
+const EXIT_GRACE: Duration = Duration::from_secs(5);
+const SNAPSHOT_CANCEL_GRACE: Duration = Duration::from_secs(160);
+
 pub(super) struct Session {
     child: Child,
     input: Option<ChildStdin>,
     events: mpsc::Receiver<Result<Event>>,
     log: tempfile::NamedTempFile,
     cancellation: Option<Instant>,
+    cancel_grace: Duration,
     completion: Option<Instant>,
     reaped: bool,
 }
@@ -57,6 +61,11 @@ impl Session {
             events,
             log,
             cancellation: None,
+            cancel_grace: if matches!(request, Request::PrepareSnapshot { .. }) {
+                SNAPSHOT_CANCEL_GRACE
+            } else {
+                EXIT_GRACE
+            },
             completion: None,
             reaped: false,
         };
@@ -74,14 +83,17 @@ impl Session {
             }
             if self
                 .cancellation
-                .is_some_and(|started| started.elapsed() > Duration::from_secs(5))
+                .is_some_and(|started| started.elapsed() > self.cancel_grace)
             {
                 self.stop()?;
-                bail!("Analysis cancelled; engine did not stop within five seconds");
+                bail!(
+                    "Analysis cancelled; engine did not stop within {} seconds",
+                    self.cancel_grace.as_secs()
+                );
             }
             if self
                 .completion
-                .is_some_and(|started| started.elapsed() > Duration::from_secs(5))
+                .is_some_and(|started| started.elapsed() > EXIT_GRACE)
             {
                 self.stop()
                     .context("Engine result stream remained open after completion")?;
@@ -96,18 +108,19 @@ impl Session {
     }
 
     pub fn finish(&mut self) -> Result<ExitStatus> {
-        let started = self
+        let deadline = self
             .cancellation
             .into_iter()
-            .chain(self.completion)
+            .map(|started| started + self.cancel_grace)
+            .chain(self.completion.map(|started| started + EXIT_GRACE))
             .min()
-            .unwrap_or_else(Instant::now);
+            .unwrap_or_else(|| Instant::now() + EXIT_GRACE);
         loop {
             if let Some(status) = self.child.try_wait()? {
                 self.finish_group();
                 return Ok(status);
             }
-            if started.elapsed() > Duration::from_secs(5) {
+            if Instant::now() > deadline {
                 self.stop()?;
                 bail!("Engine did not exit after closing its result stream");
             }

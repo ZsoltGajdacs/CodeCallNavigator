@@ -35,6 +35,7 @@ pub(super) fn validate(result: &Value) -> Result<()> {
     );
     for side in ["base", "head"] {
         endpoint(&result[side])?;
+        strings(&result[side], &["schema"])?;
     }
     ensure!(
         result["base"]["kind"] == "commit",
@@ -43,17 +44,17 @@ pub(super) fn validate(result: &Value) -> Result<()> {
     boolean(result, "graph_equal")?;
     boolean(result, "metadata_equal")?;
     ensure!(result["summary"].is_object(), "Comparison omitted summary");
-    page(result)?;
+    page(result, "changes")?;
     for change in array(result, "changes")? {
         record(change)?;
     }
     Ok(())
 }
 
-fn page(result: &Value) -> Result<()> {
+pub(super) fn page(result: &Value, records: &str) -> Result<()> {
     boolean(result, "more")?;
     integers(result, &["offset", "limit", "returned", "total"])?;
-    let changes = array(result, "changes")?;
+    let changes = array(result, records)?;
     ensure!(
         result["returned"].as_u64() == Some(changes.len() as u64),
         "Comparison page count mismatch"
@@ -108,11 +109,8 @@ fn record(change: &Value) -> Result<()> {
     Ok(())
 }
 
-fn endpoint(value: &Value) -> Result<()> {
-    strings(
-        value,
-        &["kind", "requested_ref", "path", "schema", "digest"],
-    )?;
+pub(super) fn endpoint(value: &Value) -> Result<()> {
+    strings(value, &["kind", "requested_ref", "path", "digest"])?;
     ensure!(
         crate::wire::generation(value["digest"].as_str().unwrap_or_default()),
         "Malformed endpoint digest"
@@ -121,7 +119,7 @@ fn endpoint(value: &Value) -> Result<()> {
         Some("commit") => {
             let commit = value["commit"].as_str().unwrap_or_default();
             ensure!(
-                matches!(commit.len(), 40 | 64) && commit.bytes().all(|b| b.is_ascii_hexdigit()),
+                crate::wire::snapshots::commit(commit),
                 "Malformed resolved commit"
             );
         }
@@ -130,6 +128,16 @@ fn endpoint(value: &Value) -> Result<()> {
             "Working graph has a resolved commit"
         ),
         _ => anyhow::bail!("Unknown endpoint kind"),
+    }
+    let snapshot = &value["snapshot"];
+    if !snapshot.is_null() {
+        crate::wire::snapshots::record(snapshot)?;
+        ensure!(
+            value["kind"] == "commit"
+                && value["commit"] == snapshot["identity"]["commit"]
+                && value["digest"] == snapshot["digest"],
+            "Cached snapshot disagrees with comparison endpoint"
+        );
     }
     Ok(())
 }

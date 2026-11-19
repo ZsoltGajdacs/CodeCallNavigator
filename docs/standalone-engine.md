@@ -58,6 +58,36 @@ new-format revisions read their manifests and objects directly from the same
 resolved commits, without checkout or fetch. Full comparison includes flows.
 Exit status is 0 for equality, 1 for changes and 2 for operational/schema errors.
 
+### Local snapshots across worktrees
+
+Successful analyses can retain a snapshot of the analyzed Git commit in the
+user cache. Linked worktrees of the same clone share these snapshots. The
+working graph stays in the project's `.codecallnavigator/` directory. An
+analysis with edited or unverifiable inputs can publish a working graph and
+report why the commit snapshot was skipped.
+
+```sh
+ccnavigator snapshot-status --project /checkout --revision main
+ccnavigator prepare-snapshot --project /checkout --revision main --target backend/pom.xml
+ccnavigator compare --project /checkout --base main --head WORKTREE
+```
+
+The cache defaults to `~/Library/Caches/CodeCallNavigator/snapshots/v1/` on
+macOS and `$XDG_CACHE_HOME/CodeCallNavigator/snapshots/v1/` on Linux, with
+`~/.cache` as the default XDG root. Set `CODECALLNAVIGATOR_SNAPSHOT_CACHE`
+to an absolute path to use another cache root. Snapshot status shows the
+clone's cache directory and the available variants. The cache deduplicates
+compressed objects and evicts the oldest retained snapshots to fit 2 GiB.
+
+Preparation is explicit. It analyzes the requested commit in a temporary
+detached worktree, using the local analyzer and build tools. Omit
+`--target` to use the revision's default build selection. Targets are paths
+within the selected project at that revision. TypeScript preparation can reuse
+installed `node_modules` from the calling worktree. The observed compiler and
+package file contents contribute to the snapshot identity. Compare uses saved
+graphs, and you can pass `--base-snapshot` or `--head-snapshot` to select a
+specific cached variant.
+
 Paths use `@repo/` relative to the output-owning project. Add repeated
 `--root NAME=PATH` mappings for project-owned sources outside that root; use the
 same logical names in every checkout. Absolute checkout paths, temporary paths,
@@ -325,8 +355,7 @@ analyzer does not execute project configuration.
 
 Analysis still extracts and validates fresh compiler facts. The disposable
 `.codecallnavigator/inference.sqlite3` cache reuses selected inference decisions;
-it is not a graph history or a substitute for compiler analysis. Commit the single
-graph file and authored configuration, not this derived cache. Missing or malformed
+it is a derived cache for compiler analysis. Keep it out of Git. Missing or malformed
 cache data falls back to full inference with a warning. Failed or cancelled
 analysis preserves the previous graph and cache.
 

@@ -18,6 +18,21 @@ no checkout, fetch, compilation, publication or cache write occurs. A renamed
 artifact path in history is not searched automatically. Git commands have a
 30-second deadline and share the query process group for cancellation.
 
+With the `local_snapshots` capability, `snapshot_status` takes a `revision`
+and returns the resolved commit, clone cache path, and retained variants.
+Both `compare` and `flow_comparison` prefer a committed bundle and consult
+the local snapshot cache when the commit has no saved graph. Supply
+`base_snapshot` or `head_snapshot` to select a specific cache variant by ID.
+Cached endpoints include a `snapshot` record with the ID, analysis identity,
+and manifest digest. If several variants are available, an implicit lookup
+reports `snapshot_ambiguous`.
+
+To prepare an absent snapshot programmatically, send a version-2
+`prepare_snapshot` request to `serve-once` with `project`, `revision`, and
+optional project-relative `targets`. Keep stdin open for progress and send
+the normal `cancel` request to cancel the operation. The terminal
+`snapshot_prepared` event carries the retained snapshot.
+
 The version-1 result contains `base` and `head` endpoint metadata (`kind`,
 `requested_ref`, resolved `commit`, repository-relative `path`, `schema`, exact-byte
 BLAKE3 `digest`), `comparison_id`, `graph_equal`, `metadata_equal`, per-section

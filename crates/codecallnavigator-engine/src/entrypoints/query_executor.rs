@@ -12,6 +12,17 @@ impl Executor {
         if let Err(error) = query::validate(request) {
             return query::envelope(None, Err(error));
         }
+        if let codecallnavigator_core::query::Query::SnapshotStatus { revision } = &request.query {
+            let result = super::snapshots::status(&request.project, revision)
+                .and_then(|status| Ok(serde_json::to_value(status)?))
+                .map_err(|error| {
+                    codecallnavigator_core::query::Error::new(
+                        "snapshot_unavailable",
+                        format!("{error:#}"),
+                    )
+                });
+            return query::envelope(None, result);
+        }
         if let Some(response) = self.release_owned(request) {
             return response;
         }

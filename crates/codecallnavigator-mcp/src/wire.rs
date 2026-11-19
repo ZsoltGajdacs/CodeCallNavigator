@@ -4,6 +4,7 @@ mod observation;
 pub use observation::Support as FreshnessSupport;
 pub mod metadata;
 pub mod results;
+pub mod snapshots;
 use anyhow::{Context, Result, ensure};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -42,6 +43,8 @@ struct WireCapabilities {
 pub struct Capabilities {
     pub freshness: FreshnessSupport,
     pub analysis_session: AnalysisSessionSupport,
+    pub local_snapshots: bool,
+    pub flow_comparison: bool,
 }
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum AnalysisSessionSupport {
@@ -83,6 +86,26 @@ struct ComparisonCapabilities {
     version: u32,
     snapshot_binding: bool,
 }
+#[derive(Deserialize)]
+struct LocalSnapshotCapabilities {
+    version: u32,
+    status_query: String,
+    prepare_command: String,
+    cancel_command: String,
+}
+
+fn supports_local_snapshots(value: &Value, operations: &[String]) -> bool {
+    serde_json::from_value::<LocalSnapshotCapabilities>(value["local_snapshots"].clone()).is_ok_and(
+        |snapshot| {
+            snapshot.version == 1
+                && snapshot.status_query == "snapshot_status"
+                && snapshot.prepare_command == "prepare_snapshot"
+                && snapshot.cancel_command == "cancel"
+                && operations.iter().any(|op| op == &snapshot.status_query)
+        },
+    )
+}
+
 pub fn capabilities(value: &Value) -> Result<Capabilities> {
     let capabilities: WireCapabilities =
         serde_json::from_value(value.clone()).context("Malformed CLI capabilities")?;
@@ -103,6 +126,11 @@ pub fn capabilities(value: &Value) -> Result<Capabilities> {
     Ok(Capabilities {
         freshness: observation::negotiate(value.get("freshness"), &capabilities.operations),
         analysis_session: analysis_session(value.get("analysis_session")),
+        local_snapshots: supports_local_snapshots(value, &capabilities.operations),
+        flow_comparison: capabilities
+            .operations
+            .iter()
+            .any(|op| op == "flow_comparison"),
     })
 }
 

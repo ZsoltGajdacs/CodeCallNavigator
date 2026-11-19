@@ -116,6 +116,12 @@ impl Client {
     pub(super) fn comparison_supported(&self, cancel: &AtomicBool) -> Result<bool> {
         Ok(self.capabilities(cancel, Instant::now())?.flow_comparison)
     }
+    pub(super) fn graph_comparison_supported(&self, cancel: &AtomicBool) -> Result<bool> {
+        Ok(self.capabilities(cancel, Instant::now())?.graph_comparison)
+    }
+    pub(super) fn local_snapshots_supported(&self, cancel: &AtomicBool) -> Result<bool> {
+        Ok(self.capabilities(cancel, Instant::now())?.local_snapshots)
+    }
 
     pub(super) fn observation_supported(&self, cancel: &AtomicBool) -> Result<bool> {
         // A monitor start/retry must notice an installed CLI upgraded in place.

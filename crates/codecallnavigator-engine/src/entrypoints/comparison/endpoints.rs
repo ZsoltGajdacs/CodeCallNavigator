@@ -23,6 +23,8 @@ pub(crate) struct InspectedPair {
 pub(crate) struct EndpointRequest<'a> {
     pub base: &'a str,
     pub head: &'a str,
+    pub base_snapshot: Option<&'a str>,
+    pub head_snapshot: Option<&'a str>,
     pub expected: Option<&'a str>,
 }
 enum ArtifactPolicy {
@@ -57,9 +59,11 @@ impl EndpointRequest<'_> {
 
     fn read(&self, request: &Request, policy: ArtifactPolicy) -> Result<InspectedPair> {
         let project = project(request)?;
-        let before = revision::inspect(&project, self.base).map_err(revision_error)?;
+        let before = revision::inspect_cached(&project, self.base, self.base_snapshot)
+            .map_err(revision_error)?;
         policy.check(&before)?;
-        let after = revision::inspect(&project, self.head).map_err(revision_error)?;
+        let after = revision::inspect_cached(&project, self.head, self.head_snapshot)
+            .map_err(revision_error)?;
         policy.check(&after)?;
         query::check_generation(request, &after.endpoint.digest)?;
         let comparison_id = identity(&before.endpoint, &after.endpoint)?;
@@ -104,6 +108,16 @@ impl EndpointRequest<'_> {
                     "Comparison references must contain 1..16384 bytes",
                 ));
             }
+        }
+        if [self.base_snapshot, self.head_snapshot]
+            .into_iter()
+            .flatten()
+            .any(|snapshot| !valid_digest(snapshot))
+        {
+            return Err(Error::new(
+                "invalid_request",
+                "Snapshot IDs must be 64-character hexadecimal digests",
+            ));
         }
         Ok(())
     }

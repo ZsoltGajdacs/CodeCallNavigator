@@ -61,7 +61,10 @@ Queries never start analysis. Only `refresh_graph` changes analyzed data.
 
 | Tool | Arguments |
 | --- | --- |
-| `compare_graphs` | `base`, `head?` (`WORKTREE`), `offset?` (0), `limit?` (100; 1–500), `expected_comparison?`, `expected_generation?` |
+| `compare_graphs` | `base`, `head?` (`WORKTREE`), `base_snapshot?`, `head_snapshot?`, `offset?` (0), `limit?` (100; 1–500), `expected_comparison?`, `expected_generation?` |
+| `compare_function_flows` | `base`, `head?`, `base_snapshot?`, `head_snapshot?`, `selection`, `expected_comparison?` |
+| `graph_snapshot_status` | `revision` |
+| `prepare_graph_snapshot` | `revision`, `targets?` (project-relative build paths) |
 | `graph_status` | `expected_generation?` |
 | `graph_freshness` | `expected_generation?` |
 | `find_symbols` | `text`, `category?` (`all`, `classes`, `methods`), `offset?` (0), `limit?` (50; 1–200), `expected_generation?` |
@@ -124,8 +127,9 @@ or watcher, and never refreshes implicitly. An unavailable optional capability
 affects only this tool; configured project/root addresses remain unchanged.
 
 `compare_graphs` forwards the CLI's [Git comparison contract](cli-queries.md#git-graph-comparison).
-It reads saved artifacts only: a committed baseline against the saved working
-graph by default, or two explicit committed revisions. It returns full paged
+It reads a saved commit snapshot against the saved working graph by default, or
+compares two explicit revisions. Each revision may come from Git or the local
+snapshot cache. It returns full paged
 changes, including flows and separately identified analysis metadata. Carry
 `comparison_id` as `expected_comparison` on subsequent pages and follow
 `next_offset`; ref/artifact changes fail with `comparison_mismatch`. A committed

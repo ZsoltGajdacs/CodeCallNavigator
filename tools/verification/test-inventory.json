@@ -584,6 +584,62 @@
       "purpose": "Cancellation after flushed manifest preparation preserves the active generation; real file persistence cannot be proven in memory"
     },
     {
+      "id": "codecallnavigator-core/lib:codecallnavigator_core::artifact::storage::local_snapshots::tests::cancelled_and_over_budget_writes_preserve_preexisting_snapshots",
+      "runner": "rust",
+      "file": "crates/codecallnavigator-core/src/artifact/storage/local_snapshots/tests.rs",
+      "test_name": "artifact::storage::local_snapshots::tests::cancelled_and_over_budget_writes_preserve_preexisting_snapshots",
+      "ignored": false,
+      "package": "codecallnavigator-core",
+      "target_kind": "lib",
+      "target": "codecallnavigator_core",
+      "component": "core",
+      "category": "integration",
+      "requirements": [],
+      "purpose": "Verify failed cache retention does not replace previously published snapshots using a real local store"
+    },
+    {
+      "id": "codecallnavigator-core/lib:codecallnavigator_core::artifact::storage::local_snapshots::tests::corrupt_object_is_detected_and_republication_repairs_only_that_object",
+      "runner": "rust",
+      "file": "crates/codecallnavigator-core/src/artifact/storage/local_snapshots/tests.rs",
+      "test_name": "artifact::storage::local_snapshots::tests::corrupt_object_is_detected_and_republication_repairs_only_that_object",
+      "ignored": false,
+      "package": "codecallnavigator-core",
+      "target_kind": "lib",
+      "target": "codecallnavigator_core",
+      "component": "core",
+      "category": "integration",
+      "requirements": [],
+      "purpose": "Verify captured digest validation and atomic object repair against real cache files"
+    },
+    {
+      "id": "codecallnavigator-core/lib:codecallnavigator_core::artifact::storage::local_snapshots::tests::distinct_clones_share_objects_and_keep_separate_indexes",
+      "runner": "rust",
+      "file": "crates/codecallnavigator-core/src/artifact/storage/local_snapshots/tests.rs",
+      "test_name": "artifact::storage::local_snapshots::tests::distinct_clones_share_objects_and_keep_separate_indexes",
+      "ignored": false,
+      "package": "codecallnavigator-core",
+      "target_kind": "lib",
+      "target": "codecallnavigator_core",
+      "component": "core",
+      "category": "integration",
+      "requirements": [],
+      "purpose": "Verify separate clone indexes, deduplicated compressed objects, and read-only cache misses"
+    },
+    {
+      "id": "codecallnavigator-core/lib:codecallnavigator_core::artifact::storage::local_snapshots::tests::oldest_snapshot_eviction_preserves_open_bundle_handles",
+      "runner": "rust",
+      "file": "crates/codecallnavigator-core/src/artifact/storage/local_snapshots/tests.rs",
+      "test_name": "artifact::storage::local_snapshots::tests::oldest_snapshot_eviction_preserves_open_bundle_handles",
+      "ignored": false,
+      "package": "codecallnavigator-core",
+      "target_kind": "lib",
+      "target": "codecallnavigator_core",
+      "component": "core",
+      "category": "integration",
+      "requirements": [],
+      "purpose": "Verify real immutable file handles remain readable when a later write evicts their snapshot"
+    },
+    {
       "id": "codecallnavigator-core/lib:codecallnavigator_core::artifact::storage::tests::cancelled_publication_preserves_exact_manifest_and_existing_objects",
       "runner": "rust",
       "file": "crates/codecallnavigator-core/src/artifact/storage/tests.rs",
@@ -7539,6 +7595,61 @@
       ]
     },
     {
+      "id": "codecallnavigator-engine/test:local_snapshots::failed_preparation_removes_only_the_checkout_it_created",
+      "runner": "rust",
+      "file": "crates/codecallnavigator-engine/tests/local_snapshots.rs",
+      "test_name": "failed_preparation_removes_only_the_checkout_it_created",
+      "ignored": false,
+      "package": "codecallnavigator-engine",
+      "target_kind": "test",
+      "target": "local_snapshots",
+      "component": "engine",
+      "category": "acceptance",
+      "purpose": "Real CLI and Git clean up a temporary detached worktree when requested historical target resolution fails.",
+      "requirements": [
+        "cli",
+        "git"
+      ]
+    },
+    {
+      "id": "codecallnavigator-engine/test:local_snapshots::maven_preparation_retains_a_revision_with_generated_source_roots",
+      "runner": "rust",
+      "file": "crates/codecallnavigator-engine/tests/local_snapshots.rs",
+      "test_name": "maven_preparation_retains_a_revision_with_generated_source_roots",
+      "ignored": true,
+      "package": "codecallnavigator-engine",
+      "target_kind": "test",
+      "target": "local_snapshots",
+      "component": "engine",
+      "category": "acceptance",
+      "purpose": "Real Maven compilation is needed to establish generated source ownership and system-settings admission for snapshot retention.",
+      "requirements": [
+        "cli",
+        "git",
+        "java",
+        "maven"
+      ]
+    },
+    {
+      "id": "codecallnavigator-engine/test:local_snapshots::prepared_and_retained_graphs_compare_across_worktrees",
+      "runner": "rust",
+      "file": "crates/codecallnavigator-engine/tests/local_snapshots.rs",
+      "test_name": "prepared_and_retained_graphs_compare_across_worktrees",
+      "ignored": true,
+      "package": "codecallnavigator-engine",
+      "target_kind": "test",
+      "target": "local_snapshots",
+      "component": "engine",
+      "category": "acceptance",
+      "purpose": "Real compiler publication and detached preparation preserve exact Git snapshots across worktrees after checkout removal.",
+      "requirements": [
+        "cli",
+        "git",
+        "node",
+        "typescript"
+      ]
+    },
+    {
       "id": "codecallnavigator-engine/test:verify::cli_checks_inputs_preserves_bytes_and_reports_mixed_failures",
       "runner": "rust",
       "file": "crates/codecallnavigator-engine/tests/verify.rs",
@@ -7960,6 +8071,25 @@
         "git"
       ],
       "purpose": "real stdio comparison preserves cli pages metadata and errors"
+    },
+    {
+      "id": "codecallnavigator-mcp/test:stdio_comparison::real_stdio_snapshot_preparation_and_comparison_preserve_cli_results",
+      "runner": "rust",
+      "file": "crates/codecallnavigator-mcp/tests/stdio_comparison.rs",
+      "test_name": "real_stdio_snapshot_preparation_and_comparison_preserve_cli_results",
+      "ignored": true,
+      "package": "codecallnavigator-mcp",
+      "target_kind": "test",
+      "target": "stdio_comparison",
+      "component": "mcp",
+      "category": "acceptance",
+      "requirements": [
+        "cli",
+        "git",
+        "node",
+        "typescript"
+      ],
+      "purpose": "real MCP progress, preparation, lookup and comparisons preserve CLI snapshot results"
     },
     {
       "id": "codecallnavigator-mcp/test:stdio_comparison_cancellation::cancelling_comparison_reaps_the_pending_git_read",
@@ -9906,6 +10036,23 @@
         "git"
       ],
       "purpose": "superseded success and error catalog outputs cannot change the current workspace"
+    },
+    {
+      "id": "codecallnavigator/bin:codecallnavigator::flow_comparison::snapshot_tests::desktop_prepares_selects_and_pages_cached_graphs_and_flows",
+      "runner": "rust",
+      "file": "src/flow_comparison/snapshot_tests.rs",
+      "test_name": "flow_comparison::snapshot_tests::desktop_prepares_selects_and_pages_cached_graphs_and_flows",
+      "ignored": true,
+      "package": "codecallnavigator",
+      "target_kind": "bin",
+      "target": "codecallnavigator",
+      "component": "ui",
+      "category": "acceptance",
+      "requirements": [
+        "git",
+        "typescript"
+      ],
+      "purpose": "Proves that the real desktop controller can prepare isolated snapshots and select identical cached endpoints for graph pages and function flows through the public engine."
     },
     {
       "id": "codecallnavigator/bin:codecallnavigator::flow_comparison::tests::historical_workspace_loads_without_graph_and_keeps_captured_project_and_side_state",

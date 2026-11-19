@@ -1,5 +1,5 @@
 use crate::{
-    arguments::{self, RefreshArgs},
+    arguments::{self, PrepareSnapshotArgs, RefreshArgs},
     configuration::Configuration,
     process, wire,
 };
@@ -7,6 +7,7 @@ use anyhow::{Context, Result, ensure};
 use serde::Deserialize;
 use serde_json::{Value, json};
 use std::time::Duration;
+use tokio::sync::mpsc;
 use tokio_util::sync::CancellationToken;
 
 const QUERY_DEADLINE: Duration = Duration::from_secs(120);
@@ -33,6 +34,7 @@ impl Backend {
                     input: None,
                     mode: process::StdinMode::Close,
                     deadline: Duration::from_secs(15),
+                    progress: None,
                 },
                 &CancellationToken::new(),
             )
@@ -59,7 +61,7 @@ impl Backend {
             .as_str()
             .context("Missing query kind")?
             .to_owned();
-        if let Some(reply) = self.unsupported_observation(&operation) {
+        if let Some(reply) = self.unsupported_query(&operation, &query.query) {
             return Ok(reply);
         }
         let request = json!({"version":2,"project":self.config.project,"roots":self.config.roots,"expected_generation":query.generation,"query":query.query});
@@ -72,6 +74,7 @@ impl Backend {
                     input: Some(serde_json::to_vec(&request)?),
                     mode: process::StdinMode::Close,
                     deadline: QUERY_DEADLINE,
+                    progress: None,
                 },
                 cancel,
             )
@@ -92,17 +95,22 @@ impl Backend {
         }
         Ok(Reply { value, is_error })
     }
-    fn unsupported_observation(&self, operation: &str) -> Option<Reply> {
-        if operation != "freshness" {
-            return None;
+    fn unsupported_query(&self, operation: &str, query: &Value) -> Option<Reply> {
+        if operation == "freshness"
+            && let wire::FreshnessSupport::Unsupported(message) = self.capabilities.freshness
+        {
+            return Some(unsupported(message));
         }
-        let wire::FreshnessSupport::Unsupported(message) = self.capabilities.freshness else {
-            return None;
-        };
-        Some(Reply {
-            value: json!({"version":2,"generation":null,"freshness":null,"result":null,"error":{"code":"unsupported_capability","message":message}}),
-            is_error: true,
-        })
+        if operation == "flow_comparison" && !self.capabilities.flow_comparison {
+            return Some(unsupported(
+                "Upgrade the configured CLI to compare function flows",
+            ));
+        }
+        let uses_snapshots = operation == "snapshot_status"
+            || query["base_snapshot"].is_string()
+            || query["head_snapshot"].is_string();
+        (uses_snapshots && !self.capabilities.local_snapshots)
+            .then(|| unsupported("Upgrade the configured CLI to use local graph snapshots"))
     }
     pub async fn discovery(&self, cancel: &CancellationToken) -> Result<Value> {
         let output = self
@@ -117,6 +125,7 @@ impl Backend {
                     input: None,
                     mode: process::StdinMode::Close,
                     deadline: QUERY_DEADLINE,
+                    progress: None,
                 },
                 cancel,
             )
@@ -138,26 +147,66 @@ impl Backend {
         let discovered: wire::Discovery = serde_json::from_value(self.discovery(cancel).await?)?;
         let targets = choose_targets(&discovered, args)?;
         let request = json!({"command":"analyze","version":2,"project":self.config.project,"roots":self.config.roots,"targets":targets,"infer_linked_roots":false,"failure_version":1});
-        let mut bytes = serde_json::to_vec(&request)?;
-        bytes.push(b'\n');
+        let invocation = analysis_invocation(request, process::StdinMode::Analysis, None)?;
         let output = self
             .processes
-            .run(
-                &self.config.engine,
-                process::Invocation {
-                    arguments: vec!["serve-once".into()],
-                    input: Some(bytes),
-                    mode: process::StdinMode::Analysis,
-                    deadline: REFRESH_DEADLINE,
-                },
-                cancel,
-            )
+            .run(&self.config.engine, invocation, cancel)
             .await?;
-        let diagnostic = output.cleanup_diagnostic.clone();
-        analysis_reply(output).map_err(|error| match diagnostic {
-            Some(diagnostic) => error.context(diagnostic),
-            None => error,
+        analysis_reply(output)
+    }
+
+    pub async fn prepare_snapshot(
+        &self,
+        args: PrepareSnapshotArgs,
+        cancel: &CancellationToken,
+        progress: Option<mpsc::Sender<String>>,
+    ) -> Result<Reply> {
+        if !self.capabilities.local_snapshots {
+            return Ok(unsupported(
+                "Upgrade the configured CLI to prepare local graph snapshots",
+            ));
+        }
+        let request = json!({"command":"prepare_snapshot","version":2,"project":self.config.project,"revision":args.revision,"targets":args.targets});
+        let invocation =
+            analysis_invocation(request, process::StdinMode::SnapshotPreparation, progress)?;
+        let output = self
+            .processes
+            .run(&self.config.engine, invocation, cancel)
+            .await?;
+        let terminal = analysis_terminal(&output, "snapshot_prepared")?;
+        if terminal["event"] == "failed" {
+            return failed_analysis(terminal, output.cleanup_diagnostic);
+        }
+        let snapshot = &terminal["snapshot"];
+        wire::snapshots::record(snapshot)?;
+        process::require_success(&output)?;
+        Ok(Reply {
+            value: json!({"version":2,"generation":null,"freshness":null,"result":terminal,"error":null}),
+            is_error: false,
         })
+    }
+}
+
+fn analysis_invocation(
+    request: Value,
+    mode: process::StdinMode,
+    progress: Option<mpsc::Sender<String>>,
+) -> Result<process::Invocation> {
+    let mut input = serde_json::to_vec(&request)?;
+    input.push(b'\n');
+    Ok(process::Invocation {
+        arguments: vec!["serve-once".into()],
+        input: Some(input),
+        mode,
+        deadline: REFRESH_DEADLINE,
+        progress,
+    })
+}
+
+fn unsupported(message: &str) -> Reply {
+    Reply {
+        value: json!({"version":2,"generation":null,"freshness":null,"result":null,"error":{"code":"unsupported_capability","message":message}}),
+        is_error: true,
     }
 }
 
@@ -222,6 +271,26 @@ fn failed_analysis(terminal: Value, cleanup_diagnostic: Option<String>) -> Resul
 }
 
 fn analysis_reply(output: process::Output) -> Result<Reply> {
+    let terminal = analysis_terminal(&output, "complete")?;
+    if terminal["event"] == "failed" {
+        return failed_analysis(terminal, output.cleanup_diagnostic);
+    }
+    validate_complete(&terminal)?;
+    process::require_success(&output)?;
+    Ok(Reply {
+        value: json!({"version":2,"generation":terminal["digest"],"freshness":null,"result":terminal,"error":null}),
+        is_error: false,
+    })
+}
+
+fn analysis_terminal(output: &process::Output, expected: &str) -> Result<Value> {
+    parse_analysis_terminal(output, expected).map_err(|error| match &output.cleanup_diagnostic {
+        Some(diagnostic) => error.context(diagnostic.clone()),
+        None => error,
+    })
+}
+
+fn parse_analysis_terminal(output: &process::Output, expected: &str) -> Result<Value> {
     let text = std::str::from_utf8(&output.stdout).context("CLI analysis output is not UTF-8")?;
     let mut events = text.lines();
     let hello: Value = serde_json::from_str(events.next().context("CLI omitted protocol hello")?)?;
@@ -240,20 +309,11 @@ fn analysis_reply(output: process::Output) -> Result<Reply> {
             Some("progress") => {
                 ensure!(event["message"].is_string(), "Malformed CLI progress event");
             }
-            Some("complete") | Some("failed") => terminal = Some(event),
+            Some(variant) if variant == expected || variant == "failed" => terminal = Some(event),
             _ => anyhow::bail!("Unexpected CLI analysis event"),
         }
     }
-    let terminal = terminal.context("CLI omitted terminal analysis event")?;
-    if terminal["event"] == "failed" {
-        return failed_analysis(terminal, output.cleanup_diagnostic);
-    }
-    validate_complete(&terminal)?;
-    process::require_success(&output)?;
-    Ok(Reply {
-        value: json!({"version":2,"generation":terminal["digest"],"freshness":null,"result":terminal,"error":null}),
-        is_error: false,
-    })
+    terminal.context("CLI omitted terminal analysis event")
 }
 fn validate_complete(event: &Value) -> Result<()> {
     let digest = event["digest"]

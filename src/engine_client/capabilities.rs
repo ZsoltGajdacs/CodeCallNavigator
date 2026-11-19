@@ -16,6 +16,8 @@ use std::{
 pub(super) struct Capabilities {
     pub flow_languages: Vec<String>,
     pub flow_comparison: bool,
+    pub graph_comparison: bool,
+    pub local_snapshots: bool,
     pub flow_expansion: bool,
     pub observation: bool,
     pub automatic_refresh: bool,
@@ -106,10 +108,34 @@ fn validate(bytes: &[u8]) -> Result<Capabilities> {
     Ok(Capabilities {
         flow_languages,
         flow_comparison: flow_comparison::supported(&capabilities, operations),
+        graph_comparison: supports_graph_comparison(&capabilities, operations),
+        local_snapshots: supports_local_snapshots(&capabilities, operations),
         flow_expansion: flow_expansion::supported(&capabilities, operations),
         observation,
         automatic_refresh,
     })
+}
+
+fn supports_graph_comparison(
+    capabilities: &serde_json::Value,
+    operations: &[serde_json::Value],
+) -> bool {
+    let comparison = &capabilities["comparison"];
+    operations.iter().any(|name| name == "compare")
+        && comparison["version"] == 1
+        && comparison["snapshot_binding"] == true
+}
+
+fn supports_local_snapshots(
+    capabilities: &serde_json::Value,
+    operations: &[serde_json::Value],
+) -> bool {
+    let snapshots = &capabilities["local_snapshots"];
+    operations.iter().any(|name| name == "snapshot_status")
+        && snapshots["version"] == 1
+        && snapshots["status_query"] == "snapshot_status"
+        && snapshots["prepare_command"] == "prepare_snapshot"
+        && snapshots["cancel_command"] == "cancel"
 }
 
 fn supports_observation(

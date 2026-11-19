@@ -11,6 +11,8 @@ pub(super) fn respond(request: &Request) -> Option<Response> {
     let Query::Compare {
         base,
         head,
+        base_snapshot,
+        head_snapshot,
         offset,
         limit,
         expected_comparison,
@@ -22,6 +24,8 @@ pub(super) fn respond(request: &Request) -> Option<Response> {
         endpoints: endpoints::EndpointRequest {
             base,
             head,
+            base_snapshot: base_snapshot.as_deref(),
+            head_snapshot: head_snapshot.as_deref(),
             expected: expected_comparison.as_deref(),
         },
         offset: *offset,

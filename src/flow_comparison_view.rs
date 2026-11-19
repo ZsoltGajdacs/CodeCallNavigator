@@ -2,12 +2,13 @@
 mod catalog;
 mod panes;
 mod provenance;
+mod snapshots;
 use crate::{app::State, theme};
 use rune::{Cx, El, col, row, text};
 use rune_kit::{Button, ButtonVariant, Kit, TextInput};
 pub fn view(state: &State, cx: &mut Cx<State>) -> El {
     let k = theme::kit(cx.system_dark());
-    let body = col()
+    let mut body = col()
         .key("comparison-workspace")
         .w_full()
         .h_full()
@@ -15,14 +16,20 @@ pub fn view(state: &State, cx: &mut Cx<State>) -> El {
         .fill(k.c.bg_base)
         .child(toolbar(state, cx.titlebar_inset(), &k))
         .child(revisions(state, &k))
-        .child(provenance::view(state, &k))
-        .child(status(state, &k))
-        .child(counterpart(state, &k))
-        .child(panes::view(state, &k));
+        .child(snapshots::controls(state, &k));
+    if state.flow_comparison.snapshots.graph_open {
+        body = body.child(snapshots::graph(state, &k));
+    } else {
+        body = body
+            .child(provenance::view(state, &k))
+            .child(status(state, &k))
+            .child(counterpart(state, &k))
+            .child(panes::view(state, &k));
+    }
     crate::view::with_overlays(state, &k, body, catalog::layers(state, &k))
 }
 fn toolbar(state: &State, inset: f32, k: &Kit) -> El {
-    row()
+    let toolbar = row()
         .key("comparison-toolbar")
         .w_full()
         .padding(8.0)
@@ -41,11 +48,19 @@ fn toolbar(state: &State, inset: f32, k: &Kit) -> El {
             .key("comparison-close"),
         )
         .child(
-            text("Compare flows")
-                .font(k.ty.ui_medium)
-                .color(k.c.text_base)
-                .grow(1.0),
-        )
+            text(if state.flow_comparison.snapshots.graph_open {
+                "Compare graphs"
+            } else {
+                "Compare flows"
+            })
+            .font(k.ty.ui_medium)
+            .color(k.c.text_base)
+            .grow(1.0),
+        );
+    if state.flow_comparison.snapshots.graph_open {
+        return toolbar;
+    }
+    toolbar
         .child(
             Button::new("Functions")
                 .disabled(state.flow_comparison.catalog.is_none())
@@ -83,6 +98,7 @@ fn fit_button(state: &State, side: crate::flow_comparison::SideId, k: &Kit) -> E
 }
 fn revisions(state: &State, k: &Kit) -> El {
     let controls = &state.flow_comparison.controls;
+    let snapshots = &state.flow_comparison.snapshots;
     row()
         .w_full()
         .px(10.0)
@@ -112,19 +128,17 @@ fn revisions(state: &State, k: &Kit) -> El {
                 .min_w(80.0),
         )
         .child(
-            Button::new("Load")
-                .disabled(state.runtime.is_none())
-                .on_press(State::load_flow_comparison)
-                .build(k)
-                .key("comparison-load"),
+            Button::new(if snapshots.graph_open {
+                "Compare flows"
+            } else {
+                "Load"
+            })
+            .disabled(state.runtime.is_none() || snapshots.pending())
+            .on_press(State::load_flow_comparison)
+            .build(k)
+            .key("comparison-load"),
         )
-        .child(
-            Button::new("Reload")
-                .disabled(state.flow_comparison.descriptor().is_none())
-                .on_press(|s: &mut State| s.flow_comparison.reload_control())
-                .build(k)
-                .key("comparison-reload"),
-        )
+        .child(reload_button(state, k))
         .child(
             Button::new("Cancel")
                 .disabled(!state.flow_comparison.pending())
@@ -132,6 +146,26 @@ fn revisions(state: &State, k: &Kit) -> El {
                 .build(k)
                 .key("comparison-cancel"),
         )
+}
+fn reload_button(state: &State, k: &Kit) -> El {
+    let workspace = &state.flow_comparison;
+    let snapshots = &workspace.snapshots;
+    let can_reload = if snapshots.graph_open {
+        snapshots.can_reload_graph()
+    } else {
+        workspace.descriptor().is_some()
+    };
+    Button::new("Reload")
+        .disabled(snapshots.pending() || !can_reload)
+        .on_press(|state: &mut State| {
+            if state.flow_comparison.snapshots.graph_open {
+                state.compare_snapshot_graphs(crate::flow_comparison::GraphNavigation::Reload);
+            } else {
+                state.flow_comparison.reload_control();
+            }
+        })
+        .build(k)
+        .key("comparison-reload")
 }
 fn counterpart(state: &State, k: &Kit) -> El {
     let pair = state.flow_comparison.current.as_ref();
@@ -211,6 +245,15 @@ pub fn key(state: &mut State, event: &rune::KeyEvent) -> bool {
     if event.key == rune::Key::Escape {
         if state.flow_comparison.controls.catalog_open {
             state.flow_comparison.controls.catalog_open = false;
+        } else if state.flow_comparison.snapshots.graph_open
+            && state
+                .flow_comparison
+                .snapshots
+                .selected_change
+                .take()
+                .is_some()
+        {
+            return true;
         } else {
             state.flow_comparison.close();
         }

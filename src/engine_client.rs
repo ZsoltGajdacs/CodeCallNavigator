@@ -124,7 +124,10 @@ fn exchange(
     ensure!(!cancel.load(Ordering::Relaxed), "Analysis cancelled");
     let mut child = process::Session::start(runtime, request)?;
     let mut conversation = Conversation {
-        typed_failure: matches!(request, Request::Analyze { .. }),
+        typed_failure: matches!(
+            request,
+            Request::Analyze { .. } | Request::PrepareSnapshot { .. }
+        ),
         ..Default::default()
     };
     while let Some(event) = child.next(cancel)? {

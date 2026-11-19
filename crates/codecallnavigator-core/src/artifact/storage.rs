@@ -2,6 +2,7 @@
 mod captured;
 mod codec;
 mod companions;
+pub mod local_snapshots;
 mod publication;
 #[cfg(test)]
 mod tests;

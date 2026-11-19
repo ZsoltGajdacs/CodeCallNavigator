@@ -90,6 +90,9 @@ pub struct CompilerOutputs {
     pub raw_bytecode_directories: Option<Vec<String>>,
     pub compile_classpath: Vec<String>,
     pub source_roots: Vec<String>,
+    /// Runtime ownership declared by the compiler for generated source roots.
+    #[serde(skip)]
+    pub generated_source_directories: Vec<String>,
     pub build_inputs: Vec<String>,
 }
 

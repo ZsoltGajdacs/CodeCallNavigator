@@ -2,12 +2,34 @@
 use super::{Project, Workspace};
 use crate::{
     app::State,
-    engine_client::{Descriptor, QueryContext},
+    engine_client::{Descriptor, QueryContext, flow_comparison::ComparisonRefs},
+    runtime::Runtime,
 };
 use std::path::Path;
 impl State {
+    #[cfg(test)]
     pub fn open_flow_comparison(&mut self, base: String, head: String) -> Result<(), String> {
+        self.open_selected_flow_comparison(ComparisonRefs {
+            base,
+            head,
+            ..Default::default()
+        })
+    }
+    pub(super) fn open_selected_flow_comparison(
+        &mut self,
+        refs: ComparisonRefs,
+    ) -> Result<(), String> {
         self.flow_residency.activity();
+        let (runtime, context) = self.comparison_context()?;
+        self.flow_comparison.open(Project {
+            context,
+            refs,
+            runtime,
+        });
+        Ok(())
+    }
+
+    pub(super) fn comparison_context(&self) -> Result<(Runtime, QueryContext), String> {
         let runtime = self
             .runtime
             .as_ref()
@@ -29,17 +51,12 @@ impl State {
                 .ok_or("Choose a project folder first")?;
             QueryContext::for_project(runtime, folder.into())
         };
-        self.flow_comparison.open(Project {
-            context,
-            base,
-            head,
-            runtime: runtime.as_ref().clone(),
-        });
-        Ok(())
+        Ok((runtime.as_ref().clone(), context))
     }
 }
 impl Workspace {
     pub fn project_installed(&mut self, project: Option<&Path>) {
+        self.snapshots.project_installed(project);
         if self.project.is_none() {
             return;
         }

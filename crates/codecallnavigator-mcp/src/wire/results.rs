@@ -1,13 +1,17 @@
 //! Validate required operation payload shapes while preserving extension metadata.
 mod comparison;
+mod flow_comparison;
 use anyhow::{Result, ensure};
 pub(super) use comparison::metadata as comparison_metadata;
 use comparison::validate as comparison;
+pub(super) use flow_comparison::metadata as flow_comparison_metadata;
 use serde_json::Value;
 pub fn validate(operation: &str, result: &Value) -> Result<()> {
     ensure!(result.is_object(), "CLI operation result must be an object");
     match operation {
         "compare" => comparison(result),
+        "flow_comparison" => flow_comparison::validate(result),
+        "snapshot_status" => super::snapshots::status(result),
         "status" => integers(result, &["nodes", "edges"]),
         // Full typed observation and envelope binding are checked by metadata.
         "freshness" => Ok(()),
@@ -94,13 +98,25 @@ fn array<'a>(value: &'a Value, field: &str) -> Result<&'a Vec<Value>> {
 }
 /// Validate echoed comparison binding without interpreting graph contents.
 pub fn binding(request: &Value, result: &Value) -> Result<()> {
-    if request["kind"] == "compare"
-        && let Some(expected) = request["expected_comparison"].as_str()
-    {
+    if !matches!(
+        request["kind"].as_str(),
+        Some("compare" | "flow_comparison")
+    ) {
+        return Ok(());
+    }
+    if let Some(expected) = request["expected_comparison"].as_str() {
         ensure!(
             result["comparison_id"] == expected,
             "CLI returned a different comparison binding"
         );
+    }
+    for (side, selector) in [("base", "base_snapshot"), ("head", "head_snapshot")] {
+        if let Some(expected) = request[selector].as_str() {
+            ensure!(
+                result[side]["snapshot"]["id"] == expected,
+                "CLI returned a different snapshot selection for {side}"
+            );
+        }
     }
     Ok(())
 }

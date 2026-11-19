@@ -26,10 +26,17 @@ pub enum Query {
     Freshness {
         observation_version: u32,
     },
+    SnapshotStatus {
+        revision: String,
+    },
     Compare {
         base: String,
         #[serde(default = "comparison_head")]
         head: String,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        base_snapshot: Option<String>,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        head_snapshot: Option<String>,
         #[serde(default)]
         offset: usize,
         #[serde(default = "comparison_limit")]
@@ -41,6 +48,10 @@ pub enum Query {
         base: String,
         #[serde(default = "comparison_head")]
         head: String,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        base_snapshot: Option<String>,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        head_snapshot: Option<String>,
         #[serde(default)]
         expected_comparison: Option<String>,
         selection: FlowComparisonSelection,

@@ -12,7 +12,7 @@ impl Workspace {
         }
         let catalog = self.publish_catalog();
         let detail = self.publish_detail();
-        identity.is_some() | catalog | detail
+        identity.is_some() | catalog | detail | self.snapshots.poll()
     }
     fn publish_catalog(&mut self) -> bool {
         let Some(output) = self.catalog_job.take() else {

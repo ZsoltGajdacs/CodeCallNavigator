@@ -9,8 +9,11 @@ fn gated_open(
     let runtime = state.runtime.as_ref().unwrap().as_ref().clone();
     let project = Project {
         context: QueryContext::for_project(&runtime, root.into()),
-        base: "refs/tags/base".into(),
-        head: "refs/tags/head".into(),
+        refs: ComparisonRefs {
+            base: "refs/tags/base".into(),
+            head: "refs/tags/head".into(),
+            ..Default::default()
+        },
         runtime,
     };
     let workspace = &mut state.flow_comparison;

@@ -7,15 +7,17 @@ mod pair;
 mod pane_geometry;
 mod publication;
 mod requests;
+mod snapshots;
 mod source_navigation;
 mod work;
 use crate::engine_client::{
     QueryContext,
-    flow_comparison::{BoundComparison, Catalog},
+    flow_comparison::{BoundComparison, Catalog, ComparisonRefs},
 };
 pub use pair::{Pair, ReadySide, Side, SideId};
 use requests::{CatalogOutput, Clock, DetailOutput};
 use rune::{Latest, Waker};
+pub use snapshots::{Navigation as GraphNavigation, Side as SnapshotSide};
 use std::sync::Arc;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -35,13 +37,13 @@ pub enum Phase {
 #[derive(Clone)]
 struct Project {
     context: QueryContext,
-    base: String,
-    head: String,
+    refs: ComparisonRefs,
     runtime: crate::runtime::Runtime,
 }
 #[derive(Default)]
 pub struct Workspace {
     pub controls: controls::Controls,
+    pub snapshots: snapshots::Snapshots,
     project: Option<Project>,
     identity: identity::Identity,
     binding: Option<BoundComparison>,
@@ -64,6 +66,7 @@ pub struct Workspace {
 impl Workspace {
     pub(crate) fn release_hidden(&mut self) {
         self.cancel_requests();
+        self.snapshots.reset();
         self.current = None;
         self.history.clear();
         self.catalog = None;
@@ -79,10 +82,11 @@ impl Workspace {
             .as_ref()
             .map(|project| &project.context.descriptor)
     }
+    #[cfg(test)]
     pub fn references(&self) -> Option<(&str, &str)> {
         self.project
             .as_ref()
-            .map(|project| (project.base.as_str(), project.head.as_str()))
+            .map(|project| (project.refs.base.as_str(), project.refs.head.as_str()))
     }
     pub fn catalog_pending(&self) -> bool {
         self.catalog_job.is_pending()
@@ -96,15 +100,20 @@ impl Workspace {
     pub fn set_waker(&self, waker: Waker) {
         self.catalog_job.set_waker(waker.clone());
         self.detail_job.set_waker(waker.clone());
+        self.snapshots.set_waker(waker.clone());
         self.workers.set_waker(waker);
     }
     pub fn pending(&self) -> bool {
-        self.catalog_job.is_pending() || self.detail_job.is_pending()
+        self.catalog_job.is_pending() || self.detail_job.is_pending() || self.snapshots.pending()
     }
     pub fn stopped(&self) -> bool {
         self.workers.stopped()
     }
     pub fn close(&mut self) {
+        self.snapshots.reset();
+        self.close_flow_binding();
+    }
+    fn close_flow_binding(&mut self) {
         self.controls.visible = false;
         self.controls.catalog_open = false;
         self.cancel_requests();
@@ -129,7 +138,7 @@ impl Workspace {
         self.detail_job.cancel();
     }
     fn open(&mut self, project: Project) {
-        self.close();
+        self.close_flow_binding();
         self.project = Some(project.clone());
         self.phase = Phase::Loading;
         self.controls.visible = true;
@@ -149,10 +158,15 @@ impl Workspace {
             .request(work, |work| work.map(requests::CatalogWork::run));
     }
     pub fn reload(&mut self) -> Result<(), String> {
-        let (base, head) = self.references().ok_or("No comparison project is open")?;
-        self.load_refs(base.into(), head.into())
+        let refs = self
+            .project
+            .as_ref()
+            .ok_or("No comparison project is open")?
+            .refs
+            .clone();
+        self.load_refs(refs)
     }
-    pub fn load_refs(&mut self, base: String, head: String) -> Result<(), String> {
+    fn load_refs(&mut self, refs: ComparisonRefs) -> Result<(), String> {
         let mut project = self
             .project
             .clone()
@@ -162,8 +176,7 @@ impl Workspace {
             descriptor.project = captured.into();
         }
         project.context = QueryContext::new(&project.runtime, descriptor);
-        project.base = base;
-        project.head = head;
+        project.refs = refs;
         self.open(project);
         Ok(())
     }
@@ -209,5 +222,7 @@ mod context_tests;
 mod identity_tests;
 #[cfg(test)]
 mod publication_tests;
+#[cfg(test)]
+mod snapshot_tests;
 #[cfg(test)]
 pub(crate) mod tests;

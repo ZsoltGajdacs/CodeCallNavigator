@@ -1,4 +1,5 @@
 //! Owned public-wire DTOs; compiler target certainty remains in the function/chart calls.
+use codecallnavigator::artifact::local_snapshots::SnapshotRecord;
 use codecallnavigator::flow::{FlowChart, FunctionFlowIR};
 use serde::Deserialize;
 
@@ -16,6 +17,7 @@ pub struct Endpoint {
     pub path: String,
     pub schema: Option<String>,
     pub digest: String,
+    pub snapshot: Option<Box<SnapshotRecord>>,
 }
 #[derive(Clone, Debug, PartialEq, Eq, Deserialize)]
 pub struct Header {
@@ -216,6 +218,14 @@ fn endpoint(endpoint: &Endpoint) -> anyhow::Result<()> {
             endpoint.commit.is_none(),
             "WORKTREE endpoint has a resolved commit"
         ),
+    }
+    if let Some(snapshot) = &endpoint.snapshot {
+        ensure!(
+            endpoint.commit.as_deref() == Some(&snapshot.identity.commit)
+                && endpoint.digest == snapshot.digest
+                && digest(&snapshot.id),
+            "CLI returned inconsistent cached snapshot provenance"
+        );
     }
     Ok(())
 }

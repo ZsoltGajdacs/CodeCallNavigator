@@ -120,6 +120,9 @@ fn merge_outputs(
         .extend(part.bytecode_directories);
     combined.compile_classpath.extend(part.compile_classpath);
     combined.source_roots.extend(part.source_roots);
+    combined
+        .generated_source_directories
+        .extend(part.generated_source_directories);
     combined.build_inputs.extend(part.build_inputs);
     combined.raw_bytecode_directories = combined
         .raw_bytecode_directories

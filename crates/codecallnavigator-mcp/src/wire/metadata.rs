@@ -1,11 +1,24 @@
 //! Operation-specific query envelope validation, independent of process transport.
-use super::{observation, results::comparison_metadata};
+use super::{
+    observation,
+    results::{comparison_metadata, flow_comparison_metadata},
+};
 use anyhow::{Result, ensure};
 use serde_json::Value;
 
 pub fn validate(value: &Value, operation: &str, bound: bool) -> Result<()> {
     if operation == "compare" {
         return comparison_metadata(value);
+    }
+    if operation == "flow_comparison" {
+        return flow_comparison_metadata(value);
+    }
+    if operation == "snapshot_status" {
+        ensure!(
+            value["generation"].is_null() && value["freshness"].is_null(),
+            "Snapshot lookup unexpectedly claims a working generation"
+        );
+        return Ok(());
     }
     if let ("explorer", false, true) = (operation, bound, value["generation"].is_null()) {
         return Ok(());

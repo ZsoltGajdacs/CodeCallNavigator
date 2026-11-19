@@ -409,6 +409,7 @@ mod tests {
             ]),
             compile_classpath: Vec::new(),
             source_roots: vec![root.join("src").to_string_lossy().into_owned()],
+            generated_source_directories: Vec::new(),
             build_inputs: vec![root.join("pom.xml").to_string_lossy().into_owned()],
         }
     }

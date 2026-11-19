@@ -22,6 +22,9 @@ mod response_encoding;
 mod session_child;
 mod session_inputs;
 mod session_stream;
+mod snapshot_retention;
+mod snapshot_worktree;
+mod snapshots;
 mod verification;
 use anyhow::Result;
 use arguments::Command;
@@ -59,17 +62,7 @@ pub fn run() -> Result<i32> {
             print_help();
             Ok(0)
         }
-        Command::Discover(project) => {
-            let targets = discovery::discover(&project)?;
-            let selected = discovery::default_selection(&targets);
-            println!(
-                "{}",
-                serde_json::to_string(
-                    &serde_json::json!({"targets":targets,"default_selection":selected})
-                )?
-            );
-            Ok(0)
-        }
+        Command::Discover(project) => run_discovery(&project),
         Command::ClearCache(project) => {
             let removed = codecallnavigator_core::boundary::clear_inference_cache(&project)?;
             println!("Cleared inference cache ({removed} files removed)");
@@ -78,12 +71,29 @@ pub fn run() -> Result<i32> {
         Command::Verify(arguments) => verification::run(arguments),
         Command::Analyze(arguments) => run_analysis(arguments),
         Command::Watch(arguments) => session_stream::cli(arguments),
+        Command::SnapshotStatus(arguments) => {
+            print_snapshot(&snapshots::status(&arguments.project, &arguments.revision)?)
+        }
+        Command::PrepareSnapshot(arguments) => print_snapshot(&snapshots::prepare(
+            &arguments.project,
+            &arguments.revision,
+            arguments.targets,
+            &|message| eprintln!("{message}"),
+        )?),
         Command::Compare {
             project,
             base,
             head,
+            base_snapshot,
+            head_snapshot,
         } => {
-            let result = artifact::compare_git(&project, &base, &head)?;
+            let base =
+                artifact::revision::inspect_cached(&project, &base, base_snapshot.as_deref())?
+                    .into_snapshot()?;
+            let head =
+                artifact::revision::inspect_cached(&project, &head, head_snapshot.as_deref())?
+                    .into_snapshot()?;
+            let result = artifact::compare(&base.artifact, &head.artifact)?;
             println!("{}", serde_json::to_string_pretty(&result)?);
             Ok(i32::from(!result.equal))
         }
@@ -98,6 +108,23 @@ pub fn run() -> Result<i32> {
             Ok(0)
         }
     }
+}
+
+fn print_snapshot(snapshot: &impl serde::Serialize) -> Result<i32> {
+    println!("{}", serde_json::to_string_pretty(snapshot)?);
+    Ok(0)
+}
+
+fn run_discovery(project: &std::path::Path) -> Result<i32> {
+    let targets = discovery::discover(project)?;
+    let selected = discovery::default_selection(&targets);
+    println!(
+        "{}",
+        serde_json::to_string(
+            &serde_json::json!({"targets":targets,"default_selection":selected})
+        )?
+    );
+    Ok(0)
 }
 
 fn run_analysis(arguments: arguments::Analysis) -> Result<i32> {
@@ -126,6 +153,6 @@ fn print_help() {
         "codecallnavigator-engine"
     };
     println!(
-        "{program} capabilities\n{program} query < request.json\n{program} query-session < requests.ndjson\n{program} observe [--auto-refresh] < observation-request.ndjson\n{program} discover PROJECT\n{program} analyze --project PROJECT [--root NAME=PATH] TARGET...\n{program} watch --project PROJECT [--root NAME=PATH] TARGET...\n{program} clear-cache --project PROJECT\n{program} verify --project PROJECT [--root NAME=PATH]\n{program} compare --project PROJECT --base REF --head REF|WORKTREE"
+        "{program} capabilities\n{program} query < request.json\n{program} query-session < requests.ndjson\n{program} observe [--auto-refresh] < observation-request.ndjson\n{program} discover PROJECT\n{program} analyze --project PROJECT [--root NAME=PATH] TARGET...\n{program} watch --project PROJECT [--root NAME=PATH] TARGET...\n{program} clear-cache --project PROJECT\n{program} verify --project PROJECT [--root NAME=PATH]\n{program} compare --project PROJECT --base REF --head REF|WORKTREE [--base-snapshot ID] [--head-snapshot ID]\n{program} snapshot-status --project PROJECT --revision REF\n{program} prepare-snapshot --project PROJECT --revision REF [--target PATH]..."
     );
 }

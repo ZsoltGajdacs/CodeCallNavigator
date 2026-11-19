@@ -42,6 +42,8 @@ impl<T> Reply<T> {
 struct Binding<'a> {
     base: &'a str,
     head: &'a str,
+    base_snapshot: Option<&'a str>,
+    head_snapshot: Option<&'a str>,
     expected: Option<&'a str>,
 }
 #[derive(Clone, Debug)]
@@ -67,6 +69,7 @@ pub struct ComparisonClient {
 pub struct BoundComparison {
     client: ComparisonClient,
     header: Header,
+    references: super::ComparisonRefs,
 }
 impl QueryContext {
     pub fn flow_comparison(&self) -> ComparisonClient {
@@ -77,16 +80,33 @@ impl QueryContext {
     }
 }
 impl ComparisonClient {
+    #[cfg(test)]
     pub fn open(
         &self,
         base: &str,
         head: &str,
         cancel: &AtomicBool,
     ) -> Result<(BoundComparison, Catalog)> {
+        self.open_selected(
+            super::ComparisonRefs {
+                base: base.into(),
+                head: head.into(),
+                ..Default::default()
+            },
+            cancel,
+        )
+    }
+    pub fn open_selected(
+        &self,
+        references: super::ComparisonRefs,
+        cancel: &AtomicBool,
+    ) -> Result<(BoundComparison, Catalog)> {
         let reply: Reply<Catalog> = self.request(
             Binding {
-                base,
-                head,
+                base: &references.base,
+                head: &references.head,
+                base_snapshot: references.base_snapshot.as_deref(),
+                head_snapshot: references.head_snapshot.as_deref(),
                 expected: None,
             },
             FlowComparisonSelection::Catalog {
@@ -98,11 +118,12 @@ impl ComparisonClient {
         )?;
         reply.check_generation(&reply.value.header)?;
         let page = reply.value;
-        page.header.validate(base, head)?;
+        references.validate(&page.header)?;
         validation::catalog(&page, "", 0, 50)?;
         let bound = BoundComparison {
             client: self.clone(),
             header: page.header.clone(),
+            references,
         };
         Ok((bound, page))
     }
@@ -113,9 +134,14 @@ impl ComparisonClient {
         cancel: &AtomicBool,
     ) -> Result<Reply<T>> {
         self.context.comparison_supported(cancel)?;
+        if binding.base_snapshot.is_some() || binding.head_snapshot.is_some() {
+            self.context.require_local_snapshots(cancel)?;
+        }
         let request = self.context.wire_request(Query::FlowComparison {
             base: binding.base.into(),
             head: binding.head.into(),
+            base_snapshot: binding.base_snapshot.map(str::to_owned),
+            head_snapshot: binding.head_snapshot.map(str::to_owned),
             expected_comparison: binding.expected.map(str::to_owned),
             selection,
         });
@@ -196,6 +222,8 @@ impl BoundComparison {
             Binding {
                 base: &self.header.base.requested_ref,
                 head: &self.header.head.requested_ref,
+                base_snapshot: self.references.base_snapshot.as_deref(),
+                head_snapshot: self.references.head_snapshot.as_deref(),
                 expected: Some(&self.header.comparison_id),
             },
             selection,

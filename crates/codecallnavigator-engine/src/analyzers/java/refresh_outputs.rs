@@ -37,6 +37,12 @@ pub(super) fn ownership(metadata: &JavaBuildMetadata) -> Result<crate::model::Co
                 .iter()
                 .flat_map(|source| source.source_roots.iter().chain(&source.generated_roots)),
         )?,
+        generated_source_directories: aliases(
+            metadata
+                .source_sets
+                .iter()
+                .flat_map(|source| &source.generated_roots),
+        )?,
         build_inputs: aliases(
             metadata.build_inputs.iter().chain(
                 metadata

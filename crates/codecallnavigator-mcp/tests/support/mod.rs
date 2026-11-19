@@ -143,6 +143,12 @@ impl Client {
         );
     }
 
+    pub fn notification(&self, method: &str) -> Option<&Value> {
+        self.pending
+            .iter()
+            .find(|message| message["method"] == method)
+    }
+
     pub fn disconnect(&mut self) {
         drop(self.input.take());
     }
@@ -183,7 +189,11 @@ impl Drop for Client {
 }
 
 pub fn cli_query(engine: &Path, project: &Path, operation: Value) -> Value {
-    let mut child = Command::new(engine)
+    cli_query_with(Command::new(engine), project, operation)
+}
+
+pub fn cli_query_with(mut command: Command, project: &Path, operation: Value) -> Value {
+    let mut child = command
         .arg("query")
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())

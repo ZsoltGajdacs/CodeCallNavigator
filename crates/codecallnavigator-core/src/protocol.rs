@@ -19,6 +19,13 @@ pub enum Request {
         version: u32,
         project: PathBuf,
     },
+    PrepareSnapshot {
+        version: u32,
+        project: PathBuf,
+        revision: String,
+        #[serde(default)]
+        targets: Vec<PathBuf>,
+    },
     Analyze {
         version: u32,
         project: PathBuf,
@@ -41,6 +48,7 @@ impl Request {
         match self {
             Self::Discover { version, .. }
             | Self::ClearCache { version, .. }
+            | Self::PrepareSnapshot { version, .. }
             | Self::Analyze { version, .. } => *version,
         }
     }
@@ -60,6 +68,9 @@ pub enum Event {
     },
     CacheCleared {
         removed_files: u32,
+    },
+    SnapshotPrepared {
+        snapshot: crate::artifact::local_snapshots::SnapshotRecord,
     },
     Complete {
         roots: Vec<(String, PathBuf)>,

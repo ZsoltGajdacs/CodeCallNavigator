@@ -13,7 +13,7 @@ impl ServerHandler for Server {
     fn get_info(&self) -> ServerConfig {
         ServerConfig::new(ServerCapabilities::builder().enable_tools().build())
             .with_server_info(Implementation::from_build_env())
-            .with_instructions("Graph queries are read-only. Use discover_builds and explicit refresh_graph to analyze. Preserve expected_generation across related queries. Static relationships express certainty/provenance, not proof of runtime execution.")
+            .with_instructions("Graph queries are read-only. Use discover_builds and explicit refresh_graph to analyze the working tree. Use graph_snapshot_status to look up retained revisions and prepare_graph_snapshot to explicitly build a missing snapshot. Preserve expected_generation or expected_comparison across related queries. Static relationships express certainty/provenance, not proof of runtime execution.")
     }
     async fn list_tools(
         &self,
@@ -53,6 +53,17 @@ impl ServerHandler for Server {
                 Ok(args) => self.backend.refresh(args, &context.ct).await,
                 Err(error) => return Ok(failure("invalid_arguments", error).into()),
             },
+            "prepare_graph_snapshot" => {
+                match serde_json::from_value::<PrepareSnapshotArgs>(arguments)
+                    .map_err(anyhow::Error::from)
+                    .and_then(|args| {
+                        args.validate()?;
+                        Ok(args)
+                    }) {
+                    Ok(args) => self.prepare_snapshot(args, &context).await,
+                    Err(error) => return Ok(failure("invalid_arguments", error).into()),
+                }
+            }
             name => match crate::arguments::parse(name, arguments) {
                 Ok(query) => self.backend.query(query, &context.ct).await,
                 Err(error) => return Ok(failure("invalid_arguments", error).into()),
@@ -63,6 +74,44 @@ impl ServerHandler for Server {
             Err(error) => failure("cli_transport_error", format!("{error:#}")),
         }
         .into())
+    }
+}
+impl Server {
+    async fn prepare_snapshot(
+        &self,
+        args: PrepareSnapshotArgs,
+        context: &RequestContext<RoleServer>,
+    ) -> anyhow::Result<Reply> {
+        let Some(token) = context.meta.get_progress_token() else {
+            return self.backend.prepare_snapshot(args, &context.ct, None).await;
+        };
+        let (sender, mut progress) = tokio::sync::mpsc::channel(32);
+        let prepare = self
+            .backend
+            .prepare_snapshot(args, &context.ct, Some(sender));
+        tokio::pin!(prepare);
+        let mut count = 0.0;
+        loop {
+            let message = tokio::select! {
+                result = &mut prepare => return result,
+                message = progress.recv() => message,
+            };
+            let Some(message) = message else {
+                return prepare.await;
+            };
+            count += 1.0;
+            let notify = context.peer.notify_progress(
+                ProgressNotificationParam::new(token.clone(), count).with_message(message),
+            );
+            tokio::select! {
+                result = &mut prepare => return result,
+                sent = notify => {
+                    if sent.is_err() {
+                        return prepare.await;
+                    }
+                }
+            }
+        }
     }
 }
 fn result(reply: Reply) -> CallToolResult {
@@ -104,13 +153,34 @@ fn tool<T: JsonSchema>(name: &'static str, description: &'static str, read_only:
     );
     tool
 }
-fn definitions() -> Vec<Tool> {
-    vec![
+fn snapshot_tools() -> [Tool; 4] {
+    [
         tool::<CompareArgs>(
             "compare_graphs",
-            "Compare a committed base graph against saved WORKTREE (default) or a committed head. Returns full paged differences; carry expected_comparison across pages. Never refreshes or checks out revisions.",
+            "Compare saved graphs from committed or local snapshots, or use saved WORKTREE as head. Returns paged differences; carry expected_comparison and snapshot IDs across pages. Never builds a graph.",
             true,
         ),
+        tool::<FlowComparisonArgs>(
+            "compare_function_flows",
+            "List comparable functions or inspect before/after flows using saved graph endpoints. Carry expected_comparison and snapshot IDs into subsequent requests.",
+            true,
+        ),
+        tool::<SnapshotStatusArgs>(
+            "graph_snapshot_status",
+            "Resolve a revision and list its retained local graph snapshot variants and cache location. Never builds a graph.",
+            true,
+        ),
+        tool::<PrepareSnapshotArgs>(
+            "prepare_graph_snapshot",
+            "Explicitly analyze an exact revision in a temporary worktree and retain the local snapshot. Uses the revision's default builds if targets are omitted. Accepts MCP cancellation and progress notifications.",
+            false,
+        ),
+    ]
+}
+
+fn definitions() -> Vec<Tool> {
+    let mut tools = Vec::from(snapshot_tools());
+    tools.extend([
         tool::<GraphArgs>(
             "graph_status",
             "Saved graph generation, freshness, counts and diagnostics; never analyzes.",
@@ -166,5 +236,6 @@ fn definitions() -> Vec<Tool> {
             "Explicitly analyze discovered build identities and atomically refresh graph. Omit targets to use CLI defaults. Uses fixed startup project/roots.",
             false,
         ),
-    ]
+    ]);
+    tools
 }

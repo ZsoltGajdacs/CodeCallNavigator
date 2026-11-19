@@ -31,7 +31,7 @@ pub fn serve_once() -> Result<i32> {
             Request::Analyze {
                 failure_version: Some(1),
                 ..
-            }
+            } | Request::PrepareSnapshot { .. }
         )
     });
     match request.and_then(|(request, input)| perform(request, input)) {
@@ -81,6 +81,16 @@ fn perform(request: Request, input: BufReader<io::Stdin>) -> Result<Event> {
         Request::ClearCache { project, .. } => Ok(Event::CacheCleared {
             removed_files: codecallnavigator_core::boundary::clear_inference_cache(&project)?,
         }),
+        Request::PrepareSnapshot {
+            project,
+            revision,
+            targets,
+            ..
+        } => {
+            monitor(input);
+            let snapshot = super::snapshots::prepare(&project, &revision, targets, &progress)?;
+            Ok(Event::SnapshotPrepared { snapshot })
+        }
         Request::Analyze {
             project,
             roots,
@@ -98,13 +108,15 @@ fn perform(request: Request, input: BufReader<io::Stdin>) -> Result<Event> {
                     expected_generation,
                 },
                 targets,
-                &|message| {
-                    if emit(&Event::Progress { message }).is_err() {
-                        CANCELLED.store(true, Ordering::Relaxed);
-                    }
-                },
+                &progress,
             )
         }
+    }
+}
+
+fn progress(message: String) {
+    if emit(&Event::Progress { message }).is_err() {
+        CANCELLED.store(true, Ordering::Relaxed);
     }
 }
 

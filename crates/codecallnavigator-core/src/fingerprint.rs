@@ -605,11 +605,22 @@ fn directory_hash_controlled(
         }
         names.insert(name);
     }
-    Ok(
-        blake3::hash(names.into_iter().collect::<Vec<_>>().join("\0").as_bytes())
-            .to_hex()
-            .to_string(),
-    )
+    Ok(directory_names_hash(names))
+}
+
+pub fn directory_names_hash(names: BTreeSet<String>) -> String {
+    blake3::hash(names.into_iter().collect::<Vec<_>>().join("\0").as_bytes())
+        .to_hex()
+        .to_string()
+}
+
+/// A Git tree lacks generated checkout directories and has declared entry types.
+pub fn includes_scoped_tree_entry(path: &Path, directory: bool, link: bool) -> bool {
+    let name = path.file_name().unwrap_or_default().to_string_lossy();
+    !(link
+        || (directory && name.starts_with('.'))
+        || excluded_directory(&name)
+        || generated_graph_output(path))
 }
 
 fn generated_graph_directory(entry: &fs::DirEntry) -> Result<bool> {

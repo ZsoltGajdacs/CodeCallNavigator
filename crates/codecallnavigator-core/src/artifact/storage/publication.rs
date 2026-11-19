@@ -120,7 +120,7 @@ fn read_previous(project: &Path) -> Result<Option<Vec<u8>>> {
     }
 }
 
-fn write_object(directory: &Path, path: &str, bytes: &[u8]) -> Result<()> {
+pub(super) fn write_object(directory: &Path, path: &str, bytes: &[u8]) -> Result<()> {
     let path = directory.join(path);
     let reader = match super::captured::open_object(&path) {
         Ok(file) => file,
@@ -222,7 +222,7 @@ fn retain(retained: &mut HashSet<String>, manifest: &Manifest) {
     }
 }
 
-fn owned_object(name: &str) -> bool {
+pub(super) fn owned_object(name: &str) -> bool {
     let Some((digest, suffix)) = name.split_once('.') else {
         return false;
     };
