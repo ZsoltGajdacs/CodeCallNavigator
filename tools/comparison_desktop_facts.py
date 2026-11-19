@@ -1,6 +1,5 @@
 """Owned source and named fixture-role proofs over actual CLI comparison replies."""
 from dataclasses import dataclass
-import copy
 from pathlib import Path
 
 from csharp_flow_acceptance import require
@@ -8,27 +7,6 @@ BASE_REF = "refs/tags/fixture-before"
 HEAD_REF = "refs/tags/fixture-after"
 ROLES = ("changed", "unchanged", "added", "removed", "legacy", "manual", "target")
 LABELS = {"changed": "Changed", "unchanged": "Unchanged", "added": "Added", "removed": "Removed", "legacy": "Legacy", "manual": "Manual", "target": "Leaf"}
-
-def source_owner(value):
-    return tuple(value[key] for key in ("build", "project", "file"))
-
-
-def remove_legacy_source(artifact):
-    result = copy.deepcopy(artifact)
-    graph = result["graph"]
-    nodes = [node for node in graph["nodes"] if node["label"] == "Legacy"]
-    require(len(nodes) == 1, "Legacy source mutation requires one compiler-owned declaration")
-    owner = source_owner(nodes[0])
-    files = graph["architecture"]["files"]
-    removed = [row for row in files if source_owner(row) == owner]
-    require(len(removed) == 1 and removed[0]["file"].endswith("/Legacy.cs")
-            and removed[0].get("content"), "Legacy must have exactly one cached source fact")
-    graph["architecture"]["files"] = [row for row in files if row not in removed]
-    require(graph["nodes"] == artifact["graph"]["nodes"]
-            and graph["flow_inventory"] == artifact["graph"]["flow_inventory"],
-            "Removing cached Legacy source changed compiler nodes or IR")
-    return result
-
 
 def comparison(client, project, selection, expected=None):
     operation = {"kind": "flow_comparison", "base": BASE_REF, "head": HEAD_REF,
@@ -113,8 +91,8 @@ def validate_presence(roles):
             and ready(roles["added"]["after"]), "Added role is not missing-to-ready")
     require(ready(roles["removed"]["before"])
             and roles["removed"]["after"]["status"] == "missing", "Removed role is not ready-to-missing")
-    require(roles["legacy"]["before"] == {"status": "unavailable", "reason": "missing_source"}
-            and ready(roles["legacy"]["after"]), "Legacy role must isolate historical missing source")
+    require(roles["legacy"]["before"] == {"status": "unavailable", "reason": "missing_function"}
+            and ready(roles["legacy"]["after"]), "Historical abstract declaration must have unavailable flow")
 
 
 def validate_correspondence(roles):

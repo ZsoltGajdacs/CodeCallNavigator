@@ -1,4 +1,5 @@
 //! Explicitly discard only disposable inference decisions, under the analysis lock.
+use super::cache_paths;
 use crate::artifact::AnalysisLock;
 use anyhow::{Context, Result, ensure};
 use std::{fs, io::ErrorKind, path::Path};
@@ -10,19 +11,15 @@ pub fn clear_inference_cache(project: &Path) -> Result<u32> {
         .canonicalize()
         .context("Cannot open cache project")?;
     ensure!(project.is_dir(), "Cache project must be a directory");
-    let directory = project.join(".codecallnavigator");
-    match fs::symlink_metadata(&directory) {
+    let path = cache_paths::path(&project)?;
+    let parent = path.parent().context("Missing inference cache directory")?;
+    match fs::symlink_metadata(parent) {
         Err(error) if error.kind() == ErrorKind::NotFound => return Ok(0),
         Err(error) => return Err(error).context("Cannot inspect cache directory"),
-        Ok(metadata) => ensure!(
-            metadata.file_type().is_dir(),
-            "Cache directory must be a real directory: {}",
-            directory.display()
-        ),
+        Ok(_) => cache_paths::validate(&path)?,
     }
     let _lock = AnalysisLock::acquire(&project)?;
-    let path = directory.join("inference.sqlite3");
-    super::cache_paths::validate(&path)?;
+    cache_paths::validate(&path)?;
     let mut removed = 0;
     for suffix in ["-wal", "-shm", "-journal", ""] {
         let mut name = path.as_os_str().to_os_string();
@@ -50,9 +47,9 @@ mod tests {
     #[test]
     fn clears_corrupt_cache_and_sidecars_but_preserves_project_files() {
         let project = tempfile::tempdir().unwrap();
-        let directory = project.path().join(".codecallnavigator");
+        let directory = crate::artifact::project_state_directory(project.path()).unwrap();
         assert_eq!(clear_inference_cache(project.path()).unwrap(), 0);
-        fs::create_dir(&directory).unwrap();
+        fs::create_dir_all(&directory).unwrap();
         for suffix in ["", "-wal", "-shm", "-journal"] {
             fs::write(
                 directory.join(format!("inference.sqlite3{suffix}")),
@@ -60,34 +57,40 @@ mod tests {
             )
             .unwrap();
         }
+        let legacy = project.path().join(".codecallnavigator");
+        fs::create_dir(&legacy).unwrap();
         for file in [
             "graph.json",
+            "inference.sqlite3",
             "layers.yml",
             "boundaries.yml",
-            "other.sqlite3",
         ] {
-            fs::write(directory.join(file), file).unwrap();
+            fs::write(legacy.join(file), file).unwrap();
         }
         assert_eq!(clear_inference_cache(project.path()).unwrap(), 4);
         assert_eq!(clear_inference_cache(project.path()).unwrap(), 0);
         for file in [
             "graph.json",
+            "inference.sqlite3",
             "layers.yml",
             "boundaries.yml",
-            "other.sqlite3",
         ] {
-            assert_eq!(fs::read_to_string(directory.join(file)).unwrap(), file);
+            assert_eq!(fs::read_to_string(legacy.join(file)).unwrap(), file);
         }
+        fs::remove_dir_all(directory).unwrap();
     }
 
     #[test]
     fn held_analysis_lock_prevents_clearing() {
         let project = tempfile::tempdir().unwrap();
-        let _lock = AnalysisLock::acquire(project.path()).unwrap();
-        let cache = project.path().join(".codecallnavigator/inference.sqlite3");
+        let lock = AnalysisLock::acquire(project.path()).unwrap();
+        let cache = cache_paths::path(project.path()).unwrap();
         fs::write(&cache, "cache").unwrap();
         assert!(clear_inference_cache(project.path()).is_err());
         assert_eq!(fs::read_to_string(cache).unwrap(), "cache");
+        drop(lock);
+        fs::remove_dir_all(crate::artifact::project_state_directory(project.path()).unwrap())
+            .unwrap();
     }
 
     #[cfg(unix)]
@@ -95,8 +98,8 @@ mod tests {
     fn unsafe_paths_fail_before_any_cache_is_removed() {
         use std::os::unix::fs::symlink;
         let project = tempfile::tempdir().unwrap();
-        let directory = project.path().join(".codecallnavigator");
-        fs::create_dir(&directory).unwrap();
+        let directory = crate::artifact::project_state_directory(project.path()).unwrap();
+        fs::create_dir_all(&directory).unwrap();
         let cache = directory.join("inference.sqlite3");
         fs::write(&cache, "cache").unwrap();
         let outside = project.path().join("outside");
@@ -114,5 +117,6 @@ mod tests {
         symlink(project.path(), &directory).unwrap();
         assert!(clear_inference_cache(project.path()).is_err());
         assert!(!project.path().join("graph.lock").exists());
+        fs::remove_file(directory).unwrap();
     }
 }

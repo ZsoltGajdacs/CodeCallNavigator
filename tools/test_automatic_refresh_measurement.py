@@ -118,7 +118,7 @@ class AutomaticPublicationTests(unittest.TestCase):
         project.reset()
         artifact = project.root / ".codecallnavigator/graph.json"
         artifact.parent.mkdir()
-        return SimpleNamespace(project=project), artifact
+        return SimpleNamespace(project=project, manifest=lambda: artifact), artifact
 
     def test_full_artifact_mismatch_is_retained_and_raises(self):
         session, artifact = self.project()

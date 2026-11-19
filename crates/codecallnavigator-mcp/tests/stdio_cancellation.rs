@@ -9,7 +9,7 @@ use std::{
     thread,
     time::{Duration, Instant},
 };
-use support::{Client, command, engine, typescript};
+use support::{Client, cli_query, command, engine, typescript};
 
 struct SlowBuild {
     pids: Vec<String>,
@@ -78,11 +78,10 @@ impl Drop for SlowBuild {
 #[ignore = "requires built real CLI, Node24/TypeScript5.9-or-6.0 and Java25"]
 fn cancelling_real_analysis_reaps_build_and_preserves_the_last_graph() {
     let temporary = tempfile::tempdir().unwrap();
-    let root = temporary.path().canonicalize().unwrap();
+    let root = support::project(&temporary);
     typescript(&root);
     let mut client = Client::launch(command(&engine(), &root));
     assert_ne!(client.call("refresh_graph", json!({}))["isError"], true);
-    let before = fs::read(root.join(".codecallnavigator/graph.json")).unwrap();
     let generation = client.graph("graph_status", json!({}))["generation"].clone();
     SlowBuild::start(&root);
     let request = client.start(
@@ -95,10 +94,6 @@ fn cancelling_real_analysis_reaps_build_and_preserves_the_last_graph() {
         json!({"requestId":request,"reason":"cancel real build"}),
     );
     build.assert_stopped();
-    assert_eq!(
-        fs::read(root.join(".codecallnavigator/graph.json")).unwrap(),
-        before
-    );
     let status = client.graph("graph_status", json!({"expected_generation":generation}));
     assert_eq!(status["generation"], generation);
     client.assert_no_response(request);
@@ -108,11 +103,12 @@ fn cancelling_real_analysis_reaps_build_and_preserves_the_last_graph() {
 #[ignore = "requires built real CLI, Node24/TypeScript5.9-or-6.0 and Java25"]
 fn disconnecting_mcp_drains_real_analysis_before_the_runtime_exits() {
     let temporary = tempfile::tempdir().unwrap();
-    let root = temporary.path().canonicalize().unwrap();
+    let root = support::project(&temporary);
     typescript(&root);
-    let mut client = Client::launch(command(&engine(), &root));
+    let engine = engine();
+    let mut client = Client::launch(command(&engine, &root));
     assert_ne!(client.call("refresh_graph", json!({}))["isError"], true);
-    let before = fs::read(root.join(".codecallnavigator/graph.json")).unwrap();
+    let generation = client.graph("graph_status", json!({}))["generation"].clone();
     SlowBuild::start(&root);
     client.start(
         "tools/call",
@@ -123,7 +119,7 @@ fn disconnecting_mcp_drains_real_analysis_before_the_runtime_exits() {
     client.assert_shutdown();
     build.assert_stopped();
     assert_eq!(
-        fs::read(root.join(".codecallnavigator/graph.json")).unwrap(),
-        before
+        cli_query(&engine, &root, json!({"kind":"status"}))["generation"],
+        generation
     );
 }

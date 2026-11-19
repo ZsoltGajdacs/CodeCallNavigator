@@ -128,11 +128,14 @@ fn cancellation_preserves_the_only_project_artifact_and_configuration() {
     )
     .unwrap();
     publish(project.path(), &artifact, &AtomicBool::new(false)).unwrap();
-    let before = fs::read(project.path().join(GRAPH_PATH)).unwrap();
+    let before = fs::read(working_manifest_path(project.path()).unwrap()).unwrap();
     let mut changed = artifact;
     changed.graph["nodes"][0]["label"] = "changed".into();
     assert!(publish(project.path(), &changed, &AtomicBool::new(true)).is_err());
-    assert_eq!(before, fs::read(project.path().join(GRAPH_PATH)).unwrap());
+    assert_eq!(
+        before,
+        fs::read(working_manifest_path(project.path()).unwrap()).unwrap()
+    );
     assert_eq!(
         fs::read_to_string(project.path().join(".codecallnavigator/layers.yml")).unwrap(),
         "version: 1\n"
@@ -143,7 +146,7 @@ fn cancellation_preserves_the_only_project_artifact_and_configuration() {
             .filter_map(|e| e.ok())
             .filter(|e| e.path().extension().is_some_and(|e| e == "json"))
             .count(),
-        3
+        0
     );
 }
 
@@ -208,9 +211,25 @@ fn git_comparison_reads_history_without_writing_snapshots() {
     git(&["config", "user.email", "test@example.invalid"]);
     git(&["config", "user.name", "Artifact test"]);
     let artifact = canonical(&fixture("/tmp/a"), &roots("/tmp/a")).unwrap();
-    publish(project.path(), &artifact, &AtomicBool::new(false)).unwrap();
-    git(&["add", GRAPH_PATH, ".codecallnavigator/objects"]);
-    git(&["commit", "-qm", "baseline"]);
+    git(&["commit", "--allow-empty", "-qm", "baseline"]);
+    let repository = revision::Repository::open(project.path()).unwrap();
+    let identity = local_snapshots::SnapshotIdentity {
+        commit: repository.resolve("HEAD").unwrap(),
+        project: repository.project,
+        analyzer: "test".into(),
+        selection: "default".into(),
+    };
+    AnalysisLock::acquire(project.path())
+        .unwrap()
+        .publish_library(
+            local_snapshots::WorkingPublication {
+                encoded: &artifact.encode().unwrap(),
+                metadata: &serde_json::Value::Null,
+                verified: Some((&repository.common_dir, identity)),
+            },
+            &AtomicBool::new(false),
+        )
+        .unwrap();
     assert!(
         compare_git(project.path(), "HEAD", "WORKTREE")
             .unwrap()
@@ -228,11 +247,7 @@ fn git_comparison_reads_history_without_writing_snapshots() {
         1
     );
     assert!(compare_git(project.path(), "missing-revision", "WORKTREE").is_err());
-    let files: Vec<_> = fs::read_dir(project.path().join(".codecallnavigator"))
-        .unwrap()
-        .map(|e| e.unwrap().file_name())
-        .collect();
-    assert_eq!(files.len(), 8); // manifests, objects, locks and three companions
+    assert!(!project.path().join(".codecallnavigator").exists());
 }
 
 #[test]

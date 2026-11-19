@@ -112,7 +112,10 @@ impl Authorization {
                 .clone()
                 .unwrap_or_else(|| "Analyzing saved inputs…".into()),
             Phase::Busy { .. } => "Automatic refresh is waiting for another analysis".into(),
-            Phase::Published { .. } => "Automatic refresh published a saved graph".into(),
+            Phase::Published { retention, .. } => retention.as_ref().map_or_else(
+                || "Automatic refresh published a saved graph".into(),
+                crate::analysis_feedback::retention_message,
+            ),
             Phase::Failed { .. } => {
                 "Automatic refresh failed · waiting for another saved edit".into()
             }

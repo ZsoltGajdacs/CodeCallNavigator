@@ -2,7 +2,7 @@
 """Validate/consume portable artifacts independently of CodeCallNavigator Rust models.
 
 Requires the test-only dependency jsonschema>=4.18. Accepts retained fixtures or
-fresh production output, e.g. check_graph_contract.py /checkout/.codecallnavigator/graph.json.
+the manifest path printed by ccnavigator graph-path --project /checkout.
 """
 import argparse
 from collections import Counter
@@ -10,7 +10,7 @@ import json
 from pathlib import Path
 
 from jsonschema import Draft202012Validator
-from graph_bundle import load
+from graph_bundle import load, object_root
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -49,8 +49,9 @@ def consume(artifact, schema_validator=None):
 def consume_bundle(path):
     """Use only the contracts beside a published bundle, with no repo fallback."""
     path = Path(path)
-    validator(path.parent / 'graph.manifest.schema.json').validate(json.loads(path.read_bytes()))
-    return consume(load(path), validator(path.parent / 'graph.schema.json'))
+    root = object_root(path)
+    validator(root / 'graph.manifest.schema.json').validate(json.loads(path.read_bytes()))
+    return consume(load(path), validator(root / 'graph.schema.json'))
 
 
 def main():

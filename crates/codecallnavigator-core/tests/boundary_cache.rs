@@ -4,6 +4,7 @@ use codecallnavigator_core::{
     boundary::{self, BoundaryInventory, BoundaryUse, Configuration, DecisionCache, RouteFact},
     model::{GraphData, Node, SourceSite},
 };
+use std::path::{Path, PathBuf};
 fn site() -> SourceSite {
     SourceSite {
         file: "/repo/app.ts".into(),
@@ -76,10 +77,7 @@ fn cache_reads_real_sqlite_and_reuses_decisions_without_changing_canonical_graph
     let mut first = DecisionCache::open(project.path());
     boundary::resolve_cached(&mut cached, &config, &mut first).unwrap();
     assert!(
-        !project
-            .path()
-            .join(".codecallnavigator/inference.sqlite3")
-            .exists(),
+        !cache_path(project.path()).exists(),
         "No publication before explicit post-graph commit"
     );
     first.commit();
@@ -96,8 +94,8 @@ fn cache_reads_real_sqlite_and_reuses_decisions_without_changing_canonical_graph
 #[test]
 fn unrelated_sqlite_database_at_reserved_path_is_preserved() {
     let project = tempfile::tempdir().unwrap();
-    std::fs::create_dir(project.path().join(".codecallnavigator")).unwrap();
-    let path = project.path().join(".codecallnavigator/inference.sqlite3");
+    create_cache_directory(project.path());
+    let path = cache_path(project.path());
     let db = rusqlite::Connection::open(&path).unwrap();
     db.execute_batch("CREATE TABLE boundary_decisions(key TEXT,value TEXT);INSERT INTO boundary_decisions VALUES ('user','important');").unwrap();
     drop(db);
@@ -128,8 +126,16 @@ fn checked(native: &GraphData, cache: &mut DecisionCache) -> GraphData {
     assert_eq!(blake3::hash(&bytes(&cached)), blake3::hash(&bytes(&full)));
     cached
 }
-fn db(project: &std::path::Path) -> rusqlite::Connection {
-    rusqlite::Connection::open(project.join(".codecallnavigator/inference.sqlite3")).unwrap()
+fn cache_path(project: &Path) -> PathBuf {
+    artifact::project_state_directory(project)
+        .unwrap()
+        .join("inference.sqlite3")
+}
+fn create_cache_directory(project: &Path) {
+    std::fs::create_dir_all(cache_path(project).parent().unwrap()).unwrap();
+}
+fn db(project: &Path) -> rusqlite::Connection {
+    rusqlite::Connection::open(cache_path(project)).unwrap()
 }
 #[test]
 fn unrelated_route_changes_reuse_unchanged_requests_and_blockers_invalidate_matching_ones() {
@@ -291,8 +297,8 @@ fn malformed_winner_and_unresolved_records_fall_back_and_checksums_bind_the_key(
 #[test]
 fn corrupt_whole_file_and_failed_writes_are_nonfatal_and_preserved() {
     let project = tempfile::tempdir().unwrap();
-    std::fs::create_dir(project.path().join(".codecallnavigator")).unwrap();
-    let path = project.path().join(".codecallnavigator/inference.sqlite3");
+    create_cache_directory(project.path());
+    let path = cache_path(project.path());
     std::fs::write(&path, b"unverifiable cache bytes").unwrap();
     let mut cache = DecisionCache::open(project.path());
     checked(&graph(), &mut cache);
@@ -312,7 +318,7 @@ fn committing_retains_only_current_decisions_and_skipping_commit_keeps_previous_
     let project = tempfile::tempdir().unwrap();
     let native = graph();
     warm(project.path(), &native);
-    let path = project.path().join(".codecallnavigator/inference.sqlite3");
+    let path = cache_path(project.path());
     let before = blake3::hash(&std::fs::read(&path).unwrap());
     let mut shortened = native;
     shortened.boundaries.as_mut().unwrap().uses.truncate(1);
@@ -337,12 +343,10 @@ fn symbolic_and_hard_links_for_database_and_sidecars_are_preserved() {
     use std::os::unix::fs::symlink;
     for suffix in ["", "-wal", "-shm", "-journal"] {
         let project = tempfile::tempdir().unwrap();
-        std::fs::create_dir(project.path().join(".codecallnavigator")).unwrap();
+        create_cache_directory(project.path());
         let external = project.path().join("user-data");
         std::fs::write(&external, b"important").unwrap();
-        let link = project
-            .path()
-            .join(format!(".codecallnavigator/inference.sqlite3{suffix}"));
+        let link = cache_path(project.path()).with_file_name(format!("inference.sqlite3{suffix}"));
         symlink(&external, &link).unwrap();
         let mut cache = DecisionCache::open(project.path());
         checked(&graph(), &mut cache);
@@ -352,14 +356,10 @@ fn symbolic_and_hard_links_for_database_and_sidecars_are_preserved() {
         assert!(!cache.warnings().is_empty());
     }
     let project = tempfile::tempdir().unwrap();
-    std::fs::create_dir(project.path().join(".codecallnavigator")).unwrap();
+    create_cache_directory(project.path());
     let external = project.path().join("user-data");
     std::fs::write(&external, b"important").unwrap();
-    std::fs::hard_link(
-        &external,
-        project.path().join(".codecallnavigator/inference.sqlite3"),
-    )
-    .unwrap();
+    std::fs::hard_link(&external, cache_path(project.path())).unwrap();
     let mut cache = DecisionCache::open(project.path());
     checked(&graph(), &mut cache);
     cache.commit();
@@ -443,8 +443,8 @@ fn reused_routing_decision_still_checks_fresh_flow_and_reconstructs_native_diagn
 #[test]
 fn unrelated_wal_database_is_not_opened_for_mutation_before_ownership_is_known() {
     let project = tempfile::tempdir().unwrap();
-    std::fs::create_dir(project.path().join(".codecallnavigator")).unwrap();
-    let path = project.path().join(".codecallnavigator/inference.sqlite3");
+    create_cache_directory(project.path());
+    let path = cache_path(project.path());
     let database = rusqlite::Connection::open(&path).unwrap();
     database.execute_batch("PRAGMA journal_mode=WAL; CREATE TABLE user_content(value TEXT); INSERT INTO user_content VALUES ('important');").unwrap();
     let paths = [

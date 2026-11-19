@@ -181,7 +181,7 @@ fn legacy_saved_graph_is_unverifiable(runtime: &mut Runtime<State>, project: &Pa
 }
 
 fn compact_failure_and_manual_retry(runtime: &mut Runtime<State>, project: &Path) {
-    let path = project.join(codecallnavigator::artifact::GRAPH_PATH);
+    let path = codecallnavigator::artifact::working_manifest_path(project).unwrap();
     let bytes = fs::read(&path).unwrap();
     let generation = runtime.state.generation.clone();
     fs::remove_file(&path).unwrap();
@@ -272,11 +272,7 @@ fn switch_to_graphless(runtime: &mut Runtime<State>, graphless: &Path) {
         "{}",
         runtime.state.warning
     );
-    assert!(
-        !graphless
-            .join(codecallnavigator::artifact::GRAPH_PATH)
-            .exists()
-    );
+    assert!(codecallnavigator::artifact::working_manifest_path(graphless).is_err());
     capture_state(runtime, "graphless-project");
     click(runtime, "project-picker-trigger");
     super::settle_revealed_control(runtime);
@@ -289,7 +285,7 @@ fn switch_to_graphless(runtime: &mut Runtime<State>, graphless: &Path) {
 }
 
 fn reopen_saved_graph(runtime: &mut Runtime<State>, project: &Path, graphless: &Path) {
-    let manifest = project.join(codecallnavigator::artifact::GRAPH_PATH);
+    let manifest = codecallnavigator::artifact::working_manifest_path(project).unwrap();
     let saved = fs::read(&manifest).unwrap();
     runtime.update(|state, _| {
         for folder in [project, graphless, project] {
@@ -538,11 +534,7 @@ fn actual_cli_automatic_refresh_adopts_first_graph_and_keeps_inferred_roots() {
     });
     assert!(ui.state.graph.is_none());
     assert!(ui.state.freshness.last.is_none());
-    assert!(
-        !project
-            .join(codecallnavigator::artifact::GRAPH_PATH)
-            .exists()
-    );
+    assert!(codecallnavigator::artifact::working_manifest_path(&project).is_err());
 
     fs::write(
         project.join("main.ts"),
@@ -623,7 +615,7 @@ fn actual_cli_mixed_analysis_failure_can_retry_java_only() {
         "automatic session did not start"
     );
     settle(&mut ui, |state| {
-        state.analysis_failure.is_none() && state.feedback().is_some()
+        state.analysis_feedback.failure.is_none() && state.feedback().is_some()
     });
     assert_eq!(assert_typescript_failure(&ui, &project), manual);
     click(&mut ui, "retry-remaining-builds");
@@ -637,7 +629,8 @@ fn actual_cli_mixed_analysis_failure_can_retry_java_only() {
             .all(|target| target.language == "java")
     );
     settle(&mut ui, |state| {
-        (state.graph.is_some() && state.view_is_current()) || state.analysis_failure.is_some()
+        (state.graph.is_some() && state.view_is_current())
+            || state.analysis_feedback.failure.is_some()
     });
     assert!(
         ui.state.graph.is_some(),
@@ -679,10 +672,15 @@ fn confirm_mixed_targets(ui: &mut Runtime<State>, project: &Path) {
     assert_eq!(ui.state.selected_analysis().unwrap().targets.len(), 1);
     click(ui, "confirm-analysis");
     settle(ui, |state| {
-        state.analysis_failure.is_some() && !state.jobs.persistence.is_pending()
+        state.analysis_feedback.failure.is_some() && !state.jobs.persistence.is_pending()
     });
     assert_eq!(
-        ui.state.analysis_failure.as_ref().unwrap().selection,
+        ui.state
+            .analysis_feedback
+            .failure
+            .as_ref()
+            .unwrap()
+            .selection,
         crate::analysis_feedback::Selection::capture(project, &targets),
     );
     let store = ui.state.store.as_ref().unwrap();
@@ -742,11 +740,7 @@ fn assert_typescript_failure(ui: &Runtime<State>, project: &Path) -> String {
     assert!(feedback.summary().contains("No graph was created."));
     assert!(ui.find("retry-remaining-builds").is_some());
     assert!(ui.state.graph.is_none());
-    assert!(
-        !project
-            .join(codecallnavigator::artifact::GRAPH_PATH)
-            .exists()
-    );
+    assert!(codecallnavigator::artifact::working_manifest_path(project).is_err());
     feedback.summary()
 }
 

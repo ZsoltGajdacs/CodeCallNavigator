@@ -548,10 +548,10 @@
       "purpose": "uncertified prototype policy stays readable but requires manual refresh"
     },
     {
-      "id": "codecallnavigator-core/lib:codecallnavigator_core::artifact::revision::tests::committed_nested_snapshots_bind_exact_bytes_without_a_working_graph",
+      "id": "codecallnavigator-core/lib:codecallnavigator_core::artifact::revision::tests::verified_nested_snapshots_bind_exact_bytes_without_a_working_graph",
       "runner": "rust",
       "file": "crates/codecallnavigator-core/src/artifact/revision/tests.rs",
-      "test_name": "artifact::revision::tests::committed_nested_snapshots_bind_exact_bytes_without_a_working_graph",
+      "test_name": "artifact::revision::tests::verified_nested_snapshots_bind_exact_bytes_without_a_working_graph",
       "ignored": false,
       "package": "codecallnavigator-core",
       "target_kind": "lib",
@@ -561,13 +561,13 @@
       "requirements": [
         "git"
       ],
-      "purpose": "committed nested snapshots bind exact bytes without a working graph"
+      "purpose": "verified nested snapshots bind exact bytes without a working graph"
     },
     {
-      "id": "codecallnavigator-core/lib:codecallnavigator_core::artifact::revision::tests::malformed_inputs_and_revision_syntax_fail_explicitly",
+      "id": "codecallnavigator-core/lib:codecallnavigator_core::artifact::revision::tests::malformed_revisions_and_legacy_working_paths_fail_explicitly",
       "runner": "rust",
       "file": "crates/codecallnavigator-core/src/artifact/revision/tests.rs",
-      "test_name": "artifact::revision::tests::malformed_inputs_and_revision_syntax_fail_explicitly",
+      "test_name": "artifact::revision::tests::malformed_revisions_and_legacy_working_paths_fail_explicitly",
       "ignored": false,
       "package": "codecallnavigator-core",
       "target_kind": "lib",
@@ -577,7 +577,7 @@
       "requirements": [
         "git"
       ],
-      "purpose": "malformed inputs and revision syntax fail explicitly"
+      "purpose": "malformed revisions and legacy working paths fail explicitly"
     },
     {
       "id": "codecallnavigator-core/lib:codecallnavigator_core::artifact::revision::tests::missing_promisor_blob_never_starts_lazy_fetch",
@@ -596,10 +596,10 @@
       "purpose": "missing promisor blob never starts lazy fetch"
     },
     {
-      "id": "codecallnavigator-core/lib:codecallnavigator_core::artifact::revision::tests::working_paths_only_fall_back_for_nonrepositories",
+      "id": "codecallnavigator-core/lib:codecallnavigator_core::artifact::revision::tests::legacy_committed_graphs_are_not_loaded",
       "runner": "rust",
       "file": "crates/codecallnavigator-core/src/artifact/revision/tests.rs",
-      "test_name": "artifact::revision::tests::working_paths_only_fall_back_for_nonrepositories",
+      "test_name": "artifact::revision::tests::legacy_committed_graphs_are_not_loaded",
       "ignored": false,
       "package": "codecallnavigator-core",
       "target_kind": "lib",
@@ -609,13 +609,45 @@
       "requirements": [
         "git"
       ],
-      "purpose": "working paths only fall back for nonrepositories"
+      "purpose": "legacy committed graphs are not loaded"
     },
     {
-      "id": "codecallnavigator-core/lib:codecallnavigator_core::artifact::storage::publication::tests::cancellation_after_preparation_preserves_active_manifest",
+      "id": "codecallnavigator-core/lib:codecallnavigator_core::artifact::revision::tests::revision_proof_reads_the_original_tree_when_git_replace_is_configured",
       "runner": "rust",
-      "file": "crates/codecallnavigator-core/src/artifact/storage/publication.rs",
-      "test_name": "artifact::storage::publication::tests::cancellation_after_preparation_preserves_active_manifest",
+      "file": "crates/codecallnavigator-core/src/artifact/revision/tests.rs",
+      "test_name": "artifact::revision::tests::revision_proof_reads_the_original_tree_when_git_replace_is_configured",
+      "ignored": false,
+      "package": "codecallnavigator-core",
+      "target_kind": "lib",
+      "target": "codecallnavigator_core",
+      "component": "core",
+      "category": "integration",
+      "requirements": [
+        "git"
+      ],
+      "purpose": "Ensure Git replacement refs cannot change inputs used for commit proof"
+    },
+    {
+      "id": "codecallnavigator-core/lib:codecallnavigator_core::artifact::revision::tests::inherited_git_environment_cannot_redirect_an_explicit_project",
+      "runner": "rust",
+      "file": "crates/codecallnavigator-core/src/artifact/revision/tests.rs",
+      "test_name": "artifact::revision::tests::inherited_git_environment_cannot_redirect_an_explicit_project",
+      "ignored": false,
+      "package": "codecallnavigator-core",
+      "target_kind": "lib",
+      "target": "codecallnavigator_core",
+      "component": "core",
+      "category": "integration",
+      "requirements": [
+        "git"
+      ],
+      "purpose": "Ensure inherited repository and object-store overrides cannot redirect exact commit proof"
+    },
+    {
+      "id": "codecallnavigator-core/lib:codecallnavigator_core::artifact::storage::local_snapshots::tests::working_and_verified_references_share_a_manifest_and_survive_history_budget",
+      "runner": "rust",
+      "file": "crates/codecallnavigator-core/src/artifact/storage/local_snapshots/tests.rs",
+      "test_name": "artifact::storage::local_snapshots::tests::working_and_verified_references_share_a_manifest_and_survive_history_budget",
       "ignored": false,
       "package": "codecallnavigator-core",
       "target_kind": "lib",
@@ -623,7 +655,49 @@
       "component": "core",
       "category": "integration",
       "requirements": [],
-      "purpose": "Cancellation after flushed manifest preparation preserves the active generation; real file persistence cannot be proven in memory"
+      "purpose": "Verify SHA and working references share a manifest and protect rollback from eviction"
+    },
+    {
+      "id": "codecallnavigator-core/lib:codecallnavigator_core::artifact::storage::local_snapshots::tests::concurrent_writers_preserve_each_worktree_and_open_reader",
+      "runner": "rust",
+      "file": "crates/codecallnavigator-core/src/artifact/storage/local_snapshots/tests.rs",
+      "test_name": "artifact::storage::local_snapshots::tests::concurrent_writers_preserve_each_worktree_and_open_reader",
+      "ignored": false,
+      "package": "codecallnavigator-core",
+      "target_kind": "lib",
+      "target": "codecallnavigator_core",
+      "component": "core",
+      "category": "integration",
+      "requirements": [],
+      "purpose": "Prove concurrent worktree publications preserve each reference and pinned readers in a real library"
+    },
+    {
+      "id": "codecallnavigator-core/lib:codecallnavigator_core::artifact::storage::local_snapshots::tests::abrupt_writer_exit_preserves_committed_references_and_reclaims_staged_objects",
+      "runner": "rust",
+      "file": "crates/codecallnavigator-core/src/artifact/storage/local_snapshots/tests.rs",
+      "test_name": "artifact::storage::local_snapshots::tests::abrupt_writer_exit_preserves_committed_references_and_reclaims_staged_objects",
+      "ignored": false,
+      "package": "codecallnavigator-core",
+      "target_kind": "lib",
+      "target": "codecallnavigator_core",
+      "component": "core",
+      "category": "integration",
+      "requirements": [],
+      "purpose": "Interrupt an owned process after durable graph writes and before the real catalog transaction commits"
+    },
+    {
+      "id": "codecallnavigator-core/lib:codecallnavigator_core::artifact::storage::local_snapshots::tests::copied_manifest_and_altered_catalog_cannot_relabel_a_verified_commit",
+      "runner": "rust",
+      "file": "crates/codecallnavigator-core/src/artifact/storage/local_snapshots/tests.rs",
+      "test_name": "artifact::storage::local_snapshots::tests::copied_manifest_and_altered_catalog_cannot_relabel_a_verified_commit",
+      "ignored": false,
+      "package": "codecallnavigator-core",
+      "target_kind": "lib",
+      "target": "codecallnavigator_core",
+      "component": "core",
+      "category": "integration",
+      "requirements": [],
+      "purpose": "Reject misattributed commit manifests and corrupted catalog selectors"
     },
     {
       "id": "codecallnavigator-core/lib:codecallnavigator_core::artifact::storage::local_snapshots::tests::cancelled_and_over_budget_writes_preserve_preexisting_snapshots",
@@ -4464,10 +4538,10 @@
       "purpose": "pruning supporting declarations retains surviving edge and source evidence"
     },
     {
-      "id": "codecallnavigator-core/test:revision_inspection::malformed_json_has_explicit_unknown_schema_and_original_error",
+      "id": "codecallnavigator-core/test:revision_inspection::moved_ref_with_identical_bundle_changes_binding_without_checkout_or_writes",
       "runner": "rust",
       "file": "crates/codecallnavigator-core/tests/revision_inspection.rs",
-      "test_name": "malformed_json_has_explicit_unknown_schema_and_original_error",
+      "test_name": "moved_ref_with_identical_bundle_changes_binding_without_checkout_or_writes",
       "ignored": false,
       "package": "codecallnavigator-core",
       "target_kind": "test",
@@ -4477,23 +4551,7 @@
       "requirements": [
         "git"
       ],
-      "purpose": "malformed json has explicit unknown schema and original error"
-    },
-    {
-      "id": "codecallnavigator-core/test:revision_inspection::moved_ref_with_identical_blob_changes_binding_without_checkout_or_writes",
-      "runner": "rust",
-      "file": "crates/codecallnavigator-core/tests/revision_inspection.rs",
-      "test_name": "moved_ref_with_identical_blob_changes_binding_without_checkout_or_writes",
-      "ignored": false,
-      "package": "codecallnavigator-core",
-      "target_kind": "test",
-      "target": "revision_inspection",
-      "component": "core",
-      "category": "integration",
-      "requirements": [
-        "git"
-      ],
-      "purpose": "moved ref with identical blob changes binding without checkout or writes"
+      "purpose": "moved ref with identical bundle changes binding without checkout or writes"
     },
     {
       "id": "codecallnavigator-core/test:revision_inspection::read_failures_keep_legacy_codes_and_messages",
@@ -4512,10 +4570,10 @@
       "purpose": "read failures keep legacy codes and messages"
     },
     {
-      "id": "codecallnavigator-core/test:revision_inspection::unsupported_monolithic_schema_or_inventory_retains_failure_and_bound_metadata",
+      "id": "codecallnavigator-core/test:revision_inspection::tampered_commit_manifest_fails_before_returning_provenance",
       "runner": "rust",
       "file": "crates/codecallnavigator-core/tests/revision_inspection.rs",
-      "test_name": "unsupported_monolithic_schema_or_inventory_retains_failure_and_bound_metadata",
+      "test_name": "tampered_commit_manifest_fails_before_returning_provenance",
       "ignored": false,
       "package": "codecallnavigator-core",
       "target_kind": "test",
@@ -4523,7 +4581,7 @@
       "component": "core",
       "category": "unit",
       "requirements": [],
-      "purpose": "unsupported monolithic schema or inventory retains failure and bound metadata"
+      "purpose": "tampered commit manifest fails before returning provenance"
     },
     {
       "id": "codecallnavigator-core/test:revision_inspection::valid_generation_without_flows_is_available_without_fabricated_inventory",
@@ -4556,10 +4614,10 @@
       "purpose": "valid inspection and legacy endpoint have identical serialization"
     },
     {
-      "id": "codecallnavigator-core/test:revision_inspection::worktree_observation_binds_undecodable_bytes_without_poisoning_committed_snapshot",
+      "id": "codecallnavigator-core/test:revision_inspection::corrupt_working_manifest_keeps_catalog_binding_and_verified_snapshot",
       "runner": "rust",
       "file": "crates/codecallnavigator-core/tests/revision_inspection.rs",
-      "test_name": "worktree_observation_binds_undecodable_bytes_without_poisoning_committed_snapshot",
+      "test_name": "corrupt_working_manifest_keeps_catalog_binding_and_verified_snapshot",
       "ignored": false,
       "package": "codecallnavigator-core",
       "target_kind": "test",
@@ -4569,7 +4627,7 @@
       "requirements": [
         "git"
       ],
-      "purpose": "worktree observation binds undecodable bytes without poisoning committed snapshot"
+      "purpose": "corrupt working manifest keeps catalog binding and verified snapshot"
     },
     {
       "id": "codecallnavigator-core/test:type_script_discovery::finds_config_variants_but_defaults_to_main_config_in_each_directory",
@@ -8152,7 +8210,9 @@
       "category": "acceptance",
       "requirements": [
         "cli",
-        "git"
+        "git",
+        "node",
+        "typescript"
       ],
       "purpose": "real stdio comparison preserves cli pages metadata and errors"
     },
@@ -20099,10 +20159,10 @@
       "purpose": "test nonmatching real git delegates without waiting or producing proof"
     },
     {
-      "id": "tools/test_comparison_desktop_gate.py::ComparisonGitGateTests.test_only_exact_project_blob_and_argument_vector_can_enter",
+      "id": "tools/test_comparison_desktop_gate.py::ComparisonGitGateTests.test_only_exact_project_base_ref_and_argument_vector_can_enter",
       "runner": "python",
       "file": "tools/test_comparison_desktop_gate.py",
-      "test_name": "test_comparison_desktop_gate.ComparisonGitGateTests.test_only_exact_project_blob_and_argument_vector_can_enter",
+      "test_name": "test_comparison_desktop_gate.ComparisonGitGateTests.test_only_exact_project_base_ref_and_argument_vector_can_enter",
       "ignored": false,
       "component": "tooling",
       "category": "unit",
@@ -20110,10 +20170,10 @@
       "purpose": "test only exact project blob and argument vector can enter"
     },
     {
-      "id": "tools/test_comparison_desktop_gate.py::ComparisonGitGateTests.test_outside_artifacts_noncanonical_projects_and_unknown_tokens_are_rejected",
+      "id": "tools/test_comparison_desktop_gate.py::ComparisonGitGateTests.test_noncanonical_projects_and_unknown_tokens_are_rejected",
       "runner": "python",
       "file": "tools/test_comparison_desktop_gate.py",
-      "test_name": "test_comparison_desktop_gate.ComparisonGitGateTests.test_outside_artifacts_noncanonical_projects_and_unknown_tokens_are_rejected",
+      "test_name": "test_comparison_desktop_gate.ComparisonGitGateTests.test_noncanonical_projects_and_unknown_tokens_are_rejected",
       "ignored": false,
       "component": "tooling",
       "category": "integration",
@@ -20143,17 +20203,6 @@
       "category": "unit",
       "requirements": [],
       "purpose": "test non capture may not carry window or binding metadata"
-    },
-    {
-      "id": "tools/test_comparison_desktop_protocol.py::ComparisonProtocolTests.test_only_one_legacy_source_row_is_removed_and_nodes_ir_stay_unchanged",
-      "runner": "python",
-      "file": "tools/test_comparison_desktop_protocol.py",
-      "test_name": "test_comparison_desktop_protocol.ComparisonProtocolTests.test_only_one_legacy_source_row_is_removed_and_nodes_ir_stay_unchanged",
-      "ignored": false,
-      "component": "tooling",
-      "category": "unit",
-      "requirements": [],
-      "purpose": "test only one legacy source row is removed and nodes ir stay unchanged"
     },
     {
       "id": "tools/test_comparison_desktop_protocol.py::ComparisonProtocolTests.test_ordinary_version_one_capture_keeps_its_existing_request_and_output_path",

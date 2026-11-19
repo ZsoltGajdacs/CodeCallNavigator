@@ -68,18 +68,18 @@ def assert_clean_shutdown(resources):
         raise RuntimeError(f"Observer shutdown failed {failures}: {resources}")
 
 
-def project_size(project):
-    raw = (project.root / ".codecallnavigator/graph.json").read_bytes()
-    graph = load_bundle(project.root / ".codecallnavigator/graph.json")["graph"]
-    return {"artifact_bytes": stored_bytes(project.root / ".codecallnavigator/graph.json"), "nodes": len(graph["nodes"]), "relationships": len(graph["edges"]),
+def project_size(session):
+    path = session.manifest()
+    graph = load_bundle(path)["graph"]
+    return {"artifact_bytes": stored_bytes(path), "nodes": len(graph["nodes"]), "relationships": len(graph["edges"]),
             "observed_inputs": len(graph["analysis"]["inputs"]),
-            "authored_source_files": sum(path.suffix in {".ts", ".java", ".cs"} for path in project.source.parent.iterdir())}
+            "authored_source_files": sum(path.suffix in {".ts", ".java", ".cs"} for path in session.project.source.parent.iterdir())}
 
 
 def scenario(session, name, arguments, output):
     session.project.reset(name)
     analysis = session.analyze()
-    size = project_size(session.project)
+    size = project_size(session)
     baseline = observe_once(session.executable, session.project)
     if baseline["input_status"] == "stale":
         raise RuntimeError(f"Newly published baseline was stale: {baseline}")

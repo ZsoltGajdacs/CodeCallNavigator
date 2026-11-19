@@ -1,4 +1,4 @@
-//! Public saved-flow comparison over real Git artifacts, without analysis or source reconstruction.
+//! Public saved-flow comparison over Git-addressed library graphs.
 #[cfg(unix)]
 #[path = "flow_comparison/cancellation.rs"]
 mod cancellation;
@@ -17,9 +17,8 @@ use support::*;
 
 #[test]
 fn committed_catalog_and_detail_use_endpoint_source_and_targets_without_working_graph() {
-    let repo = Repository::new();
+    let repo = Repository::revisions_only();
     let root = repo.root();
-    fs::remove_file(root.join(artifact::GRAPH_PATH)).unwrap();
     let listing = query(root, SAVED.catalog());
     assert!(listing["error"].is_null(), "{listing}");
     let records = listing["result"]["records"].as_array().unwrap();
@@ -53,7 +52,7 @@ fn committed_catalog_and_detail_use_endpoint_source_and_targets_without_working_
         );
         assert_eq!(result[side]["source"]["origin"], "analyzed");
     }
-    assert!(!root.join(artifact::GRAPH_PATH).exists());
+    assert!(artifact::working_manifest_path(root).is_err());
 }
 
 #[test]
@@ -75,7 +74,7 @@ fn detail_exact_add_remove_manual_and_incompatible_membership_are_explicit() {
     let mut invalid = repo.after.clone();
     invalid.schema = "future.graph.v99".into();
     fs::write(
-        root.join(artifact::GRAPH_PATH),
+        working_manifest(root),
         serde_json::to_vec(&invalid).unwrap(),
     )
     .unwrap();
@@ -107,25 +106,17 @@ fn bound_worktree_changes_and_moved_refs_reject_followups_without_writes() {
         query(root, operation)["error"]["code"],
         "comparison_mismatch"
     );
-    let before = fs::read(root.join(artifact::GRAPH_PATH)).unwrap();
+    let before = fs::read(working_manifest(root)).unwrap();
     let committed = query(root, SAVED.catalog());
     let mut operation = SAVED.detail(&symbol(&repo.before, "same"));
     operation["expected_comparison"] = committed["result"]["comparison_id"].clone();
-    git(
-        root,
-        &[
-            "commit",
-            "--allow-empty",
-            "-qm",
-            "same saved bytes new commit",
-        ],
-    );
+    commit_as(root, &repo.after, "moved-head");
     git(root, &["tag", "-f", "head"]);
     assert_eq!(
         query(root, operation)["error"]["code"],
         "comparison_mismatch"
     );
-    assert_eq!(fs::read(root.join(artifact::GRAPH_PATH)).unwrap(), before);
+    assert_eq!(fs::read(working_manifest(root)).unwrap(), before);
     assert!(!root.join(".git/FETCH_HEAD").exists());
     assert!(!root.join(".codecallnavigator/analysis.lock").exists());
 }

@@ -1,4 +1,6 @@
 use codecallnavigator_core::artifact::{self, Artifact};
+#[path = "../support/retained_graph.rs"]
+mod retained_graph;
 #[path = "snapshot.rs"]
 mod snapshot;
 use serde_json::{Value, json};
@@ -36,9 +38,21 @@ pub fn symbol(saved: &Artifact, name: &str) -> String {
         .into()
 }
 pub fn save(root: &Path, saved: &Artifact) {
-    fs::create_dir_all(root.join(".codecallnavigator")).unwrap();
     artifact::publish(root, saved, &std::sync::atomic::AtomicBool::new(false)).unwrap();
 }
+
+pub fn commit_as(root: &Path, saved: &Artifact, tag: &str) {
+    fs::write(root.join("comparison-fixture.txt"), tag).unwrap();
+    git(root, &["add", "comparison-fixture.txt"]);
+    git(root, &["commit", "-qm", tag]);
+    git(root, &["tag", tag]);
+    retained_graph::retain(root, saved);
+}
+
+pub fn working_manifest(root: &Path) -> std::path::PathBuf {
+    artifact::working_manifest_path(root).unwrap()
+}
+
 pub struct Repository {
     pub directory: tempfile::TempDir,
     pub before: Artifact,
@@ -46,6 +60,14 @@ pub struct Repository {
 }
 impl Repository {
     pub fn new() -> Self {
+        Self::build(true)
+    }
+
+    pub fn revisions_only() -> Self {
+        Self::build(false)
+    }
+
+    fn build(publish_working: bool) -> Self {
         let directory = tempfile::tempdir().unwrap();
         let root = directory.path();
         git(root, &["init", "-q"]);
@@ -57,26 +79,17 @@ impl Repository {
             extras: &["removed"],
         }
         .artifact();
-        save(root, &before);
-        git(
-            root,
-            &["add", artifact::GRAPH_PATH, ".codecallnavigator/objects"],
-        );
-        git(root, &["commit", "-qm", "before"]);
-        git(root, &["tag", "base"]);
+        commit_as(root, &before, "base");
         let after = Snapshot {
             root,
             marker: "after",
             extras: &["added"],
         }
         .artifact();
-        save(root, &after);
-        git(
-            root,
-            &["add", artifact::GRAPH_PATH, ".codecallnavigator/objects"],
-        );
-        git(root, &["commit", "-qm", "after"]);
-        git(root, &["tag", "head"]);
+        commit_as(root, &after, "head");
+        if publish_working {
+            save(root, &after);
+        }
         Self {
             directory,
             before,

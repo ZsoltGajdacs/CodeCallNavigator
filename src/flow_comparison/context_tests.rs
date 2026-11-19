@@ -14,6 +14,7 @@ fn loaded(state: &crate::app::State, root: &std::path::Path) -> LoadedGraph {
         generation: "another-current-generation".into(),
         metrics: None,
         presentation_cache: None,
+        retention: None,
         context: Some(QueryContext::new(
             state.runtime.as_ref().unwrap(),
             Descriptor {
@@ -248,10 +249,27 @@ fn retargeting_a_project_alias_cannot_redirect_bound_detail_or_explicit_reload()
         })
         .unwrap();
     settle(&mut state);
-    assert!(state.flow_comparison.current.is_some());
+    assert!(
+        state.flow_comparison.current.is_some(),
+        "{:?}",
+        state.flow_comparison.phase
+    );
+    let revision = "refs/tags/base";
+    state.flow_comparison.controls.base = rune::TextEdit::new(revision);
+    state.lookup_comparison_snapshot(snapshots::Side::Base);
+    settle(&mut state);
+    let lookup = state
+        .flow_comparison
+        .snapshots
+        .lookup(snapshots::Side::Base, revision);
+    assert_eq!(lookup.map(|lookup| lookup.status.snapshots.len()), Some(1));
     state.flow_comparison.reload().unwrap();
     settle(&mut state);
-    assert!(state.flow_comparison.catalog.is_some());
+    assert!(
+        state.flow_comparison.catalog.is_some(),
+        "{:?}",
+        state.flow_comparison.phase
+    );
     assert_eq!(
         state.flow_comparison.identity.captured(),
         Some(canonical.as_path())

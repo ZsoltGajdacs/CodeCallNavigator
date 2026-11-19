@@ -13,9 +13,11 @@ use std::{
     time::{SystemTime, UNIX_EPOCH},
 };
 
+mod fresh_outputs;
 mod snapshot;
 #[cfg(test)]
 mod tests;
+pub(super) use fresh_outputs::FreshOutputs;
 use snapshot::{Snapshot, absolute, changed};
 
 pub(super) const VERSION: u32 = 1;

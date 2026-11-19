@@ -8,7 +8,7 @@ import time
 from csharp_desktop_acceptance import callable_node, clean_environment
 from csharp_flow_acceptance import require
 from csharp_flow_ingestion_acceptance import Client
-from graph_bundle import stored_bytes
+from graph_bundle import graph_path, stored_bytes
 
 FIXTURE = Path(__file__).resolve().parents[1] / "fixtures/flow/expansion-desktop"
 
@@ -45,7 +45,7 @@ def verify_cached_sources(client, project, sources, generation):
 
 def prepare(engine, project, timeout):
     shutil.copytree(FIXTURE, project)
-    client = Client(engine, clean_environment())
+    client = Client(engine, clean_environment(project))
     started = time.monotonic()
     client.analyze(project, project / "ExpansionDesktop.csproj")
     analyze_seconds = time.monotonic() - started
@@ -55,7 +55,7 @@ def prepare(engine, project, timeout):
     generation = snapshot["generation"]
     sources = [source_snapshot(client, project / "Root.cs", entry, generation),
                source_snapshot(client, project / "Helpers.cs", helper, generation)]
-    artifact = project / ".codecallnavigator/graph.json"
+    artifact = graph_path(project, engine, client.environment)
     digest = hashlib.sha256(artifact.read_bytes()).hexdigest()
     verify_cached_sources(client, project, sources, generation)
     require(hashlib.sha256(artifact.read_bytes()).hexdigest() == digest,

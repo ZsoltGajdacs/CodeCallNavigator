@@ -48,7 +48,10 @@ pub fn run() -> Result<i32> {
     // so an idle session blocked on stdin also terminates promptly on cancellation.
     if !matches!(
         command,
-        Command::Query | Command::QuerySession | Command::Observe { automatic: false }
+        Command::Query
+            | Command::QuerySession
+            | Command::Observe { automatic: false }
+            | Command::GraphPath(_)
     ) {
         cancellation::install();
     }
@@ -65,6 +68,10 @@ pub fn run() -> Result<i32> {
             Ok(0)
         }
         Command::Discover(project) => run_discovery(&project),
+        Command::GraphPath(project) => {
+            println!("{}", artifact::working_manifest_path(&project)?.display());
+            Ok(0)
+        }
         Command::ClearCache(project) => {
             let removed = codecallnavigator_core::boundary::clear_inference_cache(&project)?;
             println!("Cleared inference cache ({removed} files removed)");
@@ -103,14 +110,16 @@ pub fn run() -> Result<i32> {
         Command::Serve => machine::serve_once(),
         Command::ServeAnalysisSession => session_stream::serve(),
         // Hidden reference-runner hook; not an alternate persistent graph output.
-        Command::AnalyzeNative(paths) => {
-            let project = std::env::current_dir()?;
-            let targets = analysis::select_targets(&project, paths)?;
-            let graph = analysis::native(targets, &|message| eprintln!("{message}"))?;
-            println!("{}", serde_json::to_string(&graph)?);
-            Ok(0)
-        }
+        Command::AnalyzeNative(paths) => run_reference_analysis(paths),
     }
+}
+
+fn run_reference_analysis(paths: Vec<std::path::PathBuf>) -> Result<i32> {
+    let project = std::env::current_dir()?;
+    let targets = analysis::select_targets(&project, paths)?;
+    let graph = analysis::native(targets, &|message| eprintln!("{message}"))?;
+    println!("{}", serde_json::to_string(&graph)?);
+    Ok(0)
 }
 
 fn print_snapshot(snapshot: &impl serde::Serialize) -> Result<i32> {
@@ -137,10 +146,7 @@ fn run_analysis(arguments: arguments::Analysis) -> Result<i32> {
         eprintln!("{message}")
     })?;
     if let codecallnavigator_core::protocol::Event::Complete { digest, .. } = complete {
-        println!(
-            "Published {} ({digest})",
-            project.join(artifact::GRAPH_PATH).display()
-        );
+        println!("Published working graph ({digest})");
     }
     Ok(0)
 }
@@ -156,6 +162,6 @@ fn print_help() {
         "codecallnavigator-engine"
     };
     println!(
-        "{program} capabilities\n{program} query < request.json\n{program} query-session < requests.ndjson\n{program} observe [--auto-refresh] < observation-request.ndjson\n{program} discover PROJECT\n{program} analyze --project PROJECT [--root NAME=PATH] TARGET...\n{program} watch --project PROJECT [--root NAME=PATH] TARGET...\n{program} clear-cache --project PROJECT\n{program} verify --project PROJECT [--root NAME=PATH]\n{program} compare --project PROJECT --base REF --head REF|WORKTREE [--base-snapshot ID] [--head-snapshot ID]\n{program} snapshot-status --project PROJECT --revision REF\n{program} prepare-snapshot --project PROJECT --revision REF [--target PATH]...\n{program} impact-preview --project PROJECT --base REF [--head REF|WORKTREE] [--base-snapshot ID]"
+        "{program} capabilities\n{program} query < request.json\n{program} query-session < requests.ndjson\n{program} observe [--auto-refresh] < observation-request.ndjson\n{program} discover PROJECT\n{program} analyze --project PROJECT [--root NAME=PATH] TARGET...\n{program} watch --project PROJECT [--root NAME=PATH] TARGET...\n{program} clear-cache --project PROJECT\n{program} graph-path --project PROJECT\n{program} verify --project PROJECT [--root NAME=PATH]\n{program} compare --project PROJECT --base REF --head REF|WORKTREE [--base-snapshot ID] [--head-snapshot ID]\n{program} snapshot-status --project PROJECT --revision REF\n{program} prepare-snapshot --project PROJECT --revision REF [--target PATH]...\n{program} impact-preview --project PROJECT --base REF [--head REF|WORKTREE] [--base-snapshot ID]"
     );
 }

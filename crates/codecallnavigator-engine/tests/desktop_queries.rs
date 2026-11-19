@@ -62,7 +62,7 @@ fn save(root: &Path, count: u32) -> String {
     };
     let saved = artifact::canonical(&graph, &[("repo".into(), root.into())]).unwrap();
     artifact::publish(root, &saved, &std::sync::atomic::AtomicBool::new(false)).unwrap();
-    let bytes = fs::read(root.join(artifact::GRAPH_PATH)).unwrap();
+    let bytes = fs::read(artifact::working_manifest_path(root).unwrap()).unwrap();
     blake3::hash(&bytes).to_hex().to_string()
 }
 
@@ -165,6 +165,7 @@ fn live_file_and_architecture_operations_remain_explicit() {
     assert!(live["error"].is_null(), "{live}");
     assert_eq!(live["result"]["content"], "live\n");
     let generation = save(root, 3);
+    fs::create_dir(root.join(".codecallnavigator")).unwrap();
     fs::write(
         root.join(".codecallnavigator/layers.yml"),
         "version: 1\nlanguages: {}\n",

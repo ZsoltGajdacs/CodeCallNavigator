@@ -44,6 +44,7 @@ fn replacement(state: &State, project: &str) -> LoadedGraph {
         metrics: None,
         context: Some(context(project, "new")),
         presentation_cache: None,
+        retention: None,
     }
 }
 

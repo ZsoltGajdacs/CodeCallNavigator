@@ -1,20 +1,23 @@
 # Portable graph JSON contract
 
-CodeCallNavigator publishes a canonical bundle through the manifest at
-`.codecallnavigator/graph.json`, described by
-[graph.manifest.schema.json](graph.manifest.schema.json). It references two
-Zstandard-compressed objects under `.codecallnavigator/objects/`: structural
-facts and function-flow inventory. External consumers, including CodeQualityChecker,
-may read the bundle without linking CodeCallNavigator's Rust crates or invoking
-an analyzer. The decoded semantic shape is specified in
+CodeCallNavigator publishes a canonical bundle through a `graph.json` manifest
+in the [local graph library](standalone-engine.md#local-snapshots-across-worktrees).
+Read the manifest using [graph.manifest.schema.json](graph.manifest.schema.json).
+It references two Zstandard-compressed objects in the library's `objects/`
+directory, one for structural facts and one for function-flow inventory.
+External consumers, including CodeQualityChecker, may locate the current manifest
+with `ccnavigator graph-path --project /checkout` and read the bundle without
+linking CodeCallNavigator's Rust crates or invoking an analyzer. The decoded
+semantic shape is specified in
 [graph.schema.json](graph.schema.json), using JSON Schema Draft 2020-12. The
 [engine guide](standalone-engine.md) describes production and comparison commands.
 
-Every successful analysis or refresh publishes both schemas and a terse
-[bundle README](graph-bundle.md) beside `graph.json`. These generated companions
-are embedded in the application and require no network access. Missing or modified
-copies are repaired on the next publication; opening or querying existing graphs
-does not write them. Companion files do not affect graph generation identity.
+Every successful analysis or refresh publishes both schemas and a
+[bundle README](graph-bundle.md) in the library root. These generated companions
+are embedded in the application and require no network access. A subsequent
+publication repairs missing or modified copies. You can copy a manifest and its
+objects into a portable bundle with the same schemas. Companion files do not
+affect graph generation identity.
 
 ## Compatibility policy
 
@@ -217,7 +220,7 @@ and fresh output:
 python3.13 -m venv /tmp/codecallnavigator-schema-check
 /tmp/codecallnavigator-schema-check/bin/pip install -r requirements-verification.txt
 /tmp/codecallnavigator-schema-check/bin/python -m unittest discover -s tools -p test_graph_contract.py
-/tmp/codecallnavigator-schema-check/bin/python tools/check_graph_contract.py fixtures/.codecallnavigator/graph.json /checkout/.codecallnavigator/graph.json
+/tmp/codecallnavigator-schema-check/bin/python tools/check_graph_contract.py fixtures/.codecallnavigator/graph.json
 ```
 
 `jsonschema` is a test-only dependency. These checks complement CodeCallNavigator's

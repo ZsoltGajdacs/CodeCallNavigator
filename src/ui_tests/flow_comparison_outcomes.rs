@@ -1,7 +1,7 @@
 //! Partial endpoint and cancellation outcomes remain explicit through real controls.
 use super::{
     click,
-    flow_comparison_fixture::{choose, commit, runtime},
+    flow_comparison_fixture::{choose, prefixed, runtime},
     flow_comparisons::load,
 };
 use crate::{
@@ -26,31 +26,23 @@ fn wait(ui: &mut rune::Runtime<State>, mut condition: impl FnMut(&State) -> bool
 fn incompatible_endpoint_membership_and_missing_cached_source_are_not_guessed() {
     use codecallnavigator::artifact;
     let data = crate::flow_scenes::data();
-    let (mut ui, project) = runtime(data.clone(), data.clone(), true);
-    let saved = artifact::canonical(&data, &[("repo".into(), "/snapshot".into())]).unwrap();
-    let mut manifest: serde_json::Value =
+    let before = prefixed("base", 1);
+    let (mut ui, project) = runtime(before.clone(), data.clone(), true);
+    let saved = artifact::canonical(&before, &[("repo".into(), "/snapshot".into())]).unwrap();
+    let manifest: serde_json::Value =
         serde_json::from_slice(saved.encode().unwrap().as_ref()).unwrap();
-    manifest["schema"] = "future-schema".into();
+    let digest = manifest["structure"]["digest"].as_str().unwrap();
     fs::write(
-        project.path().join(artifact::GRAPH_PATH),
-        serde_json::to_vec(&manifest).unwrap(),
+        crate::flow_comparison::tests::fixture_store(project.path())
+            .root()
+            .join(format!("objects/{digest}.structure.json.zst")),
+        b"corrupt structure",
     )
     .unwrap();
-    for args in [
-        &["add", artifact::GRAPH_PATH, ".codecallnavigator/objects"][..],
-        &["commit", "-qm", "future"],
-        &["tag", "-f", "base"],
-    ] {
-        crate::flow_comparison::tests::git(project.path(), args);
-    }
-    commit(project.path(), &data, "after-valid");
-    fs::remove_file(project.path().join(artifact::GRAPH_PATH)).unwrap();
     load(&mut ui);
     assert!(!ui.state.flow_comparison.catalog.as_ref().unwrap().complete);
     let header = ui.state.flow_comparison.header().unwrap();
     assert_ne!(header.base.commit, header.head.commit);
-    assert_eq!(header.base.schema.as_deref(), Some("future-schema"));
-    assert_ne!(header.head.schema.as_deref(), Some("future-schema"));
     choose(&mut ui, "load(");
     let pair = ui.state.flow_comparison.current.as_ref().unwrap();
     assert!(matches!(pair.before, Side::Unavailable(_)));

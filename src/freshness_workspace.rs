@@ -8,6 +8,7 @@ use crate::{
 use codecallnavigator::{
     artifact::verification::InputStatus,
     freshness::FreshnessObservation,
+    protocol::GraphRetention,
     refresh::{self, Activity, ObserveSession, Phase, SessionRequest},
 };
 use std::sync::atomic::Ordering;
@@ -35,6 +36,7 @@ pub struct Workspace {
     build_selection_changed: bool,
     selected: Option<ObserveSession>,
     publication: Option<Publication>,
+    retention: Option<(String, GraphRetention)>,
     binding: Option<Descriptor>,
     worker: Option<Worker>,
     retired: Vec<Worker>,
@@ -141,6 +143,13 @@ impl Workspace {
         }
     }
 
+    pub(crate) fn retention(&self, generation: Option<&str>) -> Option<&GraphRetention> {
+        self.retention
+            .as_ref()
+            .filter(|(published, _)| Some(published.as_str()) == generation)
+            .map(|(_, retention)| retention)
+    }
+
     pub fn stop(&mut self) {
         if let Some(worker) = &self.worker {
             worker.cancel.store(true, Ordering::Release);
@@ -165,6 +174,7 @@ impl Workspace {
         self.retire_worker();
         self.selected = None;
         self.publication = None;
+        self.retention = None;
         self.automatic = Default::default();
         self.automatic_worker = false;
         self.binding = None;
@@ -236,16 +246,18 @@ impl Workspace {
     }
 
     fn record_publication(&mut self, activity: Activity) {
-        if let (
-            Some(selected),
-            Phase::Published {
-                generation,
-                roots,
-                metrics,
-                ..
-            },
-        ) = (&self.selected, activity.phase)
-        {
+        let Phase::Published {
+            generation,
+            roots,
+            metrics,
+            retention,
+            ..
+        } = activity.phase
+        else {
+            return;
+        };
+        self.retention = retention.map(|retention| (generation.clone(), retention));
+        if let Some(selected) = &self.selected {
             self.publication = Some(Publication {
                 descriptor: Descriptor {
                     project: selected.session.project.clone(),
@@ -382,7 +394,7 @@ impl State {
     }
 
     pub(crate) fn refresh_build_selection_changed(&mut self) {
-        self.analysis_failure = None;
+        self.analysis_feedback.failure = None;
         self.stop_selected_refresh();
         self.freshness.build_selection_changed = true;
         if let Some(descriptor) = self.authorized_picker_project() {
@@ -400,7 +412,7 @@ impl State {
     }
 
     fn start_selected_refresh(&mut self, selection: Analysis, runtime: &crate::runtime::Runtime) {
-        self.analysis_failure = None;
+        self.analysis_feedback.failure = None;
         let project = selection.project;
         self.freshness.selected = Some(ObserveSession {
             version: refresh::OBSERVE_SESSION_VERSION,

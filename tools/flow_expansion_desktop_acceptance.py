@@ -13,6 +13,7 @@ import hashlib
 import json
 import math
 from pathlib import Path
+from graph_bundle import graph_path
 import shutil
 import subprocess
 import time
@@ -98,7 +99,7 @@ def run_native(run):
     directory = run.directory
     directory.mkdir()
     write_json(directory / "config.json", run.fixture.config)
-    environment = clean_environment()
+    environment = clean_environment(run.fixture.project)
     environment.update(CODECALLNAVIGATOR_DATA_DIR=str(run.store),
                        CODECALLNAVIGATOR_FLOW_ACCEPTANCE=str(directory), PATH="/usr/bin:/bin")
     command = [str(run.app / "Contents/MacOS/CodeCallNavigator"), "--native", "--trace",
@@ -132,7 +133,7 @@ def acceptance(app, output, timeout):
             store = root / f"store-{theme}"
             seed_session(store, fixture)
             results.append(run_native(NativeRun(relocated, fixture, store, output / theme, theme, timeout)))
-        artifact = fixture.project / ".codecallnavigator/graph.json"
+        artifact = graph_path(fixture.project, relocated / "Contents/MacOS/codecallnavigator-engine", clean_environment(fixture.project))
         require(hashlib.sha256(artifact.read_bytes()).hexdigest() == fixture.metrics["artifact_sha256"],
                 "Native expansion mutated the analyzed artifact")
         fixture.metrics["no_mutated_artifact"] = True

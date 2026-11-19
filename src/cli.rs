@@ -88,6 +88,14 @@ pub fn analyze() -> Result<()> {
 }
 
 fn validate_report_path(path: &std::path::Path) -> Result<()> {
+    let library = codecallnavigator::artifact::local_snapshots::Store::system()?;
+    validate_report_path_outside_library(path, library.root())
+}
+
+fn validate_report_path_outside_library(
+    path: &std::path::Path,
+    library: &std::path::Path,
+) -> Result<()> {
     let resolved = if path.exists() {
         path.canonicalize()?
     } else {
@@ -99,8 +107,11 @@ fn validate_report_path(path: &std::path::Path) -> Result<()> {
             .canonicalize()?
             .join(path.file_name().context("Timing report must name a file")?)
     };
+    let library = library
+        .canonicalize()
+        .unwrap_or_else(|_| library.to_owned());
     ensure!(
-        !discovery::generated_graph_output(&resolved),
+        !resolved.starts_with(library) && !discovery::generated_graph_output(&resolved),
         "Timing reports cannot overwrite reserved graph files"
     );
     Ok(())
@@ -152,6 +163,9 @@ fn run(paths: Vec<PathBuf>, layers: layers::Arguments, project: Option<PathBuf>)
         graph.nodes.len(),
         graph.edges.len()
     );
+    if let Some(retention) = &snapshot.retention {
+        eprintln!("{}", crate::analysis_feedback::retention_message(retention));
+    }
     for diagnostic in &graph.diagnostics {
         eprintln!("Analysis note: {diagnostic}");
     }
@@ -294,7 +308,7 @@ mod tests {
     fn timing_reports_cannot_overwrite_graph_files_through_direct_or_symlink_paths() {
         use std::os::unix::fs::symlink;
         let root = tempfile::tempdir().unwrap();
-        let directory = root.path().join(".codecallnavigator");
+        let directory = root.path().join("graph-library");
         std::fs::create_dir(&directory).unwrap();
         let graph = directory.join("graph.json");
         std::fs::write(&graph, b"previous graph").unwrap();
@@ -310,12 +324,15 @@ mod tests {
             &directory_alias.join("graph.json"),
         ] {
             assert!(
-                validate_report_path(path).is_err(),
+                validate_report_path_outside_library(path, &directory).is_err(),
                 "Reserved path accepted: {}",
                 path.display()
             );
         }
-        assert!(validate_report_path(&root.path().join("timings.json")).is_ok());
+        assert!(
+            validate_report_path_outside_library(&root.path().join("timings.json"), &directory)
+                .is_ok()
+        );
         assert_eq!(std::fs::read(graph).unwrap(), b"previous graph");
     }
 }

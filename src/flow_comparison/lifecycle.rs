@@ -29,6 +29,13 @@ impl State {
         Ok(())
     }
 
+    pub(super) fn library_comparison_context(&self) -> Result<QueryContext, String> {
+        match &self.flow_comparison.project {
+            Some(project) => Ok(project.context_for(self.flow_comparison.identity.captured())),
+            None => self.comparison_context().map(|(_, context)| context),
+        }
+    }
+
     pub(super) fn comparison_context(&self) -> Result<(Runtime, QueryContext), String> {
         let runtime = self
             .runtime
@@ -52,6 +59,15 @@ impl State {
             QueryContext::for_project(runtime, folder.into())
         };
         Ok((runtime.as_ref().clone(), context))
+    }
+}
+impl Project {
+    pub(super) fn context_for(&self, physical: Option<&Path>) -> QueryContext {
+        let mut descriptor = self.context.descriptor.clone();
+        if let Some(root) = physical {
+            descriptor.project = root.into();
+        }
+        QueryContext::new(&self.runtime, descriptor)
     }
 }
 impl Workspace {

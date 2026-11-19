@@ -1,17 +1,13 @@
 //! Engine-owned local snapshot preparation and discovery.
 use super::{analysis, cancellation::CANCELLED, snapshot_worktree::ResolvedRevision};
 use anyhow::{Context, Result, ensure};
-use codecallnavigator_core::{
-    artifact::{
-        local_snapshots::{SnapshotRecord, Store},
-        revision::Repository,
-    },
-    protocol::Event,
+use codecallnavigator_core::artifact::{
+    local_snapshots::{SnapshotRecord, Store, VerifiedPublication},
+    revision::Repository,
 };
 use serde::Serialize;
 use std::{
     fs::{self, File, OpenOptions, TryLockError},
-    io::Write,
     path::{Component, Path, PathBuf},
     sync::atomic::Ordering,
     thread,
@@ -52,32 +48,44 @@ pub(super) fn prepare(
             "Snapshot targets must be project-relative paths without parent traversal"
         );
     }
-    let resolved = ResolvedRevision::resolve(project, revision, &CANCELLED)?;
-    let repository = Repository::open(project)?;
+    let project = project
+        .canonicalize()
+        .context("Cannot open snapshot project")?;
+    let resolved = ResolvedRevision::resolve(&project, revision, &CANCELLED)?;
+    let repository = Repository::open(&project)?;
     let store = Store::system()?;
     let key = serde_json::to_vec(&(
         &resolved.commit,
+        project.as_os_str().as_encoded_bytes(),
         &repository.project,
         &targets,
         env!("CARGO_PKG_VERSION"),
     ))?;
     let job = Preparation::open(&store, &repository, blake3::hash(&key).to_hex().as_str())?;
-    let (_lease, waited) = job.acquire(&resolved.commit, progress)?;
-    if waited && let Some(snapshot) = job.reuse(&store, &repository, &resolved.commit)? {
-        return Ok(snapshot);
-    }
-    job.clear_receipt()?;
+    // Serialize equivalent requests from this checkout. Even after waiting for
+    // one, observe the caller's dependencies and toolchain before registering.
+    let _lease = job.acquire(&resolved.commit, progress)?;
 
     progress(format!("Preparing local snapshot at {}", resolved.commit));
-    let digest = resolved.with_checkout(&CANCELLED, |checkout| {
-        analyze_revision(project, checkout, targets, progress)
+    let staged = resolved.with_checkout(&CANCELLED, |checkout| {
+        analyze_revision(&project, checkout, targets, progress)
     })?;
-    let snapshot = records(&store, &repository, &resolved.commit)?
-        .into_iter()
-        .find(|record| record.digest == digest)
-        .context("Analysis completed but the revision snapshot could not be retained")?;
-    job.record(&snapshot)?;
-    Ok(snapshot)
+    let identity = staged.verified.identity(&staged.metadata)?;
+    ensure!(
+        staged.verified.common_dir() == repository.common_dir
+            && identity.project == repository.project
+            && identity.commit == resolved.commit,
+        "Verified snapshot does not belong to the requested clone, project, and commit"
+    );
+    store.retain_verified(
+        &repository.common_dir,
+        VerifiedPublication {
+            identity,
+            encoded: &staged.encoded,
+            metadata: &staged.metadata,
+        },
+        &CANCELLED,
+    )
 }
 
 fn analyze_revision(
@@ -85,7 +93,7 @@ fn analyze_revision(
     checkout: &Path,
     targets: Vec<PathBuf>,
     progress: &dyn Fn(String),
-) -> Result<String> {
+) -> Result<analysis::PreparedRevision> {
     for target in &targets {
         let path = checkout.join(target).canonicalize()?;
         ensure!(
@@ -104,12 +112,7 @@ fn analyze_revision(
             borrow_node_modules(project, checkout, directory)?;
         }
     }
-    let Event::Complete { digest, .. } =
-        analysis::analyze(checkout, Vec::new(), selected, progress)?
-    else {
-        anyhow::bail!("Unexpected snapshot analysis result");
-    };
-    Ok(digest)
+    analysis::prepare_revision(checkout, selected, progress)
 }
 
 fn borrow_node_modules(project: &Path, checkout: &Path, target: &Path) -> Result<()> {
@@ -165,7 +168,7 @@ impl Preparation {
         })
     }
 
-    fn acquire(&self, commit: &str, progress: &dyn Fn(String)) -> Result<(File, bool)> {
+    fn acquire(&self, commit: &str, progress: &dyn Fn(String)) -> Result<File> {
         let mut options = OpenOptions::new();
         options.write(true).create(true).truncate(false);
         #[cfg(unix)]
@@ -180,54 +183,12 @@ impl Preparation {
             lock.metadata()?.is_file(),
             "Snapshot preparation lock must be a file"
         );
-        let waited = wait_for_lease(&lock, commit, progress)?;
-        Ok((lock, waited))
-    }
-
-    fn reuse(
-        &self,
-        store: &Store,
-        repository: &Repository,
-        commit: &str,
-    ) -> Result<Option<SnapshotRecord>> {
-        let path = self.directory.join(&self.key);
-        let Ok(metadata) = fs::symlink_metadata(&path) else {
-            return Ok(None);
-        };
-        if !metadata.is_file() || metadata.len() != 64 {
-            return Ok(None);
-        }
-        let id = fs::read_to_string(path)?;
-        let Some(snapshot) = records(store, repository, commit)?
-            .into_iter()
-            .find(|record| record.id == id)
-        else {
-            return Ok(None);
-        };
-        let available = store
-            .capture(&repository.common_dir, &snapshot)
-            .and_then(|snapshot| snapshot.complete())
-            .is_ok();
-        Ok(available.then_some(snapshot))
-    }
-
-    fn record(&self, snapshot: &SnapshotRecord) -> Result<()> {
-        let mut written = tempfile::NamedTempFile::new_in(&self.directory)?;
-        written.write_all(snapshot.id.as_bytes())?;
-        written.persist(self.directory.join(&self.key))?;
-        Ok(())
-    }
-
-    fn clear_receipt(&self) -> Result<()> {
-        match fs::remove_file(self.directory.join(&self.key)) {
-            Ok(()) => Ok(()),
-            Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(()),
-            Err(error) => Err(error.into()),
-        }
+        wait_for_lease(&lock, commit, progress)?;
+        Ok(lock)
     }
 }
 
-fn wait_for_lease(lock: &File, commit: &str, progress: &dyn Fn(String)) -> Result<bool> {
+fn wait_for_lease(lock: &File, commit: &str, progress: &dyn Fn(String)) -> Result<()> {
     let mut announced = false;
     loop {
         ensure!(
@@ -235,7 +196,7 @@ fn wait_for_lease(lock: &File, commit: &str, progress: &dyn Fn(String)) -> Resul
             "Snapshot preparation cancelled"
         );
         match lock.try_lock() {
-            Ok(()) => return Ok(announced),
+            Ok(()) => return Ok(()),
             Err(TryLockError::WouldBlock) => {
                 if !announced {
                     progress(format!("Waiting for snapshot preparation at {}", commit));

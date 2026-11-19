@@ -19,7 +19,7 @@ impl State {
                     .into();
             return;
         };
-        self.analysis_failure = None;
+        self.analysis_feedback.failure = None;
         if self.defer_manual_analysis(&selection) {
             return;
         }
@@ -109,7 +109,7 @@ pub(super) fn poll_analysis(state: &mut State) -> bool {
                 state.status = "Analysis cancelled".into();
                 return true;
             }
-            state.analysis_failure = Some(crate::analysis_feedback::FailedSelection {
+            state.analysis_feedback.failure = Some(crate::analysis_feedback::FailedSelection {
                 selection: output.selection,
                 error: failure,
             });

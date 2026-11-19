@@ -21,12 +21,14 @@ class DesktopSessionTests(unittest.TestCase):
     def test_locked_console(self):
         session = {"kCGSSessionOnConsoleKey": True, "kCGSessionLoginDoneKey": True,
                    "CGSSessionScreenIsLocked": True}
-        self.assertEqual(parse_console_sessions(self.registry([session])), DesktopStatus.LOCKED)
+        for payload in (self.registry([session]), plistlib.dumps({"IOConsoleUsers": [session]})):
+            self.assertEqual(parse_console_sessions(payload), DesktopStatus.LOCKED)
 
     def test_unlocked_console(self):
         for lock in ({}, {"CGSSessionScreenIsLocked": False}):
             session = {"kCGSSessionOnConsoleKey": True, "kCGSessionLoginDoneKey": True} | lock
-            self.assertEqual(parse_console_sessions(self.registry([session])), DesktopStatus.READY)
+            for payload in (self.registry([session]), plistlib.dumps({"IOConsoleUsers": [session]})):
+                self.assertEqual(parse_console_sessions(payload), DesktopStatus.READY)
 
     def test_missing_console(self):
         inactive = {"kCGSSessionOnConsoleKey": False, "kCGSessionLoginDoneKey": True}

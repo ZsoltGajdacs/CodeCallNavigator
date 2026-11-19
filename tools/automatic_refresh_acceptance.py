@@ -5,7 +5,7 @@ All edits, locks and compiler outputs belong to disposable projects. Process
 cleanup is checked before the measurement helper's emergency cleanup can run.
 This is correctness acceptance, not a latency benchmark or a fake analyzer.
 """
-from graph_bundle import load as load_bundle, publish_fixture
+from graph_bundle import graph_path, fixture_state_dir, load as load_bundle, publish_fixture
 import argparse
 import fcntl
 import gzip
@@ -171,9 +171,12 @@ class Case:
         self.project.reset()
         self.session = Session(self.executable, self.project, self.timeout)
         self.baseline = self.session.analyze()
-        self.artifact = self.project.root / ".codecallnavigator/graph.json"
         self.before = self.artifact.read_bytes()
         self.monitors = []
+
+    @property
+    def artifact(self):
+        return graph_path(self.project.root, self.executable, required=False)
 
     def monitor(self, automatic=True, output_channel=None):
         monitor = Monitor(self, automatic, output_channel)
@@ -195,7 +198,7 @@ class Case:
             if additional_source is not None:
                 project.extra.write_text(additional_source)
             complete = Session(self.executable, project, self.timeout).analyze()
-            raw = (project.root / ".codecallnavigator/graph.json").read_bytes()
+            raw = graph_path(project.root, self.executable).read_bytes()
             return complete["generation"], raw
 
     def unchanged(self):
@@ -255,7 +258,7 @@ def invalid_then_repair(case):
 def manual_lock_contention(case):
     generation, expected = case.reference(2)
     monitor = case.monitor()
-    with case.artifact.with_name("graph.lock").open("a+b") as lock:
+    with (fixture_state_dir(case.artifact, case.project.root) / "graph.lock").open("a+b") as lock:
         fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
         case.edit(2)
         monitor.state("busy")
@@ -440,7 +443,6 @@ class FreshSessionCase(Case):
         self.project.reset()
         self.project.source.write_text("export function broken(\n")
         self.session = Session(self.executable, self.project, self.timeout)
-        self.artifact = self.project.root / ".codecallnavigator/graph.json"
         self.monitors = []
 
     def monitor(self):
@@ -452,7 +454,7 @@ class FreshSessionCase(Case):
 def fresh_session(case):
     # Only an actual compiler failure followed by two independent clean-reference
     # publications proves recovery without a preexisting graph or session restart.
-    require(not case.artifact.exists(), "Fresh session unexpectedly has a graph")
+    require(case.artifact is None, "Fresh session unexpectedly has a graph")
     monitor = case.monitor()
     process = monitor.observer.measurement.process
     monitor.typescript_preparation()
@@ -460,11 +462,11 @@ def fresh_session(case):
     require(failed["error"]["code"] == "failed", f"Wrong failure: {failed}")
     require("error TS" in failed["error"]["message"] and "app.ts" in failed["error"]["message"],
             f"Missing actual TypeScript source diagnostic: {failed}")
-    require(not case.artifact.exists(), "Invalid initial source published a graph")
+    require(case.artifact is None, "Invalid initial source published a graph")
     require(monitor.runs() == 1, "Initial invalid state did not attempt exactly once")
     monitor.quiet()
     require(monitor.runs() == 1, "Unchanged initial failure was repeatedly retried")
-    require(not case.artifact.exists(), "Unchanged invalid source published a graph")
+    require(case.artifact is None, "Unchanged invalid source published a graph")
     evidence = {"initial_failure": failed, "unchanged_failure_runs": monitor.runs(),
                 "session_pid": process.pid, "publications": []}
     for value, attempts in [(2, 2), (3, 3)]:

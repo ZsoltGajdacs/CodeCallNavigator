@@ -1,4 +1,6 @@
-//! Public executable comparisons use real Git blobs and never change the checkout.
+//! Public executable comparisons resolve real Git revisions against the local library.
+#[path = "support/retained_graph.rs"]
+mod retained_graph;
 use codecallnavigator_core::{artifact, fingerprint, model::GraphData};
 use serde_json::{Value, json};
 use std::{
@@ -34,17 +36,9 @@ fn repository(root: &Path) -> artifact::Artifact {
     graph.graph["analysis"] =
         serde_json::to_value(artifact::provenance::build(&inputs, &[], "", &roots).unwrap())
             .unwrap();
-    fs::create_dir(root.join(".codecallnavigator")).unwrap();
-    save(root, &graph);
-    git(
-        root,
-        &[
-            "add",
-            ".codecallnavigator/graph.json",
-            ".codecallnavigator/objects",
-        ],
-    );
+    git(root, &["add", "input.txt"]);
     git(root, &["commit", "-qm", "baseline"]);
+    retained_graph::retain(root, &graph);
     graph
 }
 
@@ -75,7 +69,8 @@ fn comparison_reports_saved_worktree_freshness_and_rejects_mixed_pages() {
     graph.graph["diagnostics"] = json!(["added-a", "added-b"]);
     save(&root, &graph);
     fs::write(root.join("input.txt"), "after").unwrap();
-    let before = fs::read(root.join(artifact::GRAPH_PATH)).unwrap();
+    let path = artifact::working_manifest_path(&root).unwrap();
+    let before = fs::read(&path).unwrap();
     let first = query(&root, json!({"kind":"compare","base":"HEAD","limit":1}));
     assert!(first["error"].is_null(), "{first}");
     assert_eq!(first["freshness"]["input_status"], "stale");
@@ -88,7 +83,7 @@ fn comparison_reports_saved_worktree_freshness_and_rejects_mixed_pages() {
     );
     assert!(next["error"].is_null(), "{next}");
     assert_ne!(first["result"]["changes"], next["result"]["changes"]);
-    assert_eq!(before, fs::read(root.join(artifact::GRAPH_PATH)).unwrap());
+    assert_eq!(before, fs::read(&path).unwrap());
     graph.graph["diagnostics"] = json!(["new-generation"]);
     save(&root, &graph);
     let mixed = query(
@@ -103,7 +98,6 @@ fn committed_comparison_needs_no_working_graph_or_linked_checkout() {
     let directory = tempfile::tempdir().unwrap();
     let root = directory.path().canonicalize().unwrap();
     repository(&root);
-    fs::remove_file(root.join(artifact::GRAPH_PATH)).unwrap();
     let response = query(&root, json!({"kind":"compare","base":"HEAD","head":"HEAD"}));
     assert!(response["error"].is_null(), "{response}");
     assert!(response["freshness"].is_null());
@@ -111,7 +105,7 @@ fn committed_comparison_needs_no_working_graph_or_linked_checkout() {
     assert_eq!(response["result"]["graph_equal"], true);
     assert_eq!(response["result"]["metadata_equal"], true);
     assert_eq!(response["result"]["total"], 0);
-    assert!(!root.join(artifact::GRAPH_PATH).exists());
+    assert!(artifact::working_manifest_path(&root).is_err());
     assert!(!root.join(".codecallnavigator/analysis.lock").exists());
 }
 
@@ -139,26 +133,17 @@ fn committed_refs_and_nested_paths_are_bound_in_sessions() {
     let root = directory.path().canonicalize().unwrap();
     let graph = repository(&root);
     let nested = root.join("nested project");
-    fs::create_dir_all(nested.join(".codecallnavigator")).unwrap();
-    save(&nested, &graph);
-    git(
-        &root,
-        &[
-            "add",
-            "nested project/.codecallnavigator/graph.json",
-            "nested project/.codecallnavigator/objects",
-        ],
-    );
-    git(&root, &["commit", "-qm", "nested graph"]);
+    fs::create_dir(&nested).unwrap();
+    git(&root, &["commit", "--allow-empty", "-qm", "nested graph"]);
+    let retained = retained_graph::retain(&nested, &graph);
     git(&root, &["tag", "baseline-tag"]);
     git(&root, &["branch", "baseline-branch"]);
-    fs::remove_file(nested.join(artifact::GRAPH_PATH)).unwrap();
     let operation = json!({"kind":"compare","base":"baseline-tag","head":"baseline-branch"});
     let initial = query(&nested, operation.clone());
     assert!(initial["error"].is_null(), "{initial}");
     assert_eq!(
         initial["result"]["head"]["path"],
-        "nested project/.codecallnavigator/graph.json"
+        retained.to_str().unwrap()
     );
     let mut child = Command::new(env!("CARGO_BIN_EXE_codecallnavigator-engine"))
         .arg("query-session")
@@ -185,6 +170,7 @@ fn committed_refs_and_nested_paths_are_bound_in_sessions() {
         &root,
         &["commit", "--allow-empty", "-qm", "same graph new commit"],
     );
+    retained_graph::retain(&nested, &graph);
     git(&root, &["branch", "-f", "baseline-branch", "HEAD"]);
     let changed = exchange(
         json!({"kind":"compare","base":"baseline-tag","head":"baseline-branch","expected_comparison":initial["result"]["comparison_id"]}),
@@ -235,7 +221,8 @@ fn comparison_identity_keeps_the_original_endpoint_tuple_and_field_serialization
     use artifact::{difference, revision};
     let directory = tempfile::tempdir().unwrap();
     let root = directory.path().canonicalize().unwrap();
-    repository(&root);
+    let graph = repository(&root);
+    save(&root, &graph);
     let before = revision::load(&root, "HEAD").unwrap();
     let after = revision::load(&root, "WORKTREE").unwrap();
     let expected = blake3::hash(
@@ -259,27 +246,18 @@ fn comparison_identity_keeps_the_original_endpoint_tuple_and_field_serialization
 fn strict_comparison_reports_invalid_base_before_reading_unavailable_head() {
     let directory = tempfile::tempdir().unwrap();
     let root = directory.path().canonicalize().unwrap();
-    let mut graph = repository(&root);
-    graph.schema = "incompatible.graph.v99".into();
-    fs::write(
-        root.join(artifact::GRAPH_PATH),
-        serde_json::to_vec(&graph).unwrap(),
-    )
-    .unwrap();
-    git(
-        &root,
-        &["add", artifact::GRAPH_PATH, ".codecallnavigator/objects"],
-    );
-    git(&root, &["commit", "-qm", "incompatible saved graph"]);
+    let graph = repository(&root);
+    let path = retained_graph::retain(&root, &graph);
+    fs::write(path, "{}").unwrap();
     let response = query(
         &root,
         json!({"kind":"compare","base":"HEAD","head":"missing-ref"}),
     );
-    assert_eq!(response["error"]["code"], "invalid_graph");
+    assert_eq!(response["error"]["code"], "snapshot_unavailable");
     assert!(
         response["error"]["message"]
             .as_str()
             .unwrap()
-            .starts_with("Invalid graph manifest; reanalyze this project")
+            .contains("manifest differs from the library catalog")
     );
 }

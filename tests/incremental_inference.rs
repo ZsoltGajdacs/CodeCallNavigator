@@ -1,4 +1,5 @@
 //! Real engine subprocesses compare cached inference with fresh compiler analysis.
+use codecallnavigator_core::artifact::{self, local_snapshots::Store};
 use serde_json::{Value, json};
 use std::{
     collections::BTreeSet,
@@ -54,10 +55,12 @@ impl Fixture {
         fs::write(path, text).unwrap();
     }
     fn graph(&self) -> Vec<u8> {
-        fs::read(self.root().join(".codecallnavigator/graph.json")).unwrap()
+        fs::read(artifact::working_manifest_path(self.root()).unwrap()).unwrap()
     }
     fn cache(&self) -> PathBuf {
-        self.root().join(".codecallnavigator/inference.sqlite3")
+        artifact::project_state_directory(self.root())
+            .unwrap()
+            .join("inference.sqlite3")
     }
     fn analyze(&self, disabled: bool) -> Value {
         let output = run(self.root(), disabled, false);
@@ -146,10 +149,10 @@ fn read_events(output: &mut impl BufRead, input: &mut impl Write, mut cancel: bo
     }
 }
 
-fn targets(root: &Path, bytes: &[u8], caller: &str, provenance: &str) -> BTreeSet<String> {
+fn targets(bytes: &[u8], caller: &str, provenance: &str) -> BTreeSet<String> {
     let manifest = codecallnavigator_core::artifact::storage::Manifest::from_bytes(bytes).unwrap();
     let artifact = manifest
-        .complete_with(|name| Ok(fs::read(root.join(".codecallnavigator").join(name))?))
+        .complete_with(|name| Ok(fs::read(Store::system()?.root().join(name))?))
         .unwrap();
     let graph = serde_json::to_value(artifact).unwrap();
     let nodes = graph["graph"]["nodes"].as_array().unwrap();
@@ -184,23 +187,9 @@ fn cached_inference_matches_full_analysis_after_compiler_facts_change() {
         "The engine must create the derived inference cache"
     );
     let initial = fixture.graph();
-    assert!(
-        targets(
-            fixture.root(),
-            &initial,
-            "missing",
-            "codecallnavigator.boundary.v1"
-        )
-        .is_empty()
-    );
+    assert!(targets(&initial, "missing", "codecallnavigator.boundary.v1").is_empty());
     assert_eq!(
-        targets(
-            fixture.root(),
-            &initial,
-            "notify",
-            "codecallnavigator.observer.v1"
-        )
-        .len(),
+        targets(&initial, "notify", "codecallnavigator.observer.v1").len(),
         2
     );
     assert_cache_warmth(&fixture, &cold, &initial);
@@ -212,13 +201,7 @@ fn cached_inference_matches_full_analysis_after_compiler_facts_change() {
     );
     let unregistered = fixture.compare_full();
     assert_eq!(
-        targets(
-            fixture.root(),
-            &unregistered,
-            "notify",
-            "codecallnavigator.observer.v1"
-        )
-        .len(),
+        targets(&unregistered, "notify", "codecallnavigator.observer.v1").len(),
         1,
         "Fresh compiler facts must remove vanished observer wiring"
     );
@@ -242,13 +225,7 @@ fn assert_route_invalidation(fixture: &Fixture) {
     );
     let added = fixture.compare_full();
     assert_eq!(
-        targets(
-            fixture.root(),
-            &added,
-            "missing",
-            "codecallnavigator.boundary.v1"
-        )
-        .len(),
+        targets(&added, "missing", "codecallnavigator.boundary.v1").len(),
         1,
         "A cached negative match must be invalidated when a route is added"
     );
@@ -258,13 +235,7 @@ fn assert_route_invalidation(fixture: &Fixture) {
     );
     let changed = fixture.compare_full();
     assert!(
-        targets(
-            fixture.root(),
-            &changed,
-            "request",
-            "codecallnavigator.boundary.v1"
-        )
-        .is_empty(),
+        targets(&changed, "request", "codecallnavigator.boundary.v1").is_empty(),
         "Old inferred GET target cannot survive a handler verb change"
     );
     fixture.write(
@@ -273,26 +244,12 @@ fn assert_route_invalidation(fixture: &Fixture) {
     );
     let rewired = fixture.compare_full();
     assert_eq!(
-        targets(
-            fixture.root(),
-            &rewired,
-            "request",
-            "codecallnavigator.boundary.v1"
-        )
-        .len(),
+        targets(&rewired, "request", "codecallnavigator.boundary.v1").len(),
         1
     );
     fs::remove_file(fixture.root().join("src/app/missing/route.ts")).unwrap();
     let removed = fixture.compare_full();
-    assert!(
-        targets(
-            fixture.root(),
-            &removed,
-            "missing",
-            "codecallnavigator.boundary.v1"
-        )
-        .is_empty()
-    );
+    assert!(targets(&removed, "missing", "codecallnavigator.boundary.v1").is_empty());
 }
 
 fn assert_cache_warmth(fixture: &Fixture, cold: &Value, initial: &[u8]) {
@@ -337,13 +294,7 @@ fn assert_configuration_invalidation(fixture: &Fixture, initial: &[u8]) {
     fixture.write("next.config.js", "module.exports={basePath:'/deployment'};");
     let blocked = fixture.compare_full();
     assert!(
-        targets(
-            fixture.root(),
-            &blocked,
-            "go",
-            "codecallnavigator.boundary.v1"
-        )
-        .is_empty(),
+        targets(&blocked, "go", "codecallnavigator.boundary.v1").is_empty(),
         "New routing configuration must invalidate a previously cached navigation match"
     );
     fs::remove_file(fixture.root().join("next.config.js")).unwrap();
@@ -388,11 +339,12 @@ fn publication_failure_does_not_commit_new_inference_decisions() {
     let previous_graph = fixture.graph();
     let previous_cache = fs::read(fixture.cache()).unwrap();
     fixture.write("src/client.ts", &CLIENT.replace("'/api'", "'/missing'"));
-    let directory = fixture.root().join(".codecallnavigator");
-    let permissions = fs::metadata(&directory).unwrap().permissions();
-    fs::set_permissions(&directory, fs::Permissions::from_mode(0o555)).unwrap();
+    let manifest = artifact::working_manifest_path(fixture.root()).unwrap();
+    let directory = manifest.parent().unwrap().parent().unwrap();
+    let permissions = fs::metadata(directory).unwrap().permissions();
+    fs::set_permissions(directory, fs::Permissions::from_mode(0o555)).unwrap();
     let failed = run(fixture.root(), false, false);
-    fs::set_permissions(&directory, permissions).unwrap();
+    fs::set_permissions(directory, permissions).unwrap();
     assert_eq!(
         failed["event"], "failed",
         "Publication must actually fail before this test can verify recovery"
@@ -401,7 +353,7 @@ fn publication_failure_does_not_commit_new_inference_decisions() {
         failed["message"]
             .as_str()
             .unwrap()
-            .contains(".graph-publish-"),
+            .contains("Cannot create graph library directory"),
         "The failure must occur during graph publication: {failed}"
     );
     assert_eq!(fixture.graph(), previous_graph);
@@ -414,40 +366,26 @@ fn publication_failure_does_not_commit_new_inference_decisions() {
 }
 
 fn assert_graph_bundle(root: &Path) {
-    let directory = root.join(".codecallnavigator");
-    let mut names = fs::read_dir(&directory)
-        .unwrap()
-        .map(|entry| entry.unwrap().file_name().to_string_lossy().into_owned())
-        .filter(|name| name.ends_with(".json"))
-        .collect::<Vec<_>>();
-    names.sort();
-    let mut expected = vec![
-        "graph.json",
-        "graph.manifest.schema.json",
-        "graph.schema.json",
-    ];
-    let mut manifests = vec!["graph.json"];
-    if directory.join("previous.json").exists() {
-        expected.push("previous.json");
-        manifests.push("previous.json");
-    }
-    assert_eq!(names, expected);
+    let store = Store::system().unwrap();
     for name in [
         "graph.manifest.schema.json",
         "graph.schema.json",
         "README.md",
     ] {
-        assert!(directory.join(name).is_file(), "Missing companion {name}");
+        assert!(
+            store.root().join(name).is_file(),
+            "Missing companion {name}"
+        );
     }
-    for name in manifests {
-        let manifest = codecallnavigator_core::artifact::storage::Manifest::from_bytes(
-            &fs::read(directory.join(name)).unwrap(),
-        )
-        .unwrap();
-        manifest
-            .complete_with(|part| Ok(fs::read(directory.join(part))?))
-            .unwrap();
-    }
+    let path = artifact::working_manifest_path(root).unwrap();
+    assert!(path.starts_with(store.root()));
+    artifact::load(root).unwrap();
+    assert_eq!(
+        fs::read_dir(root.join(".codecallnavigator"))
+            .unwrap()
+            .count(),
+        1
+    );
     assert_eq!(
         fs::read_to_string(root.join(".codecallnavigator/layers.yml")).unwrap(),
         "# Existing project configuration must survive\n"

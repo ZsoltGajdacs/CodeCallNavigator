@@ -2,7 +2,7 @@
 mod support;
 use serde_json::{Value, json};
 use std::{fs, path::Path, process::Command};
-use support::{Client, cli_query, cli_query_with, command, engine};
+use support::{Client, LIBRARY, cli_query, cli_query_with, command, engine, typescript};
 
 fn git(root: &Path, args: &[&str]) {
     let output = Command::new("git")
@@ -19,20 +19,16 @@ fn git(root: &Path, args: &[&str]) {
 }
 
 #[test]
-#[ignore = "requires built real CLI via CODECALLNAVIGATOR_TEST_ENGINE"]
+#[ignore = "requires built real CLI with Node and TypeScript"]
 fn real_stdio_comparison_preserves_cli_pages_metadata_and_errors() {
     let directory = tempfile::tempdir().unwrap();
-    let root = directory.path().canonicalize().unwrap();
+    let root = support::project(&directory);
     git(&root, &["init", "-q"]);
     git(&root, &["config", "user.email", "test@example.invalid"]);
     git(&root, &["config", "user.name", "MCP comparison acceptance"]);
-    fs::create_dir(root.join(".codecallnavigator")).unwrap();
-    let mut graph = json!({"schema":"codecallnavigator.graph.v2","graph":{"nodes":[],"edges":[],"roots":[],"diagnostics":[]}});
-    support::bundle::publish(&root, graph.clone());
-    git(&root, &["add", ".codecallnavigator"]);
+    typescript(&root);
+    git(&root, &["add", "tsconfig.json", "entry.ts", "other.ts"]);
     git(&root, &["commit", "-qm", "baseline"]);
-    graph["graph"]["diagnostics"] = json!(["first", "second"]);
-    support::bundle::publish(&root, graph.clone());
     let engine = engine();
     let mut client = Client::launch(command(&engine, &root));
     let tools = client.request("tools/list", json!({}));
@@ -43,15 +39,48 @@ fn real_stdio_comparison_preserves_cli_pages_metadata_and_errors() {
             .iter()
             .any(|tool| tool["name"] == "compare_graphs")
     );
-    check_pages_and_errors(&mut client, &engine, &root);
+    let baseline = client.graph("refresh_graph", json!({}));
+    assert_eq!(
+        baseline["result"]["retention"]["status"], "verified",
+        "{baseline}"
+    );
+    let status = client.graph("graph_snapshot_status", json!({"revision":"HEAD"}));
+    let saved = &status["result"]["snapshots"][0];
+    assert_eq!(saved["id"], baseline["result"]["retention"]["snapshot"]);
+    assert_eq!(
+        saved["identity"]["commit"],
+        baseline["result"]["retention"]["commit"]
+    );
+    assert_eq!(saved["digest"], baseline["generation"]);
+    let selection: Value = serde_json::from_str(saved["identity"]["selection"].as_str().unwrap())
+        .expect("snapshot has structured analysis metadata");
+    assert_eq!(selection["builds"]["targets"][0]["language"], "typescript");
+    assert!(selection["analyzers"][0]["backend"].is_string());
+    assert!(selection["analyzers"][0]["version"].is_string());
+
+    replace_entry(&root, 7);
+    let current = client.graph("refresh_graph", json!({}));
+    assert_eq!(
+        current["result"]["retention"]["status"], "working_only",
+        "{current}"
+    );
+    assert!(current["result"]["retention"]["reason"].is_string());
+    check_pages_and_errors(&mut client, &engine, &root, &current["generation"]);
     client.disconnect();
     client.assert_shutdown();
 }
 
-fn check_pages_and_errors(client: &mut Client, engine: &Path, root: &Path) {
-    let path = root.join(".codecallnavigator/graph.json");
-    let bytes = fs::read(&path).unwrap();
-    let mut graph = support::bundle::load(root);
+fn replace_entry(root: &Path, value: u32) {
+    fs::write(
+        root.join("entry.ts"),
+        format!(
+            "export function changed() {{ return {value}; }}\nexport function added() {{ return changed(); }}\n"
+        ),
+    )
+    .unwrap();
+}
+
+fn check_pages_and_errors(client: &mut Client, engine: &Path, root: &Path, current: &Value) {
     let first = client.graph("compare_graphs", json!({"base":"HEAD","limit":1}));
     assert_eq!(
         first,
@@ -61,12 +90,14 @@ fn check_pages_and_errors(client: &mut Client, engine: &Path, root: &Path) {
             json!({"kind":"compare","base":"HEAD","limit":1})
         )
     );
-    assert_eq!(first["freshness"]["input_status"], "unverifiable");
+    assert_eq!(&first["generation"], current);
     let mut records = first["result"]["changes"].as_array().unwrap().clone();
     let next = client.graph("compare_graphs", json!({"base":"HEAD","offset":1,"limit":1,"expected_comparison":first["result"]["comparison_id"],"expected_generation":first["generation"]}));
     records.extend(next["result"]["changes"].as_array().unwrap().clone());
     let complete = cli_query(engine, root, json!({"kind":"compare","base":"HEAD"}));
-    assert_eq!(Value::Array(records), complete["result"]["changes"]);
+    let all = complete["result"]["changes"].as_array().unwrap();
+    assert_eq!(records.len(), 2);
+    assert_eq!(records.as_slice(), &all[..2]);
     let invalid = client.call("compare_graphs", json!({"base":"HEAD","offset":1}));
     assert_eq!(
         invalid["structuredContent"]["error"]["code"],
@@ -77,9 +108,13 @@ fn check_pages_and_errors(client: &mut Client, engine: &Path, root: &Path) {
         missing["structuredContent"]["error"]["code"],
         "revision_unavailable"
     );
-    assert_eq!(bytes, fs::read(&path).unwrap());
-    graph["graph"]["diagnostics"] = json!(["changed"]);
-    support::bundle::publish(root, graph.clone());
+    assert_eq!(
+        &client.graph("graph_status", json!({"expected_generation":current}))["generation"],
+        current
+    );
+    replace_entry(root, 8);
+    let latest = client.graph("refresh_graph", json!({}));
+    assert_ne!(&latest["generation"], current);
     let mixed = client.call(
         "compare_graphs",
         json!({"base":"HEAD","offset":1,"expected_comparison":first["result"]["comparison_id"]}),
@@ -88,24 +123,15 @@ fn check_pages_and_errors(client: &mut Client, engine: &Path, root: &Path) {
         mixed["structuredContent"]["error"]["code"],
         "comparison_mismatch"
     );
-    fs::remove_file(&path).unwrap();
-    let committed = client.graph("compare_graphs", json!({"base":"HEAD","head":"HEAD"}));
-    assert!(committed["freshness"].is_null());
-    assert_eq!(committed["result"]["graph_equal"], true);
-    assert!(!path.exists());
-    assert!(!root.join(".codecallnavigator/graph.lock").exists());
-    assert_eq!(
-        fs::read_dir(root.join(".codecallnavigator"))
-            .unwrap()
-            .count(),
-        1
-    ); // retained objects only
+    let verified = client.graph("compare_graphs", json!({"base":"HEAD","head":"HEAD"}));
+    assert!(verified["freshness"].is_null());
+    assert_eq!(verified["result"]["graph_equal"], true);
+    assert!(!root.join(".codecallnavigator").exists());
 }
 
 #[test]
 #[ignore = "requires built real CLI with Node and TypeScript"]
 fn real_stdio_snapshot_preparation_and_comparison_preserve_cli_results() {
-    const CACHE: &str = "CODECALLNAVIGATOR_SNAPSHOT_CACHE";
     let directory = tempfile::tempdir().unwrap();
     let root = directory.path().canonicalize().unwrap().join("repo");
     let cache = root.with_file_name("cache");
@@ -131,7 +157,7 @@ fn real_stdio_snapshot_preparation_and_comparison_preserve_cli_results() {
 
     let engine = engine();
     let mut launch = command(&engine, &root);
-    launch.env(CACHE, &cache);
+    launch.env(LIBRARY, &cache);
     let mut client = Client::launch(launch);
     let status = json!({"revision":"HEAD"});
     let miss = client.graph("graph_snapshot_status", status.clone());
@@ -157,7 +183,7 @@ fn real_stdio_snapshot_preparation_and_comparison_preserve_cli_results() {
     let hit = client.graph("graph_snapshot_status", status);
     assert_eq!(hit["result"]["snapshots"], json!([snapshot]));
     let mut cli = Command::new(&engine);
-    cli.env(CACHE, &cache);
+    cli.env(LIBRARY, &cache);
     assert_eq!(
         hit,
         cli_query_with(
@@ -167,10 +193,10 @@ fn real_stdio_snapshot_preparation_and_comparison_preserve_cli_results() {
         )
     );
     let mut cli = Command::new(&engine);
-    cli.env(CACHE, &cache);
+    cli.env(LIBRARY, &cache);
     assert_snapshot_comparisons(&mut client, cli, &root, snapshot);
     let mut cli = Command::new(&engine);
-    cli.env(CACHE, &cache);
+    cli.env(LIBRARY, &cache);
     assert_snapshot_impact(&mut client, cli, &root, snapshot);
     assert!(!root.join(".codecallnavigator").exists());
     client.disconnect();

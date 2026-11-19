@@ -43,7 +43,9 @@ fn machine_preserves_linked_sources_and_human_cli_requires_declared_root() {
     let roots: Vec<(String, std::path::PathBuf)> =
         serde_json::from_value(complete["roots"].clone()).unwrap();
     assert!(roots.iter().any(|(name, _)| name.starts_with("linked-")));
-    let bytes = fs::read(project.join(codecallnavigator_core::artifact::GRAPH_PATH)).unwrap();
+    let bytes =
+        fs::read(codecallnavigator_core::artifact::working_manifest_path(&project).unwrap())
+            .unwrap();
     assert!(!String::from_utf8_lossy(&bytes).contains(&root.to_string_lossy().to_string()));
     let graph = codecallnavigator_core::artifact::load(&project)
         .unwrap()
@@ -131,7 +133,9 @@ fn machine_external_java_module_identity_roots_relocate() {
                 "path":project, "language":"java", "kind":"maven", "label":"reactor"
             }),
         );
-        let bytes = fs::read(project.join(codecallnavigator_core::artifact::GRAPH_PATH)).unwrap();
+        let bytes =
+            fs::read(codecallnavigator_core::artifact::working_manifest_path(&project).unwrap())
+                .unwrap();
         assert!(!String::from_utf8_lossy(&bytes).contains(root.to_str().unwrap()));
         let roots: Vec<(String, std::path::PathBuf)> =
             serde_json::from_value(response["roots"].clone()).unwrap();

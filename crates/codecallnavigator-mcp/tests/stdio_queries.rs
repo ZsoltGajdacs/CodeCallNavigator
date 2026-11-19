@@ -90,8 +90,6 @@ fn compare_queries(client: &mut Client, engine: &Path, root: &Path, symbol: &str
 
 fn failed_refresh_preserves_graph(client: &mut Client, root: &Path) {
     let generation = client.graph("graph_status", json!({}))["generation"].clone();
-    let graph = root.join(".codecallnavigator/graph.json");
-    let before = fs::read(&graph).unwrap();
     fs::write(root.join("entry.ts"), "const invalid: number = 'broken';\n").unwrap();
     let failure = client.call("refresh_graph", json!({}));
     assert_eq!(failure["isError"], true, "{failure}");
@@ -109,7 +107,6 @@ fn failed_refresh_preserves_graph(client: &mut Client, root: &Path) {
             .unwrap()
             .is_empty()
     );
-    assert_eq!(fs::read(&graph).unwrap(), before);
     let status = client.graph("graph_status", json!({"expected_generation":generation}));
     assert_eq!(status["generation"], generation);
     assert_eq!(status["freshness"]["input_status"], "stale");
@@ -148,7 +145,7 @@ fn refresh_reports_progress(client: &mut Client) {
 #[ignore = "requires built real CLI, Node24 and pinned TypeScript 5.9.x or 6.0.x modules"]
 fn real_stdio_refresh_queries_and_errors_preserve_the_cli_contract() {
     let directory = tempfile::tempdir().unwrap();
-    let root = directory.path().canonicalize().unwrap();
+    let root = support::project(&directory);
     let external = tempfile::tempdir().unwrap();
     fs::write(external.path().join("visible.txt"), "external root").unwrap();
     typescript(&root);
@@ -165,12 +162,13 @@ fn real_stdio_refresh_queries_and_errors_preserve_the_cli_contract() {
         missing["structuredContent"]["error"]["code"],
         "graph_missing"
     );
-    assert!(!root.join(".codecallnavigator/graph.json").exists());
+    assert!(!root.join(".codecallnavigator").exists());
     let directory = client.graph("explore_directory", json!({"path":external.path()}));
     assert_eq!(directory["result"]["entries"][0]["label"], "visible.txt");
     let discovered = client.call("discover_builds", json!({}));
     assert_ne!(discovered["isError"], true, "{discovered}");
     refresh_reports_progress(&mut client);
+    assert!(!root.join(".codecallnavigator").exists());
     let (symbol, _) = selected_start(&mut client);
     // Comparison uses matching configured roots through a separate no-root client.
     drop(client);

@@ -20,6 +20,7 @@ pub(super) struct Loaded {
     graph: OnceLock<query::Result<GraphIndex>>,
     pub generation: String,
     pub freshness: serde_json::Value,
+    pub effective_analysis: serde_json::Value,
     pub roots: Vec<(String, std::path::PathBuf)>,
     layers: std::sync::Mutex<Option<layers::Resolved>>,
 }
@@ -65,6 +66,7 @@ pub(super) fn load_captured(
     let artifact = captured
         .structure()
         .map_err(|e| Error::new("invalid_graph", format!("{e:#}")))?;
+    let effective_analysis = captured.analysis_metadata().clone();
     Ok(Loaded {
         artifact,
         captured,
@@ -72,6 +74,7 @@ pub(super) fn load_captured(
         graph: OnceLock::new(),
         generation,
         freshness: serde_json::Value::Null,
+        effective_analysis,
         roots,
         layers: Default::default(),
     })
@@ -204,6 +207,13 @@ pub(super) fn respond(loaded: &Loaded, request: &Request) -> Response {
                 offset,
                 limit,
             } => filesystem::directory(&loaded.roots, path, *offset, *limit),
+            query::Query::Status => {
+                let mut status = query::execute(loaded.graph()?, &request.query)?;
+                if !loaded.effective_analysis.is_null() {
+                    status["effective_analysis"] = loaded.effective_analysis.clone();
+                }
+                Ok(status)
+            }
             query => query::execute(loaded.graph()?, query),
         }
     });

@@ -90,7 +90,7 @@ impl AnalysisSession {
             }
             match native {
                 NativeState::Prepared(prepared) => {
-                    prepared.analyze(attempt.cancel, attempt.progress)
+                    prepared.analyze_observed(attempt.cancel, attempt.progress)
                 }
                 NativeState::Closed => bail!("Analysis session is closed"),
                 NativeState::Pending => unreachable!("native preparation was initialized above"),

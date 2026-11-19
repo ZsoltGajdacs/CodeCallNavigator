@@ -47,9 +47,8 @@ fn missing_inventory_source_and_wrong_project_source_are_endpoint_local() {
 
 #[test]
 fn session_and_oneshot_match_without_using_or_mutating_current_graph() {
-    let repo = Repository::new();
+    let repo = Repository::revisions_only();
     let root = repo.root();
-    fs::remove_file(root.join(artifact::GRAPH_PATH)).unwrap();
     let before_index = fs::read(root.join(".git/index")).unwrap();
     let before_head = git(root, &["rev-parse", "HEAD"]);
     let mut child = engine()
@@ -75,7 +74,7 @@ fn session_and_oneshot_match_without_using_or_mutating_current_graph() {
     }
     drop(input);
     assert!(child.wait().unwrap().success());
-    let unchanged = json!({"head":git(root,&["rev-parse","HEAD"]),"index":fs::read(root.join(".git/index")).unwrap(),"graph_exists":root.join(artifact::GRAPH_PATH).exists(),"fetch_exists":root.join(".git/FETCH_HEAD").exists(),"lock_exists":root.join(".codecallnavigator/analysis.lock").exists()});
+    let unchanged = json!({"head":git(root,&["rev-parse","HEAD"]),"index":fs::read(root.join(".git/index")).unwrap(),"graph_exists":artifact::working_manifest_path(root).is_ok(),"fetch_exists":root.join(".git/FETCH_HEAD").exists(),"lock_exists":root.join(".codecallnavigator/analysis.lock").exists()});
     assert_eq!(
         unchanged,
         json!({"head":before_head,"index":before_index,"graph_exists":false,"fetch_exists":false,"lock_exists":false})
@@ -147,7 +146,7 @@ fn live_source_freshness_never_replaces_cached_endpoint_source_or_chart() {
     let initial = query(root, operation.clone());
     assert_eq!(initial["freshness"]["input_status"], "match");
     assert_eq!(initial["result"]["after"]["status"], "ready");
-    let bytes = fs::read(root.join(artifact::GRAPH_PATH)).unwrap();
+    let bytes = fs::read(working_manifest(root)).unwrap();
     for deleted in [false, true] {
         if deleted {
             fs::remove_file(&source).unwrap();
@@ -157,6 +156,6 @@ fn live_source_freshness_never_replaces_cached_endpoint_source_or_chart() {
         let later = query(root, operation.clone());
         assert_eq!(later["freshness"]["input_status"], "stale");
         assert_eq!(later["result"], initial["result"]);
-        assert_eq!(fs::read(root.join(artifact::GRAPH_PATH)).unwrap(), bytes);
+        assert_eq!(fs::read(working_manifest(root)).unwrap(), bytes);
     }
 }

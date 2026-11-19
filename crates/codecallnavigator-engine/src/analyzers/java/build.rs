@@ -262,6 +262,10 @@ pub(super) fn snapshot(
 }
 
 impl PreparedJava {
+    pub(super) fn metadata(&self) -> &JavaBuildMetadata {
+        &self.metadata
+    }
+
     pub(super) fn verify_compiled(
         &self,
         build: &BuildTarget,

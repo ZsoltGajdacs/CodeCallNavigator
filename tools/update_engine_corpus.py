@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Update each fixture's one graph.json; Git is the baseline history.
+"""Update the portable graph bundles used as corpus fixtures.
 
 Requires existing toolchains/dependencies. Never installs packages or commits.
 """
@@ -9,6 +9,7 @@ import os
 from pathlib import Path
 import subprocess
 from corpus_boundaries import configure
+from graph_bundle import copy_bundle, graph_path
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -43,12 +44,14 @@ def main():
     args = parser.parse_args()
     typescript_dependencies()
     workloads = {item['name']: item for item in corpus['workloads']}
+    engine = args.executable.resolve()
     for name in args.workload or workloads:
         workload = workloads[name]
         project, targets = workload_targets(workload, workloads)
         configure(workload, workloads, project,
                   {name: ROOT / workloads[name]['source'] for name in workload.get('components', [])})
-        subprocess.run([str(args.executable.resolve()), 'analyze', '--project', str(project), *targets], check=True)
+        subprocess.run([str(engine), 'analyze', '--project', str(project), *targets], check=True)
+        copy_bundle(graph_path(project, engine), project / '.codecallnavigator')
 
 
 if __name__ == '__main__':

@@ -368,7 +368,7 @@ mod tests {
         let mut artifact = Artifact::from_bytes(&artifact_bytes(root.path())).unwrap();
         artifact.graph["analysis"]["targets"] = serde_json::json!(["@repo/Empty.CSPROJ"]);
         artifact::publish(root.path(), &artifact, &AtomicBool::new(false)).unwrap();
-        let path = root.path().join(artifact::GRAPH_PATH);
+        let path = artifact::working_manifest_path(root.path()).unwrap();
         let bytes = fs::read(&path).unwrap();
         let report = verify(root.path(), &roots).unwrap();
         assert_eq!(report.input_status, InputStatus::Unverifiable);

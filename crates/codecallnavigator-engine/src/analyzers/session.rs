@@ -1,7 +1,7 @@
 //! Fixed-selection, engine-owned preparation and raw extraction reuse.
 use super::{
-    AnalysisJob, AnalyzerRuntime, JobDirectory, compose, csharp, engine_versions, ensure_unchanged,
-    java, process::check_cancel, typescript,
+    AnalysisJob, AnalyzerRuntime, JobDirectory, ObservedAnalysis, compose, csharp, engine_versions,
+    ensure_unchanged, java, process::check_cancel, typescript,
 };
 use crate::process_ownership::CleanupFailure;
 use crate::{discovery::BuildTarget, model::GraphData};
@@ -252,20 +252,30 @@ impl PreparedAnalysis {
         self.require_reusable()?;
         let result = self.extract_inner(cancel, progress, false);
         self.record_result(&result);
-        result
+        result.map(|observed| observed.graph)
     }
 
     pub fn analyze(&mut self, cancel: &AtomicBool, progress: &dyn Fn(String)) -> Result<GraphData> {
-        let _timing = crate::metrics::stage("analysis");
-        self.prepare(cancel, progress)?;
-        self.extract(cancel, progress)
+        Ok(self.analyze_observed(cancel, progress)?.graph)
     }
 
-    pub(super) fn into_graph(
+    pub fn analyze_observed(
+        &mut self,
+        cancel: &AtomicBool,
+        progress: &dyn Fn(String),
+    ) -> Result<ObservedAnalysis> {
+        let _timing = crate::metrics::stage("analysis");
+        self.prepare(cancel, progress)?;
+        let result = self.extract_inner(cancel, progress, false);
+        self.record_result(&result);
+        result
+    }
+
+    pub(super) fn into_observed(
         mut self,
         cancel: &AtomicBool,
         progress: &dyn Fn(String),
-    ) -> Result<GraphData> {
+    ) -> Result<ObservedAnalysis> {
         let _timing = crate::metrics::stage("analysis");
         self.prepare(cancel, progress)?;
         let result = self.extract_inner(cancel, progress, true);
@@ -557,7 +567,7 @@ impl PreparedAnalysis {
         cancel: &AtomicBool,
         progress: &dyn Fn(String),
         consume: bool,
-    ) -> Result<GraphData> {
+    ) -> Result<ObservedAnalysis> {
         let _timing = crate::metrics::stage("extraction");
         check_cancel(cancel)?;
         self.clear_extraction_cache()?;
@@ -575,7 +585,16 @@ impl PreparedAnalysis {
         check_cancel(cancel)?;
         crate::metrics::count("symbols", graph.nodes.len() as u64);
         crate::metrics::count("relationships", graph.edges.len() as u64);
-        Ok(graph)
+        let output_attribution_limit = self.jobs.iter().find_map(|job| match &job.preparation {
+            Some(Preparation::Java(compiled)) => {
+                compiled.output_attribution_limit().map(str::to_owned)
+            }
+            Some(Preparation::TypeScript(_) | Preparation::Csharp(_)) | None => None,
+        });
+        Ok(ObservedAnalysis {
+            graph,
+            output_attribution_limit,
+        })
     }
 
     fn extract_selected_jobs(

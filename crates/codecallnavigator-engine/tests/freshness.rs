@@ -365,8 +365,14 @@ fn bound_observer_rejects_generation_replacement_without_mixed_observation() {
     let mut process = ObserverProcess::start(request);
     let events = process.events();
     assert_eq!(next_event(&events)["kind"], "initial");
-    let path = root.path().join(artifact::GRAPH_PATH);
-    fs::write(&path, "{}").unwrap();
+    let mut replacement = artifact::load(root.path()).unwrap();
+    replacement.graph["diagnostics"] = json!(["replacement"]);
+    artifact::publish(
+        root.path(),
+        &replacement,
+        &std::sync::atomic::AtomicBool::new(false),
+    )
+    .unwrap();
     let failed = next_event(&events);
     assert_eq!(failed["kind"], "failed");
     assert_eq!(failed["error"]["code"], "generation_mismatch");

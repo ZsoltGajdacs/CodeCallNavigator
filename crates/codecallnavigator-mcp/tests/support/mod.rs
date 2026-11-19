@@ -1,5 +1,4 @@
 #![allow(dead_code)]
-pub mod bundle;
 use serde_json::{Value, json};
 use std::{
     io::{BufRead, BufReader, Write},
@@ -23,8 +22,21 @@ pub fn command(engine: &Path, project: &Path) -> Command {
         .arg("--engine")
         .arg(engine)
         .arg("--project")
-        .arg(project);
+        .arg(project)
+        .env(LIBRARY, library(project));
     command
+}
+
+pub const LIBRARY: &str = "CODECALLNAVIGATOR_GRAPH_LIBRARY";
+
+pub fn project(directory: &tempfile::TempDir) -> PathBuf {
+    let project = directory.path().canonicalize().unwrap().join("project");
+    std::fs::create_dir(&project).unwrap();
+    project
+}
+
+pub fn library(project: &Path) -> PathBuf {
+    project.with_file_name("graph-library")
 }
 
 pub struct Client {
@@ -198,6 +210,9 @@ pub fn cli_query(engine: &Path, project: &Path, operation: Value) -> Value {
 }
 
 pub fn cli_query_with(mut command: Command, project: &Path, operation: Value) -> Value {
+    if !command.get_envs().any(|(key, _)| key == LIBRARY) {
+        command.env(LIBRARY, library(project));
+    }
     let mut child = command
         .arg("query")
         .stdin(Stdio::piped())

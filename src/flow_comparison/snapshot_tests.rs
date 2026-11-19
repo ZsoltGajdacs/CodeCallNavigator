@@ -42,7 +42,11 @@ fn desktop_prepares_selects_and_pages_cached_graphs_and_flows() {
         state.prepare_comparison_snapshot(side);
         settle(&mut state);
         assert!(
-            state.flow_comparison.snapshots.message.is_empty(),
+            state
+                .flow_comparison
+                .snapshots
+                .message
+                .starts_with("Prepared snapshot for "),
             "{}",
             state.flow_comparison.snapshots.message
         );
@@ -59,7 +63,7 @@ fn desktop_prepares_selects_and_pages_cached_graphs_and_flows() {
             assert_impact_without_head_snapshot(&mut state);
         }
     }
-    assert!(!root.join(codecallnavigator::artifact::GRAPH_PATH).exists());
+    assert!(!root.join(".codecallnavigator").exists());
 
     assert_graph_pagination(&mut state);
 
@@ -70,6 +74,23 @@ fn desktop_prepares_selects_and_pages_cached_graphs_and_flows() {
     assert!(header.base.snapshot.is_some() && header.head.snapshot.is_some());
     assert!(state.flow_comparison.catalog.as_ref().unwrap().complete);
     assert!(state.graph.is_none());
+
+    assert_preparation_failure(&mut state);
+}
+
+fn assert_preparation_failure(state: &mut State) {
+    state.flow_comparison.controls.base = rune::TextEdit::new("no-such-revision");
+    state.prepare_comparison_snapshot(SnapshotSide::Base);
+    settle(state);
+    assert!(
+        state
+            .flow_comparison
+            .snapshots
+            .message
+            .starts_with("Snapshot preparation failed"),
+        "{}",
+        state.flow_comparison.snapshots.message
+    );
 }
 
 fn check_impact_support(state: &mut State) {

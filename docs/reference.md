@@ -186,8 +186,9 @@ The same operation is available without opening the desktop:
 codecallnavigator-engine clear-cache --project /path/to/project
 ```
 
-It removes only `.codecallnavigator/inference.sqlite3` and its SQLite sidecars; an absent
-cache is already clear. It preserves `.codecallnavigator/graph.json` and project files.
+It removes only the project's `inference.sqlite3` and its SQLite sidecars in
+the graph library. An absent cache is already clear. Saved graphs and project
+files remain available.
 Unsafe cache paths, deletion errors and a project lock held by analysis cause a
 reported failure; retry after resolving the error.
 
@@ -237,10 +238,10 @@ cargo run --bin codecallnavigator -- analyze fixtures/dotnet/Fixture.sln fixture
 cargo run --bin codecallnavigator -- analyze /path/to/project/tsconfig.json
 ```
 
-The standalone engine updates the single `.codecallnavigator/graph.json` beside project
-configuration. Commit that file to retain graph history in Git. Compare revisions
+The standalone engine saves its working graph and verified commit snapshots in
+the local graph library. Compare two analyzed revisions
 with `codecallnavigator-engine compare --project /path/to/project --base HEAD~1 --head HEAD`
-or compare a committed graph with `--head WORKTREE`. See
+or compare with the current working graph using `--head WORKTREE`. See
 [the engine contract](../docs/standalone-engine.md) for packaging, identities and
 language extension boundaries.
 

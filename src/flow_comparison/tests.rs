@@ -1,6 +1,10 @@
 use super::*;
 use crate::{app::State, runtime::Runtime};
-use codecallnavigator::artifact;
+use codecallnavigator::artifact::{
+    self, Artifact,
+    local_snapshots::{Retention, SnapshotIdentity, SnapshotRecord, Store},
+    revision::Repository,
+};
 use std::{
     fs,
     os::unix::fs::PermissionsExt,
@@ -13,7 +17,7 @@ use std::{
 pub(crate) fn isolate_cli_cache(runtime: &mut Runtime, cache: &Path) {
     let wrapper = cache.with_file_name("use-isolated-cache");
     let script = format!(
-        "#!/bin/sh\nexport CODECALLNAVIGATOR_SNAPSHOT_CACHE={}\nexec {} \"$@\"\n",
+        "#!/bin/sh\nexport CODECALLNAVIGATOR_GRAPH_LIBRARY={}\nexec {} \"$@\"\n",
         shell_path(cache),
         shell_path(&runtime.engine),
     );
@@ -43,25 +47,61 @@ pub(crate) fn project(root: &Path) {
     git(root, &["init", "-q"]);
     git(root, &["config", "user.name", "Workspace tests"]);
     git(root, &["config", "user.email", "test@example.invalid"]);
-    fs::create_dir(root.join(".codecallnavigator")).unwrap();
-    let graph = crate::flow_scenes::data();
-    let saved = artifact::canonical(&graph, &[("repo".into(), "/snapshot".into())]).unwrap();
-    codecallnavigator::artifact::publish(root, &saved, &std::sync::atomic::AtomicBool::new(false))
-        .unwrap();
-    git(
-        root,
-        &["add", artifact::GRAPH_PATH, ".codecallnavigator/objects"],
-    );
-    git(root, &["commit", "-qm", "base"]);
+    git(root, &["commit", "--allow-empty", "-qm", "base"]);
     git(root, &["tag", "base"]);
     git(root, &["tag", "head"]);
-    fs::remove_file(root.join(artifact::GRAPH_PATH)).unwrap();
+    retain_scene(root, &crate::flow_scenes::data(), "HEAD");
+}
+
+pub(crate) fn fixture_store(root: &Path) -> Store {
+    // Fixture engine and library paths model fixed user-level configuration.
+    // A mutable project alias must not redirect either path.
+    Store::at(root.canonicalize().unwrap().join(".fixture-library"))
+}
+
+pub(crate) fn fixture_runtime(root: &Path) -> Runtime {
+    let mut runtime = Runtime::discover().unwrap();
+    let store = fixture_store(root);
+    if store.root().exists() {
+        isolate_cli_cache(&mut runtime, store.root());
+    }
+    runtime
+}
+
+pub(crate) fn retain_scene(
+    root: &Path,
+    graph: &codecallnavigator::model::GraphData,
+    revision: &str,
+) -> SnapshotRecord {
+    let saved = artifact::canonical(graph, &[("repo".into(), "/snapshot".into())]).unwrap();
+    retain_fixture(root, &saved, revision)
+}
+
+/// Seed already-saved graph fixtures. Compiler-backed tests exercise real retention.
+pub(crate) fn retain_fixture(root: &Path, saved: &Artifact, revision: &str) -> SnapshotRecord {
+    let repository = Repository::open(root).unwrap();
+    let commit = repository.resolve(revision).unwrap();
+    fixture_store(root)
+        .retain(
+            &repository.common_dir,
+            Retention {
+                identity: SnapshotIdentity {
+                    commit,
+                    project: repository.project,
+                    analyzer: "desktop-flow-fixture".into(),
+                    selection: "{}".into(),
+                },
+                encoded: &saved.encode().unwrap(),
+            },
+            &std::sync::atomic::AtomicBool::new(false),
+        )
+        .unwrap()
 }
 pub(crate) fn state(root: &Path) -> State {
     let mut state = State::new();
     state.root = rune::TextEdit::new(root.to_string_lossy());
     state.project_open.folder = Some(state.root.text.clone());
-    state.runtime = Some(Arc::new(Runtime::discover().unwrap()));
+    state.runtime = Some(Arc::new(fixture_runtime(root)));
     state
 }
 pub(crate) fn settle(state: &mut State) {
@@ -157,6 +197,7 @@ fn moved_reference_requires_reload_and_clears_every_actionable_result() {
     settle(&mut state);
     git(root.path(), &["commit", "--allow-empty", "-qm", "moved"]);
     git(root.path(), &["tag", "-f", "head"]);
+    retain_scene(root.path(), &crate::flow_scenes::data(), "HEAD");
     state.flow_comparison.page(Default::default()).unwrap();
     settle(&mut state);
     assert!(matches!(

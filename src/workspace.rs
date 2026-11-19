@@ -44,6 +44,7 @@ pub struct LoadedGraph {
     pub metrics: Option<codecallnavigator::metrics::Metrics>,
     pub context: Option<QueryContext>,
     pub presentation_cache: Option<crate::presentation_cache::PresentationCache>,
+    pub retention: Option<codecallnavigator::protocol::GraphRetention>,
 }
 pub struct Boot {
     pub store: Arc<SqliteStore>,
@@ -171,6 +172,7 @@ pub(crate) fn from_snapshot(snapshot: crate::engine_client::Snapshot) -> LoadedG
         context: Some(snapshot.context),
         presentation_cache: None,
         metrics: None,
+        retention: snapshot.retention,
     }
 }
 

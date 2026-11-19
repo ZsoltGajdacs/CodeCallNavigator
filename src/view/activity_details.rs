@@ -69,7 +69,7 @@ pub(super) fn view(
 
 fn summary(state: &State, k: &Kit) -> El {
     let graph = &state.graph_view;
-    col()
+    let body = col()
         .key("activity-graph-summary")
         .w_full()
         .gap(6.0)
@@ -94,7 +94,23 @@ fn summary(state: &State, k: &Kit) -> El {
                 graph.hidden_edges
             ),
             k,
-        ))
+        ));
+    if let Some(retention) = state
+        .analysis_feedback
+        .retention
+        .as_ref()
+        .or_else(|| state.freshness.retention(state.generation.as_deref()))
+    {
+        return body.child(
+            text(crate::analysis_feedback::retention_message(retention))
+                .key("analysis-graph-retention")
+                .w_full()
+                .font(k.ty.ui)
+                .color(k.c.text_base)
+                .wrap_anywhere(),
+        );
+    }
+    body
 }
 
 fn count_row(label: &str, counts: String, k: &Kit) -> El {

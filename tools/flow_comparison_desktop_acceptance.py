@@ -41,7 +41,7 @@ def validate_report(report, app):
                ("highlight_drawn", "camera_independent", "scroll_independent", "hidden_scroll_restored")}
     require(all(report["checks"].get(check) is True for check in checks), "Native comparison omitted a required drawn check")
     require(report["frames"]["drawn"] > 0 and report["ready_drawn_ms"], "Native comparison has no actual Drawn observations")
-    require(report["captures"] == ["missing-source", "manual-pair", "restored-pair"], "Native comparison capture checkpoints are incomplete")
+    require(report["captures"] == ["unavailable-flow", "manual-pair", "restored-pair"], "Native comparison capture checkpoints are incomplete")
 
 
 @dataclass(frozen=True)
@@ -58,10 +58,10 @@ def run_native(run):
     app, fixture, store, directory, theme, timeout = run.app, run.fixture, run.store, run.directory, run.theme, run.timeout
     directory.mkdir()
     write_json(directory / "config.json", fixture.config)
-    gate = Gate(fixture.project, directory, fixture.config["initial"]["base_commit"] +
-                ":.codecallnavigator/graph.json", uuid.uuid4().hex, app / "Contents/MacOS/codecallnavigator-engine")
+    gate = Gate(fixture.project, directory, uuid.uuid4().hex, app / "Contents/MacOS/codecallnavigator-engine")
     environment = clean_environment()
     environment.update(CODECALLNAVIGATOR_DATA_DIR=str(store),
+                       CODECALLNAVIGATOR_GRAPH_LIBRARY=str(fixture.library),
                        CODECALLNAVIGATOR_FLOW_ACCEPTANCE=str(directory), PATH=gate.install())
     command = [str(app / "Contents/MacOS/CodeCallNavigator"), "--native", "--trace",
                str(directory / "native.jsonl"), "--size", "1050x680", "--theme", theme]

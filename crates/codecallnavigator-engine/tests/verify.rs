@@ -23,7 +23,7 @@ fn publish(root: &Path) -> Vec<u8> {
     artifact.graph["analysis"] =
         serde_json::to_value(provenance::build(&inputs, &[], "", &roots).unwrap()).unwrap();
     artifact::publish(root, &artifact, &std::sync::atomic::AtomicBool::new(false)).unwrap();
-    fs::read(root.join(artifact::GRAPH_PATH)).unwrap()
+    fs::read(artifact::working_manifest_path(root).unwrap()).unwrap()
 }
 fn verify(root: &Path, shared: bool) -> (i32, Value) {
     let mut command = Command::new(env!("CARGO_BIN_EXE_codecallnavigator-engine"));
@@ -46,7 +46,8 @@ fn verify(root: &Path, shared: bool) -> (i32, Value) {
 fn cli_checks_inputs_preserves_bytes_and_reports_mixed_failures() {
     let root = tempfile::tempdir().unwrap();
     let bytes = publish(root.path());
-    let directory_before: Vec<_> = fs::read_dir(root.path().join(".codecallnavigator"))
+    let path = artifact::working_manifest_path(root.path()).unwrap();
+    let directory_before: Vec<_> = fs::read_dir(path.parent().unwrap())
         .unwrap()
         .map(|entry| entry.unwrap().file_name())
         .collect();
@@ -80,11 +81,8 @@ fn cli_checks_inputs_preserves_bytes_and_reports_mixed_failures() {
             .iter()
             .any(|reason| reason["code"] == "unavailable_root")
     );
-    assert_eq!(
-        fs::read(root.path().join(artifact::GRAPH_PATH)).unwrap(),
-        bytes
-    );
-    let directory_after: Vec<_> = fs::read_dir(root.path().join(".codecallnavigator"))
+    assert_eq!(fs::read(&path).unwrap(), bytes);
+    let directory_after: Vec<_> = fs::read_dir(path.parent().unwrap())
         .unwrap()
         .map(|entry| entry.unwrap().file_name())
         .collect();
@@ -99,17 +97,19 @@ fn cli_handles_legacy_malformed_and_missing_artifacts() {
         &[("repo".into(), root.path().into())],
     )
     .unwrap();
-    fs::write(
-        root.path().join(artifact::GRAPH_PATH),
-        serde_json::to_vec_pretty(&legacy).unwrap(),
+    artifact::publish(
+        root.path(),
+        &legacy,
+        &std::sync::atomic::AtomicBool::new(false),
     )
     .unwrap();
     assert_eq!(verify(root.path(), true).1["input_status"], "unverifiable");
-    fs::write(root.path().join(artifact::GRAPH_PATH), "{}").unwrap();
+    let path = artifact::working_manifest_path(root.path()).unwrap();
+    fs::write(&path, "{}").unwrap();
     let (code, report) = verify(root.path(), true);
     assert_eq!(code, 2);
     assert_eq!(report["contract_valid"], false);
-    fs::remove_file(root.path().join(artifact::GRAPH_PATH)).unwrap();
+    fs::remove_file(&path).unwrap();
     let output = Command::new(env!("CARGO_BIN_EXE_codecallnavigator-engine"))
         .args(["verify", "--project"])
         .arg(root.path())

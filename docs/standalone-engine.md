@@ -16,7 +16,7 @@ See the [external consumer contract](graph-contract.md) and its
 The [public CLI query interface](cli-queries.md) provides bounded graph queries,
 source/flow data and generation-bound snapshots without running analysis.
 Its optional `flow_comparison` operation reads selected before/after charts and
-cached source directly from saved Git artifacts, retaining exact endpoint
+captured source from the local graph library, retaining exact endpoint
 digests and explicit per-side availability. It uses the same comparison binding
 as `compare`, with exact stable-ID correspondence and an explicit manual
 counterpart option; see the [saved-revision contract](cli-queries.md#saved-revision-function-flows).
@@ -26,19 +26,20 @@ counterpart option; see the [saved-revision contract](cli-queries.md#saved-revis
 ```sh
 ccnavigator discover /checkout
 ccnavigator analyze --project /checkout backend/pom.xml frontend/tsconfig.json
+ccnavigator graph-path --project /checkout
 ccnavigator watch --project /checkout backend/pom.xml frontend/tsconfig.json
 ccnavigator clear-cache --project /checkout
 ccnavigator compare --project /checkout --base HEAD~1 --head WORKTREE
 ```
 
 With no explicit targets, analysis selects the same default builds as discovery.
-The saved graph uses a version-2 bundle. `/checkout/.codecallnavigator/graph.json`
-is a small manifest referencing two immutable Zstandard-compressed objects under
-`objects/`: structure and function flows. Commit the manifest and its referenced
-objects alongside the source changes. Publication replaces the manifest atomically;
-failed or cancelled analysis preserves the previous generation. Neither command
-stages files or creates commits. The publisher retains the current and previous
-generations and prunes older owned objects; active readers keep captured handles.
+Each successful analysis saves a version-2 bundle in the local graph library.
+The `graph.json` manifest references immutable Zstandard-compressed structure and
+function-flow objects in the library's shared `objects/` directory. Publication
+atomically updates the working-graph reference. Failed or cancelled analysis
+preserves the current generation. Each checkout and project keeps its current
+and previous generations. Active readers keep captured object handles.
+Use `graph-path` to locate a project's current manifest without running analysis.
 
 Structure contains nodes, relationships, entry points, diagnostics, architecture,
 analyzed source snapshots and analysis provenance. Flows contain function bodies
@@ -52,19 +53,19 @@ demand within a CLI session; it can be explicitly released and loaded again. The
 desktop releases hidden flow inventory and presentation caches after 60 seconds
 without a visible flow view. The CLI owns no idle timer.
 
-This is a clean format break: existing single-file graphs require reanalysis.
-Old-format Git revisions report an unsupported-format error. Comparisons between
-new-format revisions read their manifests and objects directly from the same
-resolved commits, without checkout or fetch. Full comparison includes flows.
+Populate the library by running analysis again after upgrading from repo-local
+storage. Compare resolves Git refs locally and opens the corresponding verified
+library graphs. Full comparison includes flows and uses saved bundles without
+checking out, fetching, or compiling a revision.
 Exit status is 0 for equality, 1 for changes and 2 for operational/schema errors.
 
 ### Local snapshots across worktrees
 
-Successful analyses can retain a snapshot of the analyzed Git commit in the
-user cache. Linked worktrees of the same clone share these snapshots. The
-working graph stays in the project's `.codecallnavigator/` directory. An
-analysis with edited or unverifiable inputs can publish a working graph and
-report why the commit snapshot was skipped.
+When a successful analysis verifies its inputs against the Git commit, the
+library registers the same bundle as a commit snapshot. Linked worktrees of the
+same clone share these snapshots. Analysis with edited or unverifiable inputs
+saves a working graph and reports why commit attribution failed. Select
+`WORKTREE` in Compare to use the current working graph.
 
 ```sh
 ccnavigator snapshot-status --project /checkout --revision main
@@ -77,21 +78,23 @@ The [changed-symbol impact preview](cli-queries.md#changed-symbol-impact-preview
 uses one retained baseline to map changed lines and follow recorded callers
 before a head graph has been analyzed.
 
-The cache defaults to `~/Library/Caches/CodeCallNavigator/snapshots/v1/` on
-macOS and `$XDG_CACHE_HOME/CodeCallNavigator/snapshots/v1/` on Linux, with
-`~/.cache` as the default XDG root. Set `CODECALLNAVIGATOR_SNAPSHOT_CACHE`
-to an absolute path to use another cache root. Snapshot status shows the
-clone's cache directory and the available variants. The cache deduplicates
-compressed objects and evicts the oldest retained snapshots to fit 2 GiB.
+The library defaults to `~/Library/Application Support/CodeCallNavigator/graphs/v1/`
+on macOS and `$XDG_DATA_HOME/CodeCallNavigator/graphs/v1/` on Linux, with
+`~/.local/share` as the default XDG data directory. Set
+`CODECALLNAVIGATOR_GRAPH_LIBRARY` to an absolute path to use another library.
+Snapshot status shows the clone's directory and available variants. Verified
+manifests live under
+`repos/<clone-key>/commits/<full-sha>/<project-key>/<variant-id>/graph.json`.
+The library deduplicates compressed objects and limits evictable history to
+2 GiB. Current and previous working graphs are protected from eviction.
 
 Preparation is explicit. It analyzes the requested commit in a temporary
 detached worktree, using the local analyzer and build tools. Omit
 `--target` to use the revision's default build selection. Targets are paths
 within the selected project at that revision. TypeScript preparation can reuse
-installed `node_modules` from the calling worktree. The observed compiler and
-package file contents contribute to the snapshot identity. Compare uses saved
-graphs, and you can pass `--base-snapshot` or `--head-snapshot` to select a
-specific cached variant.
+installed `node_modules` from the calling worktree. The effective build targets,
+analyzers, and observed dependencies contribute to the snapshot identity. Pass
+`--base-snapshot` or `--head-snapshot` to select a specific variant.
 
 Paths use `@repo/` relative to the output-owning project. Add repeated
 `--root NAME=PATH` mappings for project-owned sources outside that root; use the
@@ -361,19 +364,18 @@ analyzer does not execute project configuration.
 ## Inference cache
 
 Analysis still extracts and validates fresh compiler facts. The disposable
-`.codecallnavigator/inference.sqlite3` cache reuses selected inference decisions;
-it is a derived cache for compiler analysis. Keep it out of Git. Missing or malformed
-cache data falls back to full inference with a warning. Failed or cancelled
-analysis preserves the previous graph and cache.
+`inference.sqlite3` cache in the library's project state reuses selected inference
+decisions. Missing or malformed cache data falls back to full inference with a
+warning. Failed or cancelled analysis preserves the current graph and cache.
 
 Use `codecallnavigator-engine clear-cache --project /checkout` or the desktop's
 **Clear cache** button beside analysis to discard the inference database and its
 exact `-wal`, `-shm` and `-journal` sidecars. Clearing holds the same project
 analysis lock and fails while another analysis owns it. Nonregular or hard-linked
-cache paths and a symlinked `.codecallnavigator` directory are rejected before deletion.
+cache paths and symlinked state directories are rejected before deletion.
 Corrupt regular cache files can be removed so the next analysis recomputes all
-inference decisions. Clearing preserves `graph.json`, the displayed graph,
-navigation, authored configuration and build outputs; start analysis separately
+inference decisions. Clearing preserves the saved graphs, navigation, authored
+configuration and build outputs. Start analysis separately
 after it completes.
 
 Set `CODECALLNAVIGATOR_DISABLE_INFERENCE_CACHE=1` to run the full reference path without

@@ -66,7 +66,10 @@ fn real_typescript_facts_survive_stable_ids_cached_queries_and_excluded_targets(
     assert!(site.targets.is_empty());
     flow::build(pruned).unwrap();
     assert_cached_queries_and_expansion(&root, &caller, &saved, &original);
-    assert_eq!(fs::read(root.join(artifact::GRAPH_PATH)).unwrap(), bytes);
+    assert_eq!(
+        fs::read(artifact::working_manifest_path(&root).unwrap()).unwrap(),
+        bytes
+    );
 }
 
 fn assert_cached_queries_and_expansion(
@@ -137,7 +140,7 @@ fn analyze(root: &Path) -> (Artifact, Vec<u8>) {
         "{}",
         String::from_utf8_lossy(&output.stderr)
     );
-    let bytes = fs::read(root.join(artifact::GRAPH_PATH)).unwrap();
+    let bytes = fs::read(artifact::working_manifest_path(root).unwrap()).unwrap();
     let saved = artifact::load(root).unwrap();
     assert_eq!(saved.encode().unwrap().as_ref(), bytes);
     (saved, bytes)

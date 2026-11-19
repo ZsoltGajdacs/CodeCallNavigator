@@ -77,6 +77,8 @@ pub enum Phase {
         roots: Vec<(String, PathBuf)>,
         analysis_milliseconds: f64,
         metrics: serde_json::Value,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        retention: Option<crate::protocol::GraphRetention>,
     },
     Failed {
         run: u64,

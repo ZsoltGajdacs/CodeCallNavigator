@@ -1,5 +1,5 @@
 //! Paging records actual prior cursors and forgets them at a new search or binding.
-use crate::flow_comparison::tests::{git, project, settle, state};
+use crate::flow_comparison::tests::{git, project, retain_scene, settle, state};
 fn many(root: &std::path::Path) {
     project(root);
     let mut graph = crate::flow_scenes::data();
@@ -12,21 +12,9 @@ fn many(root: &std::path::Path) {
         node.body_unavailable = true;
         graph.nodes.push(node);
     }
-    let saved =
-        codecallnavigator::artifact::canonical(&graph, &[("repo".into(), "/snapshot".into())])
-            .unwrap();
-    codecallnavigator::artifact::publish(root, &saved, &std::sync::atomic::AtomicBool::new(false))
-        .unwrap();
-    git(
-        root,
-        &[
-            "add",
-            codecallnavigator::artifact::GRAPH_PATH,
-            ".codecallnavigator/objects",
-        ],
-    );
-    git(root, &["commit", "-qm", "many identities"]);
+    git(root, &["commit", "--allow-empty", "-qm", "many identities"]);
     git(root, &["tag", "-f", "head"]);
+    retain_scene(root, &graph, "HEAD");
 }
 #[test]
 fn paging_keeps_prior_offsets_and_resets_for_search_reload_and_new_comparison() {

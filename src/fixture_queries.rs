@@ -84,6 +84,7 @@ pub fn cached_boot(directory: std::path::PathBuf) -> anyhow::Result<crate::works
                 context: None,
                 presentation_cache: None,
                 metrics: None,
+                retention: None,
             })
         })
         .transpose()?;

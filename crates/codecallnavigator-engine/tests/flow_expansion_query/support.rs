@@ -33,11 +33,9 @@ impl Saved {
             .as_str()
             .unwrap()
             .into();
-        let path = project.join(artifact::GRAPH_PATH);
-        fs::create_dir_all(path.parent().unwrap()).unwrap();
         let mut fixture = Self {
             directory,
-            path,
+            path: PathBuf::new(),
             root,
             digest: String::new(),
             saved,
@@ -52,6 +50,7 @@ impl Saved {
             &std::sync::atomic::AtomicBool::new(false),
         )
         .unwrap();
+        self.path = artifact::working_manifest_path(self.directory.path()).unwrap();
         let bytes = fs::read(&self.path).unwrap();
         self.digest = blake3::hash(&bytes).to_hex().to_string();
     }

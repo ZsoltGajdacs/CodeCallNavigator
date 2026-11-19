@@ -9,7 +9,7 @@ use crate::{
         },
     },
 };
-use codecallnavigator::artifact::local_snapshots::SnapshotRecord;
+use codecallnavigator::{artifact::local_snapshots::SnapshotRecord, protocol::AnalysisFailureCode};
 use rune::{Latest, TextEdit, Waker};
 use std::{
     path::{Path, PathBuf},
@@ -95,6 +95,7 @@ enum Answer {
         status: SnapshotStatus,
         prepared: Option<SnapshotRecord>,
     },
+    PreparedWithoutLookup(String),
     Graph {
         refs: ComparisonRefs,
         page: Box<GraphPage>,
@@ -183,11 +184,7 @@ impl State {
     }
 
     fn start_snapshot_operation(&mut self, operation: Operation) {
-        let context = match &self.flow_comparison.project {
-            Some(project) => Ok(project.context.clone()),
-            None => self.comparison_context().map(|(_, context)| context),
-        };
-        match context {
+        match self.library_comparison_context() {
             Ok(context) => self.flow_comparison.snapshots.start(
                 context,
                 operation,
@@ -372,7 +369,10 @@ impl Snapshots {
                     .and_then(|lookup| lookup.selected.clone());
                 let selected = prepared
                     .as_ref()
-                    .map(|record| record.id.clone())
+                    .map(|record| {
+                        self.message = preparation_message(record);
+                        record.id.clone()
+                    })
                     .or(old)
                     .filter(|id| status.snapshots.iter().any(|record| &record.id == id));
                 self.lookups[side.index()] = Some(Lookup {
@@ -381,6 +381,7 @@ impl Snapshots {
                     selected,
                 });
             }
+            Ok(Answer::PreparedWithoutLookup(message)) => self.message = message,
             Ok(Answer::Graph {
                 refs,
                 page,
@@ -431,14 +432,24 @@ fn execute(
         }),
         Operation::Prepare { side, selection } => {
             let revision = selection.revision.clone();
-            let record = context.prepare_local_snapshot(selection, cancel, progress)?;
-            let status = context.snapshot_status(record.identity.commit.clone(), cancel)?;
-            Ok(Answer::Lookup {
-                side,
-                reference: revision,
-                status,
-                prepared: Some(record),
-            })
+            let record = context
+                .prepare_local_snapshot(selection, cancel, progress)
+                .map_err(preparation_error)?;
+            let message = preparation_message(&record);
+            match context.snapshot_status(revision.clone(), cancel) {
+                Ok(status) if status.snapshots.contains(&record) => Ok(Answer::Lookup {
+                    side,
+                    reference: revision,
+                    status,
+                    prepared: Some(record),
+                }),
+                Ok(_) => Ok(Answer::PreparedWithoutLookup(format!(
+                    "{message} Refresh the snapshot list to select a current variant."
+                ))),
+                Err(error) => Ok(Answer::PreparedWithoutLookup(format!(
+                    "{message} Could not refresh the snapshot list: {error:#}"
+                ))),
+            }
         }
         Operation::Graph {
             refs,
@@ -450,4 +461,19 @@ fn execute(
             navigation,
         }),
     }
+}
+
+fn preparation_message(record: &SnapshotRecord) -> String {
+    format!("Prepared snapshot for {}.", record.identity.commit)
+}
+
+fn preparation_error(error: anyhow::Error) -> anyhow::Error {
+    let cancelled = error
+        .downcast_ref::<engine_client::AnalysisFailure>()
+        .is_some_and(|failure| failure.code == Some(AnalysisFailureCode::Cancelled));
+    error.context(if cancelled {
+        "Snapshot preparation cancelled"
+    } else {
+        "Snapshot preparation failed"
+    })
 }

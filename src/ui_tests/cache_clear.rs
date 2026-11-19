@@ -61,8 +61,8 @@ fn clearing_blocks_analysis_even_when_called_directly() {
 #[ignore = "requires built standalone engine"]
 fn clear_cache_button_uses_real_engine_preserves_graph_and_allows_retry() {
     let project = tempfile::tempdir().unwrap();
-    let cache_dir = project.path().join(".codecallnavigator");
-    std::fs::create_dir(&cache_dir).unwrap();
+    let cache_dir = codecallnavigator::artifact::project_state_directory(project.path()).unwrap();
+    std::fs::create_dir_all(&cache_dir).unwrap();
     let cache = cache_dir.join("inference.sqlite3");
     std::fs::write(&cache, b"disposable cache").unwrap();
     let mut runtime = cache_runtime(project.path());

@@ -18,5 +18,3 @@ libc = "0.2"
 
 [dev-dependencies]
 tempfile = "3"
-blake3 = "1"
-zstd = { version = "0.13", default-features = false }

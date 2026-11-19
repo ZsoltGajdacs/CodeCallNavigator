@@ -12,6 +12,7 @@ pub enum Command {
     Help,
     Discover(PathBuf),
     ClearCache(PathBuf),
+    GraphPath(PathBuf),
     Analyze(Analysis),
     Watch(Analysis),
     Verify(Analysis),
@@ -81,15 +82,8 @@ pub fn parse(values: impl Iterator<Item = String>) -> Result<Command> {
             );
             Ok(Command::Verify(arguments))
         }
-        "clear-cache" => {
-            ensure!(
-                values.next().as_deref() == Some("--project"),
-                "clear-cache requires --project PROJECT"
-            );
-            let project = take_value(&mut values, "--project")?;
-            ensure!(values.next().is_none(), "Unexpected clear-cache argument");
-            Ok(Command::ClearCache(project.into()))
-        }
+        "clear-cache" => only_project(values, &command).map(Command::ClearCache),
+        "graph-path" => only_project(values, &command).map(Command::GraphPath),
         "compare" => parse_comparison(values, false),
         "impact-preview" => parse_comparison(values, true),
         "snapshot-status" => parse_snapshot(values, false).map(Command::SnapshotStatus),
@@ -112,6 +106,16 @@ pub fn parse(values: impl Iterator<Item = String>) -> Result<Command> {
         }
         other => bail!("Unknown engine command: {other}"),
     }
+}
+
+fn only_project(mut values: impl Iterator<Item = String>, command: &str) -> Result<PathBuf> {
+    ensure!(
+        values.next().as_deref() == Some("--project"),
+        "{command} requires --project PROJECT"
+    );
+    let project = take_value(&mut values, "--project")?;
+    ensure!(values.next().is_none(), "Unexpected {command} argument");
+    Ok(project.into())
 }
 
 fn parse_observe(mut values: impl Iterator<Item = String>) -> Result<Command> {

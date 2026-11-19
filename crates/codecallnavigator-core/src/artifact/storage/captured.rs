@@ -1,11 +1,9 @@
-use super::{Manifest, publication::Guard};
-use crate::{
-    artifact::{Artifact, GRAPH_PATH},
-    flow::FlowInventory,
-};
+use super::{Manifest, local_snapshots::Store};
+use crate::{artifact::Artifact, flow::FlowInventory};
 use anyhow::{Context, Result};
+use serde_json::Value;
 use std::{
-    fs::{self, File, OpenOptions},
+    fs::{File, OpenOptions},
     io::{Seek, SeekFrom},
     path::{Path, PathBuf},
     sync::Mutex,
@@ -15,10 +13,11 @@ use std::{
 /// Flow open failures are deferred so structural operations remain available.
 pub struct Captured {
     bytes: Vec<u8>,
+    analysis_metadata: Value,
     manifest: Manifest,
     structure: Mutex<File>,
     flows: Mutex<Option<File>>,
-    project: PathBuf,
+    root: PathBuf,
 }
 
 impl Captured {
@@ -28,31 +27,36 @@ impl Captured {
 
     /// Preserve exact manifest bytes even when a referenced part is unavailable.
     pub fn inspect(project: &Path) -> Result<(Vec<u8>, Result<Self>)> {
-        let _guard = Guard::read(project)?;
-        let bytes = fs::read(project.join(GRAPH_PATH)).context("Cannot read graph manifest")?;
-        let captured = Self::from_manifest(project, bytes.clone());
-        // A fresh checkout has no publication lock yet. If a publisher created
-        // it while handles were being captured, retry under that new guard.
-        if !_guard.coordinated() && Guard::exists(project) {
-            return Self::inspect(project);
-        }
+        let (_, bytes, captured) = Self::inspect_located(project)?;
         Ok((bytes, captured))
     }
 
-    fn from_manifest(project: &Path, bytes: Vec<u8>) -> Result<Self> {
+    pub fn inspect_located(project: &Path) -> Result<(PathBuf, Vec<u8>, Result<Self>)> {
+        Store::system()?.inspect_working(project)
+    }
+
+    pub(super) fn from_manifest(
+        root: &Path,
+        bytes: Vec<u8>,
+        analysis_metadata: Value,
+    ) -> Result<Self> {
         let manifest = Manifest::from_bytes(&bytes)?;
-        let directory = project.join(".codecallnavigator");
-        super::publication::validate_object_directory(&directory)?;
-        let structure = open_object(&directory.join(manifest.structure.path("structure")))
+        super::publication::validate_object_directory(root)?;
+        let structure = open_object(&root.join(manifest.structure.path("structure")))
             .context("Cannot open graph structure object")?;
-        let flows = open_object(&directory.join(manifest.flows.path("flows"))).ok();
+        let flows = open_object(&root.join(manifest.flows.path("flows"))).ok();
         Ok(Self {
             bytes,
+            analysis_metadata,
             manifest,
             structure: Mutex::new(structure),
             flows: Mutex::new(flows),
-            project: project.into(),
+            root: root.into(),
         })
+    }
+
+    pub fn analysis_metadata(&self) -> &Value {
+        &self.analysis_metadata
     }
 
     pub fn manifest_bytes(&self) -> &[u8] {
@@ -107,19 +111,11 @@ impl Captured {
     }
 
     fn retry_flows(&self) -> Result<File> {
-        let _guard = Guard::read(&self.project)?;
-        anyhow::ensure!(
-            fs::read(self.project.join(GRAPH_PATH))? == self.bytes,
-            "Graph generation changed before unavailable flows could be reopened"
-        );
-        super::publication::validate_object_directory(&self.project.join(".codecallnavigator"))?;
-        open_object(
-            &self
-                .project
-                .join(".codecallnavigator")
-                .join(self.manifest.flows.path("flows")),
-        )
-        .context("Cannot reopen graph flow object")
+        // The digest pins the exact object even if a newer generation has
+        // become current. If it was reclaimed, the old reader reports failure.
+        super::publication::validate_object_directory(&self.root)?;
+        open_object(&self.root.join(self.manifest.flows.path("flows")))
+            .context("Cannot reopen graph flow object")
     }
 
     pub fn complete(&self) -> Result<Artifact> {

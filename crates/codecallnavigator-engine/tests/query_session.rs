@@ -40,14 +40,13 @@ fn session_rechecks_inputs_and_rejects_replaced_generations() {
         serde_json::to_value(artifact::provenance::build(&observations, &[], "", &roots).unwrap())
             .unwrap();
     fs::create_dir(root.path().join(".codecallnavigator")).unwrap();
-    let path = root.path().join(artifact::GRAPH_PATH);
     artifact::publish(
         root.path(),
         &graph,
         &std::sync::atomic::AtomicBool::new(false),
     )
     .unwrap();
-    let bytes = fs::read(&path).unwrap();
+    let bytes = fs::read(artifact::working_manifest_path(root.path()).unwrap()).unwrap();
     let generation = blake3::hash(&bytes).to_hex().to_string();
     let mut child = Command::new(env!("CARGO_BIN_EXE_codecallnavigator-engine"))
         .arg("query-session")

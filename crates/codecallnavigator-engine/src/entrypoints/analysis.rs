@@ -1,19 +1,23 @@
 use super::cancellation::CANCELLED;
-use super::snapshot_retention::{Candidate, Observations};
+use super::snapshot_retention::{Candidate, Observations, VerifiedSnapshot, dependency_identity};
 use anyhow::{Context, Result, ensure};
 use codecallnavigator_core::{
-    artifact,
+    artifact::{
+        self,
+        local_snapshots::{SnapshotRecord, WorkingPublication},
+    },
     discovery::{self, BuildTarget},
     metrics,
     model::{FileFingerprint, GraphData},
-    protocol::Event,
+    protocol::{Event, GraphRetention},
 };
-use codecallnavigator_engine::analyzers::{self, AnalyzerRuntime};
+use codecallnavigator_engine::analyzers::{self, AnalyzerRuntime, ObservedAnalysis};
 use std::{
     collections::BTreeMap,
     path::{Path, PathBuf},
     sync::atomic::AtomicBool,
 };
+mod metadata;
 
 pub fn select_targets(project: &Path, paths: Vec<PathBuf>) -> Result<Vec<BuildTarget>> {
     let paths = if paths.is_empty() {
@@ -46,18 +50,19 @@ fn default_targets(project: &Path) -> Result<Vec<BuildTarget>> {
 }
 
 pub fn native(targets: Vec<BuildTarget>, progress: &dyn Fn(String)) -> Result<GraphData> {
-    native_attempt(
+    Ok(native_attempt(
         targets,
         &Attempt {
             cancel: &CANCELLED,
             progress,
             diagnostic: progress,
         },
-    )
+    )?
+    .graph)
 }
 
-fn native_attempt(targets: Vec<BuildTarget>, attempt: &Attempt<'_>) -> Result<GraphData> {
-    analyzers::analyze(
+fn native_attempt(targets: Vec<BuildTarget>, attempt: &Attempt<'_>) -> Result<ObservedAnalysis> {
+    analyzers::analyze_observed(
         targets,
         &AnalyzerRuntime::discover()?,
         attempt.cancel,
@@ -152,102 +157,267 @@ pub(super) struct Attempt<'a> {
 /// Produce native data only after acquiring the project lock and generation guard.
 /// The resulting owned graph is mutated by inference, never a retained raw cache.
 pub(super) fn publish<F>(
-    publication: Publication<'_>,
+    mut publication: Publication<'_>,
     attempt: Attempt<'_>,
     produce: F,
 ) -> Result<Event>
 where
-    F: FnOnce(Vec<BuildTarget>, &Attempt<'_>) -> Result<GraphData>,
+    F: FnOnce(Vec<BuildTarget>, &Attempt<'_>) -> Result<ObservedAnalysis>,
 {
-    let Publication {
-        project,
-        options,
-        mut targets,
-    } = publication;
-    let project = project.canonicalize().context("Cannot open project")?;
+    let project = publication
+        .project
+        .canonicalize()
+        .context("Cannot open project")?;
     ensure!(project.is_dir(), "Project must be a directory");
-    let roots = roots(&project, options.configured)?;
+    let roots = roots(
+        &project,
+        std::mem::take(&mut publication.options.configured),
+    )?;
     let lock = artifact::AnalysisLock::acquire(&project)?;
-    (attempt.progress)("Preparing analysis inputs…".into());
-    let snapshot = Candidate::capture(&project, attempt.diagnostic);
-    if let Some(expected) = &options.expected_generation {
+    if let Some(expected) = &publication.options.expected_generation {
         lock.require_generation(expected)?;
     }
     let metrics = metrics::Metrics::default();
     let _scope = metrics.enter();
-    targets.sort_by_key(BuildTarget::identity);
-    targets.dedup_by(|a, b| a.identity() == b.identity());
-    let (boundaries, boundary_inputs) =
-        codecallnavigator_core::boundary::Configuration::load(&project, &targets)?;
-    let application_inputs = application_inputs(&project)?;
-    let selection = targets.clone();
-    let mut graph = produce(targets, &attempt)?;
-    graph.fingerprints.extend(boundary_inputs);
-    graph.fingerprints.extend(application_inputs);
-    (attempt.progress)("Resolving graph relationships…".into());
-    let cache = super::inference::resolve(&project, &mut graph, &boundaries)?;
-    let roots = if options.infer_linked {
-        super::linked_roots::infer(&graph, &project, roots)?
-    } else {
-        roots
-    };
-    let digest = GraphPublication {
-        graph: &graph,
-        selection: &selection,
-        roots: &roots,
-        snapshot,
-    }
-    .publish(&lock, &attempt)?;
-    super::inference::finish(cache, attempt.diagnostic);
+    let outcome = prepare(
+        AnalysisBinding {
+            project: &project,
+            roots,
+            targets: publication.targets,
+            infer_linked: publication.options.infer_linked,
+            use_inference_cache: true,
+        },
+        &attempt,
+        produce,
+    )?;
+    let retention = outcome.publish_working(&lock, &attempt)?;
+    (attempt.diagnostic)(retention.to_string());
+    super::inference::finish(outcome.cache, attempt.diagnostic);
     metrics.finish();
     Ok(Event::Complete {
-        roots,
-        digest,
-        fingerprints: graph.fingerprints,
-        engine_versions: graph.engine_versions,
+        roots: outcome.roots,
+        digest: outcome.digest,
+        fingerprints: outcome.graph.fingerprints,
+        engine_versions: outcome.graph.engine_versions,
         metrics: serde_json::to_value(metrics.report())?,
+        retention: Some(retention),
     })
 }
 
-struct GraphPublication<'a> {
-    graph: &'a GraphData,
-    selection: &'a [BuildTarget],
-    roots: &'a artifact::Roots,
-    snapshot: Option<Candidate>,
+pub(super) fn prepare_revision(
+    project: &Path,
+    targets: Vec<BuildTarget>,
+    progress: &dyn Fn(String),
+) -> Result<PreparedRevision> {
+    let outcome = prepare(
+        AnalysisBinding {
+            project,
+            roots: roots(project, Vec::new())?,
+            targets,
+            infer_linked: false,
+            use_inference_cache: false,
+        },
+        &Attempt {
+            cancel: &CANCELLED,
+            progress,
+            diagnostic: progress,
+        },
+        native_attempt,
+    )?;
+    let verified = outcome
+        .verified
+        .context("The requested revision graph could not be verified")?;
+    verified.require_current()?;
+    Ok(PreparedRevision {
+        encoded: outcome.encoded,
+        metadata: outcome.metadata,
+        verified,
+    })
 }
 
-impl GraphPublication<'_> {
-    fn publish(self, lock: &artifact::AnalysisLock, attempt: &Attempt<'_>) -> Result<String> {
-        let Self {
+pub(super) struct PreparedRevision {
+    pub encoded: artifact::EncodedArtifact,
+    pub metadata: serde_json::Value,
+    pub verified: VerifiedSnapshot,
+}
+
+struct AnalysisBinding<'a> {
+    project: &'a Path,
+    roots: Vec<(String, PathBuf)>,
+    targets: Vec<BuildTarget>,
+    infer_linked: bool,
+    use_inference_cache: bool,
+}
+
+fn prepare<F>(
+    binding: AnalysisBinding<'_>,
+    attempt: &Attempt<'_>,
+    produce: F,
+) -> Result<PreparedGraph>
+where
+    F: FnOnce(Vec<BuildTarget>, &Attempt<'_>) -> Result<ObservedAnalysis>,
+{
+    let AnalysisBinding {
+        project,
+        roots,
+        mut targets,
+        infer_linked,
+        use_inference_cache,
+    } = binding;
+    (attempt.progress)("Preparing analysis inputs…".into());
+    let snapshot = Candidate::capture(project);
+    targets.sort_by_key(BuildTarget::identity);
+    targets.dedup_by(|a, b| a.identity() == b.identity());
+    let (boundaries, boundary_inputs) =
+        codecallnavigator_core::boundary::Configuration::load(project, &targets)?;
+    let application_inputs = application_inputs(project)?;
+    let selection = targets.clone();
+    let ObservedAnalysis {
+        mut graph,
+        output_attribution_limit,
+    } = produce(targets, attempt)?;
+    graph.fingerprints.extend(boundary_inputs);
+    graph.fingerprints.extend(application_inputs);
+    (attempt.progress)("Resolving graph relationships…".into());
+    let cache = super::inference::resolve(project, &mut graph, &boundaries, use_inference_cache)?;
+    let roots = if infer_linked {
+        super::linked_roots::infer(&graph, project, roots)?
+    } else {
+        roots
+    };
+    PreparedGraph::capture(
+        GraphInputs {
+            graph,
+            roots,
+            project,
+            selection: &selection,
+            snapshot,
+            output_attribution_limit: output_attribution_limit.as_deref(),
+            cache,
+        },
+        attempt,
+    )
+}
+
+struct GraphInputs<'a> {
+    graph: GraphData,
+    roots: Vec<(String, PathBuf)>,
+    project: &'a Path,
+    selection: &'a [BuildTarget],
+    snapshot: Result<Candidate>,
+    output_attribution_limit: Option<&'a str>,
+    cache: Option<codecallnavigator_core::boundary::DecisionCache>,
+}
+
+struct PreparedGraph {
+    graph: GraphData,
+    roots: Vec<(String, PathBuf)>,
+    encoded: artifact::EncodedArtifact,
+    digest: String,
+    metadata: serde_json::Value,
+    verified: Result<VerifiedSnapshot>,
+    cache: Option<codecallnavigator_core::boundary::DecisionCache>,
+}
+
+impl PreparedGraph {
+    fn capture(inputs: GraphInputs<'_>, attempt: &Attempt<'_>) -> Result<Self> {
+        let GraphInputs {
             graph,
             selection,
             roots,
+            project,
             snapshot,
-        } = self;
+            output_attribution_limit,
+            cache,
+        } = inputs;
         (attempt.progress)("Encoding the graph…".into());
-        let (bytes, provenance, refresh_validation) = encode_publication(graph, selection, roots)?;
-        let digest = blake3::hash(bytes.as_ref()).to_hex().to_string();
+        let (encoded, provenance, refresh_validation) =
+            encode_publication(&graph, selection, &roots)?;
+        let digest = blake3::hash(encoded.as_ref()).to_hex().to_string();
+        let observations = Observations {
+            analysis: &provenance,
+            roots: &roots,
+            analyzer: &graph.fingerprints,
+            refresh: &refresh_validation,
+            targets: selection,
+            project,
+            generated_sources: graph
+                .refresh_outputs
+                .as_ref()
+                .map_or(&[], |output| output.generated_source_directories.as_slice()),
+            output_attribution_limit,
+        };
+        let verified = snapshot.and_then(|candidate| {
+            (attempt.progress)("Verifying Git snapshot attribution…".into());
+            candidate.verify(&observations, attempt.cancel)
+        });
+        let fallback_identity = verified
+            .is_err()
+            .then(|| dependency_identity(&observations))
+            .transpose()?;
+        let identity = verified
+            .as_ref()
+            .ok()
+            .map(VerifiedSnapshot::dependency_identity)
+            .or(fallback_identity.as_deref());
+        let metadata = metadata::capture(&observations, &graph.engine_versions, identity)?;
         (attempt.progress)("Validating analyzed inputs…".into());
         verify_inputs(&graph.fingerprints, &refresh_validation, attempt.cancel)?;
+        Ok(Self {
+            graph,
+            roots,
+            encoded,
+            digest,
+            metadata,
+            verified,
+            cache,
+        })
+    }
+
+    fn publish_working(
+        &self,
+        lock: &artifact::AnalysisLock,
+        attempt: &Attempt<'_>,
+    ) -> Result<GraphRetention> {
         (attempt.progress)("Publishing the graph…".into());
-        lock.publish_encoded(&bytes, attempt.cancel)?;
-        retain_snapshot(
-            snapshot,
-            Observations {
-                analysis: &provenance,
-                roots,
-                analyzer: &graph.fingerprints,
-                refresh: &refresh_validation,
-                targets: selection,
-                generated_sources: graph
-                    .refresh_outputs
-                    .as_ref()
-                    .map_or(&[], |output| output.generated_source_directories.as_slice()),
-            },
-            &bytes,
-            attempt,
-        );
-        Ok(digest)
+        match self
+            .verified
+            .as_ref()
+            .map_err(|error| format!("{error:#}"))
+            .and_then(|verified| {
+                verified
+                    .require_current()
+                    .map_err(|error| format!("{error:#}"))?;
+                Ok(verified)
+            }) {
+            Ok(verified) => {
+                let record = lock.publish_library(
+                    WorkingPublication {
+                        encoded: &self.encoded,
+                        metadata: &self.metadata,
+                        verified: Some((verified.common_dir(), verified.identity(&self.metadata)?)),
+                    },
+                    attempt.cancel,
+                )?;
+                let SnapshotRecord { id, identity, .. } =
+                    record.context("Graph library omitted its verified snapshot record")?;
+                Ok(GraphRetention::Verified {
+                    commit: identity.commit,
+                    snapshot: id,
+                })
+            }
+            Err(reason) => {
+                lock.publish_library(
+                    WorkingPublication {
+                        encoded: &self.encoded,
+                        metadata: &self.metadata,
+                        verified: None,
+                    },
+                    attempt.cancel,
+                )?;
+                Ok(GraphRetention::WorkingOnly { reason })
+            }
+        }
     }
 }
 
@@ -270,20 +440,6 @@ fn encode_publication(
     let validation = refresh_inputs(graph, selection, roots, &mut provenance)?;
     artifact.graph["analysis"] = serde_json::to_value(&provenance)?;
     Ok((artifact.encode()?, provenance, validation))
-}
-
-fn retain_snapshot(
-    candidate: Option<Candidate>,
-    observed: Observations<'_>,
-    bytes: &artifact::EncodedArtifact,
-    attempt: &Attempt<'_>,
-) {
-    if let Some(candidate) = candidate {
-        (attempt.progress)("Retaining the local Git snapshot…".into());
-        if let Err(error) = candidate.retain(observed, bytes, attempt.cancel) {
-            (attempt.diagnostic)(format!("Local snapshot was not retained: {error:#}"));
-        }
-    }
 }
 
 fn verify_inputs(

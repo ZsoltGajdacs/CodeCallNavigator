@@ -1,6 +1,7 @@
 //! The desktop consumes the same published artifact as standalone CLI users.
 #[cfg(test)]
 use codecallnavigator::model::GraphData;
+mod analysis;
 mod analysis_failure;
 mod capabilities;
 pub mod flow_comparison;
@@ -11,6 +12,9 @@ pub(crate) use observation_process::{CleanupFailure, Notice, ObservationOptions}
 mod process;
 mod queries;
 mod query_process;
+#[cfg(test)]
+use analysis::analyze;
+pub use analysis::{Analysis, analyze_snapshot};
 pub(crate) use analysis_failure::AnalysisFailure;
 pub(crate) use queries::QueryFailure;
 pub use queries::{Descriptor, QueryContext, Snapshot};
@@ -23,7 +27,7 @@ use crate::runtime::Runtime;
 use anyhow::{Context, Result, bail, ensure};
 use codecallnavigator::{
     discovery::BuildTarget,
-    protocol::{Event, Request, VERSION},
+    protocol::{AnalysisFailureCode, Event, Request, VERSION},
 };
 use std::{
     path::Path,
@@ -31,88 +35,33 @@ use std::{
 };
 
 pub fn discover(runtime: &Runtime, project: &Path) -> Result<Vec<BuildTarget>> {
-    let request = Request::Discover {
-        version: VERSION,
-        project: project.to_owned(),
-    };
-    match exchange(runtime, &request, &AtomicBool::new(false), &|_| {})? {
+    match exchange_quiet(
+        runtime,
+        Request::Discover {
+            version: VERSION,
+            project: project.to_path_buf(),
+        },
+    )? {
         Event::Discovered { targets } => Ok(targets),
         _ => bail!("Engine returned an analysis result for discovery"),
     }
 }
 
 pub fn clear_cache(runtime: &Runtime, project: &Path) -> Result<u32> {
-    let request = Request::ClearCache {
-        version: VERSION,
-        project: project.to_owned(),
-    };
-    match exchange(runtime, &request, &AtomicBool::new(false), &|_| {})? {
+    match exchange_quiet(
+        runtime,
+        Request::ClearCache {
+            version: VERSION,
+            project: project.to_path_buf(),
+        },
+    )? {
         Event::CacheCleared { removed_files } => Ok(removed_files),
         _ => bail!("Engine returned an unexpected result for cache clearing"),
     }
 }
 
-#[derive(Clone)]
-pub struct Analysis {
-    pub project: std::path::PathBuf,
-    pub targets: Vec<BuildTarget>,
-}
-
-pub fn analyze_snapshot(
-    runtime: &Runtime,
-    selection: Analysis,
-    cancel: &AtomicBool,
-    progress: &dyn Fn(String),
-) -> Result<Snapshot> {
-    let project = selection
-        .project
-        .canonicalize()
-        .context("Cannot open analysis project")?;
-    let request = Request::Analyze {
-        version: VERSION,
-        project: project.clone(),
-        roots: Vec::new(),
-        infer_linked_roots: true,
-        failure_version: Some(1),
-        expected_generation: None,
-        targets: selection.targets,
-    };
-    let Event::Complete {
-        roots,
-        digest,
-        metrics,
-        engine_versions,
-        ..
-    } = exchange(runtime, &request, cancel, progress)?
-    else {
-        bail!("Engine returned discovery results for analysis");
-    };
-    ensure!(!cancel.load(Ordering::Relaxed), "Analysis cancelled");
-    codecallnavigator::metrics::absorb(&metrics)?;
-    let roots = roots
-        .into_iter()
-        .filter(|(name, _)| name != "repo")
-        .collect();
-    QueryContext::new(
-        runtime,
-        Descriptor {
-            project,
-            roots,
-            generation: Some(digest),
-        },
-    )
-    .snapshot_with_versions(cancel, Some(engine_versions))
-}
-
-#[cfg(test)]
-fn analyze(
-    runtime: &Runtime,
-    selection: Analysis,
-    cancel: &AtomicBool,
-    progress: &dyn Fn(String),
-) -> Result<GraphData> {
-    let snapshot = analyze_snapshot(runtime, selection, cancel, progress)?;
-    Ok(snapshot.graph.data.to_graph_data())
+fn exchange_quiet(runtime: &Runtime, request: Request) -> Result<Event> {
+    exchange(runtime, &request, &AtomicBool::new(false), &|_| {})
 }
 
 fn exchange(
@@ -121,7 +70,7 @@ fn exchange(
     cancel: &AtomicBool,
     progress: &dyn Fn(String),
 ) -> Result<Event> {
-    ensure!(!cancel.load(Ordering::Relaxed), "Analysis cancelled");
+    require_running(cancel)?;
     let mut child = process::Session::start(runtime, request)?;
     let mut conversation = Conversation {
         typed_failure: matches!(
@@ -139,7 +88,7 @@ fn exchange(
         }
     }
     let status = child.finish()?;
-    ensure!(!cancel.load(Ordering::Relaxed), "Analysis cancelled");
+    require_running(cancel)?;
     ensure!(
         status.success(),
         "Engine failed ({status}): {}",
@@ -148,6 +97,18 @@ fn exchange(
     conversation
         .terminal
         .context("Engine exited without a terminal result")
+}
+
+fn require_running(cancel: &AtomicBool) -> Result<()> {
+    ensure!(
+        !cancel.load(Ordering::Relaxed),
+        AnalysisFailure {
+            code: Some(AnalysisFailureCode::Cancelled),
+            message: "Analysis cancelled".into(),
+            target: None,
+        }
+    );
+    Ok(())
 }
 
 #[derive(Default)]

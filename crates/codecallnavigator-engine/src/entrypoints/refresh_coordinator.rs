@@ -400,6 +400,7 @@ mod tests {
                 roots: Vec::new(),
                 analysis_milliseconds: 123.0,
                 metrics: serde_json::json!({"complete":true}),
+                retention: None,
             },
         };
         let watching = Activity {

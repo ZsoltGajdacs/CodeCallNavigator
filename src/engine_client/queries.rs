@@ -135,6 +135,7 @@ impl QueryContext {
             graph,
             navigation,
             context: self,
+            retention: None,
         })
     }
 
@@ -182,4 +183,5 @@ pub struct Snapshot {
     pub navigation: Arc<crate::projection::NavigationInventory>,
     pub graph: Arc<GraphIndex>,
     pub context: QueryContext,
+    pub retention: Option<codecallnavigator::protocol::GraphRetention>,
 }

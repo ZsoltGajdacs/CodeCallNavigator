@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Exercise native SDK MCP tools with a real compiler fixture and PATH-installed CLI."""
 import argparse
+from dataclasses import dataclass
 import json
 import os
 from pathlib import Path
@@ -11,6 +12,17 @@ import tempfile
 from agent_cli import AcceptanceError, require
 from agent_journeys import fixture
 from agent_mcp import Client
+from graph_bundle import graph_path
+
+
+@dataclass(frozen=True)
+class Project:
+    root: Path
+    engine: Path
+    environment: dict
+
+    def manifest(self, *, required=True):
+        return graph_path(self.root, self.engine, self.environment, required=required)
 
 
 def methods(client, text, generation):
@@ -68,10 +80,10 @@ def inspect_graph(client, generation):
     return symbol
 
 
-def edit_and_refresh(client, root, generation, symbol):
-    artifact = root / '.codecallnavigator/graph.json'
+def edit_and_refresh(client, project, generation, symbol):
+    artifact = project.manifest()
     before = artifact.read_bytes()
-    (root / 'other.ts').write_text('export function start(): number { return 42; }\n')
+    (project.root / 'other.ts').write_text('export function start(): number { return 42; }\n')
     status = client.call('edited-inputs', 'graph_status', {})
     require(status['freshness']['input_status'] == 'stale', 'Edited inputs must become stale')
     client.call('analyzed-source', 'symbol_source', {
@@ -79,7 +91,7 @@ def edit_and_refresh(client, root, generation, symbol):
     })
     repeated = client.call('repeated-status', 'graph_status', {'expected_generation': generation})
     require(repeated['generation'] == generation, 'Queries must not replace the generation')
-    require(artifact.read_bytes() == before, 'Read queries must preserve artifact bytes')
+    require(project.manifest().read_bytes() == before, 'Read queries must preserve artifact bytes')
     client.call('explicit-refresh-after-edit', 'refresh_graph', {})
     client.call('old-generation', 'graph_status', {'expected_generation': generation},
                 error='generation_mismatch')
@@ -87,13 +99,13 @@ def edit_and_refresh(client, root, generation, symbol):
     require(latest['generation'] != generation, 'Explicit refresh must publish a new generation')
 
 
-def protocol(client, root):
+def protocol(client, project):
     tools = client.request('tools/list', {})
     names = {tool['name'] for tool in tools['tools']}
     require({'graph_status', 'find_symbols', 'graph_section', 'function_flow', 'refresh_graph'} <= names,
             'MCP server must advertise companion workflow tools')
     client.call('missing-graph', 'graph_status', {}, error='graph_missing')
-    require(not (root / '.codecallnavigator/graph.json').exists(),
+    require(project.manifest(required=False) is None,
             'Status must not create a missing graph')
     client.call('discover', 'discover_builds', {})
     client.call('explicit-initial-refresh', 'refresh_graph', {})
@@ -103,7 +115,7 @@ def protocol(client, root):
     if freshness == 'unverifiable':
         require(status['freshness']['reasons'], 'Unverifiable freshness must retain reasons')
     symbol = inspect_graph(client, status['generation'])
-    edit_and_refresh(client, root, status['generation'], symbol)
+    edit_and_refresh(client, project, status['generation'], symbol)
     return freshness
 
 
@@ -127,7 +139,7 @@ def run(args):
         }
         command = [args.mcp, '--engine', args.engine, '--project', str(root)]
         with Client(command, environment) as client:
-            freshness = protocol(client, root)
+            freshness = protocol(client, Project(root, args.engine, environment))
         report = {'status': 'passed', 'initial_freshness': freshness,
                   'host_behavior': 'not-tested; see integrations/shared/journeys.md',
                   'records': client.records, 'unavailable': unavailable(args, root, environment)}

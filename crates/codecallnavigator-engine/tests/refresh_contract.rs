@@ -43,7 +43,7 @@ fn publish(root: &Path, note: &str) -> String {
     };
     let graph = artifact::canonical(&graph, &[("repo".into(), root.into())]).unwrap();
     artifact::publish(root, &graph, &AtomicBool::new(false)).unwrap();
-    blake3::hash(&fs::read(root.join(artifact::GRAPH_PATH)).unwrap())
+    blake3::hash(&fs::read(artifact::working_manifest_path(root).unwrap()).unwrap())
         .to_hex()
         .to_string()
 }
@@ -78,7 +78,7 @@ fn intervening_manual_publication_rejects_planned_generation_under_child_lock() 
     let frames = exchange(selected);
     assert_eq!(frames.last().unwrap()["code"], "generation_changed");
     assert_eq!(
-        blake3::hash(&fs::read(root.path().join(artifact::GRAPH_PATH)).unwrap())
+        blake3::hash(&fs::read(artifact::working_manifest_path(root.path()).unwrap()).unwrap())
             .to_hex()
             .to_string(),
         current

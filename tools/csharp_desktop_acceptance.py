@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Exercise a relocated native app using an isolated, compiler-analyzed C# fixture."""
-from graph_bundle import load as load_bundle, stored_bytes
+from graph_bundle import graph_path, load as load_bundle, stored_bytes
 import argparse
 from dataclasses import dataclass
 import hashlib
@@ -62,11 +62,13 @@ def defer_for_desktop(output, version):
     return status
 
 
-def clean_environment():
+def clean_environment(project=None):
     environment = dict(os.environ)
     for key in list(environment):
         if key.startswith("CODECALLNAVIGATOR_"):
             environment.pop(key)
+    if project is not None:
+        environment["CODECALLNAVIGATOR_GRAPH_LIBRARY"] = str(project.parent / "graphs")
     return environment
 
 
@@ -81,7 +83,7 @@ def prepare_fixture(engine, project):
     shutil.copytree(FIXTURE, project)
     projects = list(project.glob("*.csproj"))
     require(len(projects) == 1, "Desktop fixture must have one project")
-    client = Client(engine, clean_environment())
+    client = Client(engine, clean_environment(project))
     started = time.monotonic()
     client.analyze(project, projects[0])
     refresh_seconds = time.monotonic() - started
@@ -94,7 +96,7 @@ def prepare_fixture(engine, project):
     source = flow["result"]["source"]["content"]
     require(source.encode("utf-8") == (project / "Example.cs").read_bytes(),
             "CLI flow must preserve fixture BOM, Unicode and CRLF bytes")
-    artifact_path = project / ".codecallnavigator/graph.json"
+    artifact_path = graph_path(project, engine, client.environment)
     artifact = load_bundle(artifact_path)
     inventory = artifact["graph"]["flow_inventory"]
     metrics = {
@@ -219,7 +221,7 @@ def run_native(run):
         "target_symbol": fixture.target, "source": fixture.source, "timeout_seconds": run.timeout,
         "expected_viewport": VIEWPORT,
     })
-    environment = clean_environment()
+    environment = clean_environment(fixture.project)
     environment.update(CODECALLNAVIGATOR_DATA_DIR=str(run.store),
                        CODECALLNAVIGATOR_FLOW_ACCEPTANCE=str(directory), PATH="/usr/bin:/bin")
     command = [str(app / "Contents/MacOS/CodeCallNavigator"), "--native", "--trace",

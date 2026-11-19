@@ -18,15 +18,16 @@ DEFERRED_DESKTOP_EXITS = {
 
 
 def console_users(nodes):
-    if not isinstance(nodes, list):
+    if isinstance(nodes, list):
+        for node in nodes:
+            yield from console_users(node)
         return
-    for node in nodes:
-        if not isinstance(node, dict):
-            continue
-        users = node.get("IOConsoleUsers")
-        if isinstance(users, list):
-            yield from users
-        yield from console_users(node.get("IORegistryEntryChildren"))
+    if not isinstance(nodes, dict):
+        return
+    users = nodes.get("IOConsoleUsers")
+    if isinstance(users, list):
+        yield from users
+    yield from console_users(nodes.get("IORegistryEntryChildren"))
 
 
 def parse_console_sessions(payload):

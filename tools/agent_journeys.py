@@ -10,6 +10,7 @@ import tempfile
 
 from agent_cli import AcceptanceError, Client, require
 from check_graph_contract import consume_bundle
+from graph_bundle import copy_bundle, graph_path
 
 
 def fixture(root, modules):
@@ -79,7 +80,7 @@ def inspect_graph(client, generation):
 
 
 def edit_and_refresh(client, root, generation, symbol):
-    artifact = root / '.codecallnavigator/graph.json'
+    artifact = graph_path(root, client.engine, client.environment)
     before = artifact.read_bytes()
     (root / 'other.ts').write_text('export function start(): number { return 42; }\n')
     status = client.query('edited-inputs', {'kind': 'status'})
@@ -89,7 +90,7 @@ def edit_and_refresh(client, root, generation, symbol):
     }, generation)
     repeated = client.query('repeated-status', {'kind': 'status'}, generation)
     require(repeated['generation'] == generation, 'Queries must not replace the generation')
-    require(artifact.read_bytes() == before, 'Read queries must preserve artifact bytes')
+    require(graph_path(root, client.engine, client.environment).read_bytes() == before, 'Read queries must preserve artifact bytes')
     client.analyze('explicit-refresh-after-edit')
     client.query('old-generation', {'kind': 'status'}, generation, error='generation_mismatch')
     latest = client.query('new-generation', {'kind': 'status'})
@@ -101,7 +102,7 @@ def protocol(client, root):
     require(capabilities.get('query_version') == 2 and capabilities.get('generation_binding'),
             'CLI must support query contract version 2 and generation binding')
     client.query('missing-graph', {'kind': 'status'}, error='graph_missing')
-    require(not (root / '.codecallnavigator/graph.json').exists(),
+    require(graph_path(root, client.engine, client.environment, required=False) is None,
             'Status must not create a missing graph')
     client.command('discover', ['discover', str(root)])
     client.analyze('explicit-initial-refresh')
@@ -109,7 +110,7 @@ def protocol(client, root):
     # CLI publication includes sufficient contracts for an independent consumer.
     with tempfile.TemporaryDirectory(prefix='offline-graph-consumer-') as directory:
         bundle = Path(directory) / 'bundle'
-        shutil.copytree(root / '.codecallnavigator', bundle)
+        copy_bundle(graph_path(root, client.engine, client.environment), bundle)
         result = consume_bundle(bundle / 'graph.json')
         require(result['symbols'] and result['relationships'], 'Offline consumer must resolve real graph edges')
         require(len((bundle / 'README.md').read_text().split()) < 200, 'Bundle README must stay terse')

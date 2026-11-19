@@ -1,17 +1,13 @@
-//! Saved Git fixtures exercise the public CLI without compiling current sources.
+//! Saved library fixtures exercise the public CLI without compiling current sources.
+use crate::flow_comparison::tests::{fixture_runtime, git, retain_scene};
 use crate::{app::State, jobs, view};
-use codecallnavigator::{artifact, model::GraphData};
+use codecallnavigator::model::GraphData;
 use rune::{Env, Runtime};
-use std::{fs, path::Path};
+use std::path::Path;
 pub(super) fn commit(root: &Path, graph: &GraphData, name: &str) {
-    let saved = artifact::canonical(graph, &[("repo".into(), "/snapshot".into())]).unwrap();
-    artifact::publish(root, &saved, &std::sync::atomic::AtomicBool::new(false)).unwrap();
-    crate::flow_comparison::tests::git(
-        root,
-        &["add", artifact::GRAPH_PATH, ".codecallnavigator/objects"],
-    );
-    crate::flow_comparison::tests::git(root, &["commit", "--allow-empty", "-qm", name]);
-    crate::flow_comparison::tests::git(root, &["tag", name]);
+    git(root, &["commit", "--allow-empty", "-qm", name]);
+    git(root, &["tag", name]);
+    retain_scene(root, graph, "HEAD");
 }
 pub(super) fn runtime(
     before: GraphData,
@@ -25,18 +21,14 @@ pub(super) fn runtime(
         &["config", "user.name", "Comparison UI"],
         &["config", "user.email", "test@example.invalid"],
     ] {
-        crate::flow_comparison::tests::git(root, args);
+        git(root, args);
     }
-    fs::create_dir(root.join(".codecallnavigator")).unwrap();
     commit(root, &before, "base");
     commit(root, &after, "head");
-    fs::remove_file(root.join(artifact::GRAPH_PATH)).unwrap();
     let mut state = State::new();
     state.root = rune::TextEdit::new(root.to_string_lossy());
     state.project_open.folder = Some(state.root.text.clone());
-    state.runtime = Some(std::sync::Arc::new(
-        crate::runtime::Runtime::discover().unwrap(),
-    ));
+    state.runtime = Some(std::sync::Arc::new(fixture_runtime(root)));
     let mut runtime = Runtime::new(state, view::view, (1050.0, 680.0), Env::new(dark, 1.0));
     runtime.poll = Some(jobs::poll);
     runtime.on_key = Some(view::key);

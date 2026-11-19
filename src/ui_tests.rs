@@ -390,6 +390,7 @@ fn assert_reusable_presentation_cache(
             metrics: None,
             context: graph.context.clone(),
             presentation_cache: None,
+            retention: None,
         },
         crate::graph_install::Mode::Restore,
     );

@@ -7,7 +7,7 @@ use serde_json::{Value, json};
 use std::{fs, os::unix::fs::PermissionsExt, sync::atomic::AtomicBool};
 
 fn endpoint(reference: &str) -> Value {
-    json!({"kind":"commit","requested_ref":reference,"commit":"a".repeat(64),"path":".codecallnavigator/graph.json","schema":null,"digest":"b".repeat(64)})
+    json!({"kind":"commit","requested_ref":reference,"commit":"a".repeat(64),"path":"/library/commits/graph.json","schema":null,"digest":"b".repeat(64)})
 }
 fn header() -> Value {
     json!({"version":1,"base":endpoint("base"),"head":endpoint("head"),"comparison_id":"c".repeat(64)})

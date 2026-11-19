@@ -2,6 +2,7 @@
 use super::{
     analyze_compiled,
     build::{self, PreparedJava},
+    compile_observation::FreshOutputs,
     contexts,
     maven::MavenSources,
     refresh_outputs,
@@ -21,6 +22,7 @@ pub(in crate::analyzers) struct CompiledJava {
     metadata: build::JavaBuildMetadata,
     fingerprints: Vec<FileFingerprint>,
     extraction: Vec<FileFingerprint>,
+    output_attribution_limit: Option<String>,
 }
 
 #[derive(Debug)]
@@ -33,6 +35,10 @@ impl std::fmt::Display for ExtractionOutputsChanged {
 }
 
 impl CompiledJava {
+    pub(in crate::analyzers) fn output_attribution_limit(&self) -> Option<&str> {
+        self.output_attribution_limit.as_deref()
+    }
+
     pub(in crate::analyzers) fn verify(&self) -> Result<()> {
         ensure_unchanged(&self.fingerprints)?;
         ensure_unchanged(&self.extraction).context(ExtractionOutputsChanged)
@@ -48,6 +54,8 @@ impl CompiledJava {
         build::require_compiled_outputs(&self.metadata)?;
         self.extraction = extraction_fingerprints(&self.metadata)?.0;
         self.verify()?;
+        self.output_attribution_limit =
+            Some("Java outputs changed after the observed compiler attempt".into());
         Ok(true)
     }
 
@@ -87,9 +95,14 @@ pub(in crate::analyzers) fn compile(
         "Compiling all Java source sets for {}…",
         build.label
     ));
+    let initial_outputs = FreshOutputs::before(prepared.metadata());
     let compilation = build::compile(build, context)?;
     let metadata = compilation.metadata;
     prepared.verify_compiled(build, &metadata)?;
+    let output_attribution_limit = initial_outputs
+        .and_then(|before| before.verify(&metadata, &compilation.observations))
+        .err()
+        .map(|error| format!("{error:#}"));
     let mut fingerprints = prepared.configuration_before.clone();
     fingerprints.extend(build::snapshot(build, &metadata, true)?);
     fingerprints.extend(
@@ -105,6 +118,7 @@ pub(in crate::analyzers) fn compile(
         metadata,
         fingerprints,
         extraction,
+        output_attribution_limit,
     };
     compiled.verify()?;
     Ok(compiled)

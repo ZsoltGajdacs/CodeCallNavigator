@@ -78,6 +78,8 @@ pub enum Event {
         fingerprints: Vec<FileFingerprint>,
         engine_versions: String,
         metrics: serde_json::Value,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        retention: Option<GraphRetention>,
     },
     Failed {
         message: String,
@@ -86,6 +88,28 @@ pub enum Event {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         target: Option<TargetFailure>,
     },
+}
+
+/// Commit attribution of the exact graph just published.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "status", rename_all = "snake_case", deny_unknown_fields)]
+pub enum GraphRetention {
+    Verified { commit: String, snapshot: String },
+    WorkingOnly { reason: String },
+}
+
+impl std::fmt::Display for GraphRetention {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Verified { commit, snapshot } => {
+                write!(
+                    formatter,
+                    "Saved verified commit snapshot {snapshot} for {commit}"
+                )
+            }
+            Self::WorkingOnly { reason } => write!(formatter, "Saved working graph only: {reason}"),
+        }
+    }
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]

@@ -8,7 +8,7 @@ import unittest
 from unittest.mock import patch, Mock
 
 from comparison_desktop_cleanup import OwnedRun, Process, group_alive, wait_groups, query_leases, stop_verified, termination_snapshot, wait_terminated
-from comparison_desktop_gate import Gate
+from comparison_desktop_gate import Gate, resolution_arguments
 
 
 class ComparisonFailureCleanupTests(unittest.TestCase):
@@ -29,11 +29,10 @@ class ComparisonFailureCleanupTests(unittest.TestCase):
             project.mkdir()
             output.mkdir()
             engine = root / "test-engine"
-            gate = Gate(project, output, "a" * 40 + ":.codecallnavigator/graph.json", "b" * 32, engine)
+            gate = Gate(project, output, "b" * 32, engine)
             gate.install()
             gate.arm()
-            arguments = [str(output / "path/git"), "--no-pager", "-C", str(project),
-                         "cat-file", "blob", gate.blob]
+            arguments = [str(output / "path/git"), *resolution_arguments(project)]
             engine.write_text("#!/usr/bin/python3\nimport subprocess,sys,time,pathlib\n"
                               f"subprocess.call({arguments!r})\n"
                               f"while not pathlib.Path({str(root / 'allow-session-exit')!r}).exists():time.sleep(0.01)\n")

@@ -206,7 +206,7 @@ impl Case {
                 (ExpectedSide::Ready { .. }, ExpectedSide::Missing)
             ),
             CaseKind::Legacy => {
-                matches!((&self.before,&self.after),(ExpectedSide::Unavailable{reason},ExpectedSide::Ready{..}) if reason=="missing_source")
+                matches!((&self.before,&self.after),(ExpectedSide::Unavailable{reason},ExpectedSide::Ready{..}) if reason=="missing_function")
             }
             CaseKind::Changed => matches!(
                 equality,

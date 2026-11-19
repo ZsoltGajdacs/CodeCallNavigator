@@ -1,5 +1,8 @@
 use super::*;
-use crate::model::GraphData;
+use crate::{
+    artifact::local_snapshots::{Retention, SnapshotIdentity, Store},
+    model::GraphData,
+};
 
 fn git(root: &Path, args: &[&str]) {
     let output = Command::new("git")
@@ -15,60 +18,73 @@ fn git(root: &Path, args: &[&str]) {
     );
 }
 
+fn init(repo: &Path) {
+    git(repo, &["init", "-q"]);
+    git(repo, &["config", "user.name", "Tests"]);
+    git(repo, &["config", "user.email", "test@example.invalid"]);
+}
+
 #[test]
-fn committed_nested_snapshots_bind_exact_bytes_without_a_working_graph() {
+fn verified_nested_snapshots_bind_exact_bytes_without_a_working_graph() {
     let repo = tempfile::tempdir().unwrap();
+    let library = tempfile::tempdir().unwrap();
+    let store = Store::at(library.path().into());
     let project = repo.path().join("nested project");
-    fs::create_dir_all(project.join(".codecallnavigator")).unwrap();
-    let artifact =
-        super::super::canonical(&GraphData::default(), &[("repo".into(), project.clone())])
-            .unwrap();
-    super::super::publish(
-        &project,
-        &artifact,
-        &std::sync::atomic::AtomicBool::new(false),
-    )
-    .unwrap();
-    let bytes = fs::read(project.join(GRAPH_PATH)).unwrap();
-    git(repo.path(), &["init", "-q"]);
-    git(repo.path(), &["config", "user.name", "Tests"]);
-    git(
-        repo.path(),
-        &["config", "user.email", "test@example.invalid"],
-    );
+    fs::create_dir(&project).unwrap();
+    fs::write(project.join("build.gradle"), "").unwrap();
+    init(repo.path());
     git(repo.path(), &["add", "."]);
     git(repo.path(), &["commit", "-qm", "baseline"]);
     git(repo.path(), &["tag", "baseline"]);
-    let worktree = load(&project, "WORKTREE").unwrap();
-    fs::remove_file(project.join(GRAPH_PATH)).unwrap();
-    let snapshot = load(&project, "baseline").unwrap();
-    assert_eq!(snapshot.endpoint.kind, EndpointKind::Commit);
-    assert_eq!(
-        snapshot.endpoint.digest,
-        blake3::hash(&bytes).to_hex().to_string()
+    let repository = Repository::open(&project).unwrap();
+    let commit = repository.resolve("baseline").unwrap();
+    let artifact =
+        super::super::canonical(&GraphData::default(), &[("repo".into(), project.clone())])
+            .unwrap();
+    let encoded = artifact.encode().unwrap();
+    let record = store
+        .retain(
+            &repository.common_dir,
+            Retention {
+                identity: SnapshotIdentity {
+                    commit: commit.clone(),
+                    project: repository.project.clone(),
+                    analyzer: "fixture".into(),
+                    selection: "{}".into(),
+                },
+                encoded: &encoded,
+            },
+            &AtomicBool::new(false),
+        )
+        .unwrap();
+    let read = inspection::read_cached(&store, &repository, commit.clone(), None).unwrap();
+    assert_eq!(read.kind, EndpointKind::Commit);
+    assert_eq!(read.bytes, encoded.as_ref());
+    assert_eq!(read.snapshot.unwrap(), record);
+    assert_eq!(read.commit.as_deref(), Some(commit.as_str()));
+    assert!(Path::new(&read.path).starts_with(library.path()));
+    assert!(
+        Path::new(&read.path)
+            .components()
+            .any(|part| part.as_os_str() == commit.as_str())
     );
-    assert_eq!(snapshot.endpoint.digest, worktree.endpoint.digest);
-    assert_eq!(
-        snapshot.endpoint.path,
-        "nested project/.codecallnavigator/graph.json"
+    assert!(read.decoded.unwrap().validate().is_ok());
+
+    git(
+        repo.path(),
+        &["commit", "--allow-empty", "-qm", "another commit"],
     );
-    assert_eq!(snapshot.endpoint.path, worktree.endpoint.path);
-    assert_eq!(snapshot.endpoint.commit.as_ref().unwrap().len(), 40);
-    assert!(snapshot.artifact.validate().is_ok());
-    assert_eq!(
-        error_code(&load(&project, "WORKTREE").err().unwrap()),
-        "graph_missing"
-    );
-    assert_eq!(
-        error_code(&load(&project, "missing").err().unwrap()),
-        "revision_unavailable"
-    );
-    assert!(!project.join(GRAPH_PATH).exists());
+    let other = repository.resolve("HEAD").unwrap();
+    let error = inspection::read_cached(&store, &repository, other, Some(&record.id))
+        .err()
+        .unwrap();
+    assert_eq!(error_code(&error), "snapshot_missing");
+    assert!(!project.join(".codecallnavigator").exists());
     assert!(!repo.path().join(".git/FETCH_HEAD").exists());
 }
 
 #[test]
-fn malformed_inputs_and_revision_syntax_fail_explicitly() {
+fn malformed_revisions_and_legacy_working_paths_fail_explicitly() {
     let directory = tempfile::tempdir().unwrap();
     for revision in ["", "--help", "HEAD:file", "HEAD\nHEAD"] {
         assert_eq!(
@@ -77,66 +93,126 @@ fn malformed_inputs_and_revision_syntax_fail_explicitly() {
         );
     }
     fs::create_dir(directory.path().join(".codecallnavigator")).unwrap();
-    fs::write(directory.path().join(GRAPH_PATH), "not json").unwrap();
+    fs::write(
+        directory.path().join(".codecallnavigator/graph.json"),
+        "legacy",
+    )
+    .unwrap();
     assert_eq!(
         error_code(&load(directory.path(), "WORKTREE").err().unwrap()),
-        "invalid_graph"
+        "graph_missing"
     );
 }
 
 #[test]
-fn working_paths_only_fall_back_for_nonrepositories() {
-    let timeout = working_path(Err(failure(
-        "git_timeout",
-        "Git snapshot read exceeded 30 seconds",
-    )))
-    .unwrap_err();
-    assert_eq!(error_code(&timeout), "git_timeout");
-    let unavailable =
-        working_path(Err(failure("revision_unavailable", "permission denied"))).unwrap_err();
-    assert_eq!(error_code(&unavailable), "revision_unavailable");
+fn legacy_committed_graphs_are_not_loaded() {
+    let repo = tempfile::tempdir().unwrap();
+    init(repo.path());
+    fs::create_dir(repo.path().join(".codecallnavigator")).unwrap();
+    fs::write(repo.path().join(".codecallnavigator/graph.json"), "legacy").unwrap();
+    git(repo.path(), &["add", "-f", ".codecallnavigator/graph.json"]);
+    git(repo.path(), &["commit", "-qm", "legacy graph"]);
     assert_eq!(
-        working_path(Err(failure(
-            "revision_unavailable",
-            "fatal: not a git repository"
-        )))
-        .unwrap(),
-        GRAPH_PATH
+        error_code(&load(repo.path(), "HEAD").err().unwrap()),
+        "graph_missing"
+    );
+}
+
+#[test]
+fn revision_proof_reads_the_original_tree_when_git_replace_is_configured() {
+    let repo = tempfile::tempdir().unwrap();
+    init(repo.path());
+    let file = repo.path().join("source");
+    fs::write(&file, "original").unwrap();
+    git(repo.path(), &["add", "source"]);
+    git(repo.path(), &["commit", "-qm", "original"]);
+    let repository = Repository::open(repo.path()).unwrap();
+    let original = repository.resolve("HEAD").unwrap();
+    let cancel = AtomicBool::new(false);
+    let original_tree = repository.tree(&original, &cancel).unwrap();
+    fs::write(&file, "replacement").unwrap();
+    git(repo.path(), &["commit", "-qam", "replacement"]);
+    git(repo.path(), &["replace", &original, "HEAD"]);
+
+    let proven_tree = repository.tree(&original, &cancel).unwrap();
+    assert_eq!(
+        proven_tree["source"].regular_blob(),
+        original_tree["source"].regular_blob()
+    );
+}
+
+#[test]
+fn inherited_git_environment_cannot_redirect_an_explicit_project() {
+    const PROJECT: &str = "CODECALLNAVIGATOR_GIT_ENV_TEST_PROJECT";
+    const COMMIT: &str = "CODECALLNAVIGATOR_GIT_ENV_TEST_COMMIT";
+    if let Some(project) = std::env::var_os(PROJECT) {
+        let project = std::path::PathBuf::from(project).canonicalize().unwrap();
+        let repository = Repository::detect(&project).unwrap().unwrap();
+        assert_eq!(repository.root, project.parent().unwrap());
+        assert_eq!(repository.common_dir, repository.root.join(".git"));
+        assert_eq!(repository.project, "nested");
+        assert_eq!(
+            repository.resolve("HEAD").unwrap(),
+            std::env::var(COMMIT).unwrap()
+        );
+        return;
+    }
+
+    let selected = tempfile::tempdir().unwrap();
+    let project = selected.path().join("nested");
+    fs::create_dir(&project).unwrap();
+    fs::write(project.join("source"), "selected source").unwrap();
+    init(selected.path());
+    git(selected.path(), &["add", "nested"]);
+    git(selected.path(), &["commit", "-qm", "selected"]);
+    let expected = resolve_commit(selected.path(), "HEAD").unwrap();
+
+    let foreign = tempfile::tempdir().unwrap();
+    init(foreign.path());
+    git(
+        foreign.path(),
+        &["commit", "--allow-empty", "-qm", "foreign"],
+    );
+    let foreign_git = foreign.path().join(".git");
+    let result = Command::new(std::env::current_exe().unwrap())
+        .args([
+            "--exact",
+            "artifact::revision::tests::inherited_git_environment_cannot_redirect_an_explicit_project",
+        ])
+        .env(PROJECT, project)
+        .env(COMMIT, expected)
+        .env("GIT_DIR", &foreign_git)
+        .env("GIT_COMMON_DIR", &foreign_git)
+        .env("GIT_WORK_TREE", foreign.path())
+        .env("GIT_INDEX_FILE", foreign_git.join("index"))
+        .env("GIT_OBJECT_DIRECTORY", foreign_git.join("objects"))
+        .env("GIT_CONFIG_COUNT", "1")
+        .env("GIT_CONFIG_KEY_0", "core.worktree")
+        .env("GIT_CONFIG_VALUE_0", foreign.path())
+        .output()
+        .unwrap();
+    assert!(
+        result.status.success() && String::from_utf8_lossy(&result.stdout).contains("1 passed"),
+        "{}\n{}",
+        String::from_utf8_lossy(&result.stdout),
+        String::from_utf8_lossy(&result.stderr),
     );
 }
 
 #[test]
 fn missing_promisor_blob_never_starts_lazy_fetch() {
     let repo = tempfile::tempdir().unwrap();
-    fs::create_dir(repo.path().join(".codecallnavigator")).unwrap();
-    let artifact = super::super::canonical(
-        &GraphData::default(),
-        &[("repo".into(), repo.path().into())],
-    )
-    .unwrap();
-    super::super::publish(
-        repo.path(),
-        &artifact,
-        &std::sync::atomic::AtomicBool::new(false),
-    )
-    .unwrap();
-    git(repo.path(), &["init", "-q"]);
-    git(repo.path(), &["config", "user.name", "Tests"]);
-    git(
-        repo.path(),
-        &["config", "user.email", "test@example.invalid"],
-    );
-    git(repo.path(), &["add", "."]);
+    init(repo.path());
+    let source = b"tracked source";
+    fs::write(repo.path().join("source"), source).unwrap();
+    git(repo.path(), &["add", "source"]);
     git(repo.path(), &["commit", "-qm", "baseline"]);
-    let output = Command::new("git")
-        .arg("-C")
-        .arg(repo.path())
-        .args(["rev-parse", &format!("HEAD:{GRAPH_PATH}")])
-        .output()
-        .unwrap();
-    assert!(output.status.success());
-    let blob = String::from_utf8(output.stdout).unwrap();
-    let blob = blob.trim();
+
+    let repository = Repository::open(repo.path()).unwrap();
+    let commit = repository.resolve("HEAD").unwrap();
+    let cancel = AtomicBool::new(false);
+    let tree = repository.tree(&commit, &cancel).unwrap();
+    let blob = tree["source"].regular_blob().unwrap();
     fs::remove_file(
         repo.path()
             .join(".git/objects")
@@ -159,8 +235,8 @@ fn missing_promisor_blob_never_starts_lazy_fetch() {
             &format!("ext::/usr/bin/touch {}", marker.display()),
         ],
     );
-    let error = load(repo.path(), "HEAD").err().unwrap();
-    assert_eq!(error_code(&error), "graph_missing");
+    let hashes = [(blob.into(), blake3::hash(source).to_hex().to_string())].into();
+    assert!(repository.verify_blobs(&hashes, &cancel).is_err());
     assert!(
         !marker.exists(),
         "Reading a missing blob started a fetch helper"

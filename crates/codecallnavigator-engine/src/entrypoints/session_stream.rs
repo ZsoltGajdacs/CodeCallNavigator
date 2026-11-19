@@ -363,6 +363,7 @@ impl<'a> Monitor<'a> {
             roots,
             fingerprints,
             metrics,
+            retention,
             ..
         } = event
         else {
@@ -387,6 +388,7 @@ impl<'a> Monitor<'a> {
                 roots,
                 analysis_milliseconds,
                 metrics,
+                retention,
             },
         );
     }

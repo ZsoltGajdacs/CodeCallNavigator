@@ -326,7 +326,8 @@ struct PublishedCliGraph {
 }
 
 fn published_cli_graph(project: &Path, store: &SqliteStore) -> PublishedCliGraph {
-    let bytes = fs::read(project.join(codecallnavigator::artifact::GRAPH_PATH)).unwrap();
+    let bytes =
+        fs::read(codecallnavigator::artifact::working_manifest_path(project).unwrap()).unwrap();
     let context = store.load_session().unwrap().unwrap()["graph_context"].clone();
     let response = query_cli_snapshot(&context);
     let published = PublishedCliGraph { bytes, context };
@@ -357,7 +358,7 @@ impl PublishedCliGraph {
 
 fn assert_cli_graph_preserved(project: &Path, store: &SqliteStore, published: &PublishedCliGraph) {
     assert_eq!(
-        fs::read(project.join(codecallnavigator::artifact::GRAPH_PATH)).unwrap(),
+        fs::read(codecallnavigator::artifact::working_manifest_path(project).unwrap()).unwrap(),
         published.bytes
     );
     let context = store.load_session().unwrap().unwrap()["graph_context"].clone();

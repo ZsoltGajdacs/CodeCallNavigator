@@ -1,7 +1,27 @@
 //! SQLite may touch sidecars, so validate all owned paths before opening it.
 use anyhow::{Result, ensure};
-use std::path::{Path, PathBuf};
+use std::{
+    fs,
+    io::ErrorKind,
+    path::{Path, PathBuf},
+};
+
+pub(super) fn path(project: &Path) -> Result<PathBuf> {
+    Ok(crate::artifact::project_state_directory(project)?.join("inference.sqlite3"))
+}
+
 pub(super) fn validate(path: &Path) -> Result<()> {
+    if let Some(parent) = path.parent() {
+        match fs::symlink_metadata(parent) {
+            Ok(metadata) => ensure!(
+                metadata.file_type().is_dir(),
+                "Inference cache directory is not a real directory: {}",
+                parent.display()
+            ),
+            Err(error) if error.kind() == ErrorKind::NotFound => {}
+            Err(error) => return Err(error.into()),
+        }
+    }
     regular_or_missing(path)?;
     for suffix in ["-wal", "-shm", "-journal"] {
         let mut sidecar = path.as_os_str().to_os_string();
@@ -11,9 +31,9 @@ pub(super) fn validate(path: &Path) -> Result<()> {
     Ok(())
 }
 fn regular_or_missing(path: &Path) -> Result<()> {
-    let metadata = match std::fs::symlink_metadata(path) {
+    let metadata = match fs::symlink_metadata(path) {
         Ok(metadata) => metadata,
-        Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(()),
+        Err(error) if error.kind() == ErrorKind::NotFound => return Ok(()),
         Err(error) => return Err(error.into()),
     };
     ensure!(

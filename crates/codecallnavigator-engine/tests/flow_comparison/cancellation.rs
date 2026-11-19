@@ -1,6 +1,5 @@
-//! Cancellation kills the query-owned Git group before a blocked blob read can publish anything.
+//! Cancellation kills the query-owned Git group during a stalled revision lookup.
 use super::support::*;
-use codecallnavigator_core::artifact;
 use serde_json::json;
 use std::{
     fs,
@@ -20,9 +19,9 @@ fn cancellation_during_git_read_preserves_artifacts_and_reaps_the_git_group() {
     let wrapper = driver.path().join("git");
     // Creating the ready path before printf completes lets the test observe an
     // empty PID. Rename a complete marker so readiness also proves its payload.
-    fs::write(&wrapper,format!("#!/bin/sh\ncase \"$*\" in *'cat-file blob'*) printf '%s' \"$$\" > '{}.tmp'; mv '{}.tmp' '{}'; sleep 30;; esac\nexec /usr/bin/git \"$@\"\n",marker.display(),marker.display(),marker.display())).unwrap();
+    fs::write(&wrapper,format!("#!/bin/sh\ncase \"$*\" in *'rev-parse --verify'*) printf '%s' \"$$\" > '{}.tmp'; mv '{}.tmp' '{}'; sleep 30;; esac\nexec /usr/bin/git \"$@\"\n",marker.display(),marker.display(),marker.display())).unwrap();
     fs::set_permissions(&wrapper, fs::Permissions::from_mode(0o755)).unwrap();
-    let saved = fs::read(root.join(artifact::GRAPH_PATH)).unwrap();
+    let saved = fs::read(working_manifest(root)).unwrap();
     let head = git(root, &["rev-parse", "HEAD"]);
     let mut command = engine();
     command
@@ -59,7 +58,7 @@ fn cancellation_during_git_read_preserves_artifacts_and_reaps_the_git_group() {
     );
     assert!(!child.wait().unwrap().success());
     wait_for(|| !running(git_pid));
-    let after = json!({"graph":fs::read(root.join(artifact::GRAPH_PATH)).unwrap(),"head":git(root,&["rev-parse","HEAD"]),"fetch":root.join(".git/FETCH_HEAD").exists(),"lock":root.join(".codecallnavigator/analysis.lock").exists()});
+    let after = json!({"graph":fs::read(working_manifest(root)).unwrap(),"head":git(root,&["rev-parse","HEAD"]),"fetch":root.join(".git/FETCH_HEAD").exists(),"lock":root.join(".codecallnavigator/analysis.lock").exists()});
     assert_eq!(
         after,
         json!({"graph":saved,"head":head,"fetch":false,"lock":false})

@@ -245,7 +245,7 @@ fn generated_compile_sources_and_bodyless_declarations_preserve_graph_policy() {
         "{}",
         String::from_utf8_lossy(&output.stderr)
     );
-    let artifact = root.join(".codecallnavigator/graph.json");
+    let artifact = codecallnavigator_core::artifact::working_manifest_path(root).unwrap();
     let saved = fs::read(&artifact).unwrap();
     let snapshot = query(root, json!({"kind":"snapshot"}));
     let graph = &snapshot["result"];
@@ -392,7 +392,7 @@ fn cross_file_partial_method_keeps_graph_when_flow_source_cannot_match_native_ow
 
 fn assert_cached_compiler_expansion(root: &Path, caller: &str) {
     use codecallnavigator_core::artifact;
-    let path = root.join(artifact::GRAPH_PATH);
+    let path = artifact::working_manifest_path(root).unwrap();
     let bytes = fs::read(&path).unwrap();
     let saved = artifact::load(root).unwrap();
     compiler_expansion::assert_cached_expansion(

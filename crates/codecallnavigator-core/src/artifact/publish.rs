@@ -1,7 +1,11 @@
-use super::{Artifact, EncodedArtifact, GRAPH_PATH, storage};
+use super::{
+    Artifact, EncodedArtifact,
+    local_snapshots::{SnapshotRecord, Store, WorkingPublication},
+    storage,
+};
 use anyhow::{Context, Result};
 use std::{
-    fs::{self, File, OpenOptions},
+    fs::{File, OpenOptions},
     path::{Path, PathBuf},
     sync::atomic::AtomicBool,
 };
@@ -39,22 +43,28 @@ impl std::error::Error for GenerationChanged {}
 /// Own this before taking the input snapshot, through final artifact publication.
 pub struct AnalysisLock {
     project: PathBuf,
+    store: Store,
     _file: LockedFile,
 }
 
 impl AnalysisLock {
     pub fn acquire(project: &Path) -> Result<Self> {
-        let (project, file) = acquire_file(project, "graph.lock", LockOwner::Analysis)?;
+        Self::acquire_in(project, Store::system()?)
+    }
+
+    pub fn acquire_in(project: &Path, store: Store) -> Result<Self> {
+        let (project, file) = acquire_file(&store, project, "graph.lock", LockOwner::Analysis)?;
         Ok(Self {
             project,
+            store,
             _file: file,
         })
     }
 
     pub fn require_generation(&self, expected: &str) -> Result<()> {
-        let bytes = match fs::read(self.project.join(GRAPH_PATH)) {
-            Ok(bytes) => bytes,
-            Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
+        let (_, bytes, _) = match self.store.inspect_working(&self.project) {
+            Ok(working) => working,
+            Err(error) if error.is::<storage::MissingGraph>() => {
                 return Err(GenerationChanged.into());
             }
             Err(error) => return Err(error).context("Cannot check locked graph generation"),
@@ -65,9 +75,25 @@ impl AnalysisLock {
         Ok(())
     }
 
-    /// Publish the exact canonical buffer used for the protocol digest.
     pub fn publish_encoded(&self, bytes: &EncodedArtifact, cancel: &AtomicBool) -> Result<()> {
-        storage::publish(&self.project, bytes, cancel)
+        self.publish_library(
+            WorkingPublication {
+                encoded: bytes,
+                metadata: &serde_json::Value::Null,
+                verified: None,
+            },
+            cancel,
+        )?;
+        Ok(())
+    }
+
+    pub fn publish_library(
+        &self,
+        publication: WorkingPublication<'_>,
+        cancel: &AtomicBool,
+    ) -> Result<Option<SnapshotRecord>> {
+        self.store
+            .publish_working(&self.project, publication, cancel)
     }
 
     pub fn project(&self) -> &Path {
@@ -75,7 +101,7 @@ impl AnalysisLock {
     }
 
     pub fn publish(&self, artifact: &Artifact, cancel: &AtomicBool) -> Result<()> {
-        storage::publish(&self.project, &artifact.encode()?, cancel)
+        self.publish_encoded(&artifact.encode()?, cancel)
     }
 }
 
@@ -85,7 +111,12 @@ pub struct CoordinatorLease {
 }
 impl CoordinatorLease {
     pub fn acquire(project: &Path) -> Result<Self> {
-        let (_, file) = acquire_file(project, COORDINATOR_LOCK_NAME, LockOwner::Coordinator)?;
+        let (_, file) = acquire_file(
+            &Store::system()?,
+            project,
+            COORDINATOR_LOCK_NAME,
+            LockOwner::Coordinator,
+        )?;
         Ok(Self { _file: file })
     }
 }
@@ -105,23 +136,43 @@ impl Drop for LockedFile {
     }
 }
 
-fn acquire_file(project: &Path, name: &str, owner: LockOwner) -> Result<(PathBuf, LockedFile)> {
+fn acquire_file(
+    store: &Store,
+    project: &Path,
+    name: &str,
+    owner: LockOwner,
+) -> Result<(PathBuf, LockedFile)> {
     let project = project
         .canonicalize()
         .context("Cannot open analysis project")?;
-    let directory = project.join(".codecallnavigator");
-    fs::create_dir_all(&directory)?;
-    let file = OpenOptions::new()
-        .create(true)
-        .truncate(false)
-        .read(true)
-        .write(true)
-        .open(directory.join(name))?;
+    let directory = store.ensure_state_directory(&project)?;
+    let mut options = OpenOptions::new();
+    options.create(true).truncate(false).read(true).write(true);
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::OpenOptionsExt;
+        options
+            .mode(0o600)
+            .custom_flags(libc::O_NOFOLLOW | libc::O_NONBLOCK);
+    }
+    let file = options.open(directory.join(name))?;
+    anyhow::ensure!(
+        file.metadata()?.is_file(),
+        "Graph project lock is not a regular file"
+    );
     match file.try_lock() {
         Ok(()) => Ok((project, LockedFile { file })),
         Err(std::fs::TryLockError::WouldBlock) => Err(LockBusy { owner }.into()),
         Err(error) => Err(error).context("Cannot acquire project lock"),
     }
+}
+
+pub fn working_manifest_path(project: &Path) -> Result<PathBuf> {
+    Store::system()?.working_manifest_path(project)
+}
+
+pub fn project_state_directory(project: &Path) -> Result<PathBuf> {
+    Store::system()?.state_directory(project)
 }
 
 pub fn load(project: &Path) -> Result<Artifact> {

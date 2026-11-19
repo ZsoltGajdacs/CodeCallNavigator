@@ -3,28 +3,29 @@
 ## Git graph comparison
 
 Both `ccnavigator` and `codecallnavigator-engine` support saved-graph comparison
-through `query` and `query-session`. Graph refresh and committing the graph are
-separate operations. For example, send this JSON to `ccnavigator query`:
+through `query` and `query-session`. For example, send this JSON to
+`ccnavigator query`:
 
 ```json
 {"version":2,"project":"/checkout","query":{"kind":"compare","base":"main","head":"WORKTREE","offset":0,"limit":100}}
 ```
 
-`base` must resolve to a commit; `head` defaults to `WORKTREE` (the saved graph,
-including uncommitted graph changes), or accepts another commit, branch or tag.
-This compares endpoints directly, without merge-base calculation. Git blobs are
-read at the project's repository-relative `.codecallnavigator/graph.json` path;
-no checkout, fetch, compilation, publication or cache write occurs. A renamed
-artifact path in history is not searched automatically. Git commands have a
-30-second deadline and share the query process group for cancellation.
+`base` must resolve to a commit. `head` defaults to `WORKTREE`, the current
+saved graph for the checkout, and also accepts a commit, branch or tag. The
+query compares endpoints directly using the local graph library. It performs
+no merge-base calculation, checkout, fetch, compilation, or library write.
+Git commands have a 30-second deadline and share the query process group.
+
+For graphs produced by analysis, the working graph’s `status` result includes
+`effective_analysis` with the selected targets, analyzer backends and versions,
+analysis modes, logical roots, and observed dependency identity.
 
 With the `local_snapshots` capability, `snapshot_status` takes a `revision`
-and returns the resolved commit, clone cache path, and retained variants.
-Both `compare` and `flow_comparison` prefer a committed bundle and consult
-the local snapshot cache when the commit has no saved graph. Supply
-`base_snapshot` or `head_snapshot` to select a specific cache variant by ID.
-Cached endpoints include a `snapshot` record with the ID, analysis identity,
-and manifest digest. If several variants are available, an implicit lookup
+and returns the resolved commit, clone directory in the library, and verified
+variants. Supply `base_snapshot` or `head_snapshot` to select a variant by ID
+in `compare` and `flow_comparison`. Commit endpoints include a `snapshot` record
+with variant ID, effective build and analyzer selection, and manifest digest.
+If several variants are available, implicit lookup
 reports `snapshot_ambiguous`.
 
 To prepare an absent snapshot programmatically, send a version-2
@@ -34,7 +35,7 @@ the normal `cancel` request to cancel the operation. The terminal
 `snapshot_prepared` event carries the retained snapshot.
 
 The version-1 result contains `base` and `head` endpoint metadata (`kind`,
-`requested_ref`, resolved `commit`, repository-relative `path`, `schema`, exact-byte
+`requested_ref`, resolved `commit`, absolute manifest `path`, `schema`, exact-byte
 BLAKE3 `digest`), `comparison_id`, `graph_equal`, `metadata_equal`, per-section
 `summary`, and `changes`. Summary keys are JSON Pointer section locations such as
 `/graph/nodes`, `/graph/analysis`, or `/extension-name` for an artifact extension.
@@ -68,7 +69,7 @@ Every page rechecks refs and artifact bytes. Moving a ref, even to a commit with
 identical graph bytes, invalidates the binding. `expected_generation` optionally
 binds the target artifact digest. The envelope generation always identifies that
 target. Working targets include normal source freshness and permit stale saved
-graphs; committed targets have null freshness and need no working artifact or
+graphs. Verified commit targets have null freshness and need no working artifact or
 linked checkout. Historical source freshness is not inferred.
 
 The complete JSON envelope is capped at 24 MiB. Pages may contain fewer records

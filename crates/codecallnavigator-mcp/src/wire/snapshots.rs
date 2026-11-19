@@ -45,6 +45,30 @@ pub fn record(value: &Value) -> Result<()> {
     Ok(())
 }
 
+pub fn retention(value: &Value) -> Result<()> {
+    if value.is_null() {
+        return Ok(());
+    }
+    match value["status"].as_str() {
+        Some("verified") => ensure!(
+            value["commit"].as_str().is_some_and(commit)
+                && value["snapshot"].as_str().is_some_and(super::generation),
+            "Invalid verified commit snapshot in CLI completion"
+        ),
+        Some("working_only") => ensure!(
+            value["reason"]
+                .as_str()
+                .is_some_and(|reason| !reason.trim().is_empty()),
+            "CLI completion omitted why it saved only the working graph"
+        ),
+        _ => anyhow::bail!("Unknown CLI graph retention result"),
+    }
+    Ok(())
+}
+
 pub(super) fn commit(value: &str) -> bool {
-    matches!(value.len(), 40 | 64) && value.bytes().all(|byte| byte.is_ascii_hexdigit())
+    matches!(value.len(), 40 | 64)
+        && value
+            .bytes()
+            .all(|byte| byte.is_ascii_digit() || (b'a'..=b'f').contains(&byte))
 }

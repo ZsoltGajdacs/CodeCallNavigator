@@ -4,7 +4,7 @@
 Each run replaces the same project graph; no graph snapshots are saved. Sampled
 process-tree RSS is a lower bound and can count shared pages more than once.
 """
-from graph_bundle import load as load_bundle, stored_bytes
+from graph_bundle import graph_path, load as load_bundle, stored_bytes
 import argparse
 import json
 from pathlib import Path
@@ -39,7 +39,7 @@ def run(executable, project, targets):
     finally:
         stopped.set()
         sampler.join()
-    graph = load_bundle(project / '.codecallnavigator/graph.json')['graph']
+    graph = load_bundle(graph_path(project, executable))['graph']
     return {'seconds': time.perf_counter() - started,
             'sampled_peak_tree_rss_bytes': max(observations) if observations else None,
             'sampling_errors': errors,

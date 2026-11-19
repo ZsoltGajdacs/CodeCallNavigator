@@ -1,8 +1,8 @@
-//! Read-only saved graph snapshots from immutable Git blobs or the working tree.
+//! Read-only working and verified commit graphs from the local library.
 mod changes;
 mod inspection;
 mod repository;
-use super::{Artifact, GRAPH_PATH, storage};
+use super::{Artifact, storage};
 use anyhow::{Context, Result};
 pub use changes::TrackedChanges;
 pub use inspection::{
@@ -37,7 +37,7 @@ pub struct Endpoint {
     pub kind: EndpointKind,
     pub requested_ref: String,
     pub commit: Option<String>,
-    /// Repository-relative blob path; project-relative outside a Git repository.
+    /// Absolute path to the captured manifest in the local graph library.
     pub path: String,
     pub schema: String,
     pub digest: String,
@@ -90,59 +90,23 @@ struct ReadSnapshot {
     snapshot: Option<super::local_snapshots::SnapshotRecord>,
 }
 
-fn read_snapshot(project: &Path, revision: &str) -> Result<ReadSnapshot> {
-    let (bytes, decoded, commit, kind, path) = if revision == "WORKTREE" {
-        let (bytes, captured) = storage::Captured::inspect(project).map_err(|error| {
-            failure(
-                if error
-                    .downcast_ref::<std::io::Error>()
-                    .is_some_and(|error| error.kind() == std::io::ErrorKind::NotFound)
-                {
-                    "graph_missing"
-                } else {
-                    "graph_unavailable"
-                },
-                format!("Cannot read saved graph: {error}"),
-            )
-        })?;
-        let decoded = captured.and_then(|captured| captured.complete());
-        let path = working_path(project_prefix(project))?;
-        (bytes, decoded, None, EndpointKind::Worktree, path)
-    } else {
-        return read_commit(project, resolve_commit(project, revision)?);
-    };
+fn read_worktree(project: &Path) -> Result<ReadSnapshot> {
+    let (path, bytes, captured) = storage::Captured::inspect_located(project).map_err(|error| {
+        failure(
+            if error.downcast_ref::<storage::MissingGraph>().is_some() {
+                "graph_missing"
+            } else {
+                "graph_unavailable"
+            },
+            format!("Cannot read saved working graph: {error:#}"),
+        )
+    })?;
     Ok(ReadSnapshot {
         bytes,
-        decoded,
-        commit,
-        kind,
-        path,
-        snapshot: None,
-    })
-}
-
-fn decode_committed(project: &Path, bytes: &[u8], commit: &str, path: &str) -> Result<Artifact> {
-    let manifest = storage::Manifest::from_bytes(bytes)?;
-    let prefix = path
-        .strip_suffix("graph.json")
-        .context("Invalid manifest path")?;
-    manifest.complete_with(|part| {
-        let object = format!("{commit}:{prefix}{part}");
-        git(project, &["cat-file", "blob", &object], "graph_missing")
-    })
-}
-
-fn read_commit(project: &Path, commit: String) -> Result<ReadSnapshot> {
-    let path = format!("{}{GRAPH_PATH}", project_prefix(project)?);
-    let object = format!("{commit}:{path}");
-    let bytes = git(project, &["cat-file", "blob", &object], "graph_missing")?;
-    let decoded = decode_committed(project, &bytes, &commit, &path);
-    Ok(ReadSnapshot {
-        bytes,
-        decoded,
-        commit: Some(commit),
-        kind: EndpointKind::Commit,
-        path,
+        decoded: captured.and_then(|captured| captured.complete()),
+        commit: None,
+        kind: EndpointKind::Worktree,
+        path: path.display().to_string(),
         snapshot: None,
     })
 }
@@ -188,22 +152,55 @@ fn project_prefix(project: &Path) -> Result<String> {
     Ok(prefix.strip_suffix('\n').unwrap_or(&prefix).to_owned())
 }
 
-fn working_path(prefix: Result<String>) -> Result<String> {
-    match prefix {
-        Ok(prefix) => Ok(format!("{prefix}{GRAPH_PATH}")),
-        Err(error) if not_repository(&error) => Ok(GRAPH_PATH.into()),
-        Err(error) => Err(error),
-    }
-}
-
 fn not_repository(error: &anyhow::Error) -> bool {
     error
         .downcast_ref::<Failure>()
         .is_some_and(|error| error.message.contains("not a git repository"))
 }
 
+/// Bind Git to an explicit project even when invoked from a Git hook or a caller
+/// that has selected another repository through its environment.
+pub fn git_for_project(project: &Path) -> Command {
+    let mut command = Command::new("git");
+    for variable in [
+        "GIT_ALTERNATE_OBJECT_DIRECTORIES",
+        "GIT_ATTR_SOURCE",
+        "GIT_CEILING_DIRECTORIES",
+        "GIT_COMMON_DIR",
+        "GIT_CONFIG",
+        "GIT_CONFIG_COUNT",
+        "GIT_CONFIG_GLOBAL",
+        "GIT_CONFIG_PARAMETERS",
+        "GIT_CONFIG_SYSTEM",
+        "GIT_DIR",
+        "GIT_DISCOVERY_ACROSS_FILESYSTEM",
+        "GIT_GRAFT_FILE",
+        "GIT_IMPLICIT_WORK_TREE",
+        "GIT_INDEX_FILE",
+        "GIT_NAMESPACE",
+        "GIT_OBJECT_DIRECTORY",
+        "GIT_PREFIX",
+        "GIT_QUARANTINE_PATH",
+        "GIT_REPLACE_REF_BASE",
+        "GIT_SHALLOW_FILE",
+        "GIT_WORK_TREE",
+    ] {
+        command.env_remove(variable);
+    }
+    command
+        .arg("--no-pager")
+        .arg("-C")
+        .arg(project)
+        .env("GIT_NO_REPLACE_OBJECTS", "1")
+        .env("GIT_OPTIONAL_LOCKS", "0")
+        .env("GIT_NO_LAZY_FETCH", "1")
+        .env("GIT_TERMINAL_PROMPT", "0")
+        .env("LC_ALL", "C");
+    command
+}
+
 /// Git writes into anonymous temporary files instead of pipes, avoiding deadlocks
-/// on large graphs. It inherits the CLI process group for cancellation ownership.
+/// on large trees and input batches. It inherits the CLI process group.
 fn git(project: &Path, arguments: &[&str], code: &'static str) -> Result<Vec<u8>> {
     let mut output = git_output(project, arguments, code, GitInput::default())?;
     let mut bytes = Vec::new();
@@ -234,15 +231,8 @@ fn git_output(
         file.rewind()?;
         file.into()
     };
-    let child = Command::new("git")
-        .arg("--no-pager")
-        .arg("-C")
-        .arg(project)
+    let child = git_for_project(project)
         .args(arguments)
-        .env("GIT_OPTIONAL_LOCKS", "0")
-        .env("GIT_NO_LAZY_FETCH", "1")
-        .env("GIT_TERMINAL_PROMPT", "0")
-        .env("LC_ALL", "C")
         .stdin(stdin)
         .stdout(output.try_clone()?)
         .stderr(errors.try_clone()?)

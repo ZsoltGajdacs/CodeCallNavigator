@@ -5,7 +5,7 @@ Requires --project beneath the system temporary directory. Never copies or edits
 the original checkout. Full semantic equivalence requires a separate corpus
 oracle; this probe reports that unavailable rather than using counts as proof.
 """
-from graph_bundle import capture, restore
+from graph_bundle import graph_path, capture, restore
 import argparse
 import json
 from pathlib import Path
@@ -96,7 +96,7 @@ def prepare_corpus(executable, project):
     source.write_text(pristine)
     targets = response(run([str(executable), "discover", str(project / "backend")]))["targets"]
     analyze(executable, project, targets)
-    artifact = project / ".codecallnavigator/graph.json"
+    artifact = graph_path(project, executable)
     return targets, (source, artifact, pristine, capture(artifact))
 
 

@@ -5,7 +5,7 @@ use crate::{
 };
 use codecallnavigator::{
     discovery::{BuildIdentity, BuildTarget},
-    protocol::{AnalysisFailureCode, AnalysisPhase, TargetFailure},
+    protocol::{AnalysisFailureCode, AnalysisPhase, GraphRetention, TargetFailure},
     refresh::Phase,
 };
 use std::path::{Path, PathBuf};
@@ -40,6 +40,12 @@ impl Selection {
 pub(crate) struct FailedSelection {
     pub selection: Selection,
     pub error: AnalysisFailure,
+}
+
+#[derive(Default)]
+pub(crate) struct Results {
+    pub failure: Option<FailedSelection>,
+    pub retention: Option<GraphRetention>,
 }
 
 pub(crate) struct Feedback<'a> {
@@ -102,6 +108,15 @@ pub(super) fn bounded(message: &str, limit: usize) -> String {
     excerpt
 }
 
+pub(crate) fn retention_message(retention: &GraphRetention) -> String {
+    match retention {
+        GraphRetention::Verified { commit, .. } => {
+            format!("Saved a verified snapshot for {commit}.")
+        }
+        GraphRetention::WorkingOnly { reason } => format!("Saved working graph only. {reason}"),
+    }
+}
+
 pub(crate) struct Retry {
     pub target: BuildIdentity,
     pub label: &'static str,
@@ -110,7 +125,8 @@ pub(crate) struct Retry {
 impl State {
     pub(crate) fn feedback(&self) -> Option<Feedback<'_>> {
         let manual = self
-            .analysis_failure
+            .analysis_feedback
+            .failure
             .as_ref()
             .filter(|failure| failure.selection.matches(self));
         let (diagnostic, target) = if let Some(manual) = manual {
@@ -151,7 +167,8 @@ impl State {
         let target = &self.feedback()?.target?.target;
         let selection = self.selected_analysis()?;
         let matching_manual = self
-            .analysis_failure
+            .analysis_feedback
+            .failure
             .as_ref()
             .is_some_and(|failure| failure.selection == Selection::for_analysis(&selection));
         if !matching_manual && !self.freshness.matches_selected_session(&selection) {

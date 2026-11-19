@@ -120,7 +120,10 @@ impl Fixture {
             .find(|event| event["event"] == "complete")
             .expect("analysis must complete");
         Snapshot {
-            bytes: fs::read(self.project.join(".codecallnavigator/graph.json")).unwrap(),
+            bytes: fs::read(
+                codecallnavigator::artifact::working_manifest_path(&self.project).unwrap(),
+            )
+            .unwrap(),
             artifact: serde_json::to_value(
                 codecallnavigator::artifact::load(&self.project).unwrap(),
             )

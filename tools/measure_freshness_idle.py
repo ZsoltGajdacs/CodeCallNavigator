@@ -3,6 +3,7 @@
 import argparse
 import json
 from pathlib import Path
+from graph_bundle import graph_path
 import statistics
 import subprocess
 import tempfile
@@ -106,12 +107,12 @@ def measure_language(arguments, repository, language):
         project.reset()
         session = Session(arguments.executable, project, arguments.timeout)
         baseline = session.analyze()
-        artifact = project.root / ".codecallnavigator/graph.json"
+        artifact = graph_path(project.root, session.executable)
         before = artifact.read_bytes()
-        result = {"project_size": project_size(project), "modes": {}}
+        result = {"project_size": project_size(session), "modes": {}}
         for mode in arguments.modes:
             result["modes"][mode] = measure_mode(session, arguments, mode, baseline["generation"])
-            if artifact.read_bytes() != before:
+            if session.manifest().read_bytes() != before:
                 raise RuntimeError("Idle monitor changed the canonical artifact")
             print(language, mode, result["modes"][mode]["mean_percent_one_core"], flush=True)
         return result

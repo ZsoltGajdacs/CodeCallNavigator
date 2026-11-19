@@ -150,7 +150,8 @@ fn nested_external_property_imports_are_observed_and_failed_refresh_retains_arti
             .iter()
             .any(|reason| reason["path"] == "@imports/Inner--&.props")
     );
-    let saved = fs::read(root.join(".codecallnavigator/graph.json")).unwrap();
+    let saved =
+        fs::read(codecallnavigator_core::artifact::working_manifest_path(&root).unwrap()).unwrap();
     fs::write(imports.join("Inner--&.props"), "<Project>").unwrap();
     let failed = command(&root, "analyze", Some(&imports))
         .arg("Fixture.csproj")
@@ -158,7 +159,7 @@ fn nested_external_property_imports_are_observed_and_failed_refresh_retains_arti
         .unwrap();
     assert!(!failed.status.success());
     assert_eq!(
-        fs::read(root.join(".codecallnavigator/graph.json")).unwrap(),
+        fs::read(codecallnavigator_core::artifact::working_manifest_path(&root).unwrap()).unwrap(),
         saved
     );
 }

@@ -95,38 +95,28 @@ Editing refs leaves the displayed pair bound to its original revisions until
 or detail request, changed refs or saved artifact bytes clear actionable results
 and require Reload. **Cancel** stops pending work and leaves the revision editor
 available.
-`WORKTREE` in After means the current saved `.codecallnavigator/graph.json`; refresh
-explicitly to include newer source edits. Queries read cached source and never build
-historical code automatically.
+`WORKTREE` in After means the current working graph in the local library. Refresh
+explicitly to include newer source edits. Queries read captured source without
+building historical code.
 
 PR reviews use base/head refs available in the local repository. Hosted PR discovery,
 authentication and fetching are outside this workflow. Both revisions need a saved
 artifact containing the desired flow and source metadata. An old commit with no
 artifact needs preparation; its source tree alone cannot supply a historical chart.
 
-For example, from the repository, prepare two separate worktrees and local snapshot
-tags. Replace `BASE_REF`, `HEAD_REF`, the worktree paths, tag names and project
-target with your own values. Analysis requires the usual language toolchains and
-dependencies.
+From the repository, prepare any missing verified revision. Replace `BASE_REF`,
+`HEAD_REF`, and the project target with your own values. Preparation requires the
+usual language toolchains and dependencies.
 
 ```sh
-git worktree add --detach /tmp/ccn-flow-base BASE_REF
-ccnavigator analyze --project /tmp/ccn-flow-base path/to/App.csproj
-git -C /tmp/ccn-flow-base add -f .codecallnavigator/graph.json
-git -C /tmp/ccn-flow-base commit -m "Record base flow snapshot"
-git -C /tmp/ccn-flow-base tag ccn-flow-base
-
-git worktree add --detach /tmp/ccn-flow-head HEAD_REF
-ccnavigator analyze --project /tmp/ccn-flow-head path/to/App.csproj
-git -C /tmp/ccn-flow-head add -f .codecallnavigator/graph.json
-git -C /tmp/ccn-flow-head commit -m "Record head flow snapshot"
-git -C /tmp/ccn-flow-head tag ccn-flow-head
+ccnavigator prepare-snapshot --project . --revision BASE_REF --target path/to/App.csproj
+ccnavigator prepare-snapshot --project . --revision HEAD_REF --target path/to/App.csproj
 ```
 
-Use `refs/tags/ccn-flow-base` and `refs/tags/ccn-flow-head` in the comparison. These
-local snapshot commits include analyzed source in the artifact. Use matching build
-selections and logical `--root NAME=PATH` names for linked sources across worktrees;
-see [artifact preparation](standalone-engine.md#project-artifact-and-git-history)
+Use `BASE_REF` and `HEAD_REF` in the comparison. The library snapshots include the
+analyzed source. Use matching build selections across worktrees and matching logical
+root names for linked sources. See
+[artifact preparation](standalone-engine.md#local-snapshots-across-worktrees)
 and the [saved-revision query contract](cli-queries.md#saved-revision-function-flows).
 
 ## C# support

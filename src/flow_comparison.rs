@@ -187,11 +187,7 @@ impl Workspace {
             .project
             .clone()
             .ok_or("No comparison project is open")?;
-        let mut descriptor = project.context.descriptor.clone();
-        if let Some(captured) = self.identity.captured() {
-            descriptor.project = captured.into();
-        }
-        project.context = QueryContext::new(&project.runtime, descriptor);
+        project.context = project.context_for(self.identity.captured());
         project.refs = refs;
         self.open(project);
         Ok(())

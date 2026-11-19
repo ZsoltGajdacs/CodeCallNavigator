@@ -1,5 +1,4 @@
 """External native actions must stay inside their exact fixture, binding and operation sequence."""
-import copy
 import json
 from pathlib import Path
 import tempfile
@@ -8,14 +7,14 @@ from unittest.mock import patch
 import unittest
 
 from comparison_desktop_protocol import ORDER, read_request, validate
-from comparison_desktop_facts import expected_side, remove_legacy_source
+from comparison_desktop_facts import expected_side
 
 
 class ComparisonProtocolTests(unittest.TestCase):
     def setUp(self):
         self.fixture = SimpleNamespace(project=Path("/private/tmp/owned-project"),
                                        config={"initial": {"comparison_id": "a" * 64}})
-        self.request = {"version": 2, "sequence": 1, "operation": "capture", "checkpoint": "missing-source",
+        self.request = {"version": 2, "sequence": 1, "operation": "capture", "checkpoint": "unavailable-flow",
                         "project": str(self.fixture.project), "window_id": 123, "comparison_id": "a" * 64}
 
     def test_ordinary_version_one_capture_keeps_its_existing_request_and_output_path(self):
@@ -54,22 +53,6 @@ class ComparisonProtocolTests(unittest.TestCase):
             path.write_text("[]")
             with self.assertRaises(ValueError):
                 read_request(path)
-
-    def test_only_one_legacy_source_row_is_removed_and_nodes_ir_stay_unchanged(self):
-        owner = {"build": "build", "project": "project", "file": "@repo/Legacy.cs"}
-        legacy = {**owner, "content": "legacy"}
-        other = {**owner, "file": "@repo/Unchanged.cs", "content": "unchanged"}
-        artifact = {"graph": {"nodes": [{**owner, "label": "Legacy"}],
-                              "flow_inventory": {"functions": ["original"]},
-                              "architecture": {"files": [legacy, other]}}}
-        original = copy.deepcopy(artifact)
-        result = remove_legacy_source(artifact)
-        self.assertEqual(artifact, original)
-        self.assertEqual(result["graph"]["architecture"]["files"], [other])
-        duplicate = copy.deepcopy(artifact)
-        duplicate["graph"]["architecture"]["files"].append(legacy)
-        with self.assertRaises(ValueError):
-            remove_legacy_source(duplicate)
 
     def test_ready_source_must_match_exact_bom_unicode_crlf_compiler_bytes(self):
         raw = b"\xef\xbb\xbf" + "// café 🧭\r\n".encode()

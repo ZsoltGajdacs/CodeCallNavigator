@@ -1,13 +1,13 @@
 //! Owned detached checkouts used by explicit snapshot preparation.
 use anyhow::{Context, Result, bail, ensure};
-use codecallnavigator_core::artifact::revision::Repository;
+use codecallnavigator_core::artifact::revision::{Repository, git_for_project};
 use codecallnavigator_engine::process_ownership::{CleanupFailure, OwnedProcess};
 use std::{
     ffi::OsStr,
     io::{Read, Seek, SeekFrom},
     os::unix::ffi::OsStrExt,
     path::{Path, PathBuf},
-    process::{Command, Stdio},
+    process::Stdio,
     sync::atomic::{AtomicBool, Ordering},
     time::{Duration, Instant},
 };
@@ -193,25 +193,14 @@ fn git(
     let mut stdout = tempfile::tempfile().context("Cannot capture Git output")?;
     let mut stderr = tempfile::tempfile().context("Cannot capture Git diagnostics")?;
     let mut child = OwnedProcess::spawn(
-        Command::new("git")
-            .arg("--no-pager")
+        git_for_project(directory)
             .args([
                 "-c",
                 "core.hooksPath=/dev/null",
                 "-c",
                 "submodule.recurse=false",
             ])
-            .arg("-C")
-            .arg(directory)
             .args(arguments)
-            .env_remove("GIT_DIR")
-            .env_remove("GIT_WORK_TREE")
-            .env_remove("GIT_COMMON_DIR")
-            .env_remove("GIT_INDEX_FILE")
-            .env("GIT_OPTIONAL_LOCKS", "0")
-            .env("GIT_NO_LAZY_FETCH", "1")
-            .env("GIT_TERMINAL_PROMPT", "0")
-            .env("LC_ALL", "C")
             .stdin(Stdio::null())
             .stdout(stdout.try_clone()?)
             .stderr(stderr.try_clone()?),

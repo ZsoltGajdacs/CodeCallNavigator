@@ -649,7 +649,6 @@ name = "codecallnavigator-mcp"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "blake3",
  "libc",
  "rmcp",
  "schemars",
@@ -658,7 +657,6 @@ dependencies = [
  "tempfile",
  "tokio",
  "tokio-util",
- "zstd",
 ]
 
 [[package]]

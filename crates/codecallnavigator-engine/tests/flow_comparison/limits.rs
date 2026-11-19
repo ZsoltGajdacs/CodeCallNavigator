@@ -1,5 +1,4 @@
 use super::support::*;
-use codecallnavigator_core::artifact;
 use serde_json::json;
 use std::fs;
 
@@ -55,13 +54,7 @@ fn complete_detail_budget_counts_escaping_and_never_drops_a_side() {
         + &"\"".repeat(7 * 1024 * 1024)
         + "*/";
     large.graph["architecture"]["files"][0]["content"] = json!(content);
-    save(root, &large);
-    git(
-        root,
-        &["add", artifact::GRAPH_PATH, ".codecallnavigator/objects"],
-    );
-    git(root, &["commit", "-qm", "escaped source"]);
-    git(root, &["tag", "large"]);
+    commit_as(root, &large, "large");
     let response = query(
         root,
         Revisions {
@@ -84,7 +77,7 @@ fn oversized_catalog_returns_whole_records_and_progresses_by_bytes() {
         node["signature"] = json!("q".repeat(9 * 1024 * 1024));
     }
     save(root, &large);
-    let before = fs::read(root.join(artifact::GRAPH_PATH)).unwrap();
+    let before = fs::read(working_manifest(root)).unwrap();
     let first = query(root, WORKTREE.catalog());
     assert!(first["error"].is_null(), "{first}");
     let page = &first["result"];
@@ -101,7 +94,7 @@ fn oversized_catalog_returns_whole_records_and_progresses_by_bytes() {
         returned + second["result"]["returned"].as_u64().unwrap(),
         page["total"].as_u64().unwrap()
     );
-    assert_eq!(fs::read(root.join(artifact::GRAPH_PATH)).unwrap(), before);
+    assert_eq!(fs::read(working_manifest(root)).unwrap(), before);
 }
 
 #[test]

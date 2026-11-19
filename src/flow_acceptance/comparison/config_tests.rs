@@ -67,7 +67,7 @@ fn example_case(kind: CaseKind, index: usize, template: &serde_json::Value) -> s
     }
     let before = match kind {
         CaseKind::Added => serde_json::json!({"status":"missing"}),
-        CaseKind::Legacy => serde_json::json!({"status":"unavailable","reason":"missing_source"}),
+        CaseKind::Legacy => serde_json::json!({"status":"unavailable","reason":"missing_function"}),
         _ => before,
     };
     if kind == CaseKind::Removed {

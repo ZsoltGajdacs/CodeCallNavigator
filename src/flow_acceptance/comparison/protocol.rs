@@ -25,7 +25,7 @@ pub(crate) enum Checkpoint {
     GateArmed,
     GateHeld,
     GateReleased,
-    MissingSource,
+    UnavailableFlow,
     ManualPair,
     RestoredPair,
 }
@@ -68,7 +68,7 @@ impl Request {
             Operation::ReleaseGitGate => self.checkpoint == Checkpoint::GateReleased,
             Operation::Capture => matches!(
                 self.checkpoint,
-                Checkpoint::MissingSource | Checkpoint::ManualPair | Checkpoint::RestoredPair
+                Checkpoint::UnavailableFlow | Checkpoint::ManualPair | Checkpoint::RestoredPair
             ),
         };
         ensure!(

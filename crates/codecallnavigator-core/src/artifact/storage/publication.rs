@@ -1,99 +1,11 @@
-use super::{EncodedParts, Manifest};
-use crate::artifact::GRAPH_PATH;
+//! Filesystem primitives for durable immutable graph files.
 use anyhow::{Context, Result, ensure};
 use std::{
-    collections::HashSet,
-    fs::{self, File, OpenOptions},
+    fs,
     io::{Read, Write},
     path::Path,
     sync::atomic::{AtomicBool, Ordering},
 };
-
-const GUARD_NAME: &str = ".codecallnavigator/publication.lock";
-const PREVIOUS: &str = ".codecallnavigator/previous.json";
-
-/// Short-lived coordination only: never held during analysis or decompression.
-pub(super) struct Guard(Option<File>);
-
-impl Guard {
-    pub(super) fn coordinated(&self) -> bool {
-        self.0.is_some()
-    }
-
-    pub(super) fn exists(project: &Path) -> bool {
-        project.join(GUARD_NAME).exists()
-    }
-
-    pub(super) fn read(project: &Path) -> Result<Self> {
-        match File::open(project.join(GUARD_NAME)) {
-            Ok(file) => {
-                file.lock_shared()?;
-                Ok(Self(Some(file)))
-            }
-            Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(Self(None)),
-            Err(error) => Err(error).context("Cannot open publication guard"),
-        }
-    }
-
-    fn write(project: &Path) -> Result<Self> {
-        let file = OpenOptions::new()
-            .create(true)
-            .truncate(false)
-            .read(true)
-            .write(true)
-            .open(project.join(GUARD_NAME))?;
-        file.lock()?;
-        Ok(Self(Some(file)))
-    }
-}
-
-impl Drop for Guard {
-    fn drop(&mut self) {
-        if let Some(file) = &self.0 {
-            let _ = file.unlock();
-        }
-    }
-}
-
-pub(crate) fn publish(project: &Path, encoded: &EncodedParts, cancel: &AtomicBool) -> Result<()> {
-    check_cancel(cancel)?;
-    let directory = project.join(".codecallnavigator");
-    ensure!(
-        fs::symlink_metadata(&directory)?.file_type().is_dir(),
-        "Graph configuration directory must be a real directory"
-    );
-    fs::create_dir_all(directory.join("objects"))?;
-    validate_object_directory(&directory)?;
-    write_object(
-        &directory,
-        &encoded.manifest.structure.path("structure"),
-        &encoded.structure,
-    )?;
-    check_cancel(cancel)?;
-    write_object(
-        &directory,
-        &encoded.manifest.flows.path("flows"),
-        &encoded.flows,
-    )?;
-    File::open(directory.join("objects"))?.sync_all()?;
-    let _guard = Guard::write(project)?;
-    check_cancel(cancel)?;
-    super::companions::publish(&directory, cancel)?;
-    let previous = previous(project, encoded.as_ref())?;
-    // All fallible cleanup happens before the manifest's commit point.
-    prune(&directory, &encoded.manifest, previous.as_deref())?;
-    if let Some(bytes) = &previous {
-        atomic_write(&project.join(PREVIOUS), bytes)?;
-    } else if project.join(PREVIOUS).exists() {
-        fs::remove_file(project.join(PREVIOUS))
-            .context("Cannot remove obsolete previous manifest")?;
-    }
-    let path = project.join(GRAPH_PATH);
-    let prepared = prepare_write(&path, encoded.as_ref())?;
-    commit_manifest(&path, prepared, cancel)?;
-    File::open(&directory)?.sync_all()?;
-    Ok(())
-}
 
 pub(super) fn check_cancel(cancel: &AtomicBool) -> Result<()> {
     ensure!(
@@ -101,23 +13,6 @@ pub(super) fn check_cancel(cancel: &AtomicBool) -> Result<()> {
         "Analysis cancelled before graph publication"
     );
     Ok(())
-}
-
-fn previous(project: &Path, current: &[u8]) -> Result<Option<Vec<u8>>> {
-    match fs::read(project.join(GRAPH_PATH)) {
-        Ok(bytes) if bytes == current => read_previous(project),
-        Ok(bytes) => Ok(Manifest::from_bytes(&bytes).ok().map(|_| bytes)),
-        Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(None),
-        Err(error) => Err(error).context("Cannot preserve previous graph manifest"),
-    }
-}
-
-fn read_previous(project: &Path) -> Result<Option<Vec<u8>>> {
-    match fs::read(project.join(PREVIOUS)) {
-        Ok(bytes) => Ok(Manifest::from_bytes(&bytes).ok().map(|_| bytes)),
-        Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(None),
-        Err(error) => Err(error).context("Cannot read previous graph manifest"),
-    }
 }
 
 pub(super) fn write_object(directory: &Path, path: &str, bytes: &[u8]) -> Result<()> {
@@ -170,56 +65,9 @@ fn prepare_write(path: &Path, bytes: &[u8]) -> Result<tempfile::NamedTempFile> {
     Ok(temporary)
 }
 
-fn commit_manifest(
-    path: &Path,
-    temporary: tempfile::NamedTempFile,
-    cancel: &AtomicBool,
-) -> Result<()> {
-    // This is the publication commit point. Cancellation during pruning,
-    // sidecar updates or temporary-file preparation must preserve graph.json.
-    check_cancel(cancel)?;
-    persist(path, temporary)
-}
-
 fn persist(path: &Path, temporary: tempfile::NamedTempFile) -> Result<()> {
     temporary.persist(path).map_err(|error| error.error)?;
     Ok(())
-}
-
-fn prune(directory: &Path, current: &Manifest, previous: Option<&[u8]>) -> Result<()> {
-    let mut retained = HashSet::new();
-    retain(&mut retained, current);
-    if let Some(previous) = previous {
-        retain(&mut retained, &Manifest::from_bytes(previous)?);
-    }
-    for entry in fs::read_dir(directory.join("objects"))? {
-        let entry = entry?;
-        let name = entry.file_name();
-        let Some(name) = name.to_str() else {
-            continue;
-        };
-        if !obsolete(name, &retained) {
-            continue;
-        }
-        if !entry.file_type()?.is_file() {
-            continue;
-        }
-        fs::remove_file(entry.path()).context("Cannot prune obsolete graph object")?;
-    }
-    Ok(())
-}
-
-fn obsolete(name: &str, retained: &HashSet<String>) -> bool {
-    owned_object(name) && !retained.contains(name)
-}
-
-fn retain(retained: &mut HashSet<String>, manifest: &Manifest) {
-    for path in [
-        manifest.structure.path("structure"),
-        manifest.flows.path("flows"),
-    ] {
-        retained.insert(path.trim_start_matches("objects/").into());
-    }
 }
 
 pub(super) fn owned_object(name: &str) -> bool {
@@ -229,26 +77,4 @@ pub(super) fn owned_object(name: &str) -> bool {
     digest.len() == 64
         && digest.bytes().all(|byte| byte.is_ascii_hexdigit())
         && matches!(suffix, "structure.json.zst" | "flows.json.zst")
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    // Only a real temporary file can prove that cancellation after flushing
-    // prepared bytes leaves the active manifest intact and removes the temp.
-    #[test]
-    fn cancellation_after_preparation_preserves_active_manifest() {
-        let directory = tempfile::tempdir().unwrap();
-        let path = directory.path().join("graph.json");
-        fs::write(&path, b"previous successful generation").unwrap();
-        let cancel = AtomicBool::new(false);
-        let temporary = prepare_write(&path, b"replacement generation").unwrap();
-        let temporary_path = temporary.path().to_owned();
-        assert!(temporary_path.exists());
-        cancel.store(true, Ordering::Release);
-        assert!(commit_manifest(&path, temporary, &cancel).is_err());
-        assert_eq!(fs::read(path).unwrap(), b"previous successful generation");
-        assert!(!temporary_path.exists());
-    }
 }

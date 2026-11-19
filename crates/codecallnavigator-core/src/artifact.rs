@@ -25,7 +25,7 @@ use anyhow::{Context, Result, ensure};
 pub use compare::{Comparison, compare, compare_git};
 pub use publish::{
     AnalysisLock, COORDINATOR_LOCK_NAME, CoordinatorLease, GenerationChanged, LockBusy, LockOwner,
-    load, publish,
+    load, project_state_directory, publish, working_manifest_path,
 };
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -34,7 +34,6 @@ pub use storage::local_snapshots;
 
 pub type Roots = [(String, PathBuf)];
 pub const SCHEMA: &str = "codecallnavigator.graph.v2";
-pub const GRAPH_PATH: &str = ".codecallnavigator/graph.json";
 
 pub fn validate_roots(roots: &Roots) -> Result<()> {
     paths::Paths::new(roots).map(|_| ())

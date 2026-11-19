@@ -5,7 +5,7 @@ import subprocess
 import tempfile
 import unittest
 
-from comparison_desktop_gate import Gate, matches
+from comparison_desktop_gate import Gate, resolution_arguments
 
 
 class ComparisonGitGateTests(unittest.TestCase):
@@ -17,16 +17,18 @@ class ComparisonGitGateTests(unittest.TestCase):
         self.project.mkdir()
         self.output = self.root / "output"
         self.output.mkdir()
-        self.blob = "a" * 40 + ":.codecallnavigator/graph.json"
-        self.gate = Gate(self.project, self.output, self.blob, "b" * 32)
+        self.gate = Gate(self.project, self.output, "b" * 32)
 
-    def test_only_exact_project_blob_and_argument_vector_can_enter(self):
-        arguments = ["--no-pager", "-C", str(self.project), "cat-file", "blob", self.blob]
-        self.assertTrue(matches(arguments, self.project, self.blob))
+    def test_only_exact_project_base_ref_and_argument_vector_can_enter(self):
+        self.gate.install()
+        self.gate.arm()
+        arguments = resolution_arguments(self.project)
         for changed in [arguments[1:], [*arguments, "extra"],
-                        [*arguments[:2], str(self.root), *arguments[3:]],
-                        [*arguments[:-1], "other:" + self.blob.split(":")[1]]]:
-            self.assertFalse(matches(changed, self.project, self.blob))
+                        resolution_arguments(self.root),
+                        [*arguments[:-1], "refs/tags/fixture-after^{commit}"]]:
+            subprocess.run([self.output / "path/git", *changed],
+                           capture_output=True, timeout=5)
+            self.assertFalse((self.output / "gate-held.json").exists())
 
     def test_nonmatching_real_git_delegates_without_waiting_or_producing_proof(self):
         self.gate.install()
@@ -43,16 +45,13 @@ class ComparisonGitGateTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.gate.release()
 
-    def test_outside_artifacts_noncanonical_projects_and_unknown_tokens_are_rejected(self):
-        for blob in ["HEAD:.codecallnavigator/graph.json", "a" * 40 + ":other.json"]:
-            with self.assertRaises(ValueError):
-                Gate(self.project, self.output, blob, "b" * 32)
+    def test_noncanonical_projects_and_unknown_tokens_are_rejected(self):
         alias = self.root / "alias"
         alias.symlink_to(self.project)
         with self.assertRaises(ValueError):
-            Gate(alias, self.output, self.blob, "b" * 32)
+            Gate(alias, self.output, "b" * 32)
         with self.assertRaises(ValueError):
-            Gate(self.project, self.output, self.blob, "arbitrary")
+            Gate(self.project, self.output, "arbitrary")
 
 
 if __name__ == "__main__":

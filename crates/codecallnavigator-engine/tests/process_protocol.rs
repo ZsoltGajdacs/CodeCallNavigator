@@ -1,4 +1,5 @@
 //! Exercise the actual executable and process lifetime, independently of GUI code.
+use codecallnavigator_core::{artifact, model::GraphData};
 use serde_json::{Value, json};
 use std::{
     fs,
@@ -51,12 +52,19 @@ fn wait(child: &mut Child) -> i32 {
     }
 }
 
+fn saved_graph(project: &Path) -> (std::path::PathBuf, Vec<u8>) {
+    let graph =
+        artifact::canonical(&GraphData::default(), &[("repo".into(), project.into())]).unwrap();
+    artifact::publish(project, &graph, &std::sync::atomic::AtomicBool::new(false)).unwrap();
+    let graph = artifact::working_manifest_path(project).unwrap();
+    let bytes = fs::read(&graph).unwrap();
+    (graph, bytes)
+}
+
 #[test]
 fn initial_request_eof_and_malformed_protocol_fail_without_replacing_graph() {
     let project = tempfile::tempdir().unwrap();
-    fs::create_dir(project.path().join(".codecallnavigator")).unwrap();
-    let graph = project.path().join(".codecallnavigator/graph.json");
-    fs::write(&graph, "previous successful graph").unwrap();
+    let (graph, previous) = saved_graph(project.path());
     let requests = [
         None,
         Some("not JSON".to_owned()),
@@ -82,10 +90,7 @@ fn initial_request_eof_and_malformed_protocol_fail_without_replacing_graph() {
             .map(|line| serde_json::from_str(line).unwrap())
             .collect();
         assert_eq!(events.last().unwrap()["event"], "failed");
-        assert_eq!(
-            fs::read_to_string(&graph).unwrap(),
-            "previous successful graph"
-        );
+        assert_eq!(fs::read(&graph).unwrap(), previous);
     }
 }
 
@@ -111,9 +116,9 @@ fn invalid_roots_fail_before_acquiring_project_lock() {
     );
     assert_eq!(wait(&mut child), 2);
     assert!(
-        !project
-            .path()
-            .join(".codecallnavigator/graph.lock")
+        !artifact::project_state_directory(project.path())
+            .unwrap()
+            .join("graph.lock")
             .exists()
     );
 }
@@ -181,9 +186,7 @@ fn analysis_eof_and_sigterm_reap_build_descendants_and_preserve_artifact() {
     for signal in [false, true] {
         let project = tempfile::tempdir().unwrap();
         slow_build(project.path());
-        fs::create_dir(project.path().join(".codecallnavigator")).unwrap();
-        let graph = project.path().join(".codecallnavigator/graph.json");
-        fs::write(&graph, "previous successful graph").unwrap();
+        let (graph, previous) = saved_graph(project.path());
         let mut child = Command::new(env!("CARGO_BIN_EXE_codecallnavigator-engine"))
             .arg("serve-once")
             .env("JAVA_HOME", project.path().join("jdk"))
@@ -238,9 +241,6 @@ fn analysis_eof_and_sigterm_reap_build_descendants_and_preserve_artifact() {
             -1,
             "build descendant survived cancellation"
         );
-        assert_eq!(
-            fs::read_to_string(graph).unwrap(),
-            "previous successful graph"
-        );
+        assert_eq!(fs::read(graph).unwrap(), previous);
     }
 }

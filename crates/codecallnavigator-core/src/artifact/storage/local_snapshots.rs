@@ -1,30 +1,32 @@
-//! Local revision bundles shared by linked worktrees of one Git clone.
+//! One local graph library for checkout generations and verified revisions.
 mod catalog;
 #[cfg(test)]
 mod tests;
 
 use super::{
-    Manifest,
+    Captured, MissingGraph,
     captured::open_object,
-    publication::{atomic_write, write_object},
+    companions,
+    publication::{atomic_write, check_cancel, write_object},
 };
-use crate::artifact::{Artifact, EncodedArtifact};
+use crate::artifact::EncodedArtifact;
 use anyhow::{Context, Result, ensure};
-use catalog::{Catalog, Entry, InventoryItem, read_directory};
+use catalog::{Entry, hex};
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 use std::{
     env,
     fs::{self, File, OpenOptions, TryLockError},
+    io::Read,
     path::{Path, PathBuf},
-    sync::atomic::{AtomicBool, Ordering},
+    sync::atomic::AtomicBool,
     thread,
     time::Duration,
 };
 
 const SNAPSHOT_BUDGET: u64 = 2 * 1024 * 1024 * 1024;
-const CACHE_OVERRIDE: &str = "CODECALLNAVIGATOR_SNAPSHOT_CACHE";
+const LIBRARY_OVERRIDE: &str = "CODECALLNAVIGATOR_GRAPH_LIBRARY";
 
-/// The engine supplies revision and analysis information after validating the inputs.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct SnapshotIdentity {
     pub commit: String,
@@ -33,7 +35,6 @@ pub struct SnapshotIdentity {
     pub selection: String,
 }
 
-/// Identical identity and bundle bytes always produce the same stable variant ID.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct SnapshotRecord {
     pub id: String,
@@ -41,10 +42,27 @@ pub struct SnapshotRecord {
     pub digest: String,
 }
 
-/// Identity proven by the engine paired with the exact successfully published bytes.
 pub struct Retention<'a> {
     pub identity: SnapshotIdentity,
     pub encoded: &'a EncodedArtifact,
+}
+
+pub struct WorkingPublication<'a> {
+    pub encoded: &'a EncodedArtifact,
+    pub metadata: &'a Value,
+    pub verified: Option<(&'a Path, SnapshotIdentity)>,
+}
+
+pub struct VerifiedPublication<'a> {
+    pub identity: SnapshotIdentity,
+    pub encoded: &'a EncodedArtifact,
+    pub metadata: &'a Value,
+}
+
+struct GraphWrite<'a> {
+    entry: Entry,
+    encoded: &'a EncodedArtifact,
+    working_project: Option<&'a str>,
 }
 
 pub struct Store {
@@ -54,17 +72,15 @@ pub struct Store {
 
 impl Store {
     pub fn system() -> Result<Self> {
-        if let Some(value) = env::var_os(CACHE_OVERRIDE) {
+        if let Some(value) = env::var_os(LIBRARY_OVERRIDE) {
             let path = PathBuf::from(value);
             ensure!(
                 path.is_absolute(),
-                "{CACHE_OVERRIDE} must be an absolute path"
+                "{LIBRARY_OVERRIDE} must be an absolute path"
             );
             return Ok(Self::at(path));
         }
-        Ok(Self::at(
-            system_cache()?.join("CodeCallNavigator/snapshots/v1"),
-        ))
+        Ok(Self::at(user_data()?.join("CodeCallNavigator/graphs/v1")))
     }
 
     pub fn at(root: PathBuf) -> Self {
@@ -78,13 +94,18 @@ impl Store {
         &self.root
     }
 
-    /// The caller supplies Git's canonical common directory, not a worktree path.
     pub fn repository_path(&self, common_dir: &Path) -> PathBuf {
-        self.root.join("repos").join(
-            blake3::hash(common_dir.as_os_str().as_encoded_bytes())
-                .to_hex()
-                .as_str(),
-        )
+        self.root.join("repos").join(path_key(common_dir))
+    }
+
+    pub fn snapshot_manifest_path(
+        &self,
+        common_dir: &Path,
+        record: &SnapshotRecord,
+    ) -> Result<PathBuf> {
+        Ok(self
+            .root
+            .join(catalog::revision_path(&path_key(common_dir), record)?))
     }
 
     pub fn list(
@@ -93,39 +114,85 @@ impl Store {
         commit: &str,
         project: &str,
     ) -> Result<Vec<SnapshotRecord>> {
-        let Some(_guard) = read_guard(&self.root)? else {
+        let Some(_guard) = self.read_guard()? else {
             return Ok(Vec::new());
         };
-        let mut records = catalog::entries(&self.repository_path(common_dir))?
-            .into_iter()
-            .map(|(_, entry)| entry.record)
-            .filter(|record| record.identity.commit == commit && record.identity.project == project)
-            .collect::<Vec<_>>();
-        records.sort_by(|a, b| a.id.cmp(&b.id));
-        Ok(records)
+        let db = catalog::open(&self.root, false)?;
+        catalog::variants(&db, &path_key(common_dir), commit, project)
     }
 
-    pub fn capture(&self, common_dir: &Path, record: &SnapshotRecord) -> Result<CapturedSnapshot> {
-        ensure!(catalog::digest(&record.id), "Invalid graph snapshot ID");
-        let _guard = read_guard(&self.root)?.context("Local graph snapshot cache is missing")?;
-        let repository = self.repository_path(common_dir);
-        real_directory(&repository)?;
-        real_directory(&self.root.join("objects"))?;
-        let entry = Entry::read(&catalog::entry_path(&repository, &record.id))
-            .context("Cannot open local graph snapshot")?;
+    pub fn capture(&self, common_dir: &Path, record: &SnapshotRecord) -> Result<Captured> {
+        let _guard = self
+            .read_guard()?
+            .context("Local graph library is missing")?;
+        let db = catalog::open(&self.root, false)?;
+        let entry = catalog::snapshot(&db, &path_key(common_dir), record)?;
+        self.capture_entry(&entry, &record.id)
+    }
+
+    fn capture_entry(&self, entry: &Entry, id: &str) -> Result<Captured> {
+        let path = entry.path(id)?;
+        self.check_directories(&path, false)?;
+        let mut bytes = Vec::new();
+        open_object(&self.root.join(&path))?
+            .take(entry.bytes().len() as u64 + 1)
+            .read_to_end(&mut bytes)?;
         ensure!(
-            entry.record == *record,
-            "Local graph snapshot identity changed"
+            bytes == entry.bytes(),
+            "Saved graph manifest differs from the library catalog"
         );
-        let manifest = entry.manifest()?;
-        let structure = open_object(&self.root.join(manifest.structure.path("structure")))?;
-        let flows = open_object(&self.root.join(manifest.flows.path("flows")))?;
-        Ok(CapturedSnapshot {
-            bytes: entry.manifest.into_bytes(),
-            manifest,
-            structure,
-            flows,
-        })
+        Captured::from_manifest(&self.root, bytes, entry.metadata.clone())
+    }
+
+    pub(crate) fn inspect_working(
+        &self,
+        project: &Path,
+    ) -> Result<(PathBuf, Vec<u8>, Result<Captured>)> {
+        let _guard = self.read_guard()?.ok_or(MissingGraph)?;
+        let project = project
+            .canonicalize()
+            .context("Cannot open graph project")?;
+        let db = catalog::open(&self.root, false)?;
+        let (id, entry) = catalog::working(&db, &path_key(&project))?;
+        let path = self.root.join(entry.path(&id)?);
+        let captured = self.capture_entry(&entry, &id);
+        Ok((path, entry.bytes().to_vec(), captured))
+    }
+
+    pub(crate) fn working_manifest_path(&self, project: &Path) -> Result<PathBuf> {
+        let _guard = self.read_guard()?.ok_or(MissingGraph)?;
+        let project = project
+            .canonicalize()
+            .context("Cannot open graph project")?;
+        let db = catalog::open(&self.root, false)?;
+        let (id, entry) = catalog::working(&db, &path_key(&project))?;
+        Ok(self.root.join(entry.path(&id)?))
+    }
+
+    pub(crate) fn state_directory(&self, project: &Path) -> Result<PathBuf> {
+        let project = project
+            .canonicalize()
+            .context("Cannot open graph project")?;
+        let relative = Path::new("state").join(path_key(&project));
+        let path = self.root.join(&relative);
+        for directory in [&self.root, &self.root.join("state"), &path] {
+            match real_directory(directory) {
+                Ok(()) => (),
+                Err(error) if missing(&error) => break,
+                Err(error) => return Err(error),
+            }
+        }
+        Ok(path)
+    }
+
+    pub(crate) fn ensure_state_directory(&self, project: &Path) -> Result<PathBuf> {
+        let project = project
+            .canonicalize()
+            .context("Cannot open graph project")?;
+        let relative = Path::new("state").join(path_key(&project));
+        private_directory(&self.root)?;
+        self.check_directories(&relative.join("state-file"), true)?;
+        Ok(self.root.join(relative))
     }
 
     pub fn retain(
@@ -135,97 +202,226 @@ impl Store {
         cancel: &AtomicBool,
     ) -> Result<SnapshotRecord> {
         let Retention { identity, encoded } = retention;
-        check_cancel(cancel)?;
-        let mut entry = Entry::new(identity, encoded)?;
-        let repository = self.repository_path(common_dir);
-        let path = catalog::entry_path(&repository, &entry.record.id);
-        private_directory(&self.root)?;
-        let _guard = write_guard(&self.root, cancel)?;
-        for directory in [
-            self.root.join("objects"),
-            self.root.join("repos"),
-            repository.clone(),
-        ] {
-            private_directory(&directory)?;
-        }
+        self.retain_verified(
+            common_dir,
+            VerifiedPublication {
+                identity,
+                encoded,
+                metadata: &Value::Null,
+            },
+            cancel,
+        )
+    }
 
-        let mut catalog = Catalog::load(&self.root)?;
-        entry.inserted = catalog.insertion(&path)?;
-        let bytes = serde_json::to_vec(&entry)?;
-        let record = entry.record.clone();
-        let item = InventoryItem {
-            entry,
-            bytes: bytes.len() as u64,
-        };
-        let evictions = catalog.evict_to_fit(&path, &item, self.budget)?;
-        // Reclaim files left by a previously interrupted write, even if this
-        // attempt is later cancelled. This uses only the current committed index.
-        catalog.prune(&self.root)?;
-        check_cancel(cancel)?;
-        self.write_objects(encoded)?;
-        check_cancel(cancel)?;
-        // Index publication makes the complete bundle visible. Finish eviction
-        // while still holding the exclusive lock, including after cancellation.
-        atomic_write(&path, &bytes)?;
-        File::open(repository)?.sync_all()?;
-        catalog.apply(path, item, evictions)?;
-        catalog.prune(&self.root)?;
+    pub fn retain_verified(
+        &self,
+        common_dir: &Path,
+        publication: VerifiedPublication<'_>,
+        cancel: &AtomicBool,
+    ) -> Result<SnapshotRecord> {
+        let VerifiedPublication {
+            identity,
+            encoded,
+            metadata,
+        } = publication;
+        let entry = Entry::snapshot(path_key(common_dir), identity, metadata, encoded.as_ref())?;
+        let record = entry
+            .snapshot_record()
+            .context("Missing verified record")?
+            .clone();
+        self.publish(
+            GraphWrite {
+                working_project: None,
+                entry,
+                encoded,
+            },
+            cancel,
+        )?;
         Ok(record)
     }
 
-    fn write_objects(&self, encoded: &EncodedArtifact) -> Result<()> {
-        let manifest = &encoded.manifest;
+    pub(crate) fn publish_working(
+        &self,
+        project: &Path,
+        publication: WorkingPublication<'_>,
+        cancel: &AtomicBool,
+    ) -> Result<Option<SnapshotRecord>> {
+        let WorkingPublication {
+            encoded,
+            metadata,
+            verified,
+        } = publication;
+        let project_key = path_key(project);
+        let entry = match verified {
+            Some((common_dir, identity)) => {
+                Entry::snapshot(path_key(common_dir), identity, metadata, encoded.as_ref())?
+            }
+            None => Entry::working(
+                path_key(checkout(project)),
+                project_key.clone(),
+                metadata,
+                encoded.as_ref(),
+            )?,
+        };
+        let record = entry.snapshot_record().cloned();
+        self.publish(
+            GraphWrite {
+                working_project: Some(&project_key),
+                entry,
+                encoded,
+            },
+            cancel,
+        )?;
+        Ok(record)
+    }
+
+    fn publish(&self, write: GraphWrite<'_>, cancel: &AtomicBool) -> Result<()> {
+        let GraphWrite {
+            working_project,
+            entry,
+            encoded,
+        } = write;
+        check_cancel(cancel)?;
+        let id = entry.id()?;
+        let relative = entry.path(&id)?;
+        private_directory(&self.root)?;
+        let _guard = self.write_guard(cancel)?;
+        let mut db = catalog::open(&self.root, true)?;
+        self.check_directories(&relative, true)?;
+        private_directory(&self.root.join("objects"))?;
+        let tx = db.transaction()?;
+        catalog::insert(&tx, &id, &entry, entry.snapshot_record().is_some())?;
+        if let Some(project) = working_project {
+            catalog::set_current(&tx, project, &id)?;
+        }
+        catalog::evict(&tx, &id, self.budget)?;
+        self.write_bundle(&relative, encoded, cancel)?;
+        check_cancel(cancel)?;
+        tx.commit()?;
+        // Publication has succeeded. Unreferenced files can safely be retried
+        // at the next publication if housekeeping fails.
+        if let Err(error) = catalog::prune(&self.root, &db) {
+            eprintln!("Graph library cleanup deferred: {error:#}");
+        }
+        Ok(())
+    }
+
+    fn write_bundle(
+        &self,
+        relative: &Path,
+        encoded: &EncodedArtifact,
+        cancel: &AtomicBool,
+    ) -> Result<()> {
         for (part, name, bytes) in [
             (
-                &manifest.structure,
+                &encoded.manifest.structure,
                 "structure",
                 encoded.structure.as_slice(),
             ),
-            (&manifest.flows, "flows", encoded.flows.as_slice()),
+            (&encoded.manifest.flows, "flows", encoded.flows.as_slice()),
         ] {
+            check_cancel(cancel)?;
             ensure!(
-                bytes.len() as u64 == part.compressed_bytes
-                    && blake3::hash(bytes).to_hex().as_str() == part.digest,
-                "Encoded graph snapshot object does not match its manifest"
+                bytes.len() as u64 == part.compressed_bytes && hex(bytes) == part.digest,
+                "Encoded graph object does not match its manifest"
             );
             write_object(&self.root, &part.path(name), bytes)?;
         }
         File::open(self.root.join("objects"))?.sync_all()?;
+        companions::publish(&self.root, cancel)?;
+        let manifest = self.root.join(relative);
+        atomic_write(&manifest, encoded.as_ref())?;
+        sync_parents(
+            manifest.parent().context("Missing manifest directory")?,
+            &self.root,
+        )
+    }
+
+    fn check_directories(&self, relative_file: &Path, create: bool) -> Result<()> {
+        real_directory(&self.root)?;
+        let mut directory = self.root.clone();
+        for component in relative_file
+            .parent()
+            .context("Missing graph directory")?
+            .components()
+        {
+            directory.push(component);
+            if create {
+                private_directory(&directory)?;
+            } else {
+                real_directory(&directory)?;
+            }
+        }
         Ok(())
     }
-}
 
-/// Open descriptors keep the selected bundle available after eviction.
-pub struct CapturedSnapshot {
-    bytes: Vec<u8>,
-    manifest: Manifest,
-    structure: File,
-    flows: File,
-}
-
-impl CapturedSnapshot {
-    pub fn manifest_bytes(&self) -> &[u8] {
-        &self.bytes
+    fn read_guard(&self) -> Result<Option<File>> {
+        match real_directory(&self.root) {
+            Ok(()) => (),
+            Err(error) if missing(&error) => return Ok(None),
+            Err(error) => return Err(error),
+        }
+        let file = match open_object(&self.root.join("library.lock")) {
+            Ok(file) => file,
+            Err(error) if missing(&error) => return Ok(None),
+            Err(error) => return Err(error),
+        };
+        file.lock_shared()?;
+        match fs::symlink_metadata(self.root.join("catalog.sqlite3")) {
+            Ok(_) => Ok(Some(file)),
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(None),
+            Err(error) => Err(error.into()),
+        }
     }
 
-    pub fn complete(self) -> Result<Artifact> {
-        let mut parts = [self.structure, self.flows].into_iter();
-        self.manifest
-            .complete_from(|_| parts.next().context("Missing captured graph object"))
+    fn write_guard(&self, cancel: &AtomicBool) -> Result<File> {
+        let mut options = OpenOptions::new();
+        options.read(true).write(true).create(true).truncate(false);
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::OpenOptionsExt;
+            options
+                .mode(0o600)
+                .custom_flags(libc::O_NOFOLLOW | libc::O_NONBLOCK);
+        }
+        let file = options.open(self.root.join("library.lock"))?;
+        ensure!(
+            file.metadata()?.is_file(),
+            "Graph library lock is not a regular file"
+        );
+        loop {
+            check_cancel(cancel)?;
+            match file.try_lock() {
+                Ok(()) => return Ok(file),
+                Err(TryLockError::WouldBlock) => thread::sleep(Duration::from_millis(10)),
+                Err(TryLockError::Error(error)) => return Err(error.into()),
+            }
+        }
     }
 }
 
-fn system_cache() -> Result<PathBuf> {
+fn checkout(project: &Path) -> &Path {
+    project
+        .ancestors()
+        .find(|directory| directory.join(".git").exists())
+        .unwrap_or(project)
+}
+
+fn path_key(path: &Path) -> String {
+    hex(path.as_os_str().as_encoded_bytes())
+}
+
+fn user_data() -> Result<PathBuf> {
     if cfg!(target_os = "windows") {
         return absolute_env("LOCALAPPDATA").context("Cannot locate LOCALAPPDATA");
     }
     let home = || absolute_env("HOME").context("Cannot locate home directory");
     if cfg!(target_os = "macos") {
-        return Ok(home()?.join("Library/Caches"));
+        return Ok(home()?.join("Library/Application Support"));
     }
-    match absolute_env("XDG_CACHE_HOME") {
-        Some(cache) => Ok(cache),
-        None => Ok(home()?.join(".cache")),
+    match absolute_env("XDG_DATA_HOME") {
+        Some(data) => Ok(data),
+        None => Ok(home()?.join(".local/share")),
     }
 }
 
@@ -235,18 +431,10 @@ fn absolute_env(name: &str) -> Option<PathBuf> {
         .filter(|path| path.is_absolute())
 }
 
-fn check_cancel(cancel: &AtomicBool) -> Result<()> {
-    ensure!(
-        !cancel.load(Ordering::Acquire),
-        "Local graph snapshot retention cancelled"
-    );
-    Ok(())
-}
-
 fn real_directory(path: &Path) -> Result<()> {
     ensure!(
         fs::symlink_metadata(path)?.file_type().is_dir(),
-        "Snapshot cache location must be a real directory: {}",
+        "Graph library location must be a real directory: {}",
         path.display()
     );
     Ok(())
@@ -260,47 +448,24 @@ fn private_directory(path: &Path) -> Result<()> {
         use std::os::unix::fs::DirBuilderExt;
         builder.mode(0o700);
     }
-    builder.create(path)?;
+    builder
+        .create(path)
+        .with_context(|| format!("Cannot create graph library directory {}", path.display()))?;
     real_directory(path)
 }
 
-fn read_guard(root: &Path) -> Result<Option<File>> {
-    if read_directory(root)?.is_none() {
-        return Ok(None);
-    }
-    let file = match open_object(&root.join("cache.lock")) {
-        Ok(file) => file,
-        Err(error) if catalog::missing(&error) => return Ok(None),
-        Err(error) => return Err(error),
-    };
-    file.lock_shared()?;
-    if read_directory(&root.join("repos"))?.is_none() {
-        return Ok(None);
-    }
-    Ok(Some(file))
+fn missing(error: &anyhow::Error) -> bool {
+    error
+        .downcast_ref::<std::io::Error>()
+        .is_some_and(|error| error.kind() == std::io::ErrorKind::NotFound)
 }
 
-fn write_guard(root: &Path, cancel: &AtomicBool) -> Result<File> {
-    let mut options = OpenOptions::new();
-    options.read(true).write(true).create(true).truncate(false);
-    #[cfg(unix)]
-    {
-        use std::os::unix::fs::OpenOptionsExt;
-        options
-            .mode(0o600)
-            .custom_flags(libc::O_NOFOLLOW | libc::O_NONBLOCK);
-    }
-    let file = options.open(root.join("cache.lock"))?;
-    ensure!(
-        file.metadata()?.is_file(),
-        "Snapshot cache lock is not a file"
-    );
-    loop {
-        check_cancel(cancel)?;
-        match file.try_lock() {
-            Ok(()) => return Ok(file),
-            Err(TryLockError::WouldBlock) => thread::sleep(Duration::from_millis(10)),
-            Err(TryLockError::Error(error)) => return Err(error.into()),
+fn sync_parents(directory: &Path, root: &Path) -> Result<()> {
+    for path in directory.ancestors() {
+        File::open(path)?.sync_all()?;
+        if path == root {
+            break;
         }
     }
+    Ok(())
 }

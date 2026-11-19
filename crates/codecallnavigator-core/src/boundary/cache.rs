@@ -1,5 +1,5 @@
 //! Disposable decisions; callers commit only after publishing a successful graph.
-use super::{RouteFact, cache_key, cache_store};
+use super::{RouteFact, cache_key, cache_paths, cache_store};
 use anyhow::{Result, ensure};
 use serde::{Deserialize, Serialize};
 use std::{
@@ -27,7 +27,7 @@ struct Record {
 }
 
 pub struct DecisionCache {
-    path: PathBuf,
+    path: Option<PathBuf>,
     implementation: String,
     previous: BTreeMap<String, String>,
     current: BTreeMap<String, String>,
@@ -37,27 +37,31 @@ pub struct DecisionCache {
 impl DecisionCache {
     /// Read only. Missing/corrupt/version-mismatched caches cannot affect analysis.
     pub fn open(project: &Path) -> Self {
-        let project = project
-            .canonicalize()
-            .unwrap_or_else(|_| project.to_path_buf());
-        let path = project.join(".codecallnavigator/inference.sqlite3");
+        let path = cache_paths::path(project);
         let mut session = Self {
-            path,
+            path: None,
             implementation: cache_key::implementation(),
             previous: BTreeMap::new(),
             current: BTreeMap::new(),
             stats: CacheStats::default(),
             warnings: Vec::new(),
         };
-        match super::cache_paths::validate(&session.path) {
-            Ok(()) if session.path.exists() => session.load(),
-            Ok(()) => {}
+        match path.and_then(|path| {
+            cache_paths::validate(&path)?;
+            Ok(path)
+        }) {
+            Ok(path) => {
+                if path.exists() {
+                    session.load(&path);
+                }
+                session.path = Some(path);
+            }
             Err(error) => session.reject(format!("Inference cache ignored: {error:#}")),
         }
         session
     }
-    fn load(&mut self) {
-        match cache_store::read(&self.path, &self.implementation) {
+    fn load(&mut self, path: &Path) {
+        match cache_store::read(path, &self.implementation) {
             Ok(rows) => self.previous = rows,
             Err(error) => self.reject(format!("Inference cache ignored: {error:#}")),
         }
@@ -71,7 +75,8 @@ impl DecisionCache {
     /// Call only under the project analysis lock, after successful graph publication.
     /// Cache failure is a volatile warning, never a failed graph publication.
     pub fn commit(&mut self) {
-        if let Err(error) = cache_store::write(&self.path, &self.implementation, &self.current) {
+        let Some(path) = &self.path else { return };
+        if let Err(error) = cache_store::write(path, &self.implementation, &self.current) {
             self.warnings
                 .push(format!("Inference cache was not saved: {error:#}"));
         }

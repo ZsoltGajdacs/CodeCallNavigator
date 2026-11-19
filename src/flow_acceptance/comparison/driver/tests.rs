@@ -94,7 +94,7 @@ fn catalog_page(
     symbols: &[&str],
     offset: usize,
 ) -> std::sync::Arc<crate::engine_client::flow_comparison::Catalog> {
-    let endpoint = serde_json::json!({"kind":"commit","requested_ref":"fixture","commit":"a".repeat(40),"path":".codecallnavigator/graph.json","schema":null,"digest":"b".repeat(64)});
+    let endpoint = serde_json::json!({"kind":"commit","requested_ref":"fixture","commit":"a".repeat(40),"path":"/library/commits/graph.json","schema":null,"digest":"b".repeat(64)});
     let records: Vec<_> = symbols.iter().map(|symbol| serde_json::json!({"symbol":symbol,"membership":"both","before":{"status":"present","node":null,"flow":{"status":"recorded"}},"after":{"status":"present","node":null,"flow":{"status":"recorded"}}})).collect();
     std::sync::Arc::new(serde_json::from_value(serde_json::json!({"version":1,"base":endpoint,"head":endpoint,"comparison_id":"c".repeat(64),"kind":"catalog","complete":true,"endpoints":{"before":{"status":"available"},"after":{"status":"available"}},"text":text,"records":records,"offset":offset,"limit":50,"returned":symbols.len(),"total":symbols.len(),"more":false,"next_offset":null})).unwrap())
 }

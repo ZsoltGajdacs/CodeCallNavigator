@@ -5,8 +5,10 @@ use crate::{
     engine_client::flow_comparison::{GraphChange, GraphPage, SnapshotStatus},
     flow_comparison::{GraphNavigation, SnapshotSide},
 };
+use codecallnavigator::artifact::{local_snapshots::SnapshotRecord, selection::Selection};
 use rune::{El, ScrollSpec, col, row, text};
 use rune_kit::{Button, ButtonVariant, Kit, TextInput};
+use serde::Deserialize;
 
 pub(super) fn controls(state: &State, k: &Kit) -> El {
     let snapshots = &state.flow_comparison.snapshots;
@@ -170,12 +172,9 @@ fn variants(side: SnapshotSide, status: &SnapshotStatus, selected: Option<&str>,
         .children(status.snapshots.iter().map(|record| {
             let id = record.id.clone();
             let is_selected = selected == Some(id.as_str());
-            let label = format!(
-                "{}{} · {}",
-                if is_selected { "Selected: " } else { "" },
-                short(&id),
-                record.identity.analyzer,
-            );
+            let (summary, details) = variant_settings(record);
+            let prefix = if is_selected { "Selected · " } else { "" };
+            let label = format!("{prefix}{summary} · {}", short(&id));
             Button::new(label)
                 .disabled(is_selected)
                 .on_press(move |state: &mut State| {
@@ -186,8 +185,8 @@ fn variants(side: SnapshotSide, status: &SnapshotStatus, selected: Option<&str>,
                 })
                 .build(k)
                 .help(format!(
-                    "Snapshot {}\nBuild selection {}\nDigest {}",
-                    record.id, record.identity.selection, record.digest
+                    "Snapshot {}\n{details}\nDigest {}",
+                    record.id, record.digest
                 ))
         }));
     let label = if status.snapshots.is_empty() {
@@ -219,6 +218,75 @@ fn variants(side: SnapshotSide, status: &SnapshotStatus, selected: Option<&str>,
                 .build(k),
         )
         .child(list)
+}
+
+#[derive(Deserialize)]
+struct VariantSettings {
+    builds: Option<Selection>,
+    #[serde(default)]
+    analyzers: Vec<Analyzer>,
+}
+
+#[derive(Deserialize)]
+struct Analyzer {
+    path: String,
+    kind: String,
+    language: String,
+    backend: String,
+    version: String,
+    mode: String,
+}
+
+fn variant_settings(record: &SnapshotRecord) -> (String, String) {
+    let Ok(VariantSettings {
+        builds: Some(builds),
+        analyzers,
+    }) = serde_json::from_str(&record.identity.selection)
+    else {
+        return ("Saved graph".into(), record.identity.selection.clone());
+    };
+    let mut lines = builds.targets.iter().map(|target| {
+        let path = target.path.strip_prefix("@repo/").unwrap_or(&target.path);
+        let path = if path.is_empty() { "." } else { path };
+        let build = format!("{path} ({})", target.kind);
+        let choices = analyzers
+            .iter()
+            .filter(|analyzer| {
+                analyzer.path == target.path
+                    && analyzer.kind == target.kind
+                    && analyzer.language == target.language
+            })
+            .map(|analyzer| {
+                format!(
+                    "{} {} ({})",
+                    analyzer.backend, analyzer.version, analyzer.mode
+                )
+            })
+            .collect::<Vec<_>>();
+        if choices.is_empty() {
+            format!("{build} · {}", target.language)
+        } else {
+            format!("{build} · {}", choices.join(", "))
+        }
+    });
+    let Some(first) = lines.next() else {
+        return ("Saved graph".into(), record.identity.selection.clone());
+    };
+    let total = builds.targets.len();
+    let summary = if total > 1 {
+        format!(
+            "{} + {}",
+            crate::analysis_feedback::bounded(&first, 64),
+            total - 1
+        )
+    } else {
+        crate::analysis_feedback::bounded(&first, 64)
+    };
+    let details = std::iter::once(first)
+        .chain(lines)
+        .collect::<Vec<_>>()
+        .join("\n");
+    (summary, details)
 }
 
 pub(super) fn graph(state: &State, k: &Kit) -> El {

@@ -134,6 +134,7 @@ pub(crate) fn request(state: &mut State, navigation: Arc<crate::projection::Navi
             graph,
             context,
             navigation,
+            retention: None,
         },
         cancel: Arc::new(AtomicBool::new(false)),
     };

@@ -16,13 +16,11 @@ fn without_timing(mut envelope: Value) -> Value {
 #[ignore = "requires built real CLI, Node24 and pinned TypeScript 5.9.x or 6.0.x modules"]
 fn real_freshness_preserves_cli_observations_and_generation_errors() {
     let directory = tempfile::tempdir().unwrap();
-    let root = directory.path().canonicalize().unwrap();
+    let root = support::project(&directory);
     typescript(&root);
     let engine = engine();
     let mut client = Client::launch(command(&engine, &root));
     assert_ne!(client.call("refresh_graph", json!({}))["isError"], true);
-    let graph = root.join(".codecallnavigator/graph.json");
-    let before = fs::read(&graph).unwrap();
     let generation = client.graph("graph_status", json!({}))["generation"].clone();
     let initial = client.graph("graph_freshness", json!({"expected_generation":generation}));
     let direct = cli_query(
@@ -55,8 +53,8 @@ fn real_freshness_preserves_cli_observations_and_generation_errors() {
     );
     assert_eq!(repaired["result"]["input_status"], "stale");
     assert_eq!(
-        fs::read(&graph).unwrap(),
-        before,
+        client.graph("graph_status", json!({}))["generation"],
+        generation,
         "Queries published a graph"
     );
     assert_ne!(client.call("refresh_graph", json!({}))["isError"], true);

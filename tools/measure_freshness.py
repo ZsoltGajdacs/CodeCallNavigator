@@ -8,7 +8,7 @@ full analysis; later repetitions compare against that exact reference. Compiler
 and inference caches remain warm. Cold means first timed scenario repetition,
 not cold dependencies or a clean compiler build.
 """
-from graph_bundle import load as load_bundle, capture, restore
+from graph_bundle import graph_path, load as load_bundle, capture, restore
 import argparse
 import hashlib
 import json
@@ -46,6 +46,9 @@ class Session:
         discovery = response(run([str(executable), "discover", str(project.root)]))
         self.targets = selected_targets(project, discovery)
 
+    def manifest(self):
+        return graph_path(self.project.root, self.executable)
+
     def analyze(self):
         observation = run([str(self.executable), "serve-once"], {"command": "analyze", "version": 2,
             "project": str(self.project.root), "roots": self.project.roots, "targets": self.targets,
@@ -66,7 +69,7 @@ class Session:
 
     def sample(self, scenario, iteration, context):
         self.project.reset(scenario)
-        artifact = self.project.root / ".codecallnavigator/graph.json"
+        artifact = self.manifest()
         restore(artifact, context["baseline_capture"])
         saved = time.monotonic()
         self.project.edit(scenario, 0)
@@ -74,10 +77,11 @@ class Session:
         detection = self.query()
         self.assert_stale(detection, scenario)
         refresh = self.analyze()
-        candidate = artifact.read_bytes()
         adoption = self.query(refresh["generation"])
         observed = self.adopt(adoption, refresh["generation"])
         save_to_adoption_ms = (time.monotonic() - saved) * 1000
+        artifact = self.manifest()
+        candidate = artifact.read_bytes()
         reference = self.reference(scenario, context)
         equivalent = candidate == context["reference_bytes"]
         if not equivalent:
@@ -118,17 +122,17 @@ class Session:
             clean.reset(scenario)
             clean.edit(scenario, 0)
             reference = Session(self.executable, clean, self.timeout).analyze()
-            context["reference_bytes"] = (clean.root / ".codecallnavigator/graph.json").read_bytes()
+            context["reference_bytes"] = graph_path(clean.root, self.executable).read_bytes()
         return reference
 
     def failure_journey(self):
         self.project.reset()
         complete = self.analyze()
-        artifact = self.project.root / ".codecallnavigator/graph.json"
+        artifact = self.manifest()
         before = artifact.read_bytes()
         self.project.source.write_text(self.project.source.read_text() + '\nthis is invalid {\n')
         failure = self.invalid_code_failure()
-        if artifact.read_bytes() != before:
+        if self.manifest().read_bytes() != before:
             raise RuntimeError("Invalid code did not preserve the previous artifact")
         self.assert_generation_mismatch()
         return {"invalid_code_rejected": True, "previous_artifact_preserved": True,
@@ -192,8 +196,8 @@ class Experiment:
     def scenario(self, session, scenario, output):
         session.project.reset(scenario)
         baseline = session.analyze()
-        context = {"baseline_bytes": (session.project.root / ".codecallnavigator/graph.json").read_bytes(), "baseline_generation": baseline["generation"]}
-        path = session.project.root / ".codecallnavigator/graph.json"
+        path = session.manifest()
+        context = {"baseline_bytes": path.read_bytes(), "baseline_generation": baseline["generation"]}
         context["baseline_capture"] = capture(path)
         context["baseline_graph"] = load_bundle(path)["graph"]
         for iteration in range(self.arguments.runs + 1):

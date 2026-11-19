@@ -16,7 +16,7 @@ pub struct Repository {
 
 impl Repository {
     pub fn detect(project: &Path) -> Result<Option<Self>> {
-        if !has_worktree_marker(project)? && std::env::var_os("GIT_DIR").is_none() {
+        if !has_worktree_marker(project)? {
             return Ok(None);
         }
         match Self::open(project) {
@@ -27,15 +27,22 @@ impl Repository {
     }
 
     pub fn open(project: &Path) -> Result<Self> {
-        let root = git_path(project, &["rev-parse", "--show-toplevel"])?;
+        let project = project.canonicalize().context("Cannot open Git project")?;
+        let root = git_path(&project, &["rev-parse", "--show-toplevel"])?;
         let common_dir = git_path(
-            project,
+            &project,
             &["rev-parse", "--path-format=absolute", "--git-common-dir"],
         )?;
+        let prefix = project_prefix(&project)?;
+        let relative = prefix.trim_end_matches('/');
+        ensure!(
+            root.join(relative) == project,
+            "Git worktree does not contain the selected project"
+        );
         Ok(Self {
             root,
             common_dir,
-            project: project_prefix(project)?.trim_end_matches('/').into(),
+            project: relative.into(),
         })
     }
 

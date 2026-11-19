@@ -195,7 +195,7 @@ impl Driver {
         match self.purpose {
             Purpose::Cases if case.kind == CaseKind::Legacy => self.external(
                 Operation::Capture,
-                Checkpoint::MissingSource,
+                Checkpoint::UnavailableFlow,
                 Phase::Interaction(Interaction::StartManual),
             )?,
             Purpose::Cases => self.select_case(self.selected_case + 1, Purpose::Cases),

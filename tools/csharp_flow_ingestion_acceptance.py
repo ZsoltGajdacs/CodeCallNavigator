@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Verify C# flow ingestion through production engine analysis and query processes."""
-from graph_bundle import load as load_bundle, publish_fixture, capture, restore
+from graph_bundle import graph_path, load as load_bundle, publish_fixture, capture, restore
 import argparse
 from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, wait
 from functools import partial
@@ -19,7 +19,6 @@ from csharp_flow_acceptance import objects, require, source_metadata, rebase_exp
 
 ROOT = Path(__file__).resolve().parents[1]
 BASELINE = ROOT / "fixtures/flow/csharp-baselines/pre-ingestion.json"
-GRAPH = Path(".codecallnavigator/graph.json")
 # Match the four-boundary compiler budget inside this one acceptance gate;
 # outer native/performance gate exclusivity and timeouts remain unchanged.
 CASE_WORKERS = 4
@@ -127,7 +126,7 @@ def graph_parity(client, fixture, work):
     expected_native = rebase_expected(fixture["native_projection"], Path(fixture["root"]), paths.root)
     require(projection(native) == expected_native, f"Native graph changed for {fixture['name']}")
     client.analyze(paths.root, paths.project)
-    artifact = load_bundle(paths.root / GRAPH)
+    artifact = load_bundle(graph_path(paths.root, client.engine, client.environment))
     require(projection(artifact["graph"]) == fixture["canonical_projection"],
             f"Canonical graph changed for {fixture['name']}")
     require(paths.source.read_bytes() == paths.raw, "Analysis changed fixture source")
@@ -181,7 +180,7 @@ def no_dotnet_environment(client):
 
 
 def cached_after_source_changes(client, fixture, reply):
-    saved = (fixture.root / GRAPH).read_bytes()
+    saved = graph_path(fixture.root, client.engine, client.environment).read_bytes()
     operation = {"kind": "flow", "symbol": reply["result"]["function"]["symbol"]}
     source_operation = {"kind": "source", "symbol": operation["symbol"]}
     try:
@@ -197,7 +196,7 @@ def cached_after_source_changes(client, fixture, reply):
                 == reply["result"]["source"]["content"], "Analyzed source query read live files")
         require(edited["freshness"]["input_status"] == removed["freshness"]["input_status"] == "stale",
                 "Source mutation/removal did not report stale graph inputs")
-        require((fixture.root / GRAPH).read_bytes() == saved, "Query modified canonical graph")
+        require(graph_path(fixture.root, client.engine, client.environment).read_bytes() == saved, "Query modified canonical graph")
     finally:
         fixture.source.write_bytes(fixture.raw)
     return {"edited_source_ignored": True, "removed_source_ignored": True,
@@ -206,7 +205,7 @@ def cached_after_source_changes(client, fixture, reply):
 
 
 def historical_guidance(client, root, fixture, symbol):
-    path = root / GRAPH
+    path = graph_path(root, client.engine, client.environment)
     current = capture(path)
     try:
         artifact = {**fixture["artifact"], "schema": "codecallnavigator.graph.v2"}
@@ -221,11 +220,11 @@ def historical_guidance(client, root, fixture, symbol):
 
 
 def failed_source_refresh(client, fixture):
-    saved = (fixture.root / GRAPH).read_bytes()
+    saved = graph_path(fixture.root, client.engine, client.environment).read_bytes()
     try:
         fixture.source.write_text("namespace Fixture; class Broken { return invalid; }")
         client.analyze(fixture.root, fixture.project, succeeds=False)
-        require((fixture.root / GRAPH).read_bytes() == saved, "Failed source refresh replaced prior generation")
+        require(graph_path(fixture.root, client.engine, client.environment).read_bytes() == saved, "Failed source refresh replaced prior generation")
     finally:
         fixture.source.write_bytes(fixture.raw)
     return {"invalid_source_refresh_retains_prior_generation": True}
@@ -273,7 +272,7 @@ def malformed_refreshes(client, root, project, work):
     control = client.in_environment({**environment, "TASK22_FLOW_FAULT": "passthrough",
                                      "TASK22_FLOW_FAULT_MARKER": str(work / "fault-control.json")})
     control.analyze(root, project)
-    saved = (root / GRAPH).read_bytes()
+    saved = graph_path(root, client.engine, client.environment).read_bytes()
     for fault in ["missing", "corrupt"]:
         marker = work / f"fault-observed-{fault}.json"
         failing = client.in_environment({**environment, "TASK22_FLOW_FAULT": fault,
@@ -285,7 +284,7 @@ def malformed_refreshes(client, root, project, work):
         expected = {"missing": "CallAtlas function flow facts are missing or unsupported",
                     "corrupt": "C# flow callable is absent from compiler graph: missing-owned-flow-symbol"}
         require(expected[fault] in failure.stderr, f"{fault} output was rejected for an unrelated reason")
-        require((root / GRAPH).read_bytes() == saved, f"{fault} flow facts replaced prior generation")
+        require(graph_path(root, client.engine, client.environment).read_bytes() == saved, f"{fault} flow facts replaced prior generation")
     return {"missing_flow_capability_retains_generation": True,
             "corrupt_owned_flow_identity_retains_generation": True,
             "passthrough_wrapper_analysis_succeeds": True, "rejection_reasons_matched": True}

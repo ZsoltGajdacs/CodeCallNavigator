@@ -57,6 +57,10 @@ after upgrading the configured CLI.
 All argument objects reject unknown fields. Related analyzed queries can carry
 `expected_generation`, a 64-character hexadecimal CLI digest. A generation
 mismatch is an explicit CLI error; request status again before combining results.
+For graphs produced by analysis, `graph_status` exposes the engine’s
+`result.effective_analysis` metadata, including the resolved build targets and
+analyzers actually used.
+
 Analysis starts through an explicit `refresh_graph` or `prepare_graph_snapshot` request.
 Both tools forward CLI analysis messages as `notifications/progress` when the
 caller includes `_meta.progressToken`. Intermediate progress may be skipped
@@ -133,12 +137,11 @@ affects only this tool; configured project/root addresses remain unchanged.
 
 `compare_graphs` forwards the CLI's [Git comparison contract](cli-queries.md#git-graph-comparison).
 It reads a saved commit snapshot against the saved working graph by default, or
-compares two explicit revisions. Each revision may come from Git or the local
-snapshot cache. It returns full paged
-changes, including flows and separately identified analysis metadata. Carry
+compares two explicit revisions. The local graph library supplies both endpoints.
+It returns paged changes, including flows and analysis metadata. Carry
 `comparison_id` as `expected_comparison` on subsequent pages and follow
-`next_offset`; ref/artifact changes fail with `comparison_mismatch`. A committed
-target has null freshness, while a working target reports observed-input
+`next_offset`. Ref or artifact changes fail with `comparison_mismatch`. A verified
+commit target has null freshness, while a working target reports observed-input
 freshness and may be stale. Never interpret a saved graph as unsaved editor state.
 The 24 MiB CLI page budget is below the adapter's 32 MiB transport limit.
 Startup requires comparison format 1 with snapshot binding and the `compare`

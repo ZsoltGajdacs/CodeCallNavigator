@@ -191,31 +191,40 @@ impl Executor {
         let (bytes, captured) =
             codecallnavigator_core::artifact::storage::Captured::inspect(project).map_err(|e| {
                 codecallnavigator_core::query::Error::new(
-                    if project
-                        .join(codecallnavigator_core::artifact::GRAPH_PATH)
-                        .exists()
-                    {
-                        "graph_unavailable"
-                    } else {
+                    if e.is::<codecallnavigator_core::artifact::storage::MissingGraph>() {
                         "graph_missing"
+                    } else {
+                        "graph_unavailable"
                     },
                     format!("{e:#}"),
                 )
             })?;
         let generation = blake3::hash(&bytes).to_hex().to_string();
         query::check_generation(request, &generation)?;
-        if self
+        // The catalog can preserve a generation digest after its manifest
+        // disappears. A cached graph must not mask a broken current capture.
+        let captured = valid_capture(captured)?;
+        if let Some(loaded) = self
             .loaded
-            .as_ref()
-            .is_some_and(|loaded| loaded.matches_generation(&generation, &roots))
+            .as_mut()
+            .filter(|loaded| loaded.matches_generation(&generation, &roots))
         {
-            // Parsed immutable artifact/index remain executor-owned.
+            // Publication metadata can change while the graph payload stays
+            // byte-identical. Status reads the metadata from this capture.
+            if matches!(request.query, codecallnavigator_core::query::Query::Status) {
+                loaded.effective_analysis = captured.analysis_metadata().clone();
+            }
         } else {
-            let captured = captured.map_err(|e| {
-                codecallnavigator_core::query::Error::new("invalid_graph", format!("{e:#}"))
-            })?;
             self.loaded = Some(query::load_captured(request, roots, captured, generation)?);
         }
         Ok(())
     }
+}
+
+fn valid_capture(
+    result: anyhow::Result<codecallnavigator_core::artifact::storage::Captured>,
+) -> codecallnavigator_core::query::Result<codecallnavigator_core::artifact::storage::Captured> {
+    result.map_err(|error| {
+        codecallnavigator_core::query::Error::new("invalid_graph", format!("{error:#}"))
+    })
 }

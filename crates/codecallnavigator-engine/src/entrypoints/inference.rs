@@ -11,11 +11,13 @@ pub fn resolve(
     project: &Path,
     graph: &mut GraphData,
     configuration: &Configuration,
+    use_cache: bool,
 ) -> Result<Option<DecisionCache>> {
     let _stage = metrics::stage("inference.boundaries");
     let relationships = graph.edges.len();
-    let cache = if std::env::var_os("CODECALLNAVIGATOR_DISABLE_INFERENCE_CACHE")
-        .is_some_and(|value| value == "1")
+    let cache = if !use_cache
+        || std::env::var_os("CODECALLNAVIGATOR_DISABLE_INFERENCE_CACHE")
+            .is_some_and(|value| value == "1")
     {
         metrics::count("inference.cache_disabled", 1);
         boundary::resolve(graph, configuration)?;

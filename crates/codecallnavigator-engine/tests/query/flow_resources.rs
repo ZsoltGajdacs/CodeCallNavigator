@@ -12,7 +12,15 @@ struct Session {
 }
 impl Session {
     fn new(root: &Path, manifest: &[u8]) -> Self {
-        let mut child = Command::new(env!("CARGO_BIN_EXE_codecallnavigator-engine"))
+        Self::start(root, manifest, None)
+    }
+
+    fn start(root: &Path, manifest: &[u8], library: Option<&Path>) -> Self {
+        let mut command = Command::new(env!("CARGO_BIN_EXE_codecallnavigator-engine"));
+        if let Some(library) = library {
+            command.env("CODECALLNAVIGATOR_GRAPH_LIBRARY", library);
+        }
+        let mut child = command
             .arg("query-session")
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
@@ -83,15 +91,20 @@ fn session_residency_is_explicit_and_structure_stays_lazy() {
 #[test]
 fn corrupt_flows_preserve_structure_and_recover_in_the_same_session() {
     let root = tempfile::tempdir().unwrap();
-    let bytes = saved_graph(root.path());
-    let manifest = artifact::storage::Manifest::from_bytes(&bytes).unwrap();
-    let path = root
-        .path()
-        .join(".codecallnavigator")
-        .join(manifest.flows.path("flows"));
+    let library = root.path().join("isolated-library");
+    let bundle = graph_fixture(root.path()).encode().unwrap();
+    artifact::AnalysisLock::acquire_in(
+        root.path(),
+        artifact::local_snapshots::Store::at(library.clone()),
+    )
+    .unwrap()
+    .publish_encoded(&bundle, &std::sync::atomic::AtomicBool::new(false))
+    .unwrap();
+    let manifest = artifact::storage::Manifest::from_bytes(bundle.as_ref()).unwrap();
+    let path = library.join(manifest.flows.path("flows"));
     let original = fs::read(&path).unwrap();
     fs::write(&path, b"corrupt flow object").unwrap();
-    let mut session = Session::new(root.path(), &bytes);
+    let mut session = Session::start(root.path(), bundle.as_ref(), Some(&library));
     assert_eq!(session.query(json!({"kind":"status"}))["nodes"], 2);
     assert_eq!(
         session.response(json!({"kind":"flow_resources","action":"load"}))["error"]["code"],
@@ -119,8 +132,9 @@ fn unload_releases_owned_generation_after_a_new_publication() {
     assert_eq!(session.resources("unload")["retained_bytes"], 0);
     let outdated = session.response(json!({"kind":"status"}));
     assert_eq!(outdated["error"]["code"], "generation_mismatch");
-    session.generation = blake3::hash(&fs::read(root.path().join(artifact::GRAPH_PATH)).unwrap())
-        .to_hex()
-        .to_string();
+    session.generation =
+        blake3::hash(&fs::read(artifact::working_manifest_path(root.path()).unwrap()).unwrap())
+            .to_hex()
+            .to_string();
     assert_eq!(session.resources("status")["loaded"], false);
 }

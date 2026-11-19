@@ -1,9 +1,6 @@
 //! Bound metadata survives strict artifact unavailability.
 use super::{Artifact, Endpoint, EndpointKind, ReadSnapshot, Repository, Snapshot, failure};
-use crate::artifact::{
-    GRAPH_PATH,
-    local_snapshots::{SnapshotRecord, Store},
-};
+use crate::artifact::local_snapshots::{SnapshotRecord, Store};
 use anyhow::Result;
 use serde::Serialize;
 use std::path::Path;
@@ -65,13 +62,10 @@ impl Inspection {
 
 /// Read once, validate strictly, and retain provenance even when saved facts are incompatible.
 pub fn inspect(project: &Path, revision: &str) -> Result<Inspection> {
-    Ok(inspect_read(
-        super::read_snapshot(project, revision)?,
-        revision,
-    ))
+    inspect_cached(project, revision, None)
 }
 
-/// Prefer a committed graph unless the caller explicitly selected a cached variant.
+/// Resolve the working generation or a verified commit variant from the library.
 pub fn inspect_cached(
     project: &Path,
     revision: &str,
@@ -84,29 +78,21 @@ pub fn inspect_cached(
                 "WORKTREE does not take a snapshot ID",
             ));
         }
-        return inspect(project, revision);
+        return Ok(inspect_read(super::read_worktree(project)?, revision));
     }
     let commit = super::resolve_commit(project, revision)?;
-    if selected.is_none()
-        && let Some(read) = committed_if_present(project, &commit)?
-    {
-        return Ok(inspect_read(read, revision));
-    }
     Ok(inspect_read(
-        read_cached(&Repository::open(project)?, commit, selected)?,
+        read_cached(
+            &Store::system().map_err(library_error)?,
+            &Repository::open(project)?,
+            commit,
+            selected,
+        )?,
         revision,
     ))
 }
 
-fn committed_if_present(project: &Path, commit: &str) -> Result<Option<ReadSnapshot>> {
-    match super::read_commit(project, commit.into()) {
-        Ok(snapshot) => Ok(Some(snapshot)),
-        Err(error) if super::error_code(&error) == "graph_missing" => Ok(None),
-        Err(error) => Err(error),
-    }
-}
-
-/// Load a retained variant even when this revision also contains a committed bundle.
+/// Load a verified baseline for impact preview.
 pub fn load_retained(
     repository: &Repository,
     revision: &str,
@@ -116,7 +102,13 @@ pub fn load_retained(
     let unavailable = format!(
         "No retained baseline for {revision} ({commit}). Prepare a snapshot for this revision."
     );
-    let read = read_cached(repository, commit, selected).map_err(|error| {
+    let read = read_cached(
+        &Store::system().map_err(library_error)?,
+        repository,
+        commit,
+        selected,
+    )
+    .map_err(|error| {
         if super::error_code(&error) == "graph_missing" {
             failure("snapshot_missing", unavailable)
         } else {
@@ -126,30 +118,28 @@ pub fn load_retained(
     inspect_read(read, revision).into_snapshot()
 }
 
-fn read_cached(
+pub(super) fn read_cached(
+    store: &Store,
     repository: &Repository,
     commit: String,
     selected: Option<&str>,
 ) -> Result<ReadSnapshot> {
-    let store = Store::system().map_err(cache_error)?;
     let records = store
         .list(&repository.common_dir, &commit, &repository.project)
-        .map_err(cache_error)?;
+        .map_err(library_error)?;
     let record = select_record(records, selected, &commit)?;
     let captured = store
         .capture(&repository.common_dir, &record)
-        .map_err(cache_error)?;
-    let path = if repository.project.is_empty() {
-        GRAPH_PATH.into()
-    } else {
-        format!("{}/{GRAPH_PATH}", repository.project)
-    };
+        .map_err(library_error)?;
+    let path = store
+        .snapshot_manifest_path(&repository.common_dir, &record)
+        .map_err(library_error)?;
     Ok(ReadSnapshot {
         bytes: captured.manifest_bytes().to_vec(),
         decoded: captured.complete(),
         commit: Some(commit),
         kind: EndpointKind::Commit,
-        path,
+        path: path.display().to_string(),
         snapshot: Some(record),
     })
 }
@@ -175,20 +165,20 @@ fn select_record(
         failure(
             "graph_missing",
             format!(
-                "No committed or local graph for {commit}. Prepare a snapshot for this revision."
+                "No verified graph in the library for {commit}. Prepare a snapshot for this revision."
             ),
         )
     })?;
     if records.next().is_some() {
         return Err(failure(
             "snapshot_ambiguous",
-            format!("Multiple local snapshots exist for {commit}. Select a snapshot ID."),
+            format!("Multiple verified graphs exist for {commit}. Select a snapshot ID."),
         ));
     }
     Ok(first)
 }
 
-fn cache_error(error: anyhow::Error) -> anyhow::Error {
+fn library_error(error: anyhow::Error) -> anyhow::Error {
     failure("snapshot_unavailable", format!("{error:#}"))
 }
 

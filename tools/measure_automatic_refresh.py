@@ -12,6 +12,7 @@ import hashlib
 import json
 import os
 from pathlib import Path
+from graph_bundle import graph_path
 import tempfile
 import time
 
@@ -46,7 +47,7 @@ def independent_references(session, output):
             project.reset()
             write_variant(project, variant)
             measurements[str(variant)] = Session(session.executable, project, session.timeout).analyze()
-            raw = (project.root / ".codecallnavigator/graph.json").read_bytes()
+            raw = graph_path(project.root, session.executable).read_bytes()
             references[variant] = raw
             path = output / f"{project.language}-variant-{variant}.json.gz"
             path.write_bytes(gzip.compress(raw, mtime=0))
@@ -119,7 +120,7 @@ def sample(session, observer, binding, iteration):
     completion = collect_completion(observer, binding.generations[variant], started, events)
     if completion["runs_started"] != iteration + 1:
         raise RuntimeError(f"Unexpected automatic analysis count: {completion}")
-    raw = (session.project.root / ".codecallnavigator/graph.json").read_bytes()
+    raw = session.manifest().read_bytes()
     if raw != binding.references[variant]:
         mismatch = Path(tempfile.mkdtemp(prefix="ccn-auto-mismatch-"))
         (mismatch / "actual.json").write_bytes(raw)
@@ -148,7 +149,7 @@ def trace_event(output, received, event):
 def measure_language(session, arguments, output):
     references, reference_measurements = independent_references(session, arguments.output)
     baseline = session.analyze()
-    artifact = session.project.root / ".codecallnavigator/graph.json"
+    artifact = session.manifest()
     if artifact.read_bytes() != references[0]:
         raise RuntimeError("Initial artifact differs from independent baseline analysis")
     generations = {variant: reference_measurements[str(variant)]["generation"] for variant in (0, 1)}
@@ -172,7 +173,7 @@ def measure_language(session, arguments, output):
             resources = observer.close()
     assert_clean_shutdown(resources)
     warm = [record["save_to_verified_publication_ms"] for record in records if record["phase"] == "warm"]
-    return {"project_size": project_size(session.project), "baseline_analysis": baseline,
+    return {"project_size": project_size(session), "baseline_analysis": baseline,
             "independent_analyses": reference_measurements, "stream_resources": resources,
             "warm_save_to_verified_publication_ms": distribution(warm),
             "first_save_to_verified_publication_ms": records[0]["save_to_verified_publication_ms"],

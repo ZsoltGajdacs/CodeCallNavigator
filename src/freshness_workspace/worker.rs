@@ -126,9 +126,7 @@ impl Task {
             match notice {
                 Notice::Observation(observation) => pending.observation = Some(observation),
                 Notice::Activity(activity) => {
-                    if self.mode.selection().is_some()
-                        && matches!(activity.phase, Phase::Published { .. })
-                    {
+                    if matches!(activity.phase, Phase::Published { .. }) {
                         pending.publication = Some(activity.clone());
                     }
                     pending.activity = Some(activity);

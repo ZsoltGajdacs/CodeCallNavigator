@@ -344,7 +344,7 @@ fn validate_complete(event: &Value) -> Result<()> {
             && event["engine_versions"].is_string(),
         "Malformed CLI completion metadata"
     );
-    Ok(())
+    wire::snapshots::retention(&event["retention"])
 }
 
 #[cfg(test)]

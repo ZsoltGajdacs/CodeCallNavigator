@@ -65,6 +65,7 @@ class SuiteContext:
         return BUILD_SERVER_ENVIRONMENT | {'CARGO_TARGET_DIR': str(self.build), 'CARGO_BUILD_BUILD_DIR': str(self.build),
                 'CARGO_INCREMENTAL': '0', 'CARGO_CACHE_AUTO_CLEAN_FREQUENCY': 'never',
                 'TMPDIR': str(temporary_path(self.root, self.output)),
+                'CODECALLNAVIGATOR_GRAPH_LIBRARY': str(temporary_path(self.root, self.output) / 'graphs'),
                 'PYTHONPATH': os.pathsep.join([str(self.root / 'tools'), os.environ.get('PYTHONPATH', '')]),
                 'CODECALLNAVIGATOR_DATA_DIR': str(self.output / store),
                 'CODECALLNAVIGATOR_ENGINE': engine, 'CODECALLNAVIGATOR_TEST_ENGINE': engine,
@@ -196,6 +197,7 @@ def excluded_rows(inventory, category, selected):
 def gate_environment(context):
     return BUILD_SERVER_ENVIRONMENT | {'CARGO_TARGET_DIR': str(context.build), 'CARGO_BUILD_BUILD_DIR': str(context.build),
             'TMPDIR': str(temporary_path(context.root, context.output)),
+            'CODECALLNAVIGATOR_GRAPH_LIBRARY': str(temporary_path(context.root, context.output) / 'graphs'),
             'CODECALLNAVIGATOR_DATA_DIR': str(context.output / 'profile'),
             'PATH': os.pathsep.join([str(context.root / 'dist/CodeCallNavigatorEngine/bin'),
                                     str(context.root / 'dist/CodeCallNavigatorMcp/bin'),
@@ -220,6 +222,13 @@ def gate_setup_steps(context, gates, args):
     if any(gate['file'] == 'tools/query_benchmark.py' for gate in gates):
         command = ['cargo', 'build', '--locked', '--release', '-p', 'codecallnavigator-engine', '--bins']
         steps.append(Step('compile-query-cli', command, args.timeout))
+        fixture = 'seed_query_fixture'
+        command = ['cargo', 'build', '--locked', '--release', '-p', 'codecallnavigator-core', '--example', fixture]
+        steps.append(Step('compile-query-fixture-loader', command, args.timeout))
+        project = context.root / 'fixtures'
+        command = [str(context.build / 'release/examples' / fixture), str(project),
+                   str(project / '.codecallnavigator/graph.json')]
+        steps.append(Step('seed-query-fixture', command, args.timeout))
     if any('profile' in row['requirements'] for row in [*gates, *context.selected_tests()]):
         source = getattr(args, 'profile_source', None) or context.output / 'MISSING_PROFILE_SOURCE'
         command = [sys.executable, str(context.root / 'tools/verification/profile.py'),

@@ -6,7 +6,7 @@ from pathlib import Path
 import statistics
 import subprocess
 import time
-from graph_bundle import stored_bytes
+from graph_bundle import graph_path, stored_bytes
 
 
 def checked_response(raw):
@@ -91,7 +91,7 @@ def main():
         parser.error("--repeats must be positive")
     project = args.project.resolve()
     result = measure(args.engine.resolve(), project, args.repeats, args.render)
-    result["artifact_bytes"] = stored_bytes(project / ".codecallnavigator/graph.json")
+    result["artifact_bytes"] = stored_bytes(graph_path(project, args.engine))
     result["method"] = "Wall time includes CLI execution, pipe transfer and client JSON decoding; first session status includes initial loading. Filesystem caches are uncontrolled."
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(result, indent=2) + "\n")

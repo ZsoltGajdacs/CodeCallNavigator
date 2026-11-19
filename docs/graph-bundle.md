@@ -4,7 +4,8 @@
 `graph.schema.json` describes the reconstructed graph, not compressed objects.
 
 1. Read each manifest part from `objects/<digest>.structure.json.zst` or
-   `objects/<digest>.flows.json.zst`.
+   `objects/<digest>.flows.json.zst`. Resolve `objects/` from the library root,
+   or beside `graph.json` in a portable bundle.
 2. Verify its compressed byte count and BLAKE3 digest, then decompress with
    Zstandard and verify the uncompressed byte count.
 3. Parse the structure as the graph envelope. Parse flows into
@@ -17,9 +18,9 @@ logical roots such as `@repo/`. Relationships describe static facts with explici
 certainty, not observed execution. Schema validation does not establish reference
 integrity or freshness.
 
-These companion files are generated and replaced on successful analysis or
-refresh. Graph reads do not create or repair them. Copy the manifest and its
-referenced objects together.
+Successful publication generates the companion files in the library root. To make
+a portable bundle, copy the manifest, both schemas, and the referenced objects
+together. Keep the objects in an `objects/` subdirectory beside the manifest.
 
 See the [full graph contract](https://github.com/ZsoltGajdacs/CodeCallNavigator/blob/main/docs/graph-contract.md)
 for field semantics and compatibility rules.

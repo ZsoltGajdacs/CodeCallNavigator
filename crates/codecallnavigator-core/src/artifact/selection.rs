@@ -24,7 +24,7 @@ pub struct Target {
     pub language: String,
 }
 
-pub(super) fn capture(targets: &[BuildTarget], roots: &Roots) -> Result<Selection> {
+pub fn capture(targets: &[BuildTarget], roots: &Roots) -> Result<Selection> {
     let paths = Paths::new(roots)?;
     let mut complete = true;
     let mut selected = BTreeSet::new();

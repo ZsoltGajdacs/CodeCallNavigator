@@ -1,32 +1,16 @@
-//! Actual installed CLI wire decode over saved Git artifacts; no compiler or UI consumer.
+//! Actual installed CLI wire decode over saved library artifacts; no compiler or UI consumer.
 use super::*;
-use crate::{engine_client::Descriptor, runtime::Runtime};
+use crate::{
+    engine_client::Descriptor,
+    flow_comparison::tests::{fixture_runtime, git, retain_fixture},
+};
 use codecallnavigator::artifact::{self, Artifact};
-use std::{fs, path::Path, process::Command};
-
-fn git(root: &Path, arguments: &[&str]) {
-    let output = Command::new("git")
-        .arg("-C")
-        .arg(root)
-        .args(arguments)
-        .output()
-        .unwrap();
-    assert!(
-        output.status.success(),
-        "{}",
-        String::from_utf8_lossy(&output.stderr)
-    );
-}
+use std::{path::Path, process::Command};
 
 fn commit(root: &Path, saved: &Artifact, name: &str) {
-    codecallnavigator::artifact::publish(root, saved, &std::sync::atomic::AtomicBool::new(false))
-        .unwrap();
-    git(
-        root,
-        &["add", artifact::GRAPH_PATH, ".codecallnavigator/objects"],
-    );
-    git(root, &["commit", "-qm", name]);
+    git(root, &["commit", "--allow-empty", "-qm", name]);
     git(root, &["tag", name]);
+    retain_fixture(root, saved, "HEAD");
 }
 
 fn saved_pair(root: &Path) -> (Artifact, Artifact) {
@@ -36,7 +20,6 @@ fn saved_pair(root: &Path) -> (Artifact, Artifact) {
         &["config", "user.name", "Typed comparison integration"],
     );
     git(root, &["config", "user.email", "test@example.invalid"]);
-    fs::create_dir(root.join(".codecallnavigator")).unwrap();
     let mut graph = crate::flow_scenes::data();
     let roots = [("repo".into(), "/snapshot".into())];
     let before = artifact::canonical(&graph, &roots).unwrap();
@@ -113,11 +96,10 @@ fn assert_pinned_revision(root: &Path, bound: &BoundComparison) {
 
 #[test]
 fn packaged_cli_decodes_bound_saved_catalog_and_detail_without_current_graph() {
-    let runtime = Runtime::discover().expect("Configured matching standalone CLI is required");
     let directory = tempfile::tempdir().unwrap();
     let root = directory.path().canonicalize().unwrap();
     let (before, after) = saved_pair(&root);
-    fs::remove_file(root.join(artifact::GRAPH_PATH)).unwrap();
+    let runtime = fixture_runtime(&root);
     assert!(
         !root.join("flow.ts").exists(),
         "There is no live source to reconstruct"
@@ -174,5 +156,5 @@ fn packaged_cli_decodes_bound_saved_catalog_and_detail_without_current_graph() {
         ),
         ("refs/tags/base", "refs/tags/head")
     );
-    assert!(!root.join(artifact::GRAPH_PATH).exists());
+    assert!(!root.join(".codecallnavigator").exists());
 }

@@ -46,10 +46,7 @@ impl State {
             return;
         }
         self.flow_residency.activity();
-        let context = match &workspace.project {
-            Some(project) => Ok(project.context.clone()),
-            None => self.comparison_context().map(|(_, context)| context),
-        };
+        let context = self.library_comparison_context();
         let refs = workspace.control_refs().into();
         let workspace = &mut self.flow_comparison;
         workspace.controls.catalog_open = false;

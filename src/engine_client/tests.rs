@@ -1,5 +1,5 @@
 use super::*;
-use codecallnavigator::artifact::GRAPH_PATH;
+use codecallnavigator::artifact;
 use std::fs;
 use std::{
     os::unix::fs::symlink,
@@ -208,7 +208,7 @@ fn real_engine_roundtrip_publishes_and_preserves_graph_on_failure() {
             .any(|node| node.label == "linkedLeaf" && Path::new(&node.file) == linked)
     );
     assert!(metrics.report().stages.contains_key("analysis"));
-    let before = fs::read(project.join(GRAPH_PATH)).unwrap();
+    let before = fs::read(artifact::working_manifest_path(&project).unwrap()).unwrap();
     codecallnavigator::artifact::load(&project).unwrap();
     fs::write(
         project.join("src/main.ts"),
@@ -227,7 +227,10 @@ fn real_engine_roundtrip_publishes_and_preserves_graph_on_failure() {
         )
         .is_err()
     );
-    assert_eq!(fs::read(project.join(GRAPH_PATH)).unwrap(), before);
+    assert_eq!(
+        fs::read(artifact::working_manifest_path(&project).unwrap()).unwrap(),
+        before
+    );
 }
 
 #[test]
@@ -245,8 +248,10 @@ fn real_engine_cancellation_reaps_build_and_preserves_previous_artifact() {
     )
     .unwrap();
     fs::set_permissions(project.join("gradlew"), fs::Permissions::from_mode(0o755)).unwrap();
-    fs::create_dir(project.join(".codecallnavigator")).unwrap();
-    fs::write(project.join(GRAPH_PATH), b"previous graph").unwrap();
+    let initial =
+        artifact::canonical(&GraphData::default(), &[("repo".into(), project.clone())]).unwrap();
+    artifact::publish(&project, &initial, &AtomicBool::new(false)).unwrap();
+    let before = fs::read(artifact::working_manifest_path(&project).unwrap()).unwrap();
     let cancel = Arc::new(AtomicBool::new(false));
     let trigger = cancel.clone();
     let trigger_marker = marker.clone();
@@ -285,8 +290,8 @@ fn real_engine_cancellation_reaps_build_and_preserves_previous_artifact() {
         "Cancelled build survived engine exit"
     );
     assert_eq!(
-        fs::read(project.join(GRAPH_PATH)).unwrap(),
-        b"previous graph"
+        fs::read(artifact::working_manifest_path(&project).unwrap()).unwrap(),
+        before
     );
 }
 

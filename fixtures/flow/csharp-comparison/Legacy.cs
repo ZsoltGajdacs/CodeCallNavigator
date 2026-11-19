@@ -1,4 +1,4 @@
 namespace RevisionFixture;
-public static class Historical {
-    public static int Legacy() => 8;
+public abstract class Historical {
+    public int Legacy() => 8;
 }

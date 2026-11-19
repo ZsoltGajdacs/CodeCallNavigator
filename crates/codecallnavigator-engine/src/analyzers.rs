@@ -153,7 +153,21 @@ pub fn analyze(
     cancel: &AtomicBool,
     progress: &dyn Fn(String),
 ) -> Result<GraphData> {
-    PreparedAnalysis::new(builds, runtime.clone())?.into_graph(cancel, progress)
+    Ok(analyze_observed(builds, runtime, cancel, progress)?.graph)
+}
+
+pub struct ObservedAnalysis {
+    pub graph: GraphData,
+    pub output_attribution_limit: Option<String>,
+}
+
+pub fn analyze_observed(
+    builds: Vec<BuildTarget>,
+    runtime: &AnalyzerRuntime,
+    cancel: &AtomicBool,
+    progress: &dyn Fn(String),
+) -> Result<ObservedAnalysis> {
+    PreparedAnalysis::new(builds, runtime.clone())?.into_observed(cancel, progress)
 }
 
 struct AnalysisJob<'a> {

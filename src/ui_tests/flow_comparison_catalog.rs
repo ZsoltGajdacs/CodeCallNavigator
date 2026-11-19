@@ -132,6 +132,11 @@ fn moved_ref_blocks_actions_until_explicit_reload() {
         &["commit", "--allow-empty", "-qm", "moved"],
     );
     crate::flow_comparison::tests::git(project.path(), &["tag", "-f", "head"]);
+    crate::flow_comparison::tests::retain_scene(
+        project.path(),
+        &crate::flow_scenes::data(),
+        "HEAD",
+    );
     choose(&mut ui, "load(");
     assert!(matches!(
         ui.state.flow_comparison.phase,

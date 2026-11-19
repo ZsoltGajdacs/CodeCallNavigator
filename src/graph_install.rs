@@ -51,6 +51,7 @@ pub(crate) fn install(state: &mut State, loaded: LoadedGraph, mode: Mode) {
     state.presentation_cache = loaded.presentation_cache;
     state.graph = Some(loaded.graph);
     state.analysis_metrics = loaded.metrics;
+    state.analysis_feedback.retention = loaded.retention;
     state.generation = Some(loaded.generation);
     let graph = state.graph.as_ref().expect("installed graph");
     state.status = format!(
@@ -73,12 +74,13 @@ pub(crate) fn clear(state: &mut State) {
     state.presentation_cache = None;
     state.graph = None;
     state.analysis_metrics = None;
+    state.analysis_feedback.retention = None;
     state.generation = None;
     state.needs_layout = false;
 }
 
 fn reset_generation(state: &mut State) {
-    state.analysis_failure = None;
+    state.analysis_feedback.failure = None;
     state.flow_residency.retire(state.query_context.clone());
     invalidate(state);
     state.epoch += 1;

@@ -45,6 +45,13 @@ fn capabilities_and_missing_graph_are_machine_readable() {
 }
 
 fn saved_graph(root: &Path) -> Vec<u8> {
+    use codecallnavigator_core::artifact;
+    let artifact = graph_fixture(root);
+    artifact::publish(root, &artifact, &std::sync::atomic::AtomicBool::new(false)).unwrap();
+    fs::read(artifact::working_manifest_path(root).unwrap()).unwrap()
+}
+
+fn graph_fixture(root: &Path) -> codecallnavigator_core::artifact::Artifact {
     use codecallnavigator_core::{
         artifact,
         model::{Edge, EntryPoints, GraphData, Node},
@@ -86,9 +93,7 @@ fn saved_graph(root: &Path) -> Vec<u8> {
         flow_inventory: Some(flow_fixture(root, file)),
         ..Default::default()
     };
-    let artifact = artifact::canonical(&graph, &[("repo".into(), root.into())]).unwrap();
-    artifact::publish(root, &artifact, &std::sync::atomic::AtomicBool::new(false)).unwrap();
-    fs::read(root.join(artifact::GRAPH_PATH)).unwrap()
+    artifact::canonical(&graph, &[("repo".into(), root.into())]).unwrap()
 }
 
 fn source_fixture(
@@ -192,7 +197,7 @@ fn queries_preserve_stable_ids_uncertainty_source_and_bounds() {
     assert_eq!(flow["result"]["chart"]["symbol"], symbol);
     assert!(flow["result"]["chart"]["steps"].as_array().unwrap().len() > 1);
     assert_eq!(
-        fs::read(root.join(codecallnavigator_core::artifact::GRAPH_PATH)).unwrap(),
+        fs::read(codecallnavigator_core::artifact::working_manifest_path(&root).unwrap()).unwrap(),
         before
     );
     let (code, result) = query(
@@ -369,7 +374,8 @@ fn real_typescript_analysis_is_queryable_without_reanalysis() {
         "{}",
         String::from_utf8_lossy(&output.stderr)
     );
-    let before = fs::read(root.join(codecallnavigator_core::artifact::GRAPH_PATH)).unwrap();
+    let before =
+        fs::read(codecallnavigator_core::artifact::working_manifest_path(&root).unwrap()).unwrap();
     let search = ask(
         &root,
         json!({"kind":"search","text":"start","category":"methods"}),
@@ -403,7 +409,7 @@ fn real_typescript_analysis_is_queryable_without_reanalysis() {
     );
     assert_eq!(
         before,
-        fs::read(root.join(codecallnavigator_core::artifact::GRAPH_PATH)).unwrap()
+        fs::read(codecallnavigator_core::artifact::working_manifest_path(&root).unwrap()).unwrap()
     );
 }
 

@@ -50,7 +50,7 @@ file and in the derived desktop SQLite cache.
 ## Disposable decision cache
 
 `DecisionCache` optionally reuses per-request routing decisions in
-`.codecallnavigator/inference.sqlite3`. The key includes the current use, normalized
+`inference.sqlite3` under the local graph library's project state. The key includes the current use, normalized
 configuration, toolchain identity, and every current potentially matching route,
 including blockers and empty membership. Support identities are part of those
 validated facts. Unrelated routes can therefore change without invalidating a
