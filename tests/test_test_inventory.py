@@ -249,6 +249,10 @@ class Second(Cases, unittest.TestCase):
                                        purpose='Reviewed real harness boundary', arguments=[]))
             path.write_text(json.dumps(value))
             self.assertEqual(validate_inventory(self.root), value['tests'])
+        unit_gate = dict(value['gates'][0], category='unit')
+        path.write_text(json.dumps(value | {'gates': [unit_gate, *value['gates'][1:]]}))
+        with self.assertRaisesRegex(ValueError, r'(?i)(gate.*unit|unit.*gate)'):
+            validate_inventory(self.root)
         self.assert_gate_duplicate_and_stale(value, path)
         path.write_text(original)
         for file in (*files, ignored):

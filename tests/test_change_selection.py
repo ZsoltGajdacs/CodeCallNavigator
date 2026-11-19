@@ -2,6 +2,7 @@
 from dataclasses import replace
 import json
 import os
+import shlex
 from pathlib import Path
 import shutil
 import subprocess
@@ -13,9 +14,9 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / 'tools'))
 import verify
 import verify_changes
-from verification.change_inputs import discover_changes
+from verification.change_inputs import Change, discover_changes
 from verification.change_policy import read_json, select_changes
-from verification.change_plan import ChangePlan, build_steps
+from verification.change_plan import ChangePlan, build_steps, report_plan
 
 
 class GitSelectionTests(unittest.TestCase):
@@ -70,7 +71,6 @@ class RepositoryPolicyTests(unittest.TestCase):
                 self.assertTrue(self.selection(path).full)
 
     def test_verification_tooling_selects_no_application_build_or_runtime_checks(self):
-        from verification.change_inputs import Change
         for path in ('tools/verify_changes.py', 'tools/verification/change-rules.json',
                      'tools/verification/suites.py', 'verify-changes.sh'):
             with self.subTest(path=path):
@@ -102,7 +102,6 @@ class RepositoryPolicyTests(unittest.TestCase):
     def test_auto_full_stages_equal_legacy_and_skip_vendor_formatting(self):
         args = verify_changes.Options()
         paths = ['Cargo.lock', 'vendor/rune/src/lib.rs']
-        from verification.change_inputs import Change
         context = ChangePlan(args, 'HEAD', [Change(p, 'M', 'worktree') for p in paths],
                              self.policy, self.selection(*paths), self.inventory)
         output = ROOT / 'target/verification/PLAN'
@@ -112,7 +111,6 @@ class RepositoryPolicyTests(unittest.TestCase):
         self.assertFalse(any(s.command[0] == 'rustfmt' and 'vendor/' in s.command[-1] for s in actual))
 
     def test_focused_correctness_keeps_compiler_backed_tests_and_component_union(self):
-        from verification.change_inputs import Change
         path = 'crates/codecallnavigator-core/src/model.rs'
         context = ChangePlan(verify_changes.Options(), 'HEAD', [Change(path, 'M', 'worktree')],
                              self.policy, self.selection(path), self.inventory)
@@ -124,12 +122,66 @@ class RepositoryPolicyTests(unittest.TestCase):
         self.assertEqual(len({s.name for s in steps}), len(steps))
 
     def test_tsx_fixtures_receive_shared_source_quality_review(self):
-        from verification.change_inputs import Change
         path = 'fixtures/typescript-corpus/src/app/page.tsx'
         context = ChangePlan(verify_changes.Options(), 'HEAD', [Change(path, 'M', 'worktree')],
                              self.policy, self.selection(path), self.inventory)
         steps = build_steps(verify, context, ROOT / 'target/verification/PLAN')
         self.assertIn('codescene', [step.name for step in steps])
+
+    def test_development_plan_projects_final_selection_to_units(self):
+        output = ROOT / 'target/verification/PLAN'
+        for paths in (('tools/verify_changes.py',), ('src/view/activity.rs', 'tools/verify_changes.py'),
+                      ('tests/test_change_selection.py',), ('README.md',), ('Cargo.lock',),
+                      ('new/unknown.bin',)):
+            with self.subTest(paths=paths):
+                context = ChangePlan(verify_changes.Options(phase='development'), 'HEAD',
+                                     [Change(path, 'M', 'worktree') for path in paths],
+                                     self.policy, self.selection(*paths), self.inventory)
+                steps = build_steps(verify, context, output)
+                report = report_plan(context, steps)
+                final = report_plan(replace(context, settings=verify_changes.Options()), [])
+                self.assert_unit_projection(report, final)
+
+    def assert_unit_projection(self, report, final):
+        unit_ids = {row['id'] for row in self.inventory['tests'] if row['category'] == 'unit'}
+        final_tests = set(final['selected']['tests'])
+        self.assertEqual(report['phase'], 'development')
+        self.assertEqual(report['scope'], final['scope'])
+        self.assertEqual(report['excluded_by_policy'], final['excluded_by_policy'])
+        self.assertEqual(set(report['selected']['tests']), final_tests & unit_ids)
+        self.assertEqual(report['selected']['gates'], [])
+        self.assertEqual(set(report['deferred_until_final']['tests']), final_tests - unit_ids)
+        self.assertEqual(report['deferred_until_final']['gates'], final['selected']['gates'])
+        self.assertTrue(all(selection['category'] == 'unit' for selection in report['selections']))
+        self.assert_unit_stages(report['stages'], bool(final_tests & unit_ids))
+
+    def assert_unit_stages(self, stages, has_units):
+        names = {stage['name'] for stage in stages}
+        if has_units:
+            self.assertTrue({'unit-prerequisites', 'unit-prepare', 'unit-category-cleanup'} <= names)
+            self.assertTrue(all(name.startswith('unit-') for name in names))
+            self.assertFalse(any('bootstrap' in name or 'gate-' in name for name in names))
+        else:
+            self.assertEqual(names, set())
+
+    def assert_docs_development_phase(self, command, env, root, final):
+        output = root / 'target' / 'development'
+        args = [*command, '--phase', 'development', '--output', str(output), '--format', 'json']
+        report = subprocess.run(args, cwd='/', env=env, capture_output=True, text=True, check=True)
+        plan = json.loads(report.stdout)
+        self.assert_unit_projection(plan, final)
+        self.assertTrue(plan['deferred_until_final']['checks'])
+        self.assertIn('--phase', shlex.split(plan['execution_command']))
+        final_command = shlex.split(plan['final_execution_command'])
+        self.assertNotIn('--phase', final_command)
+        self.assertNotIn('--output', final_command)
+        self.assertFalse((root / 'target').exists())
+
+        run = subprocess.run([*args, '--run'], cwd='/', env=env, capture_output=True, text=True, check=True)
+        result = json.loads(run.stdout)
+        self.assertEqual(result['result'], 'no-unit-tests')
+        self.assertNotIn('evidence', result)
+        self.assertFalse((root / 'target').exists())
 
     def test_cli_text_json_and_execute_clean_checkout_without_artifacts(self):
         # A copied minimal real checkout proves CLI behavior without altering this checkout's Git state.
@@ -156,8 +208,13 @@ class RepositoryPolicyTests(unittest.TestCase):
             (root / 'README.md').write_text('# Documentation\n')
             planned = subprocess.run([*command, '--format', 'json'], cwd='/', env=env,
                                      capture_output=True, text=True, check=True)
-            self.assertEqual(json.loads(planned.stdout)['scope'], 'static')
+            final_plan = json.loads(planned.stdout)
+            self.assertEqual(final_plan['scope'], 'static')
+            explicit = subprocess.run([*command, '--phase', 'final', '--format', 'json'],
+                                      cwd='/', env=env, capture_output=True, text=True, check=True)
+            self.assertEqual(json.loads(explicit.stdout), final_plan)
             self.assertFalse((root / 'target').exists())
+            self.assert_docs_development_phase(command, env, root, final_plan)
             executed = subprocess.run([*command, '--run', '--format', 'json'], cwd='/', env=env,
                                       capture_output=True, text=True, check=True)
             final = json.loads(executed.stdout)

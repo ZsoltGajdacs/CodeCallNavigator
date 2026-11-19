@@ -3,7 +3,7 @@ id: doc-12
 title: Testing strategy
 type: guide
 created_date: '2026-11-16T07:06:00Z'
-updated_date: '2026-11-16T18:07:00Z'
+updated_date: '2026-11-19T07:55:00Z'
 ---
 # Testing strategy
 
@@ -40,8 +40,10 @@ owner and consumer checks. Keep MCP independent of application libraries in test
 
 Use real production operations and assert observable results, including failures,
 uncertainty, provenance, source identity and preservation of prior artifacts.
-Extract cohesive pure logic when it improves production design; do not extract
-artificial seams or replicate an algorithm just to create cheap tests.
+Design production decisions and transformations around explicit inputs and
+observable results or errors. Keep external effects at their owning boundaries
+where the design permits, and exercise the production logic in memory. Avoid
+test-only branches, artificial seams and copied algorithms.
 
 Do not mock business behavior, fabricate successful compiler/CLI outputs, or build
 replacement services that reproduce production decisions. Real temporary resources
@@ -59,14 +61,21 @@ Run commands from the workspace root:
 ```sh
 ./verify-changes.sh
 ./verify-changes.sh --format json
+./verify-changes.sh --phase development --run
 ./verify-changes.sh --run
 ./verify-changes.sh --base origin/main --run
 ```
 
-Agents must use this entrypoint for verification and test execution, rather than
-raw test commands or manually selected category/component scripts. Reporting is
-the default and creates no build or evidence artifacts. Execute the entire
-computed plan with `--run`. There is no manual full-verification override.
+Agents use this entrypoint for development and final verification. Reporting
+is the default and creates no build or evidence artifacts. During implementation
+and fixes, `--phase development --run` runs the deterministic unit selection and
+its necessary setup, compilation and cleanup. A plan with no selected unit tests
+reports that outcome without allocating an evidence directory.
+
+After the last edit, `--run` executes the complete final plan. Use a base that
+covers the entire change. Fix failures and rerun the final plan after iterating
+with unit tests. Development results do not satisfy final verification. There
+is no manual override of the final scope.
 
 The checked-in versioned rules in `tools/verification/change-rules.json` combine
 by union. Desktop code selects UI correctness; core selects core and engine/UI/MCP
@@ -102,7 +111,9 @@ prerequisites, bootstrap, reports and cleanup; component unions compile once per
 selected target/profile and execute each registration/gate once. Policy exclusions
 are distinct from selected stages that did not run. Text and versioned JSON report
 paths, rule matches, selected identities, requirements and ordered stages; execution
-persists `change-plan.json` beside results. Existing category/component/full/light
+persists `change-plan.json` beside results. Development reports distinguish
+checks reserved for final verification from policy exclusions and execution
+failures. Existing category/component/full/light
 scripts remain compatible building blocks, not the agent workflow.
 
 Static/build/CodeScene checks remain applicable. Unavailable prerequisites and

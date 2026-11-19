@@ -132,6 +132,7 @@ def validate_gates(root, rows):
     require(not (missing or stale), f'Standalone gate inventory drift; unclassified={missing}; stale={stale}')
     for gate in gates:
         validate_metadata(gate)
+        require(gate['category'] != 'unit', f'Standalone gate cannot be a unit test: {gate["id"]}')
         if 'requires_desktop' in gate:
             require(gate['requires_desktop'] is True and 'native' in gate['requirements'],
                     f'Invalid desktop requirement: {gate["id"]}')

@@ -17,6 +17,7 @@ or protocol failures. Name the risk and cheaper-layer limitation for expensive t
 
 ```sh
 ./verify-changes.sh
+./verify-changes.sh --phase development --run
 ./verify-changes.sh --run
 ./verify-changes.sh --base origin/main --run
 ```
@@ -32,10 +33,15 @@ Report build/setup/execution/cleanup costs separately. The roughly one-minute wa
 unit aspiration is not an enforced threshold. Removal requires a coverage mapping
 and demonstrated failure detection; keep unique boundary checks regardless of cost.
 
-Agents must use `./verify-changes.sh` for verification selection and
-`./verify-changes.sh --run` for all test and verification execution. Do not
-substitute raw test commands or manually selected category/component scripts.
-Execute the complete computed plan; full verification is selected automatically
-by checked-in rules, with no manual scope override. Use `--base REF` to include
-committed changes. Run automatically selected full verification outside the macOS
-sandbox. Report unavailable prerequisites as not run, never as passing checks.
+During implementation and while fixing failures, use
+`./verify-changes.sh --phase development --run` for test execution. Keep
+behavioral combinations in tests of production logic with explicit in-memory
+inputs. Isolate decisions from external effects at natural boundaries and
+retain real boundary tests. Follow the root guidance on avoiding mocks,
+fabricated results and test-only behavior.
+
+After the last edit, use `./verify-changes.sh --run` to execute the complete
+computed final plan. Include the entire change with `--base REF` when needed.
+Fix failures and rerun the final plan. Run automatically selected full
+verification outside the macOS sandbox and report unavailable prerequisites
+as not run.

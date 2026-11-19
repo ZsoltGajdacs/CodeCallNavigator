@@ -3,7 +3,7 @@ id: doc-21
 title: Verification prerequisites and operations
 type: guide
 created_date: '2026-11-16T07:06:00Z'
-updated_date: '2026-11-19T05:46:00Z'
+updated_date: '2026-11-19T07:55:00Z'
 ---
 # Verification prerequisites and operations
 
@@ -17,13 +17,21 @@ current directory when invoked by its absolute path:
 ```sh
 ./verify-changes.sh
 ./verify-changes.sh --format json
+./verify-changes.sh --phase development --run
 ./verify-changes.sh --run
 ./verify-changes.sh --base origin/main --run
 ```
 
-The script reports by default and executes only with `--run`. It determines full
+The script reports by default and executes only with `--run`. Agents use
+`--phase development --run` during implementation and fixes. It runs the
+applicable unit tests and their build/setup/cleanup only. An empty unit selection
+creates no evidence directory. Development evidence names its phase and identifies
+checks reserved for final verification.
+
+After the last edit, use `--run` to run the complete final plan. Fix failures and
+rerun that plan after iterating with units. The script determines full final
 verification automatically from explicit file rules, including conservative full
-fallback for unknown paths. There is no manual full flag or agent scope choice.
+fallback for unknown paths.
 Verification-tooling and selector/rule changes select tooling unit/integration
 checks and generated-plan equivalence assertions, without application builds.
 Do not substitute raw test commands or manually select category/component scripts.

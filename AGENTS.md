@@ -148,8 +148,11 @@ set of end-to-end journeys proves the assembled application. There is no numeric
 quota. Roughly one minute of warm unit-test execution is an aspiration, never a
 pass/fail gate or permission to weaken verification.
 
-- Test production code through observable results, not copied implementation or
-  internal call sequences. Extract cohesive logic only when it improves design.
+- Design production decisions and transformations to take explicit inputs and
+  return observable results or errors. Keep filesystem, SQLite, compiler,
+  subprocess and UI effects at their owning boundaries when the design permits.
+  Exercise the same production logic with in-memory data and avoid test-only
+  branches or seams that exist only to substitute behavior.
 - Write tests so independent cases can run in parallel whenever practical. Give
   each case its own temporary directories, mutable fixtures, environment and
   process ownership; avoid shared mutable state and order dependencies. Keep
@@ -181,6 +184,7 @@ Agents must use the deterministic selector for verification and test execution:
 ```sh
 ./verify-changes.sh
 ./verify-changes.sh --format json
+./verify-changes.sh --phase development --run
 ./verify-changes.sh --run
 ./verify-changes.sh --base origin/main --run
 ```
@@ -190,10 +194,16 @@ comparison is HEAD plus staged, unstaged and nonignored untracked changes; use
 `--base REF` to include committed changes. All commands work from any directory
 when invoked by their absolute path.
 
-Run the complete computed plan. Do not substitute raw Cargo/Python/Node test
-commands, manually choose category/component scripts, or override verification
-scope. Existing category/component and full/light scripts are compatibility and
-internal-composition entrypoints, not the agent verification workflow.
+During implementation and while fixing failures, run only the deterministic
+unit tests with `--phase development --run`. This phase runs the setup, build and
+cleanup needed for the selected unit tests. A change can select zero unit tests.
+
+After the last edit, run the complete computed final plan with `--run` and a base
+that covers the whole change. If a required check fails, fix it, use the
+development phase while iterating, and rerun the complete plan. Development
+results cannot satisfy final verification. Use this same selector throughout
+the task. Existing category/component and full/light scripts serve compatibility
+and internal composition.
 
 The versioned policy in `tools/verification/change-rules.json` unions explicit
 file rules. Production changes select affected component correctness and consumer

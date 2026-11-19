@@ -107,7 +107,7 @@ def machine_details(include_tools=True):
                 tools={name: tool_version(command) for name, command in commands.items()} if include_tools else {})
 
 
-def write_summary(root, output):
+def write_summary(root, output, *, verification_phase='final'):
     """Write durable evidence after Runner, without changing its success criteria."""
     output = Path(output)
     results = json.loads((output / 'results.json').read_text())
@@ -118,7 +118,10 @@ def write_summary(root, output):
             selections[category] = json.loads(path.read_text())
     report = summarize_results(results, selections)
     runtime = bool(selections) or any(row['name'] == 'prerequisites' for row in results)
+    development = verification_phase == 'development'
+    if development:
+        report.update(phase=verification_phase, final_verification_required=True)
     report.update(version=1, generated_at=datetime.now(timezone.utc).isoformat(),
-                  repository=str(Path(root).resolve()), machine=machine_details(runtime))
+                  repository=str(Path(root).resolve()), machine=machine_details(runtime and not development))
     (output / 'summary.json').write_text(json.dumps(report, indent=2) + '\n')
     return report

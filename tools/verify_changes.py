@@ -2,7 +2,7 @@
 """Select required verification from changed files; execute only with --run."""
 import argparse
 import contextlib
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 import json
 import os
 from pathlib import Path
@@ -16,6 +16,7 @@ from verification.change_inputs import discover_changes, inventory_at
 from verification.change_policy import INVENTORY, read_json, select_changes, validate_policy
 from verification.change_plan import ChangePlan, build_steps, report_plan
 from verification.inventory import validate_inventory
+from verification.plan_output import display_plan
 from verification.reporting import write_summary
 from verification.runner import RESULT_LABELS, Runner, exclusive
 
@@ -32,13 +33,16 @@ class Options:
     keep_artifacts: bool = False
     mode: str = 'changes'
     component: tuple[str, ...] | None = None
+    phase: str = 'final'
 
 
 def arguments():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--base', default='HEAD', help='Direct comparison base, including all local changes')
     parser.add_argument('--format', choices=('text', 'json'), default='text')
-    parser.add_argument('--run', action='store_true', help='Execute the complete computed plan')
+    parser.add_argument('--phase', choices=('development', 'final'), default='final',
+                        help='Select unit tests during development or the complete final plan (default)')
+    parser.add_argument('--run', action='store_true', help='Execute the plan for the selected phase')
     parser.add_argument('--timeout', type=int, default=1800)
     parser.add_argument('--profile-source', type=Path, default=os.environ.get('CODECALLNAVIGATOR_VERIFY_PROFILE_SOURCE'))
     parser.add_argument('--output', type=Path)
@@ -51,7 +55,7 @@ def arguments():
 
 
 def options(args):
-    names = ('base', 'timeout', 'profile_source', 'output', 'codescene_command', 'keep_artifacts')
+    names = ('base', 'timeout', 'profile_source', 'output', 'codescene_command', 'keep_artifacts', 'phase')
     values = {name: getattr(args, name) for name in names}
     for name in ('profile_source', 'output'):
         if values[name] is not None:
@@ -75,12 +79,17 @@ def prepare(settings, output):
     steps = build_steps(legacy, context, output)
     report = report_plan(context, steps)
     report['execution_command'] = execution_command(settings)
+    if settings.phase == 'development':
+        # The development run may already own an explicitly requested evidence directory.
+        report['final_execution_command'] = execution_command(replace(settings, phase='final', output=None))
     return report, steps
 
 
 def execution_command(settings):
     command = [str(ROOT / 'verify-changes.sh'), '--run', '--base', settings.base, '--timeout', str(settings.timeout),
                '--codescene-command', settings.codescene_command]
+    if settings.phase == 'development':
+        command.extend(['--phase', settings.phase])
     for flag, value in (('--profile-source', settings.profile_source), ('--output', settings.output)):
         if value is not None:
             command.extend([flag, str(value)])
@@ -89,29 +98,11 @@ def execution_command(settings):
     return shlex.join(command)
 
 
-def display(report, form):
-    if form == 'json':
-        print(json.dumps(report, indent=2, sort_keys=True))
-        return
-    print(f"Verification: {report['scope']} (base {report['base']} = {report['resolved_base']})")
-    for match in report['matches']:
-        print(f"  {match['path']!r}: {', '.join(match['rules'])}")
-    for selection in report['selections']:
-        print(f"  Required: {selection['category']} / {selection['component']}")
-    print('Requirements: ' + (', '.join(report['requirements']) or 'none'))
-    for stage in report['stages']:
-        desktop = " (requires accessible desktop)" if stage['requires_desktop'] else ""
-        print(f"  {stage['name']}{desktop}: {shlex.join(stage['command'])}")
-    print('Execute: ' + report['execution_command'])
-    if 'result' in report:
-        print(f"Result: {report['result']}; evidence: {report['evidence']}")
-
-
 def run(settings, report, steps, output):
     with exclusive(ROOT):
         result = Runner(ROOT, output, steps).run()
         (output / 'change-plan.json').write_text(json.dumps(report, indent=2, sort_keys=True) + '\n')
-        write_summary(ROOT, output)
+        write_summary(ROOT, output, verification_phase=settings.phase)
     return result
 
 
@@ -121,7 +112,9 @@ def main():
     placeholder = settings.output or ROOT / 'target/verification/PLAN'
     report, steps = prepare(settings, placeholder)
     if not args.run or not steps:
-        display(report, args.format)
+        if args.run and settings.phase == 'development':
+            report['result'] = 'no-unit-tests'
+        display_plan(report, args.format)
         return 0
     # Reserve an evidence name only after selection succeeds and --run was requested.
     output = legacy.evidence_output(settings)
@@ -129,7 +122,7 @@ def main():
     with contextlib.redirect_stdout(sys.stderr):
         result = run(settings, report, steps, output)
     report.update(result=RESULT_LABELS[result], evidence=str(output))
-    display(report, args.format)
+    display_plan(report, args.format)
     return result
 
 

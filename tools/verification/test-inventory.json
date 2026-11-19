@@ -17383,6 +17383,19 @@
       ]
     },
     {
+      "id": "tests/test_change_selection.py::RepositoryPolicyTests.test_development_plan_projects_final_selection_to_units",
+      "runner": "python",
+      "file": "tests/test_change_selection.py",
+      "test_name": "test_change_selection.RepositoryPolicyTests.test_development_plan_projects_final_selection_to_units",
+      "ignored": false,
+      "component": "tooling",
+      "category": "integration",
+      "purpose": "Verify generated development plans select only units and distinguish postponed final checks from policy exclusions.",
+      "requirements": [
+        "git"
+      ]
+    },
+    {
       "id": "tests/test_change_selection.py::RepositoryPolicyTests.test_focused_correctness_keeps_compiler_backed_tests_and_component_union",
       "runner": "python",
       "file": "tests/test_change_selection.py",
