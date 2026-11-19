@@ -86,7 +86,7 @@ pub fn run() -> Result<i32> {
         Command::PrepareSnapshot(arguments) => print_snapshot(&snapshots::prepare(
             &arguments.project,
             &arguments.revision,
-            arguments.targets,
+            snapshots::Selection::Paths(arguments.targets),
             &|message| eprintln!("{message}"),
         )?),
         Command::ImpactPreview { project, query } => impact_preview::cli(project, query),

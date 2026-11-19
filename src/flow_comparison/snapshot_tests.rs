@@ -3,7 +3,7 @@ use super::{
     GraphNavigation, SnapshotSide,
     tests::{git, isolate_cli_cache, settle, state},
 };
-use crate::app::State;
+use crate::app::{State, TargetChoice};
 use crate::engine_client::flow_comparison::ImpactRow;
 use std::{fs, path::Path, sync::Arc};
 
@@ -16,7 +16,7 @@ fn desktop_prepares_selects_and_pages_cached_graphs_and_flows() {
     std::os::unix::fs::symlink(
         std::env::var_os("CODECALLNAVIGATOR_TS_NODE_MODULES")
             .expect("TypeScript fixture dependencies"),
-        root.join("node_modules"),
+        root.join("selected/node_modules"),
     )
     .unwrap();
 
@@ -26,39 +26,33 @@ fn desktop_prepares_selects_and_pages_cached_graphs_and_flows() {
 
     state.flow_comparison.controls.base = rune::TextEdit::new("refs/tags/base");
     state.flow_comparison.controls.head = rune::TextEdit::new("refs/tags/head");
-    state.flow_comparison.snapshots.target = rune::TextEdit::new("tsconfig.json");
     check_impact_support(&mut state);
+    state.lookup_comparison_snapshot(SnapshotSide::Base);
+    settle(&mut state);
+    assert!(
+        state
+            .flow_comparison
+            .snapshots
+            .lookup(SnapshotSide::Base, "refs/tags/base")
+            .is_some()
+    );
+    state.prepare_comparison_snapshot(SnapshotSide::Base);
+    assert_eq!(
+        state.flow_comparison.snapshots.message,
+        super::SELECT_BUILDS
+    );
+    assert!(!state.flow_comparison.snapshots.pending());
+    state.targets = crate::discovery::discover(&root)
+        .unwrap()
+        .into_iter()
+        .map(|target| TargetChoice {
+            selected: target.path == root.join("selected/tsconfig.json"),
+            target,
+        })
+        .collect();
+    assert_eq!(state.targets.len(), 2);
     for side in [SnapshotSide::Base, SnapshotSide::Head] {
-        state.lookup_comparison_snapshot(side);
-        settle(&mut state);
-        let refs = state.flow_comparison.control_refs();
-        let lookup = state
-            .flow_comparison
-            .snapshots
-            .lookup(side, side.reference(&refs))
-            .unwrap();
-        assert!(lookup.status.snapshots.is_empty());
-        assert!(lookup.status.cache_path.starts_with(&cache));
-        state.prepare_comparison_snapshot(side);
-        settle(&mut state);
-        assert!(
-            state
-                .flow_comparison
-                .snapshots
-                .message
-                .starts_with("Prepared snapshot for "),
-            "{}",
-            state.flow_comparison.snapshots.message
-        );
-        let lookup = state
-            .flow_comparison
-            .snapshots
-            .lookup(side, side.reference(&refs))
-            .unwrap();
-        assert_eq!(
-            lookup.selected.as_ref(),
-            Some(&lookup.status.snapshots[0].id)
-        );
+        assert_prepares_picked_target(&mut state, side, &cache);
         if matches!(side, SnapshotSide::Base) {
             assert_impact_without_head_snapshot(&mut state);
         }
@@ -78,6 +72,49 @@ fn desktop_prepares_selects_and_pages_cached_graphs_and_flows() {
     assert_preparation_failure(&mut state);
 }
 
+fn assert_prepares_picked_target(state: &mut State, side: SnapshotSide, cache: &Path) {
+    state.lookup_comparison_snapshot(side);
+    settle(state);
+    let refs = state.flow_comparison.control_refs();
+    let lookup = state
+        .flow_comparison
+        .snapshots
+        .lookup(side, side.reference(&refs))
+        .unwrap();
+    assert!(lookup.status.snapshots.is_empty());
+    assert!(lookup.status.cache_path.starts_with(cache));
+    state.prepare_comparison_snapshot(side);
+    settle(state);
+    assert!(
+        state
+            .flow_comparison
+            .snapshots
+            .message
+            .starts_with("Prepared snapshot for "),
+        "{}",
+        state.flow_comparison.snapshots.message
+    );
+    let lookup = state
+        .flow_comparison
+        .snapshots
+        .lookup(side, side.reference(&refs))
+        .unwrap();
+    assert_eq!(
+        lookup.selected.as_ref(),
+        Some(&lookup.status.snapshots[0].id)
+    );
+    let selection: serde_json::Value =
+        serde_json::from_str(&lookup.status.snapshots[0].identity.selection).unwrap();
+    assert_eq!(
+        selection["builds"]["targets"],
+        serde_json::json!([{
+            "path": "@repo/selected/tsconfig.json",
+            "kind": "typescript",
+            "language": "typescript"
+        }])
+    );
+}
+
 fn assert_preparation_failure(state: &mut State) {
     state.flow_comparison.controls.base = rune::TextEdit::new("no-such-revision");
     state.prepare_comparison_snapshot(SnapshotSide::Base);
@@ -90,6 +127,18 @@ fn assert_preparation_failure(state: &mut State) {
             .starts_with("Snapshot preparation failed"),
         "{}",
         state.flow_comparison.snapshots.message
+    );
+    state.flow_comparison.controls.base = rune::TextEdit::new("refs/tags/base");
+    state.lookup_comparison_snapshot(SnapshotSide::Base);
+    settle(state);
+    let lookup = state
+        .flow_comparison
+        .snapshots
+        .lookup(SnapshotSide::Base, "refs/tags/base")
+        .unwrap();
+    assert_eq!(
+        lookup.selected.as_ref(),
+        Some(&lookup.status.snapshots[0].id)
     );
 }
 
@@ -167,9 +216,16 @@ fn commit_revisions(root: &Path) {
     git(root, &["config", "user.name", "Desktop snapshot test"]);
     git(root, &["config", "user.email", "snapshot@example.invalid"]);
     fs::write(root.join("tsconfig.json"), r#"{"files":["main.ts"]}"#).unwrap();
+    fs::create_dir(root.join("selected")).unwrap();
+    fs::write(
+        root.join("selected/tsconfig.json"),
+        r#"{"files":["main.ts"]}"#,
+    )
+    .unwrap();
     let before =
         "export function value() { return 1; }\nexport function caller() { return value(); }\n";
-    fs::write(root.join("main.ts"), before).unwrap();
+    fs::write(root.join("main.ts"), "export function deselected() {}\n").unwrap();
+    fs::write(root.join("selected/main.ts"), before).unwrap();
     git(root, &["add", "."]);
     git(root, &["commit", "-qm", "baseline"]);
     git(root, &["tag", "base"]);
@@ -177,8 +233,12 @@ fn commit_revisions(root: &Path) {
         .map(|id| format!("export function added{id}() {{ return {id}; }}\n"))
         .collect();
     let after = before.replace("return 1", "return 2");
-    fs::write(root.join("main.ts"), format!("{after}\n{additions}")).unwrap();
-    git(root, &["add", "main.ts"]);
+    fs::write(
+        root.join("selected/main.ts"),
+        format!("{after}\n{additions}"),
+    )
+    .unwrap();
+    git(root, &["add", "selected/main.ts"]);
     git(root, &["commit", "-qm", "head"]);
     git(root, &["tag", "head"]);
 }

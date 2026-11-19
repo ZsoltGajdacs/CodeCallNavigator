@@ -49,7 +49,7 @@ def commit_revision(project, revision, tag):
         legacy = legacy.replace(concrete, b"public abstract int Legacy();")
     (project / "Legacy.cs").write_bytes(legacy)
     inputs = {name: (project / name).read_bytes() for name in SOURCES}
-    git(project, "add", TARGET, *SOURCES)
+    git(project, "add", ".gitattributes", TARGET, *SOURCES)
     git(project, "commit", "-qm", tag)
     git(project, "tag", tag)
     return inputs
@@ -93,6 +93,8 @@ def prepare(engine, project, timeout):
     git(project, "init", "-q")
     git(project, "config", "user.name", "Native comparison fixture")
     git(project, "config", "user.email", "native-comparison@example.invalid")
+    # The fixture compares compiler inputs byte for byte, including CRLF.
+    (project / ".gitattributes").write_text("*.cs -text\n", encoding="utf-8")
     client = Client(engine, dict(clean_environment(), CODECALLNAVIGATOR_GRAPH_LIBRARY=str(library)))
     inputs = {revision: commit_revision(project, revision, tag) for revision, tag in
               (("Before", "fixture-before"), ("After", "fixture-after"))}

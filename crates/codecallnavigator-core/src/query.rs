@@ -18,7 +18,7 @@ pub fn capabilities() -> serde_json::Value {
     serde_json::json!({
         "query_version": VERSION,
         "operations": ["flow_resources", "status", "freshness", "snapshot", "inspect", "live_source", "architecture", "search", "symbol", "source", "explorer", "selection", "render_selection", "neighbors", "flow", "compare", "flow_comparison", "flow_expansion", "snapshot_status", "impact_preview"],
-        "local_snapshots": {"version":1,"status_query":"snapshot_status","prepare_command":"prepare_snapshot","cancel_command":"cancel"},
+        "local_snapshots": {"version":1,"status_query":"snapshot_status","prepare_command":"prepare_snapshot","cancel_command":"cancel","exact_targets":true},
         "impact_preview": {"version":1},
         "automatic_refresh": {"version":crate::refresh::VERSION,"activity_version":crate::refresh::VERSION,"observe_flag":"--auto-refresh","initial_session_version":crate::refresh::OBSERVE_SESSION_VERSION,"debounce_milliseconds":crate::refresh::DEBOUNCE_MILLISECONDS,"cancel_command":"cancel_refresh"},
         "analysis_session": {"version":crate::refresh::SESSION_VERSION,"command":"analysis-session","activity_version":crate::refresh::VERSION,"cancel_command":"cancel_refresh"},

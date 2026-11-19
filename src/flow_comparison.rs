@@ -18,6 +18,7 @@ use crate::engine_client::{
 pub use pair::{Pair, ReadySide, Side, SideId};
 use requests::{CatalogOutput, Clock, DetailOutput};
 use rune::{Latest, Waker};
+pub(crate) use snapshots::SELECT_BUILDS;
 pub use snapshots::{Navigation as GraphNavigation, Side as SnapshotSide};
 use std::sync::Arc;
 

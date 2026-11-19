@@ -1,14 +1,20 @@
 //! Engine-owned local snapshot preparation and discovery.
+mod selection;
+
 use super::{analysis, cancellation::CANCELLED, snapshot_worktree::ResolvedRevision};
 use anyhow::{Context, Result, ensure};
-use codecallnavigator_core::artifact::{
-    local_snapshots::{SnapshotRecord, Store, VerifiedPublication},
-    revision::Repository,
+use codecallnavigator_core::{
+    artifact::{
+        local_snapshots::{SnapshotRecord, Store, VerifiedPublication},
+        revision::Repository,
+    },
+    discovery::BuildTarget,
 };
+pub(super) use selection::Selection;
 use serde::Serialize;
 use std::{
     fs::{self, File, OpenOptions, TryLockError},
-    path::{Component, Path, PathBuf},
+    path::{Path, PathBuf},
     sync::atomic::Ordering,
     thread,
     time::Duration,
@@ -35,19 +41,10 @@ pub(super) fn status(project: &Path, revision: &str) -> Result<Status> {
 pub(super) fn prepare(
     project: &Path,
     revision: &str,
-    mut targets: Vec<PathBuf>,
+    selection: Selection,
     progress: &dyn Fn(String),
 ) -> Result<SnapshotRecord> {
-    targets.sort();
-    targets.dedup();
-    for target in &targets {
-        ensure!(
-            target
-                .components()
-                .all(|part| matches!(part, Component::Normal(_) | Component::CurDir)),
-            "Snapshot targets must be project-relative paths without parent traversal"
-        );
-    }
+    let selection = selection.normalize()?;
     let project = project
         .canonicalize()
         .context("Cannot open snapshot project")?;
@@ -58,7 +55,7 @@ pub(super) fn prepare(
         &resolved.commit,
         project.as_os_str().as_encoded_bytes(),
         &repository.project,
-        &targets,
+        &selection,
         env!("CARGO_PKG_VERSION"),
     ))?;
     let job = Preparation::open(&store, &repository, blake3::hash(&key).to_hex().as_str())?;
@@ -68,7 +65,8 @@ pub(super) fn prepare(
 
     progress(format!("Preparing local snapshot at {}", resolved.commit));
     let staged = resolved.with_checkout(&CANCELLED, |checkout| {
-        analyze_revision(&project, checkout, targets, progress)
+        let selected = selection.resolve(checkout, revision)?;
+        analyze_revision(&project, checkout, selected, progress)
     })?;
     let identity = staged.verified.identity(&staged.metadata)?;
     ensure!(
@@ -91,18 +89,9 @@ pub(super) fn prepare(
 fn analyze_revision(
     project: &Path,
     checkout: &Path,
-    targets: Vec<PathBuf>,
+    selected: Vec<BuildTarget>,
     progress: &dyn Fn(String),
 ) -> Result<analysis::PreparedRevision> {
-    for target in &targets {
-        let path = checkout.join(target).canonicalize()?;
-        ensure!(
-            path.starts_with(checkout),
-            "Snapshot target resolves outside its project"
-        );
-    }
-    let selected = analysis::select_targets(checkout, targets)?;
-    ensure!(!selected.is_empty(), "No analysis targets in this revision");
     for target in &selected {
         if target.language == "typescript" {
             let directory = target

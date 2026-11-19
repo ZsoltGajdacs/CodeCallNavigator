@@ -8,6 +8,15 @@ use std::path::PathBuf;
 
 pub const VERSION: u32 = 2;
 
+/// One exact build identity, relative to the project root of a requested revision.
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct SnapshotTarget {
+    pub path: PathBuf,
+    pub kind: String,
+    pub language: String,
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(tag = "command", rename_all = "snake_case", deny_unknown_fields)]
 pub enum Request {
@@ -25,6 +34,8 @@ pub enum Request {
         revision: String,
         #[serde(default)]
         targets: Vec<PathBuf>,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        exact_targets: Option<Vec<SnapshotTarget>>,
     },
     Analyze {
         version: u32,

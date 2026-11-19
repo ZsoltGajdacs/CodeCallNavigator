@@ -3,11 +3,11 @@ use super::provenance;
 use crate::{
     app::State,
     engine_client::flow_comparison::{GraphChange, GraphPage, SnapshotStatus},
-    flow_comparison::{GraphNavigation, SnapshotSide},
+    flow_comparison::{GraphNavigation, SELECT_BUILDS, SnapshotSide},
 };
 use codecallnavigator::artifact::{local_snapshots::SnapshotRecord, selection::Selection};
 use rune::{El, ScrollSpec, col, row, text};
-use rune_kit::{Button, ButtonVariant, Kit, TextInput};
+use rune_kit::{Button, ButtonVariant, Kit};
 use serde::Deserialize;
 
 pub(super) fn controls(state: &State, k: &Kit) -> El {
@@ -18,37 +18,7 @@ pub(super) fn controls(state: &State, k: &Kit) -> El {
         .gap(5.0)
         .px(10.0)
         .pb(5.0)
-        .child(
-            row()
-                .gap(8.0)
-                .child(
-                    Button::new(if snapshots.panel_open {
-                        "Hide local snapshots"
-                    } else {
-                        "Local snapshots"
-                    })
-                    .variant(ButtonVariant::Outline)
-                    .on_press(|state: &mut State| {
-                        let controls = &mut state.flow_comparison.controls;
-                        controls.catalog_open = false;
-                        let snapshots = &mut state.flow_comparison.snapshots;
-                        snapshots.panel_open = !snapshots.panel_open;
-                    })
-                    .build(k)
-                    .key("comparison-snapshots"),
-                )
-                .child(
-                    Button::new("Compare graph differences")
-                        .variant(ButtonVariant::Outline)
-                        .disabled(state.runtime.is_none() || snapshots.pending())
-                        .on_press(|state: &mut State| {
-                            state.compare_snapshot_graphs(GraphNavigation::First)
-                        })
-                        .build(k)
-                        .key("comparison-graph-differences"),
-                )
-                .child(super::impact::button(state, k)),
-        );
+        .child(snapshot_actions(state, k));
     if !snapshots.message.is_empty() {
         body = body.child(
             text(&snapshots.message)
@@ -63,7 +33,15 @@ pub(super) fn controls(state: &State, k: &Kit) -> El {
         return body;
     }
     let refs = state.flow_comparison.control_refs();
-    body.child(build_targets(state, k)).child(
+    if !has_selected_builds(state) {
+        body = body.child(
+            text(SELECT_BUILDS)
+                .font(k.ty.small)
+                .color(k.c.text_muted)
+                .key("comparison-snapshot-select-builds"),
+        );
+    }
+    body.child(
         row()
             .w_full()
             .gap(10.0)
@@ -72,51 +50,39 @@ pub(super) fn controls(state: &State, k: &Kit) -> El {
     )
 }
 
-fn build_targets(state: &State, k: &Kit) -> El {
+fn snapshot_actions(state: &State, k: &Kit) -> El {
     let snapshots = &state.flow_comparison.snapshots;
-    let targets = snapshots
-        .targets
-        .iter()
-        .map(|target| target.display().to_string())
-        .collect::<Vec<_>>()
-        .join(", ");
-    let mut body = col().w_full().gap(3.0).child(
-        row()
-            .gap(6.0)
-            .child(
-                TextInput::new(&snapshots.target)
-                    .width(None)
-                    .label("Snapshot build target")
-                    .placeholder("Project-relative build target (empty uses defaults)")
-                    .on_edit(|state: &mut State| &mut state.flow_comparison.snapshots.target)
-                    .build(k)
-                    .grow(1.0)
-                    .min_w(0.0)
-                    .key("comparison-snapshot-target"),
-            )
-            .child(
-                Button::new("Add target")
-                    .disabled(snapshots.target.text.trim().is_empty())
-                    .on_press(|state: &mut State| state.flow_comparison.snapshots.add_target())
-                    .build(k),
-            )
-            .child(
-                Button::new("Clear targets")
-                    .disabled(snapshots.targets.is_empty())
-                    .on_press(|state: &mut State| state.flow_comparison.snapshots.targets.clear())
-                    .build(k),
-            ),
-    );
-    if !targets.is_empty() {
-        body = body.child(
-            text(&targets)
-                .font(k.ty.small)
-                .color(k.c.text_muted)
-                .truncate()
-                .help(&targets),
-        );
-    }
-    body
+    row()
+        .gap(8.0)
+        .child(
+            Button::new(if snapshots.panel_open {
+                "Hide local snapshots"
+            } else {
+                "Local snapshots"
+            })
+            .variant(ButtonVariant::Outline)
+            .on_press(|state: &mut State| {
+                let controls = &mut state.flow_comparison.controls;
+                controls.catalog_open = false;
+                let snapshots = &mut state.flow_comparison.snapshots;
+                snapshots.panel_open = !snapshots.panel_open;
+            })
+            .build(k)
+            .key("comparison-snapshots"),
+        )
+        .child(
+            Button::new("Compare graph differences")
+                .variant(ButtonVariant::Outline)
+                .disabled(state.runtime.is_none() || snapshots.pending())
+                .on_press(|state: &mut State| state.compare_snapshot_graphs(GraphNavigation::First))
+                .build(k)
+                .key("comparison-graph-differences"),
+        )
+        .child(super::impact::button(state, k))
+}
+
+fn has_selected_builds(state: &State) -> bool {
+    state.project_open.folder.is_some() && state.selected_builds().next().is_some()
 }
 
 fn side(state: &State, side: SnapshotSide, revision: &str, k: &Kit) -> El {
@@ -144,7 +110,7 @@ fn side(state: &State, side: SnapshotSide, revision: &str, k: &Kit) -> El {
             )
             .child(
                 Button::new("Prepare snapshot")
-                    .disabled(disabled)
+                    .disabled(disabled || !has_selected_builds(state))
                     .on_press(move |state: &mut State| state.prepare_comparison_snapshot(side))
                     .build(k)
                     .key(format!("{scope}-prepare")),

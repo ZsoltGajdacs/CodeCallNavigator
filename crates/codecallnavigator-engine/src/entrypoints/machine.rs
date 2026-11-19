@@ -1,4 +1,4 @@
-use super::{analysis, cancellation::CANCELLED};
+use super::{analysis, cancellation::CANCELLED, snapshots};
 use anyhow::{Context, Result, ensure};
 use codecallnavigator_core::{
     discovery,
@@ -85,10 +85,12 @@ fn perform(request: Request, input: BufReader<io::Stdin>) -> Result<Event> {
             project,
             revision,
             targets,
+            exact_targets,
             ..
         } => {
+            let selection = snapshots::Selection::from_request(targets, exact_targets)?;
             monitor(input);
-            let snapshot = super::snapshots::prepare(&project, &revision, targets, &progress)?;
+            let snapshot = snapshots::prepare(&project, &revision, selection, &progress)?;
             Ok(Event::SnapshotPrepared { snapshot })
         }
         Request::Analyze {

@@ -34,6 +34,12 @@ optional project-relative `targets`. Keep stdin open for progress and send
 the normal `cancel` request to cancel the operation. The terminal
 `snapshot_prepared` event carries the retained snapshot.
 
+Engines advertising `local_snapshots.exact_targets` also accept a nonempty
+`exact_targets` list of objects with `path`, `kind`, and `language`. Leave
+`targets` empty when using this field. Paths are project-relative. Use `.`
+for a Maven or Gradle build at the project root. Each target must resolve
+to the specified build in the requested revision.
+
 The version-1 result contains `base` and `head` endpoint metadata (`kind`,
 `requested_ref`, resolved `commit`, absolute manifest `path`, `schema`, exact-byte
 BLAKE3 `digest`), `comparison_id`, `graph_equal`, `metadata_equal`, per-section

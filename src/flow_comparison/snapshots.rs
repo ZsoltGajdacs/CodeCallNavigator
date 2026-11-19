@@ -10,7 +10,7 @@ use crate::{
     },
 };
 use codecallnavigator::{artifact::local_snapshots::SnapshotRecord, protocol::AnalysisFailureCode};
-use rune::{Latest, TextEdit, Waker};
+use rune::{Latest, Waker};
 use std::{
     path::{Path, PathBuf},
     sync::{
@@ -19,6 +19,8 @@ use std::{
         mpsc,
     },
 };
+
+pub(crate) const SELECT_BUILDS: &str = "Select builds in the main graph to prepare a snapshot.";
 
 #[derive(Clone, Copy)]
 pub enum Side {
@@ -59,8 +61,6 @@ pub struct Lookup {
 pub struct Snapshots {
     pub panel_open: bool,
     pub message: String,
-    pub target: TextEdit,
-    pub targets: Vec<PathBuf>,
     pub graph: Option<GraphPage>,
     pub selected_change: Option<usize>,
     lookups: [Option<Lookup>; 2],
@@ -113,33 +113,26 @@ pub enum Navigation {
 
 impl State {
     pub fn lookup_comparison_snapshot(&mut self, side: Side) {
-        self.begin_snapshot_operation(side, false);
-    }
-
-    pub fn prepare_comparison_snapshot(&mut self, side: Side) {
-        self.begin_snapshot_operation(side, true);
-    }
-
-    fn begin_snapshot_operation(&mut self, side: Side, prepare: bool) {
         self.flow_residency.activity();
         let revision = side
             .reference(&self.flow_comparison.control_refs())
             .to_owned();
-        let operation = if prepare {
-            let snapshots = &self.flow_comparison.snapshots;
-            let mut targets = snapshots.targets.clone();
-            let input = snapshots.target.text.trim();
-            if !input.is_empty() {
-                targets.push(input.into());
-            }
-            Operation::Prepare {
-                side,
-                selection: SnapshotPreparation { revision, targets },
-            }
-        } else {
-            Operation::Lookup { side, revision }
+        self.start_snapshot_operation(Operation::Lookup { side, revision });
+    }
+
+    pub fn prepare_comparison_snapshot(&mut self, side: Side) {
+        self.flow_residency.activity();
+        let Some(analysis) = self.selected_analysis() else {
+            self.flow_comparison.snapshots.message = SELECT_BUILDS.into();
+            return;
         };
-        self.start_snapshot_operation(operation);
+        let revision = side
+            .reference(&self.flow_comparison.control_refs())
+            .to_owned();
+        self.start_snapshot_operation(Operation::Prepare {
+            side,
+            selection: SnapshotPreparation { revision, analysis },
+        });
     }
 
     pub fn compare_snapshot_graphs(&mut self, navigation: Navigation) {
@@ -217,13 +210,6 @@ impl Snapshots {
         }
     }
 
-    pub fn add_target(&mut self) {
-        if !self.target.text.trim().is_empty() {
-            self.targets.push(self.target.text.trim().into());
-            self.target = TextEdit::new("");
-        }
-    }
-
     pub fn previous_available(&self) -> bool {
         !self.previous.is_empty()
     }
@@ -267,8 +253,6 @@ impl Snapshots {
         self.graph_refs = None;
         self.previous.clear();
         self.project = None;
-        self.targets.clear();
-        self.target = TextEdit::new("");
         self.message.clear();
         self.panel_open = false;
     }

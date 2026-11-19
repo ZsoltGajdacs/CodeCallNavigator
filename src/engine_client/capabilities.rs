@@ -18,10 +18,15 @@ pub(super) struct Capabilities {
     pub flow_comparison: bool,
     pub graph_comparison: bool,
     pub impact_preview: bool,
-    pub local_snapshots: bool,
+    pub local_snapshots: Option<LocalSnapshots>,
     pub flow_expansion: bool,
     pub observation: bool,
     pub automatic_refresh: bool,
+}
+
+#[derive(Clone, Copy)]
+pub(super) struct LocalSnapshots {
+    pub exact_targets: bool,
 }
 
 pub(super) fn check(
@@ -112,7 +117,7 @@ fn validate(bytes: &[u8]) -> Result<Capabilities> {
         graph_comparison: supports_graph_comparison(&capabilities, operations),
         impact_preview: operations.iter().any(|name| name == "impact_preview")
             && capabilities["impact_preview"]["version"] == 1,
-        local_snapshots: supports_local_snapshots(&capabilities, operations),
+        local_snapshots: local_snapshots(&capabilities, operations),
         flow_expansion: flow_expansion::supported(&capabilities, operations),
         observation,
         automatic_refresh,
@@ -129,16 +134,27 @@ fn supports_graph_comparison(
         && comparison["snapshot_binding"] == true
 }
 
-fn supports_local_snapshots(
+fn local_snapshots(
     capabilities: &serde_json::Value,
     operations: &[serde_json::Value],
-) -> bool {
+) -> Option<LocalSnapshots> {
     let snapshots = &capabilities["local_snapshots"];
-    operations.iter().any(|name| name == "snapshot_status")
+    let commands = (
+        snapshots["status_query"].as_str(),
+        snapshots["prepare_command"].as_str(),
+        snapshots["cancel_command"].as_str(),
+    );
+    let supported = operations.iter().any(|name| name == "snapshot_status")
         && snapshots["version"] == 1
-        && snapshots["status_query"] == "snapshot_status"
-        && snapshots["prepare_command"] == "prepare_snapshot"
-        && snapshots["cancel_command"] == "cancel"
+        && commands
+            == (
+                Some("snapshot_status"),
+                Some("prepare_snapshot"),
+                Some("cancel"),
+            );
+    supported.then_some(LocalSnapshots {
+        exact_targets: snapshots["exact_targets"] == true,
+    })
 }
 
 fn supports_observation(
@@ -256,6 +272,20 @@ mod tests {
                 .iter()
                 .any(|language| language == "typescript")
         );
+    }
+
+    #[test]
+    fn exact_snapshot_targets_are_optional_for_snapshot_lookup() {
+        let mut wire = codecallnavigator::query::capabilities();
+        let current = validate(&serde_json::to_vec(&wire).unwrap()).unwrap();
+        assert!(current.local_snapshots.unwrap().exact_targets);
+
+        wire["local_snapshots"]
+            .as_object_mut()
+            .unwrap()
+            .remove("exact_targets");
+        let older = validate(&serde_json::to_vec(&wire).unwrap()).unwrap();
+        assert!(!older.local_snapshots.unwrap().exact_targets);
     }
 }
 

@@ -8924,6 +8924,20 @@
       "purpose": "automatic refresh requires its complete optional contract"
     },
     {
+      "id": "codecallnavigator/bin:codecallnavigator::engine_client::capabilities::tests::exact_snapshot_targets_are_optional_for_snapshot_lookup",
+      "runner": "rust",
+      "file": "src/engine_client/capabilities.rs",
+      "test_name": "engine_client::capabilities::tests::exact_snapshot_targets_are_optional_for_snapshot_lookup",
+      "ignored": false,
+      "package": "codecallnavigator",
+      "target_kind": "bin",
+      "target": "codecallnavigator",
+      "component": "ui",
+      "category": "unit",
+      "requirements": [],
+      "purpose": "older engines support snapshot lookup without exact desktop preparation"
+    },
+    {
       "id": "codecallnavigator/bin:codecallnavigator::engine_client::capabilities::tests::optional_observation_support_does_not_disable_legacy_graph_queries",
       "runner": "rust",
       "file": "src/engine_client/capabilities.rs",

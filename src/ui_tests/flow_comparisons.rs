@@ -35,13 +35,17 @@ fn global_comparison_entry_opens_revision_controls_without_a_loaded_graph() {
         "comparison-snapshot-base-prepare",
         "comparison-snapshot-after-lookup",
         "comparison-snapshot-after-prepare",
-        "comparison-snapshot-target",
+        "comparison-snapshot-select-builds",
     ] {
         assert!(
             runtime.find(key).is_some(),
             "Missing snapshot control {key}"
         );
     }
+    assert!(runtime.find("comparison-snapshot-target").is_none());
+    let message = runtime.state.flow_comparison.snapshots.message.clone();
+    click(&mut runtime, "comparison-snapshot-base-prepare");
+    assert_eq!(runtime.state.flow_comparison.snapshots.message, message);
     click(&mut runtime, "comparison-close");
     click(&mut runtime, "project-picker-trigger");
     assert!(runtime.find("compare-flows").is_some());

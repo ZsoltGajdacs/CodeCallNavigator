@@ -115,6 +115,30 @@ impl Fixture {
             .unwrap()
     }
 
+    fn prepare_exact(&self, targets: Value) -> Output {
+        let mut child = self
+            .engine()
+            .arg("serve-once")
+            .stdin(Stdio::piped())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .spawn()
+            .unwrap();
+        let request = json!({
+            "command": "prepare_snapshot",
+            "version": codecallnavigator_core::protocol::VERSION,
+            "project": self.root,
+            "revision": "HEAD",
+            "exact_targets": targets
+        });
+        let mut input = child.stdin.take().unwrap();
+        writeln!(input, "{request}").unwrap();
+        // The machine protocol interprets EOF as cancellation while preparing a snapshot.
+        let output = child.wait_with_output().unwrap();
+        drop(input);
+        output
+    }
+
     fn compare(&self, project: &Path, base: &str, head: &str) -> Value {
         self.query(project, json!({"kind":"compare","base":base,"head":head}))
     }
@@ -162,6 +186,9 @@ fn link_modules(root: &Path) {
 #[test]
 fn failed_preparation_removes_only_the_checkout_it_created() {
     let fixture = Fixture::new();
+    std::os::unix::fs::symlink("tsconfig.json", fixture.root.join("tsconfig.link.json")).unwrap();
+    git(&fixture.root, &["add", "tsconfig.link.json"]);
+    git(&fixture.root, &["commit", "-qm", "Redirected target"]);
     let before = git(&fixture.root, &["worktree", "list", "--porcelain"]);
     let output = fixture.prepare("HEAD", "missing/tsconfig.json");
     let messages = String::from_utf8_lossy(&output.stderr);
@@ -169,6 +196,23 @@ fn failed_preparation_removes_only_the_checkout_it_created() {
         !output.status.success() && messages.contains("Preparing local snapshot"),
         "{messages}"
     );
+    for (path, cause) in [
+        ("missing/tsconfig.json", "Target path is unavailable"),
+        ("tsconfig.link.json", "Target path is redirected"),
+    ] {
+        let output = fixture.prepare_exact(json!([{
+            "path": path, "kind": "typescript", "language": "typescript"
+        }]));
+        let message = String::from_utf8_lossy(&output.stdout);
+        assert!(
+            !output.status.success()
+                && message.contains("Preparing local snapshot")
+                && message.contains(path)
+                && message.contains("HEAD")
+                && message.contains(cause),
+            "{message}"
+        );
+    }
     assert_eq!(
         git(&fixture.root, &["worktree", "list", "--porcelain"]),
         before
@@ -488,11 +532,28 @@ fn maven_preparation_retains_a_revision_with_generated_source_roots() {
         "public class Example { public static int value() { return 1; } }\n",
     )
     .unwrap();
+    fs::write(fixture.root.join("standalone/build.gradle"), "").unwrap();
     git(&fixture.root, &["add", "parent", "standalone"]);
     git(&fixture.root, &["commit", "-qm", "Maven revision"]);
     let checkouts = git(&fixture.root, &["worktree", "list", "--porcelain"]);
-    let snapshot: Value =
-        serde_json::from_slice(&checked(fixture.prepare("HEAD", "standalone/pom.xml"))).unwrap();
+    let output = checked(fixture.prepare_exact(json!([{
+        "path": "standalone", "kind": "maven", "language": "java"
+    }])));
+    let terminal: Value = serde_json::from_slice(
+        output
+            .split(|byte| *byte == b'\n')
+            .rfind(|line| !line.is_empty())
+            .unwrap(),
+    )
+    .unwrap();
+    assert_eq!(terminal["event"], "snapshot_prepared", "{terminal}");
+    let snapshot = terminal["snapshot"].clone();
+    let selection: Value =
+        serde_json::from_str(snapshot["identity"]["selection"].as_str().unwrap()).unwrap();
+    assert_eq!(
+        selection["builds"]["targets"],
+        json!([{"path": "@repo/standalone", "kind": "maven", "language": "java"}])
+    );
     assert_eq!(
         fixture.status(&fixture.root, "HEAD")["snapshots"],
         json!([snapshot])

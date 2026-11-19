@@ -28,13 +28,15 @@ impl State {
 
     pub(crate) fn selected_analysis(&self) -> Option<engine_client::Analysis> {
         let project = PathBuf::from(self.project_open.folder.as_deref()?);
-        let targets: Vec<_> = self
-            .targets
+        let targets: Vec<_> = self.selected_builds().cloned().collect();
+        (!targets.is_empty()).then_some(engine_client::Analysis { project, targets })
+    }
+
+    pub(crate) fn selected_builds(&self) -> impl Iterator<Item = &crate::discovery::BuildTarget> {
+        self.targets
             .iter()
             .filter(|choice| choice.selected)
-            .map(|choice| choice.target.clone())
-            .collect();
-        (!targets.is_empty()).then_some(engine_client::Analysis { project, targets })
+            .map(|choice| &choice.target)
     }
 
     pub(crate) fn start_selected_analysis(&mut self, selection: engine_client::Analysis) {

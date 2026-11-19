@@ -123,7 +123,17 @@ impl Client {
         Ok(self.capabilities(cancel, Instant::now())?.impact_preview)
     }
     pub(super) fn local_snapshots_supported(&self, cancel: &AtomicBool) -> Result<bool> {
-        Ok(self.capabilities(cancel, Instant::now())?.local_snapshots)
+        Ok(self
+            .capabilities(cancel, Instant::now())?
+            .local_snapshots
+            .is_some())
+    }
+
+    pub(super) fn exact_snapshot_targets_supported(&self, cancel: &AtomicBool) -> Result<bool> {
+        Ok(self
+            .capabilities(cancel, Instant::now())?
+            .local_snapshots
+            .is_some_and(|snapshots| snapshots.exact_targets))
     }
 
     pub(super) fn observation_supported(&self, cancel: &AtomicBool) -> Result<bool> {
