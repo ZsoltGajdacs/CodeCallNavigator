@@ -237,13 +237,13 @@ mod tests {
         let file = Path::new("Source.cs");
         let mut snapshots = captured_source(file, Original::Utf8("é".into()));
         let utf8 = CompilerContext {
-            file: file,
+            file,
             assembly: "Utf8",
             code_page: Some(65001),
         };
         assert_eq!(snapshots.content(utf8, "é").unwrap(), "é");
         let latin1 = CompilerContext {
-            file: file,
+            file,
             assembly: "Latin1",
             code_page: Some(28591),
         };
