@@ -22,6 +22,7 @@ fn global_comparison_entry_opens_revision_controls_without_a_loaded_graph() {
         "comparison-close",
         "comparison-snapshots",
         "comparison-graph-differences",
+        "comparison-impact-preview",
     ] {
         assert!(
             runtime.find(key).is_some(),

@@ -1,4 +1,5 @@
 use anyhow::{Context, Result, bail, ensure};
+use codecallnavigator_core::query::Query;
 use std::path::PathBuf;
 
 pub enum Command {
@@ -23,6 +24,10 @@ pub enum Command {
     },
     SnapshotStatus(Snapshot),
     PrepareSnapshot(Snapshot),
+    ImpactPreview {
+        project: PathBuf,
+        query: Query,
+    },
     Serve,
     ServeAnalysisSession,
     AnalyzeNative(Vec<PathBuf>),
@@ -85,7 +90,8 @@ pub fn parse(values: impl Iterator<Item = String>) -> Result<Command> {
             ensure!(values.next().is_none(), "Unexpected clear-cache argument");
             Ok(Command::ClearCache(project.into()))
         }
-        "compare" => parse_compare(values),
+        "compare" => parse_comparison(values, false),
+        "impact-preview" => parse_comparison(values, true),
         "snapshot-status" => parse_snapshot(values, false).map(Command::SnapshotStatus),
         "prepare-snapshot" => parse_snapshot(values, true).map(Command::PrepareSnapshot),
         "serve-once" => {
@@ -159,7 +165,7 @@ fn parse_analyze(mut values: impl Iterator<Item = String>) -> Result<Analysis> {
     })
 }
 
-fn parse_compare(mut values: impl Iterator<Item = String>) -> Result<Command> {
+fn parse_comparison(mut values: impl Iterator<Item = String>, preview: bool) -> Result<Command> {
     let (mut project, mut base, mut head) = (None, None, None);
     let (mut base_snapshot, mut head_snapshot) = (None, None);
     while let Some(option) = values.next() {
@@ -175,9 +181,19 @@ fn parse_compare(mut values: impl Iterator<Item = String>) -> Result<Command> {
                 head = Some(value);
             }
             "--base-snapshot" if base_snapshot.is_none() => base_snapshot = Some(value),
-            "--head-snapshot" if head_snapshot.is_none() => head_snapshot = Some(value),
+            "--head-snapshot" if !preview && head_snapshot.is_none() => head_snapshot = Some(value),
             _ => bail!("Unknown compare option: {option}"),
         }
+    }
+    if preview {
+        return Ok(Command::ImpactPreview {
+            project: project.context("impact-preview requires --project")?,
+            query: Query::ImpactPreview {
+                base: base.context("impact-preview requires --base")?,
+                head: head.unwrap_or_else(|| "WORKTREE".into()),
+                base_snapshot,
+            },
+        });
     }
     Ok(Command::Compare {
         project: project.context("compare requires --project")?,

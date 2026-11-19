@@ -45,6 +45,7 @@ pub struct Capabilities {
     pub analysis_session: AnalysisSessionSupport,
     pub local_snapshots: bool,
     pub flow_comparison: bool,
+    pub impact_preview: bool,
 }
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum AnalysisSessionSupport {
@@ -131,6 +132,11 @@ pub fn capabilities(value: &Value) -> Result<Capabilities> {
             .operations
             .iter()
             .any(|op| op == "flow_comparison"),
+        impact_preview: value["impact_preview"]["version"] == 1
+            && capabilities
+                .operations
+                .iter()
+                .any(|op| op == "impact_preview"),
     })
 }
 

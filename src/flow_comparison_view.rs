@@ -1,14 +1,15 @@
 //! Revision controls and saved endpoint flows; all blocking work belongs to the controller.
 mod catalog;
+mod impact;
 mod panes;
 mod provenance;
 mod snapshots;
-use crate::{app::State, theme};
+use crate::{app::State, flow_comparison::Panel, theme};
 use rune::{Cx, El, col, row, text};
 use rune_kit::{Button, ButtonVariant, Kit, TextInput};
 pub fn view(state: &State, cx: &mut Cx<State>) -> El {
     let k = theme::kit(cx.system_dark());
-    let mut body = col()
+    let body = col()
         .key("comparison-workspace")
         .w_full()
         .h_full()
@@ -17,18 +18,19 @@ pub fn view(state: &State, cx: &mut Cx<State>) -> El {
         .child(toolbar(state, cx.titlebar_inset(), &k))
         .child(revisions(state, &k))
         .child(snapshots::controls(state, &k));
-    if state.flow_comparison.snapshots.graph_open {
-        body = body.child(snapshots::graph(state, &k));
-    } else {
-        body = body
+    let body = match state.flow_comparison.controls.panel {
+        Panel::Graph => body.child(snapshots::graph(state, &k)),
+        Panel::Impact => body.child(impact::view(state, &k)),
+        Panel::Flows => body
             .child(provenance::view(state, &k))
             .child(status(state, &k))
             .child(counterpart(state, &k))
-            .child(panes::view(state, &k));
-    }
+            .child(panes::view(state, &k)),
+    };
     crate::view::with_overlays(state, &k, body, catalog::layers(state, &k))
 }
 fn toolbar(state: &State, inset: f32, k: &Kit) -> El {
+    let panel = state.flow_comparison.controls.panel;
     let toolbar = row()
         .key("comparison-toolbar")
         .w_full()
@@ -48,16 +50,16 @@ fn toolbar(state: &State, inset: f32, k: &Kit) -> El {
             .key("comparison-close"),
         )
         .child(
-            text(if state.flow_comparison.snapshots.graph_open {
-                "Compare graphs"
-            } else {
-                "Compare flows"
+            text(match panel {
+                Panel::Flows => "Compare flows",
+                Panel::Graph => "Compare graphs",
+                Panel::Impact => "Changed-symbol impact",
             })
             .font(k.ty.ui_medium)
             .color(k.c.text_base)
             .grow(1.0),
         );
-    if state.flow_comparison.snapshots.graph_open {
+    if panel != Panel::Flows {
         return toolbar;
     }
     toolbar
@@ -128,10 +130,10 @@ fn revisions(state: &State, k: &Kit) -> El {
                 .min_w(80.0),
         )
         .child(
-            Button::new(if snapshots.graph_open {
-                "Compare flows"
-            } else {
+            Button::new(if controls.panel == Panel::Flows {
                 "Load"
+            } else {
+                "Compare flows"
             })
             .disabled(state.runtime.is_none() || snapshots.pending())
             .on_press(State::load_flow_comparison)
@@ -150,20 +152,22 @@ fn revisions(state: &State, k: &Kit) -> El {
 fn reload_button(state: &State, k: &Kit) -> El {
     let workspace = &state.flow_comparison;
     let snapshots = &workspace.snapshots;
-    let can_reload = if snapshots.graph_open {
-        snapshots.can_reload_graph()
-    } else {
-        workspace.descriptor().is_some()
+    let can_reload = match workspace.controls.panel {
+        Panel::Flows => workspace.descriptor().is_some(),
+        Panel::Graph => snapshots.can_reload_graph(),
+        Panel::Impact => workspace.can_preview_impact(),
     };
     Button::new("Reload")
         .disabled(snapshots.pending() || !can_reload)
-        .on_press(|state: &mut State| {
-            if state.flow_comparison.snapshots.graph_open {
-                state.compare_snapshot_graphs(crate::flow_comparison::GraphNavigation::Reload);
-            } else {
-                state.flow_comparison.reload_control();
-            }
-        })
+        .on_press(
+            |state: &mut State| match state.flow_comparison.controls.panel {
+                Panel::Flows => state.flow_comparison.reload_control(),
+                Panel::Graph => {
+                    state.compare_snapshot_graphs(crate::flow_comparison::GraphNavigation::Reload)
+                }
+                Panel::Impact => state.preview_changed_symbol_impact(),
+            },
+        )
         .build(k)
         .key("comparison-reload")
 }
@@ -245,7 +249,7 @@ pub fn key(state: &mut State, event: &rune::KeyEvent) -> bool {
     if event.key == rune::Key::Escape {
         if state.flow_comparison.controls.catalog_open {
             state.flow_comparison.controls.catalog_open = false;
-        } else if state.flow_comparison.snapshots.graph_open
+        } else if state.flow_comparison.controls.panel == Panel::Graph
             && state
                 .flow_comparison
                 .snapshots

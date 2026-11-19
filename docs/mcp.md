@@ -57,12 +57,13 @@ after upgrading the configured CLI.
 All argument objects reject unknown fields. Related analyzed queries can carry
 `expected_generation`, a 64-character hexadecimal CLI digest. A generation
 mismatch is an explicit CLI error; request status again before combining results.
-Queries never start analysis. Only `refresh_graph` changes analyzed data.
+Analysis starts through an explicit `refresh_graph` or `prepare_graph_snapshot` request.
 
 | Tool | Arguments |
 | --- | --- |
 | `compare_graphs` | `base`, `head?` (`WORKTREE`), `base_snapshot?`, `head_snapshot?`, `offset?` (0), `limit?` (100; 1–500), `expected_comparison?`, `expected_generation?` |
 | `compare_function_flows` | `base`, `head?`, `base_snapshot?`, `head_snapshot?`, `selection`, `expected_comparison?` |
+| `preview_graph_impact` | `base`, `head?` (`WORKTREE`), `base_snapshot?` |
 | `graph_snapshot_status` | `revision` |
 | `prepare_graph_snapshot` | `revision`, `targets?` (project-relative build paths) |
 | `graph_status` | `expected_generation?` |
@@ -139,14 +140,25 @@ The 24 MiB CLI page budget is below the adapter's 32 MiB transport limit.
 Startup requires comparison format 1 with snapshot binding and the `compare`
 query capability; older CLIs must be upgraded with this adapter.
 
+`preview_graph_impact` uses one saved baseline graph and the tracked source diff
+to report potential caller impact. The response identifies the baseline and
+head, includes old-side changed ranges and their resolved baseline symbols, and
+reports any unmapped or truncated coverage. `WORKTREE` includes tracked changes
+on disk. New paths have no matching baseline range. Use
+`graph_snapshot_status` to find locally retained variants and
+`prepare_graph_snapshot` to explicitly prepare a missing baseline. The
+preview itself never checks out or compiles a revision. It requires optional
+`impact_preview` v1 support. An older compatible CLI returns
+`unsupported_capability` for this tool.
+
 A graph tool's `structuredContent` is the complete CLI query envelope, unchanged,
 including generation, freshness, provenance, diagnostic and truncation metadata.
 A short text content block accompanies it. CLI error envelopes set MCP `isError`
 and retain the original error code/message. Invalid arguments use
 `invalid_arguments`; process, malformed-wire and deadline failures use
 `cli_transport_error`. Unknown tools are MCP method-not-found errors. Discovery
-returns the CLI's complete discovery object. No snapshot/render/inspector tools or
-MCP-side graph algorithms/cache exist.
+returns the CLI's complete discovery object. The CLI owns graph algorithms and
+snapshot storage.
 
 Refresh first runs CLI discovery. Omitted targets select exactly the CLI's
 `default_selection` identities; explicit identities must match discovered DTOs.

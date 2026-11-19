@@ -234,6 +234,9 @@ fn restore_workspace(state: &mut State, mut boot: Boot) {
     if state.closing {
         return;
     }
+    if state.flow_comparison.controls.visible {
+        state.check_impact_preview_support();
+    }
     if let Some(session) = &mut boot.session {
         restore_project_history(state, session, boot.active_folder.as_deref());
     }

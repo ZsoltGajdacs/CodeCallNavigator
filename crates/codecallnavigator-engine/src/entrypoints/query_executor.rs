@@ -29,7 +29,9 @@ impl Executor {
         if let Some(response) = super::flow_comparison::respond(request) {
             return response;
         }
-        if let Some(response) = super::comparison::respond(request) {
+        if let Some(response) =
+            super::comparison::respond(request).or_else(|| super::impact_preview::respond(request))
+        {
             return response;
         }
         if let Some(response) = query::live_response(request) {

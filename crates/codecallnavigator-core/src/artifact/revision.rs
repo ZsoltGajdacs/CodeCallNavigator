@@ -1,11 +1,13 @@
 //! Read-only saved graph snapshots from immutable Git blobs or the working tree.
+mod changes;
 mod inspection;
 mod repository;
 use super::{Artifact, GRAPH_PATH, storage};
 use anyhow::{Context, Result};
+pub use changes::TrackedChanges;
 pub use inspection::{
     ArtifactFailure, ArtifactResult, InspectedEndpoint, Inspection, ObservedSchema, inspect,
-    inspect_cached,
+    inspect_cached, load_retained,
 };
 pub use repository::{Repository, TreeEntry};
 use serde::Serialize;
@@ -213,6 +215,7 @@ fn git(project: &Path, arguments: &[&str], code: &'static str) -> Result<Vec<u8>
 struct GitInput<'a> {
     bytes: &'a [u8],
     cancel: Option<&'a AtomicBool>,
+    output_limit: Option<u64>,
 }
 
 fn git_output(
@@ -254,6 +257,11 @@ fn git_output(
         {
             return Err(failure("cancelled", "Git snapshot read cancelled"));
         }
+        if output_limit_reached(&output, input.output_limit)? {
+            drop(child);
+            output.rewind()?;
+            return Ok(output);
+        }
         if let Some(status) = child.0.try_wait().context("Cannot observe Git")? {
             break status;
         }
@@ -276,6 +284,13 @@ fn git_output(
     }
     output.seek(SeekFrom::Start(0))?;
     Ok(output)
+}
+
+fn output_limit_reached(output: &std::fs::File, limit: Option<u64>) -> Result<bool> {
+    match limit {
+        Some(limit) => Ok(output.metadata()?.len() >= limit),
+        None => Ok(false),
+    }
 }
 
 struct OwnedChild(Child);

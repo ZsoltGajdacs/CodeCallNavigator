@@ -1,7 +1,7 @@
 //! Operation-specific query envelope validation, independent of process transport.
 use super::{
     observation,
-    results::{comparison_metadata, flow_comparison_metadata},
+    results::{comparison_metadata, flow_comparison_metadata, impact_preview_metadata},
 };
 use anyhow::{Result, ensure};
 use serde_json::Value;
@@ -19,6 +19,9 @@ pub fn validate(value: &Value, operation: &str, bound: bool) -> Result<()> {
             "Snapshot lookup unexpectedly claims a working generation"
         );
         return Ok(());
+    }
+    if operation == "impact_preview" {
+        return impact_preview_metadata(value);
     }
     if let ("explorer", false, true) = (operation, bound, value["generation"].is_null()) {
         return Ok(());

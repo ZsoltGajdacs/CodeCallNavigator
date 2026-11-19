@@ -4,6 +4,7 @@ mod compare;
 pub mod difference;
 pub mod flow;
 mod identity;
+pub mod impact;
 mod paths;
 mod portable;
 pub mod provenance;

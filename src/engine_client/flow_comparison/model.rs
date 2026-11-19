@@ -202,7 +202,7 @@ impl Header {
 fn digest(value: &str) -> bool {
     value.len() == 64 && value.bytes().all(|byte| byte.is_ascii_hexdigit())
 }
-fn endpoint(endpoint: &Endpoint) -> anyhow::Result<()> {
+pub(super) fn endpoint(endpoint: &Endpoint) -> anyhow::Result<()> {
     ensure!(digest(&endpoint.digest), "Invalid CLI artifact digest");
     ensure!(!endpoint.path.is_empty(), "CLI omitted artifact path");
     match endpoint.kind {

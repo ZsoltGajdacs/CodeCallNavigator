@@ -20,6 +20,8 @@ if mode != 'legacy':
     capabilities['freshness'] = dict(version=2 if mode=='future' else 1,mode='verified_polling',limited=True)
 if mode == 'future':
     capabilities['analysis_session'] = dict(version=2,command='analysis-session',activity_version=1,cancel_command='cancel_refresh')
+    capabilities['operations'].append('impact_preview')
+    capabilities['impact_preview'] = dict(version=2)
 if sys.argv[1] == 'capabilities':
     print(json.dumps(capabilities))
     sys.exit(0)
@@ -65,6 +67,12 @@ fn optional_missing_or_future_capability_keeps_legacy_tools_usable() {
         assert_eq!(refresh["isError"], true, "{mode}: {refresh}");
         assert_eq!(
             refresh["structuredContent"]["error"]["code"],
+            "unsupported_capability"
+        );
+        let preview = client.call("preview_graph_impact", json!({"base":"HEAD"}));
+        assert_eq!(preview["isError"], true, "{mode}: {preview}");
+        assert_eq!(
+            preview["structuredContent"]["error"]["code"],
             "unsupported_capability"
         );
         assert_eq!(

@@ -149,6 +149,13 @@ impl<'a> View<'a> {
         }))
     }
 
+    pub(super) fn source_range(&self, symbol: &str) -> Option<(&str, crate::flow::SourceSpan)> {
+        let facts = self.facts(symbol).ok()??;
+        let span = facts.function.span;
+        (span.start < span.end && facts.content.get(span.start..span.end).is_some())
+            .then_some((facts.content, span))
+    }
+
     /// Clone only requested IR; source text and the resident inventory stay borrowed.
     pub fn input(&self, symbol: &str) -> Result<Option<Input<'_>>, Unavailable> {
         let Some(facts) = self.facts(symbol)? else {

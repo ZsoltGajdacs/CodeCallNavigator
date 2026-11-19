@@ -17,6 +17,7 @@ pub(super) struct Capabilities {
     pub flow_languages: Vec<String>,
     pub flow_comparison: bool,
     pub graph_comparison: bool,
+    pub impact_preview: bool,
     pub local_snapshots: bool,
     pub flow_expansion: bool,
     pub observation: bool,
@@ -109,6 +110,8 @@ fn validate(bytes: &[u8]) -> Result<Capabilities> {
         flow_languages,
         flow_comparison: flow_comparison::supported(&capabilities, operations),
         graph_comparison: supports_graph_comparison(&capabilities, operations),
+        impact_preview: operations.iter().any(|name| name == "impact_preview")
+            && capabilities["impact_preview"]["version"] == 1,
         local_snapshots: supports_local_snapshots(&capabilities, operations),
         flow_expansion: flow_expansion::supported(&capabilities, operations),
         observation,

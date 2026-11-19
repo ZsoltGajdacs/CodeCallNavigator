@@ -56,6 +56,7 @@ impl State {
 }
 impl Workspace {
     pub fn project_installed(&mut self, project: Option<&Path>) {
+        self.impact.project_installed(project);
         self.snapshots.project_installed(project);
         if self.project.is_none() {
             return;

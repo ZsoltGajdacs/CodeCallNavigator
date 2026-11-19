@@ -93,7 +93,7 @@ pub fn inspect_cached(
         return Ok(inspect_read(read, revision));
     }
     Ok(inspect_read(
-        read_cached(project, commit, selected)?,
+        read_cached(&Repository::open(project)?, commit, selected)?,
         revision,
     ))
 }
@@ -106,8 +106,31 @@ fn committed_if_present(project: &Path, commit: &str) -> Result<Option<ReadSnaps
     }
 }
 
-fn read_cached(project: &Path, commit: String, selected: Option<&str>) -> Result<ReadSnapshot> {
-    let repository = Repository::open(project)?;
+/// Load a retained variant even when this revision also contains a committed bundle.
+pub fn load_retained(
+    repository: &Repository,
+    revision: &str,
+    selected: Option<&str>,
+) -> Result<Snapshot> {
+    let commit = repository.resolve(revision)?;
+    let unavailable = format!(
+        "No retained baseline for {revision} ({commit}). Prepare a snapshot for this revision."
+    );
+    let read = read_cached(repository, commit, selected).map_err(|error| {
+        if super::error_code(&error) == "graph_missing" {
+            failure("snapshot_missing", unavailable)
+        } else {
+            error
+        }
+    })?;
+    inspect_read(read, revision).into_snapshot()
+}
+
+fn read_cached(
+    repository: &Repository,
+    commit: String,
+    selected: Option<&str>,
+) -> Result<ReadSnapshot> {
     let store = Store::system().map_err(cache_error)?;
     let records = store
         .list(&repository.common_dir, &commit, &repository.project)

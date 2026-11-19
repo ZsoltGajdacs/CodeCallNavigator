@@ -51,6 +51,7 @@ impl Repository {
             GitInput {
                 bytes: &[],
                 cancel: Some(cancel),
+                ..GitInput::default()
             },
         )?;
         BufReader::new(output)
@@ -75,6 +76,7 @@ impl Repository {
             GitInput {
                 bytes: input.as_bytes(),
                 cancel: Some(cancel),
+                ..GitInput::default()
             },
         )?;
         verify_batch(BufReader::new(output), expected, cancel)

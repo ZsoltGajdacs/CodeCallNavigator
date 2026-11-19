@@ -106,10 +106,12 @@ impl Backend {
                 "Upgrade the configured CLI to compare function flows",
             ));
         }
-        let uses_snapshots = operation == "snapshot_status"
-            || query["base_snapshot"].is_string()
-            || query["head_snapshot"].is_string();
-        (uses_snapshots && !self.capabilities.local_snapshots)
+        if operation == "impact_preview" && !self.capabilities.impact_preview {
+            return Some(unsupported(
+                "Upgrade the configured CLI to preview graph impact",
+            ));
+        }
+        (uses_local_snapshots(operation, query) && !self.capabilities.local_snapshots)
             .then(|| unsupported("Upgrade the configured CLI to use local graph snapshots"))
     }
     pub async fn discovery(&self, cancel: &CancellationToken) -> Result<Value> {
@@ -201,6 +203,13 @@ fn analysis_invocation(
         deadline: REFRESH_DEADLINE,
         progress,
     })
+}
+
+fn uses_local_snapshots(operation: &str, query: &Value) -> bool {
+    operation == "snapshot_status"
+        || ["base_snapshot", "head_snapshot"]
+            .iter()
+            .any(|field| query[*field].is_string())
 }
 
 fn unsupported(message: &str) -> Reply {

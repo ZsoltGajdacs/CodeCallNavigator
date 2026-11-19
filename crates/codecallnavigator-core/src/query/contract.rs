@@ -29,6 +29,13 @@ pub enum Query {
     SnapshotStatus {
         revision: String,
     },
+    ImpactPreview {
+        base: String,
+        #[serde(default = "comparison_head")]
+        head: String,
+        #[serde(default)]
+        base_snapshot: Option<String>,
+    },
     Compare {
         base: String,
         #[serde(default = "comparison_head")]

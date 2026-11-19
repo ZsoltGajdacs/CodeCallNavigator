@@ -44,7 +44,8 @@ pub(super) fn controls(state: &State, k: &Kit) -> El {
                         })
                         .build(k)
                         .key("comparison-graph-differences"),
-                ),
+                )
+                .child(super::impact::button(state, k)),
         );
     if !snapshots.message.is_empty() {
         body = body.child(

@@ -1,16 +1,19 @@
 //! Validate required operation payload shapes while preserving extension metadata.
 mod comparison;
 mod flow_comparison;
+mod impact_preview;
 use anyhow::{Result, ensure};
 pub(super) use comparison::metadata as comparison_metadata;
 use comparison::validate as comparison;
 pub(super) use flow_comparison::metadata as flow_comparison_metadata;
+pub(super) use impact_preview::metadata as impact_preview_metadata;
 use serde_json::Value;
 pub fn validate(operation: &str, result: &Value) -> Result<()> {
     ensure!(result.is_object(), "CLI operation result must be an object");
     match operation {
         "compare" => comparison(result),
         "flow_comparison" => flow_comparison::validate(result),
+        "impact_preview" => impact_preview::validate(result),
         "snapshot_status" => super::snapshots::status(result),
         "status" => integers(result, &["nodes", "edges"]),
         // Full typed observation and envelope binding are checked by metadata.
@@ -98,6 +101,9 @@ fn array<'a>(value: &'a Value, field: &str) -> Result<&'a Vec<Value>> {
 }
 /// Validate echoed comparison binding without interpreting graph contents.
 pub fn binding(request: &Value, result: &Value) -> Result<()> {
+    if request["kind"] == "impact_preview" {
+        return impact_preview::binding(request, result);
+    }
     if !matches!(
         request["kind"].as_str(),
         Some("compare" | "flow_comparison")

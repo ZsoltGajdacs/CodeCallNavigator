@@ -69,6 +69,7 @@ pub fn execute(graph: &GraphIndex, query: &Query) -> Result<Value> {
         | Query::Compare { .. }
         | Query::FlowComparison { .. }
         | Query::SnapshotStatus { .. }
+        | Query::ImpactPreview { .. }
         | Query::RenderSelection { layer: Some(_), .. } => Err(Error::new(
             "invalid_request",
             "Live filesystem queries require engine handling",

@@ -169,9 +169,40 @@ fn real_stdio_snapshot_preparation_and_comparison_preserve_cli_results() {
     let mut cli = Command::new(&engine);
     cli.env(CACHE, &cache);
     assert_snapshot_comparisons(&mut client, cli, &root, snapshot);
+    let mut cli = Command::new(&engine);
+    cli.env(CACHE, &cache);
+    assert_snapshot_impact(&mut client, cli, &root, snapshot);
     assert!(!root.join(".codecallnavigator").exists());
     client.disconnect();
     client.assert_shutdown();
+}
+
+fn assert_snapshot_impact(client: &mut Client, cli: Command, root: &Path, snapshot: &Value) {
+    fs::write(
+        root.join("entry.ts"),
+        "export function value() { return 2; }\n",
+    )
+    .unwrap();
+    let arguments = json!({"base":"HEAD","base_snapshot":snapshot["id"]});
+    let impact = client.graph("preview_graph_impact", arguments.clone());
+    let result = &impact["result"];
+    assert_eq!(result["base"]["snapshot"], *snapshot);
+    assert_eq!(result["head"]["requested_ref"], "WORKTREE");
+    assert_eq!(result["coverage"]["tracked_only"], true);
+    assert_eq!(result["coverage"]["mapped_ranges"], 1);
+    assert!(
+        result["records"][0]["symbols"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|symbol| symbol["label"] == "value")
+    );
+    assert!(impact["generation"].is_null());
+    assert!(impact["graph_schema"].is_null());
+    assert!(impact["freshness"].is_null());
+    let mut request = arguments;
+    request["kind"] = json!("impact_preview");
+    assert_eq!(impact, cli_query_with(cli, root, request));
 }
 
 fn assert_snapshot_comparisons(client: &mut Client, cli: Command, root: &Path, snapshot: &Value) {

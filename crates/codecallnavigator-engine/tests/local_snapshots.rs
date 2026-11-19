@@ -44,6 +44,7 @@ impl Fixture {
         git(&root, &["config", "user.email", "snapshot@example.invalid"]);
         git(&root, &["config", "user.name", "Snapshot acceptance"]);
         fs::write(root.join("tsconfig.json"), r#"{"files":["main.ts"]}"#).unwrap();
+        fs::write(root.join("notes\t[preview].txt"), "baseline\n").unwrap();
         fs::write(
             root.join("main.ts"),
             "export function value() { return 1; }\n",
@@ -179,9 +180,20 @@ fn prepared_and_retained_graphs_compare_across_worktrees() {
         "export function added() { return 2; }\n",
     )
     .unwrap();
-    git(&linked, &["add", "main.ts"]);
+    fs::write(linked.join("notes\t[preview].txt"), "baseline\ninserted\n").unwrap();
+    git(
+        &linked,
+        &[
+            "--literal-pathspecs",
+            "add",
+            "--",
+            "main.ts",
+            "notes\t[preview].txt",
+        ],
+    );
     git(&linked, &["commit", "-qm", "head"]);
     let head = git(&linked, &["rev-parse", "HEAD"]);
+    assert_impact_without_head_graph(&fixture, &linked, &base, &head);
     checked(fixture.analyze(&linked));
     let retained = fixture.status(&linked, &head);
     assert_eq!(
@@ -199,10 +211,19 @@ fn prepared_and_retained_graphs_compare_across_worktrees() {
         &fixture.root,
         &["worktree", "remove", "--force", linked.to_str().unwrap()],
     );
+    assert_saved_comparison_is_read_only(&fixture, &base, &head, &retained);
+}
+
+fn assert_saved_comparison_is_read_only(
+    fixture: &Fixture,
+    base: &str,
+    head: &str,
+    retained: &Value,
+) {
     let status = git(&fixture.root, &["status", "--porcelain"]);
     let index = fs::read(fixture.root.join(".git/index")).unwrap();
     let refs = git(&fixture.root, &["show-ref"]);
-    let committed = fixture.compare(&fixture.root, &base, &head);
+    let committed = fixture.compare(&fixture.root, base, head);
     assert_eq!(
         committed["result"]["head"]["snapshot"],
         retained["snapshots"][0]
@@ -211,6 +232,65 @@ fn prepared_and_retained_graphs_compare_across_worktrees() {
     assert_eq!(git(&fixture.root, &["status", "--porcelain"]), status);
     assert_eq!(fs::read(fixture.root.join(".git/index")).unwrap(), index);
     assert_eq!(git(&fixture.root, &["show-ref"]), refs);
+}
+
+fn assert_impact_without_head_graph(fixture: &Fixture, linked: &Path, base: &str, head: &str) {
+    assert!(
+        fixture.status(linked, head)["snapshots"]
+            .as_array()
+            .unwrap()
+            .is_empty()
+    );
+    let run = |base: &str, head: &str| {
+        fixture
+            .engine()
+            .args(["impact-preview", "--project"])
+            .arg(linked)
+            .args(["--base", base, "--head", head])
+            .env("PATH", "/usr/bin:/bin")
+            .env(
+                "CODECALLNAVIGATOR_RESOURCES",
+                fixture.directory.path().join("unavailable-resources"),
+            )
+            .output()
+            .unwrap()
+    };
+    let missing = run(head, head);
+    assert!(!missing.status.success());
+    assert!(String::from_utf8_lossy(&missing.stderr).contains("snapshot_missing"));
+    let preview: Value = serde_json::from_slice(&checked(run(base, head))).unwrap();
+    assert_eq!(
+        (&preview["base"]["commit"], &preview["head"]["commit"]),
+        (&json!(base), &json!(head))
+    );
+    assert_eq!(
+        (
+            &preview["records"][0]["path"],
+            &preview["records"][0]["old_start"]
+        ),
+        (&json!("main.ts"), &json!(1))
+    );
+    assert!(
+        preview["records"][0]["symbols"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|symbol| symbol["label"] == "value")
+    );
+    let inserted = &preview["records"][1];
+    assert_eq!(
+        (
+            &inserted["path"],
+            &inserted["old_count"],
+            &inserted["unresolved"]
+        ),
+        (
+            &json!("notes\t[preview].txt"),
+            &json!(0),
+            &json!("insert_only")
+        )
+    );
+    assert!(!linked.join(".codecallnavigator/graph.json").exists());
 }
 
 #[test]

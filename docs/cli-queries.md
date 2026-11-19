@@ -87,6 +87,37 @@ not compile, refresh, publish or write graph caches. Refresh is an explicit
 `analyze` command. Failed or cancelled analysis preserves the last successful
 artifact. The existing `serve-once` analysis protocol remains available.
 
+## Changed-symbol impact preview
+
+Run `ccnavigator impact-preview --project /checkout --base main` or send the
+following to `ccnavigator query` or `ccnavigator query-session`:
+
+```json
+{"version":2,"project":"/checkout","query":{"kind":"impact_preview","base":"main","head":"WORKTREE"}}
+```
+
+The optional `impact_preview` capability advertises version 1. The base must have
+a retained snapshot in this clone. Use `base_snapshot` (CLI `--base-snapshot ID`)
+to choose a variant when several exist. Prepare a missing baseline explicitly.
+The head defaults to `WORKTREE` and may also be a local ref. The preview compares
+the endpoints directly. Pass an explicit merge-base commit when you want the
+branch's changes since it diverged.
+
+The engine reads the baseline bundle and Git's old-side source ranges. The
+result identifies both endpoints and includes project-relative change records,
+baseline symbols, and recorded caller chains with edge certainty and provenance.
+Caller paths run from the indicated caller to the changed symbol. The preview
+describes potential impact in the baseline and does not compile the head,
+check out source, publish a graph, or change the cache.
+
+Coverage is restricted to tracked project paths. Newly added files, pure
+insertions, unsupported changes, and old lines without a matching saved symbol
+range have explicit unresolved reasons. A record can contain both mapped symbols
+and an unresolved remainder. Untracked working-tree files and paths outside the
+project are outside this preview. If a result reaches its path, range, chain, or
+byte budgets, `coverage.truncated` is true. Counts then describe observed
+coverage only. A saved route represents a static relationship in the baseline.
+
 ## Saved-revision function flows
 
 Check the optional `capabilities.flow_comparison.version` (currently 1) before

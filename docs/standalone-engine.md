@@ -70,7 +70,12 @@ report why the commit snapshot was skipped.
 ccnavigator snapshot-status --project /checkout --revision main
 ccnavigator prepare-snapshot --project /checkout --revision main --target backend/pom.xml
 ccnavigator compare --project /checkout --base main --head WORKTREE
+ccnavigator impact-preview --project /checkout --base main
 ```
+
+The [changed-symbol impact preview](cli-queries.md#changed-symbol-impact-preview)
+uses one retained baseline to map changed lines and follow recorded callers
+before a head graph has been analyzed.
 
 The cache defaults to `~/Library/Caches/CodeCallNavigator/snapshots/v1/` on
 macOS and `$XDG_CACHE_HOME/CodeCallNavigator/snapshots/v1/` on Linux, with

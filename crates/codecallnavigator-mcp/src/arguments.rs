@@ -37,6 +37,14 @@ pub struct FlowComparisonArgs {
     pub expected_comparison: Option<String>,
     pub selection: FlowComparisonSelection,
 }
+#[derive(Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+pub struct ImpactPreviewArgs {
+    pub base: String,
+    #[serde(default = "comparison_head")]
+    pub head: String,
+    pub base_snapshot: Option<String>,
+}
 #[derive(Deserialize, Serialize, JsonSchema)]
 #[serde(tag = "kind", rename_all = "snake_case", deny_unknown_fields)]
 pub enum FlowComparisonSelection {
@@ -275,6 +283,7 @@ pub fn parse(name: &str, value: Value) -> Result<Query> {
     match name {
         "compare_graphs" => comparison(serde_json::from_value(value)?),
         "compare_function_flows" => flow_comparison(serde_json::from_value(value)?),
+        "preview_graph_impact" => impact_preview(serde_json::from_value(value)?),
         "graph_snapshot_status" => {
             let args: SnapshotStatusArgs = serde_json::from_value(value)?;
             text(&args.revision)?;
@@ -319,6 +328,17 @@ pub fn parse(name: &str, value: Value) -> Result<Query> {
         "neighbors" => neighbors(serde_json::from_value(value)?),
         _ => bail!("Unknown graph tool: {name}"),
     }
+}
+fn impact_preview(args: ImpactPreviewArgs) -> Result<Query> {
+    text(&args.base)?;
+    text(&args.head)?;
+    ensure!(
+        args.base != "WORKTREE",
+        "Impact preview base must name a commit"
+    );
+    let mut query = json!({"kind":"impact_preview","base":args.base,"head":args.head});
+    snapshot_selectors(&mut query, args.base_snapshot, None)?;
+    Query::new(query, None)
 }
 fn comparison(args: CompareArgs) -> Result<Query> {
     text(&args.base)?;

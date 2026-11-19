@@ -1,5 +1,5 @@
 //! Snapshot jobs share comparison lifetime, but can run before a flow pair exists.
-use super::{Workspace, work};
+use super::{Panel, Workspace, work};
 use crate::{
     app::State,
     engine_client::{
@@ -58,7 +58,6 @@ pub struct Lookup {
 #[derive(Default)]
 pub struct Snapshots {
     pub panel_open: bool,
-    pub graph_open: bool,
     pub message: String,
     pub target: TextEdit,
     pub targets: Vec<PathBuf>,
@@ -174,7 +173,8 @@ impl State {
             }
         };
         self.flow_comparison.controls.catalog_open = false;
-        self.flow_comparison.snapshots.graph_open = true;
+        self.flow_comparison.controls.panel = Panel::Graph;
+        self.flow_comparison.impact.clear();
         self.start_snapshot_operation(Operation::Graph {
             refs,
             cursor,
@@ -274,7 +274,6 @@ impl Snapshots {
         self.target = TextEdit::new("");
         self.message.clear();
         self.panel_open = false;
-        self.graph_open = false;
     }
 
     pub(super) fn project_installed(&mut self, project: Option<&Path>) {
@@ -325,7 +324,6 @@ impl Snapshots {
             self.selected_change = None;
             self.graph_refs = Some(refs.clone());
             self.previous.clear();
-            self.graph_open = true;
         }
         let (send, receive) = mpsc::channel();
         self.updates = Some(receive);

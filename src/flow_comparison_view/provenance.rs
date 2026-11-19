@@ -21,7 +21,7 @@ pub(super) fn pair(header: &Header, k: &Kit) -> El {
         .child(endpoint("Before", &header.base, k))
         .child(endpoint("After", &header.head, k))
 }
-fn endpoint(title: &str, endpoint: &Endpoint, k: &Kit) -> El {
+pub(super) fn endpoint(title: &str, endpoint: &Endpoint, k: &Kit) -> El {
     let commit = endpoint.commit.as_deref().unwrap_or("saved WORKTREE");
     let mut summary = match endpoint.kind {
         EndpointKind::Commit => format!(

@@ -240,6 +240,48 @@
       "purpose": "saved source absence is rejected before defaults erase it"
     },
     {
+      "id": "codecallnavigator-core/lib:codecallnavigator_core::artifact::impact::tests::bounds_report_when_saved_matches_are_omitted",
+      "runner": "rust",
+      "file": "crates/codecallnavigator-core/src/artifact/impact.rs",
+      "test_name": "artifact::impact::tests::bounds_report_when_saved_matches_are_omitted",
+      "ignored": false,
+      "package": "codecallnavigator-core",
+      "target_kind": "lib",
+      "target": "codecallnavigator_core",
+      "component": "core",
+      "category": "unit",
+      "requirements": [],
+      "purpose": "Preview limits report omitted results instead of implying complete coverage."
+    },
+    {
+      "id": "codecallnavigator-core/lib:codecallnavigator_core::artifact::impact::tests::old_body_lines_find_saved_invocation_chains",
+      "runner": "rust",
+      "file": "crates/codecallnavigator-core/src/artifact/impact.rs",
+      "test_name": "artifact::impact::tests::old_body_lines_find_saved_invocation_chains",
+      "ignored": false,
+      "package": "codecallnavigator-core",
+      "target_kind": "lib",
+      "target": "codecallnavigator_core",
+      "component": "core",
+      "category": "unit",
+      "requirements": [],
+      "purpose": "Exact saved function spans map old body lines, and incoming invocation evidence yields caller chains."
+    },
+    {
+      "id": "codecallnavigator-core/lib:codecallnavigator_core::artifact::impact::tests::partially_covered_and_inserted_lines_remain_unresolved",
+      "runner": "rust",
+      "file": "crates/codecallnavigator-core/src/artifact/impact.rs",
+      "test_name": "artifact::impact::tests::partially_covered_and_inserted_lines_remain_unresolved",
+      "ignored": false,
+      "package": "codecallnavigator-core",
+      "target_kind": "lib",
+      "target": "codecallnavigator_core",
+      "component": "core",
+      "category": "unit",
+      "requirements": [],
+      "purpose": "Partial saved coverage and zero-width old-side changes preserve explicit unknown results."
+    },
+    {
       "id": "codecallnavigator-core/lib:codecallnavigator_core::artifact::provenance::selection_tests::canonical_selection_normalizes_only_owned_v1_and_preserves_extension_order",
       "runner": "rust",
       "file": "crates/codecallnavigator-core/src/artifact/provenance_selection_tests.rs",

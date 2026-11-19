@@ -6,6 +6,7 @@ mod cancellation;
 mod comparison;
 mod flow_comparison;
 mod flow_expansion;
+mod impact_preview;
 mod inference;
 mod linked_roots;
 mod machine;
@@ -80,6 +81,7 @@ pub fn run() -> Result<i32> {
             arguments.targets,
             &|message| eprintln!("{message}"),
         )?),
+        Command::ImpactPreview { project, query } => impact_preview::cli(project, query),
         Command::Compare {
             project,
             base,
@@ -153,6 +155,6 @@ fn print_help() {
         "codecallnavigator-engine"
     };
     println!(
-        "{program} capabilities\n{program} query < request.json\n{program} query-session < requests.ndjson\n{program} observe [--auto-refresh] < observation-request.ndjson\n{program} discover PROJECT\n{program} analyze --project PROJECT [--root NAME=PATH] TARGET...\n{program} watch --project PROJECT [--root NAME=PATH] TARGET...\n{program} clear-cache --project PROJECT\n{program} verify --project PROJECT [--root NAME=PATH]\n{program} compare --project PROJECT --base REF --head REF|WORKTREE [--base-snapshot ID] [--head-snapshot ID]\n{program} snapshot-status --project PROJECT --revision REF\n{program} prepare-snapshot --project PROJECT --revision REF [--target PATH]..."
+        "{program} capabilities\n{program} query < request.json\n{program} query-session < requests.ndjson\n{program} observe [--auto-refresh] < observation-request.ndjson\n{program} discover PROJECT\n{program} analyze --project PROJECT [--root NAME=PATH] TARGET...\n{program} watch --project PROJECT [--root NAME=PATH] TARGET...\n{program} clear-cache --project PROJECT\n{program} verify --project PROJECT [--root NAME=PATH]\n{program} compare --project PROJECT --base REF --head REF|WORKTREE [--base-snapshot ID] [--head-snapshot ID]\n{program} snapshot-status --project PROJECT --revision REF\n{program} prepare-snapshot --project PROJECT --revision REF [--target PATH]...\n{program} impact-preview --project PROJECT --base REF [--head REF|WORKTREE] [--base-snapshot ID]"
     );
 }

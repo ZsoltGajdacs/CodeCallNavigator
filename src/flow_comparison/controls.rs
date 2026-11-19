@@ -1,10 +1,11 @@
 //! Editable comparison inputs never retarget an already captured revision pair.
-use super::{Selection, Workspace};
+use super::{Panel, Selection, Workspace};
 use crate::{app::State, engine_client::flow_comparison::CatalogPage};
 use rune::TextEdit;
 pub struct Controls {
     pub visible: bool,
     pub catalog_open: bool,
+    pub panel: Panel,
     pub base: TextEdit,
     pub head: TextEdit,
     pub search: TextEdit,
@@ -17,6 +18,7 @@ impl Default for Controls {
         Self {
             visible: false,
             catalog_open: false,
+            panel: Panel::Flows,
             base: TextEdit::new("HEAD"),
             head: TextEdit::new("WORKTREE"),
             search: TextEdit::new(""),
@@ -32,10 +34,12 @@ impl State {
         self.close_source();
         self.flow_workspace.preserve_current_scroll();
         self.flow_comparison.controls.visible = true;
+        self.check_impact_preview_support();
     }
     pub fn load_flow_comparison(&mut self) {
         self.flow_residency.activity();
-        self.flow_comparison.snapshots.graph_open = false;
+        self.flow_comparison.impact.clear();
+        self.flow_comparison.controls.panel = Panel::Flows;
         let refs = self.flow_comparison.control_refs();
         let result = if self.flow_comparison.descriptor().is_some() {
             self.flow_comparison.load_refs(refs)
@@ -65,6 +69,10 @@ impl Workspace {
         self.action(result);
     }
     pub fn cancel_control(&mut self) {
+        if self.impact.pending() {
+            self.impact.cancel();
+            return;
+        }
         if self.snapshots.pending() {
             self.snapshots.cancel();
             return;

@@ -153,7 +153,7 @@ fn tool<T: JsonSchema>(name: &'static str, description: &'static str, read_only:
     );
     tool
 }
-fn snapshot_tools() -> [Tool; 4] {
+fn snapshot_tools() -> [Tool; 5] {
     [
         tool::<CompareArgs>(
             "compare_graphs",
@@ -163,6 +163,11 @@ fn snapshot_tools() -> [Tool; 4] {
         tool::<FlowComparisonArgs>(
             "compare_function_flows",
             "List comparable functions or inspect before/after flows using saved graph endpoints. Carry expected_comparison and snapshot IDs into subsequent requests.",
+            true,
+        ),
+        tool::<ImpactPreviewArgs>(
+            "preview_graph_impact",
+            "Preview potential impact from one saved baseline graph and a tracked source diff. Shows changed ranges, baseline symbols and caller paths, and unresolved coverage. Never checks out or compiles a revision.",
             true,
         ),
         tool::<SnapshotStatusArgs>(

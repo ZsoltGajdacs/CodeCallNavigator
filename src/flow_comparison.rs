@@ -1,6 +1,7 @@
 //! Historical flows own their captured project and endpoint binding, not a graph epoch.
 mod controls;
 mod identity;
+mod impact;
 mod lifecycle;
 mod navigation;
 mod pair;
@@ -34,6 +35,13 @@ pub enum Phase {
     ReloadRequired(String),
     Failed(String),
 }
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum Panel {
+    #[default]
+    Flows,
+    Graph,
+    Impact,
+}
 #[derive(Clone)]
 struct Project {
     context: QueryContext,
@@ -44,6 +52,7 @@ struct Project {
 pub struct Workspace {
     pub controls: controls::Controls,
     pub snapshots: snapshots::Snapshots,
+    pub impact: impact::Impact,
     project: Option<Project>,
     identity: identity::Identity,
     binding: Option<BoundComparison>,
@@ -66,6 +75,7 @@ pub struct Workspace {
 impl Workspace {
     pub(crate) fn release_hidden(&mut self) {
         self.cancel_requests();
+        self.impact.close();
         self.snapshots.reset();
         self.current = None;
         self.history.clear();
@@ -101,15 +111,21 @@ impl Workspace {
         self.catalog_job.set_waker(waker.clone());
         self.detail_job.set_waker(waker.clone());
         self.snapshots.set_waker(waker.clone());
+        self.impact.set_waker(waker.clone());
         self.workers.set_waker(waker);
     }
     pub fn pending(&self) -> bool {
-        self.catalog_job.is_pending() || self.detail_job.is_pending() || self.snapshots.pending()
+        self.catalog_job.is_pending()
+            || self.detail_job.is_pending()
+            || self.snapshots.pending()
+            || self.impact.pending()
     }
     pub fn stopped(&self) -> bool {
         self.workers.stopped()
     }
     pub fn close(&mut self) {
+        self.impact.close();
+        self.controls.panel = Panel::Flows;
         self.snapshots.reset();
         self.close_flow_binding();
     }
