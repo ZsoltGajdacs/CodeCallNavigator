@@ -511,7 +511,9 @@ real freshness observation. The `kind: "activity"` frame carries the cumulative
 `running`, `busy`, `published`, `failed`, `cancelled` and `unavailable`.
 Published activity includes the resulting generation, effective root mappings,
 attempt duration and compiler metrics. Running timing separates configured
-debounce from queue wait. Activity frames can coalesce. Freshness verification
+debounce from queue wait. A running frame may include `progress_message`, the
+latest stage reported by the shared analysis pipeline. Activity frames can
+coalesce. Freshness verification
 and generation-bound graph snapshots establish what clients can display.
 
 Send a later line `{"version":1,"command":"cancel_refresh"}` to cancel the

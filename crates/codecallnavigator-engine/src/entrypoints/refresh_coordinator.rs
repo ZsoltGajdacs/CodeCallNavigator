@@ -46,6 +46,10 @@ impl Coordinator {
         self.activity.clone()
     }
 
+    pub fn has_running_activity(&self) -> bool {
+        self.publication.is_none() && matches!(self.activity.phase, Phase::Running { .. })
+    }
+
     pub fn publication(&self) -> Option<&Activity> {
         self.publication.as_ref()
     }

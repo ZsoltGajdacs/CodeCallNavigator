@@ -58,6 +58,10 @@ All argument objects reject unknown fields. Related analyzed queries can carry
 `expected_generation`, a 64-character hexadecimal CLI digest. A generation
 mismatch is an explicit CLI error; request status again before combining results.
 Analysis starts through an explicit `refresh_graph` or `prepare_graph_snapshot` request.
+Both tools forward CLI analysis messages as `notifications/progress` when the
+caller includes `_meta.progressToken`. Intermediate progress may be skipped
+when delivery cannot keep up. The final tool result uses the same format with
+or without a progress token.
 
 | Tool | Arguments |
 | --- | --- |

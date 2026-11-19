@@ -207,3 +207,57 @@ impl Output {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::entrypoints::session_notice::Notice;
+    use codecallnavigator_core::{
+        freshness::EventPayload,
+        refresh::{Activity, Phase},
+    };
+
+    #[test]
+    fn latest_running_stage_is_delivered_when_output_recovers_during_attempt() {
+        let (send, received) = mpsc::sync_channel(1);
+        let output = Output {
+            send,
+            acknowledged: Arc::new(AtomicU64::new(0)),
+        };
+        let mut notice = Notice::new(&output, false);
+        notice.activity(0, Phase::Watching);
+        let (ready, stages_recorded) = mpsc::channel();
+        let (finish, finish_attempt) = mpsc::channel();
+        std::thread::scope(|scope| {
+            scope.spawn(move || {
+                let phase = Phase::Running {
+                    run: 1,
+                    input_revision: None,
+                    debounce_milliseconds: 300.0,
+                    wait_milliseconds: 0.0,
+                    progress_message: None,
+                };
+                notice.during_attempt(1, &phase, |progress| {
+                    progress("Preparing inputs".into());
+                    progress("Extracting TypeScript".into());
+                    ready.send(()).unwrap();
+                    let _ = finish_attempt.recv_timeout(Duration::from_secs(3));
+                });
+            });
+            let timeout = Duration::from_secs(2);
+            stages_recorded.recv_timeout(timeout).unwrap();
+            received.recv_timeout(timeout).unwrap();
+            let frame = received.recv_timeout(timeout).unwrap();
+            assert_eq!(frame.sequence, 2);
+            assert!(matches!(
+                frame.payload,
+                EventPayload::Activity { activity: Activity {
+                    runs_started: 1,
+                    phase: Phase::Running { run: 1, progress_message: Some(message), .. },
+                    ..
+                }} if message == "Extracting TypeScript"
+            ));
+            finish.send(()).unwrap();
+        });
+    }
+}

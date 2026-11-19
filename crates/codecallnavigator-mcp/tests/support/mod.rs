@@ -144,9 +144,14 @@ impl Client {
     }
 
     pub fn notification(&self, method: &str) -> Option<&Value> {
+        self.notifications()
+            .find(|message| message["method"] == method)
+    }
+
+    pub fn notifications(&self) -> impl Iterator<Item = &Value> {
         self.pending
             .iter()
-            .find(|message| message["method"] == method)
+            .filter(|message| message["method"].is_string())
     }
 
     pub fn disconnect(&mut self) {

@@ -5,6 +5,8 @@ use crate::{
 use rmcp::{ErrorData, RoleServer, ServerHandler, model::*, service::RequestContext};
 use schemars::{JsonSchema, schema_for};
 use serde_json::{Value, json};
+use std::future::Future;
+use tokio::sync::mpsc;
 
 pub struct Server {
     pub backend: Backend,
@@ -50,7 +52,12 @@ impl ServerHandler for Server {
                 Err(error) => return Ok(failure("invalid_arguments", error).into()),
             },
             "refresh_graph" => match serde_json::from_value::<RefreshArgs>(arguments) {
-                Ok(args) => self.backend.refresh(args, &context.ct).await,
+                Ok(args) => {
+                    with_progress(&context, |progress| {
+                        self.backend.refresh(args, &context.ct, progress)
+                    })
+                    .await
+                }
                 Err(error) => return Ok(failure("invalid_arguments", error).into()),
             },
             "prepare_graph_snapshot" => {
@@ -60,7 +67,12 @@ impl ServerHandler for Server {
                         args.validate()?;
                         Ok(args)
                     }) {
-                    Ok(args) => self.prepare_snapshot(args, &context).await,
+                    Ok(args) => {
+                        with_progress(&context, |progress| {
+                            self.backend.prepare_snapshot(args, &context.ct, progress)
+                        })
+                        .await
+                    }
                     Err(error) => return Ok(failure("invalid_arguments", error).into()),
                 }
             }
@@ -76,39 +88,34 @@ impl ServerHandler for Server {
         .into())
     }
 }
-impl Server {
-    async fn prepare_snapshot(
-        &self,
-        args: PrepareSnapshotArgs,
-        context: &RequestContext<RoleServer>,
-    ) -> anyhow::Result<Reply> {
-        let Some(token) = context.meta.get_progress_token() else {
-            return self.backend.prepare_snapshot(args, &context.ct, None).await;
+async fn with_progress<F: Future<Output = anyhow::Result<Reply>>>(
+    context: &RequestContext<RoleServer>,
+    operation: impl FnOnce(Option<mpsc::Sender<String>>) -> F,
+) -> anyhow::Result<Reply> {
+    let Some(token) = context.meta.get_progress_token() else {
+        return operation(None).await;
+    };
+    let (sender, mut progress) = mpsc::channel(32);
+    let analysis = operation(Some(sender));
+    tokio::pin!(analysis);
+    let mut count = 0.0;
+    loop {
+        let message = tokio::select! {
+            result = &mut analysis => return result,
+            message = progress.recv() => message,
         };
-        let (sender, mut progress) = tokio::sync::mpsc::channel(32);
-        let prepare = self
-            .backend
-            .prepare_snapshot(args, &context.ct, Some(sender));
-        tokio::pin!(prepare);
-        let mut count = 0.0;
-        loop {
-            let message = tokio::select! {
-                result = &mut prepare => return result,
-                message = progress.recv() => message,
-            };
-            let Some(message) = message else {
-                return prepare.await;
-            };
-            count += 1.0;
-            let notify = context.peer.notify_progress(
-                ProgressNotificationParam::new(token.clone(), count).with_message(message),
-            );
-            tokio::select! {
-                result = &mut prepare => return result,
-                sent = notify => {
-                    if sent.is_err() {
-                        return prepare.await;
-                    }
+        let Some(message) = message else {
+            return analysis.await;
+        };
+        count += 1.0;
+        let notify = context.peer.notify_progress(
+            ProgressNotificationParam::new(token.clone(), count).with_message(message),
+        );
+        tokio::select! {
+            result = &mut analysis => return result,
+            sent = notify => {
+                if sent.is_err() {
+                    return analysis.await;
                 }
             }
         }
@@ -238,7 +245,7 @@ fn definitions() -> Vec<Tool> {
         ),
         tool::<RefreshArgs>(
             "refresh_graph",
-            "Explicitly analyze discovered build identities and atomically refresh graph. Omit targets to use CLI defaults. Uses fixed startup project/roots.",
+            "Explicitly analyze discovered build identities and atomically refresh graph. Omit targets to use CLI defaults. Uses fixed startup project/roots. Accepts MCP cancellation and progress notifications.",
             false,
         ),
     ]);

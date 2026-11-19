@@ -1,5 +1,6 @@
 //! Graph Studio shell. Content and application actions live in focused modules.
 mod activity;
+pub(crate) use activity::poll_stage_clock;
 mod activity_details;
 mod analysis_failure;
 mod automatic_refresh;

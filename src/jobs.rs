@@ -153,6 +153,7 @@ pub fn poll(state: &mut State, time: f64, tx: &mut Tx) -> bool {
         | poll_graph(state)
         | poll_persistence(state)
         | crate::freshness_workspace::poll(state)
+        | crate::view::poll_stage_clock(state, tx)
         | crate::architecture_workspace::poll(state, time, tx)
         | crate::flow_workspace::poll(state, tx)
         | state.flow_comparison.poll()

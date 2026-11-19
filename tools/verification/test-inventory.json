@@ -4670,6 +4670,20 @@
       "purpose": "equivalent sibling layouts have stable aliases and keep explicit roots"
     },
     {
+      "id": "codecallnavigator-engine/bin:ccnavigator::entrypoints::observation_transport::tests::latest_running_stage_is_delivered_when_output_recovers_during_attempt",
+      "runner": "rust",
+      "file": "crates/codecallnavigator-engine/src/entrypoints/observation_transport.rs",
+      "test_name": "entrypoints::observation_transport::tests::latest_running_stage_is_delivered_when_output_recovers_during_attempt",
+      "ignored": false,
+      "package": "codecallnavigator-engine",
+      "target_kind": "bin",
+      "target": "ccnavigator",
+      "component": "engine",
+      "category": "unit",
+      "requirements": [],
+      "purpose": "Latest in-memory stage crosses a bounded queue after the consumer resumes without additional producer callbacks"
+    },
+    {
       "id": "codecallnavigator-engine/bin:ccnavigator::entrypoints::query::freshness::tests::duplicate_staleness_cannot_hide_a_required_input_blocker",
       "runner": "rust",
       "file": "crates/codecallnavigator-engine/src/entrypoints/query/freshness.rs",
@@ -4850,6 +4864,20 @@
       "category": "unit",
       "requirements": [],
       "purpose": "equivalent sibling layouts have stable aliases and keep explicit roots"
+    },
+    {
+      "id": "codecallnavigator-engine/bin:codecallnavigator-engine::entrypoints::observation_transport::tests::latest_running_stage_is_delivered_when_output_recovers_during_attempt",
+      "runner": "rust",
+      "file": "crates/codecallnavigator-engine/src/entrypoints/observation_transport.rs",
+      "test_name": "entrypoints::observation_transport::tests::latest_running_stage_is_delivered_when_output_recovers_during_attempt",
+      "ignored": false,
+      "package": "codecallnavigator-engine",
+      "target_kind": "bin",
+      "target": "codecallnavigator-engine",
+      "component": "engine",
+      "category": "unit",
+      "requirements": [],
+      "purpose": "Latest in-memory stage crosses a bounded queue after the consumer resumes without additional producer callbacks"
     },
     {
       "id": "codecallnavigator-engine/bin:codecallnavigator-engine::entrypoints::query::freshness::tests::duplicate_staleness_cannot_hide_a_required_input_blocker",
@@ -8301,7 +8329,7 @@
         "node",
         "typescript"
       ],
-      "purpose": "real stdio refresh preserves typed CLI failure codes and prior artifact bytes"
+      "purpose": "real stdio refresh forwards compiler progress to token-bearing clients, preserves typed CLI failures, and leaves prior artifact bytes available"
     },
     {
       "id": "codecallnavigator/bin:codecallnavigator::architecture_workspace::tests::changing_graph_epoch_rejects_previous_configuration_job_and_forces_reload",
@@ -8386,6 +8414,20 @@
       "category": "unit",
       "requirements": [],
       "purpose": "opt in follows primary project but not roots or generation"
+    },
+    {
+      "id": "codecallnavigator/bin:codecallnavigator::automatic_refresh::tests::running_stage_elapsed_tracks_attempt_and_message",
+      "runner": "rust",
+      "file": "src/automatic_refresh.rs",
+      "test_name": "automatic_refresh::tests::running_stage_elapsed_tracks_attempt_and_message",
+      "ignored": false,
+      "package": "codecallnavigator",
+      "target_kind": "bin",
+      "target": "codecallnavigator",
+      "component": "ui",
+      "category": "unit",
+      "requirements": [],
+      "purpose": "A repeated stage preserves elapsed time, a new attempt resets it, and idle clears it"
     },
     {
       "id": "codecallnavigator/bin:codecallnavigator::build_discovery::tests::changing_root_discards_old_targets_even_when_discovery_fails",
@@ -12282,7 +12324,7 @@
         "node",
         "typescript"
       ],
-      "purpose": "graphless opt-in recovers a real compiler, keeps inferred roots across publication, and reaps owned session on shutdown"
+      "purpose": "graphless opt-in shows real compiler progress, recovers from an invalid initial input, keeps inferred roots across publication, and reaps owned session on shutdown"
     },
     {
       "id": "codecallnavigator/bin:codecallnavigator::ui_tests::cli_freshness::actual_cli_mixed_analysis_failure_can_retry_java_only",
@@ -12318,11 +12360,12 @@
       "category": "integration",
       "requirements": [
         "cli",
+        "git",
         "graphviz",
         "node",
         "typescript"
       ],
-      "purpose": "actual cli automatic refresh requires opt in and preserves loaded context"
+      "purpose": "real desktop reopens a stale graph from an earlier Git revision, shows engine progress before automatic publication, and preserves loaded context"
     },
     {
       "id": "codecallnavigator/bin:codecallnavigator::ui_tests::cli_freshness::actual_cli_freshness_reload_preserves_loaded_binding_camera_and_discards_obsolete_jobs",
@@ -22761,7 +22804,7 @@
         "typescript",
         "packaged"
       ],
-      "purpose": "automatic refresh acceptance",
+      "purpose": "real saved and graphless automatic analysis, exact stage parity with one-shot CLI, publication, cancellation and process cleanup under backpressure",
       "arguments": [
         "--executable",
         "{engine}",

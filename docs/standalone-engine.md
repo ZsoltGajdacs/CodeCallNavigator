@@ -159,7 +159,8 @@ Within a TypeScript worker, edits to the same project use the installed
 compiler’s affected-file diagnostics in memory. Configuration and project
 reference changes update the compiler inputs. Analysis emits no build files.
 
-Machine clients can open the same session with `ccnavigator analysis-session`.
+Watch prints analysis stages to stderr and includes them in its running JSON
+activity. Machine clients can open the same session with `ccnavigator analysis-session`.
 Keep stdin open and send one newline-delimited request. Capabilities advertises
 the command and its version under `analysis_session`.
 
@@ -169,7 +170,8 @@ the command and its version under `analysis_session`.
 
 A null `expected_generation` requests initial analysis. A digest follows the
 matching saved selection. Stdout carries versioned activity frames with
-monotonic sequence numbers. Publication reports a digest and leaves the
+monotonic sequence numbers. Running frames can carry the latest engine stage
+in the optional `progress_message` field. Publication reports a digest and leaves the
 session open. Send `{"command":"cancel_refresh","version":1}` to cancel the
 current attempt. Close stdin to stop the session and its owned processes.
 `observe --auto-refresh` forwards activity from this same engine session.

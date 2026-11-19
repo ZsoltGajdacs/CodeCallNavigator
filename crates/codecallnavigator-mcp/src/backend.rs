@@ -139,7 +139,12 @@ impl Backend {
             .context("Malformed CLI discovery response")?;
         Ok(value)
     }
-    pub async fn refresh(&self, args: RefreshArgs, cancel: &CancellationToken) -> Result<Reply> {
+    pub async fn refresh(
+        &self,
+        args: RefreshArgs,
+        cancel: &CancellationToken,
+        progress: Option<mpsc::Sender<String>>,
+    ) -> Result<Reply> {
         if self.capabilities.analysis_session == wire::AnalysisSessionSupport::Unsupported {
             return Ok(Reply {
                 value: json!({"version":2,"generation":null,"freshness":null,"result":null,"error":{"code":"unsupported_capability","message":"Explicit refresh requires CLI analysis_session v1; upgrade the configured CLI and restart the MCP server"}}),
@@ -149,7 +154,7 @@ impl Backend {
         let discovered: wire::Discovery = serde_json::from_value(self.discovery(cancel).await?)?;
         let targets = choose_targets(&discovered, args)?;
         let request = json!({"command":"analyze","version":2,"project":self.config.project,"roots":self.config.roots,"targets":targets,"infer_linked_roots":false,"failure_version":1});
-        let invocation = analysis_invocation(request, process::StdinMode::Analysis, None)?;
+        let invocation = analysis_invocation(request, process::StdinMode::Analysis, progress)?;
         let output = self
             .processes
             .run(&self.config.engine, invocation, cancel)

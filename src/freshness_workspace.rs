@@ -89,7 +89,7 @@ impl Workspace {
         self.automatic.reconcile(Some(&context.descriptor));
         self.automatic_worker =
             self.selected.is_some() || self.automatic.enabled(&context.descriptor.project);
-        self.automatic.activity = None;
+        self.automatic.clear_activity();
         self.binding = Some(context.descriptor.clone());
         self.status = if self.selected.is_some() {
             Status::Idle
@@ -222,12 +222,14 @@ impl Workspace {
             self.accept(observation);
         }
         if let Some(activity) = pending.activity {
-            self.automatic.activity = Some(activity);
+            self.automatic
+                .accept_activity(activity, std::time::Instant::now());
         }
         if let Some(publication) = pending.publication {
             self.record_publication(publication);
         }
         if let Some(terminal) = pending.terminal {
+            self.automatic.clear_active_work();
             self.status = terminal;
         }
         changed

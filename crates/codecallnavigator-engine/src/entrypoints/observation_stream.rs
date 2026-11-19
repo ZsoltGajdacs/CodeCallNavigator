@@ -190,6 +190,7 @@ impl Monitor {
     ) -> codecallnavigator_core::query::Result<bool> {
         match mode {
             Mode::Saved(request) => {
+                self.deliver_running_activity(output);
                 let observed = self.executor.observation(request, &input.stopped)?;
                 self.deliver(observed.current.clone(), output);
                 self.refresh(&observed.current, &input.stopped);
@@ -198,6 +199,16 @@ impl Monitor {
         }
         self.deliver_activity(output, matches!(mode, Mode::Selected(_)));
         Ok(!self.terminal(output))
+    }
+
+    fn deliver_running_activity(&mut self, output: &Output) {
+        let Some(coordinator) = &mut self.coordinator else {
+            return;
+        };
+        coordinator.poll();
+        if coordinator.has_running_activity() {
+            self.deliver_activity(output, false);
+        }
     }
 
     fn reconcile_selected(

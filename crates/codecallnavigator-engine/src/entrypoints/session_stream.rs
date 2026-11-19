@@ -6,15 +6,16 @@ use super::{
     observation_transport::{Input, Output, bridge_stop},
     refresh_policy::{Key, Pending, Policy},
     session_inputs::Inputs,
+    session_notice::Notice,
 };
 use anyhow::{Result, ensure};
 use codecallnavigator_core::{
     artifact::{CoordinatorLease, GenerationChanged, LockBusy},
     fingerprint::InputsChanged,
-    freshness::{self, EventPayload, StreamEvent},
+    freshness,
     protocol::Event,
     query::Error,
-    refresh::{self, Activity, CancelReason, Phase, SessionRequest},
+    refresh::{self, CancelReason, Phase, SessionRequest},
 };
 use codecallnavigator_engine::{analyzers::ConsumedRevision, process_ownership::CleanupFailure};
 use std::{
@@ -42,7 +43,7 @@ pub(super) fn cli(arguments: arguments::Analysis) -> Result<i32> {
     let cancel = Arc::new(AtomicBool::new(false));
     bridge_stop(stopped.clone(), cancel.clone());
     let output = Output::start(stopped.clone());
-    let result = run(request, &stopped, &cancel, &mut Notice::new(&output));
+    let result = run(request, &stopped, &cancel, &mut Notice::new(&output, true));
     stopped.store(true, Ordering::Release);
     result?;
     Ok(0)
@@ -54,7 +55,7 @@ pub(super) fn serve() -> Result<i32> {
     let Some(request) = input.receive_initial() else {
         return Ok(0);
     };
-    let mut notice = Notice::new(&output);
+    let mut notice = Notice::new(&output, false);
     let result = request
         .map_err(|error| anyhow::anyhow!(error.message))
         .and_then(|request| run(request, &input.stopped, &input.cancel_refresh, &mut notice));
@@ -138,6 +139,7 @@ struct Controls<'a> {
 struct ActiveAttempt {
     pending: Pending,
     started: Instant,
+    phase: Phase,
 }
 
 impl ActiveAttempt {
@@ -215,13 +217,16 @@ impl<'a> Monitor<'a> {
         let Some(active) = self.begin_attempt(current, notice) else {
             return Ok(());
         };
-        let result = self.session.attempt(
-            self.generation.clone(),
-            Attempt {
-                cancel: self.controls.cancel_attempt,
-                progress: &|message| eprintln!("{message}"),
-            },
-        );
+        let result = notice.during_attempt(self.runs, &active.phase, |progress| {
+            self.session.attempt(
+                self.generation.clone(),
+                Attempt {
+                    cancel: self.controls.cancel_attempt,
+                    progress,
+                    diagnostic: &|message| eprintln!("{message}"),
+                },
+            )
+        });
         if self.controls.stopped.load(Ordering::Acquire) {
             return result.map(|_| ());
         }
@@ -267,18 +272,17 @@ impl<'a> Monitor<'a> {
         }
         let pending = self.policy.take().expect("due session attempt");
         self.runs += 1;
-        notice.activity(
-            self.runs,
-            Phase::Running {
-                run: self.runs,
-                input_revision: Some(current),
-                debounce_milliseconds: refresh::DEBOUNCE_MILLISECONDS as f64,
-                wait_milliseconds: pending.queue_milliseconds(now),
-            },
-        );
+        let phase = Phase::Running {
+            run: self.runs,
+            input_revision: Some(current),
+            debounce_milliseconds: refresh::DEBOUNCE_MILLISECONDS as f64,
+            wait_milliseconds: pending.queue_milliseconds(now),
+            progress_message: None,
+        };
         Some(ActiveAttempt {
             pending,
             started: now,
+            phase,
         })
     }
 
@@ -455,68 +459,6 @@ fn wait_for_probe(started: Instant, stopped: &AtomicBool) {
     let deadline = started + Duration::from_millis(freshness::RECONCILE_MILLISECONDS);
     while !stopped.load(Ordering::Acquire) && Instant::now() < deadline {
         thread::sleep(Duration::from_millis(10));
-    }
-}
-
-struct Notice<'a> {
-    output: &'a Output,
-    sequence: u64,
-    pending: Option<StreamEvent>,
-    publication: Option<StreamEvent>,
-}
-
-impl<'a> Notice<'a> {
-    fn new(output: &'a Output) -> Self {
-        Self {
-            output,
-            sequence: 0,
-            pending: None,
-            publication: None,
-        }
-    }
-
-    fn activity(&mut self, runs_started: u64, phase: Phase) {
-        let published = matches!(phase, Phase::Published { .. });
-        let event = StreamEvent {
-            sequence: 0,
-            version: freshness::VERSION,
-            payload: EventPayload::Activity {
-                activity: Activity {
-                    version: refresh::VERSION,
-                    runs_started,
-                    phase,
-                },
-            },
-        };
-        if published {
-            self.pending = None;
-            self.publication = Some(event);
-        } else {
-            self.pending = Some(event);
-        }
-        self.flush();
-    }
-
-    fn flush(&mut self) {
-        for slot in [&mut self.publication, &mut self.pending] {
-            if let Some(event) = slot.as_mut() {
-                event.sequence = self.sequence + 1;
-                if !self.output.offer(event.clone()) {
-                    break;
-                }
-                self.sequence += 1;
-                *slot = None;
-            }
-        }
-    }
-
-    fn failed(&mut self, error: Error) {
-        self.flush();
-        self.output.finish(StreamEvent {
-            sequence: self.sequence + 1,
-            version: freshness::VERSION,
-            payload: EventPayload::Failed { error },
-        });
     }
 }
 

@@ -1,10 +1,18 @@
 //! Saved compiler graphs, CLI notifications and actual Rune adoption controls.
 use super::{
-    cli_backend::{analyze, analyze_existing, desktop, search_start, settle},
+    cli_backend::{
+        analyze, analyze_existing, analyze_with_runtime, configure_typescript_project, desktop,
+        search_start, settle,
+    },
     click,
     project_explorer::capture,
 };
-use crate::{app::State, freshness_workspace::Status, jobs};
+use crate::{
+    app::State,
+    flow_comparison::tests::{git, isolate_cli_cache},
+    freshness_workspace::Status,
+    jobs,
+};
 use codecallnavigator::artifact::verification::InputStatus;
 use rune::Runtime;
 use std::{
@@ -438,15 +446,32 @@ fn automatic_refresh_is_an_explicit_loaded_project_action() {
 #[ignore = "requires built CLI with automatic refresh, Node24/TypeScript5.9-or-6.0; optional captures require Metal"]
 fn actual_cli_automatic_refresh_requires_opt_in_and_preserves_loaded_context() {
     let directory = tempfile::tempdir().unwrap();
-    let project = directory.path().canonicalize().unwrap();
-    let pending = tempfile::tempdir().unwrap();
-    let snapshot = analyze(&project);
-    let original = snapshot.context.descriptor.generation.clone();
-    let mut runtime = desktop(snapshot, pending.path());
-    runtime.state.project_open.folder = Some(project.to_string_lossy().into_owned());
-    wait_observation(&mut runtime);
+    let fixture = directory.path().canonicalize().unwrap();
+    let project = fixture.join("checkout");
+    fs::create_dir(&project).unwrap();
+    configure_typescript_project(&project);
+    git(&project, &["init", "-q"]);
+    git(&project, &["config", "user.name", "Automatic refresh test"]);
+    git(
+        &project,
+        &["config", "user.email", "refresh@example.invalid"],
+    );
+    git(&project, &["add", "tsconfig.json", "example.ts"]);
+    git(&project, &["commit", "-qm", "Baseline"]);
+    let mut engine = crate::runtime::Runtime::discover().unwrap();
+    isolate_cli_cache(&mut engine, &fixture.join("snapshot-cache"));
+    let original = analyze_with_runtime(&project, &engine)
+        .context
+        .descriptor
+        .generation;
     source(&project, 2, true);
-    settle(&mut runtime, |state| state.freshness.is_stale());
+    git(&project, &["add", "example.ts"]);
+    git(&project, &["commit", "-qm", "Update source"]);
+
+    let mut runtime = open_project(&project, engine);
+    settle(&mut runtime, |state| {
+        state.freshness.is_stale() && state.view_is_current() && !state.jobs.discovery.is_pending()
+    });
     assert_eq!(
         runtime.state.generation, original,
         "Passive observation must not analyze or adopt"
@@ -456,6 +481,8 @@ fn actual_cli_automatic_refresh_requires_opt_in_and_preserves_loaded_context() {
         state.nav.camera.zoom = 0.73;
     });
     click(&mut runtime, "freshness-auto-toggle");
+    assert_typescript_progress(&mut runtime);
+    assert_eq!(runtime.state.generation, original);
     settle(&mut runtime, |state| {
         state.generation != original && state.view_is_current()
     });
@@ -502,6 +529,8 @@ fn actual_cli_automatic_refresh_adopts_first_graph_and_keeps_inferred_roots() {
         !state.project_open.loading() && state.targets.iter().any(|choice| choice.selected)
     });
     click(&mut ui, "freshness-auto-toggle");
+    assert_typescript_progress(&mut ui);
+    assert!(ui.state.graph.is_none());
     settle(&mut ui, |state| {
         state.freshness.automatic.activity.as_ref().is_some_and(|activity| {
             matches!(&activity.phase, Phase::Failed { error, .. } if error.code == "failed")
@@ -785,8 +814,12 @@ fn fresh_project_with_linked_source(base: &Path) -> (PathBuf, PathBuf) {
 }
 
 fn desktop_without_graph(project: &Path) -> Runtime<State> {
+    open_project(project, crate::runtime::Runtime::discover().unwrap())
+}
+
+fn open_project(project: &Path, engine: crate::runtime::Runtime) -> Runtime<State> {
     let mut state = State::new();
-    state.runtime = Some(Arc::new(crate::runtime::Runtime::discover().unwrap()));
+    state.runtime = Some(Arc::new(engine));
     state.open_project(project.to_string_lossy().into_owned());
     let mut runtime = Runtime::new(
         state,
@@ -796,6 +829,44 @@ fn desktop_without_graph(project: &Path) -> Runtime<State> {
     );
     runtime.poll = Some(jobs::poll);
     runtime
+}
+
+fn assert_typescript_progress(runtime: &mut Runtime<State>) {
+    use codecallnavigator::refresh::Phase;
+    let stage = |state: &State| {
+        state
+            .freshness
+            .automatic
+            .activity
+            .as_ref()
+            .is_some_and(|activity| {
+                matches!(&activity.phase, Phase::Running { progress_message: Some(message), .. }
+                if message.starts_with("Preparing TypeScript project"))
+            })
+    };
+    settle(runtime, stage);
+    let elements = runtime.elements();
+    for key in ["status-message", "active-analysis"] {
+        assert!(
+            elements.iter().any(|element| {
+                element.key.as_deref() == Some(key)
+                    && !element.exiting
+                    && element
+                        .text
+                        .as_deref()
+                        .is_some_and(|message| message.starts_with("Preparing TypeScript project"))
+            }),
+            "{key} did not render the live TypeScript preparation stage"
+        );
+    }
+    assert!(elements.iter().any(|element| {
+        element.key.as_deref() == Some("analysis-stage-elapsed")
+            && !element.exiting
+            && element
+                .text
+                .as_deref()
+                .is_some_and(|value| value.starts_with("Stage shown for "))
+    }));
 }
 
 fn invalid_automatic_code_recovers(runtime: &mut Runtime<State>, project: &Path) {

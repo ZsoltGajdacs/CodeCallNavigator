@@ -3,7 +3,12 @@ use crate::app::State;
 use rune::{El, col, el, row, text};
 use rune_kit::Kit;
 
-pub(super) fn view(state: &State, k: &Kit, phase: &str) -> El {
+pub(super) fn view(
+    state: &State,
+    k: &Kit,
+    phase: &str,
+    elapsed: Option<std::time::Duration>,
+) -> El {
     let mut body = col()
         .w_full()
         .min_w(0.0)
@@ -16,7 +21,21 @@ pub(super) fn view(state: &State, k: &Kit, phase: &str) -> El {
                 .font(k.ty.ui)
                 .color(k.c.text_base)
                 .wrap_anywhere(),
-        )
+        );
+    if let Some(elapsed) = elapsed {
+        let seconds = elapsed.as_secs();
+        body = body.child(
+            text(format!(
+                "Stage shown for {}:{:02}",
+                seconds / 60,
+                seconds % 60
+            ))
+            .key("analysis-stage-elapsed")
+            .font(k.ty.ui)
+            .color(k.c.text_muted),
+        );
+    }
+    body = body
         .child(divider(k))
         .child(summary(state, k))
         .child(divider(k))

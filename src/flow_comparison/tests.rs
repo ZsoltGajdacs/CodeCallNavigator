@@ -3,11 +3,29 @@ use crate::{app::State, runtime::Runtime};
 use codecallnavigator::artifact;
 use std::{
     fs,
+    os::unix::fs::PermissionsExt,
     path::Path,
     process::Command,
     sync::Arc,
     time::{Duration, Instant},
 };
+
+pub(crate) fn isolate_cli_cache(runtime: &mut Runtime, cache: &Path) {
+    let wrapper = cache.with_file_name("use-isolated-cache");
+    let script = format!(
+        "#!/bin/sh\nexport CODECALLNAVIGATOR_SNAPSHOT_CACHE={}\nexec {} \"$@\"\n",
+        shell_path(cache),
+        shell_path(&runtime.engine),
+    );
+    fs::write(&wrapper, script).unwrap();
+    fs::set_permissions(&wrapper, fs::Permissions::from_mode(0o700)).unwrap();
+    runtime.engine = wrapper;
+}
+
+fn shell_path(path: &Path) -> String {
+    format!("'{}'", path.display().to_string().replace('\'', "'\\''"))
+}
+
 pub(crate) fn git(root: &Path, args: &[&str]) {
     let out = Command::new("git")
         .arg("-C")

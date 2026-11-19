@@ -1,11 +1,11 @@
 //! Exercise the desktop controller with the real engine and an isolated user cache.
 use super::{
     GraphNavigation, SnapshotSide,
-    tests::{git, settle, state},
+    tests::{git, isolate_cli_cache, settle, state},
 };
 use crate::app::State;
 use crate::engine_client::flow_comparison::ImpactRow;
-use std::{fs, os::unix::fs::PermissionsExt, path::Path, sync::Arc};
+use std::{fs, path::Path, sync::Arc};
 
 #[test]
 #[ignore = "requires installed TypeScript and Node"]
@@ -22,7 +22,7 @@ fn desktop_prepares_selects_and_pages_cached_graphs_and_flows() {
 
     let mut state = state(&root);
     let cache = root.with_file_name("cache");
-    isolate_cli_cache(&mut state, &cache);
+    isolate_cli_cache(Arc::make_mut(state.runtime.as_mut().unwrap()), &cache);
 
     state.flow_comparison.controls.base = rune::TextEdit::new("refs/tags/base");
     state.flow_comparison.controls.head = rune::TextEdit::new("refs/tags/head");
@@ -160,21 +160,4 @@ fn commit_revisions(root: &Path) {
     git(root, &["add", "main.ts"]);
     git(root, &["commit", "-qm", "head"]);
     git(root, &["tag", "head"]);
-}
-
-fn isolate_cli_cache(state: &mut State, cache: &Path) {
-    let runtime = Arc::make_mut(state.runtime.as_mut().unwrap());
-    let wrapper = cache.with_file_name("use-isolated-cache");
-    let script = format!(
-        "#!/bin/sh\nexport CODECALLNAVIGATOR_SNAPSHOT_CACHE={}\nexec {} \"$@\"\n",
-        shell_path(cache),
-        shell_path(&runtime.engine),
-    );
-    fs::write(&wrapper, script).unwrap();
-    fs::set_permissions(&wrapper, fs::Permissions::from_mode(0o700)).unwrap();
-    runtime.engine = wrapper;
-}
-
-fn shell_path(path: &Path) -> String {
-    format!("'{}'", path.display().to_string().replace('\'', "'\\''"))
 }

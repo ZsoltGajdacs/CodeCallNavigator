@@ -164,6 +164,15 @@ fn work(state: &State, automatic_enabled: bool) -> Work {
     }
 }
 
+pub(crate) fn poll_stage_clock(state: &mut State, tx: &mut rune::Tx) -> bool {
+    let visible = state.ui.overlay == Some(Overlay::Activity)
+        && work(state, state.automatic_refresh_enabled()) == Work::Automatic;
+    state
+        .freshness
+        .automatic
+        .poll_stage_clock(visible, std::time::Instant::now(), tx)
+}
+
 fn graph_work(state: &State) -> Work {
     if state.project_open.loading() || state.reload.job.is_pending() {
         Work::Reload
@@ -182,8 +191,20 @@ fn details_layer(state: &State, k: &Kit, layers: &mut Vec<El>, summary: &model::
         .on_press(State::close_overlay)
         .build(k)
         .key("close");
-    let body =
-        super::activity_details::view(state, k, summary.phase.as_deref().unwrap_or(&state.status));
+    let elapsed = (work(state, state.automatic_refresh_enabled()) == Work::Automatic)
+        .then(|| {
+            state
+                .freshness
+                .automatic
+                .stage_elapsed(std::time::Instant::now())
+        })
+        .flatten();
+    let body = super::activity_details::view(
+        state,
+        k,
+        summary.phase.as_deref().unwrap_or(&state.status),
+        elapsed,
+    );
     let content = col()
         .key("activity-popover-content")
         .role("dialog")

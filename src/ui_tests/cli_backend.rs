@@ -43,19 +43,30 @@ fn shift(runtime: &mut Runtime<State>) {
 }
 
 pub(super) fn analyze(project: &Path) -> engine_client::Snapshot {
+    configure_typescript_project(project);
+    analyze_existing(project)
+}
+
+pub(super) fn configure_typescript_project(project: &Path) {
     fs::write(project.join("tsconfig.json"),r#"{"compilerOptions":{"strict":true,"target":"ES2022","types":[]},"include":["example.ts"]}"#).unwrap();
     fs::write(project.join("example.ts"),"export function leaf(): number { return 1; }\nexport function start(flag: boolean): number { if(flag) return leaf(); return 0; }\n").unwrap();
     let modules = std::env::var_os("CODECALLNAVIGATOR_TS_NODE_MODULES")
         .expect("Pinned TypeScript dependencies");
     std::os::unix::fs::symlink(modules, project.join("node_modules")).unwrap();
-    analyze_existing(project)
 }
 
 pub(super) fn analyze_existing(project: &Path) -> engine_client::Snapshot {
     let runtime = crate::runtime::Runtime::discover().unwrap();
-    let targets = engine_client::discover(&runtime, project).unwrap();
+    analyze_with_runtime(project, &runtime)
+}
+
+pub(super) fn analyze_with_runtime(
+    project: &Path,
+    runtime: &crate::runtime::Runtime,
+) -> engine_client::Snapshot {
+    let targets = engine_client::discover(runtime, project).unwrap();
     engine_client::analyze_snapshot(
-        &runtime,
+        runtime,
         engine_client::Analysis {
             project: project.into(),
             targets,

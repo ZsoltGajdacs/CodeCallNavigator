@@ -22,6 +22,7 @@ mod refresh_policy;
 mod response_encoding;
 mod session_child;
 mod session_inputs;
+mod session_notice;
 mod session_stream;
 mod snapshot_retention;
 mod snapshot_worktree;

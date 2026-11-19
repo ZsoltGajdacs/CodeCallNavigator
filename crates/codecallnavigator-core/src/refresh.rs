@@ -8,6 +8,7 @@ pub const VERSION: u32 = 1;
 pub const DEBOUNCE_MILLISECONDS: u64 = 300;
 pub const SESSION_VERSION: u32 = 1;
 pub const OBSERVE_SESSION_VERSION: u32 = 1;
+pub const MAX_PROGRESS_MESSAGE_CHARS: usize = 1024;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -60,6 +61,8 @@ pub enum Phase {
         input_revision: Option<String>,
         debounce_milliseconds: f64,
         wait_milliseconds: f64,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        progress_message: Option<String>,
     },
     Busy {
         run: Option<u64>,

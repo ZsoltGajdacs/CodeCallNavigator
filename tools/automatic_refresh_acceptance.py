@@ -22,6 +22,8 @@ from freshness_observer_measurement import BoundedOutput, Observer, ObserverOpti
 from freshness_scenarios import Project
 from measure_freshness import Session, metadata
 
+TYPESCRIPT_PREPARATION = "Preparing TypeScript project"
+
 
 def require(condition, message):
     if not condition:
@@ -66,6 +68,18 @@ class Monitor:
 
     def state(self, *states):
         return self.until(lambda event: activity(event).get("state") in states)
+
+    def typescript_preparation(self):
+        def stage_or_result(event):
+            notice = activity(event)
+            return (notice.get("state") in ("published", "failed", "cancelled", "unavailable")
+                    or (notice.get("state") == "running"
+                        and notice.get("progress_message", "").startswith(TYPESCRIPT_PREPARATION)))
+
+        notice = activity(self.until(stage_or_result))
+        require(notice["state"] == "running",
+                f"Run ended without TypeScript preparation progress: {notice}")
+        return notice["progress_message"]
 
     def quiet(self, seconds=5.2):
         deadline = time.monotonic() + seconds
@@ -213,6 +227,11 @@ def burst_latest(case):
     for value in range(2, 12):
         case.edit(value)
         time.sleep(.005)
+    automatic_stage = monitor.typescript_preparation()
+    manual_events = [json.loads(line) for line in case.baseline["stdout"].splitlines()]
+    require(any(event.get("event") == "progress" and event.get("message") == automatic_stage
+                for event in manual_events),
+            f"Automatic stage differs from the real one-shot CLI: {automatic_stage}")
     monitor.publish(generation)
     case.equivalent(expected)
     monitor.quiet()
@@ -436,6 +455,7 @@ def fresh_session(case):
     require(not case.artifact.exists(), "Fresh session unexpectedly has a graph")
     monitor = case.monitor()
     process = monitor.observer.measurement.process
+    monitor.typescript_preparation()
     failed = activity(monitor.state("failed"))
     require(failed["error"]["code"] == "failed", f"Wrong failure: {failed}")
     require("error TS" in failed["error"]["message"] and "app.ts" in failed["error"]["message"],

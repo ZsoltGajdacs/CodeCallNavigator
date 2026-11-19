@@ -3,7 +3,7 @@ use super::digest;
 use anyhow::{Result, ensure};
 use codecallnavigator::{
     query::Error,
-    refresh::{Activity, Phase},
+    refresh::{Activity, MAX_PROGRESS_MESSAGE_CHARS, Phase},
 };
 
 pub(super) fn validate(activity: &Activity) -> Result<()> {
@@ -24,8 +24,17 @@ pub(super) fn validate(activity: &Activity) -> Result<()> {
             input_revision,
             debounce_milliseconds,
             wait_milliseconds,
+            progress_message,
         } => {
             running(Some(*run), input_revision, *wait_milliseconds)?;
+            ensure!(
+                progress_message.as_ref().is_none_or(|message| {
+                    !message.trim().is_empty()
+                        && message.chars().count() <= MAX_PROGRESS_MESSAGE_CHARS
+                        && !message.chars().any(char::is_control)
+                }),
+                "Malformed refresh stage message"
+            );
             duration(*debounce_milliseconds)
         }
         Phase::Busy {

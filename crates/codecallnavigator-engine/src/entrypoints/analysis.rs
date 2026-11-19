@@ -51,6 +51,7 @@ pub fn native(targets: Vec<BuildTarget>, progress: &dyn Fn(String)) -> Result<Gr
         &Attempt {
             cancel: &CANCELLED,
             progress,
+            diagnostic: progress,
         },
     )
 }
@@ -128,6 +129,7 @@ pub fn analyze_with_linked_roots(
         Attempt {
             cancel: &CANCELLED,
             progress,
+            diagnostic: progress,
         },
         native_attempt,
     )
@@ -144,6 +146,7 @@ pub(super) struct Publication<'a> {
 pub(super) struct Attempt<'a> {
     pub cancel: &'a AtomicBool,
     pub progress: &'a dyn Fn(String),
+    pub diagnostic: &'a dyn Fn(String),
 }
 
 /// Produce native data only after acquiring the project lock and generation guard.
@@ -165,7 +168,8 @@ where
     ensure!(project.is_dir(), "Project must be a directory");
     let roots = roots(&project, options.configured)?;
     let lock = artifact::AnalysisLock::acquire(&project)?;
-    let snapshot = Candidate::capture(&project, attempt.progress);
+    (attempt.progress)("Preparing analysis inputs…".into());
+    let snapshot = Candidate::capture(&project, attempt.diagnostic);
     if let Some(expected) = &options.expected_generation {
         lock.require_generation(expected)?;
     }
@@ -180,33 +184,21 @@ where
     let mut graph = produce(targets, &attempt)?;
     graph.fingerprints.extend(boundary_inputs);
     graph.fingerprints.extend(application_inputs);
+    (attempt.progress)("Resolving graph relationships…".into());
     let cache = super::inference::resolve(&project, &mut graph, &boundaries)?;
     let roots = if options.infer_linked {
         super::linked_roots::infer(&graph, &project, roots)?
     } else {
         roots
     };
-    let (bytes, provenance, refresh_validation) = encode_publication(&graph, &selection, &roots)?;
-    let digest = blake3::hash(bytes.as_ref()).to_hex().to_string();
-    verify_inputs(&graph.fingerprints, &refresh_validation, attempt.cancel)?;
-    lock.publish_encoded(&bytes, attempt.cancel)?;
-    retain_snapshot(
+    let digest = GraphPublication {
+        graph: &graph,
+        selection: &selection,
+        roots: &roots,
         snapshot,
-        Observations {
-            analysis: &provenance,
-            roots: &roots,
-            analyzer: &graph.fingerprints,
-            refresh: &refresh_validation,
-            targets: &selection,
-            generated_sources: graph
-                .refresh_outputs
-                .as_ref()
-                .map_or(&[], |output| output.generated_source_directories.as_slice()),
-        },
-        &bytes,
-        &attempt,
-    );
-    super::inference::finish(cache, attempt.progress);
+    }
+    .publish(&lock, &attempt)?;
+    super::inference::finish(cache, attempt.diagnostic);
     metrics.finish();
     Ok(Event::Complete {
         roots,
@@ -215,6 +207,48 @@ where
         engine_versions: graph.engine_versions,
         metrics: serde_json::to_value(metrics.report())?,
     })
+}
+
+struct GraphPublication<'a> {
+    graph: &'a GraphData,
+    selection: &'a [BuildTarget],
+    roots: &'a artifact::Roots,
+    snapshot: Option<Candidate>,
+}
+
+impl GraphPublication<'_> {
+    fn publish(self, lock: &artifact::AnalysisLock, attempt: &Attempt<'_>) -> Result<String> {
+        let Self {
+            graph,
+            selection,
+            roots,
+            snapshot,
+        } = self;
+        (attempt.progress)("Encoding the graph…".into());
+        let (bytes, provenance, refresh_validation) = encode_publication(graph, selection, roots)?;
+        let digest = blake3::hash(bytes.as_ref()).to_hex().to_string();
+        (attempt.progress)("Validating analyzed inputs…".into());
+        verify_inputs(&graph.fingerprints, &refresh_validation, attempt.cancel)?;
+        (attempt.progress)("Publishing the graph…".into());
+        lock.publish_encoded(&bytes, attempt.cancel)?;
+        retain_snapshot(
+            snapshot,
+            Observations {
+                analysis: &provenance,
+                roots,
+                analyzer: &graph.fingerprints,
+                refresh: &refresh_validation,
+                targets: selection,
+                generated_sources: graph
+                    .refresh_outputs
+                    .as_ref()
+                    .map_or(&[], |output| output.generated_source_directories.as_slice()),
+            },
+            &bytes,
+            attempt,
+        );
+        Ok(digest)
+    }
 }
 
 fn encode_publication(
@@ -244,10 +278,11 @@ fn retain_snapshot(
     bytes: &artifact::EncodedArtifact,
     attempt: &Attempt<'_>,
 ) {
-    if let Some(candidate) = candidate
-        && let Err(error) = candidate.retain(observed, bytes, attempt.cancel)
-    {
-        (attempt.progress)(format!("Local snapshot was not retained: {error:#}"));
+    if let Some(candidate) = candidate {
+        (attempt.progress)("Retaining the local Git snapshot…".into());
+        if let Err(error) = candidate.retain(observed, bytes, attempt.cancel) {
+            (attempt.diagnostic)(format!("Local snapshot was not retained: {error:#}"));
+        }
     }
 }
 

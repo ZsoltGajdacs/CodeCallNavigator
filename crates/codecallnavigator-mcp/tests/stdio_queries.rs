@@ -115,6 +115,35 @@ fn failed_refresh_preserves_graph(client: &mut Client, root: &Path) {
     assert_eq!(status["freshness"]["input_status"], "stale");
 }
 
+fn refresh_reports_progress(client: &mut Client) {
+    let refresh = client.request(
+        "tools/call",
+        json!({"name":"refresh_graph","arguments":{},"_meta":{"progressToken":"refresh"}}),
+    );
+    assert!(refresh.get("error").is_none(), "{refresh}");
+    assert_ne!(refresh["result"]["isError"], true, "{refresh}");
+    let mut previous_progress = 0.0;
+    let mut reported_preparation = false;
+    for notification in client
+        .notifications()
+        .filter(|notification| notification["method"] == "notifications/progress")
+    {
+        let params = &notification["params"];
+        assert_eq!(params["progressToken"], "refresh");
+        let progress = params["progress"].as_f64().unwrap();
+        assert!(progress > previous_progress, "{notification}");
+        previous_progress = progress;
+        reported_preparation |= params["message"]
+            .as_str()
+            .unwrap()
+            .starts_with("Preparing TypeScript project");
+    }
+    assert!(
+        reported_preparation,
+        "No real compiler preparation progress"
+    );
+}
+
 #[test]
 #[ignore = "requires built real CLI, Node24 and pinned TypeScript 5.9.x or 6.0.x modules"]
 fn real_stdio_refresh_queries_and_errors_preserve_the_cli_contract() {
@@ -141,8 +170,7 @@ fn real_stdio_refresh_queries_and_errors_preserve_the_cli_contract() {
     assert_eq!(directory["result"]["entries"][0]["label"], "visible.txt");
     let discovered = client.call("discover_builds", json!({}));
     assert_ne!(discovered["isError"], true, "{discovered}");
-    let refresh = client.call("refresh_graph", json!({}));
-    assert_ne!(refresh["isError"], true, "{refresh}");
+    refresh_reports_progress(&mut client);
     let (symbol, _) = selected_start(&mut client);
     // Comparison uses matching configured roots through a separate no-root client.
     drop(client);
@@ -169,6 +197,7 @@ fn real_stdio_refresh_queries_and_errors_preserve_the_cli_contract() {
         "symbol_missing"
     );
     assert_ne!(client.call("refresh_graph", json!({}))["isError"], true);
+    assert!(client.notification("notifications/progress").is_none());
     let stale_generation = client.call("graph_status", json!({"expected_generation":previous}));
     assert_eq!(
         stale_generation["structuredContent"]["error"]["code"],

@@ -71,6 +71,7 @@ pub(super) fn prepare(
     context: &AnalysisJob<'_>,
 ) -> Result<PreparedTypeScript> {
     let _timing = crate::metrics::stage("typescript.prepare");
+    (context.progress)(format!("Preparing TypeScript project {}…", build.label));
     let (mut worker, metadata) = CompilerWorker::start(build, context)?;
     let before = match prepare_inputs(&metadata) {
         Ok(inputs) => inputs,
@@ -146,6 +147,7 @@ impl PreparedTypeScript {
             *self = prepare(build, context)?;
             return Ok(());
         };
+        (context.progress)(format!("Updating TypeScript project {}…", build.label));
         let reply = match worker.request(Operation::Update, context) {
             Ok(reply) => reply,
             Err(error) => return worker.stop(Err(error)),
