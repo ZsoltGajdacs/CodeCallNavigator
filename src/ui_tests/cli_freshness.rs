@@ -598,6 +598,9 @@ fn actual_cli_mixed_analysis_failure_can_retry_java_only() {
     let root = fixture.path().canonicalize().unwrap();
     let project = mixed_failure_project(&root);
     let mut ui = desktop_without_graph(&project);
+    ui.state.store = Some(Arc::new(
+        codecallnavigator::store::SqliteStore::open(&root).unwrap(),
+    ));
     settle(&mut ui, |state| {
         !state.project_open.loading()
             && state
@@ -607,8 +610,7 @@ fn actual_cli_mixed_analysis_failure_can_retry_java_only() {
                 .count()
                 == 2
     });
-    ui.update(|state, _| state.analyze_selected());
-    settle(&mut ui, |state| state.analysis_failure.is_some());
+    confirm_mixed_targets(&mut ui, &project);
     let manual = assert_typescript_failure(&ui, &project);
     assert_visible_failure(&mut ui);
     ui.update(|state, _| assert_retry_scope(state));
@@ -660,6 +662,34 @@ fn actual_cli_mixed_analysis_failure_can_retry_java_only() {
     ui.update(jobs::close);
     settle(&mut ui, |state| state.freshness.stopped());
     assert!(ui.state.freshness.cleanup_warning.is_none());
+}
+
+fn confirm_mixed_targets(ui: &mut Runtime<State>, project: &Path) {
+    let targets = ui.state.selected_analysis().unwrap().targets;
+    let typescript = ui
+        .state
+        .targets
+        .iter()
+        .position(|choice| choice.target.language == "typescript")
+        .unwrap();
+    ui.update(|state, _| state.toggle_build(typescript));
+    click(ui, "analyze");
+    super::settle_revealed_control(ui);
+    click(ui, &format!("build-{typescript}"));
+    assert_eq!(ui.state.selected_analysis().unwrap().targets.len(), 1);
+    click(ui, "confirm-analysis");
+    settle(ui, |state| {
+        state.analysis_failure.is_some() && !state.jobs.persistence.is_pending()
+    });
+    assert_eq!(
+        ui.state.analysis_failure.as_ref().unwrap().selection,
+        crate::analysis_feedback::Selection::capture(project, &targets),
+    );
+    let store = ui.state.store.as_ref().unwrap();
+    let saved: crate::navigation::SavedSession =
+        serde_json::from_value(store.load_session().unwrap().unwrap()).unwrap();
+    let confirmed = targets.iter().map(|target| target.identity()).collect();
+    assert_eq!(saved.selected_targets, Some(confirmed));
 }
 
 fn mixed_failure_project(root: &Path) -> PathBuf {

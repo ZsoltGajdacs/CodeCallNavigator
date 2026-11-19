@@ -108,7 +108,10 @@ pub(crate) fn with_overlays(state: &State, k: &Kit, body: El, mut layer: Vec<El>
 }
 
 pub fn key(state: &mut State, event: &KeyEvent, tx: &mut Tx) -> bool {
-    if state.ui.overlay == Some(presentation::Overlay::Builds) {
+    if matches!(
+        state.ui.overlay,
+        Some(presentation::Overlay::Builds | presentation::Overlay::ConfirmAnalysis(_))
+    ) {
         return false;
     }
     if crate::search::key(state, event, tx) {

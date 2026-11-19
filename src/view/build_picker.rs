@@ -1,9 +1,11 @@
-//! Build picker presentation; discovery and selection lifecycle belong to build_discovery.
+//! Shared build picker for immediate settings edits and manual analysis confirmation.
 use crate::{app::State, build_discovery::Phase, presentation::Overlay, theme};
+use codecallnavigator::discovery::BuildIdentity;
 use rune::{Align, El, Side, col, row, text};
 use rune_kit::{
     Button, ButtonVariant, Checkbox, IconButton, IconButtonVariant, Kit, ScrollBar, popover,
 };
+use std::collections::BTreeSet;
 
 pub(super) fn button(state: &State, k: &Kit) -> El {
     let open = state.ui.overlay == Some(Overlay::Builds);
@@ -37,16 +39,18 @@ fn selected_summary(state: &State) -> String {
 }
 
 pub(super) fn layer(state: &State, k: &Kit, layers: &mut Vec<El>) {
-    if state.ui.overlay != Some(Overlay::Builds) {
-        return;
-    }
+    let (title, draft) = match &state.ui.overlay {
+        Some(Overlay::Builds) => ("Builds", None),
+        Some(Overlay::ConfirmAnalysis(draft)) => ("Build Targets", Some(draft)),
+        _ => return,
+    };
     let size = state.source_popup.window;
     let width = 420.0_f32.min((size[0] - 16.0).max(1.0));
     let height = 480.0_f32.min((size[1] - 16.0).max(1.0));
-    let panel = col()
+    let mut panel = col()
         .key("build-picker")
         .role("dialog")
-        .label("Builds")
+        .label(title)
         .w(width)
         .max_h(height)
         .min_h(0.0)
@@ -57,7 +61,7 @@ pub(super) fn layer(state: &State, k: &Kit, layers: &mut Vec<El>) {
                 .w_full()
                 .center_y()
                 .justify_between()
-                .child(text("Builds").font(k.ty.ui_medium).color(k.c.text_base))
+                .child(text(title).font(k.ty.ui_medium).color(k.c.text_base))
                 .child(
                     IconButton::new(k.glyph.close)
                         .variant(IconButtonVariant::Ghost)
@@ -76,16 +80,41 @@ pub(super) fn layer(state: &State, k: &Kit, layers: &mut Vec<El>) {
                 .scroll(rune::ScrollSpec {
                     stick_bottom: false,
                 })
-                .child(contents(state, k))
+                .child(contents(state, k, draft))
                 .scroll_bar(k),
         )
         .focus_return("project-picker-trigger")
         .modal(true, State::close_overlay)
         .anchored_fit("project-picker-trigger", Side::Bottom, Align::Start, 8.0);
+    if draft.is_some() {
+        panel = panel.child(confirmation_actions(state, k));
+    }
     layers.push(popover::raised(k, panel, k.radius.md));
 }
 
-fn contents(state: &State, k: &Kit) -> El {
+fn confirmation_actions(state: &State, k: &Kit) -> El {
+    row()
+        .w_full()
+        .gap(theme::SPACE)
+        .justify_end()
+        .child(
+            Button::new("Cancel")
+                .variant(ButtonVariant::Outline)
+                .on_press(State::close_overlay)
+                .build(k)
+                .key("cancel-analysis-confirmation"),
+        )
+        .child(
+            Button::new("Start analysis")
+                .variant(ButtonVariant::Submit)
+                .disabled(!state.can_confirm_analysis())
+                .on_press(State::confirm_analysis)
+                .build(k)
+                .key("confirm-analysis"),
+        )
+}
+
+fn contents(state: &State, k: &Kit, draft: Option<&BTreeSet<BuildIdentity>>) -> El {
     let message = match &state.build_discovery.phase {
         Phase::Loading => Some("Looking for build files…"),
         Phase::Failed(error) => Some(error.as_str()),
@@ -106,10 +135,13 @@ fn contents(state: &State, k: &Kit) -> El {
         .w_full()
         .gap(theme::SPACE)
         .children(state.targets.iter().enumerate().map(|(index, choice)| {
-            Checkbox::new(choice.selected)
+            let checked = draft.map_or(choice.selected, |draft| {
+                draft.contains(&choice.target.identity())
+            });
+            Checkbox::new(checked)
                 .label(&choice.target.label)
                 .hide_label()
-                .on_toggle(move |s: &mut State| s.toggle_build(index))
+                .on_toggle(move |s: &mut State| s.toggle_picker_build(index))
                 .build(k)
                 .key(format!("build-{index}"))
                 .w_full()

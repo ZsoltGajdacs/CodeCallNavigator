@@ -132,6 +132,52 @@ fn modal_selection_is_immediate_and_escape_returns_focus_to_button() {
 }
 
 #[test]
+fn manual_analysis_reviews_builds_without_committing_dismissed_edits() {
+    let directory = tempfile::tempdir().unwrap();
+    let mut runtime = runtime((1050.0, 680.0), true);
+    runtime.state.store = Some(Arc::new(
+        codecallnavigator::store::SqliteStore::open(directory.path()).unwrap(),
+    ));
+    runtime.state.project_open.folder = Some("/repo".into());
+    ready(&mut runtime, 2);
+    press(&mut runtime, Key::Escape);
+    let graph = runtime.state.graph.take();
+    let committed = runtime.state.session().selected_targets;
+
+    for (label, graph) in [("Generate graph", None), ("Refresh", graph)] {
+        runtime.state.graph = graph;
+        click(&mut runtime, "project-picker-trigger");
+        settle(&mut runtime);
+        assert!(runtime.elements().iter().any(|element| {
+            element.key.as_deref() == Some("analyze") && element.label.as_deref() == Some(label)
+        }));
+        click(&mut runtime, "analyze");
+        settle(&mut runtime);
+        let [x, y, width, height] = rect(&runtime, "confirm-analysis");
+        assert!(x >= 0.0 && y >= 0.0 && x + width <= 1050.0 && y + height <= 680.0);
+        assert!(!runtime.state.jobs.analysis.is_pending());
+        click(&mut runtime, "build-0");
+        click(&mut runtime, "confirm-analysis");
+        assert!(runtime.find("confirm-analysis").is_some());
+        assert!(!runtime.state.jobs.analysis.is_pending());
+        click(&mut runtime, "build-1");
+        assert_eq!(runtime.state.session().selected_targets, committed);
+        if label == "Generate graph" {
+            press(&mut runtime, Key::Escape);
+        } else {
+            click(&mut runtime, "cancel-analysis-confirmation");
+            settle(&mut runtime);
+        }
+        assert!(runtime.find("confirm-analysis").is_none());
+        assert!(runtime.elements().iter().any(|element| {
+            element.key.as_deref() == Some("project-picker-trigger") && element.focused
+        }));
+        assert_eq!(runtime.state.session().selected_targets, committed);
+        assert!(!runtime.state.jobs.analysis.is_pending());
+    }
+}
+
+#[test]
 fn close_outside_search_and_sidebar_dismiss_the_picker() {
     let mut runtime = runtime((1050.0, 680.0), true);
     ready(&mut runtime, 2);

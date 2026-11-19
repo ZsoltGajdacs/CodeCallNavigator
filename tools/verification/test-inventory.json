@@ -12089,6 +12089,22 @@
       "purpose": "hover summary lists only selected compact names and hides when open"
     },
     {
+      "id": "codecallnavigator/bin:codecallnavigator::ui_tests::build_picker::manual_analysis_reviews_builds_without_committing_dismissed_edits",
+      "runner": "rust",
+      "file": "src/ui_tests/build_picker.rs",
+      "test_name": "ui_tests::build_picker::manual_analysis_reviews_builds_without_committing_dismissed_edits",
+      "ignored": false,
+      "package": "codecallnavigator",
+      "target_kind": "bin",
+      "target": "codecallnavigator",
+      "component": "ui",
+      "category": "integration",
+      "requirements": [
+        "graphviz"
+      ],
+      "purpose": "manual generation and refresh confirm current targets, guard empty selections, and roll back dismissed edits"
+    },
+    {
       "id": "codecallnavigator/bin:codecallnavigator::ui_tests::build_picker::keyboard_navigation_reveals_offscreen_builds_and_blocks_background_shortcuts",
       "runner": "rust",
       "file": "src/ui_tests/build_picker.rs",
@@ -12345,7 +12361,7 @@
         "node",
         "typescript"
       ],
-      "purpose": "real mixed target failure reaches desktop in both modes, then explicit recovery publishes and searches Java graph"
+      "purpose": "manual confirmation saves the reviewed real build targets, mixed failure reaches desktop in both modes, and explicit recovery publishes and searches Java graph"
     },
     {
       "id": "codecallnavigator/bin:codecallnavigator::ui_tests::cli_freshness::actual_cli_automatic_refresh_requires_opt_in_and_preserves_loaded_context",

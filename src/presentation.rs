@@ -1,11 +1,13 @@
 //! Presentation state is independent of graph navigation and projection.
-use crate::app::State;
+use crate::{app::State, build_discovery::Phase};
 use codecallnavigator::{
+    discovery::BuildIdentity,
     graph::Filter,
     model::{RelationshipKind, TargetResolution},
 };
 use rune_kit::PaneState;
 use serde::{Deserialize, Serialize};
+use std::collections::BTreeSet;
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -15,11 +17,12 @@ pub enum Drawer {
     Repository,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Overlay {
     Grouping,
     Depth,
     Builds,
+    ConfirmAnalysis(BTreeSet<BuildIdentity>),
     Filters,
     Projects,
     Navigation,
@@ -257,9 +260,77 @@ impl State {
     pub fn toggle_build(&mut self, index: usize) {
         if let Some(choice) = self.targets.get_mut(index) {
             choice.selected = !choice.selected;
-            self.refresh_build_selection_changed();
-            self.dirty_session = true;
+            self.build_selection_changed();
         }
+    }
+
+    pub(crate) fn can_review_analysis_builds(&self) -> bool {
+        self.project_open.folder.is_some()
+            && self.store.is_some()
+            && self.runtime.is_some()
+            && !self.analysis_job_busy()
+            && matches!(self.build_discovery.phase, Phase::Ready)
+            && !self.targets.is_empty()
+    }
+
+    pub(crate) fn review_analysis_builds(&mut self) {
+        if !self.can_review_analysis_builds() {
+            return;
+        }
+        self.cancel_graph_press();
+        self.close_source();
+        let selected = self
+            .targets
+            .iter()
+            .filter(|choice| choice.selected)
+            .map(|choice| choice.target.identity())
+            .collect();
+        self.ui.overlay = Some(Overlay::ConfirmAnalysis(selected));
+    }
+
+    pub(crate) fn toggle_picker_build(&mut self, index: usize) {
+        match &mut self.ui.overlay {
+            Some(Overlay::Builds) => self.toggle_build(index),
+            Some(Overlay::ConfirmAnalysis(selected)) => {
+                if let Some(choice) = self.targets.get(index) {
+                    let identity = choice.target.identity();
+                    if !selected.remove(&identity) {
+                        selected.insert(identity);
+                    }
+                }
+            }
+            _ => {}
+        }
+    }
+
+    pub(crate) fn can_confirm_analysis(&self) -> bool {
+        self.can_review_analysis_builds()
+            && matches!(&self.ui.overlay, Some(Overlay::ConfirmAnalysis(selected))
+                if self.targets.iter().any(|choice| selected.contains(&choice.target.identity())))
+    }
+
+    pub(crate) fn confirm_analysis(&mut self) {
+        if !self.can_confirm_analysis() {
+            return;
+        }
+        let Some(Overlay::ConfirmAnalysis(selected)) = self.ui.overlay.take() else {
+            return;
+        };
+        let mut changed = false;
+        for choice in &mut self.targets {
+            let checked = selected.contains(&choice.target.identity());
+            changed |= choice.selected != checked;
+            choice.selected = checked;
+        }
+        if changed {
+            self.build_selection_changed();
+        }
+        self.analyze_selected();
+    }
+
+    fn build_selection_changed(&mut self) {
+        self.refresh_build_selection_changed();
+        self.dirty_session = true;
     }
 
     pub fn zoom(&mut self, factor: f32) {

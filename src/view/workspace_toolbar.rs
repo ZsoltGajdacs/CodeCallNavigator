@@ -85,15 +85,8 @@ pub(super) fn analysis_action(state: &State, k: &Kit) -> El {
             "Generate graph"
         })
         .variant(ButtonVariant::Outline)
-        .disabled(
-            state.analysis_job_busy()
-                || state.store.is_none()
-                || state.targets.iter().all(|t| !t.selected),
-        )
-        .on_press(|state: &mut State| {
-            state.close_overlay();
-            state.analyze_selected();
-        })
+        .disabled(!state.can_review_analysis_builds())
+        .on_press(State::review_analysis_builds)
         .build(k)
         .key("analyze")
     }
