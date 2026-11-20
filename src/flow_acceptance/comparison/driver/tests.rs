@@ -26,7 +26,7 @@ fn next_reply(driver: &Driver, deadline: Instant) -> Reply {
 }
 
 #[test]
-fn no_graph_entry_opens_project_picker_before_comparison_controls() {
+fn no_graph_toolbar_entry_opens_comparison_controls() {
     let (mut driver, _project, _output, _) = driver();
     let mut runtime = Runtime::new(
         State::new(),
@@ -35,13 +35,13 @@ fn no_graph_entry_opens_project_picker_before_comparison_controls() {
         rune::Env::new(true, 1.0),
     );
     runtime.frame(0.0);
-    assert!(runtime.find("compare-flows").is_none());
-    driver.phase = Phase::Editing(Editor::ProjectPicker);
+    assert!(runtime.find("compare-flows").is_some());
+    driver.phase = Phase::Editing(Editor::Entry);
     let deadline = Instant::now() + Duration::from_secs(2);
     while !runtime.state.flow_comparison.controls.visible {
         assert!(
             Instant::now() < deadline,
-            "Actual project-picker entry did not open comparison"
+            "Actual toolbar entry did not open comparison"
         );
         driver.advance(&mut runtime);
         runtime.frame(1.0 / 60.0);

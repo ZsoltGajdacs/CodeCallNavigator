@@ -192,18 +192,6 @@ fn actions(state: &State, k: &Kit) -> El {
         .child(repository(state, k))
         .child(divider(k))
         .child(
-            Button::new("Compare flows")
-                .variant(ButtonVariant::Outline)
-                .on_press(|state: &mut State| {
-                    state.close_overlay();
-                    state.show_flow_comparison();
-                })
-                .build(k)
-                .key("compare-flows")
-                .min_h(36.0)
-                .w_full(),
-        )
-        .child(
             workspace_toolbar::clear_cache_action(state, k)
                 .min_h(36.0)
                 .w_full(),

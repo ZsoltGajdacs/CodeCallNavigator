@@ -48,7 +48,15 @@ fn global_comparison_entry_opens_revision_controls_without_a_loaded_graph() {
     assert_eq!(runtime.state.flow_comparison.snapshots.message, message);
     click(&mut runtime, "comparison-close");
     click(&mut runtime, "project-picker-trigger");
-    assert!(runtime.find("compare-flows").is_some());
+    assert_eq!(
+        runtime
+            .elements()
+            .iter()
+            .filter(|element| element.key.as_deref() == Some("compare-flows"))
+            .count(),
+        1
+    );
+    assert!(runtime.find("choose-folder").is_some());
 }
 
 pub(super) fn project_runtime(dark: bool) -> (Runtime<State>, tempfile::TempDir) {

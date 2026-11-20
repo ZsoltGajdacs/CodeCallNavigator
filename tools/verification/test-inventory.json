@@ -9817,10 +9817,10 @@
       "purpose": "catalog selection waits for the published query before asserting exact identity"
     },
     {
-      "id": "codecallnavigator/bin:codecallnavigator::flow_acceptance::comparison::driver::tests::no_graph_entry_opens_project_picker_before_comparison_controls",
+      "id": "codecallnavigator/bin:codecallnavigator::flow_acceptance::comparison::driver::tests::no_graph_toolbar_entry_opens_comparison_controls",
       "runner": "rust",
       "file": "src/flow_acceptance/comparison/driver/tests.rs",
-      "test_name": "flow_acceptance::comparison::driver::tests::no_graph_entry_opens_project_picker_before_comparison_controls",
+      "test_name": "flow_acceptance::comparison::driver::tests::no_graph_toolbar_entry_opens_comparison_controls",
       "ignored": false,
       "package": "codecallnavigator",
       "target_kind": "bin",
@@ -9828,7 +9828,7 @@
       "component": "ui",
       "category": "integration",
       "requirements": [],
-      "purpose": "Actual no-graph native driver opens project-picker and comparison controls through production input, preventing stale hidden-control entry."
+      "purpose": "The no-graph acceptance driver opens comparison directly from the toolbar through production input."
     },
     {
       "id": "codecallnavigator/bin:codecallnavigator::flow_acceptance::comparison::driver::tests::terminal_write_failure_is_terminal_instead_of_retrying_a_finished_worker",

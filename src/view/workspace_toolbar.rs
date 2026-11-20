@@ -43,7 +43,7 @@ pub(super) fn view(state: &State, k: &Kit, layers: &mut Vec<El>) -> El {
         .border(1.0, k.c.border_muted)
         .child(project_picker::button(state, k))
         .child(pane_controls::toggle(state, k, pane_controls::Side::Files))
-        .child(workspace_navigation::view(state, k, layers).grow(1.0))
+        .child(workspace_navigation::view(state, k).grow(1.0))
         .child(search_modal::button(k))
         .child(graph_controls::filters(state, k, layers))
         .child(pane_controls::toggle(

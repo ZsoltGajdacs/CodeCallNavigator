@@ -228,7 +228,7 @@ impl Driver {
             "Comparison boot selected another project"
         );
         self.report.check("normal_no_graph_boot");
-        self.phase = Phase::Editing(Editor::ProjectPicker);
+        self.phase = Phase::Editing(Editor::Entry);
         Ok(())
     }
     fn click(&mut self, runtime: &mut Runtime<State>, key: &str, next: Phase) {

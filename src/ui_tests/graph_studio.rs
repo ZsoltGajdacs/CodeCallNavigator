@@ -131,11 +131,24 @@ fn selected_relationship_shows_rule_source_construct_and_supporting_symbol() {
 fn minimum_window_keeps_graph_controls_visible_without_toolbar_scrolling() {
     for max_panes in [false, true] {
         let mut runtime = narrow_runtime(max_panes);
-        runtime.update(|s, _| s.graph_view.pages = 3);
+        runtime.update(|s, _| {
+            s.graph_view.pages = 3;
+            s.root = rune::TextEdit::new("LongProjectDirectoryName".repeat(8));
+            let mut data = s.graph.as_ref().unwrap().data.to_graph_data();
+            let node = &mut data.nodes[0];
+            node.container = "LongContainerName".repeat(8);
+            node.label = "LongFunctionName".repeat(8);
+            s.nav.selected = Some(node.id.clone());
+            s.graph = Some(std::sync::Arc::new(
+                codecallnavigator::graph::GraphIndex::new(std::sync::Arc::new(data)).unwrap(),
+            ));
+        });
         settle(&mut runtime);
         for key in [
             "graph-filters",
-            "navigation-more",
+            "overview",
+            "compare-flows",
+            "collapse-all",
             "open-search",
             "project-picker-trigger",
             "grouping-trigger",
@@ -151,16 +164,32 @@ fn minimum_window_keeps_graph_controls_visible_without_toolbar_scrolling() {
             runtime.find("direction").is_none(),
             "Focused neighborhoods show callers above and callees below without a direction choice"
         );
-        click(&mut runtime, "navigation-more");
-        settle(&mut runtime);
-        assert_visible(&runtime, "overview");
-        assert_visible(&runtime, "collapse-all");
+        assert_navigation_actions_in_one_row(&runtime);
+        click(&mut runtime, "compare-flows");
+        assert!(runtime.state.flow_comparison.controls.visible);
+        click(&mut runtime, "comparison-close");
         click(&mut runtime, "overview");
         settle(&mut runtime);
+        assert!(runtime.state.nav.focus.is_none());
         assert_visible(&runtime, "direction");
+        runtime.update(|s, _| {
+            s.nav.expanded.insert("fixture/project/Start".into());
+        });
+        click(&mut runtime, "collapse-all");
+        assert!(runtime.state.nav.expanded.is_empty());
         let before = runtime.state.nav.camera.zoom;
         click(&mut runtime, "zoom-in");
         assert!(runtime.state.nav.camera.zoom > before);
+    }
+}
+
+fn assert_navigation_actions_in_one_row(runtime: &Runtime<State>) {
+    let actions = ["overview", "compare-flows", "collapse-all"];
+    for pair in actions.windows(2) {
+        let left = element(runtime, pair[0]).rect;
+        let right = element(runtime, pair[1]).rect;
+        assert_eq!(left[1], right[1], "{pair:?} must share a row");
+        assert!(left[0] + left[2] <= right[0], "{pair:?} must not overlap");
     }
 }
 
@@ -442,7 +471,7 @@ fn system_appearance_switch_rethemes_the_live_workspace_without_losing_search() 
     assert!(runtime.state.search.open);
     assert_visible(&runtime, "search");
     assert_visible(&runtime, "toggle-inspector");
-    assert_visible(&runtime, "navigation-more");
+    assert_visible(&runtime, "overview");
     runtime.set_system_dark(true);
     settle(&mut runtime);
     assert_eq!(element(&runtime, "graph-canvas").fill, dark_canvas);
@@ -466,7 +495,7 @@ fn reduced_motion_pane_collapse_snaps_width_and_keeps_controls_reachable() {
         element(&runtime, "sidebar-pane").rect[2] < 1.0,
         "Reduced motion should snap pane width instead of sliding it"
     );
-    assert_visible(&runtime, "navigation-more");
+    assert_visible(&runtime, "overview");
     assert_visible(&runtime, "toggle-inspector");
     click(&mut runtime, "open-search");
     settle(&mut runtime);

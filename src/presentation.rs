@@ -25,7 +25,6 @@ pub enum Overlay {
     ConfirmAnalysis(BTreeSet<BuildIdentity>),
     Filters,
     Projects,
-    Navigation,
     Activity,
 }
 

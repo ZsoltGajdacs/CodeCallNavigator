@@ -160,9 +160,9 @@ fn dismiss_control_surface(runtime: &mut Runtime<State>) {
 
 fn control_surface(key: &str) -> Option<&'static str> {
     match key {
-        "overview" | "collapse-all" => Some("navigation-more"),
-        "find-builds" | "choose-folder" | "root-path" | "analyze" | "clear-cache"
-        | "compare-flows" => Some("project-picker-trigger"),
+        "find-builds" | "choose-folder" | "root-path" | "analyze" | "clear-cache" => {
+            Some("project-picker-trigger")
+        }
         _ if key.starts_with("freshness-") => Some("activity-details"),
         _ if key.starts_with("filter-") => Some("graph-filters"),
         _ => None,

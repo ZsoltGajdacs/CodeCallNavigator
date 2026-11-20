@@ -2,7 +2,6 @@
 use super::*;
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(super) enum Editor {
-    ProjectPicker,
     Entry,
     Base,
     After,
@@ -36,11 +35,6 @@ impl Driver {
         step: Editor,
     ) -> Result<()> {
         match step {
-            Editor::ProjectPicker => self.click(
-                runtime,
-                "project-picker-trigger",
-                Phase::Editing(Editor::Entry),
-            ),
             Editor::Entry => self.click(runtime, "compare-flows", Phase::Editing(Editor::Base)),
             Editor::Base => {
                 if self

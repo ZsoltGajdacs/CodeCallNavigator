@@ -1,11 +1,9 @@
 //! Navigation chrome consumes existing graph actions without owning graph state.
-use crate::{app::State, icons, presentation::Overlay};
-use rune::{El, col, row, text};
-use rune_kit::{
-    Button, ButtonVariant, ControlSize, IconButton, IconButtonVariant, Kit, Placement, Popover,
-};
+use crate::{app::State, icons};
+use rune::{El, row, text};
+use rune_kit::{Button, ButtonVariant, ControlSize, IconButton, IconButtonVariant, Kit};
 
-pub(super) fn view(state: &State, k: &Kit, layers: &mut Vec<El>) -> El {
+pub(super) fn view(state: &State, k: &Kit) -> El {
     row()
         .key("graph-toolbar")
         .center_y()
@@ -13,8 +11,15 @@ pub(super) fn view(state: &State, k: &Kit, layers: &mut Vec<El>) -> El {
         .min_w(0.0)
         .child(history(state, false, k))
         .child(history(state, true, k))
-        .child(breadcrumb(state, k))
-        .child(overflow(state, k, layers))
+        .child(breadcrumb(state, k).grow(1.0).shrink())
+        .child(action("Overview", "overview", State::overview, k))
+        .child(super::comparison_button(k))
+        .child(action(
+            "Collapse all",
+            "collapse-all",
+            State::collapse_all,
+            k,
+        ))
 }
 
 fn history(state: &State, forward: bool, k: &Kit) -> El {
@@ -53,7 +58,8 @@ fn breadcrumb(state: &State, k: &Kit) -> El {
                     .font(k.ty.ui)
                     .color(k.c.text_muted)
                     .truncate()
-                    .max_w(160.0),
+                    .max_w(160.0)
+                    .shrink(),
             )
             .child(text("/").font(k.ty.ui).color(k.c.text_faint))
             .child(
@@ -61,7 +67,8 @@ fn breadcrumb(state: &State, k: &Kit) -> El {
                     .font(k.ty.ui_medium)
                     .color(k.c.text_base)
                     .truncate()
-                    .max_w(200.0),
+                    .max_w(200.0)
+                    .shrink(),
             );
     } else {
         path = path.child(
@@ -74,50 +81,10 @@ fn breadcrumb(state: &State, k: &Kit) -> El {
     path
 }
 
-fn overflow(state: &State, k: &Kit, layers: &mut Vec<El>) -> El {
-    let trigger = Button::new("More")
-        .variant(ButtonVariant::GhostMuted)
-        .control_size(ControlSize::ExtraLarge)
-        .expanded(state.ui.overlay == Some(Overlay::Navigation))
-        .on_press(|state: &mut State| {
-            state.ui.overlay = if state.ui.overlay == Some(Overlay::Navigation) {
-                None
-            } else {
-                Some(Overlay::Navigation)
-            };
-        })
+fn action(label: &str, key: &'static str, on_press: fn(&mut State), k: &Kit) -> El {
+    Button::new(label)
+        .variant(ButtonVariant::Ghost)
+        .on_press(on_press)
         .build(k)
-        .key("navigation-more")
-        .help("Graph navigation actions");
-    let items = col()
-        .w(180.0)
-        .gap(6.0)
-        .child(
-            Button::new("Overview")
-                .variant(ButtonVariant::Ghost)
-                .on_press(|state: &mut State| {
-                    state.close_overlay();
-                    state.overview();
-                })
-                .build(k)
-                .key("overview"),
-        )
-        .child(
-            Button::new("Collapse all")
-                .variant(ButtonVariant::Ghost)
-                .on_press(|state: &mut State| {
-                    state.close_overlay();
-                    state.collapse_all();
-                })
-                .build(k)
-                .key("collapse-all"),
-        );
-    Popover::new("navigation-popover")
-        .label("Graph navigation actions")
-        .trigger(trigger)
-        .open(state.ui.overlay == Some(Overlay::Navigation))
-        .placement(Placement::BottomStart)
-        .on_close(State::close_overlay)
-        .child(items)
-        .build(k, layers)
+        .key(key)
 }
