@@ -6109,6 +6109,34 @@
       "purpose": "compiled visibility preserves declared class and method access"
     },
     {
+      "id": "codecallnavigator-engine/lib:codecallnavigator_engine::analyzers::java::maven::diagnostics::tests::prioritizes_reactor_errors_over_stderr_warnings",
+      "runner": "rust",
+      "file": "crates/codecallnavigator-engine/src/analyzers/java/maven/diagnostics.rs",
+      "test_name": "analyzers::java::maven::diagnostics::tests::prioritizes_reactor_errors_over_stderr_warnings",
+      "ignored": false,
+      "package": "codecallnavigator-engine",
+      "target_kind": "lib",
+      "target": "codecallnavigator_engine",
+      "component": "engine",
+      "category": "unit",
+      "requirements": [],
+      "purpose": "Maven reactor goal failures and actionable compiler details fit before stderr warnings."
+    },
+    {
+      "id": "codecallnavigator-engine/lib:codecallnavigator_engine::analyzers::java::maven::diagnostics::tests::falls_back_to_bounded_unicode_tails",
+      "runner": "rust",
+      "file": "crates/codecallnavigator-engine/src/analyzers/java/maven/diagnostics.rs",
+      "test_name": "analyzers::java::maven::diagnostics::tests::falls_back_to_bounded_unicode_tails",
+      "ignored": false,
+      "package": "codecallnavigator-engine",
+      "target_kind": "lib",
+      "target": "codecallnavigator_engine",
+      "component": "engine",
+      "category": "unit",
+      "requirements": [],
+      "purpose": "Unstructured Maven output preserves both bounded text streams and strips terminal escapes."
+    },
+    {
       "id": "codecallnavigator-engine/lib:codecallnavigator_engine::analyzers::process::diagnostics::tests::stderr_tail_is_bounded_and_tolerates_a_split_utf8_character",
       "runner": "rust",
       "file": "crates/codecallnavigator-engine/src/analyzers/process/diagnostics.rs",
@@ -7798,6 +7826,25 @@
         "node",
         "typescript",
         "cli"
+      ]
+    },
+    {
+      "id": "codecallnavigator-engine/test:local_snapshots::failed_maven_snapshot_reports_compiler_error_and_retains_logs",
+      "runner": "rust",
+      "file": "crates/codecallnavigator-engine/tests/local_snapshots.rs",
+      "test_name": "failed_maven_snapshot_reports_compiler_error_and_retains_logs",
+      "ignored": true,
+      "package": "codecallnavigator-engine",
+      "target_kind": "test",
+      "target": "local_snapshots",
+      "component": "engine",
+      "category": "acceptance",
+      "purpose": "Public CLI and desktop protocol expose real javac stdout and retained raw logs after deleting the failed Git checkout.",
+      "requirements": [
+        "cli",
+        "git",
+        "java",
+        "maven"
       ]
     },
     {
@@ -10289,6 +10336,22 @@
         "typescript"
       ],
       "purpose": "Prepares isolated snapshots and selects cached endpoints through the public engine, then renders impact rows, graph changes, and JSON detail through the production Rune view."
+    },
+    {
+      "id": "codecallnavigator/bin:codecallnavigator::flow_comparison::snapshots::tests::preparation_failure_is_visible_copyable_and_cleared_on_project_change",
+      "runner": "rust",
+      "file": "src/flow_comparison/snapshots/tests.rs",
+      "test_name": "flow_comparison::snapshots::tests::preparation_failure_is_visible_copyable_and_cleared_on_project_change",
+      "ignored": false,
+      "package": "codecallnavigator",
+      "target_kind": "bin",
+      "target": "codecallnavigator",
+      "component": "ui",
+      "category": "integration",
+      "requirements": [
+        "graphviz"
+      ],
+      "purpose": "Production Rune failure details render and copy the typed diagnostic and log location and clear when switching projects."
     },
     {
       "id": "codecallnavigator/bin:codecallnavigator::flow_comparison::tests::historical_workspace_loads_without_graph_and_keeps_captured_project_and_side_state",

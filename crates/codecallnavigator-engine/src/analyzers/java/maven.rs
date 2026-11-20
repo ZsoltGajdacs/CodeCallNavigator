@@ -1,4 +1,5 @@
 //! Maven build execution; evaluated ownership comes from the bundled extension.
+mod diagnostics;
 use super::{
     build::{JavaBuildMetadata, JavaCompilation},
     compile_observation::Attempt,
@@ -203,7 +204,8 @@ fn task(build: &BuildTarget, context: &AnalysisJob<'_>, task: MavenTask<'_>) -> 
         observation.configure(&mut command);
     }
     command.arg(task.goal());
-    run_process(&mut command, context.path, task.log(), context.cancel)?;
+    run_process(&mut command, context.path, task.log(), context.cancel)
+        .map_err(diagnostics::enrich_exit)?;
     Ok(())
 }
 

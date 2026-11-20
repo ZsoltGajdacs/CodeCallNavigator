@@ -2,7 +2,7 @@ mod diagnostics;
 pub(super) mod worker;
 use crate::process_ownership::OwnedProcess;
 use anyhow::{Context, Result, ensure};
-pub(super) use diagnostics::NativeExitFailure;
+pub(super) use diagnostics::{LogTails, NativeExitFailure};
 use diagnostics::{PROCESS_TIMEOUT, ProcessLogs};
 use std::{
     fs,

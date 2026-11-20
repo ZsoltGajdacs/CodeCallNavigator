@@ -654,6 +654,95 @@ fn maven_preparation_retains_a_revision_with_generated_source_roots() {
     assert_snapshot_checkout_removed(&fixture, &engine_temp, &checkouts);
 }
 
+#[test]
+#[ignore = "requires Maven and JDK 25"]
+fn failed_maven_snapshot_reports_compiler_error_and_retains_logs() {
+    const MISSING: &str = "missingSnapshotDiagnostic";
+    let mut fixture = Fixture::new();
+    let engine_temp = fixture.isolate_engine_temp();
+    commit_broken_maven_project(&fixture, MISSING);
+    let worktrees = registered_worktrees(&fixture);
+
+    let terminal = fixture.prepare("HEAD", "broken");
+    let stderr = String::from_utf8_lossy(&terminal.stderr);
+    assert!(
+        !terminal.status.success() && stderr.contains(MISSING),
+        "{stderr}"
+    );
+    assert!(
+        stderr.contains("Build logs") && stderr.contains("codecallnavigator-"),
+        "{stderr}"
+    );
+
+    assert_maven_failure_event(&fixture, &engine_temp, MISSING);
+    assert_snapshot_checkout_removed(&fixture, &engine_temp, &worktrees);
+    assert_eq!(
+        fixture.status(&fixture.root, "HEAD")["snapshots"],
+        json!([])
+    );
+}
+
+fn commit_broken_maven_project(fixture: &Fixture, missing: &str) {
+    let project = fixture.root.join("broken");
+    let sources = project.join("src/test/java");
+    fs::create_dir_all(&sources).unwrap();
+    let parent = fixture.root.join("parent");
+    fs::create_dir(&parent).unwrap();
+    fs::write(
+        parent.join("pom.xml"),
+        include_str!("../../../fixtures/maven/parent/pom.xml"),
+    )
+    .unwrap();
+    fs::write(
+        project.join("pom.xml"),
+        r#"<project>
+  <modelVersion>4.0.0</modelVersion>
+  <parent><groupId>codecallnavigator.fixture</groupId><artifactId>external-parent</artifactId><version>1.0</version><relativePath>../parent/pom.xml</relativePath></parent>
+  <groupId>snapshot</groupId><artifactId>broken</artifactId><version>1</version>
+</project>"#,
+    )
+    .unwrap();
+    fs::write(
+        sources.join("Broken.java"),
+        format!("class Broken {{ Object result = {missing}(); }}"),
+    )
+    .unwrap();
+    git(&fixture.root, &["add", "broken", "parent"]);
+    git(&fixture.root, &["commit", "-qm", "Broken Maven revision"]);
+}
+
+fn assert_maven_failure_event(fixture: &Fixture, engine_temp: &Path, missing: &str) {
+    let machine = fixture.prepare_exact(json!([{
+        "path": "broken", "kind": "maven", "language": "java"
+    }]));
+    assert!(!machine.status.success());
+    let event: Value = serde_json::from_slice(
+        machine
+            .stdout
+            .split(|byte| *byte == b'\n')
+            .rfind(|line| !line.is_empty())
+            .unwrap(),
+    )
+    .unwrap();
+    assert_eq!(
+        (&event["event"], &event["code"], &event["target"]["phase"]),
+        (&json!("failed"), &json!("failed"), &json!("compilation")),
+        "{event}"
+    );
+    assert!(
+        event["message"].as_str().unwrap().contains(missing),
+        "{event}"
+    );
+    let logs = Path::new(event["target"]["logs"].as_str().unwrap());
+    assert!(logs.starts_with(engine_temp), "{}", logs.display());
+    assert!(
+        fs::read_to_string(logs.join("maven-compile.stdout"))
+            .unwrap()
+            .contains(missing)
+    );
+    assert!(logs.join("maven-compile.stderr").is_file());
+}
+
 fn assert_generated_method_is_retained(fixture: &Fixture) {
     let generated = fixture.query(
         &fixture.root,

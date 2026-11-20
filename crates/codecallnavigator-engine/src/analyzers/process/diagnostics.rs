@@ -17,7 +17,13 @@ const LOG_TAIL_BYTES: u64 = 4000;
 #[derive(Debug)]
 pub(crate) struct NativeExitFailure {
     status: ExitStatus,
-    message: String,
+    logs: ProcessLogs,
+    summary: String,
+}
+
+pub(crate) struct LogTails {
+    pub(crate) stdout: String,
+    pub(crate) stderr: String,
 }
 
 impl NativeExitFailure {
@@ -32,27 +38,43 @@ impl NativeExitFailure {
     fn new(logs: &ProcessLogs, status: ExitStatus) -> Self {
         Self {
             status,
-            message: format!(
-                "{} failed ({status}). {}",
-                logs.name,
-                log_tail(&logs.stderr)
-            ),
+            logs: logs.clone(),
+            summary: log_tail(&logs.stderr),
         }
     }
 
     pub(crate) fn exited(&self) -> bool {
         self.status.code().is_some()
     }
+
+    pub(crate) fn log_tails(&self, limit: u64) -> LogTails {
+        LogTails {
+            stdout: read_log_tail(&self.logs.stdout, limit).unwrap_or_default(),
+            stderr: read_log_tail(&self.logs.stderr, limit).unwrap_or_default(),
+        }
+    }
+
+    pub(crate) fn with_log_summary(mut self, summary: String) -> Self {
+        if !summary.is_empty() {
+            self.summary = summary;
+        }
+        self
+    }
 }
 
 impl std::fmt::Display for NativeExitFailure {
     fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        formatter.write_str(&self.message)
+        write!(
+            formatter,
+            "{} failed ({}). {}",
+            self.logs.name, self.status, self.summary
+        )
     }
 }
 
 impl std::error::Error for NativeExitFailure {}
 
+#[derive(Clone, Debug)]
 pub(super) struct ProcessLogs {
     pub(super) name: String,
     pub(super) stdout: PathBuf,
@@ -106,19 +128,20 @@ impl ProcessLogs {
 }
 
 pub(super) fn log_tail(path: &Path) -> String {
-    read_log_tail(path).unwrap_or_else(|error| format!("Cannot read {}: {error}", path.display()))
+    read_log_tail(path, LOG_TAIL_BYTES)
+        .unwrap_or_else(|error| format!("Cannot read {}: {error}", path.display()))
 }
 
-fn read_log_tail(path: &Path) -> std::io::Result<String> {
+fn read_log_tail(path: &Path, limit: u64) -> std::io::Result<String> {
     let file = File::open(path)?;
     let length = file.metadata()?.len();
-    read_tail(file, length)
+    read_tail(file, length, limit)
 }
 
-fn read_tail(mut input: impl Read + Seek, length: u64) -> std::io::Result<String> {
-    input.seek(SeekFrom::Start(length.saturating_sub(LOG_TAIL_BYTES)))?;
+fn read_tail(mut input: impl Read + Seek, length: u64, limit: u64) -> std::io::Result<String> {
+    input.seek(SeekFrom::Start(length.saturating_sub(limit)))?;
     let mut bytes = Vec::new();
-    input.take(LOG_TAIL_BYTES).read_to_end(&mut bytes)?;
+    input.take(limit).read_to_end(&mut bytes)?;
     Ok(String::from_utf8_lossy(&bytes).into_owned())
 }
 
@@ -129,7 +152,12 @@ mod tests {
     #[test]
     fn stderr_tail_is_bounded_and_tolerates_a_split_utf8_character() {
         let input = format!("{}END", "é".repeat(10000));
-        let tail = read_tail(std::io::Cursor::new(input.as_bytes()), input.len() as u64).unwrap();
+        let tail = read_tail(
+            std::io::Cursor::new(input.as_bytes()),
+            input.len() as u64,
+            LOG_TAIL_BYTES,
+        )
+        .unwrap();
         assert!(tail.starts_with('\u{fffd}'));
         assert!(tail.ends_with("END"));
         assert!(tail.len() <= LOG_TAIL_BYTES as usize + 2);

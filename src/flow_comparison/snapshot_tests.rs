@@ -136,8 +136,22 @@ fn assert_preparation_failure(state: &mut State) {
         "{}",
         state.flow_comparison.snapshots.message
     );
+    assert!(
+        state
+            .flow_comparison
+            .snapshots
+            .preparation_failure
+            .is_some()
+    );
     state.flow_comparison.controls.base = rune::TextEdit::new("refs/tags/base");
     state.lookup_comparison_snapshot(SnapshotSide::Base);
+    assert!(
+        state
+            .flow_comparison
+            .snapshots
+            .preparation_failure
+            .is_none()
+    );
     settle(state);
     let lookup = state
         .flow_comparison

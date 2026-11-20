@@ -60,12 +60,7 @@ impl Feedback<'_> {
         let mut message = self.target.map_or_else(
             || "Analysis did not complete.".into(),
             |failure| {
-                let phase = match failure.phase {
-                    AnalysisPhase::Preparation => "Preparation",
-                    AnalysisPhase::Compilation => "Compilation",
-                    AnalysisPhase::Extraction => "Analysis",
-                    AnalysisPhase::Validation => "Validation",
-                };
+                let phase = phase_label(failure.phase);
                 let path = &failure.target.path;
                 let relative = self
                     .project
@@ -96,6 +91,15 @@ impl Feedback<'_> {
             .find(|line| !line.trim().is_empty())
             .map(|line| bounded(line.trim(), 240))
             .unwrap_or_default()
+    }
+}
+
+pub(crate) fn phase_label(phase: AnalysisPhase) -> &'static str {
+    match phase {
+        AnalysisPhase::Preparation => "Preparation",
+        AnalysisPhase::Compilation => "Compilation",
+        AnalysisPhase::Extraction => "Analysis",
+        AnalysisPhase::Validation => "Validation",
     }
 }
 

@@ -1,4 +1,6 @@
 //! Render local snapshot controls and one page of the engine's graph differences.
+mod failure;
+
 use super::provenance;
 use crate::{
     app::State,
@@ -28,6 +30,9 @@ pub(super) fn controls(state: &State, k: &Kit) -> El {
                 .help(&snapshots.message)
                 .key("comparison-snapshot-status"),
         );
+    }
+    if let Some(failure) = &snapshots.preparation_failure {
+        body = body.child(failure::details(failure, k));
     }
     if !snapshots.panel_open {
         return body;

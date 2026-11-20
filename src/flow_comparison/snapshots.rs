@@ -20,7 +20,11 @@ use std::{
     },
 };
 
+#[cfg(test)]
+mod tests;
+
 pub(crate) const SELECT_BUILDS: &str = "Select builds in the main graph to prepare a snapshot.";
+const PREPARATION_FAILED: &str = "Snapshot preparation failed";
 
 #[derive(Clone, Copy)]
 pub enum Side {
@@ -61,6 +65,7 @@ pub struct Lookup {
 pub struct Snapshots {
     pub panel_open: bool,
     pub message: String,
+    pub(crate) preparation_failure: Option<engine_client::AnalysisFailure>,
     pub graph: Option<GraphPage>,
     pub selected_change: Option<usize>,
     lookups: [Option<Lookup>; 2],
@@ -96,6 +101,7 @@ enum Answer {
         prepared: Option<SnapshotRecord>,
     },
     PreparedWithoutLookup(String),
+    PreparationFailed(engine_client::AnalysisFailure),
     Graph {
         refs: ComparisonRefs,
         page: Box<GraphPage>,
@@ -123,7 +129,9 @@ impl State {
     pub fn prepare_comparison_snapshot(&mut self, side: Side) {
         self.flow_residency.activity();
         let Some(analysis) = self.selected_analysis() else {
-            self.flow_comparison.snapshots.message = SELECT_BUILDS.into();
+            self.flow_comparison
+                .snapshots
+                .set_status(SELECT_BUILDS.into());
             return;
         };
         let revision = side
@@ -183,7 +191,7 @@ impl State {
                 operation,
                 self.flow_comparison.workers.clone(),
             ),
-            Err(error) => self.flow_comparison.snapshots.message = error,
+            Err(error) => self.flow_comparison.snapshots.set_status(error),
         }
     }
 }
@@ -253,7 +261,7 @@ impl Snapshots {
         self.graph_refs = None;
         self.previous.clear();
         self.project = None;
-        self.message.clear();
+        self.set_status(String::new());
         self.panel_open = false;
     }
 
@@ -289,12 +297,14 @@ impl Snapshots {
         self.project_installed(Some(&context.descriptor.project));
         self.project = Some(context.descriptor.project.clone());
         self.cancel = Arc::new(AtomicBool::new(false));
-        self.message = match &operation {
-            Operation::Lookup { .. } => "Looking up local snapshots…",
-            Operation::Prepare { .. } => "Preparing local snapshot…",
-            Operation::Graph { .. } => "Comparing saved graphs…",
-        }
-        .into();
+        self.set_status(
+            match &operation {
+                Operation::Lookup { .. } => "Looking up local snapshots…",
+                Operation::Prepare { .. } => "Preparing local snapshot…",
+                Operation::Graph { .. } => "Comparing saved graphs…",
+            }
+            .into(),
+        );
         if let Operation::Graph {
             navigation: Navigation::First | Navigation::Reload,
             refs,
@@ -340,7 +350,7 @@ impl Snapshots {
     }
 
     fn accept(&mut self, answer: anyhow::Result<Answer>) {
-        self.message.clear();
+        self.set_status(String::new());
         match answer {
             Ok(Answer::Lookup {
                 side,
@@ -366,6 +376,10 @@ impl Snapshots {
                 });
             }
             Ok(Answer::PreparedWithoutLookup(message)) => self.message = message,
+            Ok(Answer::PreparationFailed(failure)) => {
+                self.message = PREPARATION_FAILED.into();
+                self.preparation_failure = Some(failure);
+            }
             Ok(Answer::Graph {
                 refs,
                 page,
@@ -399,6 +413,11 @@ impl Snapshots {
             }
         }
     }
+
+    fn set_status(&mut self, message: String) {
+        self.message = message;
+        self.preparation_failure = None;
+    }
 }
 
 fn execute(
@@ -416,9 +435,10 @@ fn execute(
         }),
         Operation::Prepare { side, selection } => {
             let revision = selection.revision.clone();
-            let record = context
-                .prepare_local_snapshot(selection, cancel, progress)
-                .map_err(preparation_error)?;
+            let record = match context.prepare_local_snapshot(selection, cancel, progress) {
+                Ok(record) => record,
+                Err(error) => return preparation_error(error),
+            };
             let message = preparation_message(&record);
             match context.snapshot_status(revision.clone(), cancel) {
                 Ok(status) if status.snapshots.contains(&record) => Ok(Answer::Lookup {
@@ -451,13 +471,15 @@ fn preparation_message(record: &SnapshotRecord) -> String {
     format!("Prepared snapshot for {}.", record.identity.commit)
 }
 
-fn preparation_error(error: anyhow::Error) -> anyhow::Error {
-    let cancelled = error
+fn preparation_error(error: anyhow::Error) -> anyhow::Result<Answer> {
+    let code = error
         .downcast_ref::<engine_client::AnalysisFailure>()
-        .is_some_and(|failure| failure.code == Some(AnalysisFailureCode::Cancelled));
-    error.context(if cancelled {
-        "Snapshot preparation cancelled"
-    } else {
-        "Snapshot preparation failed"
-    })
+        .and_then(|failure| failure.code);
+    match code {
+        Some(AnalysisFailureCode::Failed) => error.downcast().map(Answer::PreparationFailed),
+        Some(AnalysisFailureCode::Cancelled) => {
+            Err(error.context("Snapshot preparation cancelled"))
+        }
+        _ => Err(error.context(PREPARATION_FAILED)),
+    }
 }

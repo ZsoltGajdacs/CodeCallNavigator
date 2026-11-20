@@ -22,7 +22,11 @@ impl std::fmt::Display for Attribution {
             self.target.phase,
             self.target.target.path.display(),
             self.target.target.kind
-        )
+        )?;
+        if let Some(logs) = &self.target.logs {
+            write!(formatter, "\nBuild logs: {}", logs.display())?;
+        }
+        Ok(())
     }
 }
 impl std::error::Error for Attribution {}
