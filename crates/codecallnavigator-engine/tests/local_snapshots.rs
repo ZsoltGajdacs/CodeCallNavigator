@@ -524,6 +524,65 @@ fn assert_impact_without_head_graph(fixture: &Fixture, linked: &Path, base: &str
 }
 
 #[test]
+#[ignore = "requires JDK 25 and Gradle"]
+fn gradle_snapshot_proves_custom_class_output_and_ignores_unrelated_directory() {
+    let mut fixture = Fixture::new();
+    let engine_temp = fixture.isolate_engine_temp();
+    let template = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../fixtures/gradle");
+    fs::create_dir_all(fixture.root.join("gradle/wrapper")).unwrap();
+    for input in [
+        "gradlew",
+        "gradle/wrapper/gradle-wrapper.jar",
+        "gradle/wrapper/gradle-wrapper.properties",
+    ] {
+        fs::copy(template.join(input), fixture.root.join(input)).unwrap();
+    }
+
+    fs::write(
+        fixture.root.join("settings.gradle"),
+        "rootProject.name = 'evidence'",
+    )
+    .unwrap();
+    fs::write(
+        fixture.root.join("build.gradle"),
+        r#"
+plugins { id 'java' }
+java { toolchain { languageVersion = JavaLanguageVersion.of(25) } }
+layout.buildDirectory = layout.projectDirectory.dir('compiled-products')
+def renderAssets = tasks.register('renderAssets') {
+    doLast {
+        file('unrelated-results').mkdirs()
+        file('unrelated-results/index.html').text = '<p>report</p>'
+    }
+}
+tasks.named('compileJava') { dependsOn(renderAssets) }
+"#,
+    )
+    .unwrap();
+    fs::write(
+        fixture.root.join(".gitignore"),
+        "/.gradle/\n/compiled-products/\n/unrelated-results/\n",
+    )
+    .unwrap();
+    let sources = fixture.root.join("src/main/java");
+    fs::create_dir_all(&sources).unwrap();
+    fs::write(
+        sources.join("Example.java"),
+        "public class Example { public static int value() { return 17; } }",
+    )
+    .unwrap();
+    git(&fixture.root, &["add", "."]);
+    git(&fixture.root, &["commit", "-qm", "Gradle evidence fixture"]);
+    let checkouts = registered_worktrees(&fixture);
+    checked(fixture.prepare_exact(json!([{
+        "path": ".", "kind": "gradle", "language": "java"
+    }])));
+    let status = fixture.status(&fixture.root, "HEAD");
+    assert_eq!(status["snapshots"].as_array().unwrap().len(), 1, "{status}");
+    assert_snapshot_checkout_removed(&fixture, &engine_temp, &checkouts);
+}
+
+#[test]
 #[ignore = "requires JDK 25 and Maven"]
 fn maven_preparation_retains_a_revision_with_generated_source_roots() {
     let mut fixture = Fixture::new();
@@ -548,7 +607,7 @@ fn maven_preparation_retains_a_revision_with_generated_source_roots() {
     fs::write(fixture.root.join("standalone/build.gradle"), "").unwrap();
     fs::write(
         fixture.root.join("standalone/.gitignore"),
-        "/target/\n/asyncapi.yaml\n/src/main/java/IgnoredGenerated.java\n",
+        "/target/\n/asyncapi.yaml\n/arbitrary-frontend-products/\n/src/main/java/IgnoredGenerated.java\n",
     )
     .unwrap();
     git(&fixture.root, &["add", "parent", "standalone"]);

@@ -106,7 +106,7 @@ function trackingSystem(ts, inputs, observations) {
     system[name]=(...args)=>{
       if (name==='readFile' || name==='fileExists') track(args[0]);
       const key=JSON.stringify([name,...args]);
-      return observations.observe(key,()=>ts.sys[name](...args));
+      return observations.observe(key,()=>ts.sys[name](...args),name==='getDirectories');
     };
   }
   system.writeFile=()=>{ throw new Error('TypeScript analysis must never emit files'); };

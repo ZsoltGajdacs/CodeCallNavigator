@@ -158,9 +158,11 @@ pub fn analyze(
     Ok(analyze_observed(builds, runtime, cancel, progress)?.graph)
 }
 
+pub mod evidence;
+
 pub struct ObservedAnalysis {
     pub graph: GraphData,
-    pub output_attribution_limit: Option<String>,
+    pub evidence: Vec<evidence::TargetEvidence>,
 }
 
 /// The detached worktree and exact commit tree of a cleaned snapshot checkout.
@@ -240,6 +242,7 @@ impl Drop for JobDirectory {
     }
 }
 
+#[cfg(test)]
 fn source_snapshot(roots: &[PathBuf]) -> Result<Vec<FileFingerprint>> {
     let roots = roots
         .iter()

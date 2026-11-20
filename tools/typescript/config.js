@@ -54,7 +54,7 @@ function prepare(config, previous) {
   const configuration=topology(projects);
   const retained=previous?.configuration===configuration ? previous.programs : [];
   const programs = createPrograms(ts,projects,system,retained);
-  const context = {ts,config,projects,owners,programs,localRequire,observations,toolchain:identity,configuration};
+  const context = {ts,config,projects,owners,programs,localRequire,observations,toolchain:identity,toolchainInputs:inputPaths,configuration};
   context.metadata = metadata(context,inputs);
   return context;
 }

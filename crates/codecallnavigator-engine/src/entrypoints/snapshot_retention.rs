@@ -5,55 +5,98 @@ use codecallnavigator_core::{
         Roots,
         local_snapshots::SnapshotIdentity,
         provenance::Analysis,
-        refresh_inputs,
         revision::{Repository, TreeEntry},
     },
     discovery::BuildTarget,
     fingerprint::{self, InputKind, InputPolicy},
     model::FileFingerprint,
 };
+use codecallnavigator_engine::analyzers::evidence::{EvidenceInput, EvidenceRole, TargetEvidence};
 use std::{
     collections::{BTreeMap, BTreeSet},
-    fs,
-    path::{Path, PathBuf},
+    path::{Component, Path, PathBuf},
     sync::atomic::{AtomicBool, Ordering},
 };
-
-mod dependencies;
-use dependencies::Dependencies;
-
-pub(super) fn dependency_identity(observed: &Observations<'_>) -> Result<String> {
-    let mut dependencies = Dependencies::new(observed.targets)?;
-    for input in observed.analyzer.iter().chain(observed.refresh) {
-        dependencies.observe(
-            input,
-            Path::new(&input.path).strip_prefix(observed.project).ok(),
-        );
-    }
-    dependencies.digest()
-}
 
 pub(super) struct Candidate {
     repository: Repository,
     commit: String,
-    checkout: Checkout,
-}
-
-#[derive(Clone, Copy)]
-pub(super) enum Checkout {
-    Working,
-    Clean,
 }
 
 pub(super) struct Observations<'a> {
     pub analysis: &'a Analysis,
     pub roots: &'a Roots,
-    pub analyzer: &'a [FileFingerprint],
-    pub refresh: &'a [FileFingerprint],
     pub targets: &'a [BuildTarget],
-    pub project: &'a Path,
-    pub generated_sources: &'a [String],
-    pub output_attribution_limit: Option<&'a str>,
+    pub project_inputs: &'a [FileFingerprint],
+    pub evidence: &'a [TargetEvidence],
+}
+
+impl Observations<'_> {
+    pub fn inputs(
+        &self,
+    ) -> impl Iterator<Item = (&FileFingerprint, EvidenceRole, Option<&BuildTarget>)> {
+        self.project_inputs
+            .iter()
+            .map(|input| (input, EvidenceRole::Revision, None))
+            .chain(self.evidence.iter().flat_map(|target| {
+                target
+                    .inputs
+                    .iter()
+                    .filter_map(|EvidenceInput { fingerprint, role }| {
+                        (*role != EvidenceRole::Watch).then_some((
+                            fingerprint,
+                            *role,
+                            Some(&target.target),
+                        ))
+                    })
+            }))
+    }
+
+    pub fn dependency_identity(&self, root: &Path) -> Result<String> {
+        let mut entries = BTreeSet::new();
+        for (input, role, _) in self.inputs() {
+            if matches!(role, EvidenceRole::Generated | EvidenceRole::Dependency)
+                && input.kind != InputKind::Missing
+            {
+                let path = Path::new(&input.path);
+                entries.insert((path.strip_prefix(root).unwrap_or(path), &input.hash));
+            }
+        }
+        Ok(blake3::hash(&serde_json::to_vec(&entries)?)
+            .to_hex()
+            .to_string())
+    }
+
+    fn require_attribution(&self) -> Result<()> {
+        let selected = self
+            .targets
+            .iter()
+            .map(BuildTarget::identity)
+            .collect::<BTreeSet<_>>();
+        let observed = self
+            .evidence
+            .iter()
+            .map(|entry| entry.target.identity())
+            .collect::<BTreeSet<_>>();
+        ensure!(
+            selected == observed && self.evidence.len() == selected.len(),
+            "Analyzed build selection has incomplete attribution evidence"
+        );
+        for evidence in self.evidence {
+            if let Some(limit) = &evidence.attribution_limit {
+                anyhow::bail!("{}: {limit}", evidence.target.label);
+            }
+            ensure!(
+                evidence
+                    .inputs
+                    .iter()
+                    .any(|input| input.role != EvidenceRole::Watch),
+                "{}: adapter reported no consumed inputs",
+                evidence.target.label
+            );
+        }
+        Ok(())
+    }
 }
 
 pub(super) struct VerifiedSnapshot {
@@ -62,15 +105,11 @@ pub(super) struct VerifiedSnapshot {
 }
 
 impl Candidate {
-    pub(super) fn capture(project: &Path, checkout: Checkout) -> Result<Self> {
+    pub(super) fn capture(project: &Path) -> Result<Self> {
         let repository = Repository::detect(project)?
             .context("The analysis project is outside a Git repository")?;
         let commit = repository.resolve("HEAD")?;
-        Ok(Self {
-            repository,
-            commit,
-            checkout,
-        })
+        Ok(Self { repository, commit })
     }
 
     pub(super) fn verify(
@@ -95,78 +134,31 @@ impl Candidate {
                 == Some(true),
             "Analyzed build selection cannot be fully attributed to this revision"
         );
-        if let Some(reason) = observed.output_attribution_limit {
-            anyhow::bail!("{reason}");
-        }
+        observed.require_attribution()?;
         let tree = self.repository.tree(&self.commit, cancel)?;
-        let outputs = refresh_inputs::owned_outputs(analysis, observed.roots).unwrap_or_default();
-        let generated_sources =
-            generated_roots(&self.repository.root, observed.generated_sources, &tree);
         let mut proof = InputProof {
             root: &self.repository.root,
-            directories: self.directory_members(&tree, observed, cancel)?,
+            directories: directories(&tree),
             tree,
             hashes: BTreeMap::new(),
-            outputs,
-            dependencies: Dependencies::new(observed.targets)?,
-            generated_sources,
         };
-        for input in observed.analyzer.iter().chain(observed.refresh) {
+        for (input, role, target) in observed.inputs() {
             ensure!(
                 !cancel.load(Ordering::Acquire),
                 "Snapshot retention cancelled"
             );
-            proof.check(input)?;
+            proof.check(input, role).with_context(|| match target {
+                Some(target) => format!("{}: Git input attribution failed", target.label),
+                None => "Project configuration attribution failed".into(),
+            })?;
         }
         self.repository.verify_blobs(&proof.hashes, cancel)?;
-        let dependency_identity = proof.dependencies.digest()?;
+        let dependency_identity = observed.dependency_identity(&self.repository.root)?;
         self.require_current()?;
         Ok(VerifiedSnapshot {
             candidate: self,
             dependency_identity,
         })
-    }
-
-    fn directory_members(
-        &self,
-        tree: &BTreeMap<String, TreeEntry>,
-        observed: &Observations<'_>,
-        cancel: &AtomicBool,
-    ) -> Result<BTreeMap<PathBuf, BTreeSet<String>>> {
-        let mut members = directories(tree);
-        if matches!(self.checkout, Checkout::Clean) {
-            // Account for ignored build side effects in directory fingerprints only.
-            // File inputs still go through the full Git or declared-output proof.
-            let observed_directories = observed
-                .analyzer
-                .iter()
-                .chain(observed.refresh)
-                .filter(|input| input.kind == InputKind::Directory)
-                .filter_map(|input| {
-                    Path::new(&input.path)
-                        .strip_prefix(&self.repository.root)
-                        .ok()
-                })
-                .collect::<BTreeSet<_>>();
-            for path in self.repository.ignored_untracked_files(cancel)? {
-                if path
-                    .parent()
-                    .is_none_or(|parent| !observed_directories.contains(parent))
-                {
-                    continue;
-                }
-                let absolute = self.repository.root.join(&path);
-                let kind = fs::symlink_metadata(&absolute)
-                    .with_context(|| {
-                        format!("Cannot inspect ignored build file {}", absolute.display())
-                    })?
-                    .file_type();
-                if kind.is_file() && fingerprint::includes_scoped_tree_entry(&path, false, false) {
-                    add_directory_member(&mut members, &path);
-                }
-            }
-        }
-        Ok(members)
     }
 
     fn require_current(&self) -> Result<()> {
@@ -211,22 +203,25 @@ struct InputProof<'a> {
     directories: BTreeMap<PathBuf, BTreeSet<String>>,
     tree: BTreeMap<String, TreeEntry>,
     hashes: BTreeMap<String, String>,
-    outputs: Vec<PathBuf>,
-    dependencies: Dependencies,
-    generated_sources: Vec<PathBuf>,
 }
 
 impl InputProof<'_> {
-    fn check(&mut self, input: &FileFingerprint) -> Result<()> {
+    fn check(&mut self, input: &FileFingerprint, role: EvidenceRole) -> Result<()> {
         let path = Path::new(&input.path);
-        let relative = path.strip_prefix(self.root).ok();
-        let Some(relative) = relative else {
+        ensure!(
+            path.is_absolute() && path.components().all(|part| part != Component::ParentDir),
+            "Input path is not normalized: {}",
+            path.display()
+        );
+        let normalized: PathBuf = path.components().collect();
+        let path = normalized.as_path();
+        let Ok(relative) = path.strip_prefix(self.root) else {
             ensure!(
-                self.dependencies.observe(input, None),
+                role == EvidenceRole::Dependency,
                 "Input outside Git checkout: {}",
                 path.display()
             );
-            return Ok(());
+            return self.verify_dependency_alias(path);
         };
         ensure!(
             !self.traverses_tracked_link(relative),
@@ -234,37 +229,47 @@ impl InputProof<'_> {
             relative.display()
         );
         let key = relative.to_str().context("Git input path is not UTF-8")?;
-        if !self.tree.contains_key(key) && self.accepts_untracked(path, relative, input)? {
-            return Ok(());
+        if !self.tree.contains_key(key) {
+            match role {
+                EvidenceRole::Dependency => return self.verify_dependency_alias(path),
+                EvidenceRole::Generated => {
+                    require_unlinked(path, relative)?;
+                    ensure!(
+                        input.kind == InputKind::File,
+                        "Missing generated product: {}",
+                        relative.display()
+                    );
+                    return Ok(());
+                }
+                EvidenceRole::Revision | EvidenceRole::Watch => {}
+            }
         }
         require_unlinked(path, relative)?;
         self.verify_git_input(relative, key, input)
     }
 
-    fn accepts_untracked(
-        &mut self,
-        path: &Path,
-        relative: &Path,
-        input: &FileFingerprint,
-    ) -> Result<bool> {
-        if self.outputs.iter().any(|output| path.starts_with(output)) {
-            require_unlinked(path, relative)?;
-            self.dependencies.record(relative, input);
-            return Ok(true);
+    fn verify_dependency_alias(&self, path: &Path) -> Result<()> {
+        let resolved = match path.canonicalize() {
+            Ok(resolved) => resolved,
+            // Missing dependency probes are checked by filesystem reobservation.
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(()),
+            Err(error) => {
+                return Err(error)
+                    .with_context(|| format!("Resolve dependency {}", path.display()));
+            }
+        };
+        if let Ok(relative) = resolved.strip_prefix(self.root) {
+            let key = relative
+                .to_str()
+                .context("Git dependency path is not UTF-8")?;
+            ensure!(
+                !self.tree.contains_key(key),
+                "Dependency alias resolves to a tracked path: {} -> {}",
+                path.display(),
+                relative.display()
+            );
         }
-        if self.dependencies.observe(input, Some(relative)) {
-            return Ok(true);
-        }
-        if self
-            .generated_sources
-            .iter()
-            .any(|root| path.starts_with(root))
-        {
-            require_unlinked(path, relative)?;
-            self.dependencies.record(relative, input);
-            return Ok(true);
-        }
-        Ok(false)
+        Ok(())
     }
 
     fn verify_git_input(
@@ -332,26 +337,6 @@ fn require_unlinked(path: &Path, relative: &Path) -> Result<()> {
     Ok(())
 }
 
-fn generated_roots(
-    repository: &Path,
-    outputs: &[String],
-    tree: &BTreeMap<String, TreeEntry>,
-) -> Vec<PathBuf> {
-    // Recursive Git trees include directories. Any generated root with
-    // authored contents is ineligible for the generated exemption.
-    outputs
-        .iter()
-        .map(Path::new)
-        .filter(|path| {
-            path.strip_prefix(repository)
-                .ok()
-                .and_then(Path::to_str)
-                .is_some_and(|relative| !relative.is_empty() && !tree.contains_key(relative))
-        })
-        .map(Path::to_path_buf)
-        .collect()
-}
-
 fn directories(tree: &BTreeMap<String, TreeEntry>) -> BTreeMap<PathBuf, BTreeSet<String>> {
     let mut result = BTreeMap::<PathBuf, BTreeSet<String>>::new();
     for (path, entry) in tree {
@@ -371,4 +356,55 @@ fn add_directory_member(members: &mut BTreeMap<PathBuf, BTreeSet<String>>, path:
         .to_string_lossy()
         .into_owned();
     members.entry(parent.into()).or_default().insert(name);
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use codecallnavigator_core::artifact::provenance;
+    use codecallnavigator_engine::analyzers::evidence::AnalyzerDescriptor;
+
+    #[test]
+    fn scheduling_watches_cannot_certify_a_selected_target() {
+        let target = BuildTarget {
+            path: "/repo".into(),
+            label: "Selected target".into(),
+            language: "fixture".into(),
+            kind: "fixture".into(),
+        };
+        let watch = EvidenceInput::new(
+            FileFingerprint {
+                path: "/repo".into(),
+                kind: InputKind::Directory,
+                ..FileFingerprint::default()
+            },
+            EvidenceRole::Watch,
+        );
+        let evidence = [TargetEvidence {
+            target: target.clone(),
+            analyzer: AnalyzerDescriptor {
+                backend: "fixture",
+                version: "1".into(),
+                mode: "fixture",
+            },
+            inputs: vec![watch],
+            attribution_limit: None,
+        }];
+        let roots = vec![("repo".into(), std::env::current_dir().unwrap())];
+        let analysis = provenance::build(&[], &[], "{}", &roots).unwrap();
+        let observations = Observations {
+            analysis: &analysis,
+            roots: &roots,
+            targets: std::slice::from_ref(&target),
+            project_inputs: &[],
+            evidence: &evidence,
+        };
+
+        assert_eq!(observations.inputs().count(), 0);
+        let error = observations.require_attribution().unwrap_err();
+        assert_eq!(
+            error.to_string(),
+            "Selected target: adapter reported no consumed inputs"
+        );
+    }
 }

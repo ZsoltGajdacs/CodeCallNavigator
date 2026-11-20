@@ -61,16 +61,23 @@ function outputRoots(projects) {
 }
 function metadata(context, inputs) {
   const {ts,projects,owners,programs} = context;
-  const versions = {typescript:ts.version,node:process.versions.node,adapter:'7',input_policy:'scoped_v1',react_rules:'1',next_rules:'1',boundary_rules:'1'};
+  const versions = {typescript:ts.version,node:process.versions.node,adapter:'7',input_policy:'scoped_v1',react_rules:'1',next_rules:'1',boundary_rules:'1',build_evidence:'1'};
+  const packages=new Set(context.toolchainInputs), manifestProbes=new Set();
   for (const {config} of projects.values()) {
-    projectInputs(config,inputs);
+    for(const file of projectInputs(config,inputs)) manifestProbes.add(file);
     for(const file of configurationFiles(config)) inputs.add(file);
-    for (const name of ['typescript','react','next']) packageVersion(config,name,inputs,{versions,observations:context.observations});
+    for (const name of ['typescript','react','next']) {
+      const manifest=packageVersion(config,name,inputs,{versions,observations:context.observations});
+      if(manifest) packages.add(manifest);
+    }
   }
   for (const {program} of programs) {
     for (const source of program.getSourceFiles()) inputs.add(canonical(source.fileName));
   }
+  const inventory=dependencyInputs(inputs,[...projects.keys()].map(config=>path.dirname(config)),context.observations);
+  const dependencies=inventory.inputs.filter(file=>packages.has(file));
   return {configs:[...projects.keys()].sort(),sources:[...owners.keys()].sort(),owners:Object.fromEntries(owners),
-    inputs:dependencyInputs(inputs,[...projects.keys()].map(config=>path.dirname(config)),context.observations),watch_roots:context.observations.observe('watch-roots',()=>watchRoots(projects,owners)),output_roots:outputRoots(projects),versions};
+    inputs:inventory.inputs,dependency_inputs:[...new Set([...inventory.dependencies,...dependencies])].sort(),
+    manifest_probes:[...manifestProbes].sort(),watch_roots:watchRoots(projects,owners),output_roots:outputRoots(projects),versions};
 }
 module.exports = {metadata};

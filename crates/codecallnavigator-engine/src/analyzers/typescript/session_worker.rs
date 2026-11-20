@@ -22,6 +22,7 @@ const VERSION: u32 = 1;
 pub(super) enum Operation {
     Update,
     Analyze,
+    Verify,
 }
 
 #[derive(Serialize)]
@@ -85,9 +86,12 @@ impl Reply {
             .context("TypeScript worker omitted preparation metadata")
     }
 
-    pub fn into_graph(self) -> Result<Output> {
-        self.graph
-            .context("TypeScript worker omitted analysis output")
+    pub fn into_analysis(mut self) -> Result<(Metadata, Output)> {
+        let graph = self
+            .graph
+            .take()
+            .context("TypeScript worker omitted analysis output")?;
+        Ok((self.into_metadata()?, graph))
     }
 }
 

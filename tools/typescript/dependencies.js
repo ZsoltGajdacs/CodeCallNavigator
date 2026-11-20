@@ -5,13 +5,19 @@ const {createRequire}=require('node:module');
 const {canonical}=require('./paths.js');
 const MANIFESTS = ['package.json','package-lock.json','npm-shrinkwrap.json','pnpm-lock.yaml','yarn.lock','.pnp.cjs'];
 function projectInputs(config, inputs) {
+  const probes=[];
   let directory = path.dirname(config);
   while (true) {
-    for (const name of MANIFESTS) inputs.add(path.join(directory,name));
+    for (const name of MANIFESTS) {
+      const file=path.join(directory,name);
+      inputs.add(file);
+      probes.push(file);
+    }
     const parent = path.dirname(directory);
     if (parent === directory) break;
     directory = parent;
   }
+  return probes;
 }
 function resolveManifest(config,name) {
   const resolver=createRequire(path.join(path.dirname(config),'__codecallnavigator__.js'));
@@ -27,5 +33,6 @@ function packageVersion(config, name, inputs, {versions,observations}) {
   inputs.add(manifest);
   const contents=observations.observe(`manifest:${manifest}`,()=>fs.readFileSync(manifest,'utf8'));
   versions[`${name}:${config}`]=JSON.parse(contents).version;
+  return manifest;
 }
 module.exports={projectInputs,packageVersion};

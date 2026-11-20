@@ -118,7 +118,13 @@ fn repeated_preprocessing_rejects_new_external_conditional_imports() {
         snapshot
             .fingerprints
             .iter()
-            .any(|input| Path::new(&input.path) == parent)
+            .any(|input| Path::new(&input.path) == project)
+    );
+    assert!(
+        snapshot
+            .fingerprints
+            .iter()
+            .all(|input| Path::new(&input.path) != parent)
     );
     fs::write(
         &imported,

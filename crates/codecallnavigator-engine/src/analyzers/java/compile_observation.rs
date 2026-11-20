@@ -4,7 +4,7 @@ use crate::{fingerprint, model::FileFingerprint};
 use anyhow::{Context, Result, bail, ensure};
 use serde::Deserialize;
 use std::{
-    collections::BTreeSet,
+    collections::{BTreeMap, BTreeSet},
     fs,
     io::ErrorKind,
     path::{Path, PathBuf},
@@ -234,11 +234,14 @@ impl Operation {
         Ok(())
     }
 
-    fn verify(&self) -> Result<()> {
+    fn verify<'a>(
+        &'a self,
+        verified: &mut BTreeMap<&'a PathBuf, &'a snapshot::Input>,
+    ) -> Result<()> {
         self.require_supported()?;
         self.before.require_same_consumed(&self.consumed_after)?;
         self.after
-            .verify(&self.outputs.classes)
+            .verify(&self.outputs.classes, verified)
             .with_context(|| format!("Java compiler input consistency for {}", self.operation))
     }
 
@@ -291,11 +294,29 @@ impl Observations {
     }
 
     pub fn verify(&self, metadata: &JavaBuildMetadata) -> Result<()> {
+        let mut verified = BTreeMap::new();
         for operation in &self.operations {
-            operation.verify()?;
+            operation.verify(&mut verified)?;
         }
         for source in &metadata.source_sets {
             self.require_coverage(source)?;
+        }
+        Ok(())
+    }
+
+    pub fn verify_membership(&self) -> Result<()> {
+        for operation in &self.operations {
+            let result = if operation.outcome == Outcome::NoSource {
+                // No javac operation consumed this source set's classpath.
+                operation.after.verify_source_membership()
+            } else {
+                operation
+                    .after
+                    .verify_membership(&operation.outputs.classes)
+            };
+            result.with_context(|| {
+                format!("Java compiler input membership for {}", operation.operation)
+            })?;
         }
         Ok(())
     }

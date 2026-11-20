@@ -100,7 +100,8 @@ function dependencyProbeInventories(t) {
   });
   assert.deepEqual(inventories[0],inventories[1]);
   assert.deepEqual(inventories[0],inventories[2]);
-  assert.deepEqual(inventories[0],[spellings[0],spellings[1]].sort());
+  const expected=[spellings[0],spellings[1]].sort();
+  assert.deepEqual(inventories[0],{inputs:expected,dependencies:expected});
   const {inputs,system,observations}=tracked();
   // Even physical-only probes must observe the completed local alias mapping.
   system.fileExists(spellings[0]);

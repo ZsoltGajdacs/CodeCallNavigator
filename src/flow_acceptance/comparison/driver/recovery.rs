@@ -64,13 +64,17 @@ impl Driver {
                 if runtime.state.flow_comparison.pending() {
                     return Ok(());
                 }
-                ensure!(
-                    matches!(
-                        runtime.state.flow_comparison.phase,
-                        crate::flow_comparison::Phase::ReloadRequired(_)
-                    ),
-                    "Moved ref did not require explicit Reload"
-                );
+                // A Drawn observation can precede publication of a completed
+                // query. Only inspect the recovered controls once Reload is drawn.
+                use crate::flow_comparison::Phase as ComparisonPhase;
+                match &runtime.state.flow_comparison.phase {
+                    ComparisonPhase::ReloadRequired(_) => {}
+                    ComparisonPhase::Failed(message) => {
+                        anyhow::bail!("Moved ref query failed: {message}");
+                    }
+                    ComparisonPhase::Closed => anyhow::bail!("Comparison closed after moving ref"),
+                    ComparisonPhase::Loading | ComparisonPhase::Bound => return Ok(()),
+                }
                 ensure!(
                     runtime.state.flow_comparison.current.is_none()
                         && runtime.state.flow_comparison.catalog.is_none()

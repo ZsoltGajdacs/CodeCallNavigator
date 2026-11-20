@@ -17,6 +17,7 @@ mod compiled;
 mod compose;
 mod contexts;
 mod engine;
+mod evidence;
 #[cfg(test)]
 mod execution_tests;
 mod flow_inventory;
@@ -63,7 +64,6 @@ fn analyze_compiled(
 ) -> Result<GraphData> {
     let contexts = contexts::plan(&metadata.source_sets)?;
     let bytecode_before = contexts::snapshot(&contexts)?;
-    let before_engine = build::snapshot(build, metadata, true)?;
     let mut graph = compiled_graph(build, metadata);
     graph.refresh_outputs = Some(refresh_outputs::ownership(metadata)?);
     let mut composer = compose::Composer::default();
@@ -95,11 +95,9 @@ fn analyze_compiled(
         // one context; retain a failing context's files for diagnosis.
         let _ = fs::remove_dir_all(&root);
     }
-    ensure_unchanged(&before_engine)?;
     ensure_unchanged(&bytecode_before)?;
     compose::finish(&mut graph)?;
-    graph.fingerprints = before_engine;
-    graph.fingerprints.extend(bytecode_before);
+    graph.fingerprints = bytecode_before;
     let visibility = contexts
         .iter()
         .map(|planned| {

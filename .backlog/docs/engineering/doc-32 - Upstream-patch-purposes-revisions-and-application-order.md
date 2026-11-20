@@ -3,7 +3,7 @@ id: doc-32
 title: Upstream patch purposes revisions and application order
 type: guide
 created_date: '2026-11-16T07:08:00Z'
-updated_date: '2026-11-16T07:47:00Z'
+updated_date: '2026-11-20T11:07:00Z'
 ---
 # CallAtlas assembly-qualified identity patch
 
@@ -73,6 +73,15 @@ build outputs do not affect this check.
 Apply the current combined patch once to the pristine pinned revision; do not
 stack it on a prior checkpoint. Bootstrap recognizes every checksum-verified
 `*_patch` checkpoint recorded in the lock and migrates only an exact byte match.
+
+The combined compiler-evidence patch exports the exact syntax trees and assembly
+references consumed by Roslyn. It compares decoded on-disk source with the
+compiler text and resolved PE metadata with the file whose SHA-256 is recorded.
+It follows project compilation references and reports inputs lacking file-based
+proof. The C# adapter binds those observations to local content fingerprints.
+The prior combined patch is preserved in
+`callatlas-assembly-identity-pre-compiler-evidence.patch` with its lockfile checksum.
+Apply the current combined patch once after checking out the pinned revision.
 
 Regression fixture: `fixtures/dotnet-collisions/Collisions.sln` contains four
 independent applications with duplicate entry/type/member names and two top-level

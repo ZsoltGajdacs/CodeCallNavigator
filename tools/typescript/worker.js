@@ -1,6 +1,7 @@
 'use strict';
 const fs=require('node:fs');
 const path=require('node:path');
+const {isDeepStrictEqual}=require('node:util');
 const {prepare}=require('./config.js');
 const {diagnostics,toolchain,RestartRequired}=require('./compiler.js');
 const {Observations}=require('./observations.js');
@@ -11,11 +12,27 @@ function writeOutput(output,result) {
   fs.writeFileSync(temporary,JSON.stringify(result));
   fs.renameSync(temporary,output);
 }
+function exactMembership(metadata) {
+  const {watch_roots,output_roots,...membership}=metadata;
+  return membership;
+}
+function verifyCompilerInputs(context) {
+  context.observations.verify(key=>{
+    // The compiler also enumerates directories to set up wildcard watches.
+    // Re-evaluate its selected inputs when such a listing changes.
+    const current=prepare(context.config,context);
+    current.observations.verify();
+    if (!isDeepStrictEqual(exactMembership(current.metadata),exactMembership(context.metadata))) {
+      throw new Error(`TypeScript input changed after preparation: ${key}`);
+    }
+    context.metadata.watch_roots=current.metadata.watch_roots;
+  });
+}
 function analyzed(context) {
-  context.observations.verify();
+  verifyCompilerInputs(context);
   diagnostics(context);
   const result=extract(context);
-  context.observations.verify();
+  verifyCompilerInputs(context);
   return result;
 }
 function probePath(key) {
@@ -65,7 +82,7 @@ class Session {
     // valid epoch and can be repaired by a subsequent update in this process.
     this.context=prepare(this.config,this.context);
     const affected=diagnostics(this.context);
-    this.context.observations.verify();
+    verifyCompilerInputs(this.context);
     return {status:'success',metadata:this.context.metadata,affected};
   }
   analyze() {
@@ -76,11 +93,17 @@ class Session {
     const graph=analyzed(this.context);
     return {status:'success',metadata:this.context.metadata,graph,affected:this.context.affected};
   }
+  verify() {
+    if (!this.context) throw new Error('TypeScript worker requires a successful preparation epoch');
+    toolchain(this.config,new Observations(),this.context.toolchain);
+    verifyCompilerInputs(this.context);
+    return {status:'success',metadata:this.context.metadata};
+  }
   request(bytes) {
     const request=JSON.parse(bytes.toString('utf8'));
     if (request.version!==VERSION) throw new Error('Invalid TypeScript worker request version');
     validateSequence(request,this.sequence);
-    if (!['update','analyze'].includes(request.command)) throw new Error('Invalid TypeScript worker request command');
+    if (!['update','analyze','verify'].includes(request.command)) throw new Error('Invalid TypeScript worker request command');
     this.sequence=request.sequence;
     this.respond(()=>this[request.command]());
   }

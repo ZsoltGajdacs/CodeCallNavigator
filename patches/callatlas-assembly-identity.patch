@@ -605,10 +605,10 @@ index 0000000..ffbc6d7
 +    private static bool SafeLiteral(string segment) => Literal.IsMatch(segment) && segment is not "." and not "..";
 +}
 diff --git a/src/CallAtlas.Core/CallAtlas.Core.csproj b/src/CallAtlas.Core/CallAtlas.Core.csproj
-index 3a44265..4e30796 100644
+index 3a44265..107b72f 100644
 --- a/src/CallAtlas.Core/CallAtlas.Core.csproj
 +++ b/src/CallAtlas.Core/CallAtlas.Core.csproj
-@@ -1,7 +1,7 @@
+@@ -1,10 +1,11 @@
  <Project Sdk="Microsoft.NET.Sdk">
  
    <PropertyGroup>
@@ -617,6 +617,10 @@ index 3a44265..4e30796 100644
      <ImplicitUsings>enable</ImplicitUsings>
      <Nullable>enable</Nullable>
      <LangVersion>latest</LangVersion>
++    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+   </PropertyGroup>
+ 
+   <ItemGroup>
 diff --git a/src/CallAtlas.Core/CallGraphBindings.cs b/src/CallAtlas.Core/CallGraphBindings.cs
 new file mode 100644
 index 0000000..a2b430d
@@ -753,7 +757,7 @@ index 0000000..a2b430d
 +
 +}
 diff --git a/src/CallAtlas.Core/CallGraphBuilder.cs b/src/CallAtlas.Core/CallGraphBuilder.cs
-index bf14b1d..647d0fe 100644
+index bf14b1d..cece2de 100644
 --- a/src/CallAtlas.Core/CallGraphBuilder.cs
 +++ b/src/CallAtlas.Core/CallGraphBuilder.cs
 @@ -664,7 +664,7 @@ public sealed partial class CallGraphBuilder
@@ -843,7 +847,7 @@ index bf14b1d..647d0fe 100644
              foreach (var (key, count) in shard.Edges)
                  edges[key] = edges.TryGetValue(key, out var e) ? e + count : count;
              foreach (var (key, count) in shard.External)
-@@ -942,9 +945,25 @@ public sealed partial class CallGraphBuilder
+@@ -942,9 +945,26 @@ public sealed partial class CallGraphBuilder
              Ms(PhaseTicks.CollectDiag), Ms(PhaseTicks.BodyScan),
              Ms(PhaseTicks.BodySpan), Ms(PhaseTicks.BodyGetDiag), Ms(PhaseTicks.BodyScanLoop)));
  
@@ -856,6 +860,7 @@ index bf14b1d..647d0fe 100644
              Schema = CodeMap.SchemaVersion,
 +            FlowFactsVersion = FlowInventory.CapabilityVersion,
 +            SourceFactsVersion = SourceFactsJson.Version,
++            CompilerEvidence = CompilationEvidence.CaptureWhenRequested(compilations),
 +            FlowInventory = FlowExport.Build(pending.SelectMany(item => item.Sites.Select(site =>
 +                new FlowInput(site.FromId, item.Tree, item.Model, site.Bodies, site.Declaration))), nodes, flowBindings, root),
 +            FrameworkFactsVersion = MediatRFacts.Version,
@@ -869,7 +874,7 @@ index bf14b1d..647d0fe 100644
              Root = root.Replace('\\', '/'),
              Nodes = [.. nodes.Values.OrderBy(n => n.Id, StringComparer.Ordinal)],
              Edges = [.. edges.Select(kv => new Edge
-@@ -999,7 +1018,15 @@ public sealed partial class CallGraphBuilder
+@@ -999,7 +1019,15 @@ public sealed partial class CallGraphBuilder
                  $"[callatlas] {"symbol cache",-22} hits {h,8}  misses {m,8}  ({rate,5:F1}% hit)");
          }
  
@@ -886,7 +891,7 @@ index bf14b1d..647d0fe 100644
      }
  
      /// <summary>
-@@ -1218,12 +1245,12 @@ public sealed partial class CallGraphBuilder
+@@ -1218,12 +1246,12 @@ public sealed partial class CallGraphBuilder
  
      /// <summary>一个"待绑定函数体"：归属节点 id + 需要扫描的语法体。
      /// 阶段一收集、阶段二消费，从而把每棵语法树从"走两遍"降到"走一遍"。</summary>
@@ -903,7 +908,7 @@ index bf14b1d..647d0fe 100644
      }
  
      private static SyntaxNode[] Bodies(BlockSyntax? block, ArrowExpressionClauseSyntax? arrow) =>
-@@ -1251,6 +1278,7 @@ public sealed partial class CallGraphBuilder
+@@ -1251,6 +1279,7 @@ public sealed partial class CallGraphBuilder
              Id = id,
              Kind = kind,
              Container = DisplayOf(symbol.ContainingType),
@@ -911,7 +916,7 @@ index bf14b1d..647d0fe 100644
              Name = symbol.Name,
              Location = string.IsNullOrEmpty(path) ? "(no location)" : $"{Rel(root, path)}:{line}",
          };
-@@ -1279,6 +1307,7 @@ public sealed partial class CallGraphBuilder
+@@ -1279,6 +1308,7 @@ public sealed partial class CallGraphBuilder
          {
              Id = id,
              Kind = "accessor",
@@ -919,7 +924,7 @@ index bf14b1d..647d0fe 100644
              Container = DisplayOf(accessor.ContainingType),
              // 显示成属性名（get_Value 的 Name 是 "get_Value"，用属性名 "Value" 更好读）
              Name = accessor.AssociatedSymbol?.Name ?? accessor.Name,
-@@ -1331,6 +1360,7 @@ public sealed partial class CallGraphBuilder
+@@ -1331,6 +1361,7 @@ public sealed partial class CallGraphBuilder
              Id = id,
              Kind = kind,
              Container = DisplayOf(target.OriginalDefinition.ContainingType),
@@ -927,7 +932,7 @@ index bf14b1d..647d0fe 100644
              Name = target.OriginalDefinition.Name,
              Location = "(implicit)",
          };
-@@ -1430,115 +1460,6 @@ public sealed partial class CallGraphBuilder
+@@ -1430,115 +1461,6 @@ public sealed partial class CallGraphBuilder
          return cur.OriginalDefinition;
      }
  
@@ -1043,7 +1048,7 @@ index bf14b1d..647d0fe 100644
      private static void RecordCreation(
          SemanticModel model,
          IReadOnlySet<IAssemblySymbol> ourAssemblies,
-@@ -1552,10 +1473,12 @@ public sealed partial class CallGraphBuilder
+@@ -1552,10 +1474,12 @@ public sealed partial class CallGraphBuilder
          if (IsExternal(ourAssemblies, ctor))
          {
              NoteExternal(shard.External, $"new {DisplayOf(ctor.OriginalDefinition.ContainingType)}");
@@ -1056,7 +1061,7 @@ index bf14b1d..647d0fe 100644
          // 编译器生成的默认构造：被证明的事实，登记为 (implicit) 位置——不是幽灵 external
          EnsureNode(shard.Implicit, ctor, "constructor");
      }
-@@ -1755,7 +1678,7 @@ public sealed partial class CallGraphBuilder
+@@ -1755,7 +1679,7 @@ public sealed partial class CallGraphBuilder
      /// 但"谁读了这个字段"是架构事实，值得有个落点。</summary>
      private static string FieldNodeId(Dictionary<string, Node> sink, IFieldSymbol field)
      {
@@ -1065,7 +1070,7 @@ index bf14b1d..647d0fe 100644
          sink.TryAdd(id, new Node
          {
              Id = id,
-@@ -1798,11 +1721,13 @@ public sealed partial class CallGraphBuilder
+@@ -1798,11 +1722,13 @@ public sealed partial class CallGraphBuilder
                  if (reads && prop.GetMethod is { } g && !IsExternal(ourAssemblies, g))
                  {
                      AddOrCount(shard.Edges, fromId, IdOf(g), EdgeKind.Get, TierForAccessor(g));
@@ -1079,7 +1084,7 @@ index bf14b1d..647d0fe 100644
                      EnsureAccessorNode(shard.Implicit, s, root);
                  }
                  break;
-@@ -1812,6 +1737,7 @@ public sealed partial class CallGraphBuilder
+@@ -1812,6 +1738,7 @@ public sealed partial class CallGraphBuilder
                  if (accessor is not null && !IsExternal(ourAssemblies, accessor))
                  {
                      AddOrCount(shard.Edges, fromId, IdOf(accessor), EdgeKind.Event, TierForAccessor(accessor));
@@ -1087,7 +1092,7 @@ index bf14b1d..647d0fe 100644
                      EnsureAccessorNode(shard.Implicit, accessor, root);
                  }
                  break;
-@@ -1835,6 +1761,7 @@ public sealed partial class CallGraphBuilder
+@@ -1835,6 +1762,7 @@ public sealed partial class CallGraphBuilder
                  var tier = EdgeTierClassifier.ForCall(target, receiverType: null);
                  var targetId = IdOf(target);
                  AddOrCount(shard.Edges, fromId, targetId, EdgeKind.MethodGroup, tier);
@@ -1095,7 +1100,7 @@ index bf14b1d..647d0fe 100644
  
                  // 目标本身是接口/虚方法时，它和 dispatch 调用是同一个问题：
                  // 静态目标只有一个，真实实现会零入度。复用同一条解析路径。
-@@ -1925,7 +1852,7 @@ public sealed partial class CallGraphBuilder
+@@ -1925,7 +1853,7 @@ public sealed partial class CallGraphBuilder
      private static string TierForAccessor(IMethodSymbol accessor) =>
          EdgeTierClassifier.ForCall(accessor, receiverType: null);
  
@@ -1105,7 +1110,7 @@ index bf14b1d..647d0fe 100644
          var rel = Path.GetRelativePath(root, path);
          return rel.Replace('\\', '/');
 diff --git a/src/CallAtlas.Core/CodeMap.cs b/src/CallAtlas.Core/CodeMap.cs
-index a720920..720768f 100644
+index a720920..596020e 100644
 --- a/src/CallAtlas.Core/CodeMap.cs
 +++ b/src/CallAtlas.Core/CodeMap.cs
 @@ -1,4 +1,5 @@
@@ -1114,7 +1119,7 @@ index a720920..720768f 100644
  
  namespace CallAtlas.Core;
  
-@@ -10,6 +11,18 @@ public sealed record CodeMap
+@@ -10,6 +11,19 @@ public sealed record CodeMap
  
      public required string Schema { get; init; }
      public required string Root { get; init; }
@@ -1122,6 +1127,7 @@ index a720920..720768f 100644
 +    public IReadOnlyList<string> ApplicationStarts { get; init; } = [];
 +    public IReadOnlyList<ArchitectureFileFacts> ArchitectureFiles { get; init; } = [];
 +    public string SourceFactsVersion { get; init; } = "";
++    public CompilationEvidence? CompilerEvidence { get; init; }
 +    public string FrameworkFactsVersion { get; init; } = "";
 +    public IReadOnlyList<MediatRDispatchFact> FrameworkEdges { get; init; } = [];
 +    public IReadOnlyList<string> FrameworkEntries { get; init; } = [];
@@ -1133,7 +1139,7 @@ index a720920..720768f 100644
      public required IReadOnlyList<Node> Nodes { get; init; }
      public required IReadOnlyList<Edge> Edges { get; init; }
      public required IReadOnlyList<ExternalCall> External { get; init; }
-@@ -45,6 +58,68 @@ public sealed record Node
+@@ -45,6 +59,68 @@ public sealed record Node
      public required string Container { get; init; }
      public required string Name { get; init; }
      public required string Location { get; init; }
@@ -1202,7 +1208,7 @@ index a720920..720768f 100644
  }
  
  /// <summary>边的种类常量。</summary>
-@@ -306,27 +381,38 @@ public static class SymbolId
+@@ -306,27 +382,38 @@ public static class SymbolId
      public static string Canonical(IMethodSymbol method)
      {
          var s = (method.ReducedFrom ?? method).OriginalDefinition;
@@ -1248,7 +1254,7 @@ index a720920..720768f 100644
  
      /// <summary>
      /// 委托调用的落点 id：<c>Action#delegate</c>（用委托类型本身命名）。
-@@ -337,7 +423,7 @@ public static class SymbolId
+@@ -337,7 +424,7 @@ public static class SymbolId
      /// 后缀 <c>#delegate</c> 与字段初始化器的 <c>#init</c> 同族，一眼可辨其为伪节点。
      /// </summary>
      public static string ForDelegate(ITypeSymbol delegateType) =>
@@ -1257,7 +1263,7 @@ index a720920..720768f 100644
  
      private static string Params(IMethodSymbol method) =>
          string.Join(",", method.Parameters.Select(p => p.Type.ToDisplayString(QualifiedFormat)));
-@@ -385,3 +471,62 @@ internal static class EdgeTierClassifier
+@@ -385,3 +472,62 @@ internal static class EdgeTierClassifier
          return EdgeTier.Direct;
      }
  }
@@ -1321,7 +1327,7 @@ index a720920..720768f 100644
 +        .Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToArray();
 +}
 diff --git a/src/CallAtlas.Core/CodeMapJson.cs b/src/CallAtlas.Core/CodeMapJson.cs
-index 9555cb4..439ccb8 100644
+index 9555cb4..9ecc057 100644
 --- a/src/CallAtlas.Core/CodeMapJson.cs
 +++ b/src/CallAtlas.Core/CodeMapJson.cs
 @@ -5,6 +5,66 @@ namespace CallAtlas.Core;
@@ -1391,7 +1397,7 @@ index 9555cb4..439ccb8 100644
      /// <summary>写出供人读 / diff 的 JSON：缩进、字段顺序固定、排序已在模型侧完成、无时间戳。</summary>
      public static string Write(CodeMap map) => Write(map, indented: true);
  
-@@ -24,18 +84,8 @@ public static class CodeMapJson
+@@ -24,18 +84,9 @@ public static class CodeMapJson
              writer.WriteString("schema", map.Schema);
              writer.WriteString("root", map.Root);
  
@@ -1408,11 +1414,12 @@ index 9555cb4..439ccb8 100644
 -            }
 -            writer.WriteEndArray();
 +            SourceFactsJson.Write(writer, map);
++            CompilationEvidence.Write(writer, map.CompilerEvidence);
 +            WriteDeclarations(writer, map);
  
              writer.WriteStartArray("edges");
              foreach (var e in map.Edges)
-@@ -162,6 +212,10 @@ public static class CodeMapJson
+@@ -162,6 +213,10 @@ public static class CodeMapJson
                      $"unsupported schema \"{schema}\" — known: {string.Join(", ", KnownSchemas)}. "
                      + "Regenerate the snapshot, or add a migration if this is an older callatlas.");
  
@@ -1423,7 +1430,7 @@ index 9555cb4..439ccb8 100644
              string Str(JsonElement e, string name) =>
                  e.TryGetProperty(name, out var v) ? v.GetString() ?? "" : "";
  
-@@ -175,6 +229,7 @@ public static class CodeMapJson
+@@ -175,6 +230,7 @@ public static class CodeMapJson
                          Container = Str(n, "container"),
                          Name = Str(n, "name"),
                          Location = Str(n, "location"),
@@ -1431,7 +1438,7 @@ index 9555cb4..439ccb8 100644
                      });
  
              var edges = new List<Edge>();
-@@ -236,6 +291,16 @@ public static class CodeMapJson
+@@ -236,6 +292,17 @@ public static class CodeMapJson
              {
                  Schema = CodeMap.SchemaVersion,
                  Root = Str(root, "root"),
@@ -1445,15 +1452,149 @@ index 9555cb4..439ccb8 100644
 +                FlowInventory = flow.Inventory,
 +                ArchitectureFiles = source.Files,
 +                SourceFactsVersion = source.Version,
++                CompilerEvidence = CompilationEvidence.Read(root),
                  Nodes = nodes,
                  Edges = edges,
                  // 读取路径**不裁剪字段**。这些曾经被硬编码成空值，因为最初的唯一消费者是
-@@ -282,4 +347,4 @@ public static class CodeMapJson
+@@ -282,4 +349,4 @@ public static class CodeMapJson
      {
          "callatlas.ir.v3",
      };
 -}
 \ No newline at end of file
++}
+diff --git a/src/CallAtlas.Core/CompilationEvidence.cs b/src/CallAtlas.Core/CompilationEvidence.cs
+new file mode 100644
+index 0000000..745fceb
+--- /dev/null
++++ b/src/CallAtlas.Core/CompilationEvidence.cs
+@@ -0,0 +1,127 @@
++using System.Reflection.PortableExecutable;
++using System.Security.Cryptography;
++using System.Text.Json;
++using Microsoft.CodeAnalysis;
++using Microsoft.CodeAnalysis.Text;
++
++namespace CallAtlas.Core;
++
++public sealed record CompilerInputFact(string Kind, string Path, string? Sha256, bool ContentChanged = false);
++
++public sealed record CompilationEvidence(string Version, IReadOnlyList<CompilerInputFact> Inputs)
++{
++    private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
++
++    internal static CompilationEvidence? CaptureWhenRequested(IReadOnlyList<Compilation> compilations) =>
++        Environment.GetEnvironmentVariable("CODECALLNAVIGATOR_CALLATLAS_COMPILER_EVIDENCE") == "1"
++            ? Capture(compilations)
++            : null;
++
++    private static CompilationEvidence Capture(IReadOnlyList<Compilation> compilations)
++    {
++        var seen = new HashSet<Compilation>();
++        var facts = new HashSet<CompilerInputFact>();
++        var referenceFiles = new Dictionary<string, ReferenceFile>(StringComparer.Ordinal);
++        var pending = new Stack<Compilation>(compilations);
++        while (pending.TryPop(out var compilation))
++        {
++            if (seen.Add(compilation)) CaptureCompilation(compilation, pending, facts, referenceFiles);
++        }
++        return new("1", facts.OrderBy(fact => fact.Path, StringComparer.Ordinal)
++            .ThenBy(fact => fact.Kind, StringComparer.Ordinal)
++            .ThenBy(fact => fact.Sha256, StringComparer.Ordinal)
++            .ThenBy(fact => fact.ContentChanged).ToArray());
++    }
++
++    private static void CaptureCompilation(Compilation compilation, Stack<Compilation> pending,
++        HashSet<CompilerInputFact> facts, Dictionary<string, ReferenceFile> referenceFiles)
++    {
++        foreach (var tree in compilation.SyntaxTrees) facts.Add(Source(tree, compilation.AssemblyName));
++        foreach (var reference in compilation.References)
++        {
++            if (reference is CompilationReference project) pending.Push(project.Compilation);
++            else facts.Add(Reference(reference, referenceFiles));
++        }
++    }
++
++    private static bool IsFilePath(string? path) =>
++        path is not null && Path.IsPathFullyQualified(path) && File.Exists(path);
++
++    private static CompilerInputFact Source(SyntaxTree tree, string? assembly)
++    {
++        var path = tree.FilePath;
++        if (!IsFilePath(path))
++            return new("source", path.Length == 0 ? $"in-memory source in {assembly}" : path, null);
++
++        var actual = tree.GetText();
++        var bytes = File.ReadAllBytes(path);
++        using var stream = new MemoryStream(bytes, writable: false);
++        var disk = SourceText.From(stream, actual.Encoding);
++        return actual.ContentEquals(disk)
++            ? new("source", path, Hex(SHA256.HashData(bytes)))
++            : new("source", path, null, ContentChanged: true);
++    }
++
++    private static CompilerInputFact Reference(MetadataReference reference, Dictionary<string, ReferenceFile> files)
++    {
++        if (reference is not PortableExecutableReference portable)
++            return new("reference", reference.Display ?? "in-memory assembly reference", null);
++        if (portable.FilePath is not { } path || !IsFilePath(path))
++            return new("reference", reference.Display ?? "in-memory assembly reference", null);
++
++        if (!files.TryGetValue(path, out var file))
++        {
++            file = ReferenceFile.Read(path);
++            files.Add(path, file);
++        }
++        return MatchesMetadata(portable, file.Metadata) switch
++        {
++            true => new("reference", path, file.Hash),
++            false => new("reference", path, null, ContentChanged: true),
++            _ => new("reference", path, null),
++        };
++    }
++
++    private static unsafe bool? MatchesMetadata(PortableExecutableReference reference, byte[] bytes)
++    {
++        // Compare the effective metadata loaded by Roslyn to the file whose bytes we hash.
++        // The span is consumed while the Roslyn module still owns its memory.
++        var metadata = reference.GetMetadata();
++        var module = metadata switch
++        {
++            AssemblyMetadata assembly when assembly.GetModules() is [var single] => single,
++            ModuleMetadata single => single,
++            _ => null,
++        };
++        if (module is null) return null;
++        var reader = module.GetMetadataReader();
++        var matches = new ReadOnlySpan<byte>(reader.MetadataPointer, reader.MetadataLength).SequenceEqual(bytes);
++        GC.KeepAlive(module);
++        return matches;
++    }
++
++    private static string Hex(byte[] hash) => Convert.ToHexStringLower(hash);
++
++    private sealed record ReferenceFile(string Hash, byte[] Metadata)
++    {
++        internal static ReferenceFile Read(string path)
++        {
++            using var stream = File.OpenRead(path);
++            using var file = new PEReader(stream, PEStreamOptions.PrefetchMetadata | PEStreamOptions.LeaveOpen);
++            stream.Position = 0;
++            return new(Hex(SHA256.HashData(stream)), file.GetMetadata().GetContent().ToArray());
++        }
++    }
++
++    internal static void Write(Utf8JsonWriter writer, CompilationEvidence? evidence)
++    {
++        if (evidence is null) return;
++        writer.WritePropertyName("compilerEvidence");
++        JsonSerializer.Serialize(writer, evidence, JsonOptions);
++    }
++
++    internal static CompilationEvidence? Read(JsonElement root) =>
++        root.TryGetProperty("compilerEvidence", out var evidence)
++            ? evidence.Deserialize<CompilationEvidence>(JsonOptions)
++            : null;
 +}
 diff --git a/src/CallAtlas.Core/FlowBinding.cs b/src/CallAtlas.Core/FlowBinding.cs
 new file mode 100644

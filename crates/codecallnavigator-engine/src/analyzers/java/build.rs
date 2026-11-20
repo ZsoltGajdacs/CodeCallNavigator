@@ -10,7 +10,7 @@ use anyhow::{Context, Result, bail, ensure};
 use serde::{Deserialize, Serialize};
 use std::{
     collections::{BTreeMap, BTreeSet},
-    path::PathBuf,
+    path::{Path, PathBuf},
 };
 
 #[derive(Clone, Deserialize, Serialize)]
@@ -200,45 +200,25 @@ fn validate_source_sets(sources: &[JavaSourceSet], modules: &BTreeSet<&PathBuf>)
     Ok(())
 }
 
-pub(super) fn snapshot(
+pub(super) fn scheduling_inputs(
     build: &BuildTarget,
     metadata: &JavaBuildMetadata,
-    generated: bool,
 ) -> Result<Vec<FileFingerprint>> {
-    let mut roots = vec![fingerprint::ScanRoot::Required(build.path.clone())];
-    roots.extend(
-        metadata
-            .modules
-            .iter()
-            .cloned()
-            .map(fingerprint::ScanRoot::Required),
-    );
-    for source in &metadata.source_sets {
-        roots.extend(
-            source
-                .source_roots
-                .iter()
-                .filter(|root| {
-                    generated
-                        || !source
-                            .generated_roots
-                            .iter()
-                            .any(|output| root.starts_with(output))
-                })
-                .cloned()
-                .map(fingerprint::ScanRoot::Required),
-        );
-        if generated {
-            roots.extend(
-                source
-                    .generated_roots
-                    .iter()
-                    .cloned()
-                    .map(fingerprint::ScanRoot::Required),
-            );
-        }
-    }
-    let mut paths = fingerprint::collect_inputs(&roots, &metadata.output_roots, true)?;
+    let source_roots = metadata
+        .source_sets
+        .iter()
+        .flat_map(|source| source.source_roots.iter().chain(&source.generated_roots));
+    let roots = std::iter::once(&build.path)
+        .chain(&metadata.modules)
+        .chain(source_roots)
+        .cloned()
+        .map(fingerprint::ScanRoot::Required)
+        .collect::<Vec<_>>();
+    let paths = fingerprint::collect_inputs(&roots, &metadata.output_roots, true)?;
+    fingerprint::capture_excluding(paths, &metadata.output_roots)
+}
+
+pub(super) fn declared_inputs(metadata: &JavaBuildMetadata) -> Result<Vec<FileFingerprint>> {
     // Build-declared inputs include resources and configuration of every type,
     // independently of broad source discovery exclusions.
     let inputs = metadata
@@ -253,17 +233,39 @@ pub(super) fn snapshot(
         .cloned()
         .map(fingerprint::ScanRoot::Required)
         .collect::<Vec<_>>();
-    paths.extend(fingerprint::collect_inputs(
-        &inputs,
-        &metadata.output_roots,
-        false,
-    )?);
+    let paths = fingerprint::collect_inputs(&inputs, &metadata.output_roots, false)?;
     fingerprint::capture_excluding(paths, &metadata.output_roots)
 }
 
 impl PreparedJava {
     pub(super) fn metadata(&self) -> &JavaBuildMetadata {
         &self.metadata
+    }
+
+    pub(super) fn producer_inputs(&self) -> Result<Vec<FileFingerprint>> {
+        let mut inputs = declared_inputs(&self.metadata)?;
+        // A prerequisite task can create or rewrite compiler sources before
+        // javac starts. The native journal owns their consumption baseline.
+        inputs.retain(|input| {
+            input.kind == fingerprint::InputKind::File
+                && !self.is_compiler_source(Path::new(&input.path))
+        });
+        Ok(inputs)
+    }
+
+    fn is_compiler_source(&self, path: &Path) -> bool {
+        if path.extension().is_none_or(|extension| extension != "java") {
+            return false;
+        }
+        let resolved = path.canonicalize().ok();
+        let path = resolved.as_deref().unwrap_or(path);
+        self.metadata.source_sets.iter().any(|source| {
+            source
+                .source_roots
+                .iter()
+                .chain(&source.generated_roots)
+                .any(|root| path.starts_with(root))
+        })
     }
 
     pub(super) fn verify_compiled(

@@ -57,6 +57,11 @@ function changed(result,file) {
 }
 test('worker retains compiler output and exits after extraction',async t=>{
   const worker=await fixture(t,'export function leaf(){} export function start(){leaf()}');
+  const incidental=path.join(worker.root,'src/generated-artifact');
+  fs.mkdirSync(incidental);
+  fs.writeFileSync(path.join(incidental,'bundle.css'),'.sample { display: block; }');
+  assert.equal(worker.metadata.versions.build_evidence,'1');
+  assert.ok(worker.metadata.dependency_inputs.some(file=>file.endsWith('typescript.js')));
   const result=await request(worker,'analyze');
   assert.equal(result.status,'success',result.error?.message);
   const graph=result.graph;
@@ -82,8 +87,10 @@ test('worker rejects source membership added after preparation',async t=>{
 });
 test('worker rejects newly appearing module-resolution candidates',async t=>{
   const worker=await fixture(t,'// @ts-ignore\nimport {leaf} from "./missing"; export function start(){leaf()}');
+  assert.equal((await request(worker,'verify')).status,'success');
   fs.writeFileSync(path.join(worker.root,'src/missing.ts'),'export function leaf(){}');
-  changed(await request(worker,'analyze'));
+  changed(await request(worker,'verify',2));
+  changed(await request(worker,'analyze',3));
 });
 test('worker rejects invalid requests without graph output',async t=>{
   const worker=await fixture(t);

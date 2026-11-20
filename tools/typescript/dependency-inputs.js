@@ -14,6 +14,20 @@ function projectDependencyPath(file, projects) {
   }
   return file;
 }
+function installedDependency(file) {
+  return file.split(path.sep).some(part=>part==='node_modules'||part==='.node_modules');
+}
+function mappedDependencyPaths(file, mappings, observations) {
+  const paths=new Set();
+  for(const {local,physical} of mappings) {
+    if(!within(file,physical)) continue;
+    paths.add(file);
+    const candidate=path.join(local,path.relative(physical,file));
+    const resolved=observations.observe(JSON.stringify(['dependency-alias',candidate]),()=>canonical(candidate));
+    if(resolved===file) paths.add(candidate);
+  }
+  return paths;
+}
 // Emit a stable set regardless of whether the compiler reached a dependency via
 // its physical installation or the project's node_modules link. Original probes
 // remain in Observations: normalization must not weaken in-run verification.
@@ -24,19 +38,20 @@ function dependencyInputs(inputs, projectDirectories, observations) {
     const physical=observations.observe(JSON.stringify(['dependency-root',local]),()=>canonical(local));
     return {local,physical};
   });
-  const result=new Set();
+  const result=new Set(), dependencies=new Set();
   for(const input of inputs) {
-    result.add(projectDependencyPath(input,projects));
+    const lexical=projectDependencyPath(input,projects);
+    result.add(lexical);
     const normalized=canonical(input);
-    for(const {local,physical} of mappings) {
-      if(within(normalized,physical)) {
-        result.add(normalized);
-        const candidate=path.join(local,path.relative(physical,normalized));
-        const resolved=observations.observe(JSON.stringify(['dependency-alias',candidate]),()=>canonical(candidate));
-        if(resolved===normalized) result.add(candidate);
-      }
+    if(installedDependency(lexical)) {
+      dependencies.add(lexical);
+      dependencies.add(normalized);
+    }
+    for(const dependency of mappedDependencyPaths(normalized,mappings,observations)) {
+      result.add(dependency);
+      dependencies.add(dependency);
     }
   }
-  return [...result].sort();
+  return {inputs:[...result].sort(),dependencies:[...dependencies].filter(file=>result.has(file)).sort()};
 }
 module.exports={dependencyInputs};

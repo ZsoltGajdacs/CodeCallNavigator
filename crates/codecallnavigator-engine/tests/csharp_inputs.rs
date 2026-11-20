@@ -47,6 +47,123 @@ fn project(root: &Path) {
     .unwrap();
 }
 
+fn checked(command: &mut Command) -> Vec<u8> {
+    let output = command.output().unwrap();
+    assert!(
+        output.status.success(),
+        "{command:?}: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    output.stdout
+}
+
+fn git(root: &Path, args: &[&str]) -> Vec<u8> {
+    checked(
+        Command::new("git")
+            .args([
+                "-c",
+                "user.email=fixture@example.invalid",
+                "-c",
+                "user.name=Fixture",
+            ])
+            .arg("-C")
+            .arg(root)
+            .args(args),
+    )
+}
+
+fn referenced_assembly(root: &Path) -> std::path::PathBuf {
+    project(root);
+    checked(
+        Command::new("dotnet")
+            .current_dir(root)
+            .env("DOTNET_CLI_USE_MSBUILD_SERVER", "0")
+            .env("MSBUILDDISABLENODEREUSE", "1")
+            .args(["build", "Fixture.csproj", "--nologo", "-o", "published"]),
+    );
+    root.join("published/Fixture.dll")
+}
+
+fn assert_retained_snapshot(root: &Path, cache: &Path) {
+    let commit = String::from_utf8(git(root, &["rev-parse", "HEAD"])).unwrap();
+    let retained: Value = serde_json::from_slice(&checked(
+        command(root, "prepare-snapshot", None)
+            .env("CODECALLNAVIGATOR_GRAPH_LIBRARY", cache)
+            .args(["--revision", "HEAD", "--target", "Fixture.csproj"]),
+    ))
+    .unwrap();
+    let status: Value = serde_json::from_slice(&checked(
+        command(root, "snapshot-status", None)
+            .env("CODECALLNAVIGATOR_GRAPH_LIBRARY", cache)
+            .args(["--revision", "HEAD"]),
+    ))
+    .unwrap();
+    assert_eq!(retained["identity"]["commit"], commit.trim());
+    assert_eq!(status["snapshots"], serde_json::json!([retained]));
+}
+
+#[test]
+#[ignore = "requires pinned CallAtlas and installed .NET 11 SDK"]
+fn snapshots_use_compiler_references_and_ignore_incidental_artifacts() {
+    let temporary = tempfile::tempdir().unwrap();
+    let base = temporary.path().canonicalize().unwrap();
+    let assembly = referenced_assembly(&base.join("library"));
+    let root = base.join("app");
+    project(&root);
+    fs::create_dir(root.join("custom-reference")).unwrap();
+    let library = root.join("custom-reference/Fixture.dll");
+    fs::copy(assembly, &library).unwrap();
+    let build = PROJECT.replace(
+        "</Project>",
+        r#"<PropertyGroup><AssemblyName>Consumer</AssemblyName></PropertyGroup>
+        <ItemGroup><Reference Include="Fixture"><HintPath>custom-reference/Fixture.dll</HintPath></Reference></ItemGroup>
+        <Target Name="IncidentalOutput" BeforeTargets="CoreCompile">
+          <MakeDir Directories="$(MSBuildProjectDirectory)/unrelated-output" />
+        </Target></Project>"#,
+    );
+    fs::write(root.join("Fixture.csproj"), build).unwrap();
+    fs::write(
+        root.join("App.cs"),
+        "public class Consumer { public static int Call() => App.Leaf(); }",
+    )
+    .unwrap();
+    fs::write(
+        root.join(".gitignore"),
+        "/obj/\n/bin/\n/unrelated-output/\n",
+    )
+    .unwrap();
+    git(&root, &["init", "--quiet"]);
+    git(&root, &["add", "."]);
+    git(
+        &root,
+        &["commit", "--quiet", "-m", "C# compiler evidence fixture"],
+    );
+
+    assert_retained_snapshot(&root, &base.join("snapshot-library"));
+    let artifact = analyze(&root);
+    assert!(
+        root.join("unrelated-output").is_dir(),
+        "The real build did not create the incidental output"
+    );
+    assert!(
+        input_paths(&artifact)
+            .iter()
+            .any(|path| path == "@repo/custom-reference/Fixture.dll"),
+        "The resolved Roslyn reference is missing from saved inputs"
+    );
+    fs::write(library, "reference contents changed").unwrap();
+    let verified = command(&root, "verify", None).output().unwrap();
+    let report: Value = serde_json::from_slice(&verified.stdout).unwrap();
+    assert_eq!(report["input_status"], "stale");
+    assert!(
+        report["reasons"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|reason| reason["path"] == "@repo/custom-reference/Fixture.dll")
+    );
+}
+
 fn input_paths(artifact: &Value) -> Vec<String> {
     artifact["graph"]["analysis"]["inputs"]
         .as_array()

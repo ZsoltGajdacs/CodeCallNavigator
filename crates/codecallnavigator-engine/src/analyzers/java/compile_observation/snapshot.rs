@@ -136,10 +136,9 @@ impl Snapshot {
             .filter(|scope| scope.selection == Selection::Java)
             .flat_map(|scope| {
                 std::iter::once(&scope.path).chain(&scope.members).chain(
-                    self.links.iter().filter_map(|link| {
-                        (scope.path.starts_with(&link.path) || link.path.starts_with(&scope.path))
-                            .then_some(&link.path)
-                    }),
+                    self.links
+                        .iter()
+                        .filter_map(|link| scope.source_link(link).then_some(&link.path)),
                 )
             })
     }
@@ -151,12 +150,29 @@ impl Snapshot {
             .chain(self.scopes.iter().map(|scope| &scope.path))
     }
 
-    pub fn verify(&self, own_classes: &[PathBuf]) -> Result<()> {
+    pub fn verify<'a>(
+        &'a self,
+        own_classes: &[PathBuf],
+        verified: &mut BTreeMap<&'a PathBuf, &'a Input>,
+    ) -> Result<()> {
+        for input in &self.inputs {
+            match verified.insert(&input.path, input) {
+                None => verify_input(input)?,
+                Some(previous) if previous == input => {}
+                Some(_) => {
+                    return Err(changed(
+                        &input.path,
+                        "compiler operations disagree on input",
+                    ));
+                }
+            }
+        }
+        self.verify_membership(own_classes)
+    }
+
+    pub fn verify_membership(&self, own_classes: &[PathBuf]) -> Result<()> {
         let outputs = ClassOutputs::new(own_classes)?;
         let mut current = self.current_links()?;
-        for input in &self.inputs {
-            verify_input(input)?;
-        }
         for scope in &self.scopes {
             current.extend(scope.verify(&outputs)?);
         }
@@ -166,6 +182,25 @@ impl Snapshot {
             .map(|link| (link.path.clone(), link.target.clone()))
             .collect();
         same_map(&expected, &current, "required link target changed")
+    }
+
+    pub fn verify_source_membership(&self) -> Result<()> {
+        let outputs = ClassOutputs::new(&[])?;
+        let mut current = BTreeMap::new();
+        for scope in self
+            .scopes
+            .iter()
+            .filter(|scope| scope.selection == Selection::Java)
+        {
+            current.extend(scope.verify(&outputs)?);
+        }
+        let expected = self
+            .links
+            .iter()
+            .filter(|link| self.scopes.iter().any(|scope| scope.source_link(link)))
+            .map(|link| (link.path.clone(), link.target.clone()))
+            .collect();
+        same_map(&expected, &current, "required source link target changed")
     }
 
     fn current_links(&self) -> Result<BTreeMap<PathBuf, PathBuf>> {
@@ -342,6 +377,11 @@ fn sha256(path: &Path) -> Result<String> {
 }
 
 impl Scope {
+    fn source_link(&self, link: &Link) -> bool {
+        self.selection == Selection::Java
+            && (self.path.starts_with(&link.path) || link.path.starts_with(&self.path))
+    }
+
     fn verify(&self, outputs: &ClassOutputs<'_>) -> Result<BTreeMap<PathBuf, PathBuf>> {
         let mut walk = ScopeWalk {
             selection: self.selection,

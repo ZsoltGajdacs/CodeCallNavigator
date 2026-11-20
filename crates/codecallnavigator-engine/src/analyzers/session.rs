@@ -1,7 +1,7 @@
 //! Fixed-selection, engine-owned preparation and raw extraction reuse.
 use super::{
     AnalysisJob, AnalyzerRuntime, CleanSnapshotCheckout, JobDirectory, ObservedAnalysis, compose,
-    csharp, engine_versions, ensure_unchanged, java, process::check_cancel, typescript,
+    csharp, engine_versions, evidence::TargetEvidence, java, process::check_cancel, typescript,
 };
 use crate::process_ownership::CleanupFailure;
 use crate::{discovery::BuildTarget, model::GraphData};
@@ -61,6 +61,10 @@ enum ValidationMode {
 }
 
 impl ValidationMode {
+    fn rechecks_compiler_context(self) -> bool {
+        matches!(self, Self::ReprepareChanged | Self::RequireCurrent)
+    }
+
     fn permits_reprepare(self, preparation: &Option<Preparation>) -> bool {
         match self {
             Self::ReprepareChanged => true,
@@ -79,12 +83,7 @@ impl Preparation {
         mode: ValidationMode,
     ) -> Result<bool> {
         match self {
-            Self::Csharp(prepared)
-                if matches!(
-                    mode,
-                    ValidationMode::ReprepareChanged | ValidationMode::RequireCurrent
-                ) =>
-            {
+            Self::Csharp(prepared) if mode.rechecks_compiler_context() => {
                 prepared.verify_context(build, context)?;
             }
             Self::Csharp(prepared) => prepared.verify()?,
@@ -92,9 +91,37 @@ impl Preparation {
                 return prepared.reconcile_outputs();
             }
             Self::Java(prepared) => prepared.verify()?,
+            Self::TypeScript(prepared) if mode.rechecks_compiler_context() => {
+                prepared.verify_context(build, context)?;
+            }
             Self::TypeScript(prepared) => prepared.verify()?,
         }
         Ok(false)
+    }
+    fn evidence(
+        &self,
+        target: &BuildTarget,
+        versions: &serde_json::Value,
+    ) -> Result<TargetEvidence> {
+        let (analyzer, inputs, attribution_limit) = match self {
+            Self::Java(prepared) => (
+                prepared.descriptor(versions)?,
+                prepared.evidence(),
+                prepared.output_attribution_limit(),
+            ),
+            Self::Csharp(prepared) => (
+                prepared.descriptor(versions)?,
+                prepared.evidence()?,
+                prepared.attribution_limit(),
+            ),
+            Self::TypeScript(prepared) => (prepared.descriptor()?, prepared.evidence()?, None),
+        };
+        Ok(TargetEvidence {
+            target: target.clone(),
+            analyzer,
+            inputs,
+            attribution_limit: attribution_limit.map(str::to_owned),
+        })
     }
 }
 
@@ -138,9 +165,6 @@ impl SelectedJob {
         };
         if preparation.verify(&self.build, context, mode)? {
             self.graph = None;
-        }
-        if let Some(graph) = &self.graph {
-            ensure_unchanged(&graph.fingerprints)?;
         }
         Ok(())
     }
@@ -366,6 +390,7 @@ impl PreparedAnalysis {
         check_cancel(cancel)?;
         let mut failure = None;
         for index in 0..self.jobs.len() {
+            self.retain_worker_for_validation(index, mode)?;
             let path = self.jobs[index].path.clone();
             let context = AnalysisJob {
                 runtime: &self.runtime,
@@ -395,6 +420,19 @@ impl PreparedAnalysis {
         }
         if let Some(error) = failure {
             return Err(error);
+        }
+        Ok(())
+    }
+
+    fn retain_worker_for_validation(&mut self, index: usize, mode: ValidationMode) -> Result<()> {
+        // Context validation can resume a released TypeScript worker.
+        if mode.rechecks_compiler_context()
+            && matches!(
+                self.jobs[index].preparation,
+                Some(Preparation::TypeScript(_))
+            )
+        {
+            self.release_other_typescript_workers(index)?;
         }
         Ok(())
     }
@@ -466,7 +504,12 @@ impl PreparedAnalysis {
             .map_err(|error| self.jobs[index].failure(error, AnalysisPhase::Preparation, cancel))?;
         let context = self.context(&self.jobs[index].path, cancel, progress);
         let preparation = match self.jobs[index].build.language.as_str() {
-            "csharp" => csharp::prepare(&self.jobs[index].build, &context).map(Preparation::Csharp),
+            "csharp" => csharp::prepare(
+                &self.jobs[index].build,
+                &context,
+                self.snapshot_checkout.as_ref(),
+            )
+            .map(Preparation::Csharp),
             "typescript" => {
                 typescript::prepare(&self.jobs[index].build, &context).map(Preparation::TypeScript)
             }
@@ -601,16 +644,18 @@ impl PreparedAnalysis {
         check_cancel(cancel)?;
         crate::metrics::count("symbols", graph.nodes.len() as u64);
         crate::metrics::count("relationships", graph.edges.len() as u64);
-        let output_attribution_limit = self.jobs.iter().find_map(|job| match &job.preparation {
-            Some(Preparation::Java(compiled)) => {
-                compiled.output_attribution_limit().map(str::to_owned)
-            }
-            Some(Preparation::TypeScript(_) | Preparation::Csharp(_)) | None => None,
-        });
-        Ok(ObservedAnalysis {
-            graph,
-            output_attribution_limit,
-        })
+        let versions = serde_json::from_str(&graph.engine_versions)?;
+        let evidence = self
+            .jobs
+            .iter()
+            .map(|job| {
+                job.preparation
+                    .as_ref()
+                    .context("Missing target preparation")?
+                    .evidence(&job.build, &versions)
+            })
+            .collect::<Result<Vec<_>>>()?;
+        Ok(ObservedAnalysis { graph, evidence })
     }
 
     fn extract_selected_jobs(
@@ -658,7 +703,6 @@ impl PreparedAnalysis {
             composition.append(graph)?;
         }
         let mut graph = composition.finish();
-        ensure_unchanged(&graph.fingerprints)?;
         let mut engines: serde_json::Value = serde_json::from_str(&engine_versions()?)?;
         if !versions.is_empty() {
             engines["projects"] = serde_json::Value::Object(versions);

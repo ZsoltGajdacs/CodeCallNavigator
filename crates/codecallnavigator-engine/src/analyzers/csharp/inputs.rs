@@ -29,6 +29,7 @@ pub(super) struct Snapshot {
     sequence: usize,
     inventory: Evaluation,
     pub paths: Vec<PathBuf>,
+    metadata: Vec<serde_json::Value>,
     fingerprints: Vec<FileFingerprint>,
 }
 
@@ -63,12 +64,12 @@ impl Evaluation {
 }
 
 impl Snapshot {
-    pub fn sequence(&self) -> usize {
-        self.sequence
+    pub fn compiler_items(&self) -> impl Iterator<Item = (&EvaluationContext, &serde_json::Value)> {
+        self.inventory.contexts.iter().zip(&self.metadata)
     }
 
-    pub fn contexts(&self) -> &[EvaluationContext] {
-        &self.inventory.contexts
+    pub fn fingerprints(&self) -> &[FileFingerprint] {
+        &self.fingerprints
     }
 
     pub fn verify(&self) -> Result<()> {
@@ -102,6 +103,9 @@ impl<'a> Preprocessor<'a> {
     pub fn capture(&self, project: &Path, sequence: usize) -> Result<Snapshot> {
         let inventory = self.inventory(project, &format!("{sequence}-discover"))?;
         let mut paths = inventory.input_paths();
+        // Evaluated imports are explicit inputs, including hidden and linked files.
+        let fingerprints = crate::fingerprint::capture(paths.iter().cloned())?;
+        let metadata = self.compiler_items(project, &inventory.contexts, &sequence.to_string())?;
         // Carry the already-observed project scope into final compiler inputs,
         // including projects with no Compile items yet.
         paths.push(
@@ -112,16 +116,6 @@ impl<'a> Preprocessor<'a> {
         );
         paths.sort();
         paths.dedup();
-        let roots = paths
-            .iter()
-            .cloned()
-            .map(crate::fingerprint::ScanRoot::Required)
-            .collect::<Vec<_>>();
-        // Evaluated imports are explicit inputs, including hidden and linked files.
-        let fingerprints = crate::fingerprint::capture_excluding(
-            crate::fingerprint::collect_inputs(&roots, &[], true)?,
-            &[],
-        )?;
         let repeated = self.inventory(project, &format!("{sequence}-verify"))?;
         inventory.require_same(&repeated, project)?;
         ensure_unchanged(&fingerprints)?;
@@ -130,6 +124,7 @@ impl<'a> Preprocessor<'a> {
             sequence,
             inventory,
             paths,
+            metadata,
             fingerprints,
         })
     }
@@ -141,6 +136,19 @@ impl<'a> Preprocessor<'a> {
         snapshot
             .inventory
             .require_same(&repeated, &snapshot.project)?;
+        let metadata = self.compiler_items(
+            &snapshot.project,
+            &repeated.contexts,
+            &format!("{}-recheck", snapshot.sequence),
+        )?;
+        if snapshot.metadata != metadata {
+            return Err(crate::fingerprint::InputsChanged::new(
+                "C# evaluated compiler inventory changed during analysis",
+                snapshot.project.to_string_lossy().into_owned(),
+                "evaluated compiler item membership changed",
+            )
+            .into());
+        }
         snapshot.verify()
     }
 
@@ -158,7 +166,22 @@ impl<'a> Preprocessor<'a> {
         command
     }
 
-    pub fn metadata(
+    fn compiler_items(
+        &self,
+        project: &Path,
+        contexts: &[EvaluationContext],
+        phase: &str,
+    ) -> Result<Vec<serde_json::Value>> {
+        contexts
+            .iter()
+            .enumerate()
+            .map(|(index, context)| {
+                self.metadata(project, context, &format!("msbuild-{phase}-{index}"))
+            })
+            .collect()
+    }
+
+    fn metadata(
         &self,
         project: &Path,
         context: &EvaluationContext,
@@ -167,9 +190,15 @@ impl<'a> Preprocessor<'a> {
         let mut command = self.command(project, context);
         command.args([
             "-getItem:Compile,ProjectReference,AdditionalFiles",
-            "-getProperty:MSBuildProjectFullPath,IsTestProject,AssemblyName",
+            concat!(
+                "-getProperty:MSBuildProjectFullPath,IsTestProject,AssemblyName,",
+                "MSBuildProjectExtensionsPath,ProjectAssetsFile,GeneratedAssemblyInfoFile,",
+                "GeneratedGlobalUsingsFile,TargetFrameworkMonikerAssemblyAttributesPath"
+            ),
         ]);
-        self.query(command, phase)
+        let mut metadata = self.query(command, phase)?;
+        remove_file_times(&mut metadata);
+        Ok(metadata)
     }
 
     fn query(&self, mut command: Command, phase: &str) -> Result<serde_json::Value> {
@@ -228,6 +257,25 @@ impl<'a> Preprocessor<'a> {
             fs::read_to_string(&output).context("Cannot read fresh C# preprocessed imports")?;
         inventory(&text, project)
             .with_context(|| format!("Unsupported C# import inventory for {}", project.display()))
+    }
+}
+
+fn remove_file_times(metadata: &mut serde_json::Value) {
+    let Some(items) = metadata["Items"].as_object_mut() else {
+        return;
+    };
+    for item in items
+        .values_mut()
+        .filter_map(serde_json::Value::as_array_mut)
+        .flatten()
+    {
+        if let Some(fields) = item.as_object_mut() {
+            // MSBuild adds these built-in fields even when timestamps do not
+            // influence evaluation. Rust fingerprints compare consumed bytes.
+            for key in ["AccessedTime", "CreatedTime", "ModifiedTime"] {
+                fields.remove(key);
+            }
+        }
     }
 }
 

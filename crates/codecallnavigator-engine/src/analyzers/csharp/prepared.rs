@@ -3,15 +3,22 @@
 //! evaluates fresh import membership at reuse and completed preparation/extraction
 //! boundaries, so helpers must not repeat full MSBuild evaluation internally.
 use super::*;
-use crate::analyzers::build_worker_count;
+use crate::analyzers::{
+    CleanSnapshotCheckout, build_worker_count,
+    evidence::{AnalyzerDescriptor, EvidenceInput, EvidenceRole},
+};
 use crate::model::FileFingerprint;
-use std::{collections::VecDeque, sync::atomic::AtomicBool};
+use std::{
+    collections::{BTreeSet, VecDeque},
+    sync::atomic::AtomicBool,
+};
 
 pub(in crate::analyzers) struct PreparedCsharp {
     output: PathBuf,
     output_before: Vec<FileFingerprint>,
-    before_metadata: Vec<FileFingerprint>,
     before_engine: Vec<FileFingerprint>,
+    watch_inputs: Vec<FileFingerprint>,
+    evidence: evidence::Captured,
     sources: CsharpSources,
     dotnet: PathBuf,
     job: PathBuf,
@@ -19,9 +26,9 @@ pub(in crate::analyzers) struct PreparedCsharp {
 
 impl PreparedCsharp {
     pub(in crate::analyzers) fn verify(&self) -> Result<()> {
-        ensure_unchanged(&self.before_metadata)?;
         ensure_unchanged(&self.before_engine)?;
         ensure_unchanged(&self.output_before)?;
+        self.evidence.verify()?;
         for snapshot in &self.sources.imports {
             snapshot.verify()?;
         }
@@ -38,36 +45,80 @@ impl PreparedCsharp {
         self.verify()?;
         let preprocessor =
             inputs::Preprocessor::for_build(&self.dotnet, &self.job, context.cancel, build);
-        self.sources.verify_imports(&preprocessor)?;
+        self.sources.verify_contexts(&preprocessor)?;
         self.verify()
+    }
+
+    pub(in crate::analyzers) fn evidence(&self) -> Result<Vec<EvidenceInput>> {
+        Ok(self
+            .evidence
+            .inputs
+            .iter()
+            .cloned()
+            .chain(
+                self.watch_inputs
+                    .iter()
+                    .cloned()
+                    .map(|input| EvidenceInput::new(input, EvidenceRole::Watch)),
+            )
+            .collect())
+    }
+
+    pub(in crate::analyzers) fn attribution_limit(&self) -> Option<&str> {
+        self.evidence.attribution_limit.as_deref()
+    }
+
+    pub(in crate::analyzers) fn descriptor(
+        &self,
+        versions: &serde_json::Value,
+    ) -> Result<AnalyzerDescriptor> {
+        Ok(AnalyzerDescriptor {
+            backend: "CallAtlas",
+            version: versions["callatlas"]["revision"]
+                .as_str()
+                .context("Native analysis omitted its CallAtlas revision")?
+                .into(),
+            mode: "Roslyn",
+        })
     }
 }
 
 pub(in crate::analyzers) fn prepare(
     build: &BuildTarget,
     context: &AnalysisJob<'_>,
+    checkout: Option<&CleanSnapshotCheckout>,
 ) -> Result<PreparedCsharp> {
     let dotnet = find_tool("dotnet")
         .context("Install the .NET SDK required by this solution; dotnet was not found")?;
     restore(build, context, &dotnet)?;
     let root = build.path.parent().context("Build has no parent folder")?;
-    let before_metadata = source_snapshot(&[root.into()])?;
     let sources = {
         let _timer = crate::metrics::stage("csharp.metadata");
         csharp_sources(build, &dotnet, context.path, context.cancel)?
     };
-    ensure_unchanged(&before_metadata)?;
-    let before_engine = compiler_input_snapshot(&sources.inputs, root)?;
+    let before_engine = sources.capture_inputs()?;
     let output = context.path.join("callatlas.json");
     compiler_map(build, context, &dotnet, &output)?;
-    // Validate compiler success before accepting a reusable preparation.
+    // Validate compiler success and evidence before accepting reusable preparation.
     let map: AtlasMap = serde_json::from_slice(&fs::read(&output)?)?;
     validate_atlas(&map)?;
+    let evidence = evidence::Captured::new(
+        map.compiler_evidence
+            .context("CallAtlas compiler evidence is missing; run tools/bootstrap.py")?,
+        &before_engine,
+        evidence::Roles::new(
+            &dotnet,
+            checkout,
+            &sources.generated_sources,
+            &sources.restore_products,
+        ),
+    )?;
     let prepared = PreparedCsharp {
         output_before: crate::fingerprint::capture([output.clone()])?,
         output,
-        before_metadata,
+        watch_inputs: compiler_input_snapshot(&sources.inputs, root)?,
         before_engine,
+        evidence,
         sources,
         dotnet,
         job: context.path.into(),
@@ -89,7 +140,14 @@ pub(in crate::analyzers) fn extract(
         let _timer = crate::metrics::stage("csharp.normalization");
         normalize_atlas(build, root, map, prepared.sources.owners.resolved())?
     };
-    graph.fingerprints = prepared.before_engine.clone();
+    graph.fingerprints = prepared.watch_inputs.clone();
+    graph.fingerprints.extend(
+        prepared
+            .evidence
+            .inputs
+            .iter()
+            .map(|input| input.fingerprint.clone()),
+    );
     crate::analyzers::process::check_cancel(context.cancel)?;
     prepared.verify()?;
     Ok(graph)
@@ -122,6 +180,7 @@ fn compiler_map(
     let _timer = crate::metrics::stage("csharp.engine");
     run_process(
         dotnet_command(dotnet)
+            .env("CODECALLNAVIGATOR_CALLATLAS_COMPILER_EVIDENCE", "1")
             .arg(context.runtime.callatlas()?)
             .arg("map")
             .arg(&build.path)
@@ -194,6 +253,9 @@ fn csharp_sources(
         owners: ownership::Owners::default(),
         assembly_names: HashMap::new(),
         inputs: vec![build.path.clone()],
+        exact_inputs: vec![build.path.clone()],
+        generated_sources: BTreeSet::new(),
+        restore_products: BTreeSet::new(),
         imports: Vec::new(),
     };
     let preprocessor = inputs::Preprocessor::for_build(dotnet, job, cancel, build);
@@ -204,12 +266,11 @@ fn csharp_sources(
             continue;
         }
         let observed = preprocessor.capture(&project, visited.len())?;
-        sources.record_metadata(&project, &observed, &preprocessor)?;
-        preprocessor.verify(&observed)?;
+        sources.record_metadata(&project, &observed)?;
         sources.inputs.extend(observed.paths.iter().cloned());
         sources.imports.push(observed);
     }
-    sources.verify_imports(&preprocessor)?;
+    sources.verify_contexts(&preprocessor)?;
     Ok(sources)
 }
 
@@ -218,37 +279,45 @@ struct CsharpSources {
     queue: VecDeque<PathBuf>,
     owners: ownership::Owners,
     inputs: Vec<PathBuf>,
+    exact_inputs: Vec<PathBuf>,
+    generated_sources: BTreeSet<PathBuf>,
+    restore_products: BTreeSet<PathBuf>,
     imports: Vec<inputs::Snapshot>,
 }
 
 impl CsharpSources {
-    fn record_metadata(
-        &mut self,
-        project: &Path,
-        snapshot: &inputs::Snapshot,
-        preprocessor: &inputs::Preprocessor<'_>,
-    ) -> Result<()> {
-        for (index, context) in snapshot.contexts().iter().enumerate() {
-            let metadata = preprocessor.metadata(
-                project,
-                context,
-                &format!("msbuild-{}-{index}", snapshot.sequence()),
-            )?;
+    fn record_metadata(&mut self, project: &Path, snapshot: &inputs::Snapshot) -> Result<()> {
+        for (context, metadata) in snapshot.compiler_items() {
             let origin = if context.is_configured_normal() {
                 ownership::Origin::ConfiguredNormal
             } else {
                 ownership::Origin::ContextFallback
             };
-            record_csharp_items(project, &metadata, origin, self)?;
+            record_csharp_items(project, metadata, origin, self)?;
         }
         Ok(())
     }
 
-    fn verify_imports(&self, preprocessor: &inputs::Preprocessor<'_>) -> Result<()> {
+    fn verify_contexts(&self, preprocessor: &inputs::Preprocessor<'_>) -> Result<()> {
         for snapshot in &self.imports {
             preprocessor.verify(snapshot)?;
         }
         Ok(())
+    }
+
+    fn capture_inputs(&self) -> Result<Vec<FileFingerprint>> {
+        let mut inputs = crate::fingerprint::capture_excluding(self.exact_inputs.clone(), &[])?;
+        inputs.extend(
+            self.imports
+                .iter()
+                .flat_map(|snapshot| snapshot.fingerprints().iter().cloned()),
+        );
+        Ok(inputs)
+    }
+
+    fn add_input(&mut self, path: PathBuf) {
+        self.inputs.push(path.clone());
+        self.exact_inputs.push(path);
     }
 }
 
@@ -290,6 +359,9 @@ fn record_csharp_items(
         let assembly = metadata["Properties"]["AssemblyName"]
             .as_str()
             .context("MSBuild omitted AssemblyName")?;
+        if owner.is_generated {
+            sources.generated_sources.insert(path.clone());
+        }
         sources.owners.record(
             ownership::Claim {
                 file: path.clone(),
@@ -301,9 +373,9 @@ fn record_csharp_items(
         if let Some(root) = compile_source_root(item, &path) {
             sources.inputs.push(root);
         }
-        sources.inputs.push(path);
+        sources.add_input(path);
     }
-    sources.inputs.push(project.into());
+    sources.add_input(project.into());
     if let Some(references) = metadata
         .pointer("/Items/ProjectReference")
         .and_then(|value| value.as_array())
@@ -353,14 +425,19 @@ fn record_project_properties(
         .pointer("/Items/AdditionalFiles")
         .and_then(|value| value.as_array())
     {
-        sources.inputs.extend(
-            additional
-                .iter()
-                .filter_map(|item| item["FullPath"].as_str())
-                .map(PathBuf::from)
-                .filter(|path| path.is_file()),
-        );
+        for path in additional
+            .iter()
+            .filter_map(|item| item["FullPath"].as_str())
+        {
+            sources.add_input(path.into());
+        }
     }
+    sources
+        .restore_products
+        .extend(evidence::restore_products(project, metadata));
+    sources
+        .generated_sources
+        .extend(evidence::generated_sources(project, metadata));
     Ok(())
 }
 

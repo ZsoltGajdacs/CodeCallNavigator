@@ -59,6 +59,26 @@ library graphs. Full comparison includes flows and uses saved bundles without
 checking out, fetching, or compiling a revision.
 Exit status is 0 for equality, 1 for changes and 2 for operational/schema errors.
 
+### Build evidence for language adapters
+
+An adapter supplies one evidence record per selected target at the engine's
+preparation and extraction boundary. The adapter owns toolchain evaluation,
+source and project membership, alias and dependency resolution, and proof that
+analyzed generated products belong to the current build. Record exact consumed
+paths and their fingerprints, including explicit absence probes. Report the
+path and reason for a consumed input whose origin cannot be established.
+Record broad directory watches for refresh scheduling separately.
+
+The engine validates shared input consistency, checks tracked inputs against
+Git, and incorporates resolved dependency and generated-product fingerprints
+into the variant identity. If any selected target has an attribution gap,
+ordinary analysis can publish a working graph with a diagnostic. Preparing
+a verified snapshot requires evidence from every selected target.
+
+Implement the evidence contract in the new language adapter and wire it into
+the engine's explicit dispatch. If an external analyzer supplies the evidence,
+version that capability and package the matching resource with the engine.
+
 ### Local snapshots across worktrees
 
 When a successful analysis verifies its inputs against the Git commit, the

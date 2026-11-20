@@ -4854,6 +4854,20 @@
       "purpose": "Pure scheduler policy clears pending work when it matches a successful publication baseline, while preserving a newly observed input revision for another attempt; real concurrent-edit acceptance proves latest-generation recovery."
     },
     {
+      "id": "codecallnavigator-engine/bin:ccnavigator::entrypoints::snapshot_retention::tests::scheduling_watches_cannot_certify_a_selected_target",
+      "runner": "rust",
+      "file": "crates/codecallnavigator-engine/src/entrypoints/snapshot_retention.rs",
+      "test_name": "entrypoints::snapshot_retention::tests::scheduling_watches_cannot_certify_a_selected_target",
+      "ignored": false,
+      "package": "codecallnavigator-engine",
+      "target_kind": "bin",
+      "target": "ccnavigator",
+      "component": "engine",
+      "category": "unit",
+      "requirements": [],
+      "purpose": "Pure verification of the target coverage contract rejects schedules without consumed inputs."
+    },
+    {
       "id": "codecallnavigator-engine/bin:codecallnavigator-engine::entrypoints::arguments::tests::clear_cache_requires_one_explicit_project",
       "runner": "rust",
       "file": "crates/codecallnavigator-engine/src/entrypoints/arguments.rs",
@@ -5048,6 +5062,20 @@
       "category": "unit",
       "requirements": [],
       "purpose": "Pure scheduler policy clears pending work when it matches a successful publication baseline, while preserving a newly observed input revision for another attempt; real concurrent-edit acceptance proves latest-generation recovery."
+    },
+    {
+      "id": "codecallnavigator-engine/bin:codecallnavigator-engine::entrypoints::snapshot_retention::tests::scheduling_watches_cannot_certify_a_selected_target",
+      "runner": "rust",
+      "file": "crates/codecallnavigator-engine/src/entrypoints/snapshot_retention.rs",
+      "test_name": "entrypoints::snapshot_retention::tests::scheduling_watches_cannot_certify_a_selected_target",
+      "ignored": false,
+      "package": "codecallnavigator-engine",
+      "target_kind": "bin",
+      "target": "codecallnavigator-engine",
+      "component": "engine",
+      "category": "unit",
+      "requirements": [],
+      "purpose": "Pure verification of the target coverage contract rejects schedules without consumed inputs."
     },
     {
       "id": "codecallnavigator-engine/lib:codecallnavigator_engine::analyzers::compose::tests::inconsistent_shared_declarations_and_non_typescript_duplicates_are_rejected",
@@ -6668,6 +6696,24 @@
       "purpose": "design time imports and external source globs are observed"
     },
     {
+      "id": "codecallnavigator-engine/test:csharp_inputs::snapshots_use_compiler_references_and_ignore_incidental_artifacts",
+      "runner": "rust",
+      "file": "crates/codecallnavigator-engine/tests/csharp_inputs.rs",
+      "test_name": "snapshots_use_compiler_references_and_ignore_incidental_artifacts",
+      "ignored": true,
+      "package": "codecallnavigator-engine",
+      "target_kind": "test",
+      "target": "csharp_inputs",
+      "component": "engine",
+      "category": "acceptance",
+      "requirements": [
+        "cli",
+        "dotnet",
+        "git"
+      ],
+      "purpose": "real Roslyn resolved reference and incidental MSBuild output prove verified revision attribution end to end"
+    },
+    {
       "id": "codecallnavigator-engine/test:csharp_inputs::empty_external_referenced_project_scope_detects_new_sources_after_publication",
       "runner": "rust",
       "file": "crates/codecallnavigator-engine/tests/csharp_inputs.rs",
@@ -7399,6 +7445,24 @@
         "maven"
       ],
       "purpose": "Real compiler required hidden input survives broad scanning exclusions; pure tests cannot establish compiler inventory semantics"
+    },
+    {
+      "id": "codecallnavigator-engine/test:local_snapshots::gradle_snapshot_proves_custom_class_output_and_ignores_unrelated_directory",
+      "runner": "rust",
+      "file": "crates/codecallnavigator-engine/tests/local_snapshots.rs",
+      "test_name": "gradle_snapshot_proves_custom_class_output_and_ignores_unrelated_directory",
+      "ignored": true,
+      "package": "codecallnavigator-engine",
+      "target_kind": "test",
+      "target": "local_snapshots",
+      "component": "engine",
+      "category": "acceptance",
+      "purpose": "Real Gradle and Git proof accept exact bytecode from a nonstandard output directory alongside incidental task output. Unit tests cannot prove native ownership or checkout cleanup.",
+      "requirements": [
+        "cli",
+        "git",
+        "java"
+      ]
     },
     {
       "id": "codecallnavigator-engine/test:process_protocol::analysis_eof_and_sigterm_reap_build_descendants_and_preserve_artifact",

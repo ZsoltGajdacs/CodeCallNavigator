@@ -1,6 +1,7 @@
 mod prepared;
 pub(super) use prepared::{PreparedCsharp, extract, prepare};
 mod architecture;
+mod evidence;
 mod flow_inventory;
 mod framework;
 mod http;
@@ -9,7 +10,9 @@ mod ownership;
 mod policy;
 mod source;
 use super::process::run_process;
-use super::{AnalysisJob, ensure_unchanged, find_tool, source_snapshot};
+#[cfg(test)]
+use super::source_snapshot;
+use super::{AnalysisJob, ensure_unchanged, find_tool};
 use crate::{
     discovery::BuildTarget,
     model::{Edge, EntryPoints, GraphData, Node, Visibility},
@@ -40,6 +43,8 @@ fn dotnet_command(dotnet: &Path) -> Command {
 #[derive(Deserialize)]
 struct AtlasMap {
     schema: String,
+    #[serde(default, rename = "compilerEvidence")]
+    compiler_evidence: Option<evidence::CompilerEvidence>,
     #[serde(rename = "declarationFactsVersion")]
     declaration_facts_version: String,
     #[serde(default, rename = "frameworkFactsVersion")]

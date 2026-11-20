@@ -1,7 +1,5 @@
 use super::cancellation::CANCELLED;
-use super::snapshot_retention::{
-    Candidate, Checkout, Observations, VerifiedSnapshot, dependency_identity,
-};
+use super::snapshot_retention::{Candidate, Observations, VerifiedSnapshot};
 use anyhow::{Context, Result, ensure};
 use codecallnavigator_core::{
     artifact::{
@@ -15,6 +13,7 @@ use codecallnavigator_core::{
 };
 use codecallnavigator_engine::analyzers::{
     self, AnalyzerRuntime, CleanSnapshotCheckout, ObservedAnalysis, PreparedAnalysis,
+    evidence::TargetEvidence,
 };
 use std::{
     collections::BTreeMap,
@@ -190,7 +189,6 @@ where
             targets: publication.targets,
             infer_linked: publication.options.infer_linked,
             use_inference_cache: true,
-            checkout: Checkout::Working,
         },
         &attempt,
         produce,
@@ -223,7 +221,6 @@ pub(super) fn prepare_revision(
                 targets,
                 infer_linked: false,
                 use_inference_cache: false,
-                checkout: Checkout::Clean,
             },
             &Attempt {
                 cancel: &CANCELLED,
@@ -258,7 +255,6 @@ struct AnalysisBinding<'a> {
     targets: Vec<BuildTarget>,
     infer_linked: bool,
     use_inference_cache: bool,
-    checkout: Checkout,
 }
 
 fn prepare<F>(
@@ -275,22 +271,21 @@ where
         mut targets,
         infer_linked,
         use_inference_cache,
-        checkout,
     } = binding;
     (attempt.progress)("Preparing analysis inputs…".into());
-    let snapshot = Candidate::capture(project, checkout);
+    let snapshot = Candidate::capture(project);
     targets.sort_by_key(BuildTarget::identity);
     targets.dedup_by(|a, b| a.identity() == b.identity());
     let (boundaries, boundary_inputs) =
         codecallnavigator_core::boundary::Configuration::load(project, &targets)?;
-    let application_inputs = application_inputs(project)?;
+    let mut project_inputs = boundary_inputs;
+    project_inputs.extend(application_inputs(project)?);
     let selection = targets.clone();
     let ObservedAnalysis {
         mut graph,
-        output_attribution_limit,
+        evidence,
     } = produce(targets, attempt)?;
-    graph.fingerprints.extend(boundary_inputs);
-    graph.fingerprints.extend(application_inputs);
+    graph.fingerprints.extend(project_inputs.iter().cloned());
     (attempt.progress)("Resolving graph relationships…".into());
     let cache = super::inference::resolve(project, &mut graph, &boundaries, use_inference_cache)?;
     let roots = if infer_linked {
@@ -305,7 +300,8 @@ where
             project,
             selection: &selection,
             snapshot,
-            output_attribution_limit: output_attribution_limit.as_deref(),
+            evidence: &evidence,
+            project_inputs: &project_inputs,
             cache,
         },
         attempt,
@@ -318,7 +314,8 @@ struct GraphInputs<'a> {
     project: &'a Path,
     selection: &'a [BuildTarget],
     snapshot: Result<Candidate>,
-    output_attribution_limit: Option<&'a str>,
+    evidence: &'a [TargetEvidence],
+    project_inputs: &'a [FileFingerprint],
     cache: Option<codecallnavigator_core::boundary::DecisionCache>,
 }
 
@@ -340,25 +337,19 @@ impl PreparedGraph {
             roots,
             project,
             snapshot,
-            output_attribution_limit,
+            evidence,
+            project_inputs,
             cache,
         } = inputs;
         (attempt.progress)("Encoding the graph…".into());
-        let (encoded, provenance, refresh_validation) =
-            encode_publication(&graph, selection, &roots)?;
+        let (encoded, provenance) = encode_publication(&graph, selection, &roots)?;
         let digest = blake3::hash(encoded.as_ref()).to_hex().to_string();
         let observations = Observations {
             analysis: &provenance,
             roots: &roots,
-            analyzer: &graph.fingerprints,
-            refresh: &refresh_validation,
             targets: selection,
-            project,
-            generated_sources: graph
-                .refresh_outputs
-                .as_ref()
-                .map_or(&[], |output| output.generated_source_directories.as_slice()),
-            output_attribution_limit,
+            evidence,
+            project_inputs,
         };
         let verified = snapshot.and_then(|candidate| {
             (attempt.progress)("Verifying Git snapshot attribution…".into());
@@ -366,16 +357,16 @@ impl PreparedGraph {
         });
         let fallback_identity = verified
             .is_err()
-            .then(|| dependency_identity(&observations))
+            .then(|| observations.dependency_identity(project))
             .transpose()?;
         let identity = verified
             .as_ref()
             .ok()
             .map(VerifiedSnapshot::dependency_identity)
             .or(fallback_identity.as_deref());
-        let metadata = metadata::capture(&observations, &graph.engine_versions, identity)?;
+        let metadata = metadata::capture(&observations, identity)?;
         (attempt.progress)("Validating analyzed inputs…".into());
-        verify_inputs(&graph.fingerprints, &refresh_validation, attempt.cancel)?;
+        verify_inputs(&observations, attempt.cancel)?;
         Ok(Self {
             graph,
             roots,
@@ -438,11 +429,7 @@ fn encode_publication(
     graph: &GraphData,
     selection: &[BuildTarget],
     roots: &artifact::Roots,
-) -> Result<(
-    artifact::EncodedArtifact,
-    artifact::provenance::Analysis,
-    Vec<FileFingerprint>,
-)> {
+) -> Result<(artifact::EncodedArtifact, artifact::provenance::Analysis)> {
     let mut artifact = artifact::canonical_with_identities(graph, roots, &graph.export_identities)?;
     let mut provenance = artifact::provenance::build_selected(
         &graph.fingerprints,
@@ -450,24 +437,28 @@ fn encode_publication(
         &graph.engine_versions,
         roots,
     )?;
-    let validation = refresh_inputs(graph, selection, roots, &mut provenance)?;
+    refresh_inputs(graph, selection, roots, &mut provenance)?;
     artifact.graph["analysis"] = serde_json::to_value(&provenance)?;
-    Ok((artifact.encode()?, provenance, validation))
+    Ok((artifact.encode()?, provenance))
 }
 
-fn verify_inputs(
-    analysis: &[FileFingerprint],
-    refresh: &[FileFingerprint],
-    cancel: &AtomicBool,
-) -> Result<()> {
+fn verify_inputs(observations: &Observations<'_>, cancel: &AtomicBool) -> Result<()> {
+    let mut unique = BTreeMap::<_, &FileFingerprint>::new();
+    for (input, _, target) in observations.inputs() {
+        let key = (&input.path, &input.excluded_children);
+        if let Some(previous) = unique.insert(key, input) {
+            let owner = target.map_or("Project configuration", |target| target.label.as_str());
+            ensure!(
+                previous.kind == input.kind && previous.hash == input.hash,
+                "{owner}: conflicting observations for {}",
+                input.path
+            );
+        }
+    }
+    let inputs = unique.into_values().cloned().collect::<Vec<_>>();
     codecallnavigator_core::fingerprint::require_unchanged_cancellable(
-        analysis,
+        &inputs,
         "Project inputs changed before graph publication",
-        cancel,
-    )?;
-    codecallnavigator_core::fingerprint::require_unchanged_cancellable(
-        refresh,
-        "Input membership changed before graph publication",
         cancel,
     )
 }
@@ -477,14 +468,14 @@ fn refresh_inputs(
     selection: &[BuildTarget],
     roots: &artifact::Roots,
     provenance: &mut artifact::provenance::Analysis,
-) -> Result<Vec<FileFingerprint>> {
+) -> Result<()> {
     let Some(outputs) = &graph.refresh_outputs else {
-        return Ok(Vec::new());
+        return Ok(());
     };
     let safe = selection.iter().all(|target| target.language == "java");
     let captured = artifact::refresh_inputs::capture(provenance, outputs, safe, roots)?;
     provenance.refresh_inputs = Some(captured.value);
-    Ok(captured.validation)
+    Ok(())
 }
 
 fn application_inputs(project: &Path) -> Result<Vec<FileFingerprint>> {

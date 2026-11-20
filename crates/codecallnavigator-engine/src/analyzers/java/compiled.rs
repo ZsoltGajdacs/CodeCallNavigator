@@ -2,14 +2,19 @@
 use super::{
     analyze_compiled,
     build::{self, PreparedJava},
-    compile_observation::FreshOutputs,
+    compile_observation::{FreshOutputs, Observations},
     contexts,
+    evidence::Roles,
     maven::MavenSources,
     refresh_outputs,
 };
 use crate::{
-    analyzers::{AnalysisJob, CleanSnapshotCheckout, ensure_unchanged},
+    analyzers::{
+        AnalysisJob, CleanSnapshotCheckout, ensure_unchanged,
+        evidence::{AnalyzerDescriptor, EvidenceInput, EvidenceRole},
+    },
     discovery::BuildTarget,
+    fingerprint::InputKind,
     model::{FileFingerprint, GraphData},
 };
 use anyhow::{Context, Result};
@@ -22,6 +27,9 @@ pub(in crate::analyzers) struct CompiledJava {
     metadata: build::JavaBuildMetadata,
     fingerprints: Vec<FileFingerprint>,
     extraction: Vec<FileFingerprint>,
+    watches: Vec<FileFingerprint>,
+    observations: Observations,
+    roles: Roles,
     output_attribution_limit: Option<String>,
 }
 
@@ -35,16 +43,50 @@ impl std::fmt::Display for ExtractionOutputsChanged {
 }
 
 impl CompiledJava {
+    pub(in crate::analyzers) fn descriptor(
+        &self,
+        versions: &serde_json::Value,
+    ) -> Result<AnalyzerDescriptor> {
+        Ok(AnalyzerDescriptor {
+            backend: "Java CallGraph2",
+            version: versions["java-callgraph2"]["version"]
+                .as_str()
+                .context("Missing Java analyzer version")?
+                .to_owned(),
+            mode: "compiled bytecode and Java source",
+        })
+    }
+
+    pub(in crate::analyzers) fn evidence(&self) -> Vec<EvidenceInput> {
+        self.fingerprints
+            .iter()
+            .chain(
+                self.extraction
+                    .iter()
+                    .filter(|input| input.kind != InputKind::Directory),
+            )
+            .map(|input| EvidenceInput::new(input.clone(), self.roles.classify(input)))
+            .chain(
+                self.watches
+                    .iter()
+                    .cloned()
+                    .map(|input| EvidenceInput::new(input, EvidenceRole::Watch)),
+            )
+            .collect()
+    }
+
     pub(in crate::analyzers) fn output_attribution_limit(&self) -> Option<&str> {
         self.output_attribution_limit.as_deref()
     }
 
     pub(in crate::analyzers) fn verify(&self) -> Result<()> {
+        self.observations.verify_membership()?;
         ensure_unchanged(&self.fingerprints)?;
         ensure_unchanged(&self.extraction).context(ExtractionOutputsChanged)
     }
 
     pub(in crate::analyzers) fn reconcile_outputs(&mut self) -> Result<bool> {
+        self.observations.verify_membership()?;
         ensure_unchanged(&self.fingerprints)?;
         if !crate::fingerprint::is_stale(&self.extraction)? {
             return Ok(false);
@@ -96,28 +138,40 @@ pub(in crate::analyzers) fn compile(
         "Compiling all Java source sets for {}…",
         build.label
     ));
+    let declared_before = prepared.producer_inputs()?;
     let initial_outputs = FreshOutputs::before(prepared.metadata());
     let compilation = build::compile(build, context)?;
     let metadata = compilation.metadata;
     prepared.verify_compiled(build, &metadata)?;
+    ensure_unchanged(&declared_before)?;
     let output_attribution_limit = initial_outputs
         .and_then(|before| before.verify(&metadata, &compilation.observations, snapshot_checkout))
         .err()
         .map(|error| format!("{error:#}"));
     let mut fingerprints = prepared.configuration_before.clone();
-    fingerprints.extend(build::snapshot(build, &metadata, true)?);
-    fingerprints.extend(
-        compilation
-            .observations
-            .fingerprints(&metadata)
-            .map_err(|error| compilation.observations.with_consumption(error))?,
-    );
+    fingerprints.extend(build::declared_inputs(&metadata)?);
+    let mut watches = build::scheduling_inputs(build, &metadata)?;
+    let journal = compilation
+        .observations
+        .fingerprints(&metadata)
+        .map_err(|error| compilation.observations.with_consumption(error))?;
+    // The compiler rechecks scoped membership. Raw directory fingerprints
+    // preserve polling coverage without certifying unrelated children.
+    let (journal_watches, journal_files): (Vec<_>, Vec<_>) = journal
+        .into_iter()
+        .partition(|input| input.kind == InputKind::Directory);
+    watches.extend(journal_watches);
+    fingerprints.extend(journal_files);
     let (extraction, external) = extraction_fingerprints(&metadata)?;
     fingerprints.extend(external);
+    let roles = Roles::new(build, context.runtime, &metadata);
     let compiled = CompiledJava {
         preflight: prepared,
         metadata,
         fingerprints,
+        watches,
+        observations: compilation.observations,
+        roles,
         extraction,
         output_attribution_limit,
     };
@@ -149,5 +203,6 @@ pub(in crate::analyzers) fn extract_java(
     compiled.verify()?;
     graph.fingerprints.extend(compiled.fingerprints.clone());
     graph.fingerprints.extend(compiled.extraction.clone());
+    graph.fingerprints.extend(compiled.watches.clone());
     Ok(graph)
 }
