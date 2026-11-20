@@ -10,6 +10,7 @@ use codecallnavigator_core::{
     },
     discovery::BuildTarget,
 };
+use codecallnavigator_engine::analyzers::CleanSnapshotCheckout;
 pub(super) use selection::Selection;
 use serde::Serialize;
 use std::{
@@ -64,9 +65,12 @@ pub(super) fn prepare(
     let _lease = job.acquire(&resolved.commit, progress)?;
 
     progress(format!("Preparing local snapshot at {}", resolved.commit));
-    let staged = resolved.with_checkout(&CANCELLED, |checkout| {
+    let staged = resolved.with_checkout(&CANCELLED, |root, checkout| {
         let selected = selection.resolve(checkout, revision)?;
-        analyze_revision(&project, checkout, selected, progress)
+        let checkout_tree = repository.tree(&resolved.commit, &CANCELLED)?;
+        let clean = CleanSnapshotCheckout::new(root.to_path_buf(), checkout_tree);
+        borrow_typescript_dependencies(&project, checkout, &selected)?;
+        analysis::prepare_revision(checkout, selected, clean, progress)
     })?;
     let identity = staged.verified.identity(&staged.metadata)?;
     ensure!(
@@ -86,13 +90,12 @@ pub(super) fn prepare(
     )
 }
 
-fn analyze_revision(
+fn borrow_typescript_dependencies(
     project: &Path,
     checkout: &Path,
-    selected: Vec<BuildTarget>,
-    progress: &dyn Fn(String),
-) -> Result<analysis::PreparedRevision> {
-    for target in &selected {
+    selected: &[BuildTarget],
+) -> Result<()> {
+    for target in selected {
         if target.language == "typescript" {
             let directory = target
                 .path
@@ -101,7 +104,7 @@ fn analyze_revision(
             borrow_node_modules(project, checkout, directory)?;
         }
     }
-    analysis::prepare_revision(checkout, selected, progress)
+    Ok(())
 }
 
 fn borrow_node_modules(project: &Path, checkout: &Path, target: &Path) -> Result<()> {

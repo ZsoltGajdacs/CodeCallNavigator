@@ -1,5 +1,7 @@
 use super::cancellation::CANCELLED;
-use super::snapshot_retention::{Candidate, Observations, VerifiedSnapshot, dependency_identity};
+use super::snapshot_retention::{
+    Candidate, Checkout, Observations, VerifiedSnapshot, dependency_identity,
+};
 use anyhow::{Context, Result, ensure};
 use codecallnavigator_core::{
     artifact::{
@@ -11,7 +13,9 @@ use codecallnavigator_core::{
     model::{FileFingerprint, GraphData},
     protocol::{Event, GraphRetention},
 };
-use codecallnavigator_engine::analyzers::{self, AnalyzerRuntime, ObservedAnalysis};
+use codecallnavigator_engine::analyzers::{
+    self, AnalyzerRuntime, CleanSnapshotCheckout, ObservedAnalysis, PreparedAnalysis,
+};
 use std::{
     collections::BTreeMap,
     path::{Path, PathBuf},
@@ -186,6 +190,7 @@ where
             targets: publication.targets,
             infer_linked: publication.options.infer_linked,
             use_inference_cache: true,
+            checkout: Checkout::Working,
         },
         &attempt,
         produce,
@@ -207,23 +212,29 @@ where
 pub(super) fn prepare_revision(
     project: &Path,
     targets: Vec<BuildTarget>,
+    checkout: CleanSnapshotCheckout,
     progress: &dyn Fn(String),
 ) -> Result<PreparedRevision> {
-    let outcome = prepare(
-        AnalysisBinding {
-            project,
-            roots: roots(project, Vec::new())?,
-            targets,
-            infer_linked: false,
-            use_inference_cache: false,
-        },
-        &Attempt {
-            cancel: &CANCELLED,
-            progress,
-            diagnostic: progress,
-        },
-        native_attempt,
-    )?;
+    let outcome =
+        prepare(
+            AnalysisBinding {
+                project,
+                roots: roots(project, Vec::new())?,
+                targets,
+                infer_linked: false,
+                use_inference_cache: false,
+                checkout: Checkout::Clean,
+            },
+            &Attempt {
+                cancel: &CANCELLED,
+                progress,
+                diagnostic: progress,
+            },
+            |targets, attempt| {
+                PreparedAnalysis::new(targets, AnalyzerRuntime::discover()?)?
+                    .into_snapshot_observed(checkout, attempt.cancel, attempt.progress)
+            },
+        )?;
     let verified = outcome
         .verified
         .context("The requested revision graph could not be verified")?;
@@ -247,6 +258,7 @@ struct AnalysisBinding<'a> {
     targets: Vec<BuildTarget>,
     infer_linked: bool,
     use_inference_cache: bool,
+    checkout: Checkout,
 }
 
 fn prepare<F>(
@@ -263,9 +275,10 @@ where
         mut targets,
         infer_linked,
         use_inference_cache,
+        checkout,
     } = binding;
     (attempt.progress)("Preparing analysis inputs…".into());
-    let snapshot = Candidate::capture(project);
+    let snapshot = Candidate::capture(project, checkout);
     targets.sort_by_key(BuildTarget::identity);
     targets.dedup_by(|a, b| a.identity() == b.identity());
     let (boundaries, boundary_inputs) =

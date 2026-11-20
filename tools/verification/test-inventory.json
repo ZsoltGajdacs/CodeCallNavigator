@@ -7764,7 +7764,7 @@
       "target": "local_snapshots",
       "component": "engine",
       "category": "acceptance",
-      "purpose": "Real Maven compilation is needed to establish generated source ownership and system-settings admission for snapshot retention.",
+      "purpose": "Real Maven lifecycle execution verifies retention for generated Java and ignored reports outside observed inputs, rejects ignored Java consumed from an ordinary source root and tracked input rewrites, and checks stale caller outputs and detached checkout cleanup.",
       "requirements": [
         "cli",
         "git",

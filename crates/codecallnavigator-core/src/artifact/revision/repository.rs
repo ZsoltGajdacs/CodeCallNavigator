@@ -67,6 +67,37 @@ impl Repository {
             .collect()
     }
 
+    /// List untracked paths ignored by the checkout's project rules.
+    pub fn ignored_untracked_files(&self, cancel: &AtomicBool) -> Result<Vec<PathBuf>> {
+        let output = git_output(
+            &self.root,
+            &[
+                "ls-files",
+                "--others",
+                "--ignored",
+                "--exclude-per-directory=.gitignore",
+                "--directory",
+                "-z",
+            ],
+            "revision_unavailable",
+            GitInput {
+                cancel: Some(cancel),
+                ..GitInput::default()
+            },
+        )?;
+        let mut files = Vec::new();
+        for entry in BufReader::new(output).split(0) {
+            let entry = entry?;
+            let Ok(path) = std::str::from_utf8(&entry) else {
+                continue;
+            };
+            if !path.ends_with('/') {
+                files.push(path.into());
+            }
+        }
+        Ok(files)
+    }
+
     pub fn verify_blobs(
         &self,
         expected: &BTreeMap<String, String>,

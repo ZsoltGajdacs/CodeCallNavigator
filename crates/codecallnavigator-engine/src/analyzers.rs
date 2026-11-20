@@ -29,9 +29,11 @@ use crate::{
     model::{FileFingerprint, GraphData},
 };
 use anyhow::{Context, Result, ensure};
+use codecallnavigator_core::artifact::revision::TreeEntry;
 use std::{
+    collections::BTreeMap,
     fs,
-    path::{Path, PathBuf},
+    path::{Component, Path, PathBuf},
     process::Command,
     sync::atomic::{AtomicBool, AtomicU64, Ordering},
     thread::available_parallelism,
@@ -159,6 +161,37 @@ pub fn analyze(
 pub struct ObservedAnalysis {
     pub graph: GraphData,
     pub output_attribution_limit: Option<String>,
+}
+
+/// The detached worktree and exact commit tree of a cleaned snapshot checkout.
+pub struct CleanSnapshotCheckout {
+    root: PathBuf,
+    tracked: BTreeMap<String, TreeEntry>,
+}
+
+impl CleanSnapshotCheckout {
+    pub fn new(root: PathBuf, tracked: BTreeMap<String, TreeEntry>) -> Self {
+        Self { root, tracked }
+    }
+
+    fn owns_generated_root(&self, path: &Path) -> bool {
+        let Ok(relative) = path.strip_prefix(&self.root) else {
+            return false;
+        };
+        let Some(key) = relative.to_str() else {
+            return false;
+        };
+        !key.is_empty()
+            && relative
+                .components()
+                .all(|part| matches!(part, Component::Normal(_)))
+            && !self.tracked.contains_key(key)
+            && !relative
+                .ancestors()
+                .filter_map(Path::to_str)
+                .filter_map(|ancestor| self.tracked.get(ancestor))
+                .any(TreeEntry::is_link)
+    }
 }
 
 pub fn analyze_observed(

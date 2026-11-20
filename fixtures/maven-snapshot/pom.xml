@@ -1,0 +1,63 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent><groupId>codecallnavigator.fixture</groupId><artifactId>external-parent</artifactId><version>1.0</version><relativePath>../parent/pom.xml</relativePath></parent>
+  <artifactId>standalone</artifactId>
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-antrun-plugin</artifactId>
+        <version>3.2.0</version>
+        <executions>
+          <execution>
+            <id>write-validation-report</id>
+            <phase>validate</phase>
+            <goals><goal>run</goal></goals>
+            <configuration>
+              <target>
+                <mkdir dir="${project.build.directory}"/>
+                <echo file="${project.build.directory}/validation.txt">Validation completed</echo>
+              </target>
+            </configuration>
+          </execution>
+          <execution>
+            <id>generate-java</id>
+            <phase>generate-sources</phase>
+            <goals><goal>run</goal></goals>
+            <configuration>
+              <target>
+                <mkdir dir="${project.build.directory}/generated-sources/fixture/fixture"/>
+                <echo file="${project.build.directory}/generated-sources/fixture/fixture/GeneratedThing.java">package fixture; public class GeneratedThing { public static int generated() { return 7; } }</echo>
+              </target>
+            </configuration>
+          </execution>
+          <execution>
+            <id>write-ignored-build-report</id>
+            <phase>process-classes</phase>
+            <goals><goal>run</goal></goals>
+            <configuration>
+              <target>
+                <echo file="${project.basedir}/asyncapi.yaml">asyncapi: 3.0.0</echo>
+              </target>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>build-helper-maven-plugin</artifactId>
+        <version>3.6.1</version>
+        <executions>
+          <execution>
+            <id>register-generated-java</id>
+            <phase>generate-sources</phase>
+            <goals><goal>add-source</goal></goals>
+            <configuration>
+              <sources><source>${project.build.directory}/generated-sources/fixture</source></sources>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+</project>

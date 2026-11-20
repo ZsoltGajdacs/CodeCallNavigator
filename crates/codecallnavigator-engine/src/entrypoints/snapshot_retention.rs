@@ -14,6 +14,7 @@ use codecallnavigator_core::{
 };
 use std::{
     collections::{BTreeMap, BTreeSet},
+    fs,
     path::{Path, PathBuf},
     sync::atomic::{AtomicBool, Ordering},
 };
@@ -35,6 +36,13 @@ pub(super) fn dependency_identity(observed: &Observations<'_>) -> Result<String>
 pub(super) struct Candidate {
     repository: Repository,
     commit: String,
+    checkout: Checkout,
+}
+
+#[derive(Clone, Copy)]
+pub(super) enum Checkout {
+    Working,
+    Clean,
 }
 
 pub(super) struct Observations<'a> {
@@ -54,11 +62,15 @@ pub(super) struct VerifiedSnapshot {
 }
 
 impl Candidate {
-    pub(super) fn capture(project: &Path) -> Result<Self> {
+    pub(super) fn capture(project: &Path, checkout: Checkout) -> Result<Self> {
         let repository = Repository::detect(project)?
             .context("The analysis project is outside a Git repository")?;
         let commit = repository.resolve("HEAD")?;
-        Ok(Self { repository, commit })
+        Ok(Self {
+            repository,
+            commit,
+            checkout,
+        })
     }
 
     pub(super) fn verify(
@@ -92,7 +104,7 @@ impl Candidate {
             generated_roots(&self.repository.root, observed.generated_sources, &tree);
         let mut proof = InputProof {
             root: &self.repository.root,
-            directories: directories(&tree),
+            directories: self.directory_members(&tree, observed, cancel)?,
             tree,
             hashes: BTreeMap::new(),
             outputs,
@@ -113,6 +125,48 @@ impl Candidate {
             candidate: self,
             dependency_identity,
         })
+    }
+
+    fn directory_members(
+        &self,
+        tree: &BTreeMap<String, TreeEntry>,
+        observed: &Observations<'_>,
+        cancel: &AtomicBool,
+    ) -> Result<BTreeMap<PathBuf, BTreeSet<String>>> {
+        let mut members = directories(tree);
+        if matches!(self.checkout, Checkout::Clean) {
+            // Account for ignored build side effects in directory fingerprints only.
+            // File inputs still go through the full Git or declared-output proof.
+            let observed_directories = observed
+                .analyzer
+                .iter()
+                .chain(observed.refresh)
+                .filter(|input| input.kind == InputKind::Directory)
+                .filter_map(|input| {
+                    Path::new(&input.path)
+                        .strip_prefix(&self.repository.root)
+                        .ok()
+                })
+                .collect::<BTreeSet<_>>();
+            for path in self.repository.ignored_untracked_files(cancel)? {
+                if path
+                    .parent()
+                    .is_none_or(|parent| !observed_directories.contains(parent))
+                {
+                    continue;
+                }
+                let absolute = self.repository.root.join(&path);
+                let kind = fs::symlink_metadata(&absolute)
+                    .with_context(|| {
+                        format!("Cannot inspect ignored build file {}", absolute.display())
+                    })?
+                    .file_type();
+                if kind.is_file() && fingerprint::includes_scoped_tree_entry(&path, false, false) {
+                    add_directory_member(&mut members, &path);
+                }
+            }
+        }
+        Ok(members)
     }
 
     fn require_current(&self) -> Result<()> {
@@ -303,13 +357,18 @@ fn directories(tree: &BTreeMap<String, TreeEntry>) -> BTreeMap<PathBuf, BTreeSet
     for (path, entry) in tree {
         let path = Path::new(path);
         if fingerprint::includes_scoped_tree_entry(path, entry.is_directory(), entry.is_link()) {
-            let parent = path.parent().unwrap_or(Path::new(""));
-            let name = path.file_name().unwrap_or_default().to_string_lossy();
-            result
-                .entry(parent.into())
-                .or_default()
-                .insert(name.into_owned());
+            add_directory_member(&mut result, path);
         }
     }
     result
+}
+
+fn add_directory_member(members: &mut BTreeMap<PathBuf, BTreeSet<String>>, path: &Path) {
+    let parent = path.parent().unwrap_or(Path::new(""));
+    let name = path
+        .file_name()
+        .unwrap_or_default()
+        .to_string_lossy()
+        .into_owned();
+    members.entry(parent.into()).or_default().insert(name);
 }

@@ -1,5 +1,6 @@
 //! A successful compiler journal cannot establish the origin of preexisting outputs.
 use super::{JavaBuildMetadata, Observations, Outcome};
+use crate::analyzers::CleanSnapshotCheckout;
 use anyhow::{Context, Result, ensure};
 use std::{
     collections::BTreeSet,
@@ -29,33 +30,51 @@ impl FreshOutputs {
         Ok(Self { empty_roots })
     }
 
-    pub fn verify(self, metadata: &JavaBuildMetadata, observed: &Observations) -> Result<()> {
+    pub fn verify(
+        self,
+        metadata: &JavaBuildMetadata,
+        observed: &Observations,
+        checkout: Option<&CleanSnapshotCheckout>,
+    ) -> Result<()> {
         for (path, generated) in output_roots(metadata) {
             if !has_entries(path)? {
                 continue;
             }
             require_unlinked(path)?;
-            ensure!(
-                self.empty_roots.iter().any(|root| path.starts_with(root)),
-                "Java outputs predate the observed compiler attempt at {}",
-                path.display()
-            );
-            let found = observed.operations.iter().any(|operation| {
-                operation.outcome == Outcome::Success
-                    && (if generated {
-                        &operation.outputs.generated_sources
-                    } else {
-                        &operation.outputs.classes
-                    })
-                    .iter()
-                    .any(|root| root == path)
-            });
-            ensure!(
-                found,
-                "No current Java compiler execution proves the origin of outputs at {}",
-                path.display()
-            );
+            // Build plugins can register generated sources after the metadata pass.
+            // A clean worktree can prove their origin without a compiler output entry.
+            if generated && checkout.is_some_and(|clean| clean.owns_generated_root(path)) {
+                continue;
+            }
+            self.verify_compiler_output(path, generated, observed)?;
         }
+        Ok(())
+    }
+
+    fn verify_compiler_output(
+        &self,
+        path: &Path,
+        generated: bool,
+        observed: &Observations,
+    ) -> Result<()> {
+        ensure!(
+            self.empty_roots.iter().any(|root| path.starts_with(root)),
+            "Java outputs predate the observed compiler attempt at {}",
+            path.display()
+        );
+        let found = observed.operations.iter().any(|operation| {
+            let roots = if generated {
+                &operation.outputs.generated_sources
+            } else {
+                &operation.outputs.classes
+            };
+            operation.outcome == Outcome::Success && roots.iter().any(|root| root == path)
+        });
+        ensure!(
+            found,
+            "No current Java compiler execution proves the origin of outputs at {}",
+            path.display()
+        );
         Ok(())
     }
 }

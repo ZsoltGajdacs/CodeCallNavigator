@@ -8,7 +8,7 @@ use super::{
     refresh_outputs,
 };
 use crate::{
-    analyzers::{AnalysisJob, ensure_unchanged},
+    analyzers::{AnalysisJob, CleanSnapshotCheckout, ensure_unchanged},
     discovery::BuildTarget,
     model::{FileFingerprint, GraphData},
 };
@@ -89,6 +89,7 @@ pub(in crate::analyzers) fn compile(
     build: &BuildTarget,
     context: &AnalysisJob<'_>,
     prepared: PreparedJava,
+    snapshot_checkout: Option<&CleanSnapshotCheckout>,
 ) -> Result<CompiledJava> {
     ensure_unchanged(&prepared.configuration_before)?;
     (context.progress)(format!(
@@ -100,7 +101,7 @@ pub(in crate::analyzers) fn compile(
     let metadata = compilation.metadata;
     prepared.verify_compiled(build, &metadata)?;
     let output_attribution_limit = initial_outputs
-        .and_then(|before| before.verify(&metadata, &compilation.observations))
+        .and_then(|before| before.verify(&metadata, &compilation.observations, snapshot_checkout))
         .err()
         .map(|error| format!("{error:#}"));
     let mut fingerprints = prepared.configuration_before.clone();

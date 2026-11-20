@@ -32,6 +32,7 @@ struct Fixture {
     directory: tempfile::TempDir,
     root: PathBuf,
     cache: PathBuf,
+    engine_temp: Option<PathBuf>,
 }
 
 impl Fixture {
@@ -57,12 +58,23 @@ impl Fixture {
             directory,
             root,
             cache,
+            engine_temp: None,
         }
+    }
+
+    fn isolate_engine_temp(&mut self) -> PathBuf {
+        let path = self.directory.path().join("engine-temp");
+        fs::create_dir(&path).unwrap();
+        self.engine_temp = Some(path.clone());
+        path
     }
 
     fn engine(&self) -> Command {
         let mut command = Command::new(env!("CARGO_BIN_EXE_codecallnavigator-engine"));
         command.env("CODECALLNAVIGATOR_GRAPH_LIBRARY", &self.cache);
+        if let Some(path) = &self.engine_temp {
+            command.env("TMPDIR", path);
+        }
         command
     }
 
@@ -514,13 +526,14 @@ fn assert_impact_without_head_graph(fixture: &Fixture, linked: &Path, base: &str
 #[test]
 #[ignore = "requires JDK 25 and Maven"]
 fn maven_preparation_retains_a_revision_with_generated_source_roots() {
-    let fixture = Fixture::new();
-    let templates = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../fixtures/maven");
-    for directory in ["parent", "standalone"] {
+    let mut fixture = Fixture::new();
+    let engine_temp = fixture.isolate_engine_temp();
+    let templates = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../fixtures");
+    for (template, directory) in [("maven/parent", "parent"), ("maven-snapshot", "standalone")] {
         let project = fixture.root.join(directory);
         fs::create_dir(&project).unwrap();
         fs::copy(
-            templates.join(directory).join("pom.xml"),
+            templates.join(template).join("pom.xml"),
             project.join("pom.xml"),
         )
         .unwrap();
@@ -533,9 +546,17 @@ fn maven_preparation_retains_a_revision_with_generated_source_roots() {
     )
     .unwrap();
     fs::write(fixture.root.join("standalone/build.gradle"), "").unwrap();
+    fs::write(
+        fixture.root.join("standalone/.gitignore"),
+        "/target/\n/asyncapi.yaml\n/src/main/java/IgnoredGenerated.java\n",
+    )
+    .unwrap();
     git(&fixture.root, &["add", "parent", "standalone"]);
     git(&fixture.root, &["commit", "-qm", "Maven revision"]);
-    let checkouts = git(&fixture.root, &["worktree", "list", "--porcelain"]);
+    let stale_class = seed_preexisting_java_output(&fixture);
+    let stale_bytes = fs::read(&stale_class).unwrap();
+    let commit = git(&fixture.root, &["rev-parse", "HEAD"]);
+    let checkouts = registered_worktrees(&fixture);
     let output = checked(fixture.prepare_exact(json!([{
         "path": "standalone", "kind": "maven", "language": "java"
     }])));
@@ -548,6 +569,8 @@ fn maven_preparation_retains_a_revision_with_generated_source_roots() {
     .unwrap();
     assert_eq!(terminal["event"], "snapshot_prepared", "{terminal}");
     let snapshot = terminal["snapshot"].clone();
+    assert_eq!(snapshot["identity"]["commit"], commit);
+    assert_eq!(fs::read(stale_class).unwrap(), stale_bytes);
     let selection: Value =
         serde_json::from_str(snapshot["identity"]["selection"].as_str().unwrap()).unwrap();
     assert_eq!(
@@ -562,14 +585,59 @@ fn maven_preparation_retains_a_revision_with_generated_source_roots() {
         fixture.compare(&fixture.root, "HEAD", "HEAD")["result"]["graph_equal"],
         true
     );
-    assert_eq!(
-        git(&fixture.root, &["worktree", "list", "--porcelain"]),
-        checkouts
-    );
+    assert_generated_method_is_retained(&fixture);
+    assert_snapshot_checkout_removed(&fixture, &engine_temp, &checkouts);
     assert_preexisting_java_outputs_are_worktree_only(&fixture, &snapshot);
+    let pom = fs::read_to_string(fixture.root.join("standalone/pom.xml")).unwrap();
+    assert_build_rewriting_tracked_java_cannot_prepare_snapshot(&fixture, &pom);
+    assert_snapshot_checkout_removed(&fixture, &engine_temp, &checkouts);
+    assert_build_compiling_ignored_java_cannot_prepare_snapshot(&fixture, &pom);
+    assert_snapshot_checkout_removed(&fixture, &engine_temp, &checkouts);
 }
 
-fn assert_preexisting_java_outputs_are_worktree_only(fixture: &Fixture, snapshot: &Value) {
+fn assert_generated_method_is_retained(fixture: &Fixture) {
+    let generated = fixture.query(
+        &fixture.root,
+        json!({
+            "kind": "flow_comparison", "base": "HEAD", "head": "HEAD",
+            "selection": {"kind": "catalog", "text": "GeneratedThing"}
+        }),
+    );
+    assert!(
+        generated["result"]["records"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|record| {
+                record["membership"] == "both"
+                    && record["symbol"]
+                        .as_str()
+                        .unwrap()
+                        .contains("GeneratedThing")
+            }),
+        "{generated}"
+    );
+}
+
+fn registered_worktrees(fixture: &Fixture) -> Vec<String> {
+    git(&fixture.root, &["worktree", "list", "--porcelain"])
+        .lines()
+        .filter_map(|line| line.strip_prefix("worktree "))
+        .map(str::to_owned)
+        .collect()
+}
+
+fn assert_snapshot_checkout_removed(fixture: &Fixture, engine_temp: &Path, checkouts: &[String]) {
+    assert_eq!(registered_worktrees(fixture), checkouts);
+    let snapshot_directories: Vec<_> = fs::read_dir(engine_temp)
+        .unwrap()
+        .map(|entry| entry.unwrap().file_name())
+        .filter(|name| name.to_string_lossy().starts_with("ccnavigator-snapshot-"))
+        .collect();
+    assert!(snapshot_directories.is_empty(), "{snapshot_directories:?}");
+}
+
+fn seed_preexisting_java_output(fixture: &Fixture) -> PathBuf {
     let stale_source = fixture.directory.path().join("Stale.java");
     fs::write(
         &stale_source,
@@ -590,9 +658,17 @@ fn assert_preexisting_java_outputs_are_worktree_only(fixture: &Fixture, snapshot
             .output()
             .unwrap(),
     );
+    stale_classes.join("Stale.class")
+}
+
+fn assert_preexisting_java_outputs_are_worktree_only(fixture: &Fixture, snapshot: &Value) {
     let output = fixture.analyze_target(&fixture.root, "standalone/pom.xml");
     let messages = String::from_utf8_lossy(&output.stderr).to_string();
     checked(output);
+    assert_eq!(
+        fs::read_to_string(fixture.root.join("standalone/asyncapi.yaml")).unwrap(),
+        "asyncapi: 3.0.0"
+    );
     assert!(
         messages.contains("Java outputs predate the observed compiler attempt"),
         "{messages}"
@@ -606,6 +682,83 @@ fn assert_preexisting_java_outputs_are_worktree_only(fixture: &Fixture, snapshot
             .graph_path(&fixture.root)
             .unwrap()
             .starts_with(fixture.cache.join("worktrees"))
+    );
+}
+
+fn assert_build_rewriting_tracked_java_cannot_prepare_snapshot(fixture: &Fixture, pom: &str) {
+    add_validation_action(
+        fixture,
+        pom,
+        r#"<echo file="${project.basedir}/src/main/java/Example.java">public class Example { public static int value() { return 42; } }</echo>"#,
+    );
+    git(&fixture.root, &["add", "standalone/pom.xml"]);
+    git(
+        &fixture.root,
+        &["commit", "-qm", "Build rewrites tracked Java"],
+    );
+    let blob = git(
+        &fixture.root,
+        &["rev-parse", "HEAD:standalone/src/main/java/Example.java"],
+    );
+    assert_snapshot_input_rejected(
+        fixture,
+        &format!("An analyzed input differs from its Git blob {blob}"),
+    );
+    assert!(
+        fs::read_to_string(fixture.root.join("standalone/src/main/java/Example.java"))
+            .unwrap()
+            .contains("return 1")
+    );
+}
+
+fn assert_build_compiling_ignored_java_cannot_prepare_snapshot(fixture: &Fixture, pom: &str) {
+    add_validation_action(
+        fixture,
+        pom,
+        r#"<echo file="${project.basedir}/src/main/java/IgnoredGenerated.java">class IgnoredGenerated { static int value() { return 42; } }</echo>"#,
+    );
+    fs::write(
+        fixture.root.join("standalone/src/main/java/Example.java"),
+        "public class Example { public static int value() { return IgnoredGenerated.value(); } }\n",
+    )
+    .unwrap();
+    git(
+        &fixture.root,
+        &[
+            "add",
+            "standalone/pom.xml",
+            "standalone/src/main/java/Example.java",
+        ],
+    );
+    git(
+        &fixture.root,
+        &["commit", "-qm", "Build consumes ignored Java"],
+    );
+    assert_snapshot_input_rejected(
+        fixture,
+        "Input differs from the Git revision: standalone/src/main/java/IgnoredGenerated.java",
+    );
+}
+
+fn add_validation_action(fixture: &Fixture, pom: &str, action: &str) {
+    let updated = pom.replace(
+        "Validation completed</echo>",
+        &format!("Validation completed</echo>\n                {action}"),
+    );
+    assert_ne!(pom, updated);
+    fs::write(fixture.root.join("standalone/pom.xml"), updated).unwrap();
+}
+
+fn assert_snapshot_input_rejected(fixture: &Fixture, expected: &str) {
+    let output = fixture.prepare("HEAD", "standalone/pom.xml");
+    let diagnostic = String::from_utf8_lossy(&output.stderr);
+    assert!(
+        !output.status.success() && diagnostic.contains(expected),
+        "{diagnostic}"
+    );
+    assert_eq!(
+        fixture.status(&fixture.root, "HEAD")["snapshots"],
+        json!([])
     );
 }
 

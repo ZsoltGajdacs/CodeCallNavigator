@@ -1,7 +1,7 @@
 //! Fixed-selection, engine-owned preparation and raw extraction reuse.
 use super::{
-    AnalysisJob, AnalyzerRuntime, JobDirectory, ObservedAnalysis, compose, csharp, engine_versions,
-    ensure_unchanged, java, process::check_cancel, typescript,
+    AnalysisJob, AnalyzerRuntime, CleanSnapshotCheckout, JobDirectory, ObservedAnalysis, compose,
+    csharp, engine_versions, ensure_unchanged, java, process::check_cancel, typescript,
 };
 use crate::process_ownership::CleanupFailure;
 use crate::{discovery::BuildTarget, model::GraphData};
@@ -24,6 +24,7 @@ pub struct PreparedAnalysis {
     generation: u64,
     failed: bool,
     cleanup_failure: Option<CleanupFailure>,
+    snapshot_checkout: Option<CleanSnapshotCheckout>,
 }
 
 struct SelectedJob {
@@ -234,7 +235,19 @@ impl PreparedAnalysis {
             generation: 0,
             failed: false,
             cleanup_failure: None,
+            snapshot_checkout: None,
         })
+    }
+
+    /// Analyze a cleaned detached checkout for explicit snapshot preparation.
+    pub fn into_snapshot_observed(
+        mut self,
+        checkout: CleanSnapshotCheckout,
+        cancel: &AtomicBool,
+        progress: &dyn Fn(String),
+    ) -> Result<ObservedAnalysis> {
+        self.snapshot_checkout = Some(checkout);
+        self.into_observed(cancel, progress)
     }
 
     /// Prepare all compiler outputs. Java ownership is checked before compilation;
@@ -533,10 +546,13 @@ impl PreparedAnalysis {
                 continue;
             };
             let context = self.context(&self.jobs[index].path, cancel, progress);
-            let prepared =
-                java::compile(&self.jobs[index].build, &context, preflight).map_err(|error| {
-                    self.jobs[index].failure(error, AnalysisPhase::Compilation, cancel)
-                })?;
+            let prepared = java::compile(
+                &self.jobs[index].build,
+                &context,
+                preflight,
+                self.snapshot_checkout.as_ref(),
+            )
+            .map_err(|error| self.jobs[index].failure(error, AnalysisPhase::Compilation, cancel))?;
             if self.jobs[index].build.kind == "maven" {
                 self.jobs[index].maven_sources = Some(prepared.maven_sources());
             }

@@ -48,7 +48,7 @@ impl ResolvedRevision {
     pub fn with_checkout<T>(
         &self,
         cancel: &AtomicBool,
-        operation: impl FnOnce(&Path) -> Result<T>,
+        operation: impl FnOnce(&Path, &Path) -> Result<T>,
     ) -> Result<T> {
         require_running(cancel)?;
         let temporary = tempfile::Builder::new()
@@ -78,7 +78,7 @@ impl ResolvedRevision {
         &self,
         path: &Path,
         cancel: &AtomicBool,
-        operation: impl FnOnce(&Path) -> Result<T>,
+        operation: impl FnOnce(&Path, &Path) -> Result<T>,
     ) -> Result<T> {
         git(
             &self.repository,
@@ -110,8 +110,15 @@ impl ResolvedRevision {
             project == expected_project && project.is_dir(),
             "Project path in the requested revision must be a directory at the same repository path"
         );
+        git(
+            path,
+            &["clean".as_ref(), "-ffdx".as_ref()],
+            cancel,
+            CHECKOUT_TIMEOUT,
+        )
+        .context("Cannot clear untracked files from the temporary snapshot checkout")?;
         require_running(cancel)?;
-        operation(&project)
+        operation(path, &project)
     }
 
     fn clean_checkout(&self, path: &Path, temporary: &Path) -> Result<()> {
