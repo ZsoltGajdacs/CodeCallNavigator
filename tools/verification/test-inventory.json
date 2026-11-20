@@ -10224,7 +10224,7 @@
         "git",
         "typescript"
       ],
-      "purpose": "Proves that the real desktop controller can prepare isolated snapshots and select identical cached endpoints for graph pages and function flows through the public engine."
+      "purpose": "Prepares isolated snapshots and selects cached endpoints through the public engine, then renders impact rows, graph changes, and JSON detail through the production Rune view."
     },
     {
       "id": "codecallnavigator/bin:codecallnavigator::flow_comparison::tests::historical_workspace_loads_without_graph_and_keeps_captured_project_and_side_state",

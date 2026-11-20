@@ -6,7 +6,7 @@ use crate::{
     flow_comparison::{GraphNavigation, SELECT_BUILDS, SnapshotSide},
 };
 use codecallnavigator::artifact::{local_snapshots::SnapshotRecord, selection::Selection};
-use rune::{El, ScrollSpec, col, row, text};
+use rune::{El, GrowthSpec, ScrollSpec, col, row, text};
 use rune_kit::{Button, ButtonVariant, Kit};
 use serde::Deserialize;
 
@@ -345,28 +345,28 @@ fn graph_summary(page: &GraphPage, k: &Kit) -> El {
 
 fn graph_records(page: &GraphPage, k: &Kit) -> El {
     let kit = k.clone();
+    let rows = col()
+        .gap(4.0)
+        .growth(GrowthSpec::default())
+        .virtual_rows_version((&page.header.comparison_id, page.offset))
+        .virtual_rows(
+            page.changes.len(),
+            35.0,
+            |_: &State, index| index.to_string().into(),
+            move |state: &State, index| {
+                let Some(page) = &state.flow_comparison.snapshots.graph else {
+                    return rune::el();
+                };
+                graph_record(page, index, &kit)
+            },
+        );
     col()
         .min_h(0.0)
         .grow(1.0)
         .scroll(ScrollSpec {
             stick_bottom: false,
         })
-        .child(
-            col()
-                .gap(4.0)
-                .virtual_rows_version((&page.header.comparison_id, page.offset))
-                .virtual_rows(
-                    page.changes.len(),
-                    35.0,
-                    |_: &State, index| index.to_string().into(),
-                    move |state: &State, index| {
-                        let Some(page) = &state.flow_comparison.snapshots.graph else {
-                            return rune::el();
-                        };
-                        graph_record(page, index, &kit)
-                    },
-                ),
-        )
+        .child(rows)
 }
 
 fn graph_record(page: &GraphPage, index: usize, k: &Kit) -> El {
@@ -405,38 +405,36 @@ fn graph_record(page: &GraphPage, index: usize, k: &Kit) -> El {
 fn graph_detail(page: &GraphPage, index: usize, change: &GraphChange, k: &Kit) -> El {
     let color = k.c.text_base;
     let binding = (&page.header.comparison_id, page.offset, index);
+    let rows = col()
+        .w(1250.0)
+        .growth(GrowthSpec::default())
+        .virtual_rows_version(binding)
+        .virtual_rows(
+            change.line_count(),
+            20.0,
+            |_: &State, line| line.to_string().into(),
+            move |state: &State, line| {
+                state
+                    .flow_comparison
+                    .snapshots
+                    .graph
+                    .as_ref()
+                    .and_then(|page| page.changes.get(index))
+                    .and_then(|change| change.line(line))
+                    .map_or_else(rune::el, |line| {
+                        text(line)
+                            .font(crate::theme::mono(12.0, 400.0).lh(20.0))
+                            .color(color)
+                            .h(20.0)
+                    })
+            },
+        );
     col()
         .grow(1.0)
         .min_h(0.0)
         .gap(4.0)
         .key("comparison-graph-change-detail")
-        .child(
-            row()
-                .gap(6.0)
-                .child(
-                    Button::new("Back to changes")
-                        .variant(ButtonVariant::Outline)
-                        .on_press(|state: &mut State| {
-                            state.flow_comparison.snapshots.selected_change = None
-                        })
-                        .build(k)
-                        .key("comparison-graph-change-back"),
-                )
-                .child(
-                    Button::new("Copy JSON")
-                        .on_press_tx(|state: &mut State, tx| {
-                            let snapshots = &state.flow_comparison.snapshots;
-                            if let Some(change) = snapshots
-                                .selected_change
-                                .and_then(|index| snapshots.graph.as_ref()?.changes.get(index))
-                            {
-                                tx.copy(change.document.clone());
-                            }
-                        })
-                        .build(k)
-                        .key("comparison-graph-change-copy"),
-                ),
-        )
+        .child(graph_detail_actions(k))
         .child(
             col()
                 .key(format!(
@@ -448,26 +446,35 @@ fn graph_detail(page: &GraphPage, index: usize, change: &GraphChange, k: &Kit) -
                 .grow(1.0)
                 .min_h(0.0)
                 .scroll_xy()
-                .child(col().w(1250.0).virtual_rows_version(binding).virtual_rows(
-                    change.line_count(),
-                    20.0,
-                    |_: &State, line| line.to_string().into(),
-                    move |state: &State, line| {
-                        state
-                            .flow_comparison
-                            .snapshots
-                            .graph
-                            .as_ref()
-                            .and_then(|page| page.changes.get(index))
-                            .and_then(|change| change.line(line))
-                            .map_or_else(rune::el, |line| {
-                                text(line)
-                                    .font(crate::theme::mono(12.0, 400.0).lh(20.0))
-                                    .color(color)
-                                    .h(20.0)
-                            })
-                    },
-                )),
+                .child(rows),
+        )
+}
+
+fn graph_detail_actions(k: &Kit) -> El {
+    row()
+        .gap(6.0)
+        .child(
+            Button::new("Back to changes")
+                .variant(ButtonVariant::Outline)
+                .on_press(|state: &mut State| {
+                    state.flow_comparison.snapshots.selected_change = None
+                })
+                .build(k)
+                .key("comparison-graph-change-back"),
+        )
+        .child(
+            Button::new("Copy JSON")
+                .on_press_tx(|state: &mut State, tx| {
+                    let snapshots = &state.flow_comparison.snapshots;
+                    if let Some(change) = snapshots
+                        .selected_change
+                        .and_then(|index| snapshots.graph.as_ref()?.changes.get(index))
+                    {
+                        tx.copy(change.document.clone());
+                    }
+                })
+                .build(k)
+                .key("comparison-graph-change-copy"),
         )
 }
 

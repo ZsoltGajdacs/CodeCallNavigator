@@ -4,7 +4,7 @@ use crate::{
     app::State,
     engine_client::flow_comparison::{ImpactPreview, ImpactRow},
 };
-use rune::{El, ScrollSpec, col, row, text};
+use rune::{El, GrowthSpec, ScrollSpec, col, row, text};
 use rune_kit::{Button, ButtonVariant, Kit};
 
 pub(super) fn button(state: &State, k: &Kit) -> El {
@@ -95,6 +95,20 @@ fn coverage(report: &ImpactPreview, k: &Kit) -> El {
 
 fn records(report: &ImpactPreview, k: &Kit) -> El {
     let kit = k.clone();
+    let rows = col().growth(GrowthSpec::default()).virtual_rows(
+        report.rows.len(),
+        30.0,
+        |_: &State, index| index.to_string().into(),
+        move |state: &State, index| {
+            state
+                .flow_comparison
+                .impact
+                .report
+                .as_ref()
+                .and_then(|report| report.rows.get(index))
+                .map_or_else(rune::el, |row| record(row, &kit))
+        },
+    );
     col()
         .key("comparison-impact-records")
         .grow(1.0)
@@ -103,20 +117,7 @@ fn records(report: &ImpactPreview, k: &Kit) -> El {
         .scroll(ScrollSpec {
             stick_bottom: false,
         })
-        .child(col().virtual_rows(
-            report.rows.len(),
-            30.0,
-            |_: &State, index| index.to_string().into(),
-            move |state: &State, index| {
-                state
-                    .flow_comparison
-                    .impact
-                    .report
-                    .as_ref()
-                    .and_then(|report| report.rows.get(index))
-                    .map_or_else(rune::el, |row| record(row, &kit))
-            },
-        ))
+        .child(rows)
 }
 
 fn record(record: &ImpactRow, k: &Kit) -> El {
