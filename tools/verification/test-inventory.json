@@ -618,10 +618,10 @@
       "purpose": "uncertified prototype policy stays readable but requires manual refresh"
     },
     {
-      "id": "codecallnavigator-core/lib:codecallnavigator_core::artifact::revision::tests::history_includes_local_refs_and_linked_head_once_with_full_messages",
+      "id": "codecallnavigator-core/lib:codecallnavigator_core::artifact::revision::tests::history_lists_only_commits_reachable_from_linked_head_in_order",
       "runner": "rust",
       "file": "crates/codecallnavigator-core/src/artifact/revision/tests.rs",
-      "test_name": "artifact::revision::tests::history_includes_local_refs_and_linked_head_once_with_full_messages",
+      "test_name": "artifact::revision::tests::history_lists_only_commits_reachable_from_linked_head_in_order",
       "ignored": false,
       "package": "codecallnavigator-core",
       "target_kind": "lib",
@@ -631,13 +631,13 @@
       "requirements": [
         "git"
       ],
-      "purpose": "Real Git refs, linked and detached checkout identity, message decoding and deduplication"
+      "purpose": "Real Git HEAD ordering, merged history, exclusion of unrelated refs, and full commit messages in a detached linked checkout"
     },
     {
-      "id": "codecallnavigator-core/lib:codecallnavigator_core::artifact::revision::tests::history_pages_keep_their_original_tips_when_refs_move",
+      "id": "codecallnavigator-core/lib:codecallnavigator_core::artifact::revision::tests::history_pages_keep_their_original_head_when_it_moves",
       "runner": "rust",
       "file": "crates/codecallnavigator-core/src/artifact/revision/tests.rs",
-      "test_name": "artifact::revision::tests::history_pages_keep_their_original_tips_when_refs_move",
+      "test_name": "artifact::revision::tests::history_pages_keep_their_original_head_when_it_moves",
       "ignored": false,
       "package": "codecallnavigator-core",
       "target_kind": "lib",
@@ -647,7 +647,7 @@
       "requirements": [
         "git"
       ],
-      "purpose": "Real Git pagination remains bound to the original tips after a ref moves"
+      "purpose": "Real Git pagination remains bound to the original HEAD after a new commit, with empty and cancelled history coverage"
     },
     {
       "id": "codecallnavigator-core/lib:codecallnavigator_core::artifact::revision::tests::verified_nested_snapshots_bind_exact_bytes_without_a_working_graph",

@@ -39,16 +39,10 @@ fn add_history_refs(repo: &Path) {
         git(repo, &["commit", "--allow-empty", "-qm", subject]);
         git(repo, &["update-ref", reference, "HEAD"]);
     }
-    git(repo, &["tag", "-am", "annotated", "annotated", "tag-only"]);
-    git(
-        repo,
-        &["tag", "-am", "nested annotation", "nested", "annotated"],
-    );
-    git(repo, &["tag", "tree-target", "common^{tree}"]);
 }
 
 #[test]
-fn history_includes_local_refs_and_linked_head_once_with_full_messages() {
+fn history_lists_only_commits_reachable_from_linked_head_in_order() {
     let repo = tempfile::tempdir().unwrap();
     let linked = tempfile::tempdir().unwrap();
     let repo = repo.path();
@@ -68,6 +62,15 @@ fn history_includes_local_refs_and_linked_head_once_with_full_messages() {
     );
     git(
         &checkout,
+        &["merge", "--no-ff", "-qm", "merge topic", "topic"],
+    );
+    git(repo, &["switch", "-q", "topic"]);
+    git(
+        repo,
+        &["commit", "--allow-empty", "-qm", "unmerged topic tip"],
+    );
+    git(
+        &checkout,
         &[
             "commit",
             "--allow-empty",
@@ -82,17 +85,10 @@ fn history_includes_local_refs_and_linked_head_once_with_full_messages() {
     let cancel = AtomicBool::new(false);
     let history = CommitHistory::open(&nested, &cancel).unwrap();
     let page = history.page(0, &cancel).unwrap();
-    let mut subjects: Vec<_> = page.rows.iter().map(|row| row.subject.as_str()).collect();
-    subjects.sort_unstable();
+    let subjects: Vec<_> = page.rows.iter().map(|row| row.subject.as_str()).collect();
     assert_eq!(
         subjects,
-        [
-            "common",
-            "linked résumé",
-            "local branch",
-            "remote branch",
-            "tag only",
-        ],
+        ["linked résumé", "merge topic", "local branch", "common"],
     );
     assert_eq!(page.next_offset, None);
     assert_eq!(history.project(), nested.canonicalize().unwrap());
@@ -107,7 +103,7 @@ fn history_includes_local_refs_and_linked_head_once_with_full_messages() {
 }
 
 #[test]
-fn history_pages_keep_their_original_tips_when_refs_move() {
+fn history_pages_keep_their_original_head_when_it_moves() {
     let repo = tempfile::tempdir().unwrap();
     let repo = repo.path();
     init(repo);

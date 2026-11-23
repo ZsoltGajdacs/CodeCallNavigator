@@ -1,9 +1,8 @@
-//! Read commit history against a fixed set of tips for a native Compare visit.
+//! Read commit history from the checkout's HEAD captured for a Compare visit.
 
 use super::{GitInput, git_output, valid_commit};
 use anyhow::{Context, Result, ensure};
 use std::{
-    collections::BTreeSet,
     io::Read,
     path::{Path, PathBuf},
     sync::atomic::AtomicBool,
@@ -16,7 +15,6 @@ const OUTPUT_LIMIT: u64 = 8 * 1024 * 1024;
 pub struct CommitHistory {
     project: PathBuf,
     head: Option<String>,
-    tips: BTreeSet<String>,
 }
 
 #[derive(Debug)]
@@ -32,42 +30,18 @@ pub struct HistoryCommit {
 }
 
 impl CommitHistory {
-    /// Capture commits reachable from this checkout's HEAD and locally known refs.
+    /// Capture this checkout's HEAD so pagination is stable if the ref moves.
     pub fn open(project: &Path, cancel: &AtomicBool) -> Result<Self> {
         let project = project.canonicalize().context("Cannot open Git project")?;
-        let refs = read_git(
-            &project,
-            &[
-                "for-each-ref",
-                "--format=%(objectname)",
-                "refs/heads/",
-                "refs/remotes/",
-                "refs/tags/",
-            ],
-            &[],
-            cancel,
-        )?;
-        let refs = std::str::from_utf8(&refs)?;
-        let specs = commit_specs(refs)?;
-        // Batch peeling covers nested annotated tags and omits tags pointing to trees or blobs.
+        // Batch-check reports an unborn HEAD as missing without masking Git failures.
         let resolved = read_git(
             &project,
             &["cat-file", "--batch-check=%(objectname) %(objecttype)"],
-            specs.as_bytes(),
+            b"HEAD^{commit}\n",
             cancel,
         )?;
-        let resolved = std::str::from_utf8(&resolved)?;
-        let mut lines = resolved.lines();
-        let head = parse_peeled(lines.next().context("Missing Git HEAD result")?)?;
-        let mut tips = head.iter().cloned().collect::<BTreeSet<_>>();
-        for line in lines {
-            tips.extend(parse_peeled(line)?);
-        }
-        Ok(Self {
-            project,
-            head,
-            tips,
-        })
+        let head = parse_head(std::str::from_utf8(&resolved)?.trim_end())?;
+        Ok(Self { project, head })
     }
 
     pub fn project(&self) -> &Path {
@@ -79,15 +53,14 @@ impl CommitHistory {
     }
 
     pub fn page(&self, offset: usize, cancel: &AtomicBool) -> Result<CommitPage> {
-        if self.tips.is_empty() {
+        let Some(head) = self.head() else {
             return Ok(CommitPage {
                 rows: Vec::new(),
                 next_offset: None,
             });
-        }
+        };
         let skip = format!("--skip={offset}");
         let limit = format!("--max-count={}", PAGE_SIZE + 1);
-        let stdin: String = self.tips.iter().map(|tip| format!("{tip}\n")).collect();
         let output = read_git(
             &self.project,
             &[
@@ -101,10 +74,10 @@ impl CommitHistory {
                 "-z",
                 &skip,
                 &limit,
-                "--stdin",
+                head,
                 "--",
             ],
-            stdin.as_bytes(),
+            &[],
             cancel,
         )?;
         parse_page(&output, offset)
@@ -134,29 +107,14 @@ impl CommitHistory {
     }
 }
 
-fn commit_specs(refs: &str) -> Result<String> {
-    let mut specs = String::from("HEAD^{commit}\n");
-    for reference in refs.lines() {
-        ensure!(
-            valid_commit(reference),
-            "Git returned an invalid ref target"
-        );
-        specs.push_str(reference);
-        specs.push_str("^{commit}\n");
-    }
-    Ok(specs)
-}
-
-fn parse_peeled(line: &str) -> Result<Option<String>> {
-    let (name, kind) = line
-        .split_once(' ')
-        .context("Invalid Git ref target result")?;
-    if kind == "missing" {
+fn parse_head(line: &str) -> Result<Option<String>> {
+    let (name, kind) = line.split_once(' ').context("Invalid Git HEAD result")?;
+    if line == "HEAD^{commit} missing" {
         return Ok(None);
     }
     ensure!(
         kind == "commit" && valid_commit(name),
-        "Git returned an invalid commit target"
+        "Git returned an invalid HEAD commit"
     );
     Ok(Some(name.to_owned()))
 }
