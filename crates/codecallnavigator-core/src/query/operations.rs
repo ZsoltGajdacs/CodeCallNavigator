@@ -67,6 +67,7 @@ pub fn execute(graph: &GraphIndex, query: &Query) -> Result<Value> {
         | Query::Architecture { .. }
         | Query::Freshness { .. }
         | Query::Compare { .. }
+        | Query::ComparisonChanges { .. }
         | Query::FlowComparison { .. }
         | Query::SnapshotStatus { .. }
         | Query::ImpactPreview { .. }

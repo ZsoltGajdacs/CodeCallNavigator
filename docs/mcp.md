@@ -71,6 +71,7 @@ or without a progress token.
 | --- | --- |
 | `compare_graphs` | `base`, `head?` (`WORKTREE`), `base_snapshot?`, `head_snapshot?`, `offset?` (0), `limit?` (100; 1–500), `expected_comparison?`, `expected_generation?` |
 | `compare_function_flows` | `base`, `head?`, `base_snapshot?`, `head_snapshot?`, `selection`, `expected_comparison?` |
+| `compare_changes` | `base`, `head?` (`WORKTREE`), `base_snapshot?`, `head_snapshot?`, `selection`, `expected_comparison?`, `expected_generation?` |
 | `preview_graph_impact` | `base`, `head?` (`WORKTREE`), `base_snapshot?` |
 | `graph_snapshot_status` | `revision` |
 | `prepare_graph_snapshot` | `revision`, `targets?` (project-relative build paths) |
@@ -146,6 +147,12 @@ freshness and may be stale. Never interpret a saved graph as unsaved editor stat
 The 24 MiB CLI page budget is below the adapter's 32 MiB transport limit.
 Startup requires comparison format 1 with snapshot binding and the `compare`
 query capability; older CLIs must be upgraded with this adapter.
+
+`compare_changes` forwards the CLI's [compact change comparison](cli-queries.md#changed-classes-methods-and-files)
+when the installed engine advertises it. Select `list` to discover changes or
+`source_diff` to fetch unified hunks by change ID. Pass `expected_comparison`
+when paging or fetching source. Use the returned method `symbol` with
+`compare_function_flows` for the paired charts.
 
 `preview_graph_impact` uses one saved baseline graph and the tracked source diff
 to report potential caller impact. The response identifies the baseline and

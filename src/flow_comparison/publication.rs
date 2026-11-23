@@ -12,7 +12,12 @@ impl Workspace {
         }
         let catalog = self.publish_catalog();
         let detail = self.publish_detail();
-        identity.is_some() | catalog | detail | self.snapshots.poll() | self.poll_impact()
+        identity.is_some()
+            | catalog
+            | detail
+            | self.snapshots.poll()
+            | self.poll_impact()
+            | self.publish_changes()
     }
     fn publish_catalog(&mut self) -> bool {
         let Some(output) = self.catalog_job.take() else {
@@ -38,6 +43,7 @@ impl Workspace {
                 self.binding = Some(bound);
                 self.catalog = Some(std::sync::Arc::new(page));
                 self.phase = Phase::Bound;
+                self.load_change_list(0);
             }
             Ok(CatalogAnswer::Page(page)) => {
                 if self
@@ -74,12 +80,13 @@ impl Workspace {
                 self.current = Some(prepared.install(output.selection, &namespace, self.viewports));
                 self.detail_message.clear();
                 self.arm_source_restore();
+                self.prefetch_selected_source();
             }
             Err(error) => self.failed(error),
         }
         true
     }
-    fn failed(&mut self, error: StringError) {
+    pub(super) fn failed(&mut self, error: StringError) {
         self.controls.catalog_open = false;
         self.controls.choosing_after = false;
         self.cancel_requests();

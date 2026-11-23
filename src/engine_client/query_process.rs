@@ -116,6 +116,11 @@ impl Client {
     pub(super) fn comparison_supported(&self, cancel: &AtomicBool) -> Result<bool> {
         Ok(self.capabilities(cancel, Instant::now())?.flow_comparison)
     }
+    pub(super) fn comparison_changes_supported(&self, cancel: &AtomicBool) -> Result<bool> {
+        Ok(self
+            .capabilities(cancel, Instant::now())?
+            .comparison_changes)
+    }
     pub(super) fn graph_comparison_supported(&self, cancel: &AtomicBool) -> Result<bool> {
         Ok(self.capabilities(cancel, Instant::now())?.graph_comparison)
     }

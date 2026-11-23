@@ -42,6 +42,11 @@ fn provenance_and_source_checks_require_actual_endpoint_widgets() {
     runtime.set_titlebar_inset(rune::tooling::Chrome::DEFAULT.titlebar_inset());
     runtime.frame(0.0);
     runtime.frame(1.0 / 60.0);
+    click_control(&mut runtime, "comparison-catalog-open");
+    click_control(&mut runtime, "comparison-catalog-close");
+    assert!(runtime.state.flow_comparison.changes.expert);
+    runtime.settle_all();
+    runtime.frame(0.0);
     provenance(&runtime).unwrap();
     controls(&runtime).unwrap();
     assert!(source_observation::source_drawn(&runtime, SideId::Before).unwrap());
@@ -55,16 +60,20 @@ fn provenance_and_source_checks_require_actual_endpoint_widgets() {
         .iter()
         .position(|step| !step.calls.is_empty())
         .unwrap();
-    let mut input = Input::default();
-    assert!(input.click(&mut runtime, &format!("comparison-before-step-{index}")));
-    runtime.frame(1.0 / 60.0);
-    input.next(&mut runtime);
-    runtime.frame(1.0 / 60.0);
-    runtime.frame(1.0 / 60.0);
+    click_control(&mut runtime, &format!("comparison-before-step-{index}"));
     assert!(source_observation::highlighted(&runtime, SideId::Before).unwrap());
     runtime.update(|state, _| state.warning = "hide-provenance".into());
     runtime.frame(1.0 / 60.0);
     assert!(runtime.state.flow_comparison.header().is_some());
     assert!(provenance(&runtime).is_err());
     assert!(!source_observation::source_drawn(&runtime, SideId::Before).unwrap());
+}
+
+fn click_control(runtime: &mut Runtime<crate::app::State>, key: &str) {
+    let mut input = Input::default();
+    assert!(input.click(runtime, key), "Control {key} is not visible");
+    runtime.frame(1.0 / 60.0);
+    input.next(runtime);
+    runtime.frame(1.0 / 60.0);
+    runtime.frame(1.0 / 60.0);
 }

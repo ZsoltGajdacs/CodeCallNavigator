@@ -106,15 +106,18 @@ pub(crate) fn state(root: &Path) -> State {
 }
 pub(crate) fn settle(state: &mut State) {
     let start = Instant::now();
-    while state.flow_comparison.pending() {
+    loop {
+        state.flow_comparison.poll();
+        // A completion can be ready to publish before it starts the next worker.
+        if !state.flow_comparison.pending() && state.flow_comparison.stopped() {
+            break;
+        }
         assert!(
             start.elapsed() < Duration::from_secs(15),
             "Comparison job timed out"
         );
-        state.flow_comparison.poll();
         std::thread::sleep(Duration::from_millis(10));
     }
-    state.flow_comparison.poll();
 }
 pub(crate) fn selected(state: &State) -> String {
     state.flow_comparison.catalog.as_ref().unwrap().records.iter().find(|record| {

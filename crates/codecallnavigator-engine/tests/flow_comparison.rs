@@ -16,6 +16,72 @@ use std::fs;
 use support::*;
 
 #[test]
+fn change_pages_and_source_diff_use_the_same_saved_revision_binding() {
+    let repo = Repository::revisions_only();
+    let root = repo.root();
+    let mut request = json!({
+        "kind": "comparison_changes",
+        "base": SAVED.base,
+        "head": SAVED.head,
+        "selection": {"kind": "list", "limit": 1}
+    });
+    let first = query(root, request.clone());
+    assert!(first["error"].is_null(), "{first}");
+    let result = &first["result"];
+    assert_eq!(result["kind"], "list");
+    assert_eq!(result["version"], 1);
+    assert_eq!(first["generation"], result["head"]["digest"]);
+    assert_eq!(result["returned"], 1);
+    assert_eq!(result["more"], true);
+    assert_eq!(result["next_offset"], 1);
+
+    request["selection"]["offset"] = result["next_offset"].clone();
+    assert_eq!(
+        query(root, request.clone())["error"]["code"],
+        "invalid_request"
+    );
+    request["expected_comparison"] = result["comparison_id"].clone();
+    request["selection"]["limit"] = json!(100);
+    let rest = query(root, request.clone());
+    assert!(rest["error"].is_null(), "{rest}");
+    assert_eq!(rest["result"]["offset"], 1);
+    assert_eq!(rest["result"]["more"], false);
+    let records: Vec<_> = result["changes"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .chain(rest["result"]["changes"].as_array().unwrap())
+        .collect();
+    let added = symbol(&repo.after, "added");
+    let removed = symbol(&repo.before, "removed");
+    for (symbol, status) in [(added, "added"), (removed, "removed")] {
+        assert!(records.iter().any(|record| {
+            record["kind"] == "method" && record["symbol"] == symbol && record["status"] == status
+        }));
+    }
+    let owner = records
+        .into_iter()
+        .find(|record| matches!(record["kind"].as_str(), Some("class" | "file")))
+        .expect("changed source has a class or file row");
+    request["selection"] = json!({"kind": "source_diff", "id": owner["id"]});
+    let diff = query(root, request.clone());
+    assert!(diff["error"].is_null(), "{diff}");
+    assert_eq!(diff["result"]["kind"], "source_diff");
+    assert_eq!(diff["result"]["id"], owner["id"]);
+    assert_eq!(diff["result"]["status"], "ready");
+    assert!(diff["result"]["hunks"].as_array().is_some_and(|hunks| {
+        hunks.iter().any(|hunk| {
+            hunk["lines"].as_array().unwrap().iter().any(|line| {
+                line["kind"] == "insert" && line["text"].as_str().unwrap().contains("added")
+            })
+        })
+    }));
+    request["expected_comparison"] = json!("0".repeat(64));
+    assert_eq!(query(root, request)["error"]["code"], "comparison_mismatch");
+    assert!(artifact::working_manifest_path(root).is_err());
+}
+
+#[test]
 fn committed_catalog_and_detail_use_endpoint_source_and_targets_without_working_graph() {
     let repo = Repository::revisions_only();
     let root = repo.root();

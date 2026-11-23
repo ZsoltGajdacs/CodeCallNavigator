@@ -1,0 +1,112 @@
+use serde::Serialize;
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ChangeKind {
+    Class,
+    Method,
+    File,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum Status {
+    Added,
+    Modified,
+    Removed,
+}
+
+impl Status {
+    pub(super) fn between(before: bool, after: bool) -> Self {
+        match (before, after) {
+            (false, true) => Self::Added,
+            (true, false) => Self::Removed,
+            _ => Self::Modified,
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum Facet {
+    Declaration,
+    Members,
+    Flow,
+    Source,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum Certainty {
+    Possible,
+    Direct,
+}
+
+#[derive(Debug, Serialize)]
+pub struct EntryPoint {
+    pub id: String,
+    pub name: String,
+    pub before: Option<Certainty>,
+    pub after: Option<Certainty>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct Change {
+    pub id: String,
+    pub kind: ChangeKind,
+    pub name: String,
+    pub file: String,
+    pub status: Status,
+    pub changes_in: Vec<Facet>,
+    pub entry_points: Vec<EntryPoint>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub class_id: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub symbol: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub flow_available: Option<bool>,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum SourceStatus {
+    Ready,
+    Unavailable,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum LineKind {
+    Context,
+    Delete,
+    Insert,
+}
+
+#[derive(Debug, Serialize)]
+pub struct Line {
+    pub kind: LineKind,
+    pub text: String,
+}
+
+#[derive(Debug, Serialize)]
+pub struct Range {
+    pub start: usize,
+    pub count: usize,
+}
+
+#[derive(Debug, Serialize)]
+pub struct Hunk {
+    pub before: Range,
+    pub after: Range,
+    pub lines: Vec<Line>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct SourceDiff<'a> {
+    pub id: &'a str,
+    pub status: SourceStatus,
+    pub file: &'a str,
+    pub hunks: Vec<Hunk>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub reason: Option<&'static str>,
+}

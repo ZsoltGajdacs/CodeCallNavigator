@@ -1,9 +1,11 @@
 //! Revision controls and saved endpoint flows; all blocking work belongs to the controller.
 mod catalog;
+mod changes;
 mod impact;
 mod panes;
 mod provenance;
 mod snapshots;
+mod source_diff;
 use crate::{app::State, flow_comparison::Panel, theme};
 use rune::{Cx, El, col, row, text};
 use rune_kit::{Button, ButtonVariant, Kit, TextInput};
@@ -24,10 +26,20 @@ pub fn view(state: &State, cx: &mut Cx<State>) -> El {
         Panel::Flows => body
             .child(provenance::view(state, &k))
             .child(status(state, &k))
-            .child(counterpart(state, &k))
+            .child(if state.flow_comparison.changes.show_outline() {
+                changes::view(state, &k)
+            } else {
+                counterpart(state, &k)
+            })
+            .child(changes::divider(state, &k))
             .child(panes::view(state, &k)),
     };
-    crate::view::with_overlays(state, &k, body, catalog::layers(state, &k))
+    let mut overlays = Vec::new();
+    if state.flow_comparison.controls.panel == Panel::Flows {
+        overlays.extend(source_diff::layer(state, &k));
+    }
+    overlays.extend(catalog::layers(state, &k));
+    crate::view::with_overlays(state, &k, body, overlays)
 }
 fn toolbar(state: &State, inset: f32, k: &Kit) -> El {
     let panel = state.flow_comparison.controls.panel;
@@ -62,11 +74,31 @@ fn toolbar(state: &State, inset: f32, k: &Kit) -> El {
     if panel != Panel::Flows {
         return toolbar;
     }
+    flow_actions(state, toolbar, k)
+}
+fn flow_actions(state: &State, toolbar: El, k: &Kit) -> El {
+    let toolbar = if state.flow_comparison.changes.loaded && state.flow_comparison.changes.expert {
+        toolbar.child(
+            Button::new("Changes")
+                .on_press(|s: &mut State| {
+                    s.flow_comparison.changes.expert = false;
+                    s.flow_comparison.controls.catalog_open = false;
+                })
+                .build(k)
+                .key("comparison-show-changes"),
+        )
+    } else {
+        toolbar
+    };
     toolbar
         .child(
             Button::new("Functions")
                 .disabled(state.flow_comparison.catalog.is_none())
-                .on_press(|s: &mut State| s.flow_comparison.controls.catalog_open = true)
+                .on_press(|s: &mut State| {
+                    s.flow_comparison.changes.preview = None;
+                    s.flow_comparison.changes.expert = true;
+                    s.flow_comparison.controls.catalog_open = true;
+                })
                 .build(k)
                 .key("comparison-catalog-open"),
         )
@@ -247,7 +279,9 @@ fn status(state: &State, k: &Kit) -> El {
 }
 pub fn key(state: &mut State, event: &rune::KeyEvent) -> bool {
     if event.key == rune::Key::Escape {
-        if state.flow_comparison.controls.catalog_open {
+        if state.flow_comparison.changes.preview.take().is_some() {
+            return true;
+        } else if state.flow_comparison.controls.catalog_open {
             state.flow_comparison.controls.catalog_open = false;
         } else if state.flow_comparison.controls.panel == Panel::Graph
             && state

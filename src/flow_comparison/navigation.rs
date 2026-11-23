@@ -17,6 +17,7 @@ impl Workspace {
                 self.history.remove(0);
             }
         }
+        self.changes.preview = None;
         self.detail_message = "Preparing before and after flowcharts…".into();
         self.pending_scroll = None;
         self.mounted_source = None;
@@ -44,6 +45,7 @@ impl Workspace {
         self.mounted_source = None;
         self.detail_message.clear();
         self.arm_source_restore();
+        self.prefetch_selected_source();
         true
     }
     pub fn reset_counterpart(&mut self) -> Result<(), String> {

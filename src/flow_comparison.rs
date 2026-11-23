@@ -1,4 +1,6 @@
 //! Historical flows own their captured project and endpoint binding, not a graph epoch.
+mod call_changes;
+mod changes;
 mod controls;
 mod identity;
 mod impact;
@@ -15,6 +17,7 @@ use crate::engine_client::{
     QueryContext,
     flow_comparison::{BoundComparison, Catalog, ComparisonRefs},
 };
+pub(crate) use changes::{Changes, PreviewTarget, StepChange};
 pub use pair::{Pair, ReadySide, Side, SideId};
 use requests::{CatalogOutput, Clock, DetailOutput};
 use rune::{Latest, Waker};
@@ -54,6 +57,7 @@ pub struct Workspace {
     pub controls: controls::Controls,
     pub snapshots: snapshots::Snapshots,
     pub impact: impact::Impact,
+    pub changes: changes::Changes,
     project: Option<Project>,
     identity: identity::Identity,
     binding: Option<BoundComparison>,
@@ -113,6 +117,7 @@ impl Workspace {
         self.detail_job.set_waker(waker.clone());
         self.snapshots.set_waker(waker.clone());
         self.impact.set_waker(waker.clone());
+        self.changes.set_waker(waker.clone());
         self.workers.set_waker(waker);
     }
     pub fn pending(&self) -> bool {
@@ -120,6 +125,7 @@ impl Workspace {
             || self.detail_job.is_pending()
             || self.snapshots.pending()
             || self.impact.pending()
+            || self.changes.pending()
     }
     pub fn stopped(&self) -> bool {
         self.workers.stopped()
@@ -153,6 +159,7 @@ impl Workspace {
         self.detail_clock.cancel();
         self.catalog_job.cancel();
         self.detail_job.cancel();
+        self.changes.clear();
     }
     fn open(&mut self, project: Project) {
         self.close_flow_binding();
@@ -160,7 +167,6 @@ impl Workspace {
         self.phase = Phase::Loading;
         self.controls.visible = true;
         self.controls.reset_binding();
-        self.controls.catalog_open = true;
         let cancel = self.catalog_clock.restart();
         let serial = self.catalog_clock.serial;
         let work = self.workers.track(requests::CatalogWork {

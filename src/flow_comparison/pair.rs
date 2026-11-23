@@ -1,5 +1,5 @@
 //! Build independent presentation sessions from each endpoint's cached source and chart.
-use super::Selection;
+use super::{Selection, call_changes::CallChanges};
 use crate::{
     engine_client::flow_comparison as wire,
     flow_workspace::{Ready, Session},
@@ -38,11 +38,13 @@ pub struct Pair {
     pub after: Side,
     pub active_source: SideId,
     pub(super) fit_pending: [bool; 2],
+    pub(super) call_changes: CallChanges,
 }
 pub(super) struct Prepared {
     correspondence: wire::Correspondence,
     before: PreparedSide,
     after: PreparedSide,
+    call_changes: CallChanges,
 }
 enum PreparedSide {
     Ready {
@@ -55,10 +57,21 @@ enum PreparedSide {
 }
 impl Prepared {
     pub fn load(detail: wire::Detail, dot: &Path, cancel: &AtomicBool) -> Result<Self, String> {
+        let before = prepare(detail.before, dot, cancel)?;
+        let after = prepare(detail.after, dot, cancel)?;
+        let call_changes = match (&detail.correspondence.kind, &before, &after) {
+            (
+                wire::CorrespondenceKind::Exact,
+                PreparedSide::Ready { ready: before, .. },
+                PreparedSide::Ready { ready: after, .. },
+            ) => CallChanges::between(before, after),
+            _ => CallChanges::default(),
+        };
         Ok(Self {
             correspondence: detail.correspondence,
-            before: prepare(detail.before, dot, cancel)?,
-            after: prepare(detail.after, dot, cancel)?,
+            before,
+            after,
+            call_changes,
         })
     }
     pub fn install(self, selection: Selection, namespace: &str, viewports: [[f32; 2]; 2]) -> Pair {
@@ -67,6 +80,7 @@ impl Prepared {
             correspondence: Arc::new(self.correspondence),
             active_source: SideId::Before,
             fit_pending: [true, true],
+            call_changes: self.call_changes,
             before: install(self.before, &format!("{namespace}:before"), viewports[0]),
             after: install(self.after, &format!("{namespace}:after"), viewports[1]),
         }

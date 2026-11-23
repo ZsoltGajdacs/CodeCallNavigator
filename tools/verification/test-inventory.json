@@ -30,6 +30,76 @@
       "purpose": "provenance order is idempotent when exclusions start unsorted"
     },
     {
+      "id": "codecallnavigator-core/lib:codecallnavigator_core::artifact::comparison_changes::tests::ambiguous_declarations_produce_a_file_preview",
+      "runner": "rust",
+      "file": "crates/codecallnavigator-core/src/artifact/comparison_changes/tests.rs",
+      "test_name": "artifact::comparison_changes::tests::ambiguous_declarations_produce_a_file_preview",
+      "ignored": false,
+      "package": "codecallnavigator-core",
+      "target_kind": "lib",
+      "target": "codecallnavigator_core",
+      "component": "core",
+      "category": "unit",
+      "requirements": [],
+      "purpose": "unowned edits remain visible as an exact saved file diff"
+    },
+    {
+      "id": "codecallnavigator-core/lib:codecallnavigator_core::artifact::comparison_changes::tests::call_certainty_is_bound_to_each_snapshot",
+      "runner": "rust",
+      "file": "crates/codecallnavigator-core/src/artifact/comparison_changes/tests.rs",
+      "test_name": "artifact::comparison_changes::tests::call_certainty_is_bound_to_each_snapshot",
+      "ignored": false,
+      "package": "codecallnavigator-core",
+      "target_kind": "lib",
+      "target": "codecallnavigator_core",
+      "component": "core",
+      "category": "unit",
+      "requirements": [],
+      "purpose": "the same handler can reach a changed method with different certainty on each side"
+    },
+    {
+      "id": "codecallnavigator-core/lib:codecallnavigator_core::artifact::comparison_changes::tests::offset_only_flow_is_unchanged_but_class_declaration_is_listed",
+      "runner": "rust",
+      "file": "crates/codecallnavigator-core/src/artifact/comparison_changes/tests.rs",
+      "test_name": "artifact::comparison_changes::tests::offset_only_flow_is_unchanged_but_class_declaration_is_listed",
+      "ignored": false,
+      "package": "codecallnavigator-core",
+      "target_kind": "lib",
+      "target": "codecallnavigator_core",
+      "component": "core",
+      "category": "unit",
+      "requirements": [],
+      "purpose": "class-only edits are visible without falsely marking shifted method flows"
+    },
+    {
+      "id": "codecallnavigator-core/lib:codecallnavigator_core::artifact::comparison_changes::tests::typescript_methods_use_saved_semantic_class_owners",
+      "runner": "rust",
+      "file": "crates/codecallnavigator-core/src/artifact/comparison_changes/tests.rs",
+      "test_name": "artifact::comparison_changes::tests::typescript_methods_use_saved_semantic_class_owners",
+      "ignored": false,
+      "package": "codecallnavigator-core",
+      "target_kind": "lib",
+      "target": "codecallnavigator_core",
+      "component": "core",
+      "category": "unit",
+      "requirements": [],
+      "purpose": "distinct compiler-recorded class owners stay separate and historical keys remain unmapped"
+    },
+    {
+      "id": "codecallnavigator-core/lib:codecallnavigator_core::artifact::comparison_changes::tests::unified_hunks_preserve_crlf_and_missing_final_newline",
+      "runner": "rust",
+      "file": "crates/codecallnavigator-core/src/artifact/comparison_changes/tests.rs",
+      "test_name": "artifact::comparison_changes::tests::unified_hunks_preserve_crlf_and_missing_final_newline",
+      "ignored": false,
+      "package": "codecallnavigator-core",
+      "target_kind": "lib",
+      "target": "codecallnavigator_core",
+      "component": "core",
+      "category": "unit",
+      "requirements": [],
+      "purpose": "diff hunks preserve saved line endings and map to absolute line positions"
+    },
+    {
       "id": "codecallnavigator-core/lib:codecallnavigator_core::artifact::difference::tests::all_inventory_sections_and_extensions_remain_observable",
       "runner": "rust",
       "file": "crates/codecallnavigator-core/src/artifact/difference/tests.rs",
@@ -7023,6 +7093,23 @@
       "purpose": "cancellation during git read preserves artifacts and reaps the git group"
     },
     {
+      "id": "codecallnavigator-engine/test:flow_comparison::change_pages_and_source_diff_use_the_same_saved_revision_binding",
+      "runner": "rust",
+      "file": "crates/codecallnavigator-engine/tests/flow_comparison.rs",
+      "test_name": "change_pages_and_source_diff_use_the_same_saved_revision_binding",
+      "ignored": false,
+      "package": "codecallnavigator-engine",
+      "target_kind": "test",
+      "target": "flow_comparison",
+      "component": "engine",
+      "category": "acceptance",
+      "requirements": [
+        "cli",
+        "git"
+      ],
+      "purpose": "Read entity pages and typed source hunks through the real CLI against retained revisions and reject stale follow-ups without a working graph"
+    },
+    {
       "id": "codecallnavigator-engine/test:flow_comparison::committed_catalog_and_detail_use_endpoint_source_and_targets_without_working_graph",
       "runner": "rust",
       "file": "crates/codecallnavigator-engine/tests/flow_comparison.rs",
@@ -9063,6 +9150,20 @@
       "purpose": "optional observation support does not disable legacy graph queries"
     },
     {
+      "id": "codecallnavigator/bin:codecallnavigator::engine_client::flow_comparison::changes::tests::hover_classifies_only_the_edit_run_at_the_step",
+      "runner": "rust",
+      "file": "src/engine_client/flow_comparison/changes.rs",
+      "test_name": "engine_client::flow_comparison::changes::tests::hover_classifies_only_the_edit_run_at_the_step",
+      "ignored": false,
+      "package": "codecallnavigator",
+      "target_kind": "bin",
+      "target": "codecallnavigator",
+      "component": "ui",
+      "category": "unit",
+      "requirements": [],
+      "purpose": "unified diff marks a hovered step using the relevant change lines on its own side"
+    },
+    {
       "id": "codecallnavigator/bin:codecallnavigator::engine_client::flow_comparison::client::real_tests::packaged_cli_decodes_bound_saved_catalog_and_detail_without_current_graph",
       "runner": "rust",
       "file": "src/engine_client/flow_comparison/real_tests.rs",
@@ -10131,6 +10232,20 @@
       "purpose": "window setup waits off thread for ack and reports failure"
     },
     {
+      "id": "codecallnavigator/bin:codecallnavigator::flow_comparison::call_changes::tests::identical_source_marks_only_unique_steps_with_changed_call_targets",
+      "runner": "rust",
+      "file": "src/flow_comparison/call_changes.rs",
+      "test_name": "flow_comparison::call_changes::tests::identical_source_marks_only_unique_steps_with_changed_call_targets",
+      "ignored": false,
+      "package": "codecallnavigator",
+      "target_kind": "bin",
+      "target": "codecallnavigator",
+      "component": "ui",
+      "category": "unit",
+      "requirements": [],
+      "purpose": "attribute changed saved call targets to uniquely matched flow steps with byte-identical source"
+    },
+    {
       "id": "codecallnavigator/bin:codecallnavigator::flow_comparison::cleanup_tests::close_reaps_running_settled_and_published_clients_off_the_ui_thread",
       "runner": "rust",
       "file": "src/flow_comparison/cleanup_tests.rs",
@@ -10446,6 +10561,20 @@
       "category": "unit",
       "requirements": [],
       "purpose": "a queued request releases its shutdown lease when dropped before start"
+    },
+    {
+      "id": "codecallnavigator/bin:codecallnavigator::flow_comparison_view::source_diff::tests::unified_diff_mounts_virtual_rows_and_draws_changed_source",
+      "runner": "rust",
+      "file": "src/flow_comparison_view/source_diff.rs",
+      "test_name": "flow_comparison_view::source_diff::tests::unified_diff_mounts_virtual_rows_and_draws_changed_source",
+      "ignored": false,
+      "package": "codecallnavigator",
+      "target_kind": "bin",
+      "target": "codecallnavigator",
+      "component": "ui",
+      "category": "integration",
+      "requirements": [],
+      "purpose": "Mount the unified diff viewport and verify changed source renders without a virtualization panic."
     },
     {
       "id": "codecallnavigator/bin:codecallnavigator::flow_residency::tests::idle_starts_after_last_view_hides_and_releases_once",

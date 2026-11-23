@@ -1,6 +1,6 @@
 //! Potential impact from old-side Git ranges and one exact saved graph.
-use super::{Artifact, flow::View};
-use crate::model::{Edge, GraphData, Node, RelationshipKind, TargetResolution};
+use super::{Artifact, callers, flow::View};
+use crate::model::{GraphData, Node};
 use anyhow::{Result, ensure};
 use serde::Serialize;
 use std::collections::{BTreeMap, VecDeque};
@@ -287,27 +287,9 @@ struct CallerGraph<'a> {
 
 impl<'a> CallerGraph<'a> {
     fn new(graph: &'a GraphData) -> Self {
-        let mut incoming = vec![Vec::new(); graph.nodes.len()];
-        for (index, edge) in graph.edges.iter().enumerate() {
-            if edge.classification().kind == RelationshipKind::Call {
-                incoming[edge.to as usize].push(index);
-            }
-        }
-        for edges in &mut incoming {
-            edges.sort_by_key(|&index| {
-                let edge = &graph.edges[index];
-                (
-                    &graph.nodes[edge.from as usize].id,
-                    edge_possible(edge),
-                    &edge.kind,
-                    &edge.certainty,
-                    &edge.provenance,
-                )
-            });
-        }
         Self {
             graph,
-            incoming,
+            incoming: callers::incoming(graph),
             entries: entry_index(graph),
         }
     }
@@ -386,7 +368,7 @@ impl<'a> CallerGraph<'a> {
             let edge = &self.graph.edges[index];
             cursor = edge.to as usize;
             path.push(self.graph.nodes[cursor].id.clone());
-            possible |= edge_possible(edge);
+            possible |= callers::possible(edge);
             edges.push(CallEvidence {
                 kind: edge.kind.clone(),
                 certainty: edge.certainty.clone(),
@@ -451,17 +433,13 @@ impl Search {
     }
 }
 
-fn edge_possible(edge: &Edge) -> bool {
-    edge.classification().resolution != TargetResolution::Direct
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::{
         architecture::{ArchitectureFacts, FileFacts},
         flow::{FlowInventory, FunctionFlowIR, SourceSpan},
-        model::EntryPoints,
+        model::{Edge, EntryPoints},
     };
 
     const CODE: &str =

@@ -60,6 +60,13 @@ impl Input {
     pub fn click<S: 'static>(&mut self, runtime: &mut Runtime<S>, key: &str) -> bool {
         self.begin_press(runtime, key, None)
     }
+    pub fn hover<S: 'static>(&self, runtime: &mut Runtime<S>, key: &str) -> bool {
+        let Some([x, y]) = point(runtime, key) else {
+            return false;
+        };
+        runtime.pointer_move(x, y);
+        true
+    }
     pub fn edit<S: 'static>(&mut self, runtime: &mut Runtime<S>, key: &str, text: &str) -> bool {
         self.begin_press(runtime, key, Some(text))
     }

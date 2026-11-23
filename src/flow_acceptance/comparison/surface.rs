@@ -28,7 +28,12 @@ pub(super) fn controls(runtime: &Runtime<State>) -> Result<()> {
             .iter()
             .find(|el| el.key.as_deref() == Some(key) && !el.exiting)
             .ok_or_else(|| anyhow::anyhow!("Missing native control {key}"))?;
-        control_bounds(el, runtime.viewport)?;
+        control_bounds(el, runtime.viewport).with_context(|| {
+            format!(
+                "{key}: drawn {:?}, target {:?}, viewport {:?}",
+                el.rect, el.target, runtime.viewport
+            )
+        })?;
     }
     Ok(())
 }

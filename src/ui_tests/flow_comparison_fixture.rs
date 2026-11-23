@@ -80,6 +80,7 @@ pub(super) fn prefixed(name: &str, lines: usize) -> GraphData {
     graph
 }
 pub(super) fn choose(runtime: &mut Runtime<State>, label: &str) -> String {
+    super::flow_comparisons::open_catalog(runtime);
     let symbol=runtime.state.flow_comparison.catalog.as_ref().unwrap().records.iter().find(|record| {
         [&record.before,&record.after].into_iter().any(|side|matches!(side,crate::engine_client::flow_comparison::CatalogSide::Present(side) if side.node.as_ref().is_some_and(|node|node.label.starts_with(label))))
     }).unwrap_or_else(||panic!("No record for {label}: {:?}",runtime.state.flow_comparison.catalog)).symbol.clone();

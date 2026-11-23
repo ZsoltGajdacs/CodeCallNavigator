@@ -1,4 +1,5 @@
 //! A concrete native workflow; only input handlers may change comparison application state.
+mod flow_first;
 mod interaction;
 mod recovery;
 mod selection;
@@ -28,6 +29,7 @@ enum Phase {
     Resize,
     Boot,
     Editing(Editor),
+    FlowFirst(flow_first::Step),
     Selection(Selecting),
     Interaction(Interaction),
     Mismatch(Mismatch),
@@ -135,6 +137,7 @@ impl Driver {
     fn action(&mut self, runtime: &mut Runtime<State>) -> Result<()> {
         match self.phase {
             Phase::Editing(step) => self.editor_action(runtime, step),
+            Phase::FlowFirst(step) => self.flow_first_action(runtime, step),
             Phase::Selection(step) => self.selection_action(runtime, step),
             Phase::Interaction(step) => self.interaction_action(runtime, step),
             Phase::Mismatch(step) => self.mismatch_action(runtime, step),
@@ -168,6 +171,7 @@ impl Driver {
         match self.phase {
             Phase::Resize => self.resized(runtime),
             Phase::Boot => self.boot(runtime)?,
+            Phase::FlowFirst(step) => self.flow_first_observed(runtime, step)?,
             Phase::Selection(step) => self.selection_observed(runtime, step)?,
             Phase::Interaction(step) => self.interaction_observed(runtime, step)?,
             Phase::Mismatch(step) => self.mismatch_observed(runtime, step)?,

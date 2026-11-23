@@ -21,7 +21,13 @@ pub(super) fn view(state: &State, k: &Kit) -> El {
                 .child(el().w(1.0).h_full().fill(k.c.std_border))
                 .child(chart(state, SideId::After, k)),
         )
-        .child(bottom(state, k))
+        .child(
+            if state.flow_comparison.changes.loaded && !state.flow_comparison.changes.expert {
+                el()
+            } else {
+                bottom(state, k)
+            },
+        )
 }
 fn address(side: SideId) -> Address {
     match side {
@@ -44,17 +50,17 @@ fn chart(state: &State, side: SideId, k: &Kit) -> El {
         .h_full()
         .min_h(0.0);
     let Some(pair) = &state.flow_comparison.current else {
-        return content
-            .child(heading(title(side), "Select an identity", k))
-            .child(empty(
-                address,
-                if state.flow_comparison.detail_pending() {
-                    "Building before and after charts…"
-                } else {
-                    "Choose a saved function identity"
-                },
-                k,
-            ));
+        return content.child(heading(title(side), "", k)).child(empty(
+            address,
+            if state.flow_comparison.detail_pending() {
+                "Building before and after charts…"
+            } else if state.flow_comparison.changes.loaded {
+                "Select a changed method"
+            } else {
+                "Choose a saved function identity"
+            },
+            k,
+        ));
     };
     match pair.side(side) {
         Side::Ready(ready) => content

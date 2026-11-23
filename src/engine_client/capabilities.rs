@@ -16,6 +16,7 @@ use std::{
 pub(super) struct Capabilities {
     pub flow_languages: Vec<String>,
     pub flow_comparison: bool,
+    pub comparison_changes: bool,
     pub graph_comparison: bool,
     pub impact_preview: bool,
     pub local_snapshots: Option<LocalSnapshots>,
@@ -114,6 +115,8 @@ fn validate(bytes: &[u8]) -> Result<Capabilities> {
     Ok(Capabilities {
         flow_languages,
         flow_comparison: flow_comparison::supported(&capabilities, operations),
+        comparison_changes: capabilities["comparison_changes"]["version"] == 1
+            && operations.iter().any(|name| name == "comparison_changes"),
         graph_comparison: supports_graph_comparison(&capabilities, operations),
         impact_preview: operations.iter().any(|name| name == "impact_preview")
             && capabilities["impact_preview"]["version"] == 1,

@@ -4,6 +4,7 @@ mod analysis_session;
 mod arguments;
 mod cancellation;
 mod comparison;
+mod comparison_changes;
 mod flow_comparison;
 mod flow_expansion;
 mod impact_preview;

@@ -52,6 +52,9 @@ impl Backend {
     pub async fn shutdown(&self) {
         self.processes.shutdown().await;
     }
+    pub fn supports_comparison_changes(&self) -> bool {
+        self.capabilities.comparison_changes
+    }
     pub async fn query(
         &self,
         query: arguments::Query,
@@ -96,23 +99,37 @@ impl Backend {
         Ok(Reply { value, is_error })
     }
     fn unsupported_query(&self, operation: &str, query: &Value) -> Option<Reply> {
-        if operation == "freshness"
-            && let wire::FreshnessSupport::Unsupported(message) = self.capabilities.freshness
-        {
-            return Some(unsupported(message));
-        }
-        if operation == "flow_comparison" && !self.capabilities.flow_comparison {
-            return Some(unsupported(
-                "Upgrade the configured CLI to compare function flows",
-            ));
-        }
-        if operation == "impact_preview" && !self.capabilities.impact_preview {
-            return Some(unsupported(
-                "Upgrade the configured CLI to preview graph impact",
-            ));
-        }
-        (uses_local_snapshots(operation, query) && !self.capabilities.local_snapshots)
-            .then(|| unsupported("Upgrade the configured CLI to use local graph snapshots"))
+        let caps = &self.capabilities;
+        let message = match (operation, caps) {
+            (
+                "freshness",
+                wire::Capabilities {
+                    freshness: wire::FreshnessSupport::Unsupported(message),
+                    ..
+                },
+            ) => Some(*message),
+            (
+                "flow_comparison",
+                wire::Capabilities {
+                    flow_comparison: false,
+                    ..
+                },
+            ) => Some("Upgrade the configured CLI to compare function flows"),
+            (
+                "impact_preview",
+                wire::Capabilities {
+                    impact_preview: false,
+                    ..
+                },
+            ) => Some("Upgrade the configured CLI to preview graph impact"),
+            _ => None,
+        };
+        message
+            .or_else(|| {
+                (!caps.local_snapshots && uses_local_snapshots(operation, query))
+                    .then_some("Upgrade the configured CLI to use local graph snapshots")
+            })
+            .map(unsupported)
     }
     pub async fn discovery(&self, cancel: &CancellationToken) -> Result<Value> {
         let output = self

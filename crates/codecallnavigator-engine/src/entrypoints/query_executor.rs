@@ -1,6 +1,6 @@
 //! Shared request dispatch and working-generation reuse for both CLI transports.
 use super::query::{self, Loaded};
-use codecallnavigator_core::query::{Request, Response};
+use codecallnavigator_core::query::{Error, Query, Request, Response};
 
 #[derive(Default)]
 pub(super) struct Executor {
@@ -12,26 +12,10 @@ impl Executor {
         if let Err(error) = query::validate(request) {
             return query::envelope(None, Err(error));
         }
-        if let codecallnavigator_core::query::Query::SnapshotStatus { revision } = &request.query {
-            let result = super::snapshots::status(&request.project, revision)
-                .and_then(|status| Ok(serde_json::to_value(status)?))
-                .map_err(|error| {
-                    codecallnavigator_core::query::Error::new(
-                        "snapshot_unavailable",
-                        format!("{error:#}"),
-                    )
-                });
-            return query::envelope(None, result);
-        }
         if let Some(response) = self.release_owned(request) {
             return response;
         }
-        if let Some(response) = super::flow_comparison::respond(request) {
-            return response;
-        }
-        if let Some(response) =
-            super::comparison::respond(request).or_else(|| super::impact_preview::respond(request))
-        {
+        if let Some(response) = saved_revision_response(request) {
             return response;
         }
         if let Some(response) = query::live_response(request) {
@@ -218,6 +202,22 @@ impl Executor {
             self.loaded = Some(query::load_captured(request, roots, captured, generation)?);
         }
         Ok(())
+    }
+}
+
+fn saved_revision_response(request: &Request) -> Option<Response> {
+    match &request.query {
+        Query::SnapshotStatus { revision } => {
+            let result = super::snapshots::status(&request.project, revision)
+                .and_then(|status| Ok(serde_json::to_value(status)?))
+                .map_err(|error| Error::new("snapshot_unavailable", format!("{error:#}")));
+            Some(query::envelope(None, result))
+        }
+        Query::FlowComparison { .. } => super::flow_comparison::respond(request),
+        Query::ComparisonChanges { .. } => super::comparison_changes::respond(request),
+        Query::Compare { .. } => super::comparison::respond(request),
+        Query::ImpactPreview { .. } => super::impact_preview::respond(request),
+        _ => None,
     }
 }
 

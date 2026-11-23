@@ -65,9 +65,95 @@ fn real_stdio_comparison_preserves_cli_pages_metadata_and_errors() {
         "{current}"
     );
     assert!(current["result"]["retention"]["reason"].is_string());
+    let changes_binding = check_change_summary(&mut client, &engine, &root);
     check_pages_and_errors(&mut client, &engine, &root, &current["generation"]);
+    let stale = client.call(
+        "compare_changes",
+        json!({
+            "base":"HEAD", "expected_comparison":changes_binding,
+            "selection":{"kind":"list","offset":1,"limit":1}
+        }),
+    );
+    assert_eq!(
+        stale["structuredContent"]["error"]["code"],
+        "comparison_mismatch"
+    );
     client.disconnect();
     client.assert_shutdown();
+}
+
+fn check_change_summary(client: &mut Client, engine: &Path, root: &Path) -> Value {
+    let first = compare_changes(
+        client,
+        engine,
+        root,
+        json!({
+            "base":"HEAD", "selection":{"kind":"list","limit":1}
+        }),
+    );
+    assert_eq!(first["result"]["returned"], 1);
+    let binding = first["result"]["comparison_id"].clone();
+    let next = compare_changes(
+        client,
+        engine,
+        root,
+        json!({
+            "base":"HEAD", "expected_comparison":binding,
+            "selection":{"kind":"list","offset":first["result"]["next_offset"],"limit":1}
+        }),
+    );
+    assert_eq!(next["result"]["offset"], 1);
+
+    let complete = compare_changes(
+        client,
+        engine,
+        root,
+        json!({
+            "base":"HEAD", "selection":{"kind":"list"}
+        }),
+    );
+    let changes = complete["result"]["changes"].as_array().unwrap();
+    let changed = changes
+        .iter()
+        .find(|row| {
+            row["kind"] == "method"
+                && row["status"] == "added"
+                && row["name"]
+                    .as_str()
+                    .is_some_and(|name| name.contains("added"))
+        })
+        .expect("the added function was returned");
+    let source = compare_changes(
+        client,
+        engine,
+        root,
+        json!({
+            "base":"HEAD", "expected_comparison":binding,
+            "selection":{"kind":"source_diff","id":changed["id"]}
+        }),
+    );
+    assert_eq!(source["result"]["status"], "ready");
+    assert!(
+        source["result"]["hunks"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|hunk| {
+                hunk["lines"]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .any(|line| line["kind"] == "insert")
+            })
+    );
+    binding
+}
+
+fn compare_changes(client: &mut Client, engine: &Path, root: &Path, mut arguments: Value) -> Value {
+    let reply = client.graph("compare_changes", arguments.clone());
+    arguments["kind"] = json!("comparison_changes");
+    assert_eq!(reply, cli_query(engine, root, arguments));
+    reply
 }
 
 fn replace_entry(root: &Path, value: u32) {

@@ -67,7 +67,7 @@ impl Driver {
                 if runtime.state.flow_comparison.catalog.is_some() {
                     observation::bound(&runtime.state, &self.config.initial)?;
                     self.report.check("refs_entered_by_controls");
-                    self.select_case(0, Purpose::Cases);
+                    self.phase = Phase::FlowFirst(super::flow_first::Step::Outline);
                 }
             }
         }

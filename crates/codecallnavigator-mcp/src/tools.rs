@@ -23,12 +23,14 @@ impl ServerHandler for Server {
         _context: RequestContext<RoleServer>,
     ) -> Result<ListToolsResult, ErrorData> {
         Ok(ListToolsResult {
-            tools: definitions(),
+            tools: definitions(self.backend.supports_comparison_changes()),
             ..Default::default()
         })
     }
     fn get_tool(&self, name: &str) -> Option<Tool> {
-        definitions().into_iter().find(|tool| tool.name == name)
+        definitions(self.backend.supports_comparison_changes())
+            .into_iter()
+            .find(|tool| tool.name == name)
     }
     async fn call_tool(
         &self,
@@ -190,8 +192,15 @@ fn snapshot_tools() -> [Tool; 5] {
     ]
 }
 
-fn definitions() -> Vec<Tool> {
+fn definitions(comparison_changes: bool) -> Vec<Tool> {
     let mut tools = Vec::from(snapshot_tools());
+    if comparison_changes {
+        tools.push(tool::<CompareChangesArgs>(
+            "compare_changes",
+            "List changed classes, methods and files with affected entry points, or fetch a unified source diff by change ID. Carry expected_comparison and snapshot IDs across pages and detail requests. Use compare_function_flows with a method symbol for its paired charts.",
+            true,
+        ));
+    }
     tools.extend([
         tool::<GraphArgs>(
             "graph_status",

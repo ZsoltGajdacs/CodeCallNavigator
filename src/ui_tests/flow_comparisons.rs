@@ -104,7 +104,7 @@ pub(super) fn settle(runtime: &mut Runtime<State>) {
     let deadline = std::time::Instant::now() + std::time::Duration::from_secs(15);
     loop {
         runtime.frame(1.0 / 60.0);
-        if !runtime.state.flow_comparison.pending() {
+        if !runtime.state.flow_comparison.pending() && runtime.state.flow_comparison.stopped() {
             break;
         }
         assert!(std::time::Instant::now() < deadline);
@@ -120,6 +120,14 @@ pub(super) fn load(runtime: &mut Runtime<State>) {
     edit(runtime, "comparison-head", "refs/tags/head");
     click(runtime, "comparison-load");
     settle(runtime);
+    if runtime.state.flow_comparison.catalog.is_some() {
+        open_catalog(runtime);
+    }
+}
+pub(super) fn open_catalog(runtime: &mut Runtime<State>) {
+    if !runtime.state.flow_comparison.controls.catalog_open {
+        click(runtime, "comparison-catalog-open");
+    }
 }
 fn symbol(runtime: &Runtime<State>, label: &str) -> String {
     runtime.state.flow_comparison.catalog.as_ref().unwrap().records.iter().find(|record| {

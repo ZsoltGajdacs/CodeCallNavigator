@@ -51,6 +51,18 @@ pub enum Query {
         #[serde(default)]
         expected_comparison: Option<String>,
     },
+    ComparisonChanges {
+        base: String,
+        #[serde(default = "comparison_head")]
+        head: String,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        base_snapshot: Option<String>,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        head_snapshot: Option<String>,
+        #[serde(default)]
+        expected_comparison: Option<String>,
+        selection: ComparisonChangesSelection,
+    },
     FlowComparison {
         base: String,
         #[serde(default = "comparison_head")]
@@ -170,6 +182,20 @@ pub enum FlowComparisonSelection {
         symbol: String,
         #[serde(default)]
         head_symbol: Option<String>,
+    },
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(tag = "kind", rename_all = "snake_case", deny_unknown_fields)]
+pub enum ComparisonChangesSelection {
+    List {
+        #[serde(default)]
+        offset: usize,
+        #[serde(default = "comparison_limit")]
+        limit: usize,
+    },
+    SourceDiff {
+        id: String,
     },
 }
 

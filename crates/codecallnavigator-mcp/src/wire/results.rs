@@ -1,5 +1,6 @@
 //! Validate required operation payload shapes while preserving extension metadata.
 mod comparison;
+mod comparison_changes;
 mod flow_comparison;
 mod impact_preview;
 use anyhow::{Result, ensure};
@@ -12,6 +13,7 @@ pub fn validate(operation: &str, result: &Value) -> Result<()> {
     ensure!(result.is_object(), "CLI operation result must be an object");
     match operation {
         "compare" => comparison(result),
+        "comparison_changes" => comparison_changes::validate(result),
         "flow_comparison" => flow_comparison::validate(result),
         "impact_preview" => impact_preview::validate(result),
         "snapshot_status" => super::snapshots::status(result),
@@ -106,7 +108,7 @@ pub fn binding(request: &Value, result: &Value) -> Result<()> {
     }
     if !matches!(
         request["kind"].as_str(),
-        Some("compare" | "flow_comparison")
+        Some("compare" | "flow_comparison" | "comparison_changes")
     ) {
         return Ok(());
     }
@@ -123,6 +125,9 @@ pub fn binding(request: &Value, result: &Value) -> Result<()> {
                 "CLI returned a different snapshot selection for {side}"
             );
         }
+    }
+    if request["kind"] == "comparison_changes" {
+        comparison_changes::binding(request, result)?;
     }
     Ok(())
 }

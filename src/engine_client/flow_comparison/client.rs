@@ -145,6 +145,13 @@ impl ComparisonClient {
             expected_comparison: binding.expected.map(str::to_owned),
             selection,
         });
+        self.reply(request, cancel)
+    }
+    fn reply<T: DeserializeOwned>(
+        &self,
+        request: query::Request,
+        cancel: &AtomicBool,
+    ) -> Result<Reply<T>> {
         let response = self.context.client.query(&request, cancel)?;
         if let Some(error) = response.error {
             return Err(Error::Cli(error));
@@ -164,6 +171,32 @@ impl ComparisonClient {
     }
 }
 impl BoundComparison {
+    pub(super) fn changes_capability(&self, cancel: &AtomicBool) -> anyhow::Result<bool> {
+        self.client
+            .context
+            .client
+            .comparison_changes_supported(cancel)
+    }
+    pub(super) fn change_request<T: DeserializeOwned>(
+        &self,
+        selection: query::ComparisonChangesSelection,
+        cancel: &AtomicBool,
+        header: impl FnOnce(&T) -> &Header,
+    ) -> Result<T> {
+        let request = self.client.context.wire_request(Query::ComparisonChanges {
+            base: self.references.base.clone(),
+            head: self.references.head.clone(),
+            base_snapshot: self.references.base_snapshot.clone(),
+            head_snapshot: self.references.head_snapshot.clone(),
+            expected_comparison: Some(self.header.comparison_id.clone()),
+            selection,
+        });
+        let reply = self.client.reply(request, cancel)?;
+        let actual = header(&reply.value);
+        reply.check_generation(actual)?;
+        self.check(actual)?;
+        Ok(reply.value)
+    }
     pub fn header(&self) -> &Header {
         &self.header
     }

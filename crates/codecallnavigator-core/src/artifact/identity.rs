@@ -55,7 +55,10 @@ fn supplied_semantic(node: &crate::model::Node, key: &str, paths: &Paths) -> Str
 
 /// Only our exact canonical representation with this node's complete owner is reusable.
 /// Arbitrary native JSON strings must remain native analyzer identities.
-fn portable_semantic(node: &crate::model::Node, locations: (&str, &str)) -> Option<String> {
+pub(super) fn portable_semantic(
+    node: &crate::model::Node,
+    locations: (&str, &str),
+) -> Option<String> {
     let [_, _, _, semantic]: [String; 4] = serde_json::from_str(&node.id).ok()?;
     let expected = json!([node.language, locations.0, locations.1, semantic]).to_string();
     (node.id == expected).then_some(semantic)

@@ -1,6 +1,8 @@
 //! Portable graph artifacts. Runtime observations belong to the process protocol.
+mod callers;
 mod canonicalization;
 mod compare;
+pub mod comparison_changes;
 pub mod difference;
 pub mod flow;
 mod identity;

@@ -33,6 +33,8 @@ def validate_report(report, app):
     require(report["expected_viewport"] == [1050, 680], "Comparison probe used another minimum")
     require_bundled_runtime(report, app)
     checks = {"normal_no_graph_boot", "refs_entered_by_controls", "minimum_viewport_drawn",
+              "changes_outline_drawn_and_auto_selected", "unified_diff_drawn_on_hover",
+              "unified_diff_drawn_on_keyboard_focus", "class_preview_preserved_flow",
               "owned_window_setup_acknowledged", "provenance_drawn", "mismatch_cleared_actionable_content",
               "explicit_reload_rebound", "cancel_waited_for_owned_query_cleanup",
               "fresh_request_after_cancel", "endpoint_target_followed", "back_pair_restored", "no_graph_returned"}

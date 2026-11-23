@@ -94,6 +94,62 @@ not compile, refresh, publish or write graph caches. Refresh is an explicit
 `analyze` command. Failed or cancelled analysis preserves the last successful
 artifact. The existing `serve-once` analysis protocol remains available.
 
+## Changed classes, methods and files
+
+Engines advertising `comparison_changes.version: 1` accept a compact, read-only
+comparison of saved snapshots through `query` and `query-session`.
+
+```json
+{"version":2,"project":"/checkout","query":{"kind":"comparison_changes","base":"main","head":"WORKTREE","selection":{"kind":"list","limit":50}}}
+```
+
+The result includes the same endpoint metadata, comparison ID, and page fields
+as `compare`. Rows contain a stable `id`, readable `name`, `file`, `kind`
+(`class`, `method`, or `file`), `status` (`added`, `removed`, or `modified`),
+and `changes_in`. Method rows include the exact `symbol` usable with
+`flow_comparison`, `flow_available`, and `class_id` when a class owns the method. Entry-point
+references report whether each saved graph records a direct or possible route.
+A null side means no route was found on that side. The
+`coverage.entry_point_search_complete` flag indicates whether reachability
+search completed. Empty entry-point lists leave the change visible.
+
+Example excerpt from `result.changes` with abbreviated IDs:
+
+```json
+[
+  {
+    "id": "class-…",
+    "kind": "class",
+    "name": "Checkout",
+    "file": "Checkout.cs",
+    "status": "modified",
+    "changes_in": ["members"],
+    "entry_points": [{"id": "entry-id", "name": "Submit order", "before": "direct", "after": "direct"}]
+  },
+  {
+    "id": "method-…",
+    "kind": "method",
+    "name": "ValidateOrder()",
+    "file": "Checkout.cs",
+    "status": "modified",
+    "changes_in": ["flow", "source"],
+    "entry_points": [{"id": "entry-id", "name": "Submit order", "before": "direct", "after": "direct"}],
+    "class_id": "class-…",
+    "symbol": "symbol-id",
+    "flow_available": true
+  }
+]
+```
+
+Use `next_offset` to continue and pass the first page's `comparison_id` as
+`expected_comparison` on every follow-up. Keep the same refs and snapshot
+selectors. To fetch saved source, send `selection: {"kind":"source_diff","id":"<change id>"}`
+with that binding. A ready result contains a file and unified hunks with old and
+new line ranges and typed context, deletion, and insertion lines. An unavailable
+result includes a reason, such as `missing_saved_source` or
+`saved_source_too_large`. An added or removed file can return a ready diff with
+changes on one side. This query uses the saved source.
+
 ## Changed-symbol impact preview
 
 Run `ccnavigator impact-preview --project /checkout --base main` or send the

@@ -2,6 +2,7 @@
 use super::address::Address;
 use crate::{
     app::State,
+    flow_comparison::StepChange,
     flow_workspace::{Ready, Session},
     theme,
 };
@@ -62,17 +63,44 @@ pub(crate) fn view(state: &State, session: &Session, address: Address, k: &Kit) 
                 }),
         );
     }
-    content = content.child(connectors(session, ready, address.viewport(state), k));
-    for (index, step) in ready.chart.steps.iter().enumerate() {
-        if session
-            .camera
-            .shows_box(step.position, step.size, address.viewport(state))
-        {
-            content = content.child(step_card(session, Card { step, index }, address, k));
-        }
-    }
     content
+        .child(connectors(session, ready, address.viewport(state), k))
+        .children(step_cards(state, session, address, k))
 }
+
+fn step_cards<'a>(
+    state: &'a State,
+    session: &'a Session,
+    address: Address,
+    k: &'a Kit,
+) -> impl Iterator<Item = El> + 'a {
+    let outline_side = address
+        .side()
+        .filter(|_| state.flow_comparison.changes.show_outline());
+    let viewport = address.viewport(state);
+    session
+        .ready
+        .iter()
+        .flat_map(|ready| &ready.chart.steps)
+        .enumerate()
+        .filter(move |(_, step)| session.camera.shows_box(step.position, step.size, viewport))
+        .map(move |(index, step)| {
+            let change =
+                outline_side.and_then(|side| state.flow_comparison.step_change(side, index));
+            let card = step_card(
+                session,
+                Card {
+                    step,
+                    index,
+                    change,
+                },
+                address,
+                k,
+            );
+            preview_on_hover(card, outline_side, address, index)
+        })
+}
+
 fn connectors(session: &Session, ready: &Ready, viewport: [f32; 2], k: &Kit) -> El {
     let mut shape = Shape::new();
     let mut content = el().w_full().h_full().inert();
@@ -109,42 +137,38 @@ fn connectors(session: &Session, ready: &Ready, viewport: [f32; 2], k: &Kit) -> 
 struct Card<'a> {
     step: &'a FlowStep,
     index: usize,
+    change: Option<StepChange>,
 }
 fn step_card(session: &Session, card: Card<'_>, address: Address, k: &Kit) -> El {
-    let Card { step, index } = card;
+    let Card {
+        step,
+        index,
+        change,
+    } = card;
     let p = session.camera.screen(step.position);
     let scale = session.camera.zoom;
     let selected = session.selected == Some(index);
     let badge = session.marker_badge(index);
-    let kind = badge.map_or(std::borrow::Cow::Borrowed(step.kind.as_str()), |badge| {
-        std::borrow::Cow::Owned(format!("{} · {badge}", step.kind))
-    });
-    let semantic = matches!(step.kind.as_str(), "decision" | "switch" | "loop");
-    let border = if selected {
-        k.c.text_accent
-    } else if semantic {
-        theme::uncertain(k)
-    } else {
-        k.c.text_muted.alpha(0.4)
-    };
+    let paint = StepPaint::new(change, selected, step, k);
+    let kind = step_label(step, badge, paint.mark);
     col()
         .key(address.key(&format!("step-{index}")))
         .absolute(p[0], p[1])
         .size(step.size[0] * scale, step.size[1] * scale)
-        .radius(if semantic { 3.0 } else { 8.0 })
-        .border(if selected { 2.0 } else { 1.0 }, border)
-        .fill(if selected {
-            k.c.text_accent.alpha(0.15)
-        } else {
-            k.c.layer_01
-        })
+        .radius(paint.radius)
+        .border(if selected { 2.0 } else { 1.0 }, paint.border)
+        .fill(paint.fill)
         .padding(7.0 * scale)
         .clip_rounded(5.0)
         .child(
-            text(kind.as_ref())
+            text(kind.as_str())
                 .key(address.key(&format!("step-kind-{index}")))
                 .font(theme::mono((10.0 * scale).max(7.0), 500.0))
-                .color(badge.map_or(k.c.text_muted, |_| k.c.warning.fg))
+                .color(
+                    paint
+                        .change
+                        .unwrap_or_else(|| badge.map_or(k.c.text_muted, |_| k.c.warning.fg)),
+                )
                 .truncate(),
         )
         .child(
@@ -159,4 +183,70 @@ fn step_card(session: &Session, card: Card<'_>, address: Address, k: &Kit) -> El
         .label(&step.label)
         .focusable(true)
         .on_press_tx(move |s: &mut State, tx| address.select(s, index, tx))
+}
+
+struct StepPaint {
+    mark: &'static str,
+    change: Option<rune::Color>,
+    radius: f32,
+    border: rune::Color,
+    fill: rune::Color,
+}
+
+impl StepPaint {
+    fn new(change: Option<StepChange>, selected: bool, step: &FlowStep, k: &Kit) -> Self {
+        let semantic = matches!(step.kind.as_str(), "decision" | "switch" | "loop");
+        let (mark, color) = match change {
+            Some(StepChange::Added) => ("+ ", Some(k.c.success.fg)),
+            Some(StepChange::Removed) => ("− ", Some(k.c.danger.fg)),
+            Some(StepChange::Modified) => ("± ", Some(k.c.text_accent)),
+            None => ("", None),
+        };
+        let (border, fill) = match (color, selected, semantic) {
+            (Some(color), _, _) => (color, color.alpha(0.12)),
+            (None, true, _) => (k.c.text_accent, k.c.text_accent.alpha(0.15)),
+            (None, false, true) => (theme::uncertain(k), k.c.layer_01),
+            (None, false, false) => (k.c.text_muted.alpha(0.4), k.c.layer_01),
+        };
+        Self {
+            mark,
+            change: color,
+            radius: if semantic { 3.0 } else { 8.0 },
+            border,
+            fill,
+        }
+    }
+}
+
+fn step_label(step: &FlowStep, badge: Option<&str>, mark: &str) -> String {
+    let mut label = format!("{mark}{}", step.kind);
+    if let Some(badge) = badge {
+        label.push_str(" · ");
+        label.push_str(badge);
+    }
+    label
+}
+
+fn preview_on_hover(
+    card: El,
+    side: Option<crate::flow_comparison::SideId>,
+    address: Address,
+    index: usize,
+) -> El {
+    let Some(side) = side else {
+        return card;
+    };
+    let key = address.key(&format!("step-{index}"));
+    card.hover_delays(
+        std::time::Duration::from_millis(160),
+        std::time::Duration::ZERO,
+    )
+    .on_hover_change(move |s: &mut State, inside, _| {
+        if inside {
+            s.flow_comparison
+                .show_step_preview(side, index, key.clone());
+        } else {
+            s.flow_comparison.end_step_hover(&key);
+        }
+    })
 }

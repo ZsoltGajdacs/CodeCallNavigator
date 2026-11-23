@@ -39,6 +39,32 @@ pub struct FlowComparisonArgs {
 }
 #[derive(Deserialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
+pub struct CompareChangesArgs {
+    pub base: String,
+    #[serde(default = "comparison_head")]
+    pub head: String,
+    pub base_snapshot: Option<String>,
+    pub head_snapshot: Option<String>,
+    pub expected_comparison: Option<String>,
+    pub expected_generation: Option<String>,
+    pub selection: CompareChangesSelection,
+}
+#[derive(Deserialize, Serialize, JsonSchema)]
+#[serde(tag = "kind", rename_all = "snake_case", deny_unknown_fields)]
+pub enum CompareChangesSelection {
+    List {
+        #[serde(default)]
+        offset: u32,
+        #[serde(default = "comparison_limit")]
+        #[schemars(range(min = 1, max = 500))]
+        limit: u32,
+    },
+    SourceDiff {
+        id: String,
+    },
+}
+#[derive(Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
 pub struct ImpactPreviewArgs {
     pub base: String,
     #[serde(default = "comparison_head")]
@@ -282,6 +308,7 @@ impl Query {
 pub fn parse(name: &str, value: Value) -> Result<Query> {
     match name {
         "compare_graphs" => comparison(serde_json::from_value(value)?),
+        "compare_changes" => comparison_changes(serde_json::from_value(value)?),
         "compare_function_flows" => flow_comparison(serde_json::from_value(value)?),
         "preview_graph_impact" => impact_preview(serde_json::from_value(value)?),
         "graph_snapshot_status" => {
@@ -353,6 +380,35 @@ fn comparison(args: CompareArgs) -> Result<Query> {
     );
     validate_generation(args.expected_comparison.as_deref())?;
     let mut query = json!({"kind":"compare","base":args.base,"head":args.head,"offset":args.offset,"limit":args.limit,"expected_comparison":args.expected_comparison});
+    snapshot_selectors(&mut query, args.base_snapshot, args.head_snapshot)?;
+    Query::new(query, args.expected_generation)
+}
+fn comparison_changes(args: CompareChangesArgs) -> Result<Query> {
+    text(&args.base)?;
+    text(&args.head)?;
+    ensure!(
+        args.base != "WORKTREE",
+        "Comparison base must name a commit"
+    );
+    validate_generation(args.expected_comparison.as_deref())?;
+    let follow_up = match &args.selection {
+        CompareChangesSelection::List { offset, limit } => {
+            ensure!((1..=500).contains(limit), "Comparison limit must be 1..500");
+            *offset > 0
+        }
+        CompareChangesSelection::SourceDiff { id } => {
+            flow_symbol(id)?;
+            true
+        }
+    };
+    ensure!(
+        !follow_up || args.expected_comparison.is_some(),
+        "Comparison follow-ups require expected_comparison"
+    );
+    let mut query = json!({
+        "kind": "comparison_changes", "base": args.base, "head": args.head,
+        "expected_comparison": args.expected_comparison, "selection": args.selection
+    });
     snapshot_selectors(&mut query, args.base_snapshot, args.head_snapshot)?;
     Query::new(query, args.expected_generation)
 }
