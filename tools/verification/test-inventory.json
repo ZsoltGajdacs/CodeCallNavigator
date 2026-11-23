@@ -618,6 +618,38 @@
       "purpose": "uncertified prototype policy stays readable but requires manual refresh"
     },
     {
+      "id": "codecallnavigator-core/lib:codecallnavigator_core::artifact::revision::tests::history_includes_local_refs_and_linked_head_once_with_full_messages",
+      "runner": "rust",
+      "file": "crates/codecallnavigator-core/src/artifact/revision/tests.rs",
+      "test_name": "artifact::revision::tests::history_includes_local_refs_and_linked_head_once_with_full_messages",
+      "ignored": false,
+      "package": "codecallnavigator-core",
+      "target_kind": "lib",
+      "target": "codecallnavigator_core",
+      "component": "core",
+      "category": "integration",
+      "requirements": [
+        "git"
+      ],
+      "purpose": "Real Git refs, linked and detached checkout identity, message decoding and deduplication"
+    },
+    {
+      "id": "codecallnavigator-core/lib:codecallnavigator_core::artifact::revision::tests::history_pages_keep_their_original_tips_when_refs_move",
+      "runner": "rust",
+      "file": "crates/codecallnavigator-core/src/artifact/revision/tests.rs",
+      "test_name": "artifact::revision::tests::history_pages_keep_their_original_tips_when_refs_move",
+      "ignored": false,
+      "package": "codecallnavigator-core",
+      "target_kind": "lib",
+      "target": "codecallnavigator_core",
+      "component": "core",
+      "category": "integration",
+      "requirements": [
+        "git"
+      ],
+      "purpose": "Real Git pagination remains bound to the original tips after a ref moves"
+    },
+    {
       "id": "codecallnavigator-core/lib:codecallnavigator_core::artifact::revision::tests::verified_nested_snapshots_bind_exact_bytes_without_a_working_graph",
       "runner": "rust",
       "file": "crates/codecallnavigator-core/src/artifact/revision/tests.rs",
@@ -12850,10 +12882,10 @@
       "purpose": "missing and unavailable sides stay explicit"
     },
     {
-      "id": "codecallnavigator/bin:codecallnavigator::ui_tests::flow_comparison_catalog::moved_ref_blocks_actions_until_explicit_reload",
+      "id": "codecallnavigator/bin:codecallnavigator::ui_tests::flow_comparison_catalog::moved_tag_preserves_the_selected_commit_until_another_is_loaded",
       "runner": "rust",
       "file": "src/ui_tests/flow_comparison_catalog.rs",
-      "test_name": "ui_tests::flow_comparison_catalog::moved_ref_blocks_actions_until_explicit_reload",
+      "test_name": "ui_tests::flow_comparison_catalog::moved_tag_preserves_the_selected_commit_until_another_is_loaded",
       "ignored": false,
       "package": "codecallnavigator",
       "target_kind": "bin",
@@ -12864,7 +12896,7 @@
         "git",
         "graphviz"
       ],
-      "purpose": "moved ref blocks actions until explicit reload"
+      "purpose": "a moved tag leaves the selected commit and its actions pinned until a different commit is loaded"
     },
     {
       "id": "codecallnavigator/bin:codecallnavigator::ui_tests::flow_comparison_editor::entry_cleanup_preserves_the_single_flow_session_history_and_actual_scroll",

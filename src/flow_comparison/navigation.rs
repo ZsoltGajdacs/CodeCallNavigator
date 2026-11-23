@@ -2,6 +2,7 @@
 use super::{Selection, Side, SideId, Workspace, requests::DetailWork};
 impl Workspace {
     pub fn select(&mut self, selection: Selection) -> Result<(), String> {
+        self.require_idle_worktree_refresh()?;
         let bound = self
             .binding
             .clone()

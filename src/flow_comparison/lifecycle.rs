@@ -74,13 +74,21 @@ impl Workspace {
     pub fn project_installed(&mut self, project: Option<&Path>) {
         self.impact.project_installed(project);
         self.snapshots.project_installed(project);
-        if self.project.is_none() {
-            return;
-        }
         let Some(project) = project else {
             self.close();
             return;
         };
+        if self
+            .revisions
+            .physical_project()
+            .is_some_and(|path| path != project)
+        {
+            self.close();
+            return;
+        }
+        if self.project.is_none() {
+            return;
+        }
         if self.identity.installed(project) == super::identity::Installation::Different {
             self.close();
         }

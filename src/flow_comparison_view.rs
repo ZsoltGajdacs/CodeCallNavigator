@@ -4,11 +4,12 @@ mod changes;
 mod impact;
 mod panes;
 mod provenance;
+mod revisions;
 mod snapshots;
 mod source_diff;
 use crate::{app::State, flow_comparison::Panel, theme};
 use rune::{Cx, El, col, row, text};
-use rune_kit::{Button, ButtonVariant, Kit, TextInput};
+use rune_kit::{Button, ButtonVariant, Kit};
 pub fn view(state: &State, cx: &mut Cx<State>) -> El {
     let k = theme::kit(cx.system_dark());
     let body = col()
@@ -39,6 +40,7 @@ pub fn view(state: &State, cx: &mut Cx<State>) -> El {
         overlays.extend(source_diff::layer(state, &k));
     }
     overlays.extend(catalog::layers(state, &k));
+    overlays.extend(revisions::layers(state, &k));
     crate::view::with_overlays(state, &k, body, overlays)
 }
 fn toolbar(state: &State, inset: f32, k: &Kit) -> El {
@@ -139,35 +141,28 @@ fn revisions(state: &State, k: &Kit) -> El {
         .pb(8.0)
         .gap(8.0)
         .center_y()
-        .child(text("Base").font(k.ty.small).color(k.c.text_muted))
-        .child(
-            TextInput::new(&controls.base)
-                .width(None)
-                .label("Base local revision")
-                .on_edit(|s: &mut State| &mut s.flow_comparison.controls.base)
-                .build(k)
-                .key("comparison-base")
-                .grow(1.0)
-                .min_w(80.0),
-        )
-        .child(text("After").font(k.ty.small).color(k.c.text_muted))
-        .child(
-            TextInput::new(&controls.head)
-                .width(None)
-                .label("After local revision")
-                .on_edit(|s: &mut State| &mut s.flow_comparison.controls.head)
-                .build(k)
-                .key("comparison-head")
-                .grow(1.0)
-                .min_w(80.0),
-        )
+        .child(revisions::picker_button(
+            state,
+            crate::flow_comparison::SnapshotSide::Base,
+            k,
+        ))
+        .child(revisions::picker_button(
+            state,
+            crate::flow_comparison::SnapshotSide::Head,
+            k,
+        ))
         .child(
             Button::new(if controls.panel == Panel::Flows {
                 "Load"
             } else {
                 "Compare flows"
             })
-            .disabled(state.runtime.is_none() || snapshots.pending())
+            .disabled(
+                state.runtime.is_none()
+                    || snapshots.pending()
+                    || state.flow_comparison.revisions.base().is_none()
+                    || state.flow_comparison.worktree_refresh.pending(),
+            )
             .on_press(State::load_flow_comparison)
             .build(k)
             .key("comparison-load"),
@@ -175,8 +170,11 @@ fn revisions(state: &State, k: &Kit) -> El {
         .child(reload_button(state, k))
         .child(
             Button::new("Cancel")
-                .disabled(!state.flow_comparison.pending())
-                .on_press(|s: &mut State| s.flow_comparison.cancel_control())
+                .disabled(
+                    !state.flow_comparison.comparison_pending()
+                        && !state.flow_comparison.worktree_refresh.pending(),
+                )
+                .on_press(State::cancel_comparison_action)
                 .build(k)
                 .key("comparison-cancel"),
         )
@@ -190,7 +188,7 @@ fn reload_button(state: &State, k: &Kit) -> El {
         Panel::Impact => workspace.can_preview_impact(),
     };
     Button::new("Reload")
-        .disabled(snapshots.pending() || !can_reload)
+        .disabled(snapshots.pending() || workspace.worktree_refresh.pending() || !can_reload)
         .on_press(
             |state: &mut State| match state.flow_comparison.controls.panel {
                 Panel::Flows => state.flow_comparison.reload_control(),
@@ -279,7 +277,10 @@ fn status(state: &State, k: &Kit) -> El {
 }
 pub fn key(state: &mut State, event: &rune::KeyEvent) -> bool {
     if event.key == rune::Key::Escape {
-        if state.flow_comparison.changes.preview.take().is_some() {
+        if state.flow_comparison.revisions.picker.is_some() {
+            state.flow_comparison.revisions.close_picker();
+            return true;
+        } else if state.flow_comparison.changes.preview.take().is_some() {
             return true;
         } else if state.flow_comparison.controls.catalog_open {
             state.flow_comparison.controls.catalog_open = false;

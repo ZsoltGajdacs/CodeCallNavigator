@@ -12,10 +12,10 @@ import uuid
 from csharp_flow_acceptance import require
 from csharp_desktop_acceptance import (clean_environment, defer_for_desktop, require_bundled_runtime,
                                        require_viewport, setup_window, write_json)
-from comparison_desktop_fixture import prepare, git, HEAD_REF
+from comparison_desktop_fixture import prepare, git, HEAD_REF, WORKTREE_LINE
 from comparison_desktop_gate import Gate
 from comparison_desktop_cleanup import OwnedRun
-from comparison_desktop_protocol import NativeOperations
+from comparison_desktop_protocol import NativeOperations, ORDER, WORKTREE_EDIT
 from native_fixture import NativeFixture
 
 
@@ -27,20 +27,31 @@ def seed_session(store, project):
         database.execute("INSERT INTO catalog VALUES ('session',?)", (json.dumps(session),))
 
 
-def validate_report(report, app):
+def required_checks(worktree):
+    checks = {"normal_no_graph_boot", "commits_selected_by_controls", "commit_messages_drawn_for_both_sides",
+              "minimum_viewport_drawn",
+              "changes_outline_drawn_and_auto_selected", "unified_diff_drawn_on_hover",
+              "unified_diff_drawn_on_keyboard_focus", "class_preview_preserved_flow",
+              "owned_window_setup_acknowledged", "provenance_drawn", "moved_tag_left_selected_commit_pinned",
+              "selected_later_commit_rebound", "cancel_waited_for_owned_query_cleanup",
+              "fresh_request_after_cancel", "endpoint_target_followed", "back_pair_restored"}
+    checks |= {f"{role}_pair_exact" for role in ("Changed", "Unchanged", "Added", "Removed", "Legacy", "Manual")}
+    checks |= {f"{side}_{check}" for side in ("Before", "After") for check in
+               ("highlight_drawn", "camera_independent", "scroll_independent", "hidden_scroll_restored")}
+    if worktree:
+        checks |= {"worktree_confirmation_cancel_preserved_pair",
+                   "worktree_refresh_rendered_uncommitted_diff", "worktree_graph_returned"}
+    else:
+        checks.add("no_graph_returned")
+    return checks
+
+
+def validate_report(report, app, worktree):
     require(report["version"] == 2 and report["status"] == "passed", f"Native comparison failed: {report}")
     require_viewport(report["viewport"])
     require(report["expected_viewport"] == [1050, 680], "Comparison probe used another minimum")
     require_bundled_runtime(report, app)
-    checks = {"normal_no_graph_boot", "refs_entered_by_controls", "minimum_viewport_drawn",
-              "changes_outline_drawn_and_auto_selected", "unified_diff_drawn_on_hover",
-              "unified_diff_drawn_on_keyboard_focus", "class_preview_preserved_flow",
-              "owned_window_setup_acknowledged", "provenance_drawn", "mismatch_cleared_actionable_content",
-              "explicit_reload_rebound", "cancel_waited_for_owned_query_cleanup",
-              "fresh_request_after_cancel", "endpoint_target_followed", "back_pair_restored", "no_graph_returned"}
-    checks |= {f"{role}_pair_exact" for role in ("Changed", "Unchanged", "Added", "Removed", "Legacy", "Manual")}
-    checks |= {f"{side}_{check}" for side in ("Before", "After") for check in
-               ("highlight_drawn", "camera_independent", "scroll_independent", "hidden_scroll_restored")}
+    checks = required_checks(worktree)
     require(all(report["checks"].get(check) is True for check in checks), "Native comparison omitted a required drawn check")
     require(report["frames"]["drawn"] > 0 and report["ready_drawn_ms"], "Native comparison has no actual Drawn observations")
     require(report["captures"] == ["unavailable-flow", "manual-pair", "restored-pair"], "Native comparison capture checkpoints are incomplete")
@@ -59,8 +70,12 @@ class NativeRun:
 def run_native(run):
     app, fixture, store, directory, theme, timeout = run.app, run.fixture, run.store, run.directory, run.theme, run.timeout
     directory.mkdir()
-    write_json(directory / "config.json", fixture.config)
-    gate = Gate(fixture.project, directory, uuid.uuid4().hex, app / "Contents/MacOS/codecallnavigator-engine")
+    # Run this last, since it deliberately publishes a graph for the shared fixture.
+    worktree = theme == "light"
+    config = dict(fixture.config, worktree_line=WORKTREE_LINE) if worktree else fixture.config
+    write_json(directory / "config.json", config)
+    gate = Gate(fixture.project, directory, uuid.uuid4().hex, fixture.config["initial"]["base_commit"],
+                app / "Contents/MacOS/codecallnavigator-engine")
     environment = clean_environment()
     environment.update(CODECALLNAVIGATOR_DATA_DIR=str(store),
                        CODECALLNAVIGATOR_GRAPH_LIBRARY=str(fixture.library),
@@ -72,10 +87,14 @@ def run_native(run):
         lease = None
         try:
             lease = setup_window(process, directory, timeout)
-            operations = NativeOperations(fixture, gate, process, directory, lease.identity.window_id, timeout).serve()
-            require(process.wait(timeout=30) == 0, "Native comparison app returned failure")
+            order = (*ORDER, WORKTREE_EDIT) if worktree else ORDER
+            operations = NativeOperations(fixture, gate, process, directory, lease.identity.window_id,
+                                          timeout, order).serve()
+            # The light journey still has to compile and render the edited worktree.
+            exit_code = process.wait(timeout=timeout if worktree else 30)
             report = json.loads((directory / "report.json").read_text())
-            validate_report(report, app)
+            require(exit_code == 0, f"Native comparison app returned failure: {report.get('error')}")
+            validate_report(report, app, worktree)
             return {"theme": theme, "command": command, "observations": report,
                     "operations": operations, "window_setup": lease.audit}
         finally:

@@ -1,10 +1,12 @@
 //! Read-only working and verified commit graphs from the local library.
 mod changes;
+mod history;
 mod inspection;
 mod repository;
 use super::{Artifact, storage};
 use anyhow::{Context, Result};
 pub use changes::TrackedChanges;
+pub use history::{CommitHistory, CommitPage, HistoryCommit};
 pub use inspection::{
     ArtifactFailure, ArtifactResult, InspectedEndpoint, Inspection, ObservedSchema, inspect,
     inspect_cached, load_retained,

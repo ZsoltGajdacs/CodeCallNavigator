@@ -48,6 +48,7 @@ struct Publication {
 }
 
 struct PendingManual {
+    purpose: crate::jobs::AnalysisPurpose,
     selection: crate::engine_client::Analysis,
     binding: crate::workspace::Binding,
 }
@@ -182,12 +183,10 @@ impl Workspace {
         self.last = None;
     }
 
-    pub fn cancel_pending_manual(&mut self) -> bool {
-        let cancelled = self.manual_pending.take().is_some();
-        if cancelled {
-            self.binding = None;
-        }
-        cancelled
+    pub fn cancel_pending_manual(&mut self) -> Option<crate::jobs::AnalysisPurpose> {
+        let request = self.manual_pending.take()?;
+        self.binding = None;
+        Some(request.purpose)
     }
 
     fn automatic_cleanup_pending(&self) -> bool {
@@ -316,9 +315,15 @@ impl Workspace {
 }
 
 impl State {
-    pub(crate) fn defer_manual_analysis(
+    #[cfg(test)]
+    pub(crate) fn defer_manual_analysis(&mut self, selection: &Analysis) -> bool {
+        self.defer_manual_analysis_for(selection, crate::jobs::AnalysisPurpose::MainGraph)
+    }
+
+    pub(crate) fn defer_manual_analysis_for(
         &mut self,
-        selection: &crate::engine_client::Analysis,
+        selection: &Analysis,
+        purpose: crate::jobs::AnalysisPurpose,
     ) -> bool {
         if self.freshness.manual_running {
             return false;
@@ -328,6 +333,7 @@ impl State {
         }
         self.stop_selected_refresh();
         self.freshness.manual_pending = Some(PendingManual {
+            purpose,
             selection: selection.clone(),
             binding: crate::workspace::Binding::capture(self),
         });
@@ -500,9 +506,13 @@ fn poll_manual(state: &mut State) -> Option<bool> {
         .expect("pending manual analysis");
     if request.binding.matches(state) {
         state.freshness.manual_running = true;
-        state.start_selected_analysis(request.selection);
+        state.start_selected_analysis(request.selection, request.purpose);
     } else {
         state.freshness.binding = None;
+        request.purpose.failed(
+            state,
+            "The active project changed before analysis started".into(),
+        );
     }
     Some(true)
 }

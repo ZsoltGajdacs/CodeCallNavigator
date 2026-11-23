@@ -1,5 +1,5 @@
 //! Snapshot jobs share comparison lifetime, but can run before a flow pair exists.
-use super::{Panel, Workspace, work};
+use super::{Panel, work};
 use crate::{
     app::State,
     engine_client::{
@@ -26,7 +26,7 @@ mod tests;
 pub(crate) const SELECT_BUILDS: &str = "Select builds in the main graph to prepare a snapshot.";
 const PREPARATION_FAILED: &str = "Snapshot preparation failed";
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq, Eq)]
 pub enum Side {
     Base,
     Head,
@@ -196,15 +196,6 @@ impl State {
     }
 }
 
-impl Workspace {
-    pub fn control_refs(&self) -> ComparisonRefs {
-        self.snapshots.references(
-            self.controls.base.text.clone(),
-            self.controls.head.text.clone(),
-        )
-    }
-}
-
 impl Snapshots {
     pub fn lookup(&self, side: Side, reference: &str) -> Option<&Lookup> {
         self.lookups[side.index()]
@@ -275,7 +266,7 @@ impl Snapshots {
         }
     }
 
-    fn references(&self, base: String, head: String) -> ComparisonRefs {
+    pub(super) fn references(&self, base: String, head: String) -> ComparisonRefs {
         let base_snapshot = self
             .lookup(Side::Base, &base)
             .and_then(|lookup| lookup.selected.clone());

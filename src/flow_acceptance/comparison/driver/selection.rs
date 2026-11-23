@@ -4,7 +4,11 @@ use super::*;
 pub(super) enum Editor {
     Entry,
     Base,
+    PickBase,
+    CloseBase,
     After,
+    PickAfter,
+    CloseAfter,
     Load,
     Catalog,
 }
@@ -37,39 +41,48 @@ impl Driver {
         match step {
             Editor::Entry => self.click(runtime, "compare-flows", Phase::Editing(Editor::Base)),
             Editor::Base => {
-                if self
-                    .input
-                    .edit(runtime, "comparison-base", &self.config.base_ref)
-                {
-                    self.phase = Phase::Editing(Editor::After);
-                }
+                self.click(runtime, "comparison-base", Phase::Editing(Editor::PickBase))
             }
-            Editor::After => {
+            Editor::PickBase => {
                 ensure!(
-                    runtime.state.flow_comparison.controls.base.text == self.config.base_ref,
-                    "Actual Base editor did not accept the supplied ref"
+                    runtime.find("comparison-revision-worktree").is_none(),
+                    "Base picker offered a Worktree endpoint"
                 );
-                if self
-                    .input
-                    .edit(runtime, "comparison-head", &self.config.head_ref)
-                {
-                    self.phase = Phase::Editing(Editor::Load);
-                }
-            }
-            Editor::Load => {
-                ensure!(
-                    runtime.state.flow_comparison.controls.head.text == self.config.head_ref,
-                    "Actual After editor did not accept the supplied ref"
+                self.click(
+                    runtime,
+                    &format!("comparison-revision-{}", self.config.initial.base_commit),
+                    Phase::Editing(Editor::CloseBase),
                 );
-                self.click(runtime, "comparison-load", Phase::Editing(Editor::Catalog));
             }
-            Editor::Catalog => {
-                if runtime.state.flow_comparison.catalog.is_some() {
-                    observation::bound(&runtime.state, &self.config.initial)?;
-                    self.report.check("refs_entered_by_controls");
-                    self.phase = Phase::FlowFirst(super::flow_first::Step::Outline);
-                }
+            Editor::CloseBase if commit_message_drawn(runtime, "fixture-before") => self.click(
+                runtime,
+                "comparison-revisions-done",
+                Phase::Editing(Editor::After),
+            ),
+            Editor::After => self.click(
+                runtime,
+                "comparison-head",
+                Phase::Editing(Editor::PickAfter),
+            ),
+            Editor::PickAfter if runtime.find("comparison-revision-worktree").is_some() => self
+                .click(
+                    runtime,
+                    &format!("comparison-revision-{}", self.config.initial.head_commit),
+                    Phase::Editing(Editor::CloseAfter),
+                ),
+            Editor::CloseAfter if commit_message_drawn(runtime, "fixture-after") => self.click(
+                runtime,
+                "comparison-revisions-done",
+                Phase::Editing(Editor::Load),
+            ),
+            Editor::Load => self.click(runtime, "comparison-load", Phase::Editing(Editor::Catalog)),
+            Editor::Catalog if runtime.state.flow_comparison.catalog.is_some() => {
+                observation::bound(&runtime.state, &self.config.initial)?;
+                self.report.check("commits_selected_by_controls");
+                self.report.check("commit_messages_drawn_for_both_sides");
+                self.phase = Phase::FlowFirst(super::flow_first::Step::Outline);
             }
+            _ => (),
         }
         Ok(())
     }
@@ -212,9 +225,28 @@ impl Driver {
             Purpose::Reloaded => self.phase = Phase::Cancellation(Cancellation::Arm),
             Purpose::Fresh => {
                 self.report.check("fresh_request_after_cancel");
-                self.phase = Phase::Cancellation(Cancellation::Close);
+                if self.config.worktree_line.is_some() {
+                    self.external(
+                        Operation::EditWorktree,
+                        Checkpoint::WorktreeEdited,
+                        Phase::Worktree(worktree::Step::OpenAfter),
+                    )?;
+                } else {
+                    self.phase = Phase::Cancellation(Cancellation::Close);
+                }
             }
         }
         Ok(())
     }
+}
+
+fn commit_message_drawn(runtime: &Runtime<State>, subject: &str) -> bool {
+    runtime.elements().iter().any(|element| {
+        !element.exiting
+            && element.visible[2].min(element.visible[3]) > 0.0
+            && element.path.contains("/comparison-revision-message")
+            && element.text.as_ref().is_some_and(|message| {
+                message.contains(subject) && message.contains("Compiler-backed comparison fixture.")
+            })
+    })
 }

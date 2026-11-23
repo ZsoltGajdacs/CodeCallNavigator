@@ -2,6 +2,7 @@ mod analysis;
 mod queries;
 pub(crate) use crate::workspace::{Boot, data_directory, load_boot};
 use crate::{app::State, projection};
+pub(crate) use analysis::Purpose as AnalysisPurpose;
 use analysis::poll_analysis;
 pub use queries::NeighborOutput;
 use queries::poll_graph;

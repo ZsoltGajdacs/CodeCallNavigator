@@ -16,6 +16,7 @@ pub(crate) enum Operation {
     ArmGitGate,
     WaitGitGate,
     ReleaseGitGate,
+    EditWorktree,
     Capture,
 }
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -25,6 +26,7 @@ pub(crate) enum Checkpoint {
     GateArmed,
     GateHeld,
     GateReleased,
+    WorktreeEdited,
     UnavailableFlow,
     ManualPair,
     RestoredPair,
@@ -66,6 +68,7 @@ impl Request {
             Operation::ArmGitGate => self.checkpoint == Checkpoint::GateArmed,
             Operation::WaitGitGate => self.checkpoint == Checkpoint::GateHeld,
             Operation::ReleaseGitGate => self.checkpoint == Checkpoint::GateReleased,
+            Operation::EditWorktree => self.checkpoint == Checkpoint::WorktreeEdited,
             Operation::Capture => matches!(
                 self.checkpoint,
                 Checkpoint::UnavailableFlow | Checkpoint::ManualPair | Checkpoint::RestoredPair

@@ -188,7 +188,7 @@ impl Driver {
                 self.external(
                     Operation::Capture,
                     Checkpoint::RestoredPair,
-                    Phase::Mismatch(Mismatch::Move),
+                    Phase::RefMove(RefMove::Move),
                 )?;
             }
             _ => (),

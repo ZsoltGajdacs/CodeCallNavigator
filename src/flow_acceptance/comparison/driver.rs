@@ -3,6 +3,7 @@ mod flow_first;
 mod interaction;
 mod recovery;
 mod selection;
+mod worktree;
 use super::{
     config::{CaseKind, Configuration},
     observation,
@@ -19,7 +20,7 @@ use crate::{
 };
 use anyhow::{Context, Result, ensure};
 use interaction::{Interaction, SavedPair};
-use recovery::{Cancellation, Mismatch};
+use recovery::{Cancellation, RefMove};
 use rune::{Runtime, WindowHandle};
 use selection::{Editor, Purpose, Selecting};
 use std::time::{Duration, Instant};
@@ -32,8 +33,9 @@ enum Phase {
     FlowFirst(flow_first::Step),
     Selection(Selecting),
     Interaction(Interaction),
-    Mismatch(Mismatch),
+    RefMove(RefMove),
     Cancellation(Cancellation),
+    Worktree(worktree::Step),
     ExternalWait,
     Writing,
     Closing,
@@ -140,8 +142,9 @@ impl Driver {
             Phase::FlowFirst(step) => self.flow_first_action(runtime, step),
             Phase::Selection(step) => self.selection_action(runtime, step),
             Phase::Interaction(step) => self.interaction_action(runtime, step),
-            Phase::Mismatch(step) => self.mismatch_action(runtime, step),
+            Phase::RefMove(step) => self.ref_move_action(runtime, step),
             Phase::Cancellation(step) => self.cancel_action(runtime, step),
+            Phase::Worktree(step) => self.worktree_action(runtime, step),
             _ => Ok(()),
         }
     }
@@ -174,8 +177,9 @@ impl Driver {
             Phase::FlowFirst(step) => self.flow_first_observed(runtime, step)?,
             Phase::Selection(step) => self.selection_observed(runtime, step)?,
             Phase::Interaction(step) => self.interaction_observed(runtime, step)?,
-            Phase::Mismatch(step) => self.mismatch_observed(runtime, step)?,
+            Phase::RefMove(step) => self.ref_move_observed(runtime, step)?,
             Phase::Cancellation(step) => self.cancel_observed(runtime, step)?,
+            Phase::Worktree(step) => self.worktree_observed(runtime, step)?,
             _ => (),
         }
         Ok(())

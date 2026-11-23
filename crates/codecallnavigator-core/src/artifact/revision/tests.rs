@@ -24,6 +24,138 @@ fn init(repo: &Path) {
     git(repo, &["config", "user.email", "test@example.invalid"]);
 }
 
+fn add_history_refs(repo: &Path) {
+    git(repo, &["commit", "--allow-empty", "-qm", "common"]);
+    git(repo, &["tag", "common"]);
+    git(repo, &["switch", "-qc", "topic"]);
+    git(repo, &["commit", "--allow-empty", "-qm", "local branch"]);
+
+    for (subject, reference) in [
+        ("remote branch", "refs/remotes/origin/remote"),
+        ("tag only", "refs/tags/tag-only"),
+        ("stash only", "refs/stash"),
+    ] {
+        git(repo, &["switch", "-q", "--detach", "common"]);
+        git(repo, &["commit", "--allow-empty", "-qm", subject]);
+        git(repo, &["update-ref", reference, "HEAD"]);
+    }
+    git(repo, &["tag", "-am", "annotated", "annotated", "tag-only"]);
+    git(
+        repo,
+        &["tag", "-am", "nested annotation", "nested", "annotated"],
+    );
+    git(repo, &["tag", "tree-target", "common^{tree}"]);
+}
+
+#[test]
+fn history_includes_local_refs_and_linked_head_once_with_full_messages() {
+    let repo = tempfile::tempdir().unwrap();
+    let linked = tempfile::tempdir().unwrap();
+    let repo = repo.path();
+    init(repo);
+    add_history_refs(repo);
+    let checkout = linked.path().join("linked checkout");
+    git(
+        repo,
+        &[
+            "worktree",
+            "add",
+            "-q",
+            "--detach",
+            checkout.to_str().unwrap(),
+            "common",
+        ],
+    );
+    git(
+        &checkout,
+        &[
+            "commit",
+            "--allow-empty",
+            "-qm",
+            "linked résumé",
+            "-m",
+            "First line.\nSecond line.",
+        ],
+    );
+    let nested = checkout.join("selected project");
+    fs::create_dir(&nested).unwrap();
+    let cancel = AtomicBool::new(false);
+    let history = CommitHistory::open(&nested, &cancel).unwrap();
+    let page = history.page(0, &cancel).unwrap();
+    let mut subjects: Vec<_> = page.rows.iter().map(|row| row.subject.as_str()).collect();
+    subjects.sort_unstable();
+    assert_eq!(
+        subjects,
+        [
+            "common",
+            "linked résumé",
+            "local branch",
+            "remote branch",
+            "tag only",
+        ],
+    );
+    assert_eq!(page.next_offset, None);
+    assert_eq!(history.project(), nested.canonicalize().unwrap());
+
+    let head = history.head().unwrap();
+    assert_eq!(head, resolve_commit(&checkout, "HEAD").unwrap());
+    assert_eq!(
+        history.message(head, &cancel).unwrap(),
+        "linked résumé\n\nFirst line.\nSecond line.\n"
+    );
+    assert!(!repo.join(".git/FETCH_HEAD").exists());
+}
+
+#[test]
+fn history_pages_keep_their_original_tips_when_refs_move() {
+    let repo = tempfile::tempdir().unwrap();
+    let repo = repo.path();
+    init(repo);
+    let cancel = AtomicBool::new(false);
+    let empty = CommitHistory::open(repo, &cancel).unwrap();
+    assert!(empty.head().is_none());
+    assert!(empty.page(0, &cancel).unwrap().rows.is_empty());
+
+    for index in 0..102 {
+        git(
+            repo,
+            &["commit", "--allow-empty", "-qm", &format!("commit {index}")],
+        );
+    }
+    let history = CommitHistory::open(repo, &cancel).unwrap();
+    let first = history.page(0, &cancel).unwrap();
+    assert_eq!(
+        (
+            first.rows.len(),
+            first.rows[0].subject.as_str(),
+            first.rows[99].subject.as_str()
+        ),
+        (100, "commit 101", "commit 2"),
+    );
+    let old_tip = history.head().unwrap();
+
+    git(repo, &["commit", "--allow-empty", "-qm", "moved tip"]);
+    let older = history.page(first.next_offset.unwrap(), &cancel).unwrap();
+    let subjects = older
+        .rows
+        .iter()
+        .map(|row| row.subject.as_str())
+        .collect::<Vec<_>>();
+    assert_eq!(
+        (subjects.as_slice(), older.next_offset),
+        (&["commit 1", "commit 0"][..], None)
+    );
+    assert_eq!(history.message(old_tip, &cancel).unwrap(), "commit 101\n");
+    assert_ne!(
+        CommitHistory::open(repo, &cancel).unwrap().head(),
+        Some(old_tip)
+    );
+
+    cancel.store(true, Ordering::Release);
+    let error = history.page(0, &cancel).unwrap_err();
+    assert_eq!(error_code(&error), "cancelled");
+}
+
 #[test]
 fn verified_nested_snapshots_bind_exact_bytes_without_a_working_graph() {
     let repo = tempfile::tempdir().unwrap();

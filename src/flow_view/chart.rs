@@ -151,7 +151,7 @@ fn step_card(session: &Session, card: Card<'_>, address: Address, k: &Kit) -> El
     let badge = session.marker_badge(index);
     let paint = StepPaint::new(change, selected, step, k);
     let kind = step_label(step, badge, paint.mark);
-    col()
+    let control = col()
         .key(address.key(&format!("step-{index}")))
         .absolute(p[0], p[1])
         .size(step.size[0] * scale, step.size[1] * scale)
@@ -182,7 +182,18 @@ fn step_card(session: &Session, card: Card<'_>, address: Address, k: &Kit) -> El
         .role("button")
         .label(&step.label)
         .focusable(true)
-        .on_press_tx(move |s: &mut State, tx| address.select(s, index, tx))
+        .on_press_tx(move |s: &mut State, tx| address.select(s, index, tx));
+    if address.side().is_none() {
+        return control;
+    }
+    // Rune includes controls with keyboard handlers in the macOS Tab order.
+    control.on_key(move |state: &mut State, event, tx| {
+        if event.key != rune::Key::Enter {
+            return false;
+        }
+        address.select(state, index, tx);
+        true
+    })
 }
 
 struct StepPaint {

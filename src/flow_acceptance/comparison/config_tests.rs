@@ -1,6 +1,6 @@
 use super::*;
 pub fn value(project: &std::path::Path) -> serde_json::Value {
-    serde_json::json!({"version":2,"project":project,"base_ref":"refs/tags/fixture-before","head_ref":"refs/tags/fixture-after","expected_viewport":[1050,680],"timeout_seconds":120,"initial":{"comparison_id":"a".repeat(64),"base_commit":"b".repeat(40),"head_commit":"c".repeat(40),"base_digest":"d".repeat(64),"head_digest":"e".repeat(64)},"reloaded":{"comparison_id":"f".repeat(64),"base_commit":"b".repeat(40),"head_commit":"d".repeat(40),"base_digest":"d".repeat(64),"head_digest":"e".repeat(64)},"cases":cases()})
+    serde_json::json!({"version":2,"project":project,"expected_viewport":[1050,680],"timeout_seconds":120,"initial":{"comparison_id":"a".repeat(64),"base_commit":"b".repeat(40),"head_commit":"c".repeat(40),"base_digest":"d".repeat(64),"head_digest":"e".repeat(64)},"reloaded":{"comparison_id":"f".repeat(64),"base_commit":"b".repeat(40),"head_commit":"d".repeat(40),"base_digest":"d".repeat(64),"head_digest":"e".repeat(64)},"cases":cases()})
 }
 #[test]
 fn misleading_case_roles_unbounded_sources_and_unknown_configuration_fields_are_rejected() {

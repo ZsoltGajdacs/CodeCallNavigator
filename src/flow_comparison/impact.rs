@@ -60,7 +60,11 @@ impl State {
 
 impl Workspace {
     pub fn can_preview_impact(&self) -> bool {
-        self.impact.supported == Some(true) && !self.impact.pending() && !self.snapshots.pending()
+        self.revisions.base().is_some()
+            && self.impact.supported == Some(true)
+            && !self.impact.pending()
+            && !self.snapshots.pending()
+            && !self.worktree_refresh.pending()
     }
 
     pub(super) fn poll_impact(&mut self) -> bool {

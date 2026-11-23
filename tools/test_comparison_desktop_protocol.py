@@ -27,22 +27,22 @@ class ComparisonProtocolTests(unittest.TestCase):
             capture.assert_called_once_with(123, Path("/owned/output/native.png"))
 
     def test_exact_capture_envelope_and_every_fixed_checkpoint_are_required(self):
-        validate(self.request, 1, self.fixture, 123)
+        validate(self.request, (1, *ORDER[0]), self.fixture, 123)
         for key, value in (("version", 1), ("sequence", 2), ("operation", "move_after_ref"),
                            ("checkpoint", "manual-pair"), ("project", "/another/project"),
                            ("window_id", 124), ("comparison_id", "b" * 64), ("unknown", True)):
             invalid = dict(self.request, **{key: value})
             with self.assertRaises(ValueError, msg=key):
-                validate(invalid, 1, self.fixture, 123)
+                validate(invalid, (1, *ORDER[0]), self.fixture, 123)
         self.assertEqual(len(ORDER), 7)
 
     def test_non_capture_may_not_carry_window_or_binding_metadata(self):
         request = {"version": 2, "sequence": 4, "operation": "move_after_ref", "checkpoint": "after-ref-moved",
                    "project": str(self.fixture.project)}
-        validate(request, 4, self.fixture, 123)
+        validate(request, (4, *ORDER[3]), self.fixture, 123)
         request["window_id"] = 123
         with self.assertRaises(ValueError):
-            validate(request, 4, self.fixture, 123)
+            validate(request, (4, *ORDER[3]), self.fixture, 123)
 
     def test_request_reader_rejects_over_budget_input_before_decoding(self):
         with tempfile.TemporaryDirectory() as temporary:

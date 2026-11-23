@@ -29,10 +29,11 @@ class ComparisonFailureCleanupTests(unittest.TestCase):
             project.mkdir()
             output.mkdir()
             engine = root / "test-engine"
-            gate = Gate(project, output, "b" * 32, engine)
+            base_commit = "a" * 40
+            gate = Gate(project, output, "b" * 32, base_commit, engine)
             gate.install()
             gate.arm()
-            arguments = [str(output / "path/git"), *resolution_arguments(project)]
+            arguments = [str(output / "path/git"), *resolution_arguments(project, base_commit)]
             engine.write_text("#!/usr/bin/python3\nimport subprocess,sys,time,pathlib\n"
                               f"subprocess.call({arguments!r})\n"
                               f"while not pathlib.Path({str(root / 'allow-session-exit')!r}).exists():time.sleep(0.01)\n")

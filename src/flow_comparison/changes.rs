@@ -127,6 +127,9 @@ impl Changes {
 
 impl Workspace {
     pub(super) fn load_change_list(&mut self, offset: usize) {
+        if self.worktree_refresh.pending() {
+            return;
+        }
         let Some(bound) = self.binding.clone() else {
             return;
         };
@@ -189,7 +192,7 @@ impl Workspace {
         self.changes.next_offset = page.next_offset;
         self.changes.message.clear();
         self.changes.rows.extend(page.changes);
-        if self.changes.automatic_selection || self.has_method_selection() {
+        if !self.can_choose_first_method() {
             return;
         }
         if let Some(symbol) = self
@@ -205,8 +208,11 @@ impl Workspace {
         }
     }
 
-    fn has_method_selection(&self) -> bool {
-        self.current.is_some() || self.detail_pending()
+    fn can_choose_first_method(&self) -> bool {
+        !self.changes.expert
+            && !self.changes.automatic_selection
+            && self.current.is_none()
+            && !self.detail_pending()
     }
 
     pub fn choose_change_method(&mut self, symbol: String) {
@@ -240,6 +246,9 @@ impl Workspace {
     }
 
     fn request_change_source(&mut self, id: String) {
+        if self.worktree_refresh.pending() {
+            return;
+        }
         let Some(bound) = self.binding.clone() else {
             return;
         };

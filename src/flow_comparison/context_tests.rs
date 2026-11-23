@@ -255,7 +255,10 @@ fn retargeting_a_project_alias_cannot_redirect_bound_detail_or_explicit_reload()
         state.flow_comparison.phase
     );
     let revision = "refs/tags/base";
-    state.flow_comparison.controls.base = rune::TextEdit::new(revision);
+    state
+        .flow_comparison
+        .revisions
+        .set_for_test(crate::flow_comparison::SnapshotSide::Base, revision);
     state.lookup_comparison_snapshot(snapshots::Side::Base);
     settle(&mut state);
     let lookup = state

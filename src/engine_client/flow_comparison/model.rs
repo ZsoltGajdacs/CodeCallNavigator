@@ -229,3 +229,10 @@ pub(super) fn endpoint(endpoint: &Endpoint) -> anyhow::Result<()> {
     }
     Ok(())
 }
+
+pub(super) fn worktree_freshness(
+    value: Option<serde_json::Value>,
+) -> Option<codecallnavigator::artifact::verification::InputStatus> {
+    let value = value?;
+    serde_json::from_value(value.get("input_status")?.clone()).ok()
+}

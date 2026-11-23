@@ -111,6 +111,8 @@ pub struct GraphCursor {
 
 #[derive(Debug, Deserialize)]
 pub struct GraphPage {
+    #[serde(skip)]
+    pub(crate) freshness: Option<codecallnavigator::artifact::verification::InputStatus>,
     #[serde(flatten)]
     pub header: Header,
     pub graph_equal: bool,
@@ -273,7 +275,7 @@ impl QueryContext {
             },
             cancel,
         )?;
-        let page: GraphPage =
+        let mut page: GraphPage =
             serde_json::from_value(response.result.context("CLI omitted graph differences")?)?;
         references.validate(&page.header)?;
         ensure!(
@@ -284,6 +286,7 @@ impl QueryContext {
             "CLI returned another graph comparison binding"
         );
         page.validate_page(cursor.offset, LIMIT)?;
+        page.freshness = super::model::worktree_freshness(response.freshness);
         Ok(page)
     }
 }

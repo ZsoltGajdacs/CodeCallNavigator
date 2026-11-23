@@ -28,6 +28,7 @@ pub type Result<T> = std::result::Result<T, Error>;
 struct Reply<T> {
     value: T,
     generation: Option<String>,
+    freshness: Option<codecallnavigator::artifact::verification::InputStatus>,
 }
 impl<T> Reply<T> {
     fn check_generation(&self, header: &Header) -> Result<()> {
@@ -70,6 +71,7 @@ pub struct BoundComparison {
     client: ComparisonClient,
     header: Header,
     references: super::ComparisonRefs,
+    pub(crate) freshness: Option<codecallnavigator::artifact::verification::InputStatus>,
 }
 impl QueryContext {
     pub fn flow_comparison(&self) -> ComparisonClient {
@@ -124,6 +126,7 @@ impl ComparisonClient {
             client: self.clone(),
             header: page.header.clone(),
             references,
+            freshness: reply.freshness,
         };
         Ok((bound, page))
     }
@@ -167,6 +170,7 @@ impl ComparisonClient {
         Ok(Reply {
             value,
             generation: response.generation,
+            freshness: worktree_freshness(response.freshness),
         })
     }
 }

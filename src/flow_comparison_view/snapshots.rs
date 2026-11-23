@@ -21,6 +21,30 @@ pub(super) fn controls(state: &State, k: &Kit) -> El {
         .px(10.0)
         .pb(5.0)
         .child(snapshot_actions(state, k));
+    let refresh = &state.flow_comparison.worktree_refresh;
+    let refresh_message = if refresh.showing_progress() {
+        &state.status
+    } else {
+        &refresh.message
+    };
+    if !refresh_message.is_empty() {
+        body = body.child(
+            text(refresh_message)
+                .font(k.ty.small)
+                .color(k.c.text_muted)
+                .truncate()
+                .help(refresh_message)
+                .key("comparison-worktree-status"),
+        );
+    }
+    if let Some(message) = state.flow_comparison.worktree_freshness_message() {
+        body = body.child(
+            text(message)
+                .font(k.ty.small)
+                .color(k.c.text_muted)
+                .key("comparison-worktree-freshness"),
+        );
+    }
     if !snapshots.message.is_empty() {
         body = body.child(
             text(&snapshots.message)
@@ -57,7 +81,7 @@ pub(super) fn controls(state: &State, k: &Kit) -> El {
 
 fn snapshot_actions(state: &State, k: &Kit) -> El {
     let snapshots = &state.flow_comparison.snapshots;
-    row()
+    let actions = row()
         .gap(8.0)
         .child(
             Button::new(if snapshots.panel_open {
@@ -78,12 +102,28 @@ fn snapshot_actions(state: &State, k: &Kit) -> El {
         .child(
             Button::new("Compare graph differences")
                 .variant(ButtonVariant::Outline)
-                .disabled(state.runtime.is_none() || snapshots.pending())
+                .disabled(
+                    state.runtime.is_none()
+                        || snapshots.pending()
+                        || state.flow_comparison.revisions.base().is_none()
+                        || state.flow_comparison.worktree_refresh.pending(),
+                )
                 .on_press(|state: &mut State| state.compare_snapshot_graphs(GraphNavigation::First))
                 .build(k)
                 .key("comparison-graph-differences"),
         )
-        .child(super::impact::button(state, k))
+        .child(super::impact::button(state, k));
+    if !state.flow_comparison.revisions.worktree() {
+        return actions;
+    }
+    actions.child(
+        Button::new("Refresh worktree")
+            .disabled(!state.can_refresh_comparison_worktree())
+            .variant(ButtonVariant::Outline)
+            .on_press(State::refresh_comparison_worktree)
+            .build(k)
+            .key("comparison-refresh-worktree"),
+    )
 }
 
 fn has_selected_builds(state: &State) -> bool {
@@ -94,6 +134,7 @@ fn side(state: &State, side: SnapshotSide, revision: &str, k: &Kit) -> El {
     let snapshots = &state.flow_comparison.snapshots;
     let disabled = state.runtime.is_none()
         || snapshots.pending()
+        || state.flow_comparison.worktree_refresh.pending()
         || revision.trim().is_empty()
         || revision == "WORKTREE";
     let scope = format!("comparison-snapshot-{}", side.label().to_lowercase());
@@ -151,8 +192,7 @@ fn variants(side: SnapshotSide, status: &SnapshotStatus, selected: Option<&str>,
                 .on_press(move |state: &mut State| {
                     state
                         .flow_comparison
-                        .snapshots
-                        .choose(side, Some(id.clone()));
+                        .choose_snapshot_variant(side, Some(id.clone()));
                 })
                 .build(k)
                 .help(format!(
@@ -184,7 +224,7 @@ fn variants(side: SnapshotSide, status: &SnapshotStatus, selected: Option<&str>,
             Button::new("Use automatic selection")
                 .disabled(selected.is_none())
                 .on_press(move |state: &mut State| {
-                    state.flow_comparison.snapshots.choose(side, None)
+                    state.flow_comparison.choose_snapshot_variant(side, None)
                 })
                 .build(k),
         )

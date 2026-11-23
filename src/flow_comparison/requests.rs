@@ -1,6 +1,6 @@
 //! Request cancellation and wire completions retain their own publication serials.
 use super::{Selection, pair};
-use crate::engine_client::flow_comparison::{BoundComparison, Catalog, Error};
+use crate::engine_client::flow_comparison::{BoundComparison, Catalog, EndpointStatus, Error};
 use std::sync::{
     Arc,
     atomic::{AtomicBool, Ordering},
@@ -28,9 +28,14 @@ pub(super) struct Opened {
 pub(super) enum CatalogAnswer {
     Opened(Box<Opened>),
     Page(Box<Catalog>),
+    Refreshed {
+        project: Box<super::Project>,
+        opened: Box<Opened>,
+    },
 }
 pub(super) struct CatalogOutput {
     pub serial: u64,
+    pub refresh: Option<super::RefreshTicket>,
     pub physical_project: Option<std::path::PathBuf>,
     pub result: Result<CatalogAnswer, Error>,
 }
@@ -61,6 +66,11 @@ pub(super) enum CatalogOperation {
         project: Box<super::Project>,
         identity: super::identity::Reporter,
     },
+    Refresh {
+        project: Box<super::Project>,
+        ticket: super::RefreshTicket,
+        generation: String,
+    },
     Page {
         bound: Box<BoundComparison>,
         page: crate::engine_client::flow_comparison::CatalogPage,
@@ -75,6 +85,7 @@ pub(super) struct CatalogWork {
 impl CatalogWork {
     pub fn run(self) -> CatalogOutput {
         let mut physical_project = None;
+        let mut refresh = None;
         let result = match self.operation {
             CatalogOperation::Open { project, identity } => {
                 let super::Project { context, refs, .. } = *project;
@@ -91,6 +102,30 @@ impl CatalogWork {
                             })
                     })
             }
+            CatalogOperation::Refresh {
+                project,
+                ticket,
+                generation,
+            } => {
+                refresh = Some(ticket);
+                physical_project = Some(project.context.descriptor.project.clone());
+                project.context.flow_comparison()
+                    .open_selected(project.refs.clone(), &self.cancel)
+                    .and_then(|(bound, page)| {
+                        if bound.header().head.digest != generation {
+                            return Err(Error::Invalid(anyhow::anyhow!(
+                                "The saved worktree changed again. Load to compare the latest graph."
+                            )));
+                        }
+                        if let EndpointStatus::Unavailable(failure) = &page.endpoints.after {
+                            return Err(Error::Invalid(anyhow::anyhow!("{}", failure.message)));
+                        }
+                        Ok(CatalogAnswer::Refreshed {
+                            project,
+                            opened: Box::new(Opened { bound, page }),
+                        })
+                    })
+            }
             CatalogOperation::Page {
                 bound,
                 page,
@@ -104,6 +139,7 @@ impl CatalogWork {
         };
         CatalogOutput {
             serial: self.serial,
+            refresh,
             physical_project,
             result,
         }

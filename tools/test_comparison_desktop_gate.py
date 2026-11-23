@@ -17,14 +17,15 @@ class ComparisonGitGateTests(unittest.TestCase):
         self.project.mkdir()
         self.output = self.root / "output"
         self.output.mkdir()
-        self.gate = Gate(self.project, self.output, "b" * 32)
+        self.commit = "a" * 40
+        self.gate = Gate(self.project, self.output, "b" * 32, self.commit)
 
     def test_only_exact_project_base_ref_and_argument_vector_can_enter(self):
         self.gate.install()
         self.gate.arm()
-        arguments = resolution_arguments(self.project)
+        arguments = resolution_arguments(self.project, self.commit)
         for changed in [arguments[1:], [*arguments, "extra"],
-                        resolution_arguments(self.root),
+                        resolution_arguments(self.root, self.commit),
                         [*arguments[:-1], "refs/tags/fixture-after^{commit}"]]:
             subprocess.run([self.output / "path/git", *changed],
                            capture_output=True, timeout=5)
@@ -49,9 +50,9 @@ class ComparisonGitGateTests(unittest.TestCase):
         alias = self.root / "alias"
         alias.symlink_to(self.project)
         with self.assertRaises(ValueError):
-            Gate(alias, self.output, "b" * 32)
+            Gate(alias, self.output, "b" * 32, self.commit)
         with self.assertRaises(ValueError):
-            Gate(self.project, self.output, "arbitrary")
+            Gate(self.project, self.output, "arbitrary", self.commit)
 
 
 if __name__ == "__main__":

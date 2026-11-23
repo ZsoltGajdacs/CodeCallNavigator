@@ -8,12 +8,8 @@ HEAD_REF = "refs/tags/fixture-after"
 ROLES = ("changed", "unchanged", "added", "removed", "legacy", "manual", "target")
 LABELS = {"changed": "Changed", "unchanged": "Unchanged", "added": "Added", "removed": "Removed", "legacy": "Legacy", "manual": "Manual", "target": "Leaf"}
 
-def comparison(client, project, selection, expected=None):
-    operation = {"kind": "flow_comparison", "base": BASE_REF, "head": HEAD_REF,
-                 "selection": selection}
-    if expected is not None:
-        operation["expected_comparison"] = expected
-    return client.query(project, operation)["result"]
+def comparison(client, project, operation):
+    return client.query(project, {"kind": "flow_comparison", **operation})["result"]
 
 
 def present_nodes(catalog):
@@ -67,7 +63,12 @@ class Expectations:
         symbol = ids["changed"] if role == "manual" else ids[role]
         head_symbol = ids["manual"] if role == "manual" else None
         selection = {"kind": "detail", "symbol": symbol, "head_symbol": head_symbol}
-        detail = comparison(self.client, self.project, selection, self.initial["comparison_id"])
+        detail = comparison(self.client, self.project, {
+            "base": self.initial["base_commit"],
+            "head": self.initial["head_commit"],
+            "selection": selection,
+            "expected_comparison": self.initial["comparison_id"],
+        })
         return {"kind": role, "symbol": symbol, "head_symbol": head_symbol,
                 "before": expected_side(detail["before"], self.inputs["Before"]),
                 "after": expected_side(detail["after"], self.inputs["After"])}

@@ -8,8 +8,7 @@ use std::{path::PathBuf, sync::Arc, time::Duration};
 pub(crate) struct Configuration {
     pub version: u32,
     pub project: PathBuf,
-    pub base_ref: String,
-    pub head_ref: String,
+    pub worktree_line: Option<String>,
     pub expected_viewport: [u32; 2],
     pub timeout_seconds: u64,
     pub initial: Binding,
@@ -93,16 +92,12 @@ impl Configuration {
             self.project.is_absolute(),
             "Comparison project must be absolute"
         );
-        for reference in [&self.base_ref, &self.head_ref] {
+        if let Some(line) = &self.worktree_line {
             ensure!(
-                reference.starts_with("refs/tags/") && bounded(reference, 1024),
-                "Acceptance requires explicit bounded local tag refs"
+                bounded(line, 1024),
+                "Acceptance worktree source line must be explicit and bounded"
             );
         }
-        ensure!(
-            self.base_ref != self.head_ref,
-            "Comparison refs must be distinct"
-        );
         ensure!(
             self.expected_viewport == [1050, 680],
             "Comparison acceptance requires the minimum 1050x680 viewport"
@@ -114,8 +109,10 @@ impl Configuration {
         self.initial.validate()?;
         self.reloaded.validate()?;
         ensure!(
-            self.initial.comparison_id != self.reloaded.comparison_id,
-            "Moved ref must establish a new comparison binding"
+            self.initial.base_commit == self.reloaded.base_commit
+                && self.initial.head_commit != self.reloaded.head_commit
+                && self.initial.comparison_id != self.reloaded.comparison_id,
+            "Selecting the later commit must establish a new comparison binding"
         );
         ensure!(
             self.cases.iter().map(|case| case.kind).eq(CaseKind::ORDER),

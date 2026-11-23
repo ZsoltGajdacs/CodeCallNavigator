@@ -25,8 +25,6 @@ fn desktop_prepares_selects_and_pages_cached_graphs_and_flows() {
     let cache = root.with_file_name("cache");
     isolate_cli_cache(Arc::make_mut(state.runtime.as_mut().unwrap()), &cache);
 
-    state.flow_comparison.controls.base = rune::TextEdit::new("refs/tags/base");
-    state.flow_comparison.controls.head = rune::TextEdit::new("refs/tags/head");
     check_impact_support(&mut state);
     state.lookup_comparison_snapshot(SnapshotSide::Base);
     settle(&mut state);
@@ -69,7 +67,10 @@ fn desktop_prepares_selects_and_pages_cached_graphs_and_flows() {
     assert_graph_pagination(&mut runtime);
 
     let state = &mut runtime.state;
-    state.flow_comparison.controls.base = rune::TextEdit::new("refs/tags/base");
+    state
+        .flow_comparison
+        .revisions
+        .set_for_test(SnapshotSide::Base, "refs/tags/base");
     state.load_flow_comparison();
     settle(state);
     let header = state.flow_comparison.header().unwrap();
@@ -78,6 +79,12 @@ fn desktop_prepares_selects_and_pages_cached_graphs_and_flows() {
     assert!(state.graph.is_none());
 
     assert_preparation_failure(state);
+}
+
+fn select_test_revisions(state: &mut State) {
+    let revisions = &mut state.flow_comparison.revisions;
+    revisions.set_for_test(SnapshotSide::Base, "refs/tags/base");
+    revisions.set_for_test(SnapshotSide::Head, "refs/tags/head");
 }
 
 fn assert_prepares_picked_target(state: &mut State, side: SnapshotSide, cache: &Path) {
@@ -124,7 +131,10 @@ fn assert_prepares_picked_target(state: &mut State, side: SnapshotSide, cache: &
 }
 
 fn assert_preparation_failure(state: &mut State) {
-    state.flow_comparison.controls.base = rune::TextEdit::new("no-such-revision");
+    state
+        .flow_comparison
+        .revisions
+        .set_for_test(SnapshotSide::Base, "no-such-revision");
     state.prepare_comparison_snapshot(SnapshotSide::Base);
     settle(state);
     assert!(
@@ -143,7 +153,10 @@ fn assert_preparation_failure(state: &mut State) {
             .preparation_failure
             .is_some()
     );
-    state.flow_comparison.controls.base = rune::TextEdit::new("refs/tags/base");
+    state
+        .flow_comparison
+        .revisions
+        .set_for_test(SnapshotSide::Base, "refs/tags/base");
     state.lookup_comparison_snapshot(SnapshotSide::Base);
     assert!(
         state
@@ -166,6 +179,7 @@ fn assert_preparation_failure(state: &mut State) {
 
 fn check_impact_support(state: &mut State) {
     state.show_flow_comparison();
+    select_test_revisions(state);
     let start = std::time::Instant::now();
     while state.flow_comparison.impact.checking_support() {
         assert!(start.elapsed() < std::time::Duration::from_secs(15));
@@ -202,10 +216,16 @@ fn assert_impact_without_head_snapshot(runtime: &mut Runtime<State>) {
     assert_impact_rows(report, &runtime.elements());
 
     let state = &mut runtime.state;
-    state.flow_comparison.controls.head = rune::TextEdit::new("HEAD");
+    state
+        .flow_comparison
+        .revisions
+        .set_for_test(SnapshotSide::Head, "HEAD");
     state.flow_comparison.poll();
     assert!(state.flow_comparison.impact.report.is_none());
-    state.flow_comparison.controls.head = rune::TextEdit::new("refs/tags/head");
+    state
+        .flow_comparison
+        .revisions
+        .set_for_test(SnapshotSide::Head, "refs/tags/head");
 }
 
 fn assert_impact_rows(report: &ImpactPreview, elements: &[ElementInfo]) {
@@ -254,7 +274,10 @@ fn assert_graph_pagination(runtime: &mut Runtime<State>) {
     assert_eq!(next.offset, following);
     assert_eq!(next.header.comparison_id, binding);
 
-    state.flow_comparison.controls.base = rune::TextEdit::new("no-such-revision");
+    state
+        .flow_comparison
+        .revisions
+        .set_for_test(SnapshotSide::Base, "no-such-revision");
     state.compare_snapshot_graphs(GraphNavigation::Reload);
     settle(state);
     let reloaded = state.flow_comparison.snapshots.graph.as_ref().unwrap();

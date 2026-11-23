@@ -77,7 +77,7 @@ impl Driver {
         Ok(())
     }
 
-    fn call_key(&self, runtime: &Runtime<State>) -> Result<String> {
+    pub(super) fn call_key(&self, runtime: &Runtime<State>) -> Result<String> {
         let after = observation::session(&runtime.state, SideId::After)?;
         let call =
             crate::flow_acceptance::observation::target(after, &self.config.cases[6].symbol)?;
@@ -167,7 +167,7 @@ fn focused(runtime: &Runtime<State>, key: &str) -> bool {
     })
 }
 
-fn change_key(runtime: &Runtime<State>, id: &str) -> Option<String> {
+pub(super) fn change_key(runtime: &Runtime<State>, id: &str) -> Option<String> {
     runtime.elements().into_iter().find_map(|element| {
         let key = element.key?;
         (key.starts_with("comparison-change-")
@@ -180,7 +180,7 @@ fn change_key(runtime: &Runtime<State>, id: &str) -> Option<String> {
     })
 }
 
-fn preview_drawn(runtime: &Runtime<State>, changed_source: &str) -> bool {
+pub(super) fn preview_drawn(runtime: &Runtime<State>, changed_source: &str) -> bool {
     runtime.elements().iter().any(|element| {
         !element.exiting
             && element.visible[2].min(element.visible[3]) > 0.0

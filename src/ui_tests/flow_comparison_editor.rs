@@ -1,10 +1,13 @@
 //! Entry and revision submission preserve both existing view state and captured project ownership.
 use super::{
     click,
-    flow_comparisons::{edit, load, project_runtime, settle},
+    flow_comparisons::{choose_revision, load, project_runtime, settle},
     function_flows::{prefixed_runtime, scroll_source, source_scroll},
 };
-use crate::engine_client::{Descriptor, QueryContext};
+use crate::{
+    engine_client::{Descriptor, QueryContext},
+    flow_comparison::SnapshotSide,
+};
 use std::sync::Arc;
 fn selected_single_with_history() -> rune::Runtime<crate::app::State> {
     let mut runtime = prefixed_runtime();
@@ -117,15 +120,25 @@ fn entry_cleanup_submitting_different_refs_keeps_the_captured_project_and_roots(
                 ))
             });
         }
+        crate::flow_comparison::tests::git(
+            project.path(),
+            &["commit", "--allow-empty", "-qm", "other"],
+        );
+        let other = codecallnavigator::artifact::revision::Repository::open(project.path())
+            .unwrap()
+            .resolve("HEAD")
+            .unwrap();
+        crate::flow_comparison::tests::retain_scene(
+            project.path(),
+            &crate::flow_scenes::data(),
+            &other,
+        );
         load(&mut runtime);
         let captured = runtime.state.flow_comparison.descriptor().unwrap().clone();
-        for name in ["other-base", "other-head"] {
-            crate::flow_comparison::tests::git(project.path(), &["tag", name]);
-        }
         let changed = tempfile::tempdir().unwrap();
         replace_global_context(&mut runtime, changed.path(), loaded);
-        edit(&mut runtime, "comparison-base", "other-base");
-        edit(&mut runtime, "comparison-head", "other-head");
+        choose_revision(&mut runtime, SnapshotSide::Base, &other);
+        choose_revision(&mut runtime, SnapshotSide::Head, &other);
         click(&mut runtime, "comparison-load");
         settle(&mut runtime);
         let actual = runtime.state.flow_comparison.descriptor().unwrap();
@@ -140,7 +153,7 @@ fn entry_cleanup_submitting_different_refs_keeps_the_captured_project_and_roots(
         );
         assert_eq!(
             runtime.state.flow_comparison.references(),
-            Some(("other-base", "other-head"))
+            Some((other.as_str(), other.as_str()))
         );
         assert!(runtime.state.flow_comparison.catalog.is_some());
     }

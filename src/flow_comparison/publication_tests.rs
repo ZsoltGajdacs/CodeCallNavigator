@@ -45,6 +45,7 @@ fn superseded_success_and_error_catalog_outputs_cannot_change_the_current_worksp
         let serial = workspace.catalog_clock.serial;
         let input = workspace.workers.track(CatalogOutput {
             serial,
+            refresh: None,
             physical_project: Some(root.path().canonicalize().unwrap()),
             result,
         });

@@ -6,8 +6,6 @@ pub struct Controls {
     pub visible: bool,
     pub catalog_open: bool,
     pub panel: Panel,
-    pub base: TextEdit,
-    pub head: TextEdit,
     pub search: TextEdit,
     pub choosing_after: bool,
     pub message: String,
@@ -19,8 +17,6 @@ impl Default for Controls {
             visible: false,
             catalog_open: false,
             panel: Panel::Flows,
-            base: TextEdit::new("HEAD"),
-            head: TextEdit::new("WORKTREE"),
             search: TextEdit::new(""),
             choosing_after: false,
             message: String::new(),
@@ -29,14 +25,24 @@ impl Default for Controls {
     }
 }
 impl State {
+    pub(crate) fn cancel_comparison_action(&mut self) {
+        if self.flow_comparison.worktree_refresh.pending() {
+            self.cancel_comparison_worktree_refresh();
+        } else {
+            self.flow_comparison.cancel_control();
+        }
+    }
+
     pub fn show_flow_comparison(&mut self) {
         self.flow_residency.activity();
         self.close_source();
         self.flow_workspace.preserve_current_scroll();
         self.flow_comparison.controls.visible = true;
+        self.start_comparison_history();
         self.check_impact_preview_support();
     }
     pub fn load_flow_comparison(&mut self) {
+        self.flow_comparison.invalidate_worktree_refresh();
         self.flow_residency.activity();
         self.flow_comparison.impact.clear();
         self.flow_comparison.controls.panel = Panel::Flows;
@@ -77,7 +83,7 @@ impl Workspace {
             self.snapshots.cancel();
             return;
         }
-        self.close();
+        self.close_flow_binding();
         self.controls.visible = true;
         self.controls.message = "Comparison loading cancelled".into();
     }

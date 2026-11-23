@@ -5,17 +5,17 @@ import time
 
 from csharp_flow_acceptance import require
 from csharp_desktop_acceptance import capture_image, require_viewport, write_json
-from comparison_desktop_fixture import git, HEAD_REF
+from comparison_desktop_fixture import edit_worktree, git, HEAD_REF
 
 ORDER = (("capture", "unavailable-flow"), ("capture", "manual-pair"), ("capture", "restored-pair"),
          ("move_after_ref", "after-ref-moved"), ("arm_git_gate", "gate-armed"),
          ("wait_git_gate", "gate-held"), ("release_git_gate", "gate-released"))
+WORKTREE_EDIT = ("edit_worktree", "worktree-edited")
 
 
-def validate(request, sequence, fixture, window_id):
-    require(type(sequence) is int and 1 <= sequence <= len(ORDER), "Invalid expected operation sequence")
+def validate(request, expected, fixture, window_id):
+    sequence, operation, checkpoint = expected
     required = {"version", "sequence", "operation", "checkpoint", "project"}
-    operation, checkpoint = ORDER[sequence - 1]
     if operation == "capture":
         required |= {"window_id", "comparison_id"}
     require(set(request) == required, "Comparison request has missing or unknown fields")
@@ -57,6 +57,7 @@ class NativeOperations:
     directory: object
     window_id: int
     timeout: int
+    order: tuple = ORDER
 
     def perform(self, request):
         operation = request["operation"]
@@ -72,13 +73,15 @@ class NativeOperations:
             return self.gate.wait(self.process, self.timeout)
         if operation == "release_git_gate":
             return self.gate.release()
+        if operation == "edit_worktree":
+            return edit_worktree(self.fixture.project)
         require(operation == "capture", "Unknown comparison operation")
         return capture_image(self.window_id, self.directory / f"native-{request['checkpoint']}.png")
 
     def serve(self):
         deadline = time.monotonic() + self.timeout
         operations = []
-        for sequence in range(1, len(ORDER) + 1):
+        for sequence in range(1, len(self.order) + 1):
             request_path = self.directory / f"external-{sequence:02}-request.json"
             while not request_path.exists():
                 require(self.process.poll() is None, f"Native app exited before request {sequence}")
@@ -87,7 +90,7 @@ class NativeOperations:
                 time.sleep(0.025)
             request = read_request(request_path)
             try:
-                validate(request, sequence, self.fixture, self.window_id)
+                validate(request, (sequence, *self.order[sequence - 1]), self.fixture, self.window_id)
                 proof = self.perform(request)
             except Exception as error:
                 self.failed_request(request, sequence, error)
@@ -101,5 +104,5 @@ class NativeOperations:
         # Only a trusted envelope can choose the expected acknowledgment path.
         if request.get("sequence") == sequence and request.get("version") == 2:
             safe = {"version": 2, "sequence": sequence,
-                    "operation": ORDER[sequence - 1][0], "checkpoint": ORDER[sequence - 1][1]}
+                    "operation": self.order[sequence - 1][0], "checkpoint": self.order[sequence - 1][1]}
             acknowledge(self.directory, safe, False, error)

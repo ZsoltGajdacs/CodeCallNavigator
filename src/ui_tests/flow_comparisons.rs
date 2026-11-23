@@ -1,6 +1,6 @@
 //! Comparison controls exercise the production Rune view without requiring a current graph.
 use super::click;
-use crate::{app::State, jobs, view};
+use crate::{app::State, flow_comparison::SnapshotSide, jobs, view};
 use rune::{Env, Runtime};
 #[test]
 fn global_comparison_entry_opens_revision_controls_without_a_loaded_graph() {
@@ -29,6 +29,7 @@ fn global_comparison_entry_opens_revision_controls_without_a_loaded_graph() {
             "Missing comparison control {key}"
         );
     }
+    assert_keyboard_picker(&mut runtime);
     click(&mut runtime, "comparison-snapshots");
     for key in [
         "comparison-snapshot-base-lookup",
@@ -57,6 +58,31 @@ fn global_comparison_entry_opens_revision_controls_without_a_loaded_graph() {
         1
     );
     assert!(runtime.find("choose-folder").is_some());
+}
+
+fn assert_keyboard_picker(runtime: &mut Runtime<State>) {
+    runtime.set_full_keyboard_access(false);
+    runtime.key(rune::KeyEvent {
+        key: rune::Key::Tab,
+        mods: Default::default(),
+    });
+    runtime.frame(1.0 / 60.0);
+    assert!(
+        runtime.elements().iter().any(|element| {
+            element.key.as_deref() == Some("comparison-base") && element.focused
+        })
+    );
+    runtime.key(rune::KeyEvent {
+        key: rune::Key::Down,
+        mods: Default::default(),
+    });
+    runtime.frame(1.0 / 60.0);
+    assert!(runtime.find("comparison-revisions").is_some());
+    runtime.key(rune::KeyEvent {
+        key: rune::Key::Escape,
+        mods: Default::default(),
+    });
+    runtime.frame(1.0 / 60.0);
 }
 
 pub(super) fn project_runtime(dark: bool) -> (Runtime<State>, tempfile::TempDir) {
@@ -93,8 +119,6 @@ pub(super) fn edit(runtime: &mut Runtime<State>, key: &str, value: &str) {
     });
     runtime.frame(1.0 / 60.0);
     let actual = match key {
-        "comparison-base" => &runtime.state.flow_comparison.controls.base.text,
-        "comparison-head" => &runtime.state.flow_comparison.controls.head.text,
         "comparison-search" => &runtime.state.flow_comparison.controls.search.text,
         _ => return,
     };
@@ -116,14 +140,54 @@ pub(super) fn settle(runtime: &mut Runtime<State>) {
 }
 pub(super) fn load(runtime: &mut Runtime<State>) {
     click(runtime, "compare-flows");
-    edit(runtime, "comparison-base", "refs/tags/base");
-    edit(runtime, "comparison-head", "refs/tags/head");
+    let base = fixture_commit(runtime, SnapshotSide::Base);
+    let head = fixture_commit(runtime, SnapshotSide::Head);
+    choose_revision(runtime, SnapshotSide::Base, &base);
+    choose_revision(runtime, SnapshotSide::Head, &head);
     click(runtime, "comparison-load");
     settle(runtime);
     if runtime.state.flow_comparison.catalog.is_some() {
         open_catalog(runtime);
     }
 }
+fn fixture_commit(runtime: &Runtime<State>, side: SnapshotSide) -> String {
+    let reference = match side {
+        SnapshotSide::Base => "refs/tags/base",
+        SnapshotSide::Head => "refs/tags/head",
+    };
+    codecallnavigator::artifact::revision::Repository::open(std::path::Path::new(
+        runtime.state.project_open.folder.as_deref().unwrap(),
+    ))
+    .unwrap()
+    .resolve(reference)
+    .unwrap()
+}
+
+pub(super) fn choose_revision(runtime: &mut Runtime<State>, side: SnapshotSide, commit: &str) {
+    if runtime.state.flow_comparison.controls.catalog_open {
+        click(runtime, "comparison-catalog-close");
+    }
+    let key = match side {
+        SnapshotSide::Base => "comparison-base",
+        SnapshotSide::Head => "comparison-head",
+    };
+    click(runtime, key);
+    settle(runtime);
+    click(runtime, &format!("comparison-revision-{commit}"));
+    settle(runtime);
+    if commit != "worktree" {
+        let message = runtime
+            .state
+            .flow_comparison
+            .revisions
+            .message
+            .as_deref()
+            .unwrap();
+        assert!(!message.trim().is_empty());
+    }
+    click(runtime, "comparison-revisions-done");
+}
+
 pub(super) fn open_catalog(runtime: &mut Runtime<State>) {
     if !runtime.state.flow_comparison.controls.catalog_open {
         click(runtime, "comparison-catalog-open");
@@ -138,9 +202,10 @@ fn symbol(runtime: &Runtime<State>, label: &str) -> String {
 fn real_revision_controls_load_catalog_select_a_function_and_show_both_charts() {
     let (mut runtime, _project) = project_runtime(true);
     load(&mut runtime);
+    let commit = fixture_commit(&runtime, SnapshotSide::Base);
     assert_eq!(
         runtime.state.flow_comparison.references(),
-        Some(("refs/tags/base", "refs/tags/head"))
+        Some((commit.as_str(), commit.as_str()))
     );
     let symbol = symbol(&runtime, "load(");
     click(&mut runtime, &format!("comparison-record-{symbol}"));
@@ -160,27 +225,35 @@ fn real_revision_controls_load_catalog_select_a_function_and_show_both_charts() 
 fn revision_controls_submit_refs_and_editing_does_not_retarget_the_loaded_pair() {
     let (mut runtime, project) = project_runtime(true);
     load(&mut runtime);
+    let commit = fixture_commit(&runtime, SnapshotSide::Base);
     assert_eq!(
         runtime.state.flow_comparison.references(),
-        Some(("refs/tags/base", "refs/tags/head"))
+        Some((commit.as_str(), commit.as_str()))
     );
     assert_eq!(
         runtime.state.flow_comparison.descriptor().unwrap().project,
         project.path()
     );
     assert!(runtime.state.flow_comparison.catalog.is_some());
-    edit(&mut runtime, "comparison-base", "different-base");
-    edit(&mut runtime, "comparison-head", "different-head");
+    choose_revision(&mut runtime, SnapshotSide::Head, "worktree");
     assert_eq!(
         runtime.state.flow_comparison.references(),
-        Some(("refs/tags/base", "refs/tags/head"))
+        Some((commit.as_str(), commit.as_str()))
     );
     click(&mut runtime, "comparison-reload");
     settle(&mut runtime);
     assert_eq!(
         runtime.state.flow_comparison.references(),
-        Some(("refs/tags/base", "refs/tags/head"))
+        Some((commit.as_str(), commit.as_str()))
     );
     assert!(runtime.state.flow_comparison.catalog.is_some());
     assert!(runtime.state.graph.is_none());
+    click(&mut runtime, "comparison-close");
+    runtime.update(|state, _| {
+        state.show_flow_comparison();
+        crate::graph_install::clear(state);
+    });
+    settle(&mut runtime);
+    assert!(runtime.state.flow_comparison.revisions.rows.is_empty());
+    assert!(!runtime.state.flow_comparison.controls.visible);
 }

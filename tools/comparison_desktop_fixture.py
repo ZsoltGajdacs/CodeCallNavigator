@@ -16,6 +16,7 @@ ROOT = Path(__file__).resolve().parents[1]
 FIXTURE = ROOT / "fixtures/flow/csharp-comparison"
 TARGET = "Comparison.csproj"
 SOURCES = ("Changed.cs", "Unchanged.cs", "Legacy.cs")
+WORKTREE_LINE = "if (flag) return Leaf(123);"
 
 
 @dataclass(frozen=True)
@@ -40,6 +41,25 @@ def revision_source(revision):
     return b"\xef\xbb\xbf" + (prefix + source.replace("\n", "\r\n")).encode("utf-8")
 
 
+def edit_worktree(project):
+    head = git(project, "rev-parse", "HEAD")
+    for source in SOURCES:
+        contents = subprocess.run(
+            ["/usr/bin/git", "-C", str(project), "show", f"{head}:{source}"],
+            check=True, capture_output=True, timeout=15,
+        ).stdout
+        if source == "Changed.cs":
+            line = b"if (flag) return Leaf(2);"
+            require(contents.count(line) == 1, "Worktree fixture must contain one changed statement")
+            contents = contents.replace(line, WORKTREE_LINE.encode("utf-8"))
+        (project / source).write_bytes(contents)
+    require(git(project, "diff", "--name-only") == "Changed.cs"
+            and git(project, "diff", "--cached", "--name-only") == ""
+            and git(project, "rev-parse", "HEAD") == head,
+            "Worktree fixture must contain exactly one unstaged source edit")
+    return {"commit": head, "uncommitted_line": WORKTREE_LINE}
+
+
 def commit_revision(project, revision, tag):
     (project / "Changed.cs").write_bytes(revision_source(revision))
     legacy = (FIXTURE / "Legacy.cs").read_bytes()
@@ -50,7 +70,7 @@ def commit_revision(project, revision, tag):
     (project / "Legacy.cs").write_bytes(legacy)
     inputs = {name: (project / name).read_bytes() for name in SOURCES}
     git(project, "add", ".gitattributes", TARGET, *SOURCES)
-    git(project, "commit", "-qm", tag)
+    git(project, "commit", "-qm", tag, "-m", "Compiler-backed comparison fixture.")
     git(project, "tag", tag)
     return inputs
 
@@ -103,34 +123,35 @@ def prepare(engine, project, timeout):
     require(source_hashes["Before"] == source_hashes["After"], "Unchanged physical source was modified")
     git(project, "commit", "--allow-empty", "-qm", "same source later endpoint")
     moved = git(project, "rev-parse", "HEAD")
+    base_commit = git(project, "rev-parse", f"{BASE_REF}^{{commit}}")
+    head_commit = git(project, "rev-parse", f"{HEAD_REF}^{{commit}}")
 
     before = prepare_revision(client, project, BASE_REF)
     after = prepare_revision(client, project, HEAD_REF)
     later = prepare_revision(client, project, moved)
-    initial_result = comparison(client, project, {"kind": "catalog", "limit": 100})
+    catalog_query = {"base": base_commit, "selection": {"kind": "catalog", "limit": 100}}
+    initial_result = comparison(client, project, dict(catalog_query, head=head_commit))
     initial = binding(initial_result)
     expected = Expectations(client, project, initial, inputs).cases(initial_result)
     artifacts = {"fixture-before": graph_metrics(initial_result["base"], before),
                  "fixture-after": graph_metrics(initial_result["head"], after)}
-    git(project, "update-ref", HEAD_REF, moved, initial["head_commit"])
-    reloaded_result = comparison(client, project, {"kind": "catalog", "limit": 100})
+    reloaded_result = comparison(client, project, dict(catalog_query, head=moved))
     reloaded = binding(reloaded_result)
     artifacts["moved-after"] = graph_metrics(reloaded_result["head"], later)
-    git(project, "update-ref", HEAD_REF, initial["head_commit"], moved)
     require(initial["head_digest"] == reloaded["head_digest"]
             and initial["head_commit"] != reloaded["head_commit"]
             and initial["comparison_id"] != reloaded["comparison_id"],
-            "Ref move must rebind identical graph bytes to the newly resolved verified commit")
+            "Selecting a later commit must rebind identical graph bytes to that verified commit")
     client.command(["graph-path", "--project", project], project, succeeds=False)
     for name in SOURCES:
         (project / name).unlink()
-    config = {"version": 2, "project": str(project), "base_ref": BASE_REF, "head_ref": HEAD_REF,
+    config = {"version": 2, "project": str(project),
               "expected_viewport": [1050, 680], "timeout_seconds": timeout,
               "initial": initial, "reloaded": reloaded, "cases": expected}
     metrics = {"fixture": str(FIXTURE.relative_to(ROOT)), "commands": client.records,
                "unchanged_source_hashes": source_hashes, "artifacts": artifacts,
                "compiler_inputs": input_metrics(inputs),
                "source_bytes_verified_against_inputs": True,
-               "moved_verified_commit_rebinds": True, "live_sources_removed": True,
+               "later_verified_commit_rebinds": True, "live_sources_removed": True,
                "no_working_graph_created": True, "historical_flow": "abstract declaration"}
     return Prepared(project, library, config, moved, metrics)

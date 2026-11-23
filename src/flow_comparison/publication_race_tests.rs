@@ -57,6 +57,7 @@ fn a_completed_catalog_reply_reconciles_identity_before_publication() {
         };
         workspace.accept_catalog(CatalogOutput {
             serial,
+            refresh: None,
             physical_project: Some(root.path().canonicalize().unwrap()),
             result,
         });

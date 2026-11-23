@@ -228,6 +228,7 @@ pub(crate) fn hold_request(
             release.recv().unwrap();
             requests::CatalogOutput {
                 serial,
+                refresh: None,
                 physical_project: None,
                 result: Err(crate::engine_client::flow_comparison::Error::Invalid(
                     anyhow::anyhow!("late failure"),

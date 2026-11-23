@@ -22,7 +22,7 @@ pub enum Overlay {
     Grouping,
     Depth,
     Builds,
-    ConfirmAnalysis(BTreeSet<BuildIdentity>),
+    ConfirmAnalysis(BTreeSet<BuildIdentity>, crate::jobs::AnalysisPurpose),
     Filters,
     Projects,
     Activity,
@@ -237,7 +237,9 @@ impl State {
     }
 
     pub fn close_overlay(&mut self) {
-        self.ui.overlay = None;
+        if let Some(Overlay::ConfirmAnalysis(_, purpose)) = self.ui.overlay.take() {
+            purpose.failed(self, String::new());
+        }
     }
 
     pub fn set_depth(&mut self, depth: u32) {
@@ -273,6 +275,10 @@ impl State {
     }
 
     pub(crate) fn review_analysis_builds(&mut self) {
+        self.review_analysis_builds_for(crate::jobs::AnalysisPurpose::MainGraph);
+    }
+
+    pub(crate) fn review_analysis_builds_for(&mut self, purpose: crate::jobs::AnalysisPurpose) {
         if !self.can_review_analysis_builds() {
             return;
         }
@@ -284,13 +290,13 @@ impl State {
             .filter(|choice| choice.selected)
             .map(|choice| choice.target.identity())
             .collect();
-        self.ui.overlay = Some(Overlay::ConfirmAnalysis(selected));
+        self.ui.overlay = Some(Overlay::ConfirmAnalysis(selected, purpose));
     }
 
     pub(crate) fn toggle_picker_build(&mut self, index: usize) {
         match &mut self.ui.overlay {
             Some(Overlay::Builds) => self.toggle_build(index),
-            Some(Overlay::ConfirmAnalysis(selected)) => {
+            Some(Overlay::ConfirmAnalysis(selected, _)) => {
                 if let Some(choice) = self.targets.get(index) {
                     let identity = choice.target.identity();
                     if !selected.remove(&identity) {
@@ -304,7 +310,7 @@ impl State {
 
     pub(crate) fn can_confirm_analysis(&self) -> bool {
         self.can_review_analysis_builds()
-            && matches!(&self.ui.overlay, Some(Overlay::ConfirmAnalysis(selected))
+            && matches!(&self.ui.overlay, Some(Overlay::ConfirmAnalysis(selected, _))
                 if self.targets.iter().any(|choice| selected.contains(&choice.target.identity())))
     }
 
@@ -312,7 +318,7 @@ impl State {
         if !self.can_confirm_analysis() {
             return;
         }
-        let Some(Overlay::ConfirmAnalysis(selected)) = self.ui.overlay.take() else {
+        let Some(Overlay::ConfirmAnalysis(selected, purpose)) = self.ui.overlay.take() else {
             return;
         };
         let mut changed = false;
@@ -324,7 +330,7 @@ impl State {
         if changed {
             self.build_selection_changed();
         }
-        self.analyze_selected();
+        self.analyze_selected_for(purpose);
     }
 
     fn build_selection_changed(&mut self) {

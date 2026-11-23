@@ -10,9 +10,11 @@ mod pair;
 mod pane_geometry;
 mod publication;
 mod requests;
+mod revisions;
 mod snapshots;
 mod source_navigation;
 mod work;
+mod worktree_refresh;
 use crate::engine_client::{
     QueryContext,
     flow_comparison::{BoundComparison, Catalog, ComparisonRefs},
@@ -24,6 +26,7 @@ use rune::{Latest, Waker};
 pub(crate) use snapshots::SELECT_BUILDS;
 pub use snapshots::{Navigation as GraphNavigation, Side as SnapshotSide};
 use std::sync::Arc;
+pub(crate) use worktree_refresh::RefreshTicket;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Selection {
@@ -55,6 +58,8 @@ struct Project {
 #[derive(Default)]
 pub struct Workspace {
     pub controls: controls::Controls,
+    pub(crate) revisions: revisions::Revisions,
+    pub(crate) worktree_refresh: worktree_refresh::Refresh,
     pub snapshots: snapshots::Snapshots,
     pub impact: impact::Impact,
     pub changes: changes::Changes,
@@ -80,6 +85,8 @@ pub struct Workspace {
 impl Workspace {
     pub(crate) fn release_hidden(&mut self) {
         self.cancel_requests();
+        self.revisions.reset();
+        self.invalidate_worktree_refresh();
         self.impact.close();
         self.snapshots.reset();
         self.current = None;
@@ -116,11 +123,15 @@ impl Workspace {
         self.catalog_job.set_waker(waker.clone());
         self.detail_job.set_waker(waker.clone());
         self.snapshots.set_waker(waker.clone());
+        self.revisions.set_waker(waker.clone());
         self.impact.set_waker(waker.clone());
         self.changes.set_waker(waker.clone());
         self.workers.set_waker(waker);
     }
     pub fn pending(&self) -> bool {
+        self.comparison_pending() || self.revisions.loading() || self.revisions.reading_message()
+    }
+    pub(crate) fn comparison_pending(&self) -> bool {
         self.catalog_job.is_pending()
             || self.detail_job.is_pending()
             || self.snapshots.pending()
@@ -131,6 +142,8 @@ impl Workspace {
         self.workers.stopped()
     }
     pub fn close(&mut self) {
+        self.revisions.reset();
+        self.invalidate_worktree_refresh();
         self.impact.close();
         self.controls.panel = Panel::Flows;
         self.snapshots.reset();
@@ -203,6 +216,7 @@ impl Workspace {
         &mut self,
         page: crate::engine_client::flow_comparison::CatalogPage,
     ) -> Result<(), String> {
+        self.require_idle_worktree_refresh()?;
         let bound = self
             .binding
             .clone()

@@ -336,8 +336,9 @@ impl State {
     }
 
     pub fn cancel_analysis(&mut self) {
-        if self.freshness.cancel_pending_manual() {
+        if let Some(purpose) = self.freshness.cancel_pending_manual() {
             self.status = "Manual analysis cancelled; previous graph preserved".into();
+            purpose.failed(self, self.status.clone());
             return;
         }
         self.cancel.store(true, Ordering::Release);
@@ -346,7 +347,9 @@ impl State {
 
     pub fn root_edited(&mut self) {
         self.stop_selected_refresh();
-        self.freshness.cancel_pending_manual();
+        if let Some(purpose) = self.freshness.cancel_pending_manual() {
+            purpose.failed(self, "Project changed before analysis started".into());
+        }
         self.jobs.file_focus_cancel.store(true, Ordering::Release);
         self.jobs.file_focus.cancel();
         self.root_was_edited = true;

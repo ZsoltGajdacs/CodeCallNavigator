@@ -1,4 +1,4 @@
-"""A private Git PATH gate can delay the known base ref of one owned fixture."""
+"""A private Git PATH gate can delay the selected base commit of one owned fixture."""
 from dataclasses import dataclass, field
 import json
 import os
@@ -8,12 +8,11 @@ import time
 from csharp_flow_acceptance import require
 from csharp_desktop_acceptance import write_json
 from comparison_desktop_cleanup import query_leases, processes, group_alive
-from comparison_desktop_facts import BASE_REF
 
 
-def resolution_arguments(project):
+def resolution_arguments(project, base_commit):
     return ["--no-pager", "-C", str(project), "rev-parse", "--verify",
-            "--end-of-options", f"{BASE_REF}^{{commit}}"]
+            "--end-of-options", f"{base_commit}^{{commit}}"]
 
 
 def alive(pid):
@@ -33,6 +32,7 @@ class Gate:
     project: Path
     directory: Path
     token: str
+    base_commit: str
     engine: Path | None = None
     observed: dict | None = field(default=None, init=False)
 
@@ -42,6 +42,9 @@ class Gate:
         require(self.directory.is_dir() and self.directory == self.directory.resolve(),
                 "Git gate requires its canonical owned output directory")
         require(known_token(self.token), "Git gate token must be explicit")
+        require(len(self.base_commit) in (40, 64)
+                and all(c in "0123456789abcdef" for c in self.base_commit),
+                "Git gate requires a full base commit hash")
 
     def install(self):
         private = self.directory / "path"
@@ -55,7 +58,7 @@ class Gate:
         return f'''#!/usr/bin/python3
 import json,os,pathlib,sys,time
 arguments=sys.argv[1:]
-expected={resolution_arguments(self.project)!r}
+expected={resolution_arguments(self.project, self.base_commit)!r}
 root=pathlib.Path({str(self.directory)!r})
 armed=root/'gate-armed.json'
 if arguments==expected and armed.exists():
@@ -81,7 +84,7 @@ os.execv('/usr/bin/git',['git',*arguments])
             if held.exists():
                 proof = json.loads(held.read_text())
                 require(proof.get("token") == self.token
-                        and proof.get("arguments") == resolution_arguments(self.project)
+                        and proof.get("arguments") == resolution_arguments(self.project, self.base_commit)
                         and type(proof.get("pid")) is int and proof["pid"] > 0,
                         "Git gate proof belongs to another request")
                 self.verify_live(proof, process)
@@ -89,7 +92,7 @@ os.execv('/usr/bin/git',['git',*arguments])
                 return proof
             require(process.poll() is None, "Native app exited before owned Git gate")
             time.sleep(0.02)
-        raise RuntimeError("Owned Git gate did not receive the fixture base ref resolution")
+        raise RuntimeError("Owned Git gate did not receive the fixture base commit resolution")
 
     def verify_live(self, proof, app):
         require(self.engine is not None, "Git gate needs its owned bundled engine identity")

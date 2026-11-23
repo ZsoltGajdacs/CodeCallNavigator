@@ -15,6 +15,7 @@ impl Workspace {
         identity.is_some()
             | catalog
             | detail
+            | self.revisions.poll()
             | self.snapshots.poll()
             | self.poll_impact()
             | self.publish_changes()
@@ -28,6 +29,9 @@ impl Workspace {
     fn accept_catalog(&mut self, output: super::requests::CatalogOutput) -> bool {
         if output.serial != self.catalog_clock.serial {
             return false;
+        }
+        if let Some(ticket) = output.refresh {
+            return self.publish_worktree_refresh(ticket, output);
         }
         if self.identity.completed(output.physical_project.as_deref())
             == super::identity::Installation::Different
@@ -54,8 +58,42 @@ impl Workspace {
                 }
                 self.catalog = Some(std::sync::Arc::from(page));
             }
+            Ok(CatalogAnswer::Refreshed { .. }) => unreachable!("refresh requires ticket"),
             Err(error) => self.failed(StringError::Query(error)),
         }
+        true
+    }
+    fn publish_worktree_refresh(
+        &mut self,
+        ticket: super::RefreshTicket,
+        output: super::requests::CatalogOutput,
+    ) -> bool {
+        if !self.worktree_refresh.matches(ticket) {
+            return false;
+        }
+        let message = match output.result {
+            Ok(CatalogAnswer::Refreshed { project, opened }) => {
+                if project.refs != self.control_refs() {
+                    self.finish_worktree_refresh(
+                        ticket,
+                        "Worktree refreshed. Load the current selection to compare.".into(),
+                    );
+                    return true;
+                }
+                if self.identity.completed(output.physical_project.as_deref())
+                    == super::identity::Installation::Different
+                {
+                    self.close();
+                    return true;
+                }
+                self.finish_worktree_refresh(ticket, String::new());
+                self.adopt_refreshed_comparison(*project, opened.bound, opened.page);
+                return true;
+            }
+            Err(error) => error.to_string(),
+            Ok(_) => unreachable!("refresh returned a normal catalog"),
+        };
+        self.finish_worktree_refresh(ticket, message);
         true
     }
     fn publish_detail(&mut self) -> bool {

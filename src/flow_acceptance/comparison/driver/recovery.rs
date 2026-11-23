@@ -1,12 +1,14 @@
-//! Moved refs and an externally acknowledged owned Git gate exercise real reload/cancel paths.
+//! A moved tag and an acknowledged owned Git gate exercise real reload and cancellation.
 use super::*;
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub(super) enum Mismatch {
+pub(super) enum RefMove {
     Move,
-    OpenCatalog,
-    Search,
-    Wait,
     Reload,
+    Pinned,
+    OpenAfter,
+    PickAfter,
+    CloseAfter,
+    Load,
     Loaded,
 }
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -24,69 +26,56 @@ pub(super) enum Cancellation {
     Closed,
 }
 impl Driver {
-    pub(super) fn mismatch_action(
+    pub(super) fn ref_move_action(
         &mut self,
         runtime: &mut Runtime<State>,
-        step: Mismatch,
+        step: RefMove,
     ) -> Result<()> {
         match step {
-            Mismatch::Move => self.external(
+            RefMove::Move => self.external(
                 Operation::MoveAfterRef,
                 Checkpoint::AfterRefMoved,
-                Phase::Mismatch(Mismatch::OpenCatalog),
+                Phase::RefMove(RefMove::Reload),
             )?,
-            Mismatch::OpenCatalog => self.click(
-                runtime,
-                "comparison-catalog-open",
-                Phase::Mismatch(Mismatch::Search),
-            ),
-            Mismatch::Search => self.click(
-                runtime,
-                "comparison-search-submit",
-                Phase::Mismatch(Mismatch::Wait),
-            ),
-            Mismatch::Reload => self.click(
+            RefMove::Reload => self.click(
                 runtime,
                 "comparison-reload",
-                Phase::Mismatch(Mismatch::Loaded),
+                Phase::RefMove(RefMove::Pinned),
             ),
+            RefMove::OpenAfter => self.click(
+                runtime,
+                "comparison-head",
+                Phase::RefMove(RefMove::PickAfter),
+            ),
+            RefMove::PickAfter => self.click(
+                runtime,
+                &format!("comparison-revision-{}", self.config.reloaded.head_commit),
+                Phase::RefMove(RefMove::CloseAfter),
+            ),
+            RefMove::CloseAfter => self.click(
+                runtime,
+                "comparison-revisions-done",
+                Phase::RefMove(RefMove::Load),
+            ),
+            RefMove::Load => {
+                self.click(runtime, "comparison-load", Phase::RefMove(RefMove::Loaded))
+            }
             _ => (),
         }
         Ok(())
     }
-    pub(super) fn mismatch_observed(
+    pub(super) fn ref_move_observed(
         &mut self,
         runtime: &Runtime<State>,
-        step: Mismatch,
+        step: RefMove,
     ) -> Result<()> {
         match step {
-            Mismatch::Wait => {
-                if runtime.state.flow_comparison.pending() {
-                    return Ok(());
-                }
-                // A Drawn observation can precede publication of a completed
-                // query. Only inspect the recovered controls once Reload is drawn.
-                use crate::flow_comparison::Phase as ComparisonPhase;
-                match &runtime.state.flow_comparison.phase {
-                    ComparisonPhase::ReloadRequired(_) => {}
-                    ComparisonPhase::Failed(message) => {
-                        anyhow::bail!("Moved ref query failed: {message}");
-                    }
-                    ComparisonPhase::Closed => anyhow::bail!("Comparison closed after moving ref"),
-                    ComparisonPhase::Loading | ComparisonPhase::Bound => return Ok(()),
-                }
-                ensure!(
-                    runtime.state.flow_comparison.current.is_none()
-                        && runtime.state.flow_comparison.catalog.is_none()
-                        && runtime.state.flow_comparison.history.is_empty(),
-                    "Mismatch retained actionable comparison content"
-                );
-                self.report.check("mismatch_cleared_actionable_content");
-                self.phase = Phase::Mismatch(Mismatch::Reload);
+            RefMove::Pinned if observation::bound(&runtime.state, &self.config.initial)? => {
+                self.report.check("moved_tag_left_selected_commit_pinned");
+                self.phase = Phase::RefMove(RefMove::OpenAfter);
             }
-            Mismatch::Loaded if runtime.state.flow_comparison.catalog.is_some() => {
-                observation::bound(&runtime.state, &self.config.reloaded)?;
-                self.report.check("explicit_reload_rebound");
+            RefMove::Loaded if observation::bound(&runtime.state, &self.config.reloaded)? => {
+                self.report.check("selected_later_commit_rebound");
                 self.select_case(0, Purpose::Reloaded);
             }
             _ => (),

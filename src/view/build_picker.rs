@@ -39,9 +39,15 @@ fn selected_summary(state: &State) -> String {
 }
 
 pub(super) fn layer(state: &State, k: &Kit, layers: &mut Vec<El>) {
-    let (title, draft) = match &state.ui.overlay {
-        Some(Overlay::Builds) => ("Builds", None),
-        Some(Overlay::ConfirmAnalysis(draft)) => ("Build Targets", Some(draft)),
+    let (title, draft, anchor) = match &state.ui.overlay {
+        Some(Overlay::Builds) => ("Builds", None, "project-picker-trigger"),
+        Some(Overlay::ConfirmAnalysis(draft, purpose)) => {
+            let anchor = match purpose {
+                crate::jobs::AnalysisPurpose::MainGraph => "project-picker-trigger",
+                crate::jobs::AnalysisPurpose::CompareWorktree(_) => "comparison-refresh-worktree",
+            };
+            ("Build Targets", Some(draft), anchor)
+        }
         _ => return,
     };
     let size = state.source_popup.window;
@@ -83,9 +89,9 @@ pub(super) fn layer(state: &State, k: &Kit, layers: &mut Vec<El>) {
                 .child(contents(state, k, draft))
                 .scroll_bar(k),
         )
-        .focus_return("project-picker-trigger")
+        .focus_return(anchor)
         .modal(true, State::close_overlay)
-        .anchored_fit("project-picker-trigger", Side::Bottom, Align::Start, 8.0);
+        .anchored_fit(anchor, Side::Bottom, Align::Start, 8.0);
     if draft.is_some() {
         panel = panel.child(confirmation_actions(state, k));
     }

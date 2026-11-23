@@ -2,11 +2,11 @@
 use super::{
     click,
     flow_comparison_fixture::{choose, runtime},
-    flow_comparisons::{edit, load, settle},
+    flow_comparisons::{choose_revision, edit, load, settle},
 };
 use crate::{
     engine_client::flow_comparison::CorrespondenceKind,
-    flow_comparison::{Phase, Side},
+    flow_comparison::{Side, SnapshotSide},
 };
 fn text(runtime: &rune::Runtime<crate::app::State>, needle: &str) -> bool {
     runtime
@@ -123,29 +123,25 @@ fn missing_and_unavailable_sides_stay_explicit() {
     assert!(text(&ui, "Missing in this revision"));
 }
 #[test]
-fn moved_ref_blocks_actions_until_explicit_reload() {
+fn moved_tag_preserves_the_selected_commit_until_another_is_loaded() {
     let data = crate::flow_scenes::data();
-    let (mut ui, project) = runtime(data.clone(), data, true);
+    let (mut ui, project) = runtime(data.clone(), data.clone(), true);
+    super::flow_comparison_fixture::commit(project.path(), &data, "later");
     load(&mut ui);
-    crate::flow_comparison::tests::git(
-        project.path(),
-        &["commit", "--allow-empty", "-qm", "moved"],
-    );
+    let pinned = ui.state.flow_comparison.header().unwrap().clone();
     crate::flow_comparison::tests::git(project.path(), &["tag", "-f", "head"]);
-    crate::flow_comparison::tests::retain_scene(
-        project.path(),
-        &crate::flow_scenes::data(),
-        "HEAD",
-    );
     choose(&mut ui, "load(");
-    assert!(matches!(
-        ui.state.flow_comparison.phase,
-        Phase::ReloadRequired(_)
-    ));
-    assert!(ui.state.flow_comparison.current.is_none());
-    assert!(ui.state.flow_comparison.catalog.is_none());
-    click(&mut ui, "comparison-reload");
-    settle(&mut ui);
-    choose(&mut ui, "load(");
+    assert_eq!(ui.state.flow_comparison.header(), Some(&pinned));
     assert!(ui.state.flow_comparison.current.is_some());
+
+    let later = codecallnavigator::artifact::revision::Repository::open(project.path())
+        .unwrap()
+        .resolve("HEAD")
+        .unwrap();
+    choose_revision(&mut ui, SnapshotSide::Head, &later);
+    click(&mut ui, "comparison-load");
+    settle(&mut ui);
+    let reloaded = ui.state.flow_comparison.header().unwrap();
+    assert_eq!(reloaded.head.commit.as_deref(), Some(later.as_str()));
+    assert_ne!(reloaded.comparison_id, pinned.comparison_id);
 }
