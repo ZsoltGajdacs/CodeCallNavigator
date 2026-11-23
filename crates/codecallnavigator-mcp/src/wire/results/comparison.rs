@@ -24,6 +24,18 @@ pub(in crate::wire) fn metadata(value: &Value) -> Result<()> {
 }
 
 pub(super) fn validate(result: &Value) -> Result<()> {
+    header(result)?;
+    boolean(result, "graph_equal")?;
+    boolean(result, "metadata_equal")?;
+    ensure!(result["summary"].is_object(), "Comparison omitted summary");
+    page(result, "changes")?;
+    for change in array(result, "changes")? {
+        record(change)?;
+    }
+    Ok(())
+}
+
+pub(super) fn header(result: &Value) -> Result<()> {
     ensure!(
         result["version"] == 1,
         "Unsupported comparison result version"
@@ -41,13 +53,6 @@ pub(super) fn validate(result: &Value) -> Result<()> {
         result["base"]["kind"] == "commit",
         "Comparison base is not committed"
     );
-    boolean(result, "graph_equal")?;
-    boolean(result, "metadata_equal")?;
-    ensure!(result["summary"].is_object(), "Comparison omitted summary");
-    page(result, "changes")?;
-    for change in array(result, "changes")? {
-        record(change)?;
-    }
     Ok(())
 }
 

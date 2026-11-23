@@ -1,4 +1,5 @@
 //! Validate required operation payload shapes while preserving extension metadata.
+mod class_flow_comparison;
 mod comparison;
 mod comparison_changes;
 mod flow_comparison;
@@ -14,6 +15,7 @@ pub fn validate(operation: &str, result: &Value) -> Result<()> {
     match operation {
         "compare" => comparison(result),
         "comparison_changes" => comparison_changes::validate(result),
+        "class_flow_comparison" => class_flow_comparison::validate(result),
         "flow_comparison" => flow_comparison::validate(result),
         "impact_preview" => impact_preview::validate(result),
         "snapshot_status" => super::snapshots::status(result),
@@ -108,7 +110,7 @@ pub fn binding(request: &Value, result: &Value) -> Result<()> {
     }
     if !matches!(
         request["kind"].as_str(),
-        Some("compare" | "flow_comparison" | "comparison_changes")
+        Some("compare" | "flow_comparison" | "comparison_changes" | "class_flow_comparison")
     ) {
         return Ok(());
     }
@@ -128,6 +130,9 @@ pub fn binding(request: &Value, result: &Value) -> Result<()> {
     }
     if request["kind"] == "comparison_changes" {
         comparison_changes::binding(request, result)?;
+    }
+    if request["kind"] == "class_flow_comparison" {
+        class_flow_comparison::binding(request, result)?;
     }
     Ok(())
 }

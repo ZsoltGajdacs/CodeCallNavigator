@@ -229,3 +229,116 @@ fn typescript_methods_use_saved_semantic_class_owners() {
         Some(diff.changes[0].id.as_str())
     );
 }
+
+#[test]
+fn class_graph_compares_directional_neighbor_calls_and_resolution_counts() {
+    use crate::model::TargetResolution::{Direct, Possible, VirtualDispatch};
+
+    let [before, after] = class_redirect_fixture();
+    let [root, old_id, current_id, entry_id] =
+        [0, 2, 3, 4].map(|index| Class::from_node(&before.nodes[index]).unwrap().id());
+    let missing = BTreeSet::new();
+    let old = Snapshot::new(&before, &missing).unwrap();
+    let new = Snapshot::new(&after, &missing).unwrap();
+    let graph = class_graph::graph(&old, &new, &root).unwrap();
+    let link = |from: &str, to: &str| {
+        graph
+            .links
+            .iter()
+            .find(|link| link.from == from && link.to == to)
+            .unwrap()
+    };
+    assert_eq!((graph.links.len(), graph.nodes.len()), (3, 4));
+    assert_eq!(
+        [link(&root, &old_id).status, link(&root, &current_id).status],
+        [GraphChange::Removed, GraphChange::Added]
+    );
+    assert_eq!(link(&root, &current_id).after[&VirtualDispatch], 2);
+    let incoming = link(&entry_id, &root);
+    assert_eq!(incoming.status, GraphChange::Modified);
+    assert_eq!(
+        (
+            incoming.before[&Direct],
+            incoming.after[&Direct],
+            incoming.after[&Possible]
+        ),
+        (1, 4, 2)
+    );
+    let unchanged = class_graph::graph(&old, &old, &root).unwrap();
+    assert!(
+        unchanged
+            .links
+            .iter()
+            .all(|link| link.status == GraphChange::Unchanged)
+    );
+}
+
+fn class_redirect_fixture() -> [GraphData; 2] {
+    let source = "class OrderService {\nint limit = 10;\nvoid Entry() { Run(); }\nvoid Run() { return; }\n}\n";
+    let mut before = snapshot(source, "direct");
+    let neighbor = |id: &str, name: &str| Node {
+        id: id.into(),
+        label: id.into(),
+        container: name.into(),
+        ..before.nodes[0].clone()
+    };
+    let old = neighbor("old", "Example.LegacyTax");
+    let current = neighbor("current", "Example.TaxService");
+    let entry = neighbor("caller", "Example.Web");
+    before.nodes.extend([old, current, entry]);
+    let call = |from, to, certainty: &str, count| Edge {
+        from,
+        to,
+        kind: "call".into(),
+        certainty: certainty.into(),
+        count,
+        provenance: String::new(),
+        evidence: Vec::new(),
+    };
+    before.edges.extend([
+        call(0, 2, "direct", 1),
+        call(4, 0, "direct", 1),
+        call(4, 1, "possible", 2),
+        Edge {
+            kind: "reference".into(),
+            ..call(4, 1, "direct", 10)
+        },
+        call(2, 3, "direct", 99),
+    ]);
+    let mut after = before.clone();
+    after.edges[1] = call(0, 3, "dispatch", 2);
+    after.edges[2] = call(4, 0, "direct", 4);
+    [before, after]
+}
+
+#[test]
+fn class_graph_retains_declaration_only_class_and_distinguishes_absence() {
+    let source = "class OrderService {\nint limit = 10;\nvoid Entry() { Run(); }\nvoid Run() { return; }\n}\n";
+    let original = snapshot(source, "direct");
+    let root = Class::from_node(&original.nodes[0]).unwrap().id();
+    let mut declaration_only = original;
+    declaration_only.nodes.clear();
+    declaration_only.edges.clear();
+    declaration_only.flow_inventory = None;
+    declaration_only.entry_points = None;
+    let removed = GraphData::default();
+    let missing = BTreeSet::new();
+    let old = Snapshot::new(&declaration_only, &missing).unwrap();
+    let new = Snapshot::new(&removed, &missing).unwrap();
+    let graph = class_graph::graph(&old, &new, &root).unwrap();
+    assert_eq!(
+        graph,
+        ClassGraph {
+            nodes: vec![ClassNode {
+                id: root.clone(),
+                name: "Example.OrderService".into(),
+                before: true,
+                after: false,
+                status: GraphChange::Removed,
+            }],
+            root: root.clone(),
+            links: vec![],
+        }
+    );
+    assert!(class_graph::graph(&new, &new, &root).is_none());
+}

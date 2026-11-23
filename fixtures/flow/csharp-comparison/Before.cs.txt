@@ -7,4 +7,5 @@ public static class Cases {
     public static int Leaf(int value) => value;
     public static int Manual(bool flag) => flag ? Leaf(3) : 2;
     public static int Removed() => Leaf(7);
+    public static int ClassRedirect() => OldNeighbor.Rate();
 }

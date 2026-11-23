@@ -96,7 +96,7 @@ impl Pair {
     }
 }
 
-fn render(hunk: &diffy::Hunk<'_, str>) -> Hunk {
+pub(super) fn render(hunk: &diffy::Hunk<'_, str>) -> Hunk {
     let lines = hunk
         .lines()
         .iter()

@@ -5,47 +5,63 @@ use crate::{
     flow_comparison::{PreviewTarget, Workspace},
     theme,
 };
+use codecallnavigator::artifact::comparison_changes::ClassSource;
 use rune::{Align, El, GrowthSpec, Side, col, row, text};
 use rune_kit::{Button, ButtonVariant, Kit};
 use std::sync::Arc;
 
 pub fn layer(state: &State, k: &Kit) -> Option<El> {
     let workspace = &state.flow_comparison;
-    let preview = workspace.changes.preview.as_ref()?;
-    let (id, side) = match &preview.target {
-        PreviewTarget::Row(id) => (id.as_str(), Side::Bottom),
-        PreviewTarget::Step(_, _) => (workspace.selected_change_id()?, Side::Right),
-    };
-    let diff = workspace.changes.diff(id);
-    let (title, content) = match diff {
-        None => ("Source diff", notice("Loading saved source…", k)),
-        Some(Err(error)) => ("Source diff", notice(error, k)),
-        Some(Ok(diff)) => (
-            diff.file.as_str(),
-            preview_content(workspace, diff, &preview.target, k),
-        ),
+    let preview = workspace.previews.active.as_ref()?;
+    let (title, content) = match &preview.target {
+        PreviewTarget::Class(side, id) => {
+            class_content(workspace.class_preview(*side, id), *side, k)
+        }
+        target => {
+            let id = match target {
+                PreviewTarget::Row(id) => id.as_str(),
+                _ => workspace.selected_change_id()?,
+            };
+            match workspace.previews.diff(id) {
+                None => ("Source diff".into(), notice("Loading saved source…", k)),
+                Some(Err(error)) => ("Source diff".into(), notice(error, k)),
+                Some(Ok(diff)) => (
+                    diff.file.clone(),
+                    preview_content(workspace, diff, target, k),
+                ),
+            }
+        }
     };
     let mut header = row().h(28.0).w_full().px(8.0).center_y().gap(8.0).child(
-        text(title)
+        text(&title)
             .font(k.ty.small_medium)
             .color(k.c.text_base)
             .min_w(0.0)
             .grow(1.0)
             .truncate(),
     );
-    let is_step = matches!(&preview.target, PreviewTarget::Step(_, _));
-    if !is_step {
+    let interactive = matches!(preview.target, PreviewTarget::Row(_));
+    if interactive {
         header = header.child(
             Button::new("Close")
                 .variant(ButtonVariant::Ghost)
-                .on_press(|s: &mut State| s.flow_comparison.changes.preview = None)
+                .on_press(|s: &mut State| s.flow_comparison.previews.dismiss())
                 .build(k),
         );
     }
     let panel = col()
         .key("comparison-unified-source")
-        .anchored_fit(&preview.anchor, side, Align::Start, 8.0)
-        .w(if is_step { 420.0 } else { 680.0 })
+        .anchored_fit(
+            &preview.anchor,
+            if interactive {
+                Side::Bottom
+            } else {
+                Side::Right
+            },
+            Align::Start,
+            8.0,
+        )
+        .w(if interactive { 680.0 } else { 420.0 })
         .min_h(0.0)
         .radius(8.0)
         .border(1.0, k.c.std_border)
@@ -54,7 +70,7 @@ pub fn layer(state: &State, k: &Kit) -> Option<El> {
         .label("Unified source diff")
         .child(header)
         .child(content);
-    Some(if is_step { panel.inert() } else { panel })
+    Some(if interactive { panel } else { panel.inert() })
 }
 
 fn preview_content(
@@ -75,12 +91,46 @@ fn preview_content(
             "No source change at this step",
         ),
         PreviewTarget::Row(_) => (diff.hunks.as_slice(), "No source changes in this selection"),
+        PreviewTarget::Class(..) => unreachable!("class source has its own content"),
     };
     if hunks.is_empty() {
         notice(empty_message, k)
     } else {
         diff_lines(hunks, k)
     }
+}
+
+fn class_content(
+    result: Option<Result<&ClassSource, &str>>,
+    side: crate::flow_comparison::SideId,
+    k: &Kit,
+) -> (String, El) {
+    let message = match result {
+        None => "Loading saved source…",
+        Some(Err(error)) => error,
+        Some(Ok(ClassSource::Unavailable { reason })) => reason,
+        Some(Ok(ClassSource::Diff { file, hunks })) => return (file.clone(), diff_lines(hunks, k)),
+        Some(Ok(ClassSource::Excerpt { file, start, text })) => {
+            let before = side == crate::flow_comparison::SideId::Before;
+            let excerpt = col()
+                .w_full()
+                .h((text.lines().count() as f32 * 20.0).min(240.0))
+                .scroll_xy()
+                .children(text.lines().enumerate().map(|(index, text)| {
+                    render_line(
+                        &DisplayLine {
+                            before: before.then_some(start + index),
+                            after: (!before).then_some(start + index),
+                            kind: LineKind::Context,
+                            text: text.into(),
+                        },
+                        k,
+                    )
+                }));
+            return (format!("{file}:{start}"), excerpt);
+        }
+    };
+    ("Saved source".into(), notice(message, k))
 }
 
 fn notice(value: &str, k: &Kit) -> El {

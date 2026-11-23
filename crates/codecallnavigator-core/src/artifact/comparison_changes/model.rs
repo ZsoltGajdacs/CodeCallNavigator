@@ -1,4 +1,4 @@
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "snake_case")]
@@ -74,7 +74,7 @@ pub enum SourceStatus {
     Unavailable,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum LineKind {
     Context,
@@ -82,19 +82,19 @@ pub enum LineKind {
     Insert,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Line {
     pub kind: LineKind,
     pub text: String,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Clone, Copy, Debug, Serialize, Deserialize)]
 pub struct Range {
     pub start: usize,
     pub count: usize,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Hunk {
     pub before: Range,
     pub after: Range,
@@ -109,4 +109,37 @@ pub struct SourceDiff<'a> {
     pub hunks: Vec<Hunk>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub reason: Option<&'static str>,
+}
+
+impl Hunk {
+    /// Returns whether this side's changed lines overlap, and if their edit run touches both sides.
+    pub fn changed_at(
+        &self,
+        before: bool,
+        range: &std::ops::RangeInclusive<usize>,
+    ) -> Option<bool> {
+        let in_side = if before {
+            LineKind::Delete
+        } else {
+            LineKind::Insert
+        };
+        let other_side = if before {
+            LineKind::Insert
+        } else {
+            LineKind::Delete
+        };
+        let mut index = if before { self.before } else { self.after }.start;
+        self.lines
+            .split_inclusive(|line| line.kind == LineKind::Context)
+            .find_map(|edit| {
+                let changed = edit.iter().filter(|line| line.kind == in_side).count();
+                let end = index.saturating_add(changed);
+                let overlap = (index..end).any(|line| range.contains(&line));
+                index = end.saturating_add(usize::from(
+                    edit.last()
+                        .is_some_and(|line| line.kind == LineKind::Context),
+                ));
+                overlap.then(|| edit.iter().any(|line| line.kind == other_side))
+            })
+    }
 }

@@ -72,6 +72,7 @@ or without a progress token.
 | `compare_graphs` | `base`, `head?` (`WORKTREE`), `base_snapshot?`, `head_snapshot?`, `offset?` (0), `limit?` (100; 1–500), `expected_comparison?`, `expected_generation?` |
 | `compare_function_flows` | `base`, `head?`, `base_snapshot?`, `head_snapshot?`, `selection`, `expected_comparison?` |
 | `compare_changes` | `base`, `head?` (`WORKTREE`), `base_snapshot?`, `head_snapshot?`, `selection`, `expected_comparison?`, `expected_generation?` |
+| `compare_class_flows` | `base`, `head?` (`WORKTREE`), `base_snapshot?`, `head_snapshot?`, `id`, `expected_comparison`, `expected_generation?` |
 | `preview_graph_impact` | `base`, `head?` (`WORKTREE`), `base_snapshot?` |
 | `graph_snapshot_status` | `revision` |
 | `prepare_graph_snapshot` | `revision`, `targets?` (project-relative build paths) |
@@ -153,6 +154,14 @@ when the installed engine advertises it. Select `list` to discover changes or
 `source_diff` to fetch unified hunks by change ID. Pass `expected_comparison`
 when paging or fetching source. Use the returned method `symbol` with
 `compare_function_flows` for the paired charts.
+
+Use `compare_class_flows` with the class row's `id` for the
+[class-to-class call graph](cli-queries.md#class-flow-comparison). Pass the
+list's `comparison_id` as `expected_comparison` and reuse its refs and
+snapshot selectors. The result gives caller-to-callee links and per-side
+resolution counts for the selected class's immediate neighbors. The tool
+is available when the installed engine advertises class flow comparison
+version 1.
 
 `preview_graph_impact` uses one saved baseline graph and the tracked source diff
 to report potential caller impact. The response identifies the baseline and

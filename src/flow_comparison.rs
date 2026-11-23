@@ -1,6 +1,7 @@
 //! Historical flows own their captured project and endpoint binding, not a graph epoch.
 mod call_changes;
 mod changes;
+mod class_pair;
 mod controls;
 mod identity;
 mod impact;
@@ -8,6 +9,7 @@ mod lifecycle;
 mod navigation;
 mod pair;
 mod pane_geometry;
+mod preview;
 mod publication;
 mod requests;
 mod revisions;
@@ -19,9 +21,11 @@ use crate::engine_client::{
     QueryContext,
     flow_comparison::{BoundComparison, Catalog, ComparisonRefs},
 };
-pub(crate) use changes::{Changes, PreviewTarget, StepChange};
+pub(crate) use changes::Changes;
+pub(crate) use class_pair::{ClassPair, present as class_present};
 pub use pair::{Pair, ReadySide, Side, SideId};
-use requests::{CatalogOutput, Clock, DetailOutput};
+pub(crate) use preview::{PreviewTarget, StepChange};
+use requests::{CatalogOutput, Clock, DetailOutput, DetailSelection};
 use rune::{Latest, Waker};
 pub(crate) use snapshots::SELECT_BUILDS;
 pub use snapshots::{Navigation as GraphNavigation, Side as SnapshotSide};
@@ -63,12 +67,15 @@ pub struct Workspace {
     pub snapshots: snapshots::Snapshots,
     pub impact: impact::Impact,
     pub changes: changes::Changes,
+    pub previews: preview::Previews,
     project: Option<Project>,
     identity: identity::Identity,
     binding: Option<BoundComparison>,
     pub phase: Phase,
     pub catalog: Option<Arc<Catalog>>,
     pub current: Option<Pair>,
+    detail_selection: Option<DetailSelection>,
+    class_pair: Option<ClassPair>,
     pub history: Vec<Pair>,
     pub detail_message: String,
     catalog_job: Latest<work::Tracked<CatalogOutput>>,
@@ -116,6 +123,15 @@ impl Workspace {
     pub fn detail_pending(&self) -> bool {
         self.detail_job.is_pending()
     }
+    pub(crate) fn class_selection(&self) -> Option<&str> {
+        match self.detail_selection.as_ref()? {
+            DetailSelection::Class(id) => Some(id),
+            DetailSelection::Function(_) => None,
+        }
+    }
+    pub(crate) fn class_pair(&self) -> Option<&ClassPair> {
+        self.class_pair.as_ref()
+    }
     pub fn header(&self) -> Option<&crate::engine_client::flow_comparison::Header> {
         self.binding.as_ref().map(BoundComparison::header)
     }
@@ -126,6 +142,7 @@ impl Workspace {
         self.revisions.set_waker(waker.clone());
         self.impact.set_waker(waker.clone());
         self.changes.set_waker(waker.clone());
+        self.previews.set_waker(waker.clone());
         self.workers.set_waker(waker);
     }
     pub fn pending(&self) -> bool {
@@ -137,6 +154,7 @@ impl Workspace {
             || self.snapshots.pending()
             || self.impact.pending()
             || self.changes.pending()
+            || self.previews.pending()
     }
     pub fn stopped(&self) -> bool {
         self.workers.stopped()
@@ -172,7 +190,10 @@ impl Workspace {
         self.detail_clock.cancel();
         self.catalog_job.cancel();
         self.detail_job.cancel();
+        self.detail_selection = None;
+        self.class_pair = None;
         self.changes.clear();
+        self.previews.clear();
     }
     fn open(&mut self, project: Project) {
         self.close_flow_binding();

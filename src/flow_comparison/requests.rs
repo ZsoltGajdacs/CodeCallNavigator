@@ -1,5 +1,5 @@
 //! Request cancellation and wire completions retain their own publication serials.
-use super::{Selection, pair};
+use super::{ClassPair, Selection, pair};
 use crate::engine_client::flow_comparison::{BoundComparison, Catalog, EndpointStatus, Error};
 use std::sync::{
     Arc,
@@ -42,8 +42,17 @@ pub(super) struct CatalogOutput {
 pub(super) struct DetailOutput {
     pub serial: u64,
     pub binding: String,
-    pub selection: Selection,
-    pub result: Result<pair::Prepared, StringError>,
+    pub selection: DetailSelection,
+    pub result: Result<PreparedDetail, StringError>,
+}
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub(super) enum DetailSelection {
+    Function(Selection),
+    Class(String),
+}
+pub(super) enum PreparedDetail {
+    Function(Box<pair::Prepared>),
+    Class(Box<ClassPair>),
 }
 pub(super) enum StringError {
     Query(Error),
@@ -148,7 +157,7 @@ impl CatalogWork {
 
 pub(super) struct DetailWork {
     pub bound: BoundComparison,
-    pub selection: Selection,
+    pub selection: DetailSelection,
     pub dot: std::path::PathBuf,
     pub cancel: Arc<AtomicBool>,
     pub serial: u64,
@@ -156,23 +165,39 @@ pub(super) struct DetailWork {
 impl DetailWork {
     pub fn run(self) -> DetailOutput {
         let binding = self.bound.header().comparison_id.clone();
-        let result = self
-            .bound
-            .detail(
-                &self.selection.symbol,
-                self.selection.head_symbol.as_deref(),
-                &self.cancel,
-            )
-            .map_err(StringError::Query)
-            .and_then(|detail| {
-                pair::Prepared::load(detail, &self.dot, &self.cancel)
-                    .map_err(StringError::Preparation)
-            });
+        let result = match &self.selection {
+            DetailSelection::Function(selection) => self.prepare_function(selection),
+            DetailSelection::Class(id) => self.prepare_class(id),
+        };
         DetailOutput {
             serial: self.serial,
             binding,
             selection: self.selection,
             result,
         }
+    }
+
+    fn prepare_function(&self, selection: &Selection) -> Result<PreparedDetail, StringError> {
+        let detail = self
+            .bound
+            .detail(
+                &selection.symbol,
+                selection.head_symbol.as_deref(),
+                &self.cancel,
+            )
+            .map_err(StringError::Query)?;
+        pair::Prepared::load(detail, &self.dot, &self.cancel)
+            .map(|prepared| PreparedDetail::Function(Box::new(prepared)))
+            .map_err(StringError::Preparation)
+    }
+
+    fn prepare_class(&self, id: &str) -> Result<PreparedDetail, StringError> {
+        let graph = self
+            .bound
+            .class_graph(id, &self.cancel)
+            .map_err(StringError::Query)?;
+        ClassPair::load(graph, &self.dot, &self.cancel)
+            .map(|prepared| PreparedDetail::Class(Box::new(prepared)))
+            .map_err(|error| StringError::Preparation(format!("{error:#}")))
     }
 }

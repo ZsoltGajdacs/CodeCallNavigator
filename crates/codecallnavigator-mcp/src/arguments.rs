@@ -49,6 +49,18 @@ pub struct CompareChangesArgs {
     pub expected_generation: Option<String>,
     pub selection: CompareChangesSelection,
 }
+#[derive(Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+pub struct ClassFlowComparisonArgs {
+    pub base: String,
+    #[serde(default = "comparison_head")]
+    pub head: String,
+    pub base_snapshot: Option<String>,
+    pub head_snapshot: Option<String>,
+    pub expected_comparison: String,
+    pub expected_generation: Option<String>,
+    pub id: String,
+}
 #[derive(Deserialize, Serialize, JsonSchema)]
 #[serde(tag = "kind", rename_all = "snake_case", deny_unknown_fields)]
 pub enum CompareChangesSelection {
@@ -309,6 +321,7 @@ pub fn parse(name: &str, value: Value) -> Result<Query> {
     match name {
         "compare_graphs" => comparison(serde_json::from_value(value)?),
         "compare_changes" => comparison_changes(serde_json::from_value(value)?),
+        "compare_class_flows" => class_flow_comparison(serde_json::from_value(value)?),
         "compare_function_flows" => flow_comparison(serde_json::from_value(value)?),
         "preview_graph_impact" => impact_preview(serde_json::from_value(value)?),
         "graph_snapshot_status" => {
@@ -445,6 +458,22 @@ fn flow_comparison(args: FlowComparisonArgs) -> Result<Query> {
     let mut query = json!({"kind":"flow_comparison","base":args.base,"head":args.head,"expected_comparison":args.expected_comparison,"selection":args.selection});
     snapshot_selectors(&mut query, args.base_snapshot, args.head_snapshot)?;
     Query::new(query, None)
+}
+fn class_flow_comparison(args: ClassFlowComparisonArgs) -> Result<Query> {
+    text(&args.base)?;
+    text(&args.head)?;
+    ensure!(
+        args.base != "WORKTREE",
+        "Comparison base must name a commit"
+    );
+    validate_generation(Some(&args.expected_comparison))?;
+    flow_symbol(&args.id)?;
+    let mut query = json!({
+        "kind": "class_flow_comparison", "base": args.base, "head": args.head,
+        "expected_comparison": args.expected_comparison, "id": args.id
+    });
+    snapshot_selectors(&mut query, args.base_snapshot, args.head_snapshot)?;
+    Query::new(query, args.expected_generation)
 }
 fn flow_symbol(symbol: &str) -> Result<()> {
     text(symbol)?;

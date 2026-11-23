@@ -1,16 +1,25 @@
 //! Prove the default outline and unified diff through the native presentation.
+mod class_flow;
 use super::*;
 use crate::flow_comparison::SideId;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(super) enum Step {
     Outline,
+    HoverOutlineClass,
+    OutlineClassHovered,
+    FocusOutlineClass,
     SelectMethod,
     Hover,
     Hovered,
     Focus,
     Class,
-    ClassPreview,
+    ClassDrawn,
+    HoverClass,
+    ClassHovered,
+    FocusClassNeighbor,
+    ReturnToMethod,
+    ReturnedToMethod,
 }
 
 impl Driver {
@@ -20,15 +29,15 @@ impl Driver {
         step: Step,
     ) -> Result<()> {
         match step {
-            Step::SelectMethod => self.open_change(runtime, false),
-            Step::Class => self.open_change(runtime, true),
+            Step::SelectMethod => self.open_method_change(runtime, Step::Hover),
             Step::Hover => self.hover_call(runtime),
             Step::Focus => self.focus_call(runtime),
-            _ => Ok(()),
+            Step::ReturnToMethod => self.open_method_change(runtime, Step::ReturnedToMethod),
+            _ => self.class_flow_action(runtime, step),
         }
     }
 
-    fn open_change(&mut self, runtime: &mut Runtime<State>, class: bool) -> Result<()> {
+    fn method_change_key(&self, runtime: &Runtime<State>) -> Result<Option<String>> {
         let symbol = self.config.cases[0].symbol.as_str();
         let change = runtime
             .state
@@ -38,18 +47,11 @@ impl Driver {
             .iter()
             .find(|row| row.symbol.as_deref() == Some(symbol))
             .context("The changed fixture method is absent from the outline")?;
-        let (id, next) = if class {
-            (
-                change
-                    .class_id
-                    .as_deref()
-                    .context("The fixture has no owning class row")?,
-                Step::ClassPreview,
-            )
-        } else {
-            (change.id.as_str(), Step::Hover)
-        };
-        if let Some(key) = change_key(runtime, id) {
+        Ok(change_key(runtime, &change.id))
+    }
+
+    fn open_method_change(&mut self, runtime: &mut Runtime<State>, next: Step) -> Result<()> {
+        if let Some(key) = self.method_change_key(runtime)? {
             self.click(runtime, &key, Phase::FlowFirst(next));
         }
         Ok(())
@@ -94,7 +96,7 @@ impl Driver {
             Step::Outline if comparison.changes.loaded && comparison.current.is_some() => {
                 verify_outline(runtime)?;
                 self.report.check("changes_outline_drawn_and_auto_selected");
-                self.phase = Phase::FlowFirst(Step::SelectMethod);
+                self.phase = Phase::FlowFirst(Step::HoverOutlineClass);
             }
             Step::Hovered if preview_drawn(runtime, "Leaf(2)") => {
                 self.report.check("unified_diff_drawn_on_hover");
@@ -107,24 +109,13 @@ impl Driver {
                 self.report.check("unified_diff_drawn_on_keyboard_focus");
                 self.phase = Phase::FlowFirst(Step::Class);
             }
-            Step::ClassPreview if preview_drawn(runtime, "Leaf(2)") => {
-                ensure!(
-                    comparison.changes.preview.as_ref().is_some_and(|preview| {
-                        matches!(
-                            preview.target,
-                            crate::flow_comparison::PreviewTarget::Row(_)
-                        )
-                    }),
-                    "The visible diff is not a class preview"
-                );
-                ensure!(
-                    observation::pair(runtime, &self.config.cases[0])?.is_some(),
-                    "Opening a class diff replaced the selected flow"
-                );
-                self.report.check("class_preview_preserved_flow");
+            Step::ReturnedToMethod
+                if observation::pair(runtime, &self.config.cases[0])?.is_some() =>
+            {
+                self.report.check("method_flow_restored_from_outline");
                 self.select_case(0, Purpose::Cases);
             }
-            _ => {}
+            _ => self.class_flow_observed(runtime, step)?,
         }
         Ok(())
     }

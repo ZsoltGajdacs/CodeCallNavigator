@@ -122,10 +122,11 @@ impl Driver {
             return;
         }
         if self.origin.elapsed() > self.config.timeout() {
-            self.fail(
-                runtime,
-                format!("Comparison acceptance timed out in {:?}", self.phase),
+            let message = format!(
+                "Comparison acceptance timed out in {:?}. Detail status: {}",
+                self.phase, runtime.state.flow_comparison.detail_message
             );
+            self.fail(runtime, message);
             return;
         }
         self.input.next(runtime);

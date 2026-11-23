@@ -7,6 +7,9 @@ use crate::{
 use rune::{El, col, el, row, text};
 use rune_kit::{Button, ButtonVariant, Kit};
 pub(super) fn view(state: &State, k: &Kit) -> El {
+    let workspace = &state.flow_comparison;
+    let show_methods_source = workspace.class_selection().is_none()
+        && (!workspace.changes.loaded || workspace.changes.expert);
     col()
         .w_full()
         .grow(1.0)
@@ -21,13 +24,11 @@ pub(super) fn view(state: &State, k: &Kit) -> El {
                 .child(el().w(1.0).h_full().fill(k.c.std_border))
                 .child(chart(state, SideId::After, k)),
         )
-        .child(
-            if state.flow_comparison.changes.loaded && !state.flow_comparison.changes.expert {
-                el()
-            } else {
-                bottom(state, k)
-            },
-        )
+        .child(if show_methods_source {
+            bottom(state, k)
+        } else {
+            el()
+        })
 }
 fn address(side: SideId) -> Address {
     match side {
@@ -49,13 +50,16 @@ fn chart(state: &State, side: SideId, k: &Kit) -> El {
         .min_w(0.0)
         .h_full()
         .min_h(0.0);
+    if state.flow_comparison.class_selection().is_some() {
+        return super::class_canvas::pane(content, state, side, k);
+    }
     let Some(pair) = &state.flow_comparison.current else {
         return content.child(heading(title(side), "", k)).child(empty(
             address,
             if state.flow_comparison.detail_pending() {
                 "Building before and after charts…"
             } else if state.flow_comparison.changes.loaded {
-                "Select a changed method"
+                "Select a changed class or method"
             } else {
                 "Choose a saved function identity"
             },
@@ -89,7 +93,7 @@ fn chart(state: &State, side: SideId, k: &Kit) -> El {
         }
     }
 }
-fn heading(title: &str, name: &str, k: &Kit) -> El {
+pub(super) fn heading(title: &str, name: &str, k: &Kit) -> El {
     row()
         .w_full()
         .padding(6.0)
@@ -106,7 +110,7 @@ fn heading(title: &str, name: &str, k: &Kit) -> El {
                 .help(name),
         )
 }
-fn empty(address: Address, message: &str, k: &Kit) -> El {
+pub(super) fn empty(address: Address, message: &str, k: &Kit) -> El {
     col()
         .key(address.key("canvas"))
         .w_full()

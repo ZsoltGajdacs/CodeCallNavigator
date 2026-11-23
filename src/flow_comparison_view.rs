@@ -1,6 +1,7 @@
 //! Revision controls and saved endpoint flows; all blocking work belongs to the controller.
 mod catalog;
 mod changes;
+mod class_canvas;
 mod impact;
 mod panes;
 mod provenance;
@@ -97,7 +98,7 @@ fn flow_actions(state: &State, toolbar: El, k: &Kit) -> El {
             Button::new("Functions")
                 .disabled(state.flow_comparison.catalog.is_none())
                 .on_press(|s: &mut State| {
-                    s.flow_comparison.changes.preview = None;
+                    s.flow_comparison.previews.close();
                     s.flow_comparison.changes.expert = true;
                     s.flow_comparison.controls.catalog_open = true;
                 })
@@ -117,17 +118,12 @@ fn flow_actions(state: &State, toolbar: El, k: &Kit) -> El {
         .child(fit_button(state, crate::flow_comparison::SideId::After, k))
 }
 fn fit_button(state: &State, side: crate::flow_comparison::SideId, k: &Kit) -> El {
-    let available = state
-        .flow_comparison
-        .current
-        .as_ref()
-        .is_some_and(|pair| matches!(pair.side(side), crate::flow_comparison::Side::Ready(_)));
     let (label, key) = match side {
         crate::flow_comparison::SideId::Before => ("Fit before", "comparison-fit-before"),
         crate::flow_comparison::SideId::After => ("Fit after", "comparison-fit-after"),
     };
     Button::new(label)
-        .disabled(!available)
+        .disabled(!state.flow_comparison.can_fit(side))
         .on_press(move |state: &mut State| state.flow_comparison.fit(side))
         .build(k)
         .key(key)
@@ -280,7 +276,8 @@ pub fn key(state: &mut State, event: &rune::KeyEvent) -> bool {
         if state.flow_comparison.revisions.picker.is_some() {
             state.flow_comparison.revisions.close_picker();
             return true;
-        } else if state.flow_comparison.changes.preview.take().is_some() {
+        } else if state.flow_comparison.previews.active.is_some() {
+            state.flow_comparison.previews.dismiss();
             return true;
         } else if state.flow_comparison.controls.catalog_open {
             state.flow_comparison.controls.catalog_open = false;

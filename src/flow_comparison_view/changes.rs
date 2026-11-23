@@ -4,7 +4,7 @@ use crate::{
     engine_client::flow_comparison::{Change, ChangeKind, ChangeStatus},
     flow_comparison::PreviewTarget,
 };
-use rune::{El, col, row, text};
+use rune::{El, Key, col, row, text};
 use rune_kit::{Button, ButtonVariant, Kit};
 use std::collections::{BTreeMap, HashSet};
 
@@ -168,15 +168,13 @@ impl Outline<'_> {
         let change = item.change;
         let label = format!("{} · {}", change.name, status(change.status));
         let key = format!("comparison-change-{scope}-{}", change.id);
-        let active = match &state.flow_comparison.changes.preview {
+        let active = match &state.flow_comparison.previews.active {
             Some(preview) if matches!(&preview.target, PreviewTarget::Row(_)) => {
                 preview.anchor == key
             }
             _ => state.flow_comparison.selected_change_id() == Some(change.id.as_str()),
         };
-        let id = change.id.clone();
-        let symbol = change.symbol.clone();
-        let anchor = key.clone();
+        let action = ChangeAction::new(change, &key);
         let path = item.path.map(|(before, after)| match (before, after) {
             (Some("possible"), _) | (_, Some("possible")) => " · Possible path",
             (None, Some(_)) => " · After only",
@@ -184,7 +182,7 @@ impl Outline<'_> {
             _ => "",
         });
         let status = format!("{}{}", status(change.status), path.unwrap_or_default());
-        columns([&change.name, &status, &change.file], indent, k)
+        let row = columns([&change.name, &status, &change.file], indent, k)
             .key(key)
             .label(label)
             .role("button")
@@ -194,15 +192,49 @@ impl Outline<'_> {
             } else {
                 k.c.bg_base
             })
-            .hover(k.c.layer_01)
-            .on_press(move |s: &mut State| {
-                if let Some(symbol) = &symbol {
-                    s.flow_comparison.choose_change_method(symbol.clone());
-                } else {
-                    s.flow_comparison
-                        .choose_change_source(id.clone(), anchor.clone());
+            .hover(k.c.layer_01);
+        let Some(action) = action else {
+            return row;
+        };
+        let keyboard = action.clone();
+        row.on_press(move |s: &mut State| action.select(s)).on_key(
+            move |s: &mut State, event, _| {
+                if event.key != Key::Enter {
+                    return false;
                 }
-            })
+                keyboard.select(s);
+                true
+            },
+        )
+    }
+}
+
+#[derive(Clone)]
+enum ChangeAction {
+    Class(String),
+    Method(String),
+    File { id: String, anchor: String },
+}
+
+impl ChangeAction {
+    fn new(change: &Change, anchor: &str) -> Option<Self> {
+        Some(match change.kind {
+            ChangeKind::Class => Self::Class(change.id.clone()),
+            ChangeKind::Method => Self::Method(change.symbol.clone()?),
+            ChangeKind::File => Self::File {
+                id: change.id.clone(),
+                anchor: anchor.into(),
+            },
+        })
+    }
+
+    fn select(&self, state: &mut State) {
+        let workspace = &mut state.flow_comparison;
+        match self {
+            Self::Class(id) => workspace.choose_change_class(id.clone()),
+            Self::Method(symbol) => workspace.choose_change_method(symbol.clone()),
+            Self::File { id, anchor } => workspace.choose_change_source(id.clone(), anchor.clone()),
+        }
     }
 }
 

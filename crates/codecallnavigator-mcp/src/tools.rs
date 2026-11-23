@@ -23,12 +23,12 @@ impl ServerHandler for Server {
         _context: RequestContext<RoleServer>,
     ) -> Result<ListToolsResult, ErrorData> {
         Ok(ListToolsResult {
-            tools: definitions(self.backend.supports_comparison_changes()),
+            tools: definitions(&self.backend),
             ..Default::default()
         })
     }
     fn get_tool(&self, name: &str) -> Option<Tool> {
-        definitions(self.backend.supports_comparison_changes())
+        definitions(&self.backend)
             .into_iter()
             .find(|tool| tool.name == name)
     }
@@ -162,8 +162,8 @@ fn tool<T: JsonSchema>(name: &'static str, description: &'static str, read_only:
     );
     tool
 }
-fn snapshot_tools() -> [Tool; 5] {
-    [
+fn snapshot_tools(backend: &Backend) -> Vec<Tool> {
+    let mut tools = vec![
         tool::<CompareArgs>(
             "compare_graphs",
             "Compare saved graphs from committed or local snapshots, or use saved WORKTREE as head. Returns paged differences; carry expected_comparison and snapshot IDs across pages. Never builds a graph.",
@@ -189,18 +189,26 @@ fn snapshot_tools() -> [Tool; 5] {
             "Explicitly analyze an exact revision in a temporary worktree and retain the local snapshot. Uses the revision's default builds if targets are omitted. Accepts MCP cancellation and progress notifications.",
             false,
         ),
-    ]
-}
-
-fn definitions(comparison_changes: bool) -> Vec<Tool> {
-    let mut tools = Vec::from(snapshot_tools());
-    if comparison_changes {
+    ];
+    if backend.supports_comparison_changes() {
         tools.push(tool::<CompareChangesArgs>(
             "compare_changes",
             "List changed classes, methods and files with affected entry points, or fetch a unified source diff by change ID. Carry expected_comparison and snapshot IDs across pages and detail requests. Use compare_function_flows with a method symbol for its paired charts.",
             true,
         ));
     }
+    if backend.supports_class_flow_comparison() {
+        tools.push(tool::<ClassFlowComparisonArgs>(
+            "compare_class_flows",
+            "Get directed Before and After calls for a class and its immediate neighbors. Pass a class ID from compare_changes with the same revisions, snapshot IDs and expected_comparison.",
+            true,
+        ));
+    }
+    tools
+}
+
+fn definitions(backend: &Backend) -> Vec<Tool> {
+    let mut tools = snapshot_tools(backend);
     tools.extend([
         tool::<GraphArgs>(
             "graph_status",

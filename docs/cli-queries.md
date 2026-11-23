@@ -150,6 +150,47 @@ result includes a reason, such as `missing_saved_source` or
 `saved_source_too_large`. An added or removed file can return a ready diff with
 changes on one side. This query uses the saved source.
 
+## Class flow comparison
+
+Use `class_flow_comparison` to load the class-to-class call graph for a class
+row returned by `comparison_changes`. The engine advertises version 1 in
+`capabilities.class_flow_comparison`.
+
+```json
+{"version":2,"project":"/checkout","query":{"kind":"class_flow_comparison","base":"main","head":"WORKTREE","expected_comparison":"<comparison_id from the list>","id":"<class row id>"}}
+```
+
+Use the same refs and snapshot selectors as the list. `expected_comparison`
+is required. The response includes the bound endpoints and a `graph` with
+the `root` class ID, `nodes`, and directed `links`. Nodes include the
+class ID, a display name, and `before` and `after` presence flags. For the
+root these flags describe existence in the saved revisions. For other
+nodes they describe participation in the root's one-hop call neighborhood.
+
+Each link contains its caller (`from`), callee (`to`), and `before` and
+`after` objects mapping recorded resolution to call count. An empty object
+means the link is absent on that side. Node and link status identifies
+`added`, `removed`, or `unchanged` records. A link is `modified` if its
+resolution counts changed. These are analyzed relationships and counts,
+with uncertainty preserved. Same-class calls stay inside function and
+method-level views. The engine returns graph facts without display layout.
+
+### Saved class node source
+
+The optional version 1 `class_comparison_source` CLI query retrieves source
+for a node from a loaded class graph. Pass the root class ID, the hovered
+node ID and the requested `before` or `after` side.
+
+```json
+{"version":2,"project":"/checkout","query":{"kind":"class_comparison_source","base":"main","head":"WORKTREE","expected_comparison":"<comparison_id from the list>","id":"<root class id>","node":"<class node id>","side":"after"}}
+```
+
+The `source` field has kind `diff` with unified hunks and a file, `excerpt`
+with saved text, a file and a one-based starting line, or `unavailable`
+with a reason. Excerpts use the requested side. In shared files, diffs use
+matching methods with verified saved spans. The class node must be present on
+the requested side of the graph. Reuse the class graph's snapshot selectors.
+
 ## Changed-symbol impact preview
 
 Run `ccnavigator impact-preview --project /checkout --base main` or send the

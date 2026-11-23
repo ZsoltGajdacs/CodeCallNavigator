@@ -1,5 +1,7 @@
 //! Readable, snapshot-bound code changes and on-demand unified source.
 mod class;
+mod class_graph;
+mod class_source;
 mod declarations;
 mod methods;
 mod model;
@@ -16,6 +18,8 @@ use crate::{
 };
 use anyhow::Result;
 use class::Class;
+pub use class_graph::{ClassGraph, ClassLink, ClassNode, GraphChange};
+pub use class_source::*;
 pub use model::*;
 use reachability::{Matches, Search};
 use snapshot::{FileId, Snapshot};

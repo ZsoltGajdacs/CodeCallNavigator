@@ -3,6 +3,8 @@ mod analysis;
 mod analysis_session;
 mod arguments;
 mod cancellation;
+mod class_comparison_source;
+mod class_flow_comparison;
 mod comparison;
 mod comparison_changes;
 mod flow_comparison;

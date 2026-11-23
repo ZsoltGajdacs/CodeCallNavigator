@@ -147,7 +147,7 @@ impl State {
             return false;
         }
         workspace.controls.catalog_open = false;
-        workspace.changes.preview = None;
+        workspace.previews.close();
         workspace
             .worktree_refresh
             .active

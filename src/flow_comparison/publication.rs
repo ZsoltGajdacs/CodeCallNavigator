@@ -1,7 +1,7 @@
 //! Publish only matching request serials and bindings, clearing stale actionable results.
 use super::{
     Phase, Workspace,
-    requests::{CatalogAnswer, StringError},
+    requests::{CatalogAnswer, DetailSelection, PreparedDetail, StringError},
 };
 impl Workspace {
     pub fn poll(&mut self) -> bool {
@@ -19,6 +19,7 @@ impl Workspace {
             | self.snapshots.poll()
             | self.poll_impact()
             | self.publish_changes()
+            | self.publish_previews()
     }
     fn publish_catalog(&mut self) -> bool {
         let Some(output) = self.catalog_job.take() else {
@@ -103,24 +104,38 @@ impl Workspace {
         output.map(|output| self.accept_detail(output)).value
     }
     fn accept_detail(&mut self, output: super::requests::DetailOutput) -> bool {
-        if output.serial != self.detail_clock.serial
-            || self
-                .header()
-                .is_none_or(|header| header.comparison_id != output.binding)
-        {
+        let current_request = output.serial == self.detail_clock.serial
+            && self.detail_selection.as_ref() == Some(&output.selection);
+        let current_binding = self
+            .header()
+            .is_some_and(|header| header.comparison_id == output.binding);
+        if !current_request || !current_binding {
             return false;
         }
-        match output.result {
-            Ok(prepared) => {
+        match (output.selection, output.result) {
+            (DetailSelection::Function(selection), Ok(PreparedDetail::Function(prepared))) => {
                 self.visit += 1;
                 self.presentation_revision += 1;
                 let namespace = format!("comparison:{}:{}", output.binding, self.visit);
-                self.current = Some(prepared.install(output.selection, &namespace, self.viewports));
+                self.current = Some(prepared.install(selection, &namespace, self.viewports));
                 self.detail_message.clear();
                 self.arm_source_restore();
                 self.prefetch_selected_source();
             }
-            Err(error) => self.failed(error),
+            (DetailSelection::Class(_), Ok(PreparedDetail::Class(prepared))) => {
+                let mut pair = *prepared;
+                for side in [super::SideId::Before, super::SideId::After] {
+                    pair.fit(side, self.viewports[side.index()]);
+                }
+                self.class_pair = Some(pair);
+                self.detail_message.clear();
+                self.presentation_revision += 1;
+            }
+            (DetailSelection::Class(_), Err(error)) if !error.mismatch() => {
+                self.detail_message = error.message();
+            }
+            (_, Err(error)) => self.failed(error),
+            _ => unreachable!("prepared detail must match its selection"),
         }
         true
     }

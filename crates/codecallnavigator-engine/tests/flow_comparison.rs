@@ -76,9 +76,62 @@ fn change_pages_and_source_diff_use_the_same_saved_revision_binding() {
             })
         })
     }));
+    assert_eq!(owner["kind"], "class");
+    check_class_details(root, &owner["id"], &result["comparison_id"]);
     request["expected_comparison"] = json!("0".repeat(64));
     assert_eq!(query(root, request)["error"]["code"], "comparison_mismatch");
     assert!(artifact::working_manifest_path(root).is_err());
+}
+
+fn check_class_details(
+    root: &std::path::Path,
+    id: &serde_json::Value,
+    binding: &serde_json::Value,
+) {
+    let mut class_request = json!({
+        "kind": "class_flow_comparison",
+        "base": SAVED.base,
+        "head": SAVED.head,
+        "expected_comparison": binding,
+        "id": id,
+    });
+    let class = query(root, class_request.clone());
+    assert!(class["error"].is_null(), "{class}");
+    assert_eq!(&class["result"]["comparison_id"], binding);
+    assert_eq!(
+        class["result"]["graph"],
+        json!({
+            "root": id,
+            "nodes": [{
+                "id": id, "name": "App", "before": true, "after": true,
+                "status": "unchanged"
+            }],
+            "links": [],
+        }),
+    );
+    class_request["expected_comparison"] = json!("0".repeat(64));
+    assert_eq!(
+        query(root, class_request)["error"]["code"],
+        "comparison_mismatch"
+    );
+    let mut class_source_request = json!({
+        "kind": "class_comparison_source", "base": SAVED.base, "head": SAVED.head,
+        "expected_comparison": binding, "id": id,
+        "node": id, "side": "after",
+    });
+    let class_source = query(root, class_source_request.clone());
+    assert!(class_source["error"].is_null(), "{class_source}");
+    assert_eq!(&class_source["result"]["comparison_id"], binding);
+    assert_eq!(class_source["result"]["source"]["kind"], "excerpt");
+    assert_eq!(
+        class_source["result"]["source"]["text"],
+        "int same(){ return target(); }"
+    );
+    class_source_request["expected_comparison"] = json!("0".repeat(64));
+    assert_eq!(
+        query(root, class_source_request)["error"]["code"],
+        "comparison_mismatch"
+    );
 }
 
 #[test]

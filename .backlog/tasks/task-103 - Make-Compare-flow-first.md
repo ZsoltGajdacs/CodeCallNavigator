@@ -1,11 +1,11 @@
 ---
 id: TASK-103
 title: Make Compare flow-first
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-11-22T19:11:00Z'
-updated_date: '2026-11-23T04:18:00Z'
+updated_date: '2026-11-23T17:08:00Z'
 labels: []
 dependencies: []
 type: feature
@@ -21,9 +21,9 @@ Open saved-snapshot comparison to a change outline and paired flow canvases, wit
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
 - [x] #1 Recognized entry points group changed classes and methods with ungrouped changes still visible.
-- [ ] #2 Paired flows show attributable changes and unified diff previews from saved source on hover, focus, and class or file selection.
+- [x] #2 Class and method selections open paired class graphs and function flowcharts respectively. Source previews open from canvas entities and explicit file activation.
 - [x] #3 Versioned paged CLI and MCP results agree, preserve snapshot binding and maintain existing comparison contracts.
-- [ ] #4 Relevant deterministic final, native and CodeScene checks pass.
+- [x] #4 Relevant deterministic final, native and CodeScene checks pass.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -33,6 +33,8 @@ Open saved-snapshot comparison to a change outline and paired flow canvases, wit
 2. Expose bound list and detail in the engine and MCP with unchanged legacy contracts.
 3. Add the native outline, default flow selection and floating previews.
 4. Document and verify the public contracts and native journey.
+
+5. Deliver the class graph contract, desktop routing and class source previews in TASK-103.1, TASK-103.2 and TASK-103.3.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -46,4 +48,12 @@ Added exact-source step highlighting for changed call targets and certainty. The
 Earlier full integration evidence in changes-zwxwq_xb found a legacy source test that still assumed a docked pane by default. The test now enters Functions through its real control before checking the existing pane and provenance.
 
 Final selector run changes-do05elzt passed 109 of 112 stages, including the unified diff headless render regression, real CLI and MCP parity, performance, CodeScene, and cleanup. Evidence is retained at target/verification/task-103-evidence/final/summary.json. Three native gates were deferred because macOS was locked, including the hover, keyboard focus and class preview replay. The earlier native run reached hover and exposed Rune requiring GrowthSpec on the virtual rows. The renderer now applies it and the regression proves inserted source renders. Acceptance criteria 2 and 4 remain open for native verification.
+
+Final run changes-9u51k8k0 passed integration and packaged Rust acceptance, including the Compare CLI and MCP cases. The automatic-refresh broken-pipe probe returned exit 2 before native Compare or performance gates ran. Retrying the required full selection against the same isolated fixtures.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Delivered the three linked class-flow slices and updated the native Compare journey. Final deterministic verification passed all 114 stages, including real CLI/MCP parity, both native themes, performance, and CodeScene. Evidence: target/verification/changes-mdea3q11/summary.json.
+<!-- SECTION:FINAL_SUMMARY:END -->

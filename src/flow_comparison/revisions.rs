@@ -207,7 +207,7 @@ impl Workspace {
 
     pub(crate) fn show_revision_picker(&mut self, side: SnapshotSide) {
         self.controls.catalog_open = false;
-        self.changes.preview = None;
+        self.previews.close();
         self.revisions.picker = Some(side);
         let id = match side {
             SnapshotSide::Base => self.revisions.base(),

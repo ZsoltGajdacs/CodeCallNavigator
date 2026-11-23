@@ -1,12 +1,15 @@
 //! Force obsolete completions to land, rather than relying only on Latest dropping them.
 use super::tests::{project, settle, state};
 use super::{
-    requests::{CatalogAnswer, CatalogOutput, DetailOutput, StringError},
+    requests::{
+        CatalogAnswer, CatalogOutput, DetailOutput, DetailSelection, PreparedDetail, StringError,
+    },
     *,
 };
 use crate::engine_client::flow_comparison::{CatalogPage, Error};
 use std::{
-    sync::mpsc,
+    path::Path,
+    sync::{atomic::AtomicBool, mpsc},
     time::{Duration, Instant},
 };
 fn landed<T: Send + 'static>(job: &Latest<T>) {
@@ -73,37 +76,43 @@ fn detail_outputs_need_both_the_current_serial_and_comparison_binding() {
     settle(&mut state);
     let symbol = super::tests::selected(&state);
     let dot = state.runtime.as_ref().unwrap().dot.clone();
-    for (wrong_binding, success) in [(false, false), (true, false), (false, true), (true, true)] {
+    enum SupersededBy {
+        Serial,
+        Binding,
+        ClassSelection,
+    }
+    for (obsolete, success) in [
+        (SupersededBy::Serial, false),
+        (SupersededBy::Binding, false),
+        (SupersededBy::Serial, true),
+        (SupersededBy::Binding, true),
+        (SupersededBy::ClassSelection, true),
+    ] {
         let workspace = &mut state.flow_comparison;
         let serial = workspace.detail_clock.serial;
-        let binding = if wrong_binding {
+        let binding = if matches!(obsolete, SupersededBy::Binding) {
             "obsolete".into()
         } else {
             workspace.header().unwrap().comparison_id.clone()
         };
+        let selection = DetailSelection::Function(Selection {
+            symbol: symbol.clone(),
+            head_symbol: None,
+        });
+        workspace.detail_selection = Some(if matches!(obsolete, SupersededBy::ClassSelection) {
+            DetailSelection::Class("newly selected class".into())
+        } else {
+            selection.clone()
+        });
         let result = if success {
-            let detail = workspace
-                .binding
-                .as_ref()
-                .unwrap()
-                .detail(&symbol, None, &std::sync::atomic::AtomicBool::new(false))
-                .unwrap();
-            Ok(super::pair::Prepared::load(
-                detail,
-                &dot,
-                &std::sync::atomic::AtomicBool::new(false),
-            )
-            .unwrap())
+            Ok(prepare_function(workspace, &symbol, &dot))
         } else {
             Err(StringError::Preparation("obsolete error".into()))
         };
         let output = DetailOutput {
             serial,
             binding,
-            selection: Selection {
-                symbol: symbol.clone(),
-                head_symbol: None,
-            },
+            selection,
             result,
         };
         let input = workspace.workers.track(output);
@@ -112,13 +121,28 @@ fn detail_outputs_need_both_the_current_serial_and_comparison_binding() {
             wait.recv().unwrap();
             input
         });
-        if !wrong_binding {
+        if matches!(obsolete, SupersededBy::Serial) {
             workspace.detail_clock.cancel();
         }
         release.send(()).unwrap();
         landed(&workspace.detail_job);
         assert!(!workspace.poll());
         assert!(workspace.current.is_none());
+        if matches!(obsolete, SupersededBy::ClassSelection) {
+            assert_eq!(workspace.class_selection(), Some("newly selected class"));
+        }
         assert!(matches!(workspace.phase, Phase::Bound));
     }
+}
+
+fn prepare_function(workspace: &Workspace, symbol: &str, dot: &Path) -> PreparedDetail {
+    let cancel = AtomicBool::new(false);
+    let detail = workspace
+        .binding
+        .as_ref()
+        .unwrap()
+        .detail(symbol, None, &cancel)
+        .unwrap();
+    let prepared = super::pair::Prepared::load(detail, dot, &cancel).unwrap();
+    PreparedDetail::Function(Box::new(prepared))
 }

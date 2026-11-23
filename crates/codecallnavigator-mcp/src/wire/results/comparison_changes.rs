@@ -4,23 +4,7 @@ use anyhow::{Result, bail, ensure};
 use serde_json::Value;
 
 pub(super) fn validate(result: &Value) -> Result<()> {
-    ensure!(
-        result["version"] == 1,
-        "Unsupported change comparison version"
-    );
-    strings(result, &["comparison_id"])?;
-    ensure!(
-        crate::wire::generation(result["comparison_id"].as_str().unwrap_or_default()),
-        "Malformed change comparison binding"
-    );
-    for side in ["base", "head"] {
-        comparison::endpoint(&result[side])?;
-        strings(&result[side], &["schema"])?;
-    }
-    ensure!(
-        result["base"]["kind"] == "commit",
-        "Comparison base is not committed"
-    );
+    comparison::header(result)?;
     match result["kind"].as_str() {
         Some("list") => list(result),
         Some("source_diff") => source_diff(result),

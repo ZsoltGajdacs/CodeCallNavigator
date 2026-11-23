@@ -83,65 +83,7 @@ pub enum SourceStatus {
     Unavailable,
 }
 
-#[derive(Debug, Deserialize)]
-pub struct Hunk {
-    pub before: LineRange,
-    pub after: LineRange,
-    pub lines: Vec<DiffLine>,
-}
-
-#[derive(Clone, Copy, Debug, Deserialize)]
-pub struct LineRange {
-    pub start: usize,
-    pub count: usize,
-}
-
-#[derive(Debug, Deserialize)]
-pub struct DiffLine {
-    pub kind: LineKind,
-    pub text: String,
-}
-
-#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq)]
-#[serde(rename_all = "snake_case")]
-pub enum LineKind {
-    Context,
-    Delete,
-    Insert,
-}
-
-impl Hunk {
-    /// Returns whether this side's changed lines overlap, and if their edit run touches both sides.
-    pub fn changed_at(
-        &self,
-        before: bool,
-        range: &std::ops::RangeInclusive<usize>,
-    ) -> Option<bool> {
-        let in_side = if before {
-            LineKind::Delete
-        } else {
-            LineKind::Insert
-        };
-        let other_side = if before {
-            LineKind::Insert
-        } else {
-            LineKind::Delete
-        };
-        let mut index = if before { self.before } else { self.after }.start;
-        self.lines
-            .split_inclusive(|line| line.kind == LineKind::Context)
-            .find_map(|edit| {
-                let changed = edit.iter().filter(|line| line.kind == in_side).count();
-                let end = index.saturating_add(changed);
-                let overlap = (index..end).any(|line| range.contains(&line));
-                index = end.saturating_add(usize::from(
-                    edit.last()
-                        .is_some_and(|line| line.kind == LineKind::Context),
-                ));
-                overlap.then(|| edit.iter().any(|line| line.kind == other_side))
-            })
-    }
-}
+pub use codecallnavigator::artifact::comparison_changes::{Hunk, LineKind};
 
 impl BoundComparison {
     pub fn changes_supported(&self, cancel: &AtomicBool) -> Result<bool> {

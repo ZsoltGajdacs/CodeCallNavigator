@@ -31,7 +31,10 @@ def required_checks(worktree):
     checks = {"normal_no_graph_boot", "commits_selected_by_controls", "commit_messages_drawn_for_both_sides",
               "minimum_viewport_drawn",
               "changes_outline_drawn_and_auto_selected", "unified_diff_drawn_on_hover",
-              "unified_diff_drawn_on_keyboard_focus", "class_preview_preserved_flow",
+              "unified_diff_drawn_on_keyboard_focus", "class_call_changes_drawn",
+              "outline_hover_has_no_source_preview", "outline_focus_has_no_source_preview",
+              "class_source_diff_drawn_on_hover", "class_saved_excerpt_drawn_on_focus",
+              "method_flow_restored_from_outline",
               "owned_window_setup_acknowledged", "provenance_drawn", "moved_tag_left_selected_commit_pinned",
               "selected_later_commit_rebound", "cancel_waited_for_owned_query_cleanup",
               "fresh_request_after_cancel", "endpoint_target_followed", "back_pair_restored"}

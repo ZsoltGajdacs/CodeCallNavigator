@@ -13,24 +13,7 @@ pub fn execute(graph: &GraphIndex, query: &Query) -> Result<Value> {
     match query {
         Query::Status => Ok(status(graph)),
         Query::Snapshot => encode(&*graph.data),
-        Query::Search {
-            text,
-            category,
-            offset,
-            limit,
-        } => search(
-            graph,
-            &NameSearchQuery {
-                text,
-                category: match category {
-                    Category::All => SearchCategory::All,
-                    Category::Classes => SearchCategory::Classes,
-                    Category::Methods => SearchCategory::Methods,
-                },
-                offset: *offset,
-                limit: *limit,
-            },
-        ),
+        Query::Search { .. } => search(graph, query),
         Query::Selection {
             selection,
             filter,
@@ -68,6 +51,8 @@ pub fn execute(graph: &GraphIndex, query: &Query) -> Result<Value> {
         | Query::Freshness { .. }
         | Query::Compare { .. }
         | Query::ComparisonChanges { .. }
+        | Query::ClassFlowComparison { .. }
+        | Query::ClassComparisonSource { .. }
         | Query::FlowComparison { .. }
         | Query::SnapshotStatus { .. }
         | Query::ImpactPreview { .. }
@@ -144,14 +129,36 @@ pub(super) fn encode(value: &impl serde::Serialize) -> Result<Value> {
     serde_json::to_value(value).map_err(|e| Error::new("serialization_failed", e.to_string()))
 }
 
-fn search(graph: &GraphIndex, request: &NameSearchQuery<'_>) -> Result<Value> {
+fn search(graph: &GraphIndex, query: &Query) -> Result<Value> {
+    let Query::Search {
+        text,
+        category,
+        offset,
+        limit,
+    } = query
+    else {
+        return Err(Error::new(
+            "invalid_request",
+            "Expected a name search query",
+        ));
+    };
+    let request = NameSearchQuery {
+        text,
+        category: match category {
+            Category::All => SearchCategory::All,
+            Category::Classes => SearchCategory::Classes,
+            Category::Methods => SearchCategory::Methods,
+        },
+        offset: *offset,
+        limit: *limit,
+    };
     if !(1..=200).contains(&request.limit) {
         return Err(Error::new(
             "invalid_request",
             "Search limit must be 1..=200",
         ));
     }
-    let page = NameSearchIndex::new(&graph.data).search(request);
+    let page = NameSearchIndex::new(&graph.data).search(&request);
     let hits=page.hits.iter().map(|hit| {
         let target=match &hit.target {
             SearchTarget::Method { identity,.. }=>json!({"kind":"method","symbol":identity}),

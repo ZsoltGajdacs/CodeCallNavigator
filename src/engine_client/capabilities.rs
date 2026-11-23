@@ -17,6 +17,8 @@ pub(super) struct Capabilities {
     pub flow_languages: Vec<String>,
     pub flow_comparison: bool,
     pub comparison_changes: bool,
+    pub class_flow_comparison: bool,
+    pub class_comparison_source: bool,
     pub graph_comparison: bool,
     pub impact_preview: bool,
     pub local_snapshots: Option<LocalSnapshots>,
@@ -117,6 +119,16 @@ fn validate(bytes: &[u8]) -> Result<Capabilities> {
         flow_comparison: flow_comparison::supported(&capabilities, operations),
         comparison_changes: capabilities["comparison_changes"]["version"] == 1
             && operations.iter().any(|name| name == "comparison_changes"),
+        class_flow_comparison: supports_bound_detail(
+            &capabilities,
+            operations,
+            "class_flow_comparison",
+        ),
+        class_comparison_source: supports_bound_detail(
+            &capabilities,
+            operations,
+            "class_comparison_source",
+        ),
         graph_comparison: supports_graph_comparison(&capabilities, operations),
         impact_preview: operations.iter().any(|name| name == "impact_preview")
             && capabilities["impact_preview"]["version"] == 1,
@@ -125,6 +137,16 @@ fn validate(bytes: &[u8]) -> Result<Capabilities> {
         observation,
         automatic_refresh,
     })
+}
+
+fn supports_bound_detail(
+    capabilities: &serde_json::Value,
+    operations: &[serde_json::Value],
+    name: &str,
+) -> bool {
+    operations.iter().any(|operation| operation == name)
+        && capabilities[name]["version"] == 1
+        && capabilities[name]["snapshot_binding"] == true
 }
 
 fn supports_graph_comparison(

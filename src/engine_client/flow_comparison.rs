@@ -1,5 +1,7 @@
 //! Revision-bound desktop requests, independent of the currently installed graph generation.
 mod changes;
+mod class_graph;
+mod class_source;
 mod client;
 mod impact;
 mod model;

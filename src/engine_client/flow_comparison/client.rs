@@ -181,20 +181,45 @@ impl BoundComparison {
             .client
             .comparison_changes_supported(cancel)
     }
+    pub(super) fn class_flow_capability(&self, cancel: &AtomicBool) -> anyhow::Result<bool> {
+        self.client
+            .context
+            .client
+            .class_flow_comparison_supported(cancel)
+    }
     pub(super) fn change_request<T: DeserializeOwned>(
         &self,
         selection: query::ComparisonChangesSelection,
         cancel: &AtomicBool,
         header: impl FnOnce(&T) -> &Header,
     ) -> Result<T> {
-        let request = self.client.context.wire_request(Query::ComparisonChanges {
-            base: self.references.base.clone(),
-            head: self.references.head.clone(),
-            base_snapshot: self.references.base_snapshot.clone(),
-            head_snapshot: self.references.head_snapshot.clone(),
-            expected_comparison: Some(self.header.comparison_id.clone()),
-            selection,
-        });
+        self.bound_request(
+            |references, expected| Query::ComparisonChanges {
+                base: references.base.clone(),
+                head: references.head.clone(),
+                base_snapshot: references.base_snapshot.clone(),
+                head_snapshot: references.head_snapshot.clone(),
+                expected_comparison: Some(expected.into()),
+                selection,
+            },
+            cancel,
+            header,
+        )
+    }
+    pub(super) fn class_source_capability(&self, cancel: &AtomicBool) -> anyhow::Result<bool> {
+        self.client
+            .context
+            .client
+            .class_comparison_source_supported(cancel)
+    }
+    pub(super) fn bound_request<T: DeserializeOwned>(
+        &self,
+        query: impl FnOnce(&super::ComparisonRefs, &str) -> Query,
+        cancel: &AtomicBool,
+        header: impl FnOnce(&T) -> &Header,
+    ) -> Result<T> {
+        let query = query(&self.references, &self.header.comparison_id);
+        let request = self.client.context.wire_request(query);
         let reply = self.client.reply(request, cancel)?;
         let actual = header(&reply.value);
         reply.check_generation(actual)?;

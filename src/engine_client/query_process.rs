@@ -121,6 +121,16 @@ impl Client {
             .capabilities(cancel, Instant::now())?
             .comparison_changes)
     }
+    pub(super) fn class_comparison_source_supported(&self, cancel: &AtomicBool) -> Result<bool> {
+        Ok(self
+            .capabilities(cancel, Instant::now())?
+            .class_comparison_source)
+    }
+    pub(super) fn class_flow_comparison_supported(&self, cancel: &AtomicBool) -> Result<bool> {
+        Ok(self
+            .capabilities(cancel, Instant::now())?
+            .class_flow_comparison)
+    }
     pub(super) fn graph_comparison_supported(&self, cancel: &AtomicBool) -> Result<bool> {
         Ok(self.capabilities(cancel, Instant::now())?.graph_comparison)
     }

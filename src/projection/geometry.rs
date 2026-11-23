@@ -3,7 +3,7 @@ use super::GraphView;
 use anyhow::{Context, Result, bail};
 use codecallnavigator::graphviz::{coordinates, spline_points};
 use serde_json::Value;
-use std::{collections::BTreeMap, path::Path};
+use std::{collections::BTreeMap, path::Path, sync::atomic::AtomicBool};
 
 fn dot_input(view: &GraphView) -> String {
     let mut source = String::from(
@@ -74,13 +74,24 @@ fn append_rank(source: &mut String, members: &[usize]) {
     source.push_str("}\n");
 }
 
-pub fn layout(mut view: GraphView, dot: &Path) -> Result<GraphView> {
+pub fn layout(view: GraphView, dot: &Path) -> Result<GraphView> {
+    layout_cancellable(view, dot, &AtomicBool::new(false))
+}
+
+pub(crate) fn layout_cancellable(
+    mut view: GraphView,
+    dot: &Path,
+    cancel: &AtomicBool,
+) -> Result<GraphView> {
     if view.nodes.is_empty() {
         view.size = [400.0, 300.0];
         return Ok(view);
     }
-    let output: Value =
-        serde_json::from_slice(&codecallnavigator::graphviz::run(dot, &dot_input(&view))?)?;
+    let output: Value = serde_json::from_slice(&codecallnavigator::graphviz::run_cancellable(
+        dot,
+        &dot_input(&view),
+        cancel,
+    )?)?;
     let bounds = coordinates(output["bb"].as_str().context("Graphviz omitted bounds")?)?;
     if bounds.len() != 4 {
         bail!("Invalid Graphviz bounds")

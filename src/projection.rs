@@ -14,7 +14,7 @@ mod focus;
 #[path = "projection/focus_level.rs"]
 mod focus_level;
 #[path = "projection/geometry.rs"]
-mod geometry;
+pub(crate) mod geometry;
 #[path = "projection/groups.rs"]
 mod groups;
 #[path = "projection/navigation_inventory.rs"]

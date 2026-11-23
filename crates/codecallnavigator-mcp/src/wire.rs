@@ -46,6 +46,7 @@ pub struct Capabilities {
     pub local_snapshots: bool,
     pub flow_comparison: bool,
     pub comparison_changes: bool,
+    pub class_flow_comparison: bool,
     pub impact_preview: bool,
 }
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -138,6 +139,11 @@ pub fn capabilities(value: &Value) -> Result<Capabilities> {
             &capabilities.operations,
             "comparison_changes",
         ),
+        class_flow_comparison: versioned_operation(
+            value,
+            &capabilities.operations,
+            "class_flow_comparison",
+        ) && value["class_flow_comparison"]["snapshot_binding"] == true,
         impact_preview: versioned_operation(value, &capabilities.operations, "impact_preview"),
     })
 }
@@ -278,6 +284,14 @@ mod tests {
             capabilities(&value).unwrap().analysis_session,
             AnalysisSessionSupport::Supported
         );
+        assert!(!capabilities(&value).unwrap().class_flow_comparison);
+        value["operations"]
+            .as_array_mut()
+            .unwrap()
+            .push(json!("class_flow_comparison"));
+        assert!(!capabilities(&value).unwrap().class_flow_comparison);
+        value["class_flow_comparison"] = json!({"version":1,"snapshot_binding":true});
+        assert!(capabilities(&value).unwrap().class_flow_comparison);
     }
     #[test]
     fn structured_cli_failures_keep_original_codes_and_generation_metadata() {

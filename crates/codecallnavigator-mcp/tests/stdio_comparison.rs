@@ -27,7 +27,17 @@ fn real_stdio_comparison_preserves_cli_pages_metadata_and_errors() {
     git(&root, &["config", "user.email", "test@example.invalid"]);
     git(&root, &["config", "user.name", "MCP comparison acceptance"]);
     typescript(&root);
-    git(&root, &["add", "tsconfig.json", "entry.ts", "other.ts"]);
+    fs::write(root.join("services.ts"), services("LegacyTax")).unwrap();
+    git(
+        &root,
+        &[
+            "add",
+            "tsconfig.json",
+            "entry.ts",
+            "other.ts",
+            "services.ts",
+        ],
+    );
     git(&root, &["commit", "-qm", "baseline"]);
     let engine = engine();
     let mut client = Client::launch(command(&engine, &root));
@@ -39,6 +49,43 @@ fn real_stdio_comparison_preserves_cli_pages_metadata_and_errors() {
             .iter()
             .any(|tool| tool["name"] == "compare_graphs")
     );
+    check_retained_baseline(&mut client);
+
+    replace_entry(&root, 7);
+    fs::write(root.join("services.ts"), services("TaxService")).unwrap();
+    let current = client.graph("refresh_graph", json!({}));
+    assert_eq!(
+        current["result"]["retention"]["status"], "working_only",
+        "{current}"
+    );
+    assert!(current["result"]["retention"]["reason"].is_string());
+    let changes_binding = check_change_summary(&mut client, &engine, &root);
+    let checkout = check_class_graph(&mut client, &engine, &root, &changes_binding);
+    check_pages_and_errors(&mut client, &engine, &root, &current["generation"]);
+    let stale = client.call(
+        "compare_changes",
+        json!({
+            "base":"HEAD", "expected_comparison":changes_binding,
+            "selection":{"kind":"list","offset":1,"limit":1}
+        }),
+    );
+    assert_eq!(
+        stale["structuredContent"]["error"]["code"],
+        "comparison_mismatch"
+    );
+    let stale_class = client.call(
+        "compare_class_flows",
+        json!({"base":"HEAD","expected_comparison":changes_binding,"id":checkout}),
+    );
+    assert_eq!(
+        stale_class["structuredContent"]["error"]["code"],
+        "comparison_mismatch"
+    );
+    client.disconnect();
+    client.assert_shutdown();
+}
+
+fn check_retained_baseline(client: &mut Client) {
     let baseline = client.graph("refresh_graph", json!({}));
     assert_eq!(
         baseline["result"]["retention"]["status"], "verified",
@@ -57,29 +104,50 @@ fn real_stdio_comparison_preserves_cli_pages_metadata_and_errors() {
     assert_eq!(selection["builds"]["targets"][0]["language"], "typescript");
     assert!(selection["analyzers"][0]["backend"].is_string());
     assert!(selection["analyzers"][0]["version"].is_string());
+}
 
-    replace_entry(&root, 7);
-    let current = client.graph("refresh_graph", json!({}));
-    assert_eq!(
-        current["result"]["retention"]["status"], "working_only",
-        "{current}"
+fn services(implementation: &str) -> String {
+    format!(
+        "export class LegacyTax {{ static calculate() {{ return 1; }} }}\n\
+         export class TaxService {{ static calculate() {{ return 2; }} }}\n\
+         export class Checkout {{ static submit() {{ return {implementation}.calculate(); }} }}\n"
+    )
+}
+
+fn check_class_graph(client: &mut Client, engine: &Path, root: &Path, binding: &Value) -> Value {
+    let changes = compare_changes(
+        client,
+        engine,
+        root,
+        json!({"base":"HEAD","selection":{"kind":"list"}}),
     );
-    assert!(current["result"]["retention"]["reason"].is_string());
-    let changes_binding = check_change_summary(&mut client, &engine, &root);
-    check_pages_and_errors(&mut client, &engine, &root, &current["generation"]);
-    let stale = client.call(
-        "compare_changes",
-        json!({
-            "base":"HEAD", "expected_comparison":changes_binding,
-            "selection":{"kind":"list","offset":1,"limit":1}
-        }),
-    );
-    assert_eq!(
-        stale["structuredContent"]["error"]["code"],
-        "comparison_mismatch"
-    );
-    client.disconnect();
-    client.assert_shutdown();
+    let checkout = changes["result"]["changes"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|row| row["kind"] == "class" && row["name"] == "Checkout")
+        .expect("changed Checkout class row")["id"]
+        .clone();
+    let mut request = json!({"base":"HEAD","expected_comparison":binding,"id":checkout});
+    let reply = client.graph("compare_class_flows", request.clone());
+    request["kind"] = json!("class_flow_comparison");
+    assert_eq!(reply, cli_query(engine, root, request));
+    let graph = &reply["result"]["graph"];
+    assert_eq!(graph["root"], checkout);
+    let links = graph["links"].as_array().unwrap();
+    let nodes = graph["nodes"].as_array().unwrap();
+    for (name, status, side) in [
+        ("LegacyTax", "removed", "before"),
+        ("TaxService", "added", "after"),
+    ] {
+        let node = nodes.iter().find(|node| node["name"] == name).unwrap();
+        assert_eq!(node["status"], status);
+        let link = links.iter().find(|link| link["to"] == node["id"]).unwrap();
+        assert_eq!(link["from"], checkout);
+        assert_eq!(link["status"], status);
+        assert_eq!(link[side]["direct"], 1);
+    }
+    checkout
 }
 
 fn check_change_summary(client: &mut Client, engine: &Path, root: &Path) -> Value {

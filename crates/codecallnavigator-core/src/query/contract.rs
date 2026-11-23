@@ -63,6 +63,30 @@ pub enum Query {
         expected_comparison: Option<String>,
         selection: ComparisonChangesSelection,
     },
+    ClassFlowComparison {
+        base: String,
+        #[serde(default = "comparison_head")]
+        head: String,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        base_snapshot: Option<String>,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        head_snapshot: Option<String>,
+        expected_comparison: String,
+        id: String,
+    },
+    ClassComparisonSource {
+        base: String,
+        #[serde(default = "comparison_head")]
+        head: String,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        base_snapshot: Option<String>,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        head_snapshot: Option<String>,
+        expected_comparison: String,
+        id: String,
+        node: String,
+        side: super::ComparisonSide,
+    },
     FlowComparison {
         base: String,
         #[serde(default = "comparison_head")]
@@ -344,4 +368,11 @@ pub struct FlowResourceStatus {
     /// Approximation of heap allocations retained by the typed inventory and its lookup index.
     pub retained_bytes: usize,
     pub load_milliseconds: f64,
+}
+
+#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ComparisonSide {
+    Before,
+    After,
 }

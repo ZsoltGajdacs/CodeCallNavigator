@@ -30,6 +30,34 @@
       "purpose": "provenance order is idempotent when exclusions start unsorted"
     },
     {
+      "id": "codecallnavigator-core/lib:codecallnavigator_core::artifact::comparison_changes::class_source::tests::changed_class_preview_respects_saved_file_ownership",
+      "runner": "rust",
+      "file": "crates/codecallnavigator-core/src/artifact/comparison_changes/class_source_tests.rs",
+      "test_name": "artifact::comparison_changes::class_source::tests::changed_class_preview_respects_saved_file_ownership",
+      "ignored": false,
+      "package": "codecallnavigator-core",
+      "target_kind": "lib",
+      "target": "codecallnavigator_core",
+      "component": "core",
+      "category": "unit",
+      "requirements": [],
+      "purpose": "saved class previews distinguish owned diffs, same-revision excerpts and ambiguous sources"
+    },
+    {
+      "id": "codecallnavigator-core/lib:codecallnavigator_core::artifact::comparison_changes::class_source::tests::shared_file_diff_contains_only_the_selected_members_saved_source",
+      "runner": "rust",
+      "file": "crates/codecallnavigator-core/src/artifact/comparison_changes/class_source_tests.rs",
+      "test_name": "artifact::comparison_changes::class_source::tests::shared_file_diff_contains_only_the_selected_members_saved_source",
+      "ignored": false,
+      "package": "codecallnavigator-core",
+      "target_kind": "lib",
+      "target": "codecallnavigator_core",
+      "component": "core",
+      "category": "unit",
+      "requirements": [],
+      "purpose": "shared files expose only changes from the selected class's recorded member spans"
+    },
+    {
       "id": "codecallnavigator-core/lib:codecallnavigator_core::artifact::comparison_changes::tests::ambiguous_declarations_produce_a_file_preview",
       "runner": "rust",
       "file": "crates/codecallnavigator-core/src/artifact/comparison_changes/tests.rs",
@@ -56,6 +84,34 @@
       "category": "unit",
       "requirements": [],
       "purpose": "the same handler can reach a changed method with different certainty on each side"
+    },
+    {
+      "id": "codecallnavigator-core/lib:codecallnavigator_core::artifact::comparison_changes::tests::class_graph_compares_directional_neighbor_calls_and_resolution_counts",
+      "runner": "rust",
+      "file": "crates/codecallnavigator-core/src/artifact/comparison_changes/tests.rs",
+      "test_name": "artifact::comparison_changes::tests::class_graph_compares_directional_neighbor_calls_and_resolution_counts",
+      "ignored": false,
+      "package": "codecallnavigator-core",
+      "target_kind": "lib",
+      "target": "codecallnavigator_core",
+      "component": "core",
+      "category": "unit",
+      "requirements": [],
+      "purpose": "class flow preserves direction, filters same-class and non-call links, and compares counts and resolution"
+    },
+    {
+      "id": "codecallnavigator-core/lib:codecallnavigator_core::artifact::comparison_changes::tests::class_graph_retains_declaration_only_class_and_distinguishes_absence",
+      "runner": "rust",
+      "file": "crates/codecallnavigator-core/src/artifact/comparison_changes/tests.rs",
+      "test_name": "artifact::comparison_changes::tests::class_graph_retains_declaration_only_class_and_distinguishes_absence",
+      "ignored": false,
+      "package": "codecallnavigator-core",
+      "target_kind": "lib",
+      "target": "codecallnavigator_core",
+      "component": "core",
+      "category": "unit",
+      "requirements": [],
+      "purpose": "declaration-only class remains selectable with zero external calls and an absent side"
     },
     {
       "id": "codecallnavigator-core/lib:codecallnavigator_core::artifact::comparison_changes::tests::offset_only_flow_is_unchanged_but_class_declaration_is_listed",

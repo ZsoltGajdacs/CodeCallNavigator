@@ -7,7 +7,10 @@ use anyhow::{Result, ensure};
 use serde_json::Value;
 
 pub fn validate(value: &Value, operation: &str, bound: bool) -> Result<()> {
-    if matches!(operation, "compare" | "comparison_changes") {
+    if matches!(
+        operation,
+        "compare" | "comparison_changes" | "class_flow_comparison"
+    ) {
         return comparison_metadata(value);
     }
     if operation == "flow_comparison" {

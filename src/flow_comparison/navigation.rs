@@ -1,12 +1,23 @@
 //! Pair navigation never consults the currently installed graph or its generation.
-use super::{Selection, Side, SideId, Workspace, requests::DetailWork};
+use super::{
+    Selection, Side, SideId, Workspace,
+    requests::{DetailSelection, DetailWork},
+};
 impl Workspace {
     pub fn select(&mut self, selection: Selection) -> Result<(), String> {
+        self.select_detail(DetailSelection::Function(selection))
+    }
+
+    pub(crate) fn select_class(&mut self, id: String) -> Result<(), String> {
+        self.select_detail(DetailSelection::Class(id))
+    }
+
+    fn select_detail(&mut self, selection: DetailSelection) -> Result<(), String> {
         self.require_idle_worktree_refresh()?;
         let bound = self
             .binding
             .clone()
-            .ok_or("Reload the comparison before selecting a function")?;
+            .ok_or("Reload the comparison before selecting a change")?;
         let project = self
             .project
             .as_ref()
@@ -18,8 +29,14 @@ impl Workspace {
                 self.history.remove(0);
             }
         }
-        self.changes.preview = None;
-        self.detail_message = "Preparing before and after flowcharts…".into();
+        self.previews.close();
+        self.detail_message = match &selection {
+            DetailSelection::Function(_) => "Preparing before and after flowcharts…",
+            DetailSelection::Class(_) => "Preparing before and after class flows…",
+        }
+        .into();
+        self.class_pair = None;
+        self.detail_selection = Some(selection.clone());
         self.pending_scroll = None;
         self.mounted_source = None;
         let cancel = self.detail_clock.restart();
@@ -41,6 +58,8 @@ impl Workspace {
         };
         self.detail_clock.cancel();
         self.detail_job.cancel();
+        self.class_pair = None;
+        self.detail_selection = Some(DetailSelection::Function(previous.selection.clone()));
         self.current = Some(previous);
         self.presentation_revision += 1;
         self.mounted_source = None;
@@ -80,11 +99,21 @@ impl Workspace {
             head_symbol: None,
         })
     }
+    pub fn can_fit(&self, side: SideId) -> bool {
+        if let Some(pair) = self.class_pair() {
+            return pair.has_root(side);
+        }
+        self.current
+            .as_ref()
+            .is_some_and(|pair| matches!(pair.side(side), Side::Ready(_)))
+    }
+
     pub fn fit(&mut self, side: SideId) {
-        let viewport = self.viewports[match side {
-            SideId::Before => 0,
-            SideId::After => 1,
-        }];
+        let viewport = self.viewports[side.index()];
+        if let Some(pair) = &mut self.class_pair {
+            pair.fit(side, viewport);
+            return;
+        }
         let Some(pair) = &mut self.current else {
             return;
         };
