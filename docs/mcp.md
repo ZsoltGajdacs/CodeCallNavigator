@@ -72,6 +72,7 @@ or without a progress token.
 | `compare_graphs` | `base`, `head?` (`WORKTREE`), `base_snapshot?`, `head_snapshot?`, `offset?` (0), `limit?` (100; 1–500), `expected_comparison?`, `expected_generation?` |
 | `compare_function_flows` | `base`, `head?`, `base_snapshot?`, `head_snapshot?`, `selection`, `expected_comparison?` |
 | `compare_changes` | `base`, `head?` (`WORKTREE`), `base_snapshot?`, `head_snapshot?`, `selection`, `expected_comparison?`, `expected_generation?` |
+| `compare_source_changes` | `base`, `head?` (`WORKTREE`), `base_snapshot?`, `head_snapshot?` (commit only), `selection`, `expected_comparison?` |
 | `compare_class_flows` | `base`, `head?` (`WORKTREE`), `base_snapshot?`, `head_snapshot?`, `id`, `expected_comparison`, `expected_generation?` |
 | `preview_graph_impact` | `base`, `head?` (`WORKTREE`), `base_snapshot?` |
 | `graph_snapshot_status` | `revision` |
@@ -154,6 +155,19 @@ when the installed engine advertises it. Select `list` to discover changes or
 `source_diff` to fetch unified hunks by change ID. Pass `expected_comparison`
 when paging or fetching source. Use the returned method `symbol` with
 `compare_function_flows` for the paired charts.
+
+`compare_source_changes` forwards the CLI's
+[Git source comparison](cli-queries.md#git-source-changes) when the engine
+advertises version 1. It lists changed files between the selected commits or
+against the net Worktree contents. Saved graphs, when available, add class,
+method and entry-point information. Select `list` for a page or `source_diff`
+with a returned change ID for its file diff. On follow-ups, use the resolved
+commit SHAs, keep `WORKTREE` for a Worktree After side and pass the source
+`comparison_id` as `expected_comparison`. A subsequent edit can return
+`comparison_mismatch`. Start a fresh comparison at offset 0 to reload.
+Use the separate `graph_comparison_id`, when present, to bind graph detail
+requests using the requested refs and graph snapshot selectors from that
+comparison. The source query itself carries no graph generation.
 
 Use `compare_class_flows` with the class row's `id` for the
 [class-to-class call graph](cli-queries.md#class-flow-comparison). Pass the

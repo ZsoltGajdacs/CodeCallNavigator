@@ -130,7 +130,6 @@ fn fit_button(state: &State, side: crate::flow_comparison::SideId, k: &Kit) -> E
 }
 fn revisions(state: &State, k: &Kit) -> El {
     let controls = &state.flow_comparison.controls;
-    let snapshots = &state.flow_comparison.snapshots;
     row()
         .w_full()
         .px(10.0)
@@ -155,7 +154,6 @@ fn revisions(state: &State, k: &Kit) -> El {
             })
             .disabled(
                 state.runtime.is_none()
-                    || snapshots.pending()
                     || state.flow_comparison.revisions.base().is_none()
                     || state.flow_comparison.worktree_refresh.pending(),
             )
@@ -178,13 +176,22 @@ fn revisions(state: &State, k: &Kit) -> El {
 fn reload_button(state: &State, k: &Kit) -> El {
     let workspace = &state.flow_comparison;
     let snapshots = &workspace.snapshots;
-    let can_reload = match workspace.controls.panel {
-        Panel::Flows => workspace.descriptor().is_some(),
-        Panel::Graph => snapshots.can_reload_graph(),
-        Panel::Impact => workspace.can_preview_impact(),
+    let (label, can_reload) = match workspace.controls.panel {
+        Panel::Flows => (
+            workspace.changes.reload_label(),
+            workspace.descriptor().is_some(),
+        ),
+        Panel::Graph => (
+            "Reload",
+            snapshots.can_reload_graph() && !snapshots.pending(),
+        ),
+        Panel::Impact => (
+            "Reload",
+            workspace.can_preview_impact() && !snapshots.pending(),
+        ),
     };
-    Button::new("Reload")
-        .disabled(snapshots.pending() || workspace.worktree_refresh.pending() || !can_reload)
+    Button::new(label)
+        .disabled(workspace.worktree_refresh.pending() || !can_reload)
         .on_press(
             |state: &mut State| match state.flow_comparison.controls.panel {
                 Panel::Flows => state.flow_comparison.reload_control(),

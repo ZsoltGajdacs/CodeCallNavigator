@@ -186,21 +186,32 @@ impl Workspace {
         self.mounted_source = None;
     }
     fn cancel_requests(&mut self) {
+        self.cancel_graph_requests();
+        self.previews.clear();
+        self.changes.clear(&self.workers);
+    }
+    fn cancel_graph_requests(&mut self) {
         self.catalog_clock.cancel();
         self.detail_clock.cancel();
         self.catalog_job.cancel();
         self.detail_job.cancel();
         self.detail_selection = None;
         self.class_pair = None;
-        self.changes.clear();
-        self.previews.clear();
     }
     fn open(&mut self, project: Project) {
         self.close_flow_binding();
-        self.project = Some(project.clone());
+        self.project = Some(project);
         self.phase = Phase::Loading;
         self.controls.visible = true;
         self.controls.reset_binding();
+        self.open_change_list();
+    }
+    fn open_graph_catalog(&mut self) {
+        let Some(project) = self.project.as_mut() else {
+            return;
+        };
+        project.context = project.context_for(self.identity.captured());
+        let project = project.clone();
         let cancel = self.catalog_clock.restart();
         let serial = self.catalog_clock.serial;
         let work = self.workers.track(requests::CatalogWork {

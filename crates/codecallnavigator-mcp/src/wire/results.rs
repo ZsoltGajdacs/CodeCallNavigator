@@ -15,6 +15,7 @@ pub fn validate(operation: &str, result: &Value) -> Result<()> {
     match operation {
         "compare" => comparison(result),
         "comparison_changes" => comparison_changes::validate(result),
+        "git_comparison_changes" => comparison_changes::validate_git(result),
         "class_flow_comparison" => class_flow_comparison::validate(result),
         "flow_comparison" => flow_comparison::validate(result),
         "impact_preview" => impact_preview::validate(result),
@@ -105,21 +106,31 @@ fn array<'a>(value: &'a Value, field: &str) -> Result<&'a Vec<Value>> {
 }
 /// Validate echoed comparison binding without interpreting graph contents.
 pub fn binding(request: &Value, result: &Value) -> Result<()> {
-    if request["kind"] == "impact_preview" {
-        return impact_preview::binding(request, result);
+    match request["kind"].as_str() {
+        Some("impact_preview") => impact_preview::binding(request, result),
+        Some("git_comparison_changes") => {
+            expected_comparison(request, result)?;
+            comparison_changes::binding_git(request, result)
+        }
+        Some("compare" | "flow_comparison" | "comparison_changes" | "class_flow_comparison") => {
+            saved_comparison_binding(request, result)
+        }
+        _ => Ok(()),
     }
-    if !matches!(
-        request["kind"].as_str(),
-        Some("compare" | "flow_comparison" | "comparison_changes" | "class_flow_comparison")
-    ) {
-        return Ok(());
-    }
+}
+
+fn expected_comparison(request: &Value, result: &Value) -> Result<()> {
     if let Some(expected) = request["expected_comparison"].as_str() {
         ensure!(
             result["comparison_id"] == expected,
             "CLI returned a different comparison binding"
         );
     }
+    Ok(())
+}
+
+fn saved_comparison_binding(request: &Value, result: &Value) -> Result<()> {
+    expected_comparison(request, result)?;
     for (side, selector) in [("base", "base_snapshot"), ("head", "head_snapshot")] {
         if let Some(expected) = request[selector].as_str() {
             ensure!(
@@ -128,13 +139,11 @@ pub fn binding(request: &Value, result: &Value) -> Result<()> {
             );
         }
     }
-    if request["kind"] == "comparison_changes" {
-        comparison_changes::binding(request, result)?;
+    match request["kind"].as_str() {
+        Some("comparison_changes") => comparison_changes::binding(request, result),
+        Some("class_flow_comparison") => class_flow_comparison::binding(request, result),
+        _ => Ok(()),
     }
-    if request["kind"] == "class_flow_comparison" {
-        class_flow_comparison::binding(request, result)?;
-    }
-    Ok(())
 }
 
 #[cfg(test)]

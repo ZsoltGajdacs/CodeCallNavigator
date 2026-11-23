@@ -107,17 +107,27 @@ impl Repository {
             return Ok(());
         }
         let input: String = expected.keys().map(|id| format!("{id}\n")).collect();
-        let output = git_output(
+        let output = self.blob_batch(&input, Some(cancel), None)?;
+        verify_batch(output, expected, cancel)
+    }
+
+    pub(super) fn blob_batch(
+        &self,
+        input: &str,
+        cancel: Option<&AtomicBool>,
+        output_limit: Option<u64>,
+    ) -> Result<BufReader<std::fs::File>> {
+        git_output(
             &self.root,
             &["cat-file", "--batch"],
             "revision_unavailable",
             GitInput {
                 bytes: input.as_bytes(),
-                cancel: Some(cancel),
-                ..GitInput::default()
+                cancel,
+                output_limit,
             },
-        )?;
-        verify_batch(BufReader::new(output), expected, cancel)
+        )
+        .map(BufReader::new)
     }
 }
 
@@ -176,29 +186,18 @@ fn verify_batch(
     expected: &BTreeMap<String, String>,
     cancel: &AtomicBool,
 ) -> Result<()> {
-    let mut header = String::new();
     for (id, hash) in expected {
         ensure!(
             !cancel.load(Ordering::Acquire),
             "Git snapshot read cancelled"
         );
-        header.clear();
-        output.read_line(&mut header)?;
-        let size: u64 = header
-            .trim_end_matches('\n')
-            .strip_prefix(id)
-            .and_then(|rest| rest.strip_prefix(" blob "))
-            .context("Git blob is unavailable")?
-            .parse()?;
-        let mut blob = (&mut output).take(size);
-        let mut digest = blake3::Hasher::new();
-        digest.update_reader(&mut blob)?;
-        ensure!(blob.limit() == 0, "Truncated Git blob");
-        let mut newline = [0];
-        output.read_exact(&mut newline)?;
-        ensure!(newline == *b"\n", "Invalid Git blob separator");
+        let digest = read_blob(&mut output, id, |blob, _| {
+            let mut digest = blake3::Hasher::new();
+            digest.update_reader(blob)?;
+            Ok(digest.finalize())
+        })?;
         ensure!(
-            digest.finalize().to_hex().as_str() == hash,
+            digest.to_hex().as_str() == hash,
             "An analyzed input differs from its Git blob {id}"
         );
     }
@@ -207,4 +206,26 @@ fn verify_batch(
         "Unexpected data after Git blob batch"
     );
     Ok(())
+}
+
+pub(super) fn read_blob<T>(
+    output: &mut impl BufRead,
+    id: &str,
+    read: impl FnOnce(&mut dyn Read, u64) -> Result<T>,
+) -> Result<T> {
+    let mut header = String::new();
+    output.read_line(&mut header)?;
+    let size: u64 = header
+        .trim_end_matches('\n')
+        .strip_prefix(id)
+        .and_then(|rest| rest.strip_prefix(" blob "))
+        .context("Git blob is unavailable")?
+        .parse()?;
+    let mut blob = (&mut *output).take(size);
+    let value = read(&mut blob, size)?;
+    ensure!(blob.limit() == 0, "Truncated Git blob");
+    let mut newline = [0];
+    output.read_exact(&mut newline)?;
+    ensure!(newline == *b"\n", "Invalid Git blob separator");
+    Ok(value)
 }

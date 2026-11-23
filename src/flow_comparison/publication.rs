@@ -48,7 +48,7 @@ impl Workspace {
                 self.binding = Some(bound);
                 self.catalog = Some(std::sync::Arc::new(page));
                 self.phase = Phase::Bound;
-                self.load_change_list(0);
+                self.graph_catalog_ready();
             }
             Ok(CatalogAnswer::Page(page)) => {
                 if self
@@ -142,7 +142,11 @@ impl Workspace {
     pub(super) fn failed(&mut self, error: StringError) {
         self.controls.catalog_open = false;
         self.controls.choosing_after = false;
-        self.cancel_requests();
+        if self.changes.uses_legacy_graph() {
+            self.cancel_requests();
+        } else {
+            self.cancel_graph_requests();
+        }
         self.binding = None;
         self.catalog = None;
         self.current = None;

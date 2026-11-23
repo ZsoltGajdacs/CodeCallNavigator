@@ -59,7 +59,7 @@ fn execute(
         comparison_id: &pair.comparison_id,
     };
     let reply = Reply {
-        generation: &pair.after.endpoint.digest,
+        generation: Some(&pair.after.endpoint.digest),
         freshness: freshness.as_ref(),
     };
     match selection {

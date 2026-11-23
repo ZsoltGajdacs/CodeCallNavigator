@@ -55,6 +55,9 @@ impl Backend {
     pub fn supports_comparison_changes(&self) -> bool {
         self.capabilities.comparison_changes
     }
+    pub fn supports_git_comparison_changes(&self) -> bool {
+        self.capabilities.git_comparison_changes
+    }
     pub fn supports_class_flow_comparison(&self) -> bool {
         self.capabilities.class_flow_comparison
     }

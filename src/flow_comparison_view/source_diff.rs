@@ -19,11 +19,11 @@ pub fn layer(state: &State, k: &Kit) -> Option<El> {
         }
         target => {
             let id = match target {
-                PreviewTarget::Row(id) => id.as_str(),
+                PreviewTarget::Row(id) | PreviewTarget::ClassEdit(id) => id.as_str(),
                 _ => workspace.selected_change_id()?,
             };
-            match workspace.previews.diff(id) {
-                None => ("Source diff".into(), notice("Loading saved source…", k)),
+            match workspace.previews.preview_diff(id) {
+                None => ("Source diff".into(), notice("Loading source…", k)),
                 Some(Err(error)) => ("Source diff".into(), notice(error, k)),
                 Some(Ok(diff)) => (
                     diff.file.clone(),
@@ -80,7 +80,14 @@ fn preview_content(
     k: &Kit,
 ) -> El {
     if diff.status == SourceStatus::Unavailable {
-        return notice("Saved source is unavailable", k);
+        return notice(
+            &diff
+                .reason
+                .as_deref()
+                .unwrap_or("Source is unavailable")
+                .replace('_', " "),
+            k,
+        );
     }
     let (hunks, empty_message) = match target {
         PreviewTarget::Step(side, index) => (
@@ -90,7 +97,9 @@ fn preview_content(
                 .unwrap_or_default(),
             "No source change at this step",
         ),
-        PreviewTarget::Row(_) => (diff.hunks.as_slice(), "No source changes in this selection"),
+        PreviewTarget::Row(_) | PreviewTarget::ClassEdit(_) => {
+            (diff.hunks.as_slice(), "No source changes in this selection")
+        }
         PreviewTarget::Class(..) => unreachable!("class source has its own content"),
     };
     if hunks.is_empty() {
@@ -109,7 +118,9 @@ fn class_content(
         None => "Loading saved source…",
         Some(Err(error)) => error,
         Some(Ok(ClassSource::Unavailable { reason })) => reason,
-        Some(Ok(ClassSource::Diff { file, hunks })) => return (file.clone(), diff_lines(hunks, k)),
+        Some(Ok(ClassSource::Diff { file, hunks })) => {
+            return (format!("{file} · Saved graph source"), diff_lines(hunks, k));
+        }
         Some(Ok(ClassSource::Excerpt { file, start, text })) => {
             let before = side == crate::flow_comparison::SideId::Before;
             let excerpt = col()
@@ -127,7 +138,7 @@ fn class_content(
                         k,
                     )
                 }));
-            return (format!("{file}:{start}"), excerpt);
+            return (format!("{file}:{start} · Saved graph source"), excerpt);
         }
     };
     ("Saved source".into(), notice(message, k))

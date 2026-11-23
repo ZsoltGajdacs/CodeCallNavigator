@@ -51,6 +51,7 @@ pub fn execute(graph: &GraphIndex, query: &Query) -> Result<Value> {
         | Query::Freshness { .. }
         | Query::Compare { .. }
         | Query::ComparisonChanges { .. }
+        | Query::GitComparisonChanges { .. }
         | Query::ClassFlowComparison { .. }
         | Query::ClassComparisonSource { .. }
         | Query::FlowComparison { .. }

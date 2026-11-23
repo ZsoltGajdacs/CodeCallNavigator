@@ -63,6 +63,18 @@ pub enum Query {
         expected_comparison: Option<String>,
         selection: ComparisonChangesSelection,
     },
+    GitComparisonChanges {
+        base: String,
+        #[serde(default = "comparison_head")]
+        head: String,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        base_snapshot: Option<String>,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        head_snapshot: Option<String>,
+        #[serde(default)]
+        expected_comparison: Option<String>,
+        selection: ComparisonChangesSelection,
+    },
     ClassFlowComparison {
         base: String,
         #[serde(default = "comparison_head")]

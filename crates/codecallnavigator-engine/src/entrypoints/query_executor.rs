@@ -215,6 +215,7 @@ fn saved_revision_response(request: &Request) -> Option<Response> {
         }
         Query::FlowComparison { .. } => super::flow_comparison::respond(request),
         Query::ComparisonChanges { .. } => super::comparison_changes::respond(request),
+        Query::GitComparisonChanges { .. } => super::git_comparison_changes::respond(request),
         Query::ClassFlowComparison { .. } => super::class_flow_comparison::respond(request),
         Query::ClassComparisonSource { .. } => super::class_comparison_source::respond(request),
         Query::Compare { .. } => super::comparison::respond(request),

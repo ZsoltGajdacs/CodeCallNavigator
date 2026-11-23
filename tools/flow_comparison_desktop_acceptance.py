@@ -30,7 +30,7 @@ def seed_session(store, project):
 def required_checks(worktree):
     checks = {"normal_no_graph_boot", "commits_selected_by_controls", "commit_messages_drawn_for_both_sides",
               "minimum_viewport_drawn",
-              "changes_outline_drawn_and_auto_selected", "unified_diff_drawn_on_hover",
+              "changes_outline_drawn_and_auto_selected", "git_file_diff_drawn_from_outline", "unified_diff_drawn_on_hover",
               "unified_diff_drawn_on_keyboard_focus", "class_call_changes_drawn",
               "outline_hover_has_no_source_preview", "outline_focus_has_no_source_preview",
               "class_source_diff_drawn_on_hover", "class_saved_excerpt_drawn_on_focus",

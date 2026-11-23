@@ -11,6 +11,7 @@ pub use selection::{Selection, select, select_render};
 
 pub const VERSION: u32 = 2;
 pub const COMPARISON_CHANGES_VERSION: u32 = 1;
+pub const GIT_COMPARISON_CHANGES_VERSION: u32 = 1;
 pub const CLASS_FLOW_COMPARISON_VERSION: u32 = 1;
 pub const CLASS_COMPARISON_SOURCE_VERSION: u32 = 1;
 pub const MAX_SOURCE_BYTES: u64 = crate::flow::MAX_SOURCE_BYTES;
@@ -20,7 +21,7 @@ pub const MAX_FRESHNESS_REASON_BYTES: usize = 8192;
 pub fn capabilities() -> serde_json::Value {
     serde_json::json!({
         "query_version": VERSION,
-        "operations": ["flow_resources", "status", "freshness", "snapshot", "inspect", "live_source", "architecture", "search", "symbol", "source", "explorer", "selection", "render_selection", "neighbors", "flow", "compare", "comparison_changes", "class_flow_comparison", "class_comparison_source", "flow_comparison", "flow_expansion", "snapshot_status", "impact_preview"],
+        "operations": ["flow_resources", "status", "freshness", "snapshot", "inspect", "live_source", "architecture", "search", "symbol", "source", "explorer", "selection", "render_selection", "neighbors", "flow", "compare", "comparison_changes", "git_comparison_changes", "class_flow_comparison", "class_comparison_source", "flow_comparison", "flow_expansion", "snapshot_status", "impact_preview"],
         "local_snapshots": {"version":1,"status_query":"snapshot_status","prepare_command":"prepare_snapshot","cancel_command":"cancel","exact_targets":true},
         "impact_preview": {"version":1},
         "automatic_refresh": {"version":crate::refresh::VERSION,"activity_version":crate::refresh::VERSION,"observe_flag":"--auto-refresh","initial_session_version":crate::refresh::OBSERVE_SESSION_VERSION,"debounce_milliseconds":crate::refresh::DEBOUNCE_MILLISECONDS,"cancel_command":"cancel_refresh"},
@@ -28,6 +29,7 @@ pub fn capabilities() -> serde_json::Value {
         "flow_comparison": {"version":1,"selections":["catalog","detail"],"default_limit":50,"maximum_limit":500,"maximum_text_bytes":1024,"maximum_symbol_bytes":16384,"maximum_response_bytes":crate::artifact::difference::MAX_RESPONSE_BYTES,"maximum_source_bytes":MAX_SOURCE_BYTES,"snapshot_binding":true,"correspondence":"exact_identity","manual_counterpart":true},
         "comparison": {"version":1,"default_limit":100,"maximum_limit":500,"maximum_response_bytes":24*1024*1024,"snapshot_binding":true},
         "comparison_changes": {"version":COMPARISON_CHANGES_VERSION,"selections":["list","source_diff"],"default_limit":100,"maximum_limit":500,"maximum_response_bytes":crate::artifact::difference::MAX_RESPONSE_BYTES,"snapshot_binding":true},
+        "git_comparison_changes": {"version":GIT_COMPARISON_CHANGES_VERSION,"selections":["list","source_diff"],"default_limit":100,"maximum_limit":500,"maximum_response_bytes":crate::artifact::difference::MAX_RESPONSE_BYTES},
         "class_flow_comparison": {"version":CLASS_FLOW_COMPARISON_VERSION,"maximum_response_bytes":crate::artifact::difference::MAX_RESPONSE_BYTES,"snapshot_binding":true},
         "class_comparison_source": {"version":CLASS_COMPARISON_SOURCE_VERSION,"maximum_response_bytes":crate::artifact::difference::MAX_RESPONSE_BYTES,"snapshot_binding":true},
         "freshness": {"version":crate::freshness::VERSION,"streaming":true,"mode":"verified_polling","limited":true,"reconcile_milliseconds":crate::freshness::RECONCILE_MILLISECONDS,"heartbeat_milliseconds":crate::freshness::HEARTBEAT_MILLISECONDS},

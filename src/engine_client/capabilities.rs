@@ -17,6 +17,7 @@ pub(super) struct Capabilities {
     pub flow_languages: Vec<String>,
     pub flow_comparison: bool,
     pub comparison_changes: bool,
+    pub git_comparison_changes: bool,
     pub class_flow_comparison: bool,
     pub class_comparison_source: bool,
     pub graph_comparison: bool,
@@ -119,6 +120,10 @@ fn validate(bytes: &[u8]) -> Result<Capabilities> {
         flow_comparison: flow_comparison::supported(&capabilities, operations),
         comparison_changes: capabilities["comparison_changes"]["version"] == 1
             && operations.iter().any(|name| name == "comparison_changes"),
+        git_comparison_changes: capabilities["git_comparison_changes"]["version"] == 1
+            && operations
+                .iter()
+                .any(|name| name == "git_comparison_changes"),
         class_flow_comparison: supports_bound_detail(
             &capabilities,
             operations,

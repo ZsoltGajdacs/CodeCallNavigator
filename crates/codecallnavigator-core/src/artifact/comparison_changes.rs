@@ -3,6 +3,7 @@ mod class;
 mod class_graph;
 mod class_source;
 mod declarations;
+mod git;
 mod methods;
 mod model;
 mod reachability;
@@ -20,8 +21,9 @@ use anyhow::Result;
 use class::Class;
 pub use class_graph::{ClassGraph, ClassLink, ClassNode, GraphChange};
 pub use class_source::*;
+pub use git::GitComparison;
 pub use model::*;
-use reachability::{Matches, Search};
+use reachability::Search;
 use snapshot::{FileId, Snapshot};
 use std::collections::{BTreeMap, BTreeSet};
 
@@ -136,20 +138,7 @@ impl<'a, 'snapshot> Outline<'a, 'snapshot> {
         for (class, change) in std::mem::take(&mut self.classes) {
             self.add_class(class, change);
         }
-        self.rows.sort_by(|a, b| {
-            let key = |row: &Change| match row.kind {
-                ChangeKind::Class => 0,
-                ChangeKind::Method => 1,
-                ChangeKind::File => 2,
-            };
-            (a.entry_points.is_empty(), key(a), &a.file, &a.name, &a.id).cmp(&(
-                b.entry_points.is_empty(),
-                key(b),
-                &b.file,
-                &b.name,
-                &b.id,
-            ))
-        });
+        sort_changes(&mut self.rows);
     }
 
     fn class_facet(&mut self, class: Class, file: FileId<'snapshot>, facet: Facet) {
@@ -250,15 +239,12 @@ impl<'a, 'snapshot> Outline<'a, 'snapshot> {
         before: impl IntoIterator<Item = usize>,
         after: impl IntoIterator<Item = usize>,
     ) -> Vec<EntryPoint> {
-        let mut old = Matches::new();
-        let mut new = Matches::new();
-        for member in before {
-            self.before_routes.extend(&mut old, member);
-        }
-        for member in after {
-            self.after_routes.extend(&mut new, member);
-        }
-        reachability::combine(&old, &new)
+        reachability::routes(
+            Some(&mut self.before_routes),
+            before,
+            Some(&mut self.after_routes),
+            after,
+        )
     }
 
     fn insert(&mut self, change: Change, before: FileId<'_>, after: FileId<'_>) {
@@ -290,6 +276,24 @@ fn stable_id(kind: &str, parts: &[&str]) -> String {
         digest.update(part.as_bytes());
     }
     format!("{kind}-{}", digest.finalize().to_hex())
+}
+
+fn sort_changes(rows: &mut [Change]) {
+    fn order(row: &Change) -> (bool, u8, &str, &str, &str) {
+        let kind = match row.kind {
+            ChangeKind::Class => 0,
+            ChangeKind::Method => 1,
+            ChangeKind::File => 2,
+        };
+        (
+            row.entry_points.is_empty(),
+            kind,
+            &row.file,
+            &row.name,
+            &row.id,
+        )
+    }
+    rows.sort_by(|left, right| order(left).cmp(&order(right)));
 }
 
 fn display_path(path: &str) -> &str {

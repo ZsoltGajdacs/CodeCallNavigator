@@ -70,8 +70,13 @@ nor changes its saved graph. See the [versioned CLI contract](cli-queries.md#bou
 
 ## Compare saved function flows
 
-Choose **Compare flows**, enter local Git revisions in **Base** and **After**,
-then choose **Load**. The comparison also works without a currently loaded graph.
+Choose **Compare flows**, select local Git revisions in **Base** and **After**,
+then choose **Load**. The change outline lists Git file edits and opens their
+diffs even while saved graphs are unavailable. Choose **Worktree** as After to
+include staged and unstaged edits and nonignored new files. When saved source
+matches an edited file, the outline can also identify its changed methods and
+classes. Select an attributed row to open its paired graph when available.
+
 **Functions** opens a searchable, paged catalog of exact saved identities, including
 added, removed and unavailable functions. Select an identity to display both charts.
 The headers show requested refs, resolved commits and artifact provenance; partial
@@ -90,19 +95,16 @@ identity correspondence. Choosing a target starts another exact-identity compari
 Missing flow/source facts remain unavailable; an incompatible artifact makes
 membership unknown, so it cannot establish an addition or removal.
 
-Editing refs leaves the displayed pair bound to its original revisions until
-**Load** is pressed. **Reload** rereads the last submitted refs. On the next catalog
-or detail request, changed refs or saved artifact bytes clear actionable results
-and require Reload. **Cancel** stops pending work and leaves the revision editor
-available.
-`WORKTREE` in After means the current working graph in the local library. Refresh
-explicitly to include newer source edits. Queries read captured source without
-building historical code.
+Changing the revision controls leaves the displayed pair bound to its original
+selection until **Load**. If the Worktree changes between pages or previews,
+**Reload comparison** rereads the source diff. **Refresh Worktree** rebuilds the
+saved graph so the paired flows can include the new edits. **Cancel** stops
+pending work and leaves the revision controls available.
 
 PR reviews use base/head refs available in the local repository. Hosted PR discovery,
-authentication and fetching are outside this workflow. Both revisions need a saved
-artifact containing the desired flow and source metadata. An old commit with no
-artifact needs preparation; its source tree alone cannot supply a historical chart.
+authentication and fetching are outside this workflow. Paired charts use saved
+artifacts containing the desired flow and source metadata. Prepare a snapshot for
+an old commit to add its historical chart to the source comparison.
 
 From the repository, prepare any missing verified revision. Replace `BASE_REF`,
 `HEAD_REF`, and the project target with your own values. Preparation requires the

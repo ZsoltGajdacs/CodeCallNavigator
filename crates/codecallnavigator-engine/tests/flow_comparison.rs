@@ -16,6 +16,69 @@ use std::fs;
 use support::*;
 
 #[test]
+fn git_source_pages_survive_missing_graphs_and_require_reload_after_edits() {
+    let directory = tempfile::tempdir().unwrap();
+    let root = directory.path();
+    git(root, &["init", "-q"]);
+    git(
+        root,
+        &["config", "user.name", "Git source comparison tests"],
+    );
+    git(root, &["config", "user.email", "test@example.invalid"]);
+    fs::write(root.join("A.java"), "class Original {}\n").unwrap();
+    git(root, &["add", "A.java"]);
+    git(root, &["commit", "-qm", "baseline"]);
+    fs::write(root.join("A.java"), "class Revised {}\n").unwrap();
+    fs::write(root.join("B.java"), "class Added {}\n").unwrap();
+
+    let mut request = json!({
+        "kind":"git_comparison_changes", "base":"HEAD", "head":"WORKTREE",
+        "selection":{"kind":"list","limit":1}
+    });
+    let first = query(root, request.clone());
+    assert!(first["error"].is_null(), "{first}");
+    assert!(first["generation"].is_null());
+    let page = &first["result"];
+    assert!(page["graph_comparison_id"].is_null());
+    assert_eq!(page["total"], 2);
+    assert_eq!(page["next_offset"], 1);
+    let row = &page["changes"][0];
+    assert_eq!(row["kind"], "file");
+    assert_eq!(row["file"], "A.java");
+    assert_eq!(row["status"], "modified");
+    request["base"] = page["base"]["commit"].clone();
+    request["expected_comparison"] = page["comparison_id"].clone();
+    request["selection"] = json!({"kind":"source_diff","id":row["id"]});
+    let diff = query(root, request.clone());
+    assert_eq!(diff["result"]["status"], "ready", "{diff}");
+    assert!(
+        diff["result"]["hunks"]
+            .to_string()
+            .contains("class Revised")
+    );
+
+    fs::write(root.join("A.java"), "class ChangedAgain {}\n").unwrap();
+    assert_eq!(
+        query(root, request.clone())["error"]["code"],
+        "comparison_mismatch"
+    );
+    request["selection"] = json!({"kind":"list","offset":1,"limit":1});
+    assert_eq!(
+        query(root, request.clone())["error"]["code"],
+        "comparison_mismatch"
+    );
+    request["selection"] = json!({"kind":"list"});
+    request
+        .as_object_mut()
+        .unwrap()
+        .remove("expected_comparison");
+    let reloaded = query(root, request);
+    assert!(reloaded["error"].is_null(), "{reloaded}");
+    assert_ne!(reloaded["result"]["comparison_id"], page["comparison_id"]);
+    assert!(artifact::working_manifest_path(root).is_err());
+}
+
+#[test]
 fn change_pages_and_source_diff_use_the_same_saved_revision_binding() {
     let repo = Repository::revisions_only();
     let root = repo.root();

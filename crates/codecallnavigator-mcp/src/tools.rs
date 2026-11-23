@@ -197,6 +197,13 @@ fn snapshot_tools(backend: &Backend) -> Vec<Tool> {
             true,
         ));
     }
+    if backend.supports_git_comparison_changes() {
+        tools.push(tool::<CompareSourceChangesArgs>(
+            "compare_source_changes",
+            "List actual Git source changes or fetch a unified diff by change ID. Graphs add class, method and entry-point information when available. Carry the source comparison ID across pages and previews. Reload the list if a Worktree edit changes the binding.",
+            true,
+        ));
+    }
     if backend.supports_class_flow_comparison() {
         tools.push(tool::<ClassFlowComparisonArgs>(
             "compare_class_flows",

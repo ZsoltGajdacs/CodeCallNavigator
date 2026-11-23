@@ -53,6 +53,18 @@ impl ClassPreview {
 
 impl Workspace {
     pub fn show_class_preview(&mut self, side: SideId, id: String, anchor: String) {
+        if self.is_git_class_edit(&id) {
+            self.previews.active = Some(Preview {
+                anchor,
+                target: PreviewTarget::ClassEdit(id.clone()),
+            });
+            self.request_change_source(id, true);
+        } else {
+            self.show_saved_class_preview(side, id, anchor);
+        }
+    }
+
+    fn show_saved_class_preview(&mut self, side: SideId, id: String, anchor: String) {
         if self.worktree_refresh.pending() {
             return;
         }

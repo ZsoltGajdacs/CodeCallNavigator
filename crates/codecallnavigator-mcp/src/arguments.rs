@@ -51,6 +51,17 @@ pub struct CompareChangesArgs {
 }
 #[derive(Deserialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
+pub struct CompareSourceChangesArgs {
+    pub base: String,
+    #[serde(default = "comparison_head")]
+    pub head: String,
+    pub base_snapshot: Option<String>,
+    pub head_snapshot: Option<String>,
+    pub expected_comparison: Option<String>,
+    pub selection: CompareChangesSelection,
+}
+#[derive(Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
 pub struct ClassFlowComparisonArgs {
     pub base: String,
     #[serde(default = "comparison_head")]
@@ -320,7 +331,10 @@ impl Query {
 pub fn parse(name: &str, value: Value) -> Result<Query> {
     match name {
         "compare_graphs" => comparison(serde_json::from_value(value)?),
-        "compare_changes" => comparison_changes(serde_json::from_value(value)?),
+        "compare_changes" => {
+            comparison_changes("comparison_changes", serde_json::from_value(value)?)
+        }
+        "compare_source_changes" => compare_source_changes(serde_json::from_value(value)?),
         "compare_class_flows" => class_flow_comparison(serde_json::from_value(value)?),
         "compare_function_flows" => flow_comparison(serde_json::from_value(value)?),
         "preview_graph_impact" => impact_preview(serde_json::from_value(value)?),
@@ -396,7 +410,26 @@ fn comparison(args: CompareArgs) -> Result<Query> {
     snapshot_selectors(&mut query, args.base_snapshot, args.head_snapshot)?;
     Query::new(query, args.expected_generation)
 }
-fn comparison_changes(args: CompareChangesArgs) -> Result<Query> {
+fn compare_source_changes(args: CompareSourceChangesArgs) -> Result<Query> {
+    ensure!(
+        args.head != "WORKTREE" || args.head_snapshot.is_none(),
+        "A Worktree comparison cannot select a head snapshot"
+    );
+    comparison_changes(
+        "git_comparison_changes",
+        CompareChangesArgs {
+            base: args.base,
+            head: args.head,
+            base_snapshot: args.base_snapshot,
+            head_snapshot: args.head_snapshot,
+            expected_comparison: args.expected_comparison,
+            expected_generation: None,
+            selection: args.selection,
+        },
+    )
+}
+
+fn comparison_changes(kind: &str, args: CompareChangesArgs) -> Result<Query> {
     text(&args.base)?;
     text(&args.head)?;
     ensure!(
@@ -419,7 +452,7 @@ fn comparison_changes(args: CompareChangesArgs) -> Result<Query> {
         "Comparison follow-ups require expected_comparison"
     );
     let mut query = json!({
-        "kind": "comparison_changes", "base": args.base, "head": args.head,
+        "kind": kind, "base": args.base, "head": args.head,
         "expected_comparison": args.expected_comparison, "selection": args.selection
     });
     snapshot_selectors(&mut query, args.base_snapshot, args.head_snapshot)?;
@@ -591,6 +624,18 @@ mod tests {
                 json!({"symbol":"s","expected_generation":"bad"}),
             ),
             ("find_symbols", json!({"text":"x","limit":201})),
+            (
+                "compare_source_changes",
+                json!({"base":"HEAD","selection":{"kind":"list"},"expected_generation":"a".repeat(64)}),
+            ),
+            (
+                "compare_source_changes",
+                json!({"base":"HEAD","selection":{"kind":"list"},"head_snapshot":"a".repeat(64)}),
+            ),
+            (
+                "compare_source_changes",
+                json!({"base":"HEAD","selection":{"kind":"source_diff","id":"file"}}),
+            ),
             (
                 "graph_section",
                 json!({"selection":{"kind":"overview"},"filter":{"version":1,"relationship_kinds":[],"target_resolutions":[]}}),

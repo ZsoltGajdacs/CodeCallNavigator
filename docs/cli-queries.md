@@ -94,6 +94,29 @@ not compile, refresh, publish or write graph caches. Refresh is an explicit
 `analyze` command. Failed or cancelled analysis preserves the last successful
 artifact. The existing `serve-once` analysis protocol remains available.
 
+## Git source changes
+
+Engines advertising `git_comparison_changes.version: 1` can list changes
+between two selected Git commits, or between a commit and the saved contents of
+the checkout. The operation reads Git and the checkout without running analysis.
+
+```json
+{"version":2,"project":"/checkout","query":{"kind":"git_comparison_changes","base":"HEAD","head":"WORKTREE","selection":{"kind":"list","limit":50}}}
+```
+
+Each changed path has a file row, including nonignored untracked files for
+`WORKTREE`. Moves appear as a deletion and addition. Saved graphs can add
+class, method, and entry-point attribution where they contain matching source.
+Source rows and supported file diffs are available without saved graphs.
+
+Pass the returned commit SHAs as the next request's revision selectors and keep
+`WORKTREE` as the Worktree selector. Use the same optional snapshot selectors
+and pass `comparison_id` as `expected_comparison` for subsequent pages or a
+`{"kind":"source_diff","id":"<change id>"}` selection. If the source or graph
+binding changes, the engine returns `comparison_mismatch`. Restart from the
+first page to reload. The result's optional `graph_comparison_id` binds saved
+flow queries using the same graph reference selectors.
+
 ## Changed classes, methods and files
 
 Engines advertising `comparison_changes.version: 1` accept a compact, read-only

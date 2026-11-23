@@ -124,6 +124,71 @@ pub(crate) fn selected(state: &State) -> String {
         matches!(&record.before,crate::engine_client::flow_comparison::CatalogSide::Present(side) if side.node.as_ref().is_some_and(|node|node.label.starts_with("load(")))
     }).unwrap().symbol.clone()
 }
+
+#[test]
+fn git_outline_remains_usable_without_graph_and_reloads_after_worktree_edit() {
+    let temporary = tempfile::tempdir().unwrap();
+    let root = temporary.path();
+    git(root, &["init", "-q"]);
+    git(root, &["config", "user.name", "Workspace tests"]);
+    git(root, &["config", "user.email", "test@example.invalid"]);
+    let source = root.join("code.ts");
+    fs::write(&source, "const value = 1;\n").unwrap();
+    git(root, &["add", "code.ts"]);
+    git(root, &["commit", "-qm", "base"]);
+    fs::write(
+        root.join(".git/info/exclude"),
+        "/.fixture-library/\n/use-isolated-cache\n",
+    )
+    .unwrap();
+    fs::create_dir(fixture_store(root).root()).unwrap();
+    fs::write(&source, "const value = 2;\n").unwrap();
+    let mut state = state(root);
+    state
+        .open_flow_comparison("HEAD".into(), "WORKTREE".into())
+        .unwrap();
+    settle(&mut state);
+
+    let comparison = &mut state.flow_comparison;
+    assert!(comparison.git_outline());
+    assert!(!comparison.outline_graph_ready());
+    assert_eq!(comparison.changes.rows.len(), 1);
+    let id = comparison.changes.rows[0].id.clone();
+    comparison.choose_change_source(id.clone(), "code row".into());
+    settle(&mut state);
+    assert_preview(&state.flow_comparison, &id, "const value = 2;\n");
+
+    fs::write(&source, "const value = 3;\n").unwrap();
+    state
+        .flow_comparison
+        .choose_change_source(id.clone(), "code row".into());
+    settle(&mut state);
+    assert!(state.flow_comparison.changes.reload_required);
+    assert!(state.flow_comparison.previews.active.is_none());
+
+    state.flow_comparison.reload().unwrap();
+    settle(&mut state);
+    let id = state.flow_comparison.changes.rows[0].id.clone();
+    state
+        .flow_comparison
+        .choose_change_source(id.clone(), "code row".into());
+    settle(&mut state);
+    assert_preview(&state.flow_comparison, &id, "const value = 3;\n");
+    assert!(state.graph.is_none());
+}
+
+fn assert_preview(comparison: &Workspace, id: &str, expected: &str) {
+    let preview = comparison.previews.diff(id).unwrap().unwrap();
+    assert_eq!(preview.file, "code.ts");
+    assert!(
+        preview
+            .hunks
+            .iter()
+            .flat_map(|hunk| &hunk.lines)
+            .any(|line| line.text == expected)
+    );
+}
+
 #[test]
 fn historical_workspace_loads_without_graph_and_keeps_captured_project_and_side_state() {
     let root = tempfile::tempdir().unwrap();

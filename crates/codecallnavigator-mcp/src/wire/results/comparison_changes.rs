@@ -5,6 +5,48 @@ use serde_json::Value;
 
 pub(super) fn validate(result: &Value) -> Result<()> {
     comparison::header(result)?;
+    payload(result)
+}
+
+pub(super) fn validate_git(result: &Value) -> Result<()> {
+    ensure!(
+        result["version"] == 1,
+        "Unsupported source comparison version"
+    );
+    ensure!(
+        result["comparison_id"]
+            .as_str()
+            .is_some_and(crate::wire::generation),
+        "Malformed source comparison binding"
+    );
+    ensure!(
+        result
+            .get("graph_comparison_id")
+            .is_some_and(|id| id.is_null() || id.as_str().is_some_and(crate::wire::generation)),
+        "Malformed graph comparison binding"
+    );
+    for side in ["base", "head"] {
+        let endpoint = &result[side];
+        strings(endpoint, &["requested_ref"])?;
+        if side == "head" && endpoint["requested_ref"] == "WORKTREE" {
+            ensure!(
+                endpoint.get("commit").is_some_and(Value::is_null),
+                "Worktree source endpoint cannot claim a commit"
+            );
+        } else {
+            ensure!(
+                endpoint["requested_ref"] != "WORKTREE"
+                    && endpoint["commit"]
+                        .as_str()
+                        .is_some_and(crate::wire::snapshots::commit),
+                "Malformed resolved source endpoint"
+            );
+        }
+    }
+    payload(result)
+}
+
+fn payload(result: &Value) -> Result<()> {
     match result["kind"].as_str() {
         Some("list") => list(result),
         Some("source_diff") => source_diff(result),
@@ -34,6 +76,22 @@ pub(super) fn binding(request: &Value, result: &Value) -> Result<()> {
             ensure!(
                 result[key] == selection[key],
                 "CLI returned a different page {key}"
+            );
+        }
+    }
+    Ok(())
+}
+
+pub(super) fn binding_git(request: &Value, result: &Value) -> Result<()> {
+    binding(request, result)?;
+    for side in ["base", "head"] {
+        if let Some(commit) = request[side]
+            .as_str()
+            .filter(|value| crate::wire::snapshots::commit(value))
+        {
+            ensure!(
+                result[side]["commit"] == commit,
+                "CLI returned a different resolved {side} commit"
             );
         }
     }

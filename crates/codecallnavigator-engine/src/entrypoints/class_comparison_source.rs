@@ -70,7 +70,7 @@ fn execute(
             )
         })?;
     Reply {
-        generation: &pair.after.endpoint.digest,
+        generation: Some(&pair.after.endpoint.digest),
         freshness: None,
     }
     .finish_with(

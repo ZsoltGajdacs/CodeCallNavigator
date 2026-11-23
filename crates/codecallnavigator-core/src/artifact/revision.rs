@@ -3,6 +3,10 @@ mod changes;
 mod history;
 mod inspection;
 mod repository;
+mod source_changes;
+#[cfg(test)]
+mod source_changes_tests;
+mod worktree_file;
 use super::{Artifact, storage};
 use anyhow::{Context, Result};
 pub use changes::TrackedChanges;
@@ -13,6 +17,7 @@ pub use inspection::{
 };
 pub use repository::{Repository, TreeEntry};
 use serde::Serialize;
+pub use source_changes::{SourceChanges, SourceFile, SourceSide};
 #[cfg(test)]
 use std::fs;
 use std::{

@@ -89,11 +89,14 @@ fn parse(bytes: &[u8]) -> Result<TrackedChanges> {
     Ok(changes)
 }
 
-struct ChangedPath<'a> {
-    path: &'a [u8],
-    status: &'a str,
-    old_mode: &'a str,
-    new_mode: &'a str,
+#[derive(Clone, Copy)]
+pub(super) struct ChangedPath<'a> {
+    pub(super) path: &'a [u8],
+    pub(super) status: &'a str,
+    pub(super) old_mode: &'a str,
+    pub(super) new_mode: &'a str,
+    pub(super) old_object: &'a str,
+    pub(super) new_object: &'a str,
 }
 
 impl ChangedPath<'_> {
@@ -149,7 +152,7 @@ impl ChangedPath<'_> {
     }
 }
 
-fn paths(raw: &[u8]) -> Result<Vec<ChangedPath<'_>>> {
+pub(super) fn paths(raw: &[u8]) -> Result<Vec<ChangedPath<'_>>> {
     let mut fields = raw.split_inclusive(|byte| *byte == 0);
     let mut changes = Vec::new();
     while let Some(header) = fields.next().and_then(terminated) {
@@ -160,7 +163,7 @@ fn paths(raw: &[u8]) -> Result<Vec<ChangedPath<'_>>> {
             .strip_prefix(':')
             .context("Invalid Git diff header")?;
         let fields: Vec<_> = header.split_ascii_whitespace().collect();
-        let [old_mode, new_mode, _, _, status] = fields.as_slice() else {
+        let [old_mode, new_mode, old_object, new_object, status] = fields.as_slice() else {
             anyhow::bail!("Invalid Git raw diff record");
         };
         changes.push(ChangedPath {
@@ -168,6 +171,8 @@ fn paths(raw: &[u8]) -> Result<Vec<ChangedPath<'_>>> {
             status,
             old_mode,
             new_mode,
+            old_object,
+            new_object,
         });
     }
     Ok(changes)

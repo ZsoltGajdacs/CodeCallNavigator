@@ -38,7 +38,7 @@ pub(super) fn respond(loaded: &mut Loaded, request: &Request) -> Option<Response
         let view = loaded.flow_view()?;
         let expanded = core::expand_flow_view(&view, expansion, &cancellation::CANCELLED)?;
         Reply {
-            generation: &loaded.generation,
+            generation: Some(&loaded.generation),
             freshness: None,
         }
         .finish_with(

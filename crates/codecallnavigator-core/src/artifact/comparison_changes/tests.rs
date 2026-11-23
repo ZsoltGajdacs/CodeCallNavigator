@@ -5,7 +5,7 @@ use crate::{
     model::{Edge, EntryPoints},
 };
 
-fn snapshot(source: &str, certainty: &str) -> GraphData {
+pub(super) fn snapshot(source: &str, certainty: &str) -> GraphData {
     let node = |id: &str, line| Node {
         id: id.into(),
         label: id.into(),

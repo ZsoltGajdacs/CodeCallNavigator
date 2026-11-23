@@ -8,9 +8,15 @@ use std::sync::atomic::AtomicBool;
 pub const PAGE_LIMIT: usize = 100;
 
 #[derive(Debug, Deserialize)]
-pub struct ChangesPage {
+pub(super) struct ChangesPage<H = Header> {
     #[serde(flatten)]
-    pub(super) header: Header,
+    pub(super) header: H,
+    #[serde(flatten)]
+    pub(super) page: ChangeList,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct ChangeList {
     pub(super) kind: String,
     pub(super) offset: usize,
     limit: usize,
@@ -66,14 +72,21 @@ pub struct EntryPoint {
 }
 
 #[derive(Debug, Deserialize)]
-pub struct SourceDiff {
+pub(super) struct DiffResponse<H = Header> {
     #[serde(flatten)]
-    pub(super) header: Header,
-    pub(super) kind: String,
+    pub(super) header: H,
+    #[serde(flatten)]
+    pub(super) diff: SourceDiff,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct SourceDiff {
+    kind: String,
     pub id: String,
     pub status: SourceStatus,
     pub file: String,
     pub hunks: Vec<Hunk>,
+    pub reason: Option<String>,
 }
 
 #[derive(Debug, Deserialize, Eq, PartialEq)]
@@ -90,11 +103,7 @@ impl BoundComparison {
         self.changes_capability(cancel)
     }
 
-    pub fn changes(
-        &self,
-        offset: usize,
-        cancel: &AtomicBool,
-    ) -> super::client::Result<ChangesPage> {
+    pub fn changes(&self, offset: usize, cancel: &AtomicBool) -> super::client::Result<ChangeList> {
         let page: ChangesPage = self.change_request(
             ComparisonChangesSelection::List {
                 offset,
@@ -103,8 +112,8 @@ impl BoundComparison {
             cancel,
             |page: &ChangesPage| &page.header,
         )?;
-        page.validate(offset)?;
-        Ok(page)
+        page.page.validate(offset)?;
+        Ok(page.page)
     }
 
     pub fn source_diff(
@@ -112,18 +121,18 @@ impl BoundComparison {
         id: String,
         cancel: &AtomicBool,
     ) -> super::client::Result<SourceDiff> {
-        let result: SourceDiff = self.change_request(
+        let result: DiffResponse = self.change_request(
             ComparisonChangesSelection::SourceDiff { id: id.clone() },
             cancel,
-            |result: &SourceDiff| &result.header,
+            |result: &DiffResponse| &result.header,
         )?;
-        ensure_diff(&result, &id)?;
-        Ok(result)
+        result.diff.validate(&id)?;
+        Ok(result.diff)
     }
 }
 
-impl ChangesPage {
-    fn validate(&self, offset: usize) -> Result<()> {
+impl ChangeList {
+    pub(super) fn validate(&self, offset: usize) -> Result<()> {
         ensure!(
             (self.kind.as_str(), self.offset, self.limit, self.returned)
                 == ("list", offset, PAGE_LIMIT, self.changes.len()),
@@ -144,12 +153,14 @@ impl ChangesPage {
     }
 }
 
-fn ensure_diff(diff: &SourceDiff, id: &str) -> Result<()> {
-    ensure!(
-        diff.kind == "source_diff" && diff.id == id,
-        "CLI returned the source diff for another change"
-    );
-    Ok(())
+impl SourceDiff {
+    pub(super) fn validate(&self, id: &str) -> Result<()> {
+        ensure!(
+            self.kind == "source_diff" && self.id == id,
+            "CLI returned the source diff for another change"
+        );
+        Ok(())
+    }
 }
 
 #[cfg(test)]

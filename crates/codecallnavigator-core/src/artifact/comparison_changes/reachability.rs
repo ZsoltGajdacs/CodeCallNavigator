@@ -177,3 +177,27 @@ pub(super) fn combine(before: &Matches, after: &Matches) -> Vec<EntryPoint> {
     entries.sort_by(|left, right| (&left.name, &left.id).cmp(&(&right.name, &right.id)));
     entries
 }
+
+pub(super) fn routes(
+    before: Option<&mut Search<'_>>,
+    before_members: impl IntoIterator<Item = usize>,
+    after: Option<&mut Search<'_>>,
+    after_members: impl IntoIterator<Item = usize>,
+) -> Vec<EntryPoint> {
+    fn collect(
+        search: Option<&mut Search<'_>>,
+        members: impl IntoIterator<Item = usize>,
+    ) -> Matches {
+        let mut matches = Matches::new();
+        if let Some(search) = search {
+            for member in members {
+                search.extend(&mut matches, member);
+            }
+        }
+        matches
+    }
+    combine(
+        &collect(before, before_members),
+        &collect(after, after_members),
+    )
+}

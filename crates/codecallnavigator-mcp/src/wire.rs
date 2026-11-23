@@ -46,6 +46,7 @@ pub struct Capabilities {
     pub local_snapshots: bool,
     pub flow_comparison: bool,
     pub comparison_changes: bool,
+    pub git_comparison_changes: bool,
     pub class_flow_comparison: bool,
     pub impact_preview: bool,
 }
@@ -138,6 +139,11 @@ pub fn capabilities(value: &Value) -> Result<Capabilities> {
             value,
             &capabilities.operations,
             "comparison_changes",
+        ),
+        git_comparison_changes: versioned_operation(
+            value,
+            &capabilities.operations,
+            "git_comparison_changes",
         ),
         class_flow_comparison: versioned_operation(
             value,
@@ -292,6 +298,15 @@ mod tests {
         assert!(!capabilities(&value).unwrap().class_flow_comparison);
         value["class_flow_comparison"] = json!({"version":1,"snapshot_binding":true});
         assert!(capabilities(&value).unwrap().class_flow_comparison);
+        value["git_comparison_changes"] = json!({"version":1});
+        assert!(!capabilities(&value).unwrap().git_comparison_changes);
+        value["operations"]
+            .as_array_mut()
+            .unwrap()
+            .push(json!("git_comparison_changes"));
+        assert!(capabilities(&value).unwrap().git_comparison_changes);
+        value["git_comparison_changes"]["version"] = json!(2);
+        assert!(!capabilities(&value).unwrap().git_comparison_changes);
     }
     #[test]
     fn structured_cli_failures_keep_original_codes_and_generation_metadata() {

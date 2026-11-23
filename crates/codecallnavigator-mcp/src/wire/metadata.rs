@@ -7,28 +7,23 @@ use anyhow::{Result, ensure};
 use serde_json::Value;
 
 pub fn validate(value: &Value, operation: &str, bound: bool) -> Result<()> {
-    if matches!(
-        operation,
-        "compare" | "comparison_changes" | "class_flow_comparison"
-    ) {
-        return comparison_metadata(value);
+    match operation {
+        "compare" | "comparison_changes" | "class_flow_comparison" => comparison_metadata(value),
+        "flow_comparison" => flow_comparison_metadata(value),
+        "impact_preview" => impact_preview_metadata(value),
+        "git_comparison_changes" | "snapshot_status" => {
+            ensure!(
+                value["generation"].is_null() && value["freshness"].is_null(),
+                "{operation} unexpectedly claims an analyzed graph generation"
+            );
+            Ok(())
+        }
+        "explorer" if !bound && value["generation"].is_null() => Ok(()),
+        _ => analyzed_metadata(value, operation),
     }
-    if operation == "flow_comparison" {
-        return flow_comparison_metadata(value);
-    }
-    if operation == "snapshot_status" {
-        ensure!(
-            value["generation"].is_null() && value["freshness"].is_null(),
-            "Snapshot lookup unexpectedly claims a working generation"
-        );
-        return Ok(());
-    }
-    if operation == "impact_preview" {
-        return impact_preview_metadata(value);
-    }
-    if let ("explorer", false, true) = (operation, bound, value["generation"].is_null()) {
-        return Ok(());
-    }
+}
+
+fn analyzed_metadata(value: &Value, operation: &str) -> Result<()> {
     ensure!(
         value["freshness"].is_object(),
         "CLI omitted analyzed graph freshness"

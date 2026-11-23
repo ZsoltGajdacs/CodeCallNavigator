@@ -9,6 +9,7 @@ mod comparison;
 mod comparison_changes;
 mod flow_comparison;
 mod flow_expansion;
+mod git_comparison_changes;
 mod impact_preview;
 mod inference;
 mod linked_roots;

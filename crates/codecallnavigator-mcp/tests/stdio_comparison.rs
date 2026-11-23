@@ -4,6 +4,9 @@ use serde_json::{Value, json};
 use std::{fs, path::Path, process::Command};
 use support::{Client, LIBRARY, cli_query, cli_query_with, command, engine, typescript};
 
+const GRAPH_CHANGES: (&str, &str) = ("compare_changes", "comparison_changes");
+const SOURCE_CHANGES: (&str, &str) = ("compare_source_changes", "git_comparison_changes");
+
 fn git(root: &Path, args: &[&str]) {
     let output = Command::new("git")
         .arg("-C")
@@ -26,6 +29,7 @@ fn real_stdio_comparison_preserves_cli_pages_metadata_and_errors() {
     git(&root, &["init", "-q"]);
     git(&root, &["config", "user.email", "test@example.invalid"]);
     git(&root, &["config", "user.name", "MCP comparison acceptance"]);
+    fs::write(root.join(".git/info/exclude"), "/node_modules\n").unwrap();
     typescript(&root);
     fs::write(root.join("services.ts"), services("LegacyTax")).unwrap();
     git(
@@ -41,14 +45,8 @@ fn real_stdio_comparison_preserves_cli_pages_metadata_and_errors() {
     git(&root, &["commit", "-qm", "baseline"]);
     let engine = engine();
     let mut client = Client::launch(command(&engine, &root));
-    let tools = client.request("tools/list", json!({}));
-    assert!(
-        tools["result"]["tools"]
-            .as_array()
-            .unwrap()
-            .iter()
-            .any(|tool| tool["name"] == "compare_graphs")
-    );
+    check_comparison_tools(&mut client);
+    check_source_changes_without_graphs(&mut client, &engine, &root);
     check_retained_baseline(&mut client);
 
     replace_entry(&root, 7);
@@ -85,6 +83,71 @@ fn real_stdio_comparison_preserves_cli_pages_metadata_and_errors() {
     client.assert_shutdown();
 }
 
+fn check_comparison_tools(client: &mut Client) {
+    let reply = client.request("tools/list", json!({}));
+    let tools = reply["result"]["tools"].as_array().unwrap();
+    for name in ["compare_graphs", SOURCE_CHANGES.0] {
+        let tool = tools.iter().find(|tool| tool["name"] == name).unwrap();
+        assert_eq!(tool["annotations"]["readOnlyHint"], true);
+    }
+}
+
+fn check_source_changes_without_graphs(client: &mut Client, engine: &Path, root: &Path) {
+    let entry = root.join("entry.ts");
+    let original = fs::read(&entry).unwrap();
+    replace_entry(root, 17);
+    let notes = root.join("source-notes.txt");
+    fs::write(&notes, "worktree only\n").unwrap();
+
+    let first = compare_changes(
+        client,
+        (engine, root),
+        SOURCE_CHANGES,
+        json!({"base":"HEAD","selection":{"kind":"list","limit":1}}),
+    );
+    assert!(first["generation"].is_null());
+    assert!(first["result"]["graph_comparison_id"].is_null());
+    assert_eq!(first["result"]["total"], 2);
+    let base = &first["result"]["base"]["commit"];
+    let binding = &first["result"]["comparison_id"];
+    let next = compare_changes(
+        client,
+        (engine, root),
+        SOURCE_CHANGES,
+        json!({
+            "base":base, "expected_comparison":binding,
+            "selection":{"kind":"list","offset":1,"limit":1}
+        }),
+    );
+    let first_row = &first["result"]["changes"][0];
+    let next_row = &next["result"]["changes"][0];
+    let added = [first_row, next_row]
+        .into_iter()
+        .find(|row| row["file"] == "source-notes.txt")
+        .expect("untracked file row");
+    assert_eq!(added["status"], "added");
+    let request = json!({
+        "base":base, "expected_comparison":binding,
+        "selection":{"kind":"source_diff","id":added["id"]}
+    });
+    let diff = compare_changes(client, (engine, root), SOURCE_CHANGES, request.clone());
+    assert_eq!(diff["result"]["status"], "ready");
+    assert_eq!(diff["result"]["hunks"][0]["lines"][0]["kind"], "insert");
+    assert_eq!(
+        diff["result"]["hunks"][0]["lines"][0]["text"],
+        "worktree only\n"
+    );
+
+    replace_entry(root, 18);
+    let stale = client.call("compare_source_changes", request);
+    assert_eq!(
+        stale["structuredContent"]["error"]["code"],
+        "comparison_mismatch"
+    );
+    fs::write(&entry, original).unwrap();
+    fs::remove_file(&notes).unwrap();
+}
+
 fn check_retained_baseline(client: &mut Client) {
     let baseline = client.graph("refresh_graph", json!({}));
     assert_eq!(
@@ -117,8 +180,8 @@ fn services(implementation: &str) -> String {
 fn check_class_graph(client: &mut Client, engine: &Path, root: &Path, binding: &Value) -> Value {
     let changes = compare_changes(
         client,
-        engine,
-        root,
+        (engine, root),
+        GRAPH_CHANGES,
         json!({"base":"HEAD","selection":{"kind":"list"}}),
     );
     let checkout = changes["result"]["changes"]
@@ -153,8 +216,8 @@ fn check_class_graph(client: &mut Client, engine: &Path, root: &Path, binding: &
 fn check_change_summary(client: &mut Client, engine: &Path, root: &Path) -> Value {
     let first = compare_changes(
         client,
-        engine,
-        root,
+        (engine, root),
+        GRAPH_CHANGES,
         json!({
             "base":"HEAD", "selection":{"kind":"list","limit":1}
         }),
@@ -163,8 +226,8 @@ fn check_change_summary(client: &mut Client, engine: &Path, root: &Path) -> Valu
     let binding = first["result"]["comparison_id"].clone();
     let next = compare_changes(
         client,
-        engine,
-        root,
+        (engine, root),
+        GRAPH_CHANGES,
         json!({
             "base":"HEAD", "expected_comparison":binding,
             "selection":{"kind":"list","offset":first["result"]["next_offset"],"limit":1}
@@ -174,8 +237,8 @@ fn check_change_summary(client: &mut Client, engine: &Path, root: &Path) -> Valu
 
     let complete = compare_changes(
         client,
-        engine,
-        root,
+        (engine, root),
+        GRAPH_CHANGES,
         json!({
             "base":"HEAD", "selection":{"kind":"list"}
         }),
@@ -193,8 +256,8 @@ fn check_change_summary(client: &mut Client, engine: &Path, root: &Path) -> Valu
         .expect("the added function was returned");
     let source = compare_changes(
         client,
-        engine,
-        root,
+        (engine, root),
+        GRAPH_CHANGES,
         json!({
             "base":"HEAD", "expected_comparison":binding,
             "selection":{"kind":"source_diff","id":changed["id"]}
@@ -217,9 +280,14 @@ fn check_change_summary(client: &mut Client, engine: &Path, root: &Path) -> Valu
     binding
 }
 
-fn compare_changes(client: &mut Client, engine: &Path, root: &Path, mut arguments: Value) -> Value {
-    let reply = client.graph("compare_changes", arguments.clone());
-    arguments["kind"] = json!("comparison_changes");
+fn compare_changes(
+    client: &mut Client,
+    (engine, root): (&Path, &Path),
+    (tool, operation): (&str, &str),
+    mut arguments: Value,
+) -> Value {
+    let reply = client.graph(tool, arguments.clone());
+    arguments["kind"] = json!(operation);
     assert_eq!(reply, cli_query(engine, root, arguments));
     reply
 }

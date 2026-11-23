@@ -200,7 +200,11 @@ impl Header {
     }
 }
 fn digest(value: &str) -> bool {
-    value.len() == 64 && value.bytes().all(|byte| byte.is_ascii_hexdigit())
+    is_hex_id(value, 64)
+}
+
+pub(super) fn is_hex_id(value: &str, length: usize) -> bool {
+    value.len() == length && value.bytes().all(|byte| byte.is_ascii_hexdigit())
 }
 pub(super) fn endpoint(endpoint: &Endpoint) -> anyhow::Result<()> {
     ensure!(digest(&endpoint.digest), "Invalid CLI artifact digest");

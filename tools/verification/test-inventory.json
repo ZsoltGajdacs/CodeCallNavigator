@@ -2246,6 +2246,66 @@
       "purpose": "typescript file groups are identified as files"
     },
     {
+      "id": "codecallnavigator-core/lib:codecallnavigator_core::artifact::comparison_changes::git::tests::git_attribution_ignores_compiler_renumbering_and_matches_changed_method",
+      "runner": "rust",
+      "file": "crates/codecallnavigator-core/src/artifact/comparison_changes/git.rs",
+      "test_name": "artifact::comparison_changes::git::tests::git_attribution_ignores_compiler_renumbering_and_matches_changed_method",
+      "ignored": false,
+      "package": "codecallnavigator-core",
+      "target_kind": "lib",
+      "target": "codecallnavigator_core",
+      "component": "core",
+      "category": "unit",
+      "requirements": [],
+      "purpose": "Git edits drive the outline despite unrelated compiler IDs, and CRLF maps to verified method spans"
+    },
+    {
+      "id": "codecallnavigator-core/lib:codecallnavigator_core::artifact::comparison_changes::git::tests::git_attribution_keeps_file_diff_without_matching_snapshots",
+      "runner": "rust",
+      "file": "crates/codecallnavigator-core/src/artifact/comparison_changes/git.rs",
+      "test_name": "artifact::comparison_changes::git::tests::git_attribution_keeps_file_diff_without_matching_snapshots",
+      "ignored": false,
+      "package": "codecallnavigator-core",
+      "target_kind": "lib",
+      "target": "codecallnavigator_core",
+      "component": "core",
+      "category": "unit",
+      "requirements": [],
+      "purpose": "Stale saved files cannot attribute source edits or hide the captured file diff"
+    },
+    {
+      "id": "codecallnavigator-core/lib:codecallnavigator_core::artifact::revision::source_changes_tests::source_capture_keeps_link_and_mode_changes_as_metadata",
+      "runner": "rust",
+      "file": "crates/codecallnavigator-core/src/artifact/revision/source_changes_tests.rs",
+      "test_name": "artifact::revision::source_changes_tests::source_capture_keeps_link_and_mode_changes_as_metadata",
+      "ignored": false,
+      "package": "codecallnavigator-core",
+      "target_kind": "lib",
+      "target": "codecallnavigator_core",
+      "component": "core",
+      "category": "integration",
+      "requirements": [
+        "git"
+      ],
+      "purpose": "Real Git mode-only and symlink edits keep metadata without following escaped paths or reporting unchanged recreated links"
+    },
+    {
+      "id": "codecallnavigator-core/lib:codecallnavigator_core::artifact::revision::source_changes_tests::source_capture_uses_net_worktree_paths_and_exact_commit_blobs",
+      "runner": "rust",
+      "file": "crates/codecallnavigator-core/src/artifact/revision/source_changes_tests.rs",
+      "test_name": "artifact::revision::source_changes_tests::source_capture_uses_net_worktree_paths_and_exact_commit_blobs",
+      "ignored": false,
+      "package": "codecallnavigator-core",
+      "target_kind": "lib",
+      "target": "codecallnavigator_core",
+      "component": "core",
+      "category": "integration",
+      "requirements": [
+        "git"
+      ],
+      "purpose": "Real Git staged and unstaged checkout state, untracked and ignored paths, nested repositories, binary data, exact commit blobs and content binding"
+    },
+    {
       "id": "codecallnavigator-core/test:architecture::build_relative_rules_keep_dotted_java_directory_names",
       "runner": "rust",
       "file": "crates/codecallnavigator-core/tests/architecture.rs",
@@ -7468,6 +7528,23 @@
         "git"
       ],
       "purpose": "session and oneshot match without using or mutating current graph"
+    },
+    {
+      "id": "codecallnavigator-engine/test:flow_comparison::git_source_pages_survive_missing_graphs_and_require_reload_after_edits",
+      "runner": "rust",
+      "file": "crates/codecallnavigator-engine/tests/flow_comparison.rs",
+      "test_name": "git_source_pages_survive_missing_graphs_and_require_reload_after_edits",
+      "ignored": false,
+      "package": "codecallnavigator-engine",
+      "target_kind": "test",
+      "target": "flow_comparison",
+      "component": "engine",
+      "category": "acceptance",
+      "requirements": [
+        "cli",
+        "git"
+      ],
+      "purpose": "Git source-only CLI paging and previews revalidate the effective Worktree and allow reload without analysis"
     },
     {
       "id": "codecallnavigator-engine/test:flow_expansion_query::expansion_cli_is_generation_bound_and_keeps_ordinary_flow_unchanged",
@@ -14953,6 +15030,22 @@
       "category": "unit",
       "requirements": [],
       "purpose": "warnings and new generations override success"
+    },
+    {
+      "id": "codecallnavigator/bin:codecallnavigator::flow_comparison::tests::git_outline_remains_usable_without_graph_and_reloads_after_worktree_edit",
+      "runner": "rust",
+      "file": "src/flow_comparison/tests.rs",
+      "test_name": "flow_comparison::tests::git_outline_remains_usable_without_graph_and_reloads_after_worktree_edit",
+      "ignored": false,
+      "package": "codecallnavigator",
+      "target_kind": "bin",
+      "target": "codecallnavigator",
+      "component": "ui",
+      "category": "integration",
+      "purpose": "Open a Git file diff without saved graphs and reject a cached Worktree preview after an edit until Reload captures the new source.",
+      "requirements": [
+        "git"
+      ]
     },
     {
       "id": "codecallnavigator/test:aspnet_routes::custom_endpoint_http_method_metadata_blocks_unproved_request_methods",

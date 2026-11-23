@@ -174,7 +174,11 @@ impl Outline<'_> {
             }
             _ => state.flow_comparison.selected_change_id() == Some(change.id.as_str()),
         };
-        let action = ChangeAction::new(change, &key);
+        let action = ChangeAction::new(
+            change,
+            &key,
+            state.flow_comparison.change_flow_ready(change),
+        );
         let path = item.path.map(|(before, after)| match (before, after) {
             (Some("possible"), _) | (_, Some("possible")) => " · Possible path",
             (None, Some(_)) => " · After only",
@@ -217,11 +221,11 @@ enum ChangeAction {
 }
 
 impl ChangeAction {
-    fn new(change: &Change, anchor: &str) -> Option<Self> {
+    fn new(change: &Change, anchor: &str, graph_ready: bool) -> Option<Self> {
         Some(match change.kind {
-            ChangeKind::Class => Self::Class(change.id.clone()),
-            ChangeKind::Method => Self::Method(change.symbol.clone()?),
-            ChangeKind::File => Self::File {
+            ChangeKind::Class if graph_ready => Self::Class(change.id.clone()),
+            ChangeKind::Method if graph_ready => Self::Method(change.symbol.clone()?),
+            _ => Self::File {
                 id: change.id.clone(),
                 anchor: anchor.into(),
             },

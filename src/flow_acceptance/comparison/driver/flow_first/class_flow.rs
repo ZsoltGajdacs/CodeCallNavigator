@@ -106,7 +106,7 @@ impl Driver {
         Ok(())
     }
 
-    fn outline_class_key(&self, runtime: &Runtime<State>) -> Result<Option<String>> {
+    pub(super) fn outline_class_key(&self, runtime: &Runtime<State>) -> Result<Option<String>> {
         let id = runtime
             .state
             .flow_comparison

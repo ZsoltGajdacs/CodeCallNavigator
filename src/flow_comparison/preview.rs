@@ -2,9 +2,7 @@
 mod class;
 
 use super::{
-    Panel, Side, SideId, Workspace,
-    requests::{Clock, StringError},
-    work::Tracked,
+    Panel, Side, SideId, Workspace, changes::OutlineBinding, requests::Clock, work::Tracked,
 };
 use crate::engine_client::flow_comparison::{Error, Hunk, SourceDiff, SourceStatus};
 use rune::{Latest, Waker};
@@ -35,6 +33,7 @@ pub enum PreviewTarget {
     Step(SideId, usize),
     Row(String),
     Class(SideId, String),
+    ClassEdit(String),
 }
 
 struct DiffCache {
@@ -79,6 +78,20 @@ impl Previews {
             .find(|cache| cache.id == id)
             .map(|cache| cache.result.as_ref().map_err(String::as_str))
     }
+
+    pub fn preview_diff(&self, id: &str) -> Option<Result<&SourceDiff, &str>> {
+        if self.source_id.as_deref() == Some(id) {
+            return None;
+        }
+        self.diff(id)
+    }
+
+    fn needs_source(&self, id: &str, revalidate: bool) -> bool {
+        if self.source_id.as_deref() == Some(id) {
+            return false;
+        }
+        revalidate || self.diff(id).is_none()
+    }
 }
 
 impl Workspace {
@@ -87,7 +100,7 @@ impl Workspace {
             job.map(|(id, result)| {
                 let result = match result {
                     Err(error) if mismatch(&error) => {
-                        self.failed(StringError::Query(error));
+                        self.change_binding_mismatch(error);
                         return;
                     }
                     result => result,
@@ -115,7 +128,7 @@ impl Workspace {
             anchor,
             target: PreviewTarget::Row(id.clone()),
         });
-        self.request_change_source(id);
+        self.request_change_source(id, true);
     }
 
     pub(super) fn prefetch_selected_source(&mut self) {
@@ -125,18 +138,20 @@ impl Workspace {
 
     fn prefetch_method_hunks(&mut self) {
         if let Some(id) = self.function_change_id().map(str::to_owned) {
-            self.request_change_source(id);
+            self.request_change_source(id, false);
         }
     }
 
-    fn request_change_source(&mut self, id: String) {
-        if self.worktree_refresh.pending() {
-            return;
-        }
-        let Some(bound) = self.binding.clone() else {
+    fn request_change_source(&mut self, id: String, opening_preview: bool) {
+        let Some(bound) = self.outline_binding() else {
             return;
         };
-        if self.previews.source_id.as_deref() == Some(&id) || self.previews.diff(&id).is_some() {
+        if matches!(&bound, OutlineBinding::Legacy(_)) && self.worktree_refresh.pending() {
+            return;
+        }
+        let revalidate = opening_preview
+            && matches!(&bound, OutlineBinding::Git(source) if source.is_worktree());
+        if !self.previews.needs_source(&id, revalidate) {
             return;
         }
         self.previews.source_id = Some(id.clone());
@@ -158,7 +173,7 @@ impl Workspace {
             anchor,
             target: PreviewTarget::Step(side, index),
         });
-        self.request_change_source(id);
+        self.request_change_source(id, true);
     }
 
     pub fn end_step_hover(&mut self, anchor: &str) {
@@ -194,7 +209,9 @@ impl Workspace {
             match target {
                 PreviewTarget::Step(side, index) => self.show_step_preview(side, index, key.into()),
                 PreviewTarget::Class(side, id) => self.show_class_preview(side, id, key.into()),
-                PreviewTarget::Row(_) => unreachable!("outline rows are not canvas focus"),
+                PreviewTarget::Row(_) | PreviewTarget::ClassEdit(_) => {
+                    unreachable!("canvas focus resolves through the active selection")
+                }
             }
         }
         true

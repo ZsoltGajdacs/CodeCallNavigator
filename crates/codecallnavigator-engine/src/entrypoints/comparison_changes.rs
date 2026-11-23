@@ -57,21 +57,43 @@ fn execute(
         comparison_id: &pair.comparison_id,
     };
     let reply = Reply {
-        generation: &pair.after.endpoint.digest,
+        generation: Some(&pair.after.endpoint.digest),
         freshness: freshness.as_ref(),
     };
+    respond_selection(
+        (&reply, header),
+        ChangeRows {
+            rows: &comparison.changes,
+            entry_point_search_complete: comparison.entry_point_search_complete,
+        },
+        selection,
+        |id| comparison.source_diff(id),
+    )
+}
+
+pub(super) struct ChangeRows<'a> {
+    pub rows: &'a [Change],
+    pub entry_point_search_complete: bool,
+}
+
+pub(super) fn respond_selection<'a>(
+    (reply, header): (&Reply<'_>, impl Serialize),
+    changes: ChangeRows<'a>,
+    selection: &ComparisonChangesSelection,
+    source_diff: impl FnOnce(&str) -> Option<SourceDiff<'a>>,
+) -> Result<Response> {
     match selection {
         ComparisonChangesSelection::List { offset, limit } => list(
             header,
-            &comparison,
-            &reply,
+            changes,
+            reply,
             PageWindow {
                 offset: *offset,
                 limit: *limit,
             },
         ),
         ComparisonChangesSelection::SourceDiff { id } => {
-            let diff = comparison.source_diff(id).ok_or_else(|| {
+            let diff = source_diff(id).ok_or_else(|| {
                 Error::new("selection_unavailable", "No such change in this comparison")
             })?;
             reply.finish_with(
@@ -86,7 +108,10 @@ fn execute(
     }
 }
 
-fn validate(endpoints: &EndpointRequest<'_>, selection: &ComparisonChangesSelection) -> Result<()> {
+pub(super) fn validate(
+    endpoints: &EndpointRequest<'_>,
+    selection: &ComparisonChangesSelection,
+) -> Result<()> {
     endpoints.validate_base()?;
     endpoints.validate_references()?;
     endpoints.validate_expected()?;
@@ -125,9 +150,9 @@ struct Coverage {
 }
 
 #[derive(Serialize)]
-struct Page<'a> {
+struct Page<'a, H> {
     #[serde(flatten)]
-    header: Header<'a>,
+    header: H,
     kind: &'static str,
     coverage: Coverage,
     changes: Vec<&'a Change>,
@@ -140,9 +165,9 @@ struct Page<'a> {
 }
 
 #[derive(Serialize)]
-struct SourceResult<'a> {
+struct SourceResult<'a, H> {
     #[serde(flatten)]
-    header: Header<'a>,
+    header: H,
     kind: &'static str,
     #[serde(flatten)]
     diff: SourceDiff<'a>,
@@ -154,8 +179,8 @@ struct PageWindow {
 }
 
 fn list(
-    header: Header<'_>,
-    comparison: &Comparison,
+    header: impl Serialize,
+    changes: ChangeRows<'_>,
     reply: &Reply<'_>,
     window: PageWindow,
 ) -> Result<Response> {
@@ -164,19 +189,19 @@ fn list(
         header,
         kind: "list",
         coverage: Coverage {
-            entry_point_search_complete: comparison.entry_point_search_complete,
+            entry_point_search_complete: changes.entry_point_search_complete,
         },
         changes: Vec::new(),
         offset,
         limit,
         // Reserve enough bytes for any actual pagination counters.
         returned: limit,
-        total: comparison.changes.len(),
+        total: changes.rows.len(),
         more: false,
         next_offset: Some(usize::MAX),
     };
     let mut used = reply.size(&page)?.ok_or_else(too_large)?;
-    for change in comparison.changes.iter().skip(offset).take(limit) {
+    for change in changes.rows.iter().skip(offset).take(limit) {
         let remaining = MAX_RESPONSE_BYTES.saturating_sub(used).saturating_sub(1);
         let Some(size) = response_encoding::record_size(change, remaining)? else {
             if page.changes.is_empty() {

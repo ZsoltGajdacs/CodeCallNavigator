@@ -45,7 +45,7 @@ fn execute(request: &Request, endpoints: EndpointRequest<'_>, id: &str) -> Resul
     let freshness =
         endpoints.freshness(request, &pair.after.artifact, &pair.after.endpoint.digest)?;
     let reply = Reply {
-        generation: &pair.after.endpoint.digest,
+        generation: Some(&pair.after.endpoint.digest),
         freshness: freshness.as_ref(),
     };
     reply.finish_with(

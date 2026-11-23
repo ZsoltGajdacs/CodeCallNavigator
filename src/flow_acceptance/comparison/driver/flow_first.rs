@@ -6,6 +6,9 @@ use crate::flow_comparison::SideId;
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(super) enum Step {
     Outline,
+    OpenFile,
+    FileDiff,
+    RestoreOutline,
     HoverOutlineClass,
     OutlineClassHovered,
     FocusOutlineClass,
@@ -29,12 +32,52 @@ impl Driver {
         step: Step,
     ) -> Result<()> {
         match step {
+            Step::OpenFile => self.open_changed_file(runtime),
+            Step::RestoreOutline => self.restore_outline(runtime),
             Step::SelectMethod => self.open_method_change(runtime, Step::Hover),
             Step::Hover => self.hover_call(runtime),
             Step::Focus => self.focus_call(runtime),
             Step::ReturnToMethod => self.open_method_change(runtime, Step::ReturnedToMethod),
             _ => self.class_flow_action(runtime, step),
         }
+    }
+
+    fn open_changed_file(&mut self, runtime: &mut Runtime<State>) -> Result<()> {
+        use crate::engine_client::flow_comparison::ChangeKind;
+        let rows = &runtime.state.flow_comparison.changes.rows;
+        let file = rows
+            .iter()
+            .find(|row| row.symbol.as_deref() == Some(self.config.cases[0].symbol.as_str()))
+            .and_then(|method| {
+                rows.iter()
+                    .find(|row| row.kind == ChangeKind::File && row.file == method.file)
+            })
+            .context("Git outline omitted the changed method's file row")?;
+        if let Some(key) = change_key(runtime, &file.id) {
+            self.click(runtime, &key, Phase::FlowFirst(Step::FileDiff));
+        } else {
+            self.input
+                .scroll_pane(runtime, "comparison-change-rows", 0.0);
+        }
+        Ok(())
+    }
+
+    fn restore_outline(&mut self, runtime: &mut Runtime<State>) -> Result<()> {
+        if runtime.state.flow_comparison.previews.active.is_some() {
+            runtime.key(rune::KeyEvent {
+                key: rune::Key::Escape,
+                mods: rune::Mods::default(),
+            });
+            return Ok(());
+        }
+        if self.outline_class_key(runtime)?.is_some() && self.method_change_key(runtime)?.is_some()
+        {
+            self.phase = Phase::FlowFirst(Step::HoverOutlineClass);
+        } else {
+            self.input
+                .scroll_pane(runtime, "comparison-change-rows", 160.0);
+        }
+        Ok(())
     }
 
     fn method_change_key(&self, runtime: &Runtime<State>) -> Result<Option<String>> {
@@ -91,13 +134,8 @@ impl Driver {
         runtime: &Runtime<State>,
         step: Step,
     ) -> Result<()> {
-        let comparison = &runtime.state.flow_comparison;
         match step {
-            Step::Outline if comparison.changes.loaded && comparison.current.is_some() => {
-                verify_outline(runtime)?;
-                self.report.check("changes_outline_drawn_and_auto_selected");
-                self.phase = Phase::FlowFirst(Step::HoverOutlineClass);
-            }
+            Step::Outline | Step::FileDiff => self.file_outline_observed(runtime, step)?,
             Step::Hovered if preview_drawn(runtime, "Leaf(2)") => {
                 self.report.check("unified_diff_drawn_on_hover");
                 self.phase = Phase::FlowFirst(Step::Focus);
@@ -119,10 +157,31 @@ impl Driver {
         }
         Ok(())
     }
+
+    fn file_outline_observed(&mut self, runtime: &Runtime<State>, step: Step) -> Result<()> {
+        let comparison = &runtime.state.flow_comparison;
+        match step {
+            Step::Outline if comparison.changes.loaded && comparison.current.is_some() => {
+                verify_outline(runtime)?;
+                self.report.check("changes_outline_drawn_and_auto_selected");
+                self.phase = Phase::FlowFirst(Step::OpenFile);
+            }
+            Step::FileDiff if preview_drawn(runtime, "Leaf(2)") => {
+                self.report.check("git_file_diff_drawn_from_outline");
+                self.phase = Phase::FlowFirst(Step::RestoreOutline);
+            }
+            _ => {}
+        }
+        Ok(())
+    }
 }
 
 fn verify_outline(runtime: &Runtime<State>) -> Result<()> {
     let comparison = &runtime.state.flow_comparison;
+    ensure!(
+        comparison.git_outline(),
+        "Native outline did not use Git source comparison"
+    );
     let elements = runtime.elements();
     ensure!(
         elements.iter().any(|el| {
@@ -140,7 +199,7 @@ fn verify_outline(runtime: &Runtime<State>) -> Result<()> {
         .changes
         .rows
         .iter()
-        .find(|row| row.flow_available);
+        .find(|row| row.flow_available && row.symbol.is_some());
     ensure!(
         first.and_then(|row| row.symbol.as_deref())
             == comparison

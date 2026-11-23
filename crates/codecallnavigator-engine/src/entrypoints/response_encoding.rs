@@ -8,7 +8,7 @@ use serde_json::Value;
 use std::io::{self, Write};
 
 pub(super) struct Reply<'a> {
-    pub generation: &'a str,
+    pub generation: Option<&'a str>,
     pub freshness: Option<&'a Value>,
 }
 #[derive(Serialize)]
@@ -23,7 +23,7 @@ impl Reply<'_> {
     pub fn size(&self, result: &impl Serialize) -> Result<Option<usize>> {
         let envelope = Envelope {
             version: query::VERSION,
-            generation: Some(self.generation),
+            generation: self.generation,
             freshness: self.freshness,
             result: Some(result),
             error: None,
@@ -40,7 +40,7 @@ impl Reply<'_> {
         }
         Ok(Response {
             version: query::VERSION,
-            generation: Some(self.generation.into()),
+            generation: self.generation.map(str::to_owned),
             freshness: self.freshness.cloned(),
             result: Some(serde_json::to_value(result).map_err(serialization)?),
             error: None,

@@ -253,6 +253,6 @@ impl Workspace {
         self.binding = Some(bound);
         self.catalog = Some(std::sync::Arc::new(page));
         self.phase = super::Phase::Bound;
-        self.load_change_list(0);
+        self.open_change_list();
     }
 }
