@@ -168,6 +168,7 @@ impl<'a, 'snapshot> Outline<'a, 'snapshot> {
             id: stable_id("method", &[&node.id]),
             kind: ChangeKind::Method,
             name: display_signature(node),
+            name_details: Some(NameDetails::method(node)),
             file: display_path(file.2).to_owned(),
             status: method.status(),
             changes_in: method.facts,
@@ -200,12 +201,19 @@ impl<'a, 'snapshot> Outline<'a, 'snapshot> {
             .flatten()
             .copied();
         let entry_points = self.routes(old_members, new_members);
+        let after_present = self.after.has_class(&class);
+        let naming_snapshot = if after_present {
+            self.after
+        } else {
+            self.before
+        };
         let row = Change {
             id: class.id(),
             kind: ChangeKind::Class,
             name: class.name().to_owned(),
+            name_details: Some(class.name_details(naming_snapshot.class_visibility(&class))),
             file: display_path(facts.file.2).to_owned(),
-            status: Status::between(self.before.has_class(&class), self.after.has_class(&class)),
+            status: Status::between(self.before.has_class(&class), after_present),
             changes_in: facts.facets.into_iter().collect(),
             entry_points,
             class_id: None,
@@ -220,6 +228,7 @@ impl<'a, 'snapshot> Outline<'a, 'snapshot> {
             id: stable_id("file", &[file.0, file.1, file.2]),
             kind: ChangeKind::File,
             name: file.2.rsplit('/').next().unwrap_or(file.2).to_owned(),
+            name_details: None,
             file: display_path(file.2).to_owned(),
             status: Status::between(
                 self.before.file(file).is_some(),

@@ -15,6 +15,9 @@ pub fn view(state: &State, cx: &mut Cx<State>) -> El {
     let k = theme::kit(cx.system_dark());
     let body = col()
         .key("comparison-workspace")
+        .on_layout(|s: &mut State, rect| {
+            s.flow_comparison.previews.interaction.window = [rect[2], rect[3]];
+        })
         .w_full()
         .h_full()
         .min_h(0.0)
@@ -38,7 +41,7 @@ pub fn view(state: &State, cx: &mut Cx<State>) -> El {
     };
     let mut overlays = Vec::new();
     if state.flow_comparison.controls.panel == Panel::Flows {
-        overlays.extend(source_diff::layer(state, &k));
+        overlays.extend(source_diff::layer(state, cx, &k));
     }
     overlays.extend(catalog::layers(state, &k));
     overlays.extend(revisions::layers(state, &k));

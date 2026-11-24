@@ -24,6 +24,7 @@ pub(super) fn symbol(node: &Node) -> Symbol<'_> {
         symbol: &node.id,
         label: &node.label,
         signature: &node.signature,
+        visibility: node.visibility,
         line: node.line,
         body_unavailable: node.body_unavailable,
         owner: Owner {

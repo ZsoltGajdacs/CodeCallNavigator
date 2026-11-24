@@ -52,8 +52,9 @@ impl ClassPreview {
 }
 
 impl Workspace {
-    pub fn show_class_preview(&mut self, side: SideId, id: String, anchor: String) {
+    pub(super) fn show_class_preview(&mut self, side: SideId, id: String, anchor: String) {
         if self.is_git_class_edit(&id) {
+            self.previews.class.cancel_request();
             self.previews.active = Some(Preview {
                 anchor,
                 target: PreviewTarget::ClassEdit(id.clone()),
@@ -84,11 +85,14 @@ impl Workspace {
             target: PreviewTarget::Class(side, id),
         });
         let class = &mut self.previews.class;
-        if class.pending.as_ref() == Some(&key)
-            || class
-                .result
-                .as_ref()
-                .is_some_and(|(cached, _)| *cached == key)
+        if class.pending.as_ref() == Some(&key) {
+            return;
+        }
+        class.cancel_request();
+        if class
+            .result
+            .as_ref()
+            .is_some_and(|(cached, _)| *cached == key)
         {
             return;
         }

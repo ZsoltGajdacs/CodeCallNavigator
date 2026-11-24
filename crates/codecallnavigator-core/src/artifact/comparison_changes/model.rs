@@ -1,3 +1,4 @@
+use crate::model::{Node, Visibility};
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
@@ -55,6 +56,8 @@ pub struct Change {
     pub id: String,
     pub kind: ChangeKind,
     pub name: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub name_details: Option<NameDetails>,
     pub file: String,
     pub status: Status,
     pub changes_in: Vec<Facet>,
@@ -65,6 +68,24 @@ pub struct Change {
     pub symbol: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub flow_available: Option<bool>,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub struct NameDetails {
+    pub label: String,
+    pub description: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub visibility: Option<Visibility>,
+}
+
+impl NameDetails {
+    pub(super) fn method(node: &Node) -> Self {
+        Self {
+            label: node.label.clone(),
+            description: node.signature.clone(),
+            visibility: node.visibility,
+        }
+    }
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]

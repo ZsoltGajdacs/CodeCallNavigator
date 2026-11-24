@@ -2,12 +2,15 @@
 use super::{
     click,
     flow_comparison_fixture::{choose, runtime},
-    flow_comparisons::{choose_revision, edit, load, settle},
+    flow_comparisons::{choose_revision, edit, load, open_catalog, settle},
 };
 use crate::{
-    engine_client::flow_comparison::CorrespondenceKind,
+    app::State,
+    engine_client::flow_comparison::{CatalogSide, CorrespondenceKind},
     flow_comparison::{Side, SnapshotSide},
 };
+use codecallnavigator::model::Visibility;
+use rune::Runtime;
 fn text(runtime: &rune::Runtime<crate::app::State>, needle: &str) -> bool {
     runtime
         .elements()
@@ -16,15 +19,20 @@ fn text(runtime: &rune::Runtime<crate::app::State>, needle: &str) -> bool {
 }
 #[test]
 fn explicit_counterpart_reset_and_search_keep_exact_identity_actions() {
-    let data = crate::flow_scenes::data();
+    let mut data = crate::flow_scenes::data();
+    for node in &mut data.nodes {
+        node.label = "process".into();
+        node.visibility = Some(Visibility::Public);
+    }
     let (mut ui, _project) = runtime(data.clone(), data, true);
     load(&mut ui);
-    let symbol = choose(&mut ui, "load(");
+    let symbol = select_named_identity(&mut ui, "load(");
     click(&mut ui, "comparison-choose-after");
     edit(&mut ui, "comparison-search", "save");
     click(&mut ui, "comparison-search-submit");
     settle(&mut ui);
-    let target = choose(&mut ui, "save(");
+    let target = select_named_identity(&mut ui, "save(");
+    assert_ne!(symbol, target);
     let pair = ui.state.flow_comparison.current.as_ref().unwrap();
     assert_eq!(pair.selection.symbol, symbol);
     assert_eq!(pair.selection.head_symbol.as_deref(), Some(target.as_str()));
@@ -38,6 +46,31 @@ fn explicit_counterpart_reset_and_search_keep_exact_identity_actions() {
     assert!(pair.selection.head_symbol.is_none());
     assert_eq!(pair.correspondence.kind, CorrespondenceKind::Exact);
 }
+
+fn select_named_identity(runtime: &mut Runtime<State>, signature: &str) -> String {
+    open_catalog(runtime);
+    let page = runtime.state.flow_comparison.catalog.as_ref().unwrap();
+    let record = page
+        .records
+        .iter()
+        .find(|record| {
+            matches!(&record.before, CatalogSide::Present(side) if side.node.as_ref().is_some_and(|node| node.signature.starts_with(signature)))
+        })
+        .unwrap();
+    let symbol = record.symbol.clone();
+    let key = format!("comparison-record-{symbol}");
+    let row = runtime
+        .elements()
+        .into_iter()
+        .find(|element| element.key.as_deref() == Some(&key))
+        .unwrap();
+    assert_eq!(row.label.as_deref(), Some("+ process"));
+    assert!(row.help.unwrap().contains(signature));
+    click(runtime, &key);
+    settle(runtime);
+    symbol
+}
+
 #[test]
 fn catalog_paging_and_search_reset_use_returned_cursors() {
     let mut data = crate::flow_scenes::data();

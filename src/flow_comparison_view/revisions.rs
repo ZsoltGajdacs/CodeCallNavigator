@@ -47,7 +47,7 @@ pub(super) fn layers(state: &State, k: &Kit) -> Vec<El> {
         .key("comparison-revisions")
         .label(format!("{} revision", side.label()))
         .role("dialog")
-        .w(640.0_f32.min((state.source_popup.window[0] - 24.0).max(320.0)))
+        .w(640.0_f32.min((state.source_popup.interaction.window[0] - 24.0).max(320.0)))
         .h(430.0)
         .min_h(0.0)
         .padding(12.0)

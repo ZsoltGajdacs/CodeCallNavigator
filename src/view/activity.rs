@@ -211,7 +211,7 @@ fn details_layer(state: &State, k: &Kit, layers: &mut Vec<El>, summary: &model::
         .label("Analysis details")
         .focus_return("activity-details")
         .modal(true, State::close_overlay)
-        .w(480.0_f32.min((state.source_popup.window[0] - 24.0).max(1.0)))
+        .w(480.0_f32.min((state.source_popup.interaction.window[0] - 24.0).max(1.0)))
         .min_h(0.0)
         .child(
             row()

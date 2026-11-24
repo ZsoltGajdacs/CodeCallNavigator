@@ -73,7 +73,13 @@ class SelectedResourceTests(unittest.TestCase):
             for name, version in [('typescript', '6.0.2'), ('react', '19.1.0'), ('next', '16.1.0')]:
                 (root / name).mkdir()
                 (root / name / 'package.json').write_text('{"version":"' + version + '"}')
+            compiler = root / 'typescript/index.js'
+            compiler.write_text("exports.version = '6.0.2';")
             self.assertEqual(configured_problems(root, {'typescript'}, None, environment), [])
+            compiler.write_text("exports.version = '6.0.3';")
+            self.assertIn('reports 6.0.3; package.json declares 6.0.2',
+                          configured_problems(root, {'typescript'}, None, environment)[0])
+            compiler.write_text("exports.version = '5.9.3';")
             (root / 'typescript/package.json').write_text('{"version":"5.9.3"}')
             self.assertEqual(configured_problems(root, {'typescript'}, None, environment), [])
             (root / 'typescript/package.json').write_text('{"version":"5.8.3"}')

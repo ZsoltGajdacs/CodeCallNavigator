@@ -19440,7 +19440,9 @@
       "component": "tooling",
       "category": "integration",
       "purpose": "Check selected dependency resources against real temporary package and project files",
-      "requirements": []
+      "requirements": [
+        "node"
+      ]
     },
     {
       "id": "tests/test_test_inventory.py::InventoryPolicyTests.test_compiled_lists_reject_missing_and_unclassified_tests",
@@ -19813,7 +19815,9 @@
       "ignored": false,
       "component": "tooling",
       "category": "integration",
-      "requirements": [],
+      "requirements": [
+        "node"
+      ],
       "purpose": "test full dependency preflight accepts complete inputs and rejects wrong versions"
     },
     {

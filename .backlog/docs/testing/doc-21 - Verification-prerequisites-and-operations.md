@@ -3,7 +3,7 @@ id: doc-21
 title: Verification prerequisites and operations
 type: guide
 created_date: '2026-11-16T07:06:00Z'
-updated_date: '2026-11-19T07:55:00Z'
+updated_date: '2026-11-23T21:36:00Z'
 ---
 # Verification prerequisites and operations
 
@@ -17,12 +17,20 @@ current directory when invoked by its absolute path:
 ```sh
 ./verify-changes.sh
 ./verify-changes.sh --format json
+./verify-changes.sh --preflight
 ./verify-changes.sh --phase development --run
 ./verify-changes.sh --run
 ./verify-changes.sh --base origin/main --run
 ```
 
-The script reports by default and executes only with `--run`. Agents use
+The script reports by default and executes the build and test plan only with `--run`.
+Use `--preflight` to check the same selected inputs without building or creating an evidence directory.
+A focused final run checks all selected suite inputs together before any compilation.
+For plans that need Graphviz, the selector reads `analyzers.lock.json` and uses a matching
+installed Homebrew version when the default `dot` differs. The selected version also applies
+to package and test subprocesses. Configure the explicit fixture and profile inputs below.
+
+Agents use
 `--phase development --run` during implementation and fixes. It runs the
 applicable unit tests and their build/setup/cleanup only. An empty unit selection
 creates no evidence directory. Development evidence names its phase and identifies
@@ -75,7 +83,8 @@ export CODECALLNAVIGATOR_VERIFY_PROFILE_SOURCE="/absolute/path/to/saved-applicat
 ```
 
 The modules directory must contain stable TypeScript 5.9.x or 6.0.x, React 19 and Next 16 fixture
-dependencies. The runner supplies the matching
+dependencies. Preflight loads the TypeScript compiler with Node and checks that its version matches the
+package manifest. The runner supplies the matching
 `CODECALLNAVIGATOR_TEST_TYPESCRIPT_ROOT` and engine binary paths; conflicting
 TypeScript settings fail preflight. The private Recurring Billing acceptance
 requires its Maven checkout and private-repository access; it is not silently

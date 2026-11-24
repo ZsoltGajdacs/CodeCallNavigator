@@ -3,7 +3,7 @@ use super::{normalize, texts};
 use crate::{
     artifact::{
         comparison_changes::{
-            Change, ChangeKind, Facet, Status,
+            Change, ChangeKind, Facet, NameDetails, Status,
             class::Class,
             display_signature,
             reachability::{self, Search},
@@ -12,7 +12,7 @@ use crate::{
         },
         revision::SourceFile,
     },
-    model::Node,
+    model::{Node, Visibility},
 };
 use std::collections::{BTreeMap, BTreeSet};
 
@@ -94,6 +94,7 @@ impl<'s, 'g> Attribution<'s, 'g> {
             id: stable_id("method", &[symbol]),
             kind: ChangeKind::Method,
             name: display_signature(node),
+            name_details: Some(NameDetails::method(node)),
             file: path.to_owned(),
             status: edit.status(old.is_some(), new.is_some()),
             changes_in: vec![Facet::Source],
@@ -111,10 +112,16 @@ impl<'s, 'g> Attribution<'s, 'g> {
     fn class_row(&mut self, path: &str, edit: &VerifiedEdit<'_, '_>, class: &Class) -> Change {
         let old = edit.before.class_members(class);
         let new = edit.after.class_members(class);
+        let visibility = if new.is_empty() {
+            edit.before.class_visibility(class, &old)
+        } else {
+            edit.after.class_visibility(class, &new)
+        };
         Change {
             id: class.id(),
             kind: ChangeKind::Class,
             name: class.name().to_owned(),
+            name_details: Some(class.name_details(visibility)),
             file: path.to_owned(),
             status: edit.status(!old.is_empty(), !new.is_empty()),
             changes_in: vec![Facet::Members],
@@ -280,6 +287,10 @@ impl<'s, 'g> FileEvidence<'s, 'g> {
                 .filter(|&index| FileId::of_node(&file.snapshot.graph.nodes[index]) == file.file)
                 .collect()
         })
+    }
+
+    fn class_visibility(&self, class: &Class, members: &[usize]) -> Option<Visibility> {
+        class.visibility(self.matched.as_ref()?.snapshot.graph, members)
     }
 
     fn changed_symbols(&self, lines: impl Iterator<Item = usize>) -> BTreeSet<&'g str> {

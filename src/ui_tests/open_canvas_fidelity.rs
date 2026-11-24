@@ -93,15 +93,7 @@ impl Fixture {
     fn open_source(&mut self) {
         click(&mut self.runtime, "view-selected-source");
         self.wait_source();
-        assert!(
-            self.runtime
-                .state
-                .source_popup
-                .active
-                .as_ref()
-                .unwrap()
-                .pinned
-        );
+        assert!(self.runtime.state.source_popup.interaction.pinned);
         self.assert_source_anchor();
     }
 
@@ -120,16 +112,7 @@ impl Fixture {
         let (x, y) = self.runtime.find(&format!("graph-node-{index}")).unwrap();
         self.runtime.pointer_move(x, y);
         self.wait_source();
-        assert!(
-            !self
-                .runtime
-                .state
-                .source_popup
-                .active
-                .as_ref()
-                .unwrap()
-                .pinned
-        );
+        assert!(!self.runtime.state.source_popup.interaction.pinned);
         assert_eq!(
             serde_json::to_value(&self.runtime.state.nav).unwrap(),
             navigation
@@ -150,8 +133,8 @@ impl Fixture {
             [
                 0.0,
                 0.0,
-                self.runtime.state.source_popup.window[0],
-                self.runtime.state.source_popup.window[1],
+                self.runtime.state.source_popup.interaction.window[0],
+                self.runtime.state.source_popup.interaction.window[1],
             ],
             "Source preview",
         );
@@ -261,7 +244,8 @@ fn assert_activity_title(runtime: &Runtime<State>, expected: &str) {
 #[test]
 fn long_source_title_keeps_pin_and_close_inside_minimum_preview() {
     let mut runtime = super::runtime();
-    runtime.state.source_popup.size = [360.0, 240.0];
+    runtime.state.source_popup.interaction.size = [360.0, 240.0];
+    runtime.state.source_popup.interaction.pinned = true;
     runtime.state.source_popup.active = Some(crate::source_popup::Preview {
         node: crate::projection::ViewNode {
             label: "veryLongSourceMethodNameWithManyParameters".repeat(12),
@@ -272,7 +256,6 @@ fn long_source_title_keeps_pin_and_close_inside_minimum_preview() {
         requested_line: 1,
         target: 0,
         location_warning: None,
-        pinned: true,
     });
     runtime.invalidate();
     for _ in 0..10 {

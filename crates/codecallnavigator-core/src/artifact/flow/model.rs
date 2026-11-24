@@ -1,4 +1,7 @@
-use crate::flow::{FlowChart, FunctionFlowIR};
+use crate::{
+    flow::{FlowChart, FunctionFlowIR},
+    model::Visibility,
+};
 use serde::Serialize;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
@@ -13,6 +16,8 @@ pub struct Symbol<'a> {
     pub symbol: &'a str,
     pub label: &'a str,
     pub signature: &'a str,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub visibility: Option<Visibility>,
     pub line: u32,
     pub body_unavailable: bool,
     pub owner: Owner<'a>,

@@ -3,65 +3,97 @@ use crate::{
     app::State,
     engine_client::flow_comparison::{Hunk, LineKind, SourceDiff, SourceStatus},
     flow_comparison::{PreviewTarget, Workspace},
+    source_popup::{Content, Heading, Owner, Panel},
     theme,
 };
 use codecallnavigator::artifact::comparison_changes::ClassSource;
-use rune::{Align, El, GrowthSpec, Side, col, row, text};
+use rune::{Align, Cx, El, GrowthSpec, Side, col, row, text};
 use rune_kit::{Button, ButtonVariant, Kit};
 use std::sync::Arc;
 
-pub fn layer(state: &State, k: &Kit) -> Option<El> {
+pub fn layer(state: &State, cx: &Cx<State>, k: &Kit) -> Option<El> {
     let workspace = &state.flow_comparison;
     let preview = workspace.previews.active.as_ref()?;
-    let (title, content) = match &preview.target {
-        PreviewTarget::Class(side, id) => {
-            class_content(workspace.class_preview(*side, id), *side, k)
-        }
-        target => {
-            let id = match target {
-                PreviewTarget::Row(id) | PreviewTarget::ClassEdit(id) => id.as_str(),
-                _ => workspace.selected_change_id()?,
-            };
-            match workspace.previews.preview_diff(id) {
-                None => ("Source diff".into(), notice("Loading source…", k)),
-                Some(Err(error)) => ("Source diff".into(), notice(error, k)),
-                Some(Ok(diff)) => (
-                    diff.file.clone(),
-                    preview_content(workspace, diff, target, k),
-                ),
-            }
-        }
+    let (title, content) = preview_content(workspace, &preview.target, k)?;
+    if matches!(preview.target, PreviewTarget::Row(_)) {
+        return Some(file_diff_panel(&preview.anchor, &title, content, k));
+    }
+    let popup = &workspace.previews.interaction;
+    let bounds = if popup.fixed() {
+        popup.fixed_bounds()
+    } else {
+        popup.bounds_next_to(cx.window_layout(&preview.anchor)?)
     };
-    let mut header = row().h(28.0).w_full().px(8.0).center_y().gap(8.0).child(
-        text(&title)
-            .font(k.ty.small_medium)
-            .color(k.c.text_base)
-            .min_w(0.0)
-            .grow(1.0)
-            .truncate(),
-    );
-    let interactive = matches!(preview.target, PreviewTarget::Row(_));
-    if interactive {
-        header = header.child(
+    let panel = Panel {
+        owner: Owner::Compare,
+        bounds,
+        interaction: popup,
+    };
+    Some(
+        panel.view(
+            Content {
+                heading: Heading {
+                    title: if matches!(preview.target, PreviewTarget::Class(..)) {
+                        "Saved source"
+                    } else {
+                        "Source diff"
+                    },
+                    lead: None,
+                },
+                description: &title,
+                body: col()
+                    .key(format!("preview-content-{}", preview.anchor))
+                    .w_full()
+                    .grow(1.0)
+                    .min_h(0.0)
+                    .child(content),
+                provenance: "Compared revisions",
+            },
+            k,
+        ),
+    )
+}
+
+fn preview_content(workspace: &Workspace, target: &PreviewTarget, k: &Kit) -> Option<(String, El)> {
+    if let PreviewTarget::Class(side, id) = target {
+        return Some(class_content(workspace.class_preview(*side, id), *side, k));
+    }
+    let id = match target {
+        PreviewTarget::Row(id) | PreviewTarget::ClassEdit(id) => id.as_str(),
+        _ => workspace.selected_change_id()?,
+    };
+    Some(match workspace.previews.preview_diff(id) {
+        None => ("Source diff".into(), notice("Loading source…", k)),
+        Some(Err(error)) => ("Source diff".into(), notice(error, k)),
+        Some(Ok(diff)) => (diff.file.clone(), edit_content(workspace, diff, target, k)),
+    })
+}
+
+fn file_diff_panel(anchor: &str, title: &str, body: El, k: &Kit) -> El {
+    let header = row()
+        .h(28.0)
+        .w_full()
+        .px(8.0)
+        .center_y()
+        .gap(8.0)
+        .child(
+            text(title)
+                .font(k.ty.small_medium)
+                .color(k.c.text_base)
+                .min_w(0.0)
+                .grow(1.0)
+                .truncate(),
+        )
+        .child(
             Button::new("Close")
                 .variant(ButtonVariant::Ghost)
                 .on_press(|s: &mut State| s.flow_comparison.previews.dismiss())
                 .build(k),
         );
-    }
-    let panel = col()
+    col()
         .key("comparison-unified-source")
-        .anchored_fit(
-            &preview.anchor,
-            if interactive {
-                Side::Bottom
-            } else {
-                Side::Right
-            },
-            Align::Start,
-            8.0,
-        )
-        .w(if interactive { 680.0 } else { 420.0 })
+        .anchored_fit(anchor, Side::Bottom, Align::Start, 8.0)
+        .w(680.0)
         .min_h(0.0)
         .radius(8.0)
         .border(1.0, k.c.std_border)
@@ -69,16 +101,10 @@ pub fn layer(state: &State, k: &Kit) -> Option<El> {
         .role("group")
         .label("Unified source diff")
         .child(header)
-        .child(content);
-    Some(if interactive { panel } else { panel.inert() })
+        .child(body)
 }
 
-fn preview_content(
-    workspace: &Workspace,
-    diff: &SourceDiff,
-    target: &PreviewTarget,
-    k: &Kit,
-) -> El {
+fn edit_content(workspace: &Workspace, diff: &SourceDiff, target: &PreviewTarget, k: &Kit) -> El {
     if diff.status == SourceStatus::Unavailable {
         return notice(
             &diff
@@ -105,7 +131,7 @@ fn preview_content(
     if hunks.is_empty() {
         notice(empty_message, k)
     } else {
-        diff_lines(hunks, k)
+        diff_lines(hunks, matches!(target, PreviewTarget::Row(_)), k)
     }
 }
 
@@ -119,25 +145,24 @@ fn class_content(
         Some(Err(error)) => error,
         Some(Ok(ClassSource::Unavailable { reason })) => reason,
         Some(Ok(ClassSource::Diff { file, hunks })) => {
-            return (format!("{file} · Saved graph source"), diff_lines(hunks, k));
+            return (
+                format!("{file} · Saved graph source"),
+                diff_lines(hunks, false, k),
+            );
         }
         Some(Ok(ClassSource::Excerpt { file, start, text })) => {
             let before = side == crate::flow_comparison::SideId::Before;
-            let excerpt = col()
-                .w_full()
-                .h((text.lines().count() as f32 * 20.0).min(240.0))
-                .scroll_xy()
-                .children(text.lines().enumerate().map(|(index, text)| {
-                    render_line(
-                        &DisplayLine {
-                            before: before.then_some(start + index),
-                            after: (!before).then_some(start + index),
-                            kind: LineKind::Context,
-                            text: text.into(),
-                        },
-                        k,
-                    )
-                }));
+            let lines = text
+                .lines()
+                .enumerate()
+                .map(|(index, text)| DisplayLine {
+                    before: before.then_some(start + index),
+                    after: (!before).then_some(start + index),
+                    kind: LineKind::Context,
+                    text: text.into(),
+                })
+                .collect();
+            let excerpt = source_rows(lines, false, k);
             return (format!("{file}:{start} · Saved graph source"), excerpt);
         }
     };
@@ -160,7 +185,7 @@ struct DisplayLine {
     text: String,
 }
 
-fn diff_lines(hunks: &[Hunk], k: &Kit) -> El {
+fn diff_lines(hunks: &[Hunk], file_row: bool, k: &Kit) -> El {
     let mut lines = Vec::new();
     for hunk in hunks {
         let mut before = hunk.before.start;
@@ -187,6 +212,10 @@ fn diff_lines(hunks: &[Hunk], k: &Kit) -> El {
             });
         }
     }
+    source_rows(lines, file_row, k)
+}
+
+fn source_rows(lines: Vec<DisplayLine>, file_row: bool, k: &Kit) -> El {
     let widest = lines
         .iter()
         .map(|line| line.text.chars().count())
@@ -195,23 +224,23 @@ fn diff_lines(hunks: &[Hunk], k: &Kit) -> El {
     let viewport_height = (lines.len() as f32 * 20.0).min(260.0);
     let lines = Arc::new(lines);
     let kit = k.clone();
-    col()
-        .w_full()
-        .h(viewport_height)
-        .min_h(0.0)
-        .scroll_xy()
-        .selection_group(true)
-        .child(
-            col()
-                .w((widest as f32 * 8.0 + 92.0).max(400.0))
-                .growth(GrowthSpec::default())
-                .virtual_rows(
-                    lines.len(),
-                    20.0,
-                    |_: &State, i| format!("comparison-unified-row-{i}").into(),
-                    move |_: &State, i| render_line(&lines[i], &kit),
-                ),
-        )
+    let viewport = col().key("comparison-source-scroll").w_full().min_h(0.0);
+    let viewport = if file_row {
+        viewport.h(viewport_height)
+    } else {
+        viewport.grow(1.0)
+    };
+    viewport.scroll_xy().selection_group(true).child(
+        col()
+            .w((widest as f32 * 8.0 + 92.0).max(400.0))
+            .growth(GrowthSpec::default())
+            .virtual_rows(
+                lines.len(),
+                20.0,
+                |_: &State, i| format!("comparison-unified-row-{i}").into(),
+                move |_: &State, i| render_line(&lines[i], &kit),
+            ),
+    )
 }
 
 fn render_line(line: &DisplayLine, k: &Kit) -> El {
@@ -266,7 +295,7 @@ mod tests {
                     ]
                 }))
                 .unwrap();
-                diff_lines(&[hunk], &theme::kit(true))
+                diff_lines(&[hunk], true, &theme::kit(true))
             },
             (520.0, 280.0),
             Env::new(true, 1.0),

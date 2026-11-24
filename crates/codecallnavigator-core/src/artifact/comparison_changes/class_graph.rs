@@ -1,8 +1,8 @@
 //! A selected class and its immediate incoming and outgoing saved calls.
-use super::{Class, Snapshot, missing_source};
+use super::{Class, NameDetails, Snapshot, missing_source};
 use crate::{
     artifact::Artifact,
-    model::{RelationshipKind, TargetResolution},
+    model::{RelationshipKind, TargetResolution, Visibility},
 };
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
@@ -19,6 +19,12 @@ pub struct ClassGraph {
 pub struct ClassNode {
     pub id: String,
     pub name: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub short_name: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub before_visibility: Option<Visibility>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub after_visibility: Option<Visibility>,
     pub before: bool,
     pub after: bool,
     pub status: GraphChange,
@@ -105,7 +111,7 @@ type Calls = BTreeMap<TargetResolution, u64>;
 
 #[derive(Default)]
 struct Neighborhood {
-    names: BTreeMap<String, String>,
+    names: BTreeMap<String, NameDetails>,
     links: BTreeMap<LinkKey, Calls>,
 }
 
@@ -113,9 +119,10 @@ impl Neighborhood {
     fn new(snapshot: &Snapshot<'_>, root: &Class, id: &str) -> Self {
         let mut neighborhood = Self::default();
         if snapshot.has_class(root) {
-            neighborhood
-                .names
-                .insert(id.to_owned(), root.owner.container.clone());
+            neighborhood.names.insert(
+                id.to_owned(),
+                root.name_details(snapshot.class_visibility(root)),
+            );
         }
         let Some(members) = snapshot.classes.get(root) else {
             return neighborhood;
@@ -140,7 +147,7 @@ impl Neighborhood {
             neighborhood
                 .names
                 .entry(class_id.clone())
-                .or_insert(class.owner.container);
+                .or_insert_with(|| class.name_details(snapshot.class_visibility(&class)));
             let link = if incoming {
                 (class_id, id.to_owned())
             } else {
@@ -163,9 +170,15 @@ fn nodes(old: &Neighborhood, new: &Neighborhood) -> Vec<ClassNode> {
         .map(|id| {
             let before = old.names.get(id);
             let after = new.names.get(id);
+            let details = after
+                .or(before)
+                .expect("the class is present on at least one side");
             ClassNode {
                 id: id.clone(),
-                name: after.or(before).cloned().unwrap_or_default(),
+                name: details.description.clone(),
+                short_name: Some(details.label.clone()),
+                before_visibility: before.and_then(|name| name.visibility),
+                after_visibility: after.and_then(|name| name.visibility),
                 before: before.is_some(),
                 after: after.is_some(),
                 status: GraphChange::presence(before.is_some(), after.is_some()),

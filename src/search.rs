@@ -99,7 +99,7 @@ impl State {
         if self.flow_workspace.current.is_some() {
             self.flow_workspace.window[1]
         } else {
-            self.source_popup.window[1]
+            self.source_popup.interaction.window[1]
         }
     }
     pub fn open_search(&mut self) {

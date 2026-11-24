@@ -166,7 +166,17 @@ impl Outline<'_> {
     fn change_row(&self, item: &Item<'_>, scope: &str, indent: f32) -> El {
         let Self { state, k } = self;
         let change = item.change;
-        let label = format!("{} · {}", change.name, status(change.status));
+        let name = change.name_details.as_ref().map_or_else(
+            || crate::projection::labels::named(&change.name, &change.name, None),
+            |details| {
+                crate::projection::labels::named(
+                    &details.label,
+                    &details.description,
+                    details.visibility,
+                )
+            },
+        );
+        let label = format!("{} · {}", name.text, status(change.status));
         let key = format!("comparison-change-{scope}-{}", change.id);
         let active = match &state.flow_comparison.previews.active {
             Some(preview) if matches!(&preview.target, PreviewTarget::Row(_)) => {
@@ -186,9 +196,10 @@ impl Outline<'_> {
             _ => "",
         });
         let status = format!("{}{}", status(change.status), path.unwrap_or_default());
-        let row = columns([&change.name, &status, &change.file], indent, k)
+        let row = columns([&name.text, &status, &change.file], indent, k)
             .key(key)
             .label(label)
+            .help(&name.description)
             .role("button")
             .focusable(true)
             .fill(if active {

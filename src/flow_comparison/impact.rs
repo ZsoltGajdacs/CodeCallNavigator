@@ -50,6 +50,7 @@ impl State {
         let refs = workspace.control_refs().into();
         let workspace = &mut self.flow_comparison;
         workspace.controls.catalog_open = false;
+        workspace.previews.close();
         workspace.controls.panel = Panel::Impact;
         match context {
             Ok(context) => workspace.impact.start(context, refs, &workspace.workers),

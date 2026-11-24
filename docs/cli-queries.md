@@ -116,6 +116,7 @@ and pass `comparison_id` as `expected_comparison` for subsequent pages or a
 binding changes, the engine returns `comparison_mismatch`. Restart from the
 first page to reload. The result's optional `graph_comparison_id` binds saved
 flow queries using the same graph reference selectors.
+Attributed class and method rows can include the `name_details` described below.
 
 ## Changed classes, methods and files
 
@@ -135,6 +136,9 @@ references report whether each saved graph records a direct or possible route.
 A null side means no route was found on that side. The
 `coverage.entry_point_search_complete` flag indicates whether reachability
 search completed. Empty entry-point lists leave the change visible.
+An optional `name_details` object carries the short `label`, a qualified class
+name or callable signature in `description`, and recorded `visibility` when
+available. The original `name` field remains available for older clients.
 
 Example excerpt from `result.changes` with abbreviated IDs:
 
@@ -189,6 +193,8 @@ the `root` class ID, `nodes`, and directed `links`. Nodes include the
 class ID, a display name, and `before` and `after` presence flags. For the
 root these flags describe existence in the saved revisions. For other
 nodes they describe participation in the root's one-hop call neighborhood.
+Nodes may include a `short_name` and recorded `before_visibility` or
+`after_visibility` for the corresponding revision.
 
 Each link contains its caller (`from`), callee (`to`), and `before` and
 `after` objects mapping recorded resolution to call count. An empty object
@@ -263,6 +269,7 @@ exact-byte digest and observed schema (null when it cannot be identified).
 Each record identifies an exact saved symbol and its `membership`: `both`,
 `added`, `removed`, or `unknown`. Its sides are `present`, `missing`, or
 `unknown`; present sides contain declaration metadata and flow availability.
+Declaration metadata can include `visibility` when the analyzer recorded it.
 `flow.status: "recorded"` means owned source/IR facts are available, not that a
 chart has already been built. The catalog includes saved nodes even when their
 flow is unavailable. Text matches symbol, label, signature, project or file,

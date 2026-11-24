@@ -1,125 +1,50 @@
-use super::Contents;
+use super::{Content, Contents, Heading, Owner, Panel};
 use crate::app::State;
-use rune::{El, GrowthSpec, col, el, row, text};
+use rune::{El, GrowthSpec, col, el, text};
 use rune_kit::{Button, ButtonVariant, Kit};
 
 pub fn view(state: &State, k: &Kit) -> Option<El> {
-    let preview = state.source_popup.active.as_ref()?;
-    let [x, y, w, h] = state.source_popup.bounds(state);
-    Some(
-        col()
-            .key("source-popup")
-            .absolute(x, y)
-            .size(w, h)
-            .min_h(0.0)
-            .fill(k.c.surface_raised)
-            .border(1.0, k.c.std_border)
-            .radius(12.0)
-            .shadow(
-                4.0,
-                18.0,
-                k.c.bg_deep.alpha(if k.dark { 0.35 } else { 0.12 }),
-            )
-            .clip_rounded(12.0)
-            .on_press_tx(|_: &mut State, tx| tx.live_only())
-            .role("group")
-            .label("Source preview")
-            .on_layout(|s: &mut State, rect| s.source_popup.rect = rect)
-            .on_hover_change(|s: &mut State, inside, tx| {
-                s.source_popup.inside = inside;
-                s.source_popup.close_at = if inside {
-                    None
-                } else {
-                    Some(s.source_popup.now + 0.3)
-                };
-                if inside {
-                    s.source_popup.hover = None;
-                }
-                tx.wake_after(std::time::Duration::from_millis(300));
-            })
-            .child(header(state, k))
-            .child(
-                text(preview.path.as_deref().unwrap_or(&preview.node.label))
-                    .key("source-path")
-                    .w_full()
-                    .px(12.0)
-                    .font(k.ty.small)
-                    .color(k.c.text_muted)
-                    .truncate()
-                    .help(preview.path.as_deref().unwrap_or(&preview.node.label)),
-            )
-            .child(notice(state, k))
-            .child(body(state, k))
-            .child(footer(preview.path.is_some(), k)),
-    )
-}
-
-fn footer(source: bool, k: &Kit) -> El {
-    let label = if source {
-        "Current disk contents"
-    } else {
-        "Files represented in this graph"
+    let popup = &state.source_popup;
+    let preview = popup.active.as_ref()?;
+    let has_path = preview.path.is_some();
+    let back = (has_path && preview.node.member.is_none()).then(|| {
+        Button::new("Back")
+            .variant(ButtonVariant::Ghost)
+            .on_press(State::source_files_back)
+            .build(k)
+            .key("source-back")
+    });
+    let panel = Panel {
+        owner: Owner::Graph,
+        bounds: popup.bounds(state),
+        interaction: &popup.interaction,
     };
-    row()
-        .w_full()
-        .h(24.0)
-        .center_y()
-        .child(
-            text(label)
-                .grow(1.0)
-                .px(12.0)
-                .font(k.ty.small)
-                .color(k.c.text_muted),
-        )
-        .child(
-            el().key("source-resize")
-                .size(24.0, 24.0)
-                .cursor(rune::Cursor::Crosshair)
-                .role("button")
-                .label("Resize source preview")
-                .on_drag(|s: &mut State, drag, _| s.resize_source(drag))
-                .child(text("◢").font(k.ty.small).color(k.c.text_muted)),
-        )
-}
-
-fn header(state: &State, k: &Kit) -> El {
-    let preview = state.source_popup.active.as_ref().unwrap();
-    let mut bar = row().w_full().gap(8.0).padding(12.0).center_y();
-    if preview.path.is_some() && preview.node.member.is_none() {
-        bar = bar.child(
-            Button::new("Back")
-                .variant(ButtonVariant::Ghost)
-                .on_press(State::source_files_back)
-                .build(k)
-                .key("source-back"),
-        );
-    }
-    bar.child(
-        text(if preview.path.is_some() {
-            &preview.node.label
-        } else {
-            "Source files"
-        })
-        .font(k.ty.ui_medium)
-        .color(k.c.text_base)
-        .min_w(0.0)
-        .truncate()
-        .help(&preview.node.label)
-        .grow(1.0),
-    )
-    .child(
-        Button::new(if preview.pinned { "Unpin" } else { "Pin" })
-            .variant(ButtonVariant::Ghost)
-            .on_press(State::pin_source)
-            .build(k)
-            .key("source-pin"),
-    )
-    .child(
-        Button::new("Close")
-            .variant(ButtonVariant::Ghost)
-            .on_press(State::close_source)
-            .build(k)
-            .key("source-close"),
+    Some(
+        panel.view(
+            Content {
+                heading: Heading {
+                    title: if has_path {
+                        &preview.node.label
+                    } else {
+                        "Source files"
+                    },
+                    lead: back,
+                },
+                description: preview.path.as_deref().unwrap_or(&preview.node.label),
+                body: col()
+                    .w_full()
+                    .grow(1.0)
+                    .min_h(0.0)
+                    .child(notice(state, k))
+                    .child(body(state, k)),
+                provenance: if has_path {
+                    "Current disk contents"
+                } else {
+                    "Files represented in this graph"
+                },
+            },
+            k,
+        ),
     )
 }
 

@@ -161,6 +161,7 @@ pub fn poll(state: &mut State, time: f64, tx: &mut Tx) -> bool {
         | state.flow_comparison.restore_scroll(tx);
     let preview_focus = tx.focused().filter(|_| tx.focus_visible());
     changed |= state.flow_comparison.sync_change_focus(preview_focus);
+    changed |= state.flow_comparison.poll_hover_preview(time, tx);
     changed |= crate::flow_residency::poll(state, time, tx);
     changed |= crate::graph_motion::poll(state, time, tx);
     changed |= crate::explorer::poll(state, time, tx);

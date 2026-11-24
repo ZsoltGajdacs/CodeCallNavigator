@@ -17,6 +17,7 @@ import verify_changes
 from verification.change_inputs import Change, discover_changes
 from verification.change_policy import read_json, select_changes
 from verification.change_plan import ChangePlan, build_steps, report_plan
+from verification.graphviz import prepend_locked_bin
 
 
 class GitSelectionTests(unittest.TestCase):
@@ -116,10 +117,29 @@ class RepositoryPolicyTests(unittest.TestCase):
                              self.policy, self.selection(path), self.inventory)
         steps = build_steps(verify, context, ROOT / 'target/verification/PLAN')
         self.assertFalse(any('--ordinary' in s.command for s in steps))
+        self.assert_preflight_plan(steps, context)
         self.assertEqual(sum(s.name == 'integration-compile-rust' for s in steps), 1)
         build = next(s for s in steps if s.name == 'integration-compile-rust')
         self.assertEqual(build.command.count('--component'), 4)
         self.assertEqual(len({s.name for s in steps}), len(steps))
+
+        self.assert_graphviz_keeps_packaged_paths(steps)
+
+    def assert_preflight_plan(self, steps, context):
+        self.assertEqual(steps[0].name, 'prerequisites')
+        self.assertEqual([s.name for s in steps if s.name.endswith('prerequisites')], ['prerequisites'])
+        inputs = steps[0].command
+        self.assertEqual({inputs[i + 1] for i, arg in enumerate(inputs) if arg == '--selection'},
+                         {f'{suite}/{component}' for suite, component in context.decision.pairs})
+
+    def assert_graphviz_keeps_packaged_paths(self, steps):
+        packaged = [step for step in steps if 'PATH' in step.environment]
+        original = [step.environment['PATH'] for step in packaged]
+        self.assertTrue(packaged)
+        pinned = ROOT / 'graphviz-lock/bin'
+        prepend_locked_bin(pinned, steps)
+        self.assertEqual([step.environment['PATH'] for step in packaged],
+                         [os.pathsep.join([str(pinned), path]) for path in original])
 
     def test_tsx_fixtures_receive_shared_source_quality_review(self):
         path = 'fixtures/typescript-corpus/src/app/page.tsx'
@@ -215,6 +235,10 @@ class RepositoryPolicyTests(unittest.TestCase):
             self.assertEqual(json.loads(explicit.stdout), final_plan)
             self.assertFalse((root / 'target').exists())
             self.assert_docs_development_phase(command, env, root, final_plan)
+            preflight = subprocess.run([*command, '--preflight', '--format', 'json'], cwd='/', env=env,
+                                       capture_output=True, text=True, check=True)
+            self.assertEqual(json.loads(preflight.stdout), final_plan | {'operation': 'preflight', 'result': 'passed'})
+            self.assertFalse((root / 'target').exists())
             executed = subprocess.run([*command, '--run', '--format', 'json'], cwd='/', env=env,
                                       capture_output=True, text=True, check=True)
             final = json.loads(executed.stdout)

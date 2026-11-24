@@ -34,6 +34,8 @@ def required_checks(worktree):
               "unified_diff_drawn_on_keyboard_focus", "class_call_changes_drawn",
               "outline_hover_has_no_source_preview", "outline_focus_has_no_source_preview",
               "class_source_diff_drawn_on_hover", "class_saved_excerpt_drawn_on_focus",
+              "function_source_popup_scrolled_and_resized", "class_source_popup_scrolled_and_resized",
+              "source_popup_pinned_and_dismissed",
               "method_flow_restored_from_outline",
               "owned_window_setup_acknowledged", "provenance_drawn", "moved_tag_left_selected_commit_pinned",
               "selected_later_commit_rebound", "cancel_waited_for_owned_query_cleanup",

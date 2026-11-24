@@ -66,7 +66,7 @@ fn graph_workspace(state: &State, cx: &mut Cx<State>) -> El {
     let actions = workspace_toolbar::view(state, &k, &mut layer);
     let body = col()
         .key("application")
-        .on_layout(|s: &mut State, rect| s.source_popup.window = [rect[2], rect[3]])
+        .on_layout(|s: &mut State, rect| s.source_popup.interaction.window = [rect[2], rect[3]])
         .w_full()
         .h_full()
         .fill(k.c.bg_base)

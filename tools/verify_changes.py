@@ -15,6 +15,7 @@ import verify as legacy
 from verification.change_inputs import discover_changes, inventory_at
 from verification.change_policy import INVENTORY, read_json, select_changes, validate_policy
 from verification.change_plan import ChangePlan, build_steps, report_plan
+from verification.graphviz import locked_bin, prepend_locked_bin
 from verification.inventory import validate_inventory
 from verification.plan_output import display_plan
 from verification.reporting import write_summary
@@ -34,6 +35,7 @@ class Options:
     mode: str = 'changes'
     component: tuple[str, ...] | None = None
     phase: str = 'final'
+    suite_preflight: bool = True
 
 
 def arguments():
@@ -42,7 +44,9 @@ def arguments():
     parser.add_argument('--format', choices=('text', 'json'), default='text')
     parser.add_argument('--phase', choices=('development', 'final'), default='final',
                         help='Select unit tests during development or the complete final plan (default)')
-    parser.add_argument('--run', action='store_true', help='Execute the plan for the selected phase')
+    action = parser.add_mutually_exclusive_group()
+    action.add_argument('--run', action='store_true', help='Execute the plan for the selected phase')
+    action.add_argument('--preflight', action='store_true', help='Check inputs for the selected plan without building')
     parser.add_argument('--timeout', type=int, default=1800)
     parser.add_argument('--profile-source', type=Path, default=os.environ.get('CODECALLNAVIGATOR_VERIFY_PROFILE_SOURCE'))
     parser.add_argument('--output', type=Path)
@@ -98,11 +102,37 @@ def execution_command(settings):
     return shlex.join(command)
 
 
+def configure_toolchain(report, steps):
+    if 'graphviz' not in report['requirements']:
+        return
+    if pinned := locked_bin(ROOT):
+        prepend_locked_bin(pinned, steps)
+
+
+def preflight(report, steps, format_):
+    step = next((step for step in steps if step.name.endswith('prerequisites')), None)
+    result = check_inputs(report, step) if step else 0
+    if format_ == 'json':
+        display_plan(report | {'operation': 'preflight', 'result': RESULT_LABELS[result]}, format_)
+    else:
+        print(f'Verification preflight {RESULT_LABELS[result]}')
+    return result
+
+
+def check_inputs(report, step):
+    configure_toolchain(report, [step])
+    check = subprocess.run(step.command, cwd=ROOT, env=os.environ | step.environment,
+                           stdin=subprocess.DEVNULL, stdout=sys.stderr, timeout=step.timeout)
+    return int(check.returncode != 0)
+
+
 def run(settings, report, steps, output):
+    configure_toolchain(report, steps)
     with exclusive(ROOT):
         result = Runner(ROOT, output, steps).run()
         (output / 'change-plan.json').write_text(json.dumps(report, indent=2, sort_keys=True) + '\n')
-        write_summary(ROOT, output, verification_phase=settings.phase)
+        write_summary(ROOT, output, verification_phase=settings.phase,
+                      tool_path=steps[0].environment.get('PATH'))
     return result
 
 
@@ -111,6 +141,8 @@ def main():
     settings = options(args)
     placeholder = settings.output or ROOT / 'target/verification/PLAN'
     report, steps = prepare(settings, placeholder)
+    if args.preflight:
+        return preflight(report, steps, args.format)
     if not args.run or not steps:
         if args.run and settings.phase == 'development':
             report['result'] = 'no-unit-tests'

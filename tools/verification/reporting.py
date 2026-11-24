@@ -85,8 +85,8 @@ def summarize_results(results, selections):
                 comparison_note='Build/setup, execution and cleanup are separate. Cold/warm cache conditions are not inferred.')
 
 
-def tool_version(command):
-    executable = shutil.which(command[0])
+def tool_version(command, path=None):
+    executable = shutil.which(command[0], path=path)
     if executable is None:
         return dict(status='unavailable')
     try:
@@ -98,16 +98,16 @@ def tool_version(command):
         return dict(status='unavailable', executable=executable, reason=str(error))
 
 
-def machine_details(include_tools=True):
+def machine_details(include_tools=True, path=None):
     commands = {'cargo': ['cargo', '--version'], 'rustc': ['rustc', '--version'],
                 'node': ['node', '--version'], 'java': ['java', '-version'],
                 'dotnet': ['dotnet', '--version'], 'graphviz': ['dot', '-V']}
     return dict(os=platform.platform(), architecture=platform.machine(), logical_cpus=os.cpu_count(),
                 python=dict(version=platform.python_version(), executable=sys.executable),
-                tools={name: tool_version(command) for name, command in commands.items()} if include_tools else {})
+                tools={name: tool_version(command, path) for name, command in commands.items()} if include_tools else {})
 
 
-def write_summary(root, output, *, verification_phase='final'):
+def write_summary(root, output, *, verification_phase='final', tool_path=None):
     """Write durable evidence after Runner, without changing its success criteria."""
     output = Path(output)
     results = json.loads((output / 'results.json').read_text())
@@ -122,6 +122,6 @@ def write_summary(root, output, *, verification_phase='final'):
     if development:
         report.update(phase=verification_phase, final_verification_required=True)
     report.update(version=1, generated_at=datetime.now(timezone.utc).isoformat(),
-                  repository=str(Path(root).resolve()), machine=machine_details(runtime and not development))
+                  repository=str(Path(root).resolve()), machine=machine_details(runtime and not development, tool_path))
     (output / 'summary.json').write_text(json.dumps(report, indent=2) + '\n')
     return report

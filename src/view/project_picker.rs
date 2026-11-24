@@ -67,9 +67,9 @@ pub(super) fn layer(state: &State, k: &Kit, layers: &mut Vec<El>) {
         return;
     }
     let mut contents = col()
-        .w(400.0_f32.min((state.source_popup.window[0] - 24.0).max(1.0)))
+        .w(400.0_f32.min((state.source_popup.interaction.window[0] - 24.0).max(1.0)))
         .padding(16.0)
-        .max_h((state.source_popup.window[1] - 100.0).max(1.0))
+        .max_h((state.source_popup.interaction.window[1] - 100.0).max(1.0))
         .scroll(rune::ScrollSpec {
             stick_bottom: false,
         })

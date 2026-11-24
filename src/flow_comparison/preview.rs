@@ -1,10 +1,14 @@
 //! Source overlays and their bound asynchronous requests.
 mod class;
+mod hover;
 
 use super::{
     Panel, Side, SideId, Workspace, changes::OutlineBinding, requests::Clock, work::Tracked,
 };
-use crate::engine_client::flow_comparison::{Error, Hunk, SourceDiff, SourceStatus};
+use crate::{
+    engine_client::flow_comparison::{Error, Hunk, SourceDiff, SourceStatus},
+    source_popup::{Hover, Interaction},
+};
 use rune::{Latest, Waker};
 use std::ops::RangeInclusive;
 
@@ -20,6 +24,8 @@ pub struct Previews {
     source_id: Option<String>,
     pub active: Option<Preview>,
     focus_key: Option<String>,
+    hover: Option<Hover<hover::CanvasPreview>>,
+    pub interaction: Interaction,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -53,11 +59,22 @@ impl Previews {
 
     pub fn dismiss(&mut self) {
         self.active = None;
+        self.clear_hover();
+        self.interaction.reset();
         self.class.cancel_request();
     }
 
+    pub fn clear_hover(&mut self) {
+        self.hover = None;
+    }
+
+    pub fn pin(&mut self) {
+        self.interaction.toggle_pin();
+        self.clear_hover();
+    }
+
     pub fn close(&mut self) {
-        self.active = None;
+        self.dismiss();
         self.focus_key = None;
         self.class.clear();
         self.source_clock.cancel();
@@ -165,7 +182,7 @@ impl Workspace {
         });
     }
 
-    pub fn show_step_preview(&mut self, side: SideId, index: usize, anchor: String) {
+    fn show_step_preview(&mut self, side: SideId, index: usize, anchor: String) {
         let Some(id) = self.function_change_id().map(str::to_owned) else {
             return;
         };
@@ -174,47 +191,6 @@ impl Workspace {
             target: PreviewTarget::Step(side, index),
         });
         self.request_change_source(id, true);
-    }
-
-    pub fn end_step_hover(&mut self, anchor: &str) {
-        if self.previews.focus_key.as_deref() == Some(anchor) {
-            return;
-        }
-        if self
-            .previews
-            .active
-            .as_ref()
-            .is_some_and(|preview| preview.anchor == anchor)
-        {
-            self.previews.dismiss();
-        }
-    }
-
-    pub fn sync_change_focus(&mut self, focused: Option<&str>) -> bool {
-        if !self.controls.visible || self.controls.panel != Panel::Flows {
-            return false;
-        }
-        let focused =
-            focused.filter(|_| self.changes.show_outline() || self.class_selection().is_some());
-        let focus = focused.and_then(canvas_focus);
-        let key = focus.as_ref().and(focused);
-        if self.previews.focus_key.as_deref() == key {
-            return false;
-        }
-        if let Some(previous) = self.previews.focus_key.take() {
-            self.end_step_hover(&previous);
-        }
-        if let Some((key, target)) = key.zip(focus) {
-            self.previews.focus_key = Some(key.into());
-            match target {
-                PreviewTarget::Step(side, index) => self.show_step_preview(side, index, key.into()),
-                PreviewTarget::Class(side, id) => self.show_class_preview(side, id, key.into()),
-                PreviewTarget::Row(_) | PreviewTarget::ClassEdit(_) => {
-                    unreachable!("canvas focus resolves through the active selection")
-                }
-            }
-        }
-        true
     }
 
     pub fn step_hunk<'a>(
@@ -277,21 +253,6 @@ pub enum StepChange {
     Added,
     Removed,
     Modified,
-}
-
-fn canvas_focus(key: &str) -> Option<PreviewTarget> {
-    let (side, key) = if let Some(key) = key.strip_prefix("comparison-before-") {
-        (SideId::Before, key)
-    } else {
-        (SideId::After, key.strip_prefix("comparison-after-")?)
-    };
-    if let Some(index) = key.strip_prefix("step-") {
-        return Some(PreviewTarget::Step(side, index.parse().ok()?));
-    }
-    Some(PreviewTarget::Class(
-        side,
-        key.strip_prefix("class-")?.into(),
-    ))
 }
 
 pub(super) fn mismatch(error: &Error) -> bool {

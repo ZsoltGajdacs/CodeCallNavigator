@@ -6,6 +6,7 @@ from verification.checks import static_steps
 from pathlib import Path
 from verification.inventory import SUITES
 from verification.quality import SOURCE_SUFFIXES
+from verification.runner import Step
 from verification.suite_prerequisites import requirements_for
 from verification.suites import category_steps
 
@@ -65,13 +66,27 @@ def needs_quality(paths):
     return any(Path(path).suffix.lower() in SOURCE_SUFFIXES for path in paths)
 
 
+def selected_prerequisite_step(root, context, paths):
+    command = [sys.executable, str(root / 'tools/verification/suite_prerequisites.py'), '--root', str(root)]
+    for category, component in context.decision.pairs:
+        command.extend(['--selection', f'{category}/{component}'])
+    if context.settings.profile_source:
+        command.extend(['--profile-source', str(context.settings.profile_source)])
+    if needs_quality(paths):
+        command.extend(['--codescene-command', context.settings.codescene_command])
+    return Step('prerequisites', command, 180)
+
+
 def focused_steps(legacy, context, output, paths):
     args = context.settings
     steps = static_steps(legacy.ROOT, paths, args.base, sys.executable)
+    if context.decision.pairs:
+        steps.insert(0, selected_prerequisite_step(legacy.ROOT, context, paths))
     packages = rust_packages(context, paths)
     if packages:
         steps.extend(rust_check_steps(legacy, args, output, packages))
-    steps.extend(category_plan(legacy, context, output))
+    categories = replace(context, settings=replace(args, suite_preflight=False))
+    steps.extend(category_plan(legacy, categories, output))
     if needs_quality(paths):
         steps.append(legacy.quality_step(args, paths))
     for step in steps:

@@ -175,6 +175,7 @@ impl State {
             }
         };
         self.flow_comparison.controls.catalog_open = false;
+        self.flow_comparison.previews.close();
         self.flow_comparison.controls.panel = Panel::Graph;
         self.flow_comparison.impact.clear();
         self.start_snapshot_operation(Operation::Graph {

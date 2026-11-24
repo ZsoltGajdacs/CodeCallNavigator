@@ -22,7 +22,7 @@ mod navigation_inventory;
 pub(crate) type NavigationInventory = navigation_inventory::NavigationInventory;
 pub(crate) type LayerInventory = navigation_inventory::LayerInventory;
 #[path = "projection/labels.rs"]
-mod labels;
+pub(crate) mod labels;
 #[path = "projection/layer_geometry.rs"]
 mod layer_geometry;
 #[path = "projection/layers.rs"]

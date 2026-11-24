@@ -1,5 +1,8 @@
 //! Exercise class selection, saved previews, and call changes on actual drawn frames.
-use super::{Driver, Phase, Step, change_key, focused, preview_drawn};
+use super::{
+    Driver, Phase, PopupKind, PopupStep, Step, change_key, focused, preview_drawn,
+    require_pane_labels,
+};
 use crate::{
     app::State,
     flow_comparison::{ClassPair, SideId},
@@ -88,12 +91,13 @@ impl Driver {
             }
             Step::ClassDrawn if class_graph_drawn(runtime)? => {
                 require_closed_preview(runtime)?;
+                require_class_labels(runtime)?;
                 self.report.check("class_call_changes_drawn");
                 self.phase = Phase::FlowFirst(Step::HoverClass);
             }
             Step::ClassHovered if preview_drawn(runtime, "Leaf(2)") => {
                 self.report.check("class_source_diff_drawn_on_hover");
-                self.phase = Phase::FlowFirst(Step::FocusClassNeighbor);
+                self.phase = PopupKind::Class.phase(PopupStep::Enter);
             }
             Step::FocusClassNeighbor
                 if focused(runtime, &neighbor_key(runtime)?) && excerpt_drawn(runtime, "=> 23") =>
@@ -121,6 +125,46 @@ impl Driver {
             .context("The changed fixture method has no owning class row")?;
         Ok(change_key(runtime, id))
     }
+}
+
+fn require_class_labels(runtime: &Runtime<State>) -> Result<()> {
+    let pair = runtime
+        .state
+        .flow_comparison
+        .class_pair()
+        .context("No class graph")?;
+    let elements = runtime.elements();
+    require_pane_labels(&elements, "+ Cases", "RevisionFixture.Cases")?;
+    for (side, neighbor) in [
+        (SideId::Before, "OldNeighbor"),
+        (SideId::After, "NewNeighbor"),
+    ] {
+        require_card_label(&elements, side, &pair.graph.root, "Cases")?;
+        require_card_label(&elements, side, named_node(pair, neighbor)?, neighbor)?;
+    }
+    Ok(())
+}
+
+fn require_card_label(elements: &[ElementInfo], side: SideId, id: &str, name: &str) -> Result<()> {
+    let name_key = super::observation::address(side).key(&format!("class-name-{id}"));
+    let text = format!("+ {name}");
+    let card_key = node_key(side, id);
+    let owner = format!("public · RevisionFixture.{name}");
+    ensure!(
+        elements.iter().any(|element| {
+            element.key.as_deref() == Some(&name_key)
+                && element.text.as_deref() == Some(&text)
+                && visible(element)
+        }),
+        "{side:?} class card must draw {text}"
+    );
+    ensure!(
+        elements.iter().any(|element| {
+            element.key.as_deref() == Some(&card_key) && element.help.as_deref() == Some(&owner)
+        }),
+        "{side:?} class card {name} must provide its qualified name in help"
+    );
+    Ok(())
 }
 
 fn require_closed_preview(runtime: &Runtime<State>) -> Result<()> {

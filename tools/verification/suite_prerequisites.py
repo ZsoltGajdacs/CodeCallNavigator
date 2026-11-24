@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """Fail before compilation on prerequisites of the exact selected category."""
 import argparse
-import json
 import os
 from pathlib import Path
 import platform
@@ -12,7 +11,8 @@ import sys
 if not __package__:
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from verification import prerequisites as shared
-from verification.inventory import select_gates, select_tests, validate_inventory, SUITES, COMPONENTS
+from verification.graphviz import locked_version
+from verification.inventory import COMPONENTS, SUITES, load_gates, selected, validate_inventory
 
 
 def requirements_for(rows, gates):
@@ -61,7 +61,7 @@ def version_checks(root, requirements):
         'maven': (['mvn', '--version'], shared.maven_supported, 'Maven 3.9+/4'),
     }
     if 'graphviz' in requirements:
-        expected = json.loads((root / 'analyzers.lock.json').read_text())['graphviz']['version']
+        expected = locked_version(root)
         specifications['graphviz'] = (['dot', '-V'], lambda text: shared.graphviz_supported(text, expected), f'Graphviz {expected}')
     errors = []
     for requirement in sorted(requirements.intersection(specifications)):
@@ -101,13 +101,17 @@ def native_problems(requirements):
     return ['Native verification requires Apple Silicon macOS with Metal/display access; no screen permission is requested by preflight']
 
 
+def missing_tools(tools):
+    return [f'Missing executable: {tool}' for tool in sorted(tools) if not shutil.which(tool)]
+
+
 def problems(root, rows, gates, profile_source=None):
     root = Path(root)
     requirements = requirements_for(rows, gates)
     runners = {row['runner'] for row in rows}
     if 'node' in runners:
         requirements.add('node')
-    errors = [f'Missing executable: {tool}' for tool in sorted(tools_for(requirements, runners)) if not shutil.which(tool)]
+    errors = missing_tools(tools_for(requirements, runners))
     errors.extend(shared.checked(lambda: version_checks(root, requirements)))
     errors.extend(shared.checked(lambda: configured_problems(root, requirements, profile_source, os.environ)))
     errors.extend(native_problems(requirements))
@@ -116,19 +120,32 @@ def problems(root, rows, gates, profile_source=None):
     return errors
 
 
+def selected_inputs(root, args):
+    tests, gates = validate_inventory(root), load_gates(root)
+    if args.suite:
+        return tuple(selected(rows, args.suite, args.component, not args.ordinary) for rows in (tests, gates))
+    pairs = set(args.selection)
+    return tuple([row for row in rows if f"{row['category']}/{row['component']}" in pairs]
+                 for rows in (tests, gates))
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--root', type=Path, required=True)
-    parser.add_argument('--suite', choices=SUITES, required=True)
+    scope = parser.add_mutually_exclusive_group(required=True)
+    scope.add_argument('--suite', choices=SUITES)
+    scope.add_argument('--selection', action='append',
+                       choices=[f'{suite}/{component}' for suite in SUITES for component in COMPONENTS])
     parser.add_argument('--component', choices=COMPONENTS, action='append')
     parser.add_argument('--ordinary', action='store_true')
     parser.add_argument('--profile-source', type=Path, default=os.environ.get('CODECALLNAVIGATOR_VERIFY_PROFILE_SOURCE'))
+    parser.add_argument('--codescene-command')
     args = parser.parse_args()
     try:
-        validate_inventory(args.root)
-        rows = select_tests(args.root, args.suite, args.component, not args.ordinary)
-        gates = select_gates(args.root, args.suite, args.component, not args.ordinary)
+        rows, gates = selected_inputs(args.root, args)
         errors = problems(args.root, rows, gates, args.profile_source)
+        if args.codescene_command:
+            errors.extend(missing_tools([args.codescene_command]))
     except (OSError, ValueError, KeyError) as error:
         errors = [str(error)]
     if errors:

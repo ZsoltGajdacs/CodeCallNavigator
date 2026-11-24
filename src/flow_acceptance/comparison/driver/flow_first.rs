@@ -1,7 +1,10 @@
 //! Prove the default outline and unified diff through the native presentation.
 mod class_flow;
+mod popup;
 use super::*;
 use crate::flow_comparison::SideId;
+pub(super) use popup::PopupObservation;
+use popup::{Kind as PopupKind, Probe as PopupStep};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(super) enum Step {
@@ -20,6 +23,7 @@ pub(super) enum Step {
     ClassDrawn,
     HoverClass,
     ClassHovered,
+    Popup(PopupKind, PopupStep),
     FocusClassNeighbor,
     ReturnToMethod,
     ReturnedToMethod,
@@ -36,6 +40,7 @@ impl Driver {
             Step::RestoreOutline => self.restore_outline(runtime),
             Step::SelectMethod => self.open_method_change(runtime, Step::Hover),
             Step::Hover => self.hover_call(runtime),
+            Step::Popup(kind, step) => self.popup_action(runtime, kind, step),
             Step::Focus => self.focus_call(runtime),
             Step::ReturnToMethod => self.open_method_change(runtime, Step::ReturnedToMethod),
             _ => self.class_flow_action(runtime, step),
@@ -104,6 +109,7 @@ impl Driver {
         if observation::pair(runtime, &self.config.cases[0])?.is_none() {
             return Ok(());
         }
+        require_pane_labels(&runtime.elements(), "+ Changed", "Changed(")?;
         let key = self.call_key(runtime)?;
         if self.input.hover(runtime, &key) {
             self.phase = Phase::FlowFirst(Step::Hovered);
@@ -138,8 +144,9 @@ impl Driver {
             Step::Outline | Step::FileDiff => self.file_outline_observed(runtime, step)?,
             Step::Hovered if preview_drawn(runtime, "Leaf(2)") => {
                 self.report.check("unified_diff_drawn_on_hover");
-                self.phase = Phase::FlowFirst(Step::Focus);
+                self.phase = PopupKind::Function.phase(PopupStep::Enter);
             }
+            Step::Popup(kind, step) => self.popup_observed(runtime, kind, step)?,
             Step::Focus
                 if focused(runtime, &self.call_key(runtime)?)
                     && preview_drawn(runtime, "Leaf(2)") =>
@@ -174,6 +181,30 @@ impl Driver {
         }
         Ok(())
     }
+}
+
+fn require_pane_labels(
+    elements: &[rune::runtime::ElementInfo],
+    label: &str,
+    help: &str,
+) -> Result<()> {
+    for side in ["Before", "After"] {
+        let key = format!("comparison-pane-name-{side}");
+        ensure!(
+            elements.iter().any(|element| {
+                element.key.as_deref() == Some(&key)
+                    && element.text.as_deref() == Some(label)
+                    && element
+                        .help
+                        .as_deref()
+                        .is_some_and(|value| value.contains(help))
+                    && !element.exiting
+                    && element.visible[2].min(element.visible[3]) > 0.0
+            }),
+            "{side} heading must show {label} with help containing {help}"
+        );
+    }
+    Ok(())
 }
 
 fn verify_outline(runtime: &Runtime<State>) -> Result<()> {

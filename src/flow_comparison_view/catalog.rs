@@ -2,6 +2,7 @@
 use crate::{
     app::State,
     engine_client::flow_comparison::{self as wire, CatalogSide, Recorded},
+    projection::labels,
 };
 use rune::{El, col, el, row, text};
 use rune_kit::{Button, ButtonVariant, Kit, TextInput};
@@ -204,7 +205,7 @@ fn counterpart_disabled(state: &State, record: &wire::Record) -> bool {
             .is_none_or(|pair| pair.selection.symbol == record.symbol)
 }
 fn record_node(record: &wire::Record) -> Option<&wire::Symbol> {
-    [&record.before, &record.after]
+    [&record.after, &record.before]
         .into_iter()
         .find_map(|side| match side {
             CatalogSide::Present(present) => present.node.as_ref(),
@@ -213,13 +214,7 @@ fn record_node(record: &wire::Record) -> Option<&wire::Symbol> {
 }
 fn record_name(record: &wire::Record) -> String {
     record_node(record)
-        .map(|node| {
-            if node.signature.is_empty() {
-                node.label.clone()
-            } else {
-                node.signature.clone()
-            }
-        })
+        .map(|node| labels::named(&node.label, &node.signature, node.visibility).text)
         .unwrap_or_else(|| record.symbol.clone())
 }
 fn record_owner(record: &wire::Record) -> String {
@@ -235,7 +230,7 @@ fn side_description(side: &CatalogSide) -> String {
             .map(|node| {
                 format!(
                     "{} · {} · {}:{}\nBuild: {} · {}\n{}",
-                    node.signature,
+                    labels::named(&node.label, &node.signature, node.visibility).description,
                     node.owner.project,
                     node.owner.file,
                     node.line,

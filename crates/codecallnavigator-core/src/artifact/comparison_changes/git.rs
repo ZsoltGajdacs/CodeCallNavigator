@@ -119,6 +119,7 @@ fn file_row(file: &SourceFile) -> Change {
             .next()
             .unwrap_or(&file.path)
             .to_owned(),
+        name_details: None,
         file: file.path.clone(),
         status: Status::between(file.before.present(), file.after.present()),
         changes_in: vec![Facet::Source],

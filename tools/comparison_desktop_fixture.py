@@ -37,6 +37,11 @@ def git(project, *arguments):
 
 def revision_source(revision):
     source = (FIXTURE / f"{revision}.cs.txt").read_text()
+    # Ensure a single changed step's preview can exercise horizontal scrolling.
+    comment = " // " + "Long saved source line for horizontal scrolling. " * 4
+    for value in (1, 2):
+        line = f"if (flag) return Leaf({value});\n"
+        source = source.replace(line, line.rstrip("\n") + comment + "\n")
     prefix = "// Saved revision café 🧭\r\n" * 220
     return b"\xef\xbb\xbf" + (prefix + source.replace("\n", "\r\n")).encode("utf-8")
 

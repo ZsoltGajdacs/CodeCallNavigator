@@ -1,8 +1,10 @@
 //! Two independent charts and one explicitly selected source/details endpoint.
 use crate::{
     app::State,
+    engine_client::flow_comparison::Symbol,
     flow_comparison::{Side, SideId},
     flow_view::{self, address::Address},
+    projection::labels::{self, Label},
 };
 use rune::{El, col, el, row, text};
 use rune_kit::{Button, ButtonVariant, Kit};
@@ -54,7 +56,7 @@ fn chart(state: &State, side: SideId, k: &Kit) -> El {
         return super::class_canvas::pane(content, state, side, k);
     }
     let Some(pair) = &state.flow_comparison.current else {
-        return content.child(heading(title(side), "", k)).child(empty(
+        return content.child(heading(title(side), None, k)).child(empty(
             address,
             if state.flow_comparison.detail_pending() {
                 "Building before and after charts…"
@@ -66,9 +68,11 @@ fn chart(state: &State, side: SideId, k: &Kit) -> El {
             k,
         ));
     };
-    match pair.side(side) {
+    let side_data = pair.side(side);
+    let label = method_label(side_data);
+    let content = content.child(heading(title(side), label.as_ref(), k));
+    match side_data {
         Side::Ready(ready) => content
-            .child(heading(title(side), &ready.node.signature, k))
             .child(
                 if ready
                     .session
@@ -86,14 +90,20 @@ fn chart(state: &State, side: SideId, k: &Kit) -> El {
                 },
             )
             .child(flow_view::chart::view(state, &ready.session, address, k)),
-        other => {
-            content
-                .child(heading(title(side), "", k))
-                .child(empty(address, &explanation(other), k))
-        }
+        other => content.child(empty(address, &explanation(other), k)),
     }
 }
-pub(super) fn heading(title: &str, name: &str, k: &Kit) -> El {
+
+fn method_label(side: &Side) -> Option<Label> {
+    let node: &Symbol = match side {
+        Side::Ready(ready) => &ready.node,
+        Side::Unavailable(unavailable) => unavailable.node.as_ref()?,
+        Side::Missing => return None,
+    };
+    Some(labels::named(&node.label, &node.signature, node.visibility))
+}
+
+pub(super) fn heading(title: &str, label: Option<&Label>, k: &Kit) -> El {
     row()
         .w_full()
         .padding(6.0)
@@ -101,13 +111,14 @@ pub(super) fn heading(title: &str, name: &str, k: &Kit) -> El {
         .center_y()
         .child(text(title).font(k.ty.small_medium).color(k.c.text_base))
         .child(
-            text(name)
+            text(label.map_or("", |label| &label.text))
+                .key(format!("comparison-pane-name-{title}"))
                 .font(k.ty.small)
                 .color(k.c.text_muted)
                 .grow(1.0)
                 .min_w(0.0)
                 .truncate()
-                .help(name),
+                .help(label.map_or("", |label| &label.description)),
         )
 }
 pub(super) fn empty(address: Address, message: &str, k: &Kit) -> El {

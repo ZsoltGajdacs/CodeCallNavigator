@@ -2,7 +2,7 @@ use super::*;
 use crate::{
     architecture::{ArchitectureFacts, FACTS_VERSION, FileFacts},
     flow::{FlowInventory, FunctionFlowIR, SourceSpan},
-    model::{Edge, EntryPoints},
+    model::{Edge, EntryPoints, Visibility},
 };
 
 pub(super) fn snapshot(source: &str, certainty: &str) -> GraphData {
@@ -121,8 +121,10 @@ fn ambiguous_declarations_produce_a_file_preview() {
 #[test]
 fn call_certainty_is_bound_to_each_snapshot() {
     let source = "class OrderService {\nint limit = 10;\nvoid Entry() { Run(); }\nvoid Run() { return; }\n}\n";
-    let before = snapshot(source, "possible");
-    let after = snapshot(source, "direct");
+    let mut before = snapshot(source, "possible");
+    let mut after = snapshot(source, "direct");
+    before.nodes[0].visibility = Some(Visibility::Public);
+    after.nodes[0].visibility = Some(Visibility::Public);
     let diff = Comparison::from_graphs(before, after).unwrap();
     let changed = diff
         .changes
@@ -130,6 +132,15 @@ fn call_certainty_is_bound_to_each_snapshot() {
         .find(|row| row.kind == ChangeKind::Method)
         .unwrap();
     assert_eq!(changed.name, "entry()");
+    let name = changed.name_details.as_ref().unwrap();
+    assert_eq!(
+        (
+            name.label.as_str(),
+            name.description.as_str(),
+            name.visibility
+        ),
+        ("entry", "entry()", Some(Visibility::Public))
+    );
     assert_eq!(changed.changes_in, [Facet::Flow]);
     let class = diff
         .changes
@@ -241,6 +252,10 @@ fn class_graph_compares_directional_neighbor_calls_and_resolution_counts() {
     let old = Snapshot::new(&before, &missing).unwrap();
     let new = Snapshot::new(&after, &missing).unwrap();
     let graph = class_graph::graph(&old, &new, &root).unwrap();
+    let class = graph.nodes.iter().find(|node| node.id == root).unwrap();
+    assert_eq!(class.short_name.as_deref(), Some("OrderService"));
+    assert_eq!(class.before_visibility, Some(Visibility::Internal));
+    assert_eq!(class.after_visibility, Some(Visibility::Public));
     let link = |from: &str, to: &str| {
         graph
             .links
@@ -276,6 +291,7 @@ fn class_graph_compares_directional_neighbor_calls_and_resolution_counts() {
 fn class_redirect_fixture() -> [GraphData; 2] {
     let source = "class OrderService {\nint limit = 10;\nvoid Entry() { Run(); }\nvoid Run() { return; }\n}\n";
     let mut before = snapshot(source, "direct");
+    before.nodes[0].container_visibility = Some(Visibility::Internal);
     let neighbor = |id: &str, name: &str| Node {
         id: id.into(),
         label: id.into(),
@@ -306,6 +322,7 @@ fn class_redirect_fixture() -> [GraphData; 2] {
         call(2, 3, "direct", 99),
     ]);
     let mut after = before.clone();
+    after.nodes[0].container_visibility = Some(Visibility::Public);
     after.edges[1] = call(0, 3, "dispatch", 2);
     after.edges[2] = call(4, 0, "direct", 4);
     [before, after]
@@ -332,6 +349,9 @@ fn class_graph_retains_declaration_only_class_and_distinguishes_absence() {
             nodes: vec![ClassNode {
                 id: root.clone(),
                 name: "Example.OrderService".into(),
+                short_name: Some("OrderService".into()),
+                before_visibility: None,
+                after_visibility: None,
                 before: true,
                 after: false,
                 status: GraphChange::Removed,

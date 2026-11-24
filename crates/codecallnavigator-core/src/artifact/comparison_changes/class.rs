@@ -1,6 +1,11 @@
 //! Exact native class ownership and the saved TypeScript semantic owner chain.
-use super::stable_id;
-use crate::{architecture::FileFacts, artifact::identity, model::Node, search::ClassIdentity};
+use super::{NameDetails, stable_id};
+use crate::{
+    architecture::FileFacts,
+    artifact::identity,
+    model::{GraphData, Node, Visibility},
+    search::ClassIdentity,
+};
 
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub(super) struct Class {
@@ -45,6 +50,31 @@ impl Class {
 
     pub fn name(&self) -> &str {
         simple_name(&self.owner.container)
+    }
+
+    pub fn label(&self) -> &str {
+        if self.typescript_file.is_some() {
+            &self.owner.container
+        } else {
+            self.name()
+        }
+    }
+
+    pub fn visibility(&self, graph: &GraphData, members: &[usize]) -> Option<Visibility> {
+        if self.typescript_file.is_some() {
+            return None;
+        }
+        members
+            .iter()
+            .find_map(|&index| graph.nodes[index].container_visibility)
+    }
+
+    pub fn name_details(&self, visibility: Option<Visibility>) -> NameDetails {
+        NameDetails {
+            label: self.label().to_owned(),
+            description: self.owner.container.clone(),
+            visibility,
+        }
     }
 
     pub fn id(&self) -> String {

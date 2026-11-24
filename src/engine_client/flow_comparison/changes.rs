@@ -1,6 +1,7 @@
 //! Revision-bound change summaries and library-generated source hunks.
 use super::{BoundComparison, Header};
 use anyhow::{Result, ensure};
+use codecallnavigator::artifact::comparison_changes::NameDetails;
 use codecallnavigator::query::ComparisonChangesSelection;
 use serde::Deserialize;
 use std::sync::atomic::AtomicBool;
@@ -38,6 +39,7 @@ pub struct Change {
     pub id: String,
     pub kind: ChangeKind,
     pub name: String,
+    pub name_details: Option<NameDetails>,
     pub file: String,
     pub status: ChangeStatus,
     pub class_id: Option<String>,

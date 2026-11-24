@@ -85,7 +85,7 @@ def category_steps(root, category, output, args):
     context = SuiteContext(root, output / category, SuiteSelection.from_args(category, args))
     steps, report = execution_steps(context)
     result = [preparation_step(context)]
-    if getattr(args, 'mode', None) != 'full':
+    if getattr(args, 'suite_preflight', True) and getattr(args, 'mode', None) != 'full':
         result.insert(0, prerequisite_step(context, args))
     requirements = requirements_for(report['selected'], report['gates'])
     if needs_bootstrap(context, requirements, args):

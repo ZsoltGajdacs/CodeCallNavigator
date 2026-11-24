@@ -1,10 +1,10 @@
-//! Graph-only display text, independent of stable identities and analyzer formats.
+//! Desktop graph display text, independent of stable identities and analyzer formats.
 use codecallnavigator::{
     model::{Node, Visibility},
     search::class_name,
 };
 
-pub(super) struct Label {
+pub(crate) struct Label {
     pub text: String,
     pub description: String,
 }
@@ -21,7 +21,8 @@ fn access(visibility: Visibility) -> (&'static str, &'static str) {
     }
 }
 
-fn format(name: &str, full: &str, visibility: Option<Visibility>) -> Label {
+pub(crate) fn named(name: &str, full: &str, visibility: Option<Visibility>) -> Label {
+    let full = if full.is_empty() { name } else { full };
     match visibility {
         Some(visibility) => {
             let (sign, description) = access(visibility);
@@ -38,16 +39,11 @@ fn format(name: &str, full: &str, visibility: Option<Visibility>) -> Label {
 }
 
 pub(super) fn method(node: &Node) -> Label {
-    let full = if node.signature.is_empty() {
-        &node.label
-    } else {
-        &node.signature
-    };
-    format(&node.label, full, node.visibility)
+    named(&node.label, &node.signature, node.visibility)
 }
 
 pub(super) fn class(node: &Node) -> Label {
-    format(
+    named(
         class_name(node),
         &node.container,
         if node.language.eq_ignore_ascii_case("typescript") {
@@ -74,7 +70,7 @@ mod tests {
             (Visibility::ProtectedInternal, "#~", "protected internal"),
             (Visibility::PrivateProtected, "−#", "private protected"),
         ] {
-            let label = format("run", "app.Worker::run()", Some(visibility));
+            let label = named("run", "app.Worker::run()", Some(visibility));
             assert_eq!(label.text, format!("{sign} run"));
             assert_eq!(
                 label.description,

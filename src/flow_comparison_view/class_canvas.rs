@@ -4,15 +4,29 @@ use crate::{
     app::State,
     flow_comparison::{ClassPair, SideId, class_present},
     flow_view::address::Address,
+    projection::labels::{self, Label},
     theme,
 };
 use codecallnavigator::{
     artifact::comparison_changes::{ClassNode, GraphChange},
     model::TargetResolution,
+    search::simple_class_name,
 };
 use rune::{Color, El, Key, Shape, canvas, col, el, text};
 use rune_kit::Kit;
-use std::{collections::BTreeMap, time::Duration};
+use std::collections::BTreeMap;
+
+fn class_label(node: &ClassNode, side: SideId) -> Label {
+    let name = node
+        .short_name
+        .as_deref()
+        .unwrap_or_else(|| simple_class_name(&node.name));
+    let visibility = match side {
+        SideId::Before => node.before_visibility,
+        SideId::After => node.after_visibility,
+    };
+    labels::named(name, &node.name, visibility)
+}
 
 pub(super) fn pane(content: El, state: &State, side: SideId, k: &Kit) -> El {
     let (title, address) = match side {
@@ -21,14 +35,14 @@ pub(super) fn pane(content: El, state: &State, side: SideId, k: &Kit) -> El {
     };
     let workspace = &state.flow_comparison;
     let Some(pair) = workspace.class_pair() else {
-        return content.child(heading(title, "", k)).child(empty(
+        return content.child(heading(title, None, k)).child(empty(
             address,
             &workspace.detail_message,
             k,
         ));
     };
-    let name = &pair.graph.nodes[pair.root].name;
-    let content = content.child(heading(title, name, k));
+    let name = class_label(&pair.graph.nodes[pair.root], side);
+    let content = content.child(heading(title, Some(&name), k));
     if !pair.has_root(side) {
         return content.child(empty(address, "Class missing in this revision", k));
     }
@@ -134,9 +148,8 @@ impl ClassCanvas<'_> {
                 k.c.std_border
             }
         });
-        let id = node.id.clone();
         let keyboard_anchor = anchor.clone();
-        let keyboard_id = id.clone();
+        let name = class_label(node, side);
         let mut control = col()
             .key(anchor.clone())
             .absolute(point[0], point[1])
@@ -148,10 +161,12 @@ impl ClassCanvas<'_> {
             .border(if root { 2.0 } else { 1.0 }, border)
             .fill(k.c.surface_raised)
             .role("button")
-            .label(&node.name)
+            .label(&name.text)
+            .help(&name.description)
             .focusable(true)
             .child(
-                text(&node.name)
+                text(&name.text)
+                    .key(address.key(&format!("class-name-{}", node.id)))
                     .w_full()
                     .truncate()
                     .font(k.ty.small_medium)
@@ -161,24 +176,14 @@ impl ClassCanvas<'_> {
             control = control.child(text(status).font(k.ty.small).color(border));
         }
         control
-            .hover_delays(Duration::from_millis(160), Duration::ZERO)
-            .on_hover_change(move |s: &mut State, inside, _| {
-                if inside {
-                    s.flow_comparison
-                        .show_class_preview(side, id.clone(), anchor.clone());
-                } else {
-                    s.flow_comparison.end_step_hover(&anchor);
-                }
+            .on_hover_change(move |s: &mut State, inside, tx| {
+                s.flow_comparison.hover_canvas_source(&anchor, inside, tx);
             })
             .on_key(move |s: &mut State, event, _| {
                 if event.key != Key::Enter {
                     return false;
                 }
-                s.flow_comparison.show_class_preview(
-                    side,
-                    keyboard_id.clone(),
-                    keyboard_anchor.clone(),
-                );
+                s.flow_comparison.focus_canvas_source(&keyboard_anchor);
                 true
             })
     }

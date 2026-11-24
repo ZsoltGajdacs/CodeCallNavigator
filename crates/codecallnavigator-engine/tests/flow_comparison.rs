@@ -166,7 +166,7 @@ fn check_class_details(
         json!({
             "root": id,
             "nodes": [{
-                "id": id, "name": "App", "before": true, "after": true,
+                "id": id, "name": "App", "short_name": "App", "before": true, "after": true,
                 "status": "unchanged"
             }],
             "links": [],

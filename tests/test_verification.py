@@ -460,8 +460,11 @@ class VerificationPlans(unittest.TestCase):
             (private / "pom.xml").write_text("<project />")
             (root / "fixtures/gradle").mkdir(parents=True)
             (root / "fixtures/gradle/gradlew").write_text("#!/bin/sh\n")
+            compiler = modules / 'typescript/index.js'
+            compiler.write_text("exports.version = '6.0.2';")
             environment = {"CODECALLNAVIGATOR_TS_NODE_MODULES": str(modules), "CODECALLNAVIGATOR_RECURRING_BILLING": str(private)}
             self.assertEqual(prerequisites.dependencies(root, environment), [])
+            compiler.write_text("exports.version = '5.9.3';")
             (modules / "typescript/package.json").write_text('{"version": "5.9.3"}')
             self.assertEqual(prerequisites.dependencies(root, environment), [])
             (modules / "typescript/package.json").write_text('{"version": "5.8.3"}')

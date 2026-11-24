@@ -50,7 +50,7 @@ pub(super) fn layer(state: &State, k: &Kit, layers: &mut Vec<El>) {
         }
         _ => return,
     };
-    let size = state.source_popup.window;
+    let size = state.source_popup.interaction.window;
     let width = 420.0_f32.min((size[0] - 16.0).max(1.0));
     let height = 480.0_f32.min((size[1] - 16.0).max(1.0));
     let mut panel = col()

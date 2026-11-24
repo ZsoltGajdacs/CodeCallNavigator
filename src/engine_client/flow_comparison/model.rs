@@ -1,6 +1,7 @@
 //! Owned public-wire DTOs; compiler target certainty remains in the function/chart calls.
 use codecallnavigator::artifact::local_snapshots::SnapshotRecord;
 use codecallnavigator::flow::{FlowChart, FunctionFlowIR};
+use codecallnavigator::model::Visibility;
 use serde::Deserialize;
 
 #[derive(Clone, Debug, PartialEq, Eq, Deserialize)]
@@ -54,6 +55,7 @@ pub struct Symbol {
     pub symbol: String,
     pub label: String,
     pub signature: String,
+    pub visibility: Option<Visibility>,
     pub line: u32,
     pub body_unavailable: bool,
     pub owner: Owner,

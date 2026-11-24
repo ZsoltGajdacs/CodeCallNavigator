@@ -6,7 +6,7 @@ use crate::{
     architecture::FileFacts,
     artifact::flow::View,
     flow::FunctionFlowIR,
-    model::{GraphData, Node, RelationshipKind},
+    model::{GraphData, Node, RelationshipKind, Visibility},
 };
 use anyhow::Result;
 use std::collections::{BTreeMap, BTreeSet};
@@ -122,6 +122,10 @@ impl<'a> Snapshot<'a> {
                 self.single_class(FileId::of_file(file))
                     .is_some_and(|declaration| declaration.can_confirm(class))
             })
+    }
+
+    pub fn class_visibility(&self, class: &Class) -> Option<Visibility> {
+        class.visibility(self.graph, self.classes.get(class)?.as_slice())
     }
 
     pub fn single_class(&self, id: FileId<'_>) -> Option<Class> {

@@ -244,20 +244,11 @@ fn preview_on_hover(
     address: Address,
     index: usize,
 ) -> El {
-    let Some(side) = side else {
+    if side.is_none() {
         return card;
-    };
+    }
     let key = address.key(&format!("step-{index}"));
-    card.hover_delays(
-        std::time::Duration::from_millis(160),
-        std::time::Duration::ZERO,
-    )
-    .on_hover_change(move |s: &mut State, inside, _| {
-        if inside {
-            s.flow_comparison
-                .show_step_preview(side, index, key.clone());
-        } else {
-            s.flow_comparison.end_step_hover(&key);
-        }
+    card.on_hover_change(move |s: &mut State, inside, tx| {
+        s.flow_comparison.hover_canvas_source(&key, inside, tx);
     })
 }

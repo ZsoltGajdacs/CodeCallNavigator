@@ -91,9 +91,9 @@ fn graph_hover_waits_then_allows_crossing_gap_and_closes_after_leaving() {
             .source_popup
             .hover
             .as_ref()
-            .map(|h| &h.node.key),
-        runtime.state.source_popup.inside,
-        runtime.state.source_popup.close_at
+            .map(|h| &h.target.key),
+        runtime.state.source_popup.interaction.inside,
+        runtime.state.source_popup.interaction.close_at
     );
     frames(&mut runtime, 7);
     assert!(runtime.state.source_popup.active.is_some());
@@ -120,9 +120,9 @@ fn graph_hover_waits_then_allows_crossing_gap_and_closes_after_leaving() {
             .source_popup
             .hover
             .as_ref()
-            .map(|h| &h.node.key),
-        runtime.state.source_popup.inside,
-        runtime.state.source_popup.close_at
+            .map(|h| &h.target.key),
+        runtime.state.source_popup.interaction.inside,
+        runtime.state.source_popup.interaction.close_at
     );
 }
 
@@ -266,7 +266,7 @@ fn dragging_resize_handle_is_bounded_and_window_resize_keeps_pinned_preview_visi
     runtime.pointer_move(x - 600.0, y - 600.0);
     runtime.pointer_up(x - 600.0, y - 600.0);
     frames(&mut runtime, 4);
-    assert_eq!(runtime.state.source_popup.size, [360.0, 240.0]);
+    assert_eq!(runtime.state.source_popup.interaction.size, [360.0, 240.0]);
     assert_eq!(runtime.state.nav.camera.pan, pan);
     let (x, y) = runtime.find("source-resize").unwrap();
     runtime.pointer_down(x, y);
@@ -281,7 +281,7 @@ fn dragging_resize_handle_is_bounded_and_window_resize_keeps_pinned_preview_visi
         popup[0] + popup[2] <= 1034.0 && popup[1] + popup[3] <= 664.0,
         "popup bounds: {popup:?}"
     );
-    assert!(runtime.state.source_popup.active.as_ref().unwrap().pinned);
+    assert!(runtime.state.source_popup.interaction.pinned);
 }
 
 #[test]
@@ -368,7 +368,7 @@ fn unpin_restores_leave_dismissal_and_pane_resizing_preserves_open_preview() {
         Contents::Source(_)
     ));
     click(&mut runtime, "source-pin");
-    assert!(!runtime.state.source_popup.active.as_ref().unwrap().pinned);
+    assert!(!runtime.state.source_popup.interaction.pinned);
     runtime.pointer_move(10.0, 10.0);
     frames(&mut runtime, 30);
     assert!(runtime.state.source_popup.active.is_none());
@@ -441,21 +441,21 @@ fn resizing_a_window_constrained_popup_starts_from_its_visible_size() {
     let (mut runtime, _directory) = source_runtime(1);
     open(&mut runtime);
     click(&mut runtime, "source-pin");
-    runtime.update(|state, _| state.source_popup.size = [1388.0, 868.0]);
+    runtime.update(|state, _| state.source_popup.interaction.size = [1388.0, 868.0]);
     frames(&mut runtime, 60);
     runtime.set_viewport((1050.0, 680.0), 1.0);
     frames(&mut runtime, 60);
     let before = rect(&runtime, "source-popup");
     assert!((before[2] - 1018.0).abs() < 1.0);
-    assert_eq!(runtime.state.source_popup.size[0], 1388.0);
+    assert_eq!(runtime.state.source_popup.interaction.size[0], 1388.0);
     let (x, y) = runtime.find("source-resize").unwrap();
     runtime.pointer_down(x, y);
     runtime.pointer_move(x - 100.0, y);
     frames(&mut runtime, 1);
     assert!(
-        (runtime.state.source_popup.size[0] - (before[2] - 100.0)).abs() < 1.0,
+        (runtime.state.source_popup.interaction.size[0] - (before[2] - 100.0)).abs() < 1.0,
         "resize used preferred rather than visible width: {:?}",
-        runtime.state.source_popup.size
+        runtime.state.source_popup.interaction.size
     );
     runtime.pointer_up(x - 100.0, y);
     frames(&mut runtime, 60);
@@ -467,7 +467,7 @@ fn moving_from_popup_overlap_to_exposed_trigger_keeps_preview_open() {
     let (mut runtime, _directory) = source_runtime(1);
     runtime.update(|state, _| {
         // A user-resized large preview forces the overlap this recovery case covers.
-        state.source_popup.size = [720.0, 480.0];
+        state.source_popup.interaction.size = [720.0, 480.0];
         state.nav.camera.zoom = 1.0;
         state.nav.camera.pan = [0.0, 0.0];
         state.graph_view.nodes[0].position = [650.0 - state.source_popup.canvas[0], 60.0];
@@ -485,12 +485,12 @@ fn moving_from_popup_overlap_to_exposed_trigger_keeps_preview_open() {
     assert!(exposed[0] > popup[0] + popup[2]);
     runtime.pointer_move(overlap[0], overlap[1]);
     frames(&mut runtime, 4);
-    assert!(runtime.state.source_popup.inside);
-    assert!(runtime.state.source_popup.trigger_inside);
+    assert!(runtime.state.source_popup.interaction.inside);
+    assert!(runtime.state.source_popup.interaction.trigger_inside);
     runtime.pointer_move(exposed[0], exposed[1]);
     frames(&mut runtime, 30);
-    assert!(!runtime.state.source_popup.inside);
-    assert!(runtime.state.source_popup.trigger_inside);
+    assert!(!runtime.state.source_popup.interaction.inside);
+    assert!(runtime.state.source_popup.interaction.trigger_inside);
     assert!(runtime.state.source_popup.active.is_some());
 }
 

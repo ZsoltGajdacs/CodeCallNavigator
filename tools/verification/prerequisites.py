@@ -12,6 +12,7 @@ import subprocess
 import sys
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from verification.graphviz import locked_version, supports_version as graphviz_supported
 from verification.profile import validate
 from verification.typescript_compatibility import compiler_problems
 
@@ -75,13 +76,8 @@ def dotnet_supported(output):
     return any(line.startswith("11.") for line in output.splitlines())
 
 
-def graphviz_supported(output, expected):
-    match = re.search(r"graphviz version (\d+\.\d+\.\d+)(?:\s|$)", output)
-    return match is not None and match.group(1) == expected
-
-
 def version_problems(root):
-    graphviz = json.loads((root / "analyzers.lock.json").read_text())["graphviz"]["version"]
+    graphviz = locked_version(root)
     specifications = [
         (["node", "--version"], lambda s: int(s.strip().lstrip("v").split(".")[0]) >= 24, "Node 24+"),
         (["dotnet", "--list-sdks"], dotnet_supported, ".NET SDK 11"),

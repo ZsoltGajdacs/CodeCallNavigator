@@ -67,6 +67,19 @@ impl Input {
         runtime.pointer_move(x, y);
         true
     }
+
+    pub fn drag<S: 'static>(
+        &mut self,
+        runtime: &mut Runtime<S>,
+        key: &str,
+        delta: [f32; 2],
+    ) -> bool {
+        let Some(origin) = point(runtime, key) else {
+            return false;
+        };
+        self.drag_at(runtime, origin, delta);
+        true
+    }
     pub fn edit<S: 'static>(&mut self, runtime: &mut Runtime<S>, key: &str, text: &str) -> bool {
         self.begin_press(runtime, key, Some(text))
     }
@@ -127,12 +140,16 @@ impl Input {
         let Some(origin) = candidate else {
             return false;
         };
+        self.drag_at(runtime, origin, [24.0, 18.0]);
+        true
+    }
+
+    fn drag_at<S: 'static>(&mut self, runtime: &mut Runtime<S>, origin: [f32; 2], delta: [f32; 2]) {
         runtime.pointer_move(origin[0], origin[1]);
         runtime.pointer_down(origin[0], origin[1]);
         self.gesture = Some(Gesture::Move {
-            end: [origin[0] + 24.0, origin[1] + 18.0],
+            end: [origin[0] + delta[0], origin[1] + delta[1]],
         });
-        true
     }
 
     pub fn scroll_source<S: 'static>(&mut self, runtime: &mut Runtime<S>, offset: f32) -> bool {
@@ -144,11 +161,24 @@ impl Input {
         key: &str,
         offset: f32,
     ) -> bool {
+        let delta = if offset > 80.0 { 80.0 } else { -80.0 };
+        self.scroll_by(runtime, key, [0.0, delta])
+    }
+
+    pub fn scroll_by<S: 'static>(
+        &mut self,
+        runtime: &mut Runtime<S>,
+        key: &str,
+        delta: [f32; 2],
+    ) -> bool {
         let Some(at) = point(runtime, key) else {
             return false;
         };
-        let delta = if offset > 80.0 { 80.0 } else { -80.0 };
-        runtime.wheel_event(WheelEvent::new(0.0, delta).at(at[0], at[1]).precise(true));
+        runtime.wheel_event(
+            WheelEvent::new(delta[0], delta[1])
+                .at(at[0], at[1])
+                .precise(true),
+        );
         self.gesture = Some(Gesture::Settling(
             Instant::now() + Duration::from_millis(120),
         ));
