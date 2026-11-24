@@ -24,3 +24,6 @@ zstd = { version = "0.13", default-features = false }
 # O_NONBLOCK prevents a raced symlink-to-FIFO open from blocking verification.
 [target.'cfg(unix)'.dependencies]
 libc = "0.2"
+
+[build-dependencies]
+cc = "1.11.1"

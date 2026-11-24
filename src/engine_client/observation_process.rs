@@ -346,9 +346,7 @@ impl Session {
     }
     fn update_owned(&mut self) -> Result<()> {
         if self.last_inventory.elapsed() >= Duration::from_secs(1) {
-            if let Some(owned) = &mut self.owned {
-                owned.refresh()?;
-            }
+            self.update_owned_now()?;
             self.last_inventory = Instant::now();
         }
         Ok(())
@@ -383,7 +381,12 @@ impl Session {
     }
 
     fn update_owned_now(&mut self) -> Result<()> {
-        self.owned.as_mut().map_or(Ok(()), Descendants::refresh)
+        if let Some(owned) = &mut self.owned
+            && let Some(error) = owned.track()?
+        {
+            eprintln!("Automatic refresh process tracking temporarily unavailable: {error:#}");
+        }
+        Ok(())
     }
 
     fn terminate_owned(&mut self) -> Result<()> {

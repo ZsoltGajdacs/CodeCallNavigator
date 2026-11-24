@@ -59,10 +59,13 @@ impl OwnedProcess {
 
     pub fn try_wait(&mut self) -> Result<Option<ExitStatus>> {
         if Instant::now() >= self.next_observation {
-            self.descendants.refresh().map_err(|error| {
+            let diagnostic = self.descendants.track().map_err(|error| {
                 CleanupFailure(format!("could not observe descendants: {error:#}"))
             })?;
             self.next_observation = Instant::now() + Duration::from_millis(100);
+            if let Some(error) = diagnostic {
+                eprintln!("Analyzer process tracking temporarily unavailable: {error:#}");
+            }
         }
         Ok(self.child_mut().try_wait()?)
     }

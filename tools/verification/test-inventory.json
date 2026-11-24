@@ -2134,6 +2134,52 @@
       "purpose": "structural snapshot rejects embedded function bodies"
     },
     {
+      "id": "codecallnavigator-core/lib:codecallnavigator_core::process_ownership::tests::cleanup_rejects_a_live_unidentified_candidate_without_signaling_it",
+      "runner": "rust",
+      "file": "crates/codecallnavigator-core/src/process_ownership.rs",
+      "test_name": "process_ownership::tests::cleanup_rejects_a_live_unidentified_candidate_without_signaling_it",
+      "ignored": false,
+      "package": "codecallnavigator-core",
+      "target_kind": "lib",
+      "target": "codecallnavigator_core",
+      "component": "core",
+      "category": "integration",
+      "requirements": [
+        "process-table"
+      ],
+      "purpose": "strict cleanup leaves an unverified live process untouched and reports uncertainty"
+    },
+    {
+      "id": "codecallnavigator-core/lib:codecallnavigator_core::process_ownership::tests::invalidating_group_members_preserves_confirmed_retirement",
+      "runner": "rust",
+      "file": "crates/codecallnavigator-core/src/process_ownership.rs",
+      "test_name": "process_ownership::tests::invalidating_group_members_preserves_confirmed_retirement",
+      "ignored": false,
+      "package": "codecallnavigator-core",
+      "target_kind": "lib",
+      "target": "codecallnavigator_core",
+      "component": "core",
+      "category": "unit",
+      "requirements": [],
+      "purpose": "invalidating stale group signal evidence preserves confirmed group retirement"
+    },
+    {
+      "id": "codecallnavigator-core/lib:codecallnavigator_core::process_ownership::tests::native_inventory_observes_live_child_and_checks_its_exit",
+      "runner": "rust",
+      "file": "crates/codecallnavigator-core/src/process_ownership.rs",
+      "test_name": "process_ownership::tests::native_inventory_observes_live_child_and_checks_its_exit",
+      "ignored": false,
+      "package": "codecallnavigator-core",
+      "target_kind": "lib",
+      "target": "codecallnavigator_core",
+      "component": "core",
+      "category": "integration",
+      "requirements": [
+        "process-table"
+      ],
+      "purpose": "platform inventory and targeted identity agree for a real child, then confirm its exit"
+    },
+    {
       "id": "codecallnavigator-core/lib:codecallnavigator_core::process_ownership::tests::process_identity_mismatch_never_authorizes_a_signal",
       "runner": "rust",
       "file": "crates/codecallnavigator-core/src/process_ownership.rs",
@@ -2160,6 +2206,20 @@
       "category": "integration",
       "requirements": [],
       "purpose": "reaped leader does not abandon an independently grouped descendant"
+    },
+    {
+      "id": "codecallnavigator-core/lib:codecallnavigator_core::process_ownership::tests::tracking_reports_unavailable_samples_by_platform",
+      "runner": "rust",
+      "file": "crates/codecallnavigator-core/src/process_ownership.rs",
+      "test_name": "process_ownership::tests::tracking_reports_unavailable_samples_by_platform",
+      "ignored": false,
+      "package": "codecallnavigator-core",
+      "target_kind": "lib",
+      "target": "codecallnavigator_core",
+      "component": "core",
+      "category": "unit",
+      "requirements": [],
+      "purpose": "macOS tracking reports the first denial in a streak and recovers, while the Linux error and malformed samples stay terminal"
     },
     {
       "id": "codecallnavigator-core/lib:codecallnavigator_core::search::tests::category_tabs_return_deduplicated_classes_and_distinct_overloads",
@@ -12930,7 +12990,7 @@
         "node",
         "typescript"
       ],
-      "purpose": "real desktop reopens a stale graph from an earlier Git revision, shows engine progress before automatic publication, and preserves loaded context"
+      "purpose": "real desktop reopens a stale graph, shows progress before automatic publication, matches manual generation, preserves context, and stops active refresh before passive observation resumes"
     },
     {
       "id": "codecallnavigator/bin:codecallnavigator::ui_tests::cli_freshness::actual_cli_freshness_reload_preserves_loaded_binding_camera_and_discards_obsolete_jobs",

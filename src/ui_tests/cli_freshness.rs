@@ -464,7 +464,7 @@ fn actual_cli_automatic_refresh_requires_opt_in_and_preserves_loaded_context() {
     git(&project, &["add", "example.ts"]);
     git(&project, &["commit", "-qm", "Update source"]);
 
-    let mut runtime = open_project(&project, engine);
+    let mut runtime = open_project(&project, engine.clone());
     settle(&mut runtime, |state| {
         state.freshness.is_stale() && state.view_is_current() && !state.jobs.discovery.is_pending()
     });
@@ -496,19 +496,42 @@ fn actual_cli_automatic_refresh_requires_opt_in_and_preserves_loaded_context() {
     assert_eq!(runtime.state.nav.camera.pan, [71.0, -29.0]);
     assert_eq!(runtime.state.nav.camera.zoom, 0.73);
     capture_state(&mut runtime, "automatic-enabled");
+    let manual = analyze_with_runtime(&project, &engine);
+    assert_eq!(
+        runtime.state.generation, manual.context.descriptor.generation,
+        "One-shot and automatic refresh must publish the same generation for the same inputs"
+    );
     invalid_automatic_code_recovers(&mut runtime, &project);
     manual_analysis_waits_for_automatic_cleanup(&mut runtime, &project);
-    click(&mut runtime, "freshness-auto-toggle");
-    settle(&mut runtime, |state| {
-        !state.freshness.automatic.enabled(&project)
-    });
-    let disabled = runtime.state.generation.clone();
-    source(&project, 4, true);
-    settle(&mut runtime, |state| state.freshness.is_stale());
-    assert_eq!(runtime.state.generation, disabled);
+    disable_running_refresh_and_observe_edits(&mut runtime, &project);
     capture_state(&mut runtime, "automatic-disabled");
     runtime.update(jobs::close);
     settle(&mut runtime, |state| state.freshness.stopped());
+}
+
+fn disable_running_refresh_and_observe_edits(runtime: &mut Runtime<State>, project: &Path) {
+    source(project, 6, true);
+    wait_automatic_running(runtime);
+    runtime.update(|state, _| state.toggle_automatic_refresh());
+    assert!(!runtime.state.freshness.automatic.enabled(project));
+    // The passive worker waits for the retired automatic worker to finish.
+    wait_observation(runtime);
+    assert!(runtime.state.freshness.cleanup_warning.is_none());
+    let generation = runtime.state.generation.clone();
+    let revision = runtime
+        .state
+        .freshness
+        .last
+        .as_ref()
+        .unwrap()
+        .input_revision
+        .clone();
+    source(project, 4, true);
+    settle(runtime, |state| {
+        state.freshness.is_stale()
+            && state.freshness.last.as_ref().unwrap().input_revision != revision
+    });
+    assert_eq!(runtime.state.generation, generation);
 }
 
 /// Risk: graphless opt-in, mixed source roots and first adoption cross the real
@@ -922,7 +945,6 @@ fn invalid_automatic_code_recovers(runtime: &mut Runtime<State>, project: &Path)
 }
 
 fn manual_analysis_waits_for_automatic_cleanup(runtime: &mut Runtime<State>, project: &Path) {
-    use codecallnavigator::refresh::Phase;
     let engine = crate::runtime::Runtime::discover().unwrap();
     let targets = crate::engine_client::discover(&engine, project).unwrap();
     runtime.update(|state, _| {
@@ -935,14 +957,7 @@ fn manual_analysis_waits_for_automatic_cleanup(runtime: &mut Runtime<State>, pro
             .collect();
     });
     source(project, 5, true);
-    settle(runtime, |state| {
-        state
-            .freshness
-            .automatic
-            .activity
-            .as_ref()
-            .is_some_and(|activity| matches!(activity.phase, Phase::Running { .. }))
-    });
+    wait_automatic_running(runtime);
     runtime.update(|state, _| state.analyze_selected());
     assert!(runtime.state.freshness.manual_pending());
     settle(runtime, |state| state.analyzing);
@@ -953,6 +968,19 @@ fn manual_analysis_waits_for_automatic_cleanup(runtime: &mut Runtime<State>, pro
         runtime.state.warning
     );
     assert!(runtime.state.freshness.automatic.enabled(project));
+}
+
+fn wait_automatic_running(runtime: &mut Runtime<State>) {
+    use codecallnavigator::refresh::Phase;
+
+    settle(runtime, |state| {
+        state
+            .freshness
+            .automatic
+            .activity
+            .as_ref()
+            .is_some_and(|activity| matches!(activity.phase, Phase::Running { .. }))
+    });
 }
 
 fn capture_automatic_compact_failure(runtime: &mut Runtime<State>) {
