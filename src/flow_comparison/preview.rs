@@ -64,6 +64,20 @@ impl Previews {
         self.class.cancel_request();
     }
 
+    pub fn enter_outline(&mut self) {
+        self.clear_hover();
+        if self.interaction.fixed() {
+            return;
+        }
+        let canvas_preview = self
+            .active
+            .as_ref()
+            .is_some_and(|preview| !matches!(preview.target, PreviewTarget::Row(_)));
+        if canvas_preview {
+            self.dismiss();
+        }
+    }
+
     pub fn clear_hover(&mut self) {
         self.hover = None;
     }

@@ -60,7 +60,10 @@ impl Workspace {
                 self.catalog = Some(std::sync::Arc::from(page));
             }
             Ok(CatalogAnswer::Refreshed { .. }) => unreachable!("refresh requires ticket"),
-            Err(error) => self.failed(StringError::Query(error)),
+            Err(error) => {
+                self.failed(StringError::Query(error));
+                self.resolve_pending_class();
+            }
         }
         true
     }
@@ -122,16 +125,17 @@ impl Workspace {
                 self.arm_source_restore();
                 self.prefetch_selected_source();
             }
-            (DetailSelection::Class(_), Ok(PreparedDetail::Class(prepared))) => {
+            (DetailSelection::Class { .. }, Ok(PreparedDetail::Class(prepared))) => {
                 let mut pair = *prepared;
                 for side in [super::SideId::Before, super::SideId::After] {
                     pair.fit(side, self.viewports[side.index()]);
                 }
+                self.controls.maximum_class_depth = pair.maximum_depth;
                 self.class_pair = Some(pair);
                 self.detail_message.clear();
                 self.presentation_revision += 1;
             }
-            (DetailSelection::Class(_), Err(error)) if !error.mismatch() => {
+            (DetailSelection::Class { .. }, Err(error)) if !error.mismatch() => {
                 self.detail_message = error.message();
             }
             (_, Err(error)) => self.failed(error),

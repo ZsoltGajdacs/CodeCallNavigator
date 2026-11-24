@@ -23,7 +23,10 @@ impl BoundComparison {
         target: ClassSourceTarget<'_>,
         cancel: &AtomicBool,
     ) -> Result<ClassSource> {
-        if !self.class_source_capability(cancel)? {
+        if self
+            .class_source_depth(cancel)?
+            .is_none_or(|max| target.depth > max)
+        {
             return Ok(ClassSource::Unavailable {
                 reason: "The configured CLI does not provide saved class previews".into(),
             });
@@ -38,6 +41,7 @@ impl BoundComparison {
                 id: target.root.into(),
                 node: target.node.into(),
                 side: target.side,
+                depth: target.depth,
             },
             cancel,
             |result: &Preview| &result.header,

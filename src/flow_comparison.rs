@@ -21,7 +21,7 @@ use crate::engine_client::{
     QueryContext,
     flow_comparison::{BoundComparison, Catalog, ComparisonRefs},
 };
-pub(crate) use changes::Changes;
+pub(crate) use changes::{ChangeAction, Changes};
 pub(crate) use class_pair::{ClassPair, present as class_present};
 pub use pair::{Pair, ReadySide, Side, SideId};
 pub(crate) use preview::{PreviewTarget, StepChange};
@@ -125,7 +125,7 @@ impl Workspace {
     }
     pub(crate) fn class_selection(&self) -> Option<&str> {
         match self.detail_selection.as_ref()? {
-            DetailSelection::Class(id) => Some(id),
+            DetailSelection::Class { id, .. } => Some(id),
             DetailSelection::Function(_) => None,
         }
     }
@@ -169,6 +169,8 @@ impl Workspace {
     }
     fn close_flow_binding(&mut self) {
         self.controls.visible = false;
+        self.controls.class_depth = 1;
+        self.controls.maximum_class_depth = 1;
         self.controls.catalog_open = false;
         self.cancel_requests();
         self.binding = None;
@@ -197,6 +199,7 @@ impl Workspace {
         self.detail_job.cancel();
         self.detail_selection = None;
         self.class_pair = None;
+        self.controls.class_depth_open = false;
     }
     fn open(&mut self, project: Project) {
         self.close_flow_binding();

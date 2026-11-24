@@ -9,7 +9,33 @@ impl Workspace {
     }
 
     pub(crate) fn select_class(&mut self, id: String) -> Result<(), String> {
-        self.select_detail(DetailSelection::Class(id))
+        self.select_detail(DetailSelection::Class {
+            id,
+            depth: self.controls.class_depth,
+        })
+    }
+
+    pub(crate) fn class_depth(&self) -> u32 {
+        self.controls.class_depth
+    }
+
+    pub(crate) fn maximum_class_depth(&self) -> u32 {
+        self.controls.maximum_class_depth
+    }
+
+    pub(crate) fn set_class_depth(&mut self, depth: u32) {
+        self.controls.class_depth_open = false;
+        let Some(id) = self.class_selection().map(str::to_owned) else {
+            return;
+        };
+        if depth == self.controls.class_depth || !(1..=self.maximum_class_depth()).contains(&depth)
+        {
+            return;
+        }
+        match self.select_detail(DetailSelection::Class { id, depth }) {
+            Ok(()) => self.controls.class_depth = depth,
+            Err(error) => self.changes.message = error,
+        }
     }
 
     fn select_detail(&mut self, selection: DetailSelection) -> Result<(), String> {
@@ -30,9 +56,10 @@ impl Workspace {
             }
         }
         self.previews.close();
+        self.controls.class_depth_open = false;
         self.detail_message = match &selection {
             DetailSelection::Function(_) => "Preparing before and after flowcharts…",
-            DetailSelection::Class(_) => "Preparing before and after class flows…",
+            DetailSelection::Class { .. } => "Preparing before and after class flows…",
         }
         .into();
         self.class_pair = None;
@@ -59,6 +86,7 @@ impl Workspace {
         self.detail_clock.cancel();
         self.detail_job.cancel();
         self.class_pair = None;
+        self.controls.class_depth_open = false;
         self.detail_selection = Some(DetailSelection::Function(previous.selection.clone()));
         self.current = Some(previous);
         self.presentation_revision += 1;

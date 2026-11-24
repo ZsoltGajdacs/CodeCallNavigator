@@ -2,11 +2,13 @@
 use super::{
     Artifact, Hunk,
     class::Class,
-    class_graph, display_path,
+    class_graph,
+    class_neighborhood::Neighborhood,
+    display_path,
     snapshot::{FileId, Snapshot},
     source,
 };
-use crate::query::ComparisonSide;
+use crate::query::{ComparisonSide, validate_class_comparison_depth};
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeSet;
@@ -36,6 +38,7 @@ pub struct ClassSourceTarget<'a> {
     pub root: &'a str,
     pub node: &'a str,
     pub side: ComparisonSide,
+    pub depth: u32,
 }
 
 impl ClassSource {
@@ -44,6 +47,7 @@ impl ClassSource {
         after: &Artifact,
         target: ClassSourceTarget<'_>,
     ) -> Result<Option<Self>> {
+        validate_class_comparison_depth(target.depth)?;
         class_graph::with_snapshots(before, after, |before, after| {
             preview(before, after, target)
         })
@@ -53,22 +57,25 @@ impl ClassSource {
 fn preview(
     before: &Snapshot<'_>,
     after: &Snapshot<'_>,
-    ClassSourceTarget { root, node, side }: ClassSourceTarget<'_>,
+    ClassSourceTarget {
+        root,
+        node,
+        side,
+        depth,
+    }: ClassSourceTarget<'_>,
 ) -> Option<ClassSource> {
-    let graph = class_graph::graph(before, after, root)?;
-    graph.nodes.iter().find(|class| {
-        class.id == node
-            && match side {
-                ComparisonSide::Before => class.before,
-                ComparisonSide::After => class.after,
-            }
-    })?;
-    let class = class_graph::class_for_id(before, node)
-        .or_else(|| class_graph::class_for_id(after, node))?;
     let hovered = match side {
         ComparisonSide::Before => before,
         ComparisonSide::After => after,
     };
+    let root = class_graph::class_for_id(before, root)
+        .or_else(|| class_graph::class_for_id(after, root))?;
+    let neighborhood = Neighborhood::new(hovered, &root, depth);
+    if !neighborhood.names.contains_key(node) {
+        return None;
+    }
+    let class = class_graph::class_for_id(before, node)
+        .or_else(|| class_graph::class_for_id(after, node))?;
     let files = owned_files(hovered, &class);
     let diff = files.iter().find_map(|&file| {
         let hunks = file_hunks(before, after, file, &class)

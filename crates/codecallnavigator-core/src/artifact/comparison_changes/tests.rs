@@ -288,6 +288,76 @@ fn class_graph_compares_directional_neighbor_calls_and_resolution_counts() {
     );
 }
 
+#[test]
+fn class_graph_expands_per_revision_without_switching_directions() {
+    use crate::model::TargetResolution::Direct;
+
+    let [mut before, after] = class_redirect_fixture();
+    let [root, old_id, current_id, entry_id] =
+        [0, 2, 3, 4].map(|index| Class::from_node(&before.nodes[index]).unwrap().id());
+    let mut sibling = before.nodes[4].clone();
+    sibling.id = "sibling".into();
+    sibling.container = "Example.UnrelatedCallee".into();
+    let sibling_id = Class::from_node(&sibling).unwrap().id();
+    before.nodes.push(sibling);
+    before.edges.extend([
+        Edge {
+            from: 3,
+            to: 0,
+            ..before.edges[1].clone()
+        },
+        Edge {
+            from: 4,
+            to: 5,
+            ..before.edges[1].clone()
+        },
+        Edge {
+            from: 3,
+            to: 4,
+            ..before.edges[1].clone()
+        },
+    ]);
+    let missing = BTreeSet::new();
+    let old = Snapshot::new(&before, &missing).unwrap();
+    let new = Snapshot::new(&after, &missing).unwrap();
+    let one = class_graph::graph(&old, &new, &root).unwrap();
+    assert!(
+        !one.links
+            .iter()
+            .any(|link| link.from == old_id && link.to == current_id)
+    );
+    let two = class_graph::graph_at_depth(&old, &new, &root, 2).unwrap();
+    let chain = two
+        .links
+        .iter()
+        .find(|link| link.from == old_id && link.to == current_id)
+        .expect("depth two includes calls from an immediate callee");
+    assert_eq!(
+        (chain.before[&Direct], chain.status),
+        (99, GraphChange::Removed)
+    );
+    let incoming = two
+        .links
+        .iter()
+        .find(|link| link.from == current_id && link.to == entry_id);
+    assert!(
+        incoming.is_some(),
+        "depth two includes callers of immediate callers"
+    );
+    let sibling = two.nodes.iter().find(|node| node.id == sibling_id);
+    assert!(
+        sibling.is_none(),
+        "incoming paths do not switch to outgoing calls"
+    );
+    let deep = class_graph::graph_at_depth(&old, &new, &root, 64).unwrap();
+    let cycle = deep
+        .links
+        .iter()
+        .find(|link| link.from == current_id && link.to == root)
+        .expect("a cycle retains its return call");
+    assert_eq!((cycle.before[&Direct], deep.links.len()), (1, 7));
+}
+
 fn class_redirect_fixture() -> [GraphData; 2] {
     let source = "class OrderService {\nint limit = 10;\nvoid Entry() { Run(); }\nvoid Run() { return; }\n}\n";
     let mut before = snapshot(source, "direct");

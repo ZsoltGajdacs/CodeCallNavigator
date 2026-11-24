@@ -80,7 +80,7 @@ impl Driver {
                 observation::bound(&runtime.state, &self.config.initial)?;
                 self.report.check("commits_selected_by_controls");
                 self.report.check("commit_messages_drawn_for_both_sides");
-                self.phase = Phase::FlowFirst(super::flow_first::Step::Outline);
+                self.phase = Phase::FlowFirst(super::flow_first::Step::outline());
             }
             _ => (),
         }

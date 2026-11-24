@@ -73,7 +73,7 @@ or without a progress token.
 | `compare_function_flows` | `base`, `head?`, `base_snapshot?`, `head_snapshot?`, `selection`, `expected_comparison?` |
 | `compare_changes` | `base`, `head?` (`WORKTREE`), `base_snapshot?`, `head_snapshot?`, `selection`, `expected_comparison?`, `expected_generation?` |
 | `compare_source_changes` | `base`, `head?` (`WORKTREE`), `base_snapshot?`, `head_snapshot?` (commit only), `selection`, `expected_comparison?` |
-| `compare_class_flows` | `base`, `head?` (`WORKTREE`), `base_snapshot?`, `head_snapshot?`, `id`, `expected_comparison`, `expected_generation?` |
+| `compare_class_flows` | `base`, `head?` (`WORKTREE`), `base_snapshot?`, `head_snapshot?`, `id`, `depth?` (1–64, default 1), `expected_comparison`, `expected_generation?` |
 | `preview_graph_impact` | `base`, `head?` (`WORKTREE`), `base_snapshot?` |
 | `graph_snapshot_status` | `revision` |
 | `prepare_graph_snapshot` | `revision`, `targets?` (project-relative build paths) |
@@ -172,10 +172,12 @@ comparison. The source query itself carries no graph generation.
 Use `compare_class_flows` with the class row's `id` for the
 [class-to-class call graph](cli-queries.md#class-flow-comparison). Pass the
 list's `comparison_id` as `expected_comparison` and reuse its refs and
-snapshot selectors. The result gives caller-to-callee links and per-side
-resolution counts for the selected class's immediate neighbors. The tool
-is available when the installed engine advertises class flow comparison
-version 1.
+snapshot selectors. For a Git source comparison, pass the list's
+`graph_comparison_id` as `expected_comparison`. The result gives
+caller-to-callee links and per-side resolution counts within the requested
+depth of the selected class. The tool is available when the installed engine
+advertises class flow comparison version 1. Depths greater than 1 require the
+engine to advertise a matching `maximum_depth`.
 
 `preview_graph_impact` uses one saved baseline graph and the tracked source diff
 to report potential caller impact. The response identifies the baseline and

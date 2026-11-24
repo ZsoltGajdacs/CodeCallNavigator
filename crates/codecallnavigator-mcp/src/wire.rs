@@ -9,6 +9,8 @@ use anyhow::{Context, Result, ensure};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
+pub const MAX_TRAVERSAL_DEPTH: u32 = 64;
+
 pub const OPERATIONS: &[&str] = &[
     "compare",
     "status",
@@ -47,7 +49,7 @@ pub struct Capabilities {
     pub flow_comparison: bool,
     pub comparison_changes: bool,
     pub git_comparison_changes: bool,
-    pub class_flow_comparison: bool,
+    pub class_flow_maximum_depth: Option<u32>,
     pub impact_preview: bool,
 }
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -145,13 +147,20 @@ pub fn capabilities(value: &Value) -> Result<Capabilities> {
             &capabilities.operations,
             "git_comparison_changes",
         ),
-        class_flow_comparison: versioned_operation(
-            value,
-            &capabilities.operations,
-            "class_flow_comparison",
-        ) && value["class_flow_comparison"]["snapshot_binding"] == true,
+        class_flow_maximum_depth: class_flow_maximum_depth(value, &capabilities.operations),
         impact_preview: versioned_operation(value, &capabilities.operations, "impact_preview"),
     })
+}
+
+fn class_flow_maximum_depth(value: &Value, operations: &[String]) -> Option<u32> {
+    let capability = &value["class_flow_comparison"];
+    if !versioned_operation(value, operations, "class_flow_comparison")
+        || capability["snapshot_binding"] != true
+    {
+        return None;
+    }
+    let depth = capability["maximum_depth"].as_u64().unwrap_or(1);
+    Some(depth.clamp(1, u64::from(MAX_TRAVERSAL_DEPTH)) as u32)
 }
 
 fn versioned_operation(value: &Value, operations: &[String], name: &str) -> bool {
@@ -290,14 +299,22 @@ mod tests {
             capabilities(&value).unwrap().analysis_session,
             AnalysisSessionSupport::Supported
         );
-        assert!(!capabilities(&value).unwrap().class_flow_comparison);
+        assert_eq!(capabilities(&value).unwrap().class_flow_maximum_depth, None);
         value["operations"]
             .as_array_mut()
             .unwrap()
             .push(json!("class_flow_comparison"));
-        assert!(!capabilities(&value).unwrap().class_flow_comparison);
+        assert_eq!(capabilities(&value).unwrap().class_flow_maximum_depth, None);
         value["class_flow_comparison"] = json!({"version":1,"snapshot_binding":true});
-        assert!(capabilities(&value).unwrap().class_flow_comparison);
+        assert_eq!(
+            capabilities(&value).unwrap().class_flow_maximum_depth,
+            Some(1)
+        );
+        value["class_flow_comparison"]["maximum_depth"] = json!(64);
+        assert_eq!(
+            capabilities(&value).unwrap().class_flow_maximum_depth,
+            Some(64)
+        );
         value["git_comparison_changes"] = json!({"version":1});
         assert!(!capabilities(&value).unwrap().git_comparison_changes);
         value["operations"]

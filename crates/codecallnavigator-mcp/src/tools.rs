@@ -207,7 +207,7 @@ fn snapshot_tools(backend: &Backend) -> Vec<Tool> {
     if backend.supports_class_flow_comparison() {
         tools.push(tool::<ClassFlowComparisonArgs>(
             "compare_class_flows",
-            "Get directed Before and After calls for a class and its immediate neighbors. Pass a class ID from compare_changes with the same revisions, snapshot IDs and expected_comparison.",
+            "Get directed Before and After calls within the requested caller and callee depth of a class. Depth defaults to 1. Larger depths require support from the configured CLI. Pass a class ID from compare_changes with the same revisions, snapshot IDs and expected_comparison.",
             true,
         ));
     }

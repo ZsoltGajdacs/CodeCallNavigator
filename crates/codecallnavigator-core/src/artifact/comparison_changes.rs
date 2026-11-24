@@ -1,6 +1,7 @@
 //! Readable, snapshot-bound code changes and on-demand unified source.
 mod class;
 mod class_graph;
+mod class_neighborhood;
 mod class_source;
 mod declarations;
 mod git;

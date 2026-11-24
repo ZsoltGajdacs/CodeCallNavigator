@@ -7,6 +7,7 @@ use codecallnavigator_core::{
     },
     query::{
         CLASS_COMPARISON_SOURCE_VERSION, ComparisonSide, Error, Query, Request, Response, Result,
+        validate_class_comparison_depth,
     },
 };
 use serde::Serialize;
@@ -21,6 +22,7 @@ pub(super) fn respond(request: &Request) -> Option<Response> {
         id,
         node,
         side,
+        depth,
     } = &request.query
     else {
         return None;
@@ -36,6 +38,7 @@ pub(super) fn respond(request: &Request) -> Option<Response> {
         root: id,
         node,
         side: *side,
+        depth: *depth,
     };
     Some(
         execute(request, endpoints, target)
@@ -51,6 +54,8 @@ fn execute(
     endpoints.validate_base()?;
     endpoints.validate_references()?;
     endpoints.validate_expected()?;
+    validate_class_comparison_depth(target.depth)
+        .map_err(|error| Error::new("invalid_request", error.to_string()))?;
     if [target.root, target.node]
         .iter()
         .any(|value| value.trim().is_empty() || value.len() > 16384)

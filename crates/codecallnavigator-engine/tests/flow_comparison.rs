@@ -91,12 +91,15 @@ fn change_pages_and_source_diff_use_the_same_saved_revision_binding() {
     let first = query(root, request.clone());
     assert!(first["error"].is_null(), "{first}");
     let result = &first["result"];
-    assert_eq!(result["kind"], "list");
-    assert_eq!(result["version"], 1);
+    assert_eq!(
+        json!([result["kind"], result["version"]]),
+        json!(["list", 1])
+    );
     assert_eq!(first["generation"], result["head"]["digest"]);
-    assert_eq!(result["returned"], 1);
-    assert_eq!(result["more"], true);
-    assert_eq!(result["next_offset"], 1);
+    assert_eq!(
+        json!([result["returned"], result["more"], result["next_offset"]]),
+        json!([1, true, 1])
+    );
 
     request["selection"]["offset"] = result["next_offset"].clone();
     assert_eq!(
@@ -129,21 +132,26 @@ fn change_pages_and_source_diff_use_the_same_saved_revision_binding() {
     request["selection"] = json!({"kind": "source_diff", "id": owner["id"]});
     let diff = query(root, request.clone());
     assert!(diff["error"].is_null(), "{diff}");
-    assert_eq!(diff["result"]["kind"], "source_diff");
-    assert_eq!(diff["result"]["id"], owner["id"]);
-    assert_eq!(diff["result"]["status"], "ready");
-    assert!(diff["result"]["hunks"].as_array().is_some_and(|hunks| {
-        hunks.iter().any(|hunk| {
-            hunk["lines"].as_array().unwrap().iter().any(|line| {
-                line["kind"] == "insert" && line["text"].as_str().unwrap().contains("added")
-            })
-        })
-    }));
+    let source = &diff["result"];
+    assert_eq!(
+        json!([source["kind"], source["id"], source["status"]]),
+        json!(["source_diff", owner["id"], "ready"])
+    );
+    assert!(has_inserted_text(&source["hunks"], "added"));
     assert_eq!(owner["kind"], "class");
     check_class_details(root, &owner["id"], &result["comparison_id"]);
     request["expected_comparison"] = json!("0".repeat(64));
     assert_eq!(query(root, request)["error"]["code"], "comparison_mismatch");
     assert!(artifact::working_manifest_path(root).is_err());
+}
+
+fn has_inserted_text(hunks: &serde_json::Value, expected: &str) -> bool {
+    hunks
+        .as_array()
+        .into_iter()
+        .flatten()
+        .flat_map(|hunk| hunk["lines"].as_array().unwrap())
+        .any(|line| line["kind"] == "insert" && line["text"].as_str().unwrap().contains(expected))
 }
 
 fn check_class_details(
@@ -159,19 +167,23 @@ fn check_class_details(
         "id": id,
     });
     let class = query(root, class_request.clone());
-    assert!(class["error"].is_null(), "{class}");
-    assert_eq!(&class["result"]["comparison_id"], binding);
-    assert_eq!(
-        class["result"]["graph"],
-        json!({
+    let graph = json!({
             "root": id,
             "nodes": [{
                 "id": id, "name": "App", "short_name": "App", "before": true, "after": true,
                 "status": "unchanged"
             }],
             "links": [],
-        }),
+    });
+    assert_eq!(
+        (
+            &class["error"],
+            &class["result"]["comparison_id"],
+            &class["result"]["graph"]
+        ),
+        (&serde_json::Value::Null, binding, &graph)
     );
+    assert_class_depth_contract(root, &class_request, &class);
     class_request["expected_comparison"] = json!("0".repeat(64));
     assert_eq!(
         query(root, class_request)["error"]["code"],
@@ -183,18 +195,44 @@ fn check_class_details(
         "node": id, "side": "after",
     });
     let class_source = query(root, class_source_request.clone());
-    assert!(class_source["error"].is_null(), "{class_source}");
-    assert_eq!(&class_source["result"]["comparison_id"], binding);
-    assert_eq!(class_source["result"]["source"]["kind"], "excerpt");
+    let result = &class_source["result"];
     assert_eq!(
-        class_source["result"]["source"]["text"],
-        "int same(){ return target(); }"
+        (
+            &class_source["error"],
+            &result["comparison_id"],
+            result["source"]["kind"].as_str()
+        ),
+        (&serde_json::Value::Null, binding, Some("excerpt"))
     );
+    assert_eq!(result["source"]["text"], "int same(){ return target(); }");
+    assert_class_depth_contract(root, &class_source_request, &class_source);
     class_source_request["expected_comparison"] = json!("0".repeat(64));
     assert_eq!(
         query(root, class_source_request)["error"]["code"],
         "comparison_mismatch"
     );
+}
+
+fn assert_class_depth_contract(
+    root: &std::path::Path,
+    request: &serde_json::Value,
+    default: &serde_json::Value,
+) {
+    let at_depth = |depth| {
+        let mut explicit = request.clone();
+        explicit["depth"] = json!(depth);
+        query(root, explicit)
+    };
+    assert_eq!(&at_depth(1), default);
+    assert_eq!(
+        &at_depth(2),
+        default,
+        "an isolated class has no deeper links"
+    );
+    for depth in [0, 65] {
+        let result = at_depth(depth);
+        assert_eq!(result["error"]["code"], "invalid_request", "{result}");
+    }
 }
 
 #[test]

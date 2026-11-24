@@ -85,6 +85,11 @@ pub enum Query {
         head_snapshot: Option<String>,
         expected_comparison: String,
         id: String,
+        #[serde(
+            default = "class_comparison_depth",
+            skip_serializing_if = "default_class_depth"
+        )]
+        depth: u32,
     },
     ClassComparisonSource {
         base: String,
@@ -98,6 +103,11 @@ pub enum Query {
         id: String,
         node: String,
         side: super::ComparisonSide,
+        #[serde(
+            default = "class_comparison_depth",
+            skip_serializing_if = "default_class_depth"
+        )]
+        depth: u32,
     },
     FlowComparison {
         base: String,
@@ -336,6 +346,12 @@ fn search_limit() -> usize {
 }
 fn comparison_head() -> String {
     "WORKTREE".into()
+}
+fn class_comparison_depth() -> u32 {
+    super::DEFAULT_CLASS_COMPARISON_DEPTH
+}
+fn default_class_depth(depth: &u32) -> bool {
+    *depth == class_comparison_depth()
 }
 fn comparison_limit() -> usize {
     100

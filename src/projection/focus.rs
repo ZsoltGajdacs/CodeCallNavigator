@@ -10,21 +10,36 @@ pub(super) fn traversal(
     roots: &[usize],
     depth: u32,
 ) -> Vec<(usize, NodeOrder)> {
-    let incoming = distances(&adjacency(nodes.len(), edges, true), roots, depth);
-    let outgoing = distances(&adjacency(nodes.len(), edges, false), roots, depth);
-    let mut ordered: Vec<_> = (0..nodes.len())
-        .filter_map(|node| {
-            let (rank, parent) = match (incoming[node], outgoing[node]) {
+    let mut ordered: Vec<_> = centered_orders(nodes.len(), edges, roots, depth)
+        .into_iter()
+        .enumerate()
+        .filter_map(|(node, order)| order.map(|order| (node, order)))
+        .collect();
+    sort_branches(nodes, &mut ordered);
+    ordered
+}
+
+pub(crate) fn centered_orders(
+    count: usize,
+    edges: &[ViewEdge],
+    roots: &[usize],
+    depth: u32,
+) -> Vec<Option<NodeOrder>> {
+    let incoming = distances(&adjacency(count, edges, true), roots, depth);
+    let outgoing = distances(&adjacency(count, edges, false), roots, depth);
+    incoming
+        .into_iter()
+        .zip(outgoing)
+        .map(|(incoming, outgoing)| {
+            let (rank, parent) = match (incoming, outgoing) {
                 (Some((a, p)), Some((b, _))) if a <= b => (-(a as i32), p),
                 (_, Some((b, p))) => (b as i32, p),
                 (Some((a, p)), None) => (-(a as i32), p),
                 _ => return None,
             };
-            Some((node, NodeOrder { rank, parent }))
+            Some(NodeOrder { rank, parent })
         })
-        .collect();
-    sort_branches(nodes, &mut ordered);
-    ordered
+        .collect()
 }
 
 fn adjacency(count: usize, edges: &[ViewEdge], incoming: bool) -> Vec<Vec<usize>> {

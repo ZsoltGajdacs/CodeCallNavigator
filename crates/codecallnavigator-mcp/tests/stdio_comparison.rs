@@ -60,6 +60,7 @@ fn real_stdio_comparison_preserves_cli_pages_metadata_and_errors() {
     assert!(current["result"]["retention"]["reason"].is_string());
     let changes_binding = check_change_summary(&mut client, &engine, &root);
     let checkout = check_class_graph(&mut client, &engine, &root, &changes_binding);
+    check_deeper_class_graph(&mut client, (&engine, &root), &changes_binding, &checkout);
     check_pages_and_errors(&mut client, &engine, &root, &current["generation"]);
     let stale = client.call(
         "compare_changes",
@@ -209,8 +210,9 @@ fn check_retained_baseline(client: &mut Client) {
 
 fn services(implementation: &str) -> String {
     format!(
-        "export class LegacyTax {{ static calculate() {{ return 1; }} }}\n\
-         export class TaxService {{ static calculate() {{ return 2; }} }}\n\
+        "export class Rates {{ static base() {{ return 1; }} }}\n\
+         export class LegacyTax {{ static calculate() {{ return Rates.base(); }} }}\n\
+         export class TaxService {{ static calculate() {{ return Rates.base() + 1; }} }}\n\
          export class Checkout {{ static submit() {{ return {implementation}.calculate(); }} }}\n"
     )
 }
@@ -237,6 +239,7 @@ fn check_class_graph(client: &mut Client, engine: &Path, root: &Path, binding: &
     assert_eq!(graph["root"], checkout);
     let links = graph["links"].as_array().unwrap();
     let nodes = graph["nodes"].as_array().unwrap();
+    assert!(nodes.iter().all(|node| node["name"] != "Rates"));
     for (name, status, side) in [
         ("LegacyTax", "removed", "before"),
         ("TaxService", "added", "after"),
@@ -249,6 +252,33 @@ fn check_class_graph(client: &mut Client, engine: &Path, root: &Path, binding: &
         assert_eq!(link[side]["direct"], 1);
     }
     checkout
+}
+
+fn check_deeper_class_graph(
+    client: &mut Client,
+    (engine, root): (&Path, &Path),
+    binding: &Value,
+    checkout: &Value,
+) {
+    let mut request = json!({"base":"HEAD","expected_comparison":binding,"id":checkout,"depth":2});
+    let reply = client.graph("compare_class_flows", request.clone());
+    request["kind"] = json!("class_flow_comparison");
+    assert_eq!(reply, cli_query(engine, root, request));
+    let graph = &reply["result"]["graph"];
+    let rates = graph["nodes"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|node| node["name"] == "Rates")
+        .expect("second-hop Rates class");
+    assert_eq!(rates["before"], true);
+    assert_eq!(rates["after"], true);
+    let links = graph["links"].as_array().unwrap();
+    for side in ["before", "after"] {
+        assert!(links.iter().any(|link| {
+            link["from"] != *checkout && link["to"] == rates["id"] && link[side]["direct"] == 1
+        }));
+    }
 }
 
 fn check_change_summary(client: &mut Client, engine: &Path, root: &Path) -> Value {

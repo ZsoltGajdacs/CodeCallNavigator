@@ -10,7 +10,7 @@ pub(super) fn validate(result: &Value) -> Result<()> {
     let root = field(graph, "root")?;
     let nodes = node_presence(graph)?;
     ensure!(nodes.contains_key(root), "Graph root is missing");
-    validate_links(graph, root, &nodes)
+    validate_links(graph, &nodes)
 }
 
 fn node_presence(graph: &Value) -> Result<HashMap<&str, (bool, bool)>> {
@@ -32,14 +32,11 @@ fn node_presence(graph: &Value) -> Result<HashMap<&str, (bool, bool)>> {
     Ok(nodes)
 }
 
-fn validate_links(graph: &Value, root: &str, nodes: &HashMap<&str, (bool, bool)>) -> Result<()> {
+fn validate_links(graph: &Value, nodes: &HashMap<&str, (bool, bool)>) -> Result<()> {
     let mut links = HashSet::new();
     for link in array(graph, "links")? {
         let (from, to) = (field(link, "from")?, field(link, "to")?);
-        ensure!(
-            from != to && (from == root || to == root),
-            "Class link must connect the root to a neighbor"
-        );
+        ensure!(from != to, "Class link must connect distinct classes");
         let from_sides = nodes
             .get(from)
             .ok_or_else(|| anyhow::anyhow!("Unknown caller class"))?;

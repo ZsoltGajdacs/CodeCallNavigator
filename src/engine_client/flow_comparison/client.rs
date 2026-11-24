@@ -25,10 +25,10 @@ impl From<anyhow::Error> for Error {
 }
 pub type Result<T> = std::result::Result<T, Error>;
 
-struct Reply<T> {
-    value: T,
+pub(super) struct Reply<T> {
+    pub(super) value: T,
     generation: Option<String>,
-    freshness: Option<codecallnavigator::artifact::verification::InputStatus>,
+    pub(super) freshness: Option<codecallnavigator::artifact::verification::InputStatus>,
 }
 impl<T> Reply<T> {
     fn check_generation(&self, header: &Header) -> Result<()> {
@@ -181,11 +181,11 @@ impl BoundComparison {
             .client
             .comparison_changes_supported(cancel)
     }
-    pub(super) fn class_flow_capability(&self, cancel: &AtomicBool) -> anyhow::Result<bool> {
+    pub(super) fn class_flow_depth(&self, cancel: &AtomicBool) -> anyhow::Result<Option<u32>> {
         self.client
             .context
             .client
-            .class_flow_comparison_supported(cancel)
+            .class_flow_comparison_depth(cancel)
     }
     pub(super) fn change_request<T: DeserializeOwned>(
         &self,
@@ -206,11 +206,11 @@ impl BoundComparison {
             header,
         )
     }
-    pub(super) fn class_source_capability(&self, cancel: &AtomicBool) -> anyhow::Result<bool> {
+    pub(super) fn class_source_depth(&self, cancel: &AtomicBool) -> anyhow::Result<Option<u32>> {
         self.client
             .context
             .client
-            .class_comparison_source_supported(cancel)
+            .class_comparison_source_depth(cancel)
     }
     pub(super) fn bound_request<T: DeserializeOwned>(
         &self,
@@ -218,13 +218,22 @@ impl BoundComparison {
         cancel: &AtomicBool,
         header: impl FnOnce(&T) -> &Header,
     ) -> Result<T> {
+        Ok(self.bound_reply(query, cancel, header)?.value)
+    }
+
+    pub(super) fn bound_reply<T: DeserializeOwned>(
+        &self,
+        query: impl FnOnce(&super::ComparisonRefs, &str) -> Query,
+        cancel: &AtomicBool,
+        header: impl FnOnce(&T) -> &Header,
+    ) -> Result<Reply<T>> {
         let query = query(&self.references, &self.header.comparison_id);
         let request = self.client.context.wire_request(query);
         let reply = self.client.reply(request, cancel)?;
         let actual = header(&reply.value);
         reply.check_generation(actual)?;
         self.check(actual)?;
-        Ok(reply.value)
+        Ok(reply)
     }
     pub fn header(&self) -> &Header {
         &self.header

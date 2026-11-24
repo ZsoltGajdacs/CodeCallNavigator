@@ -126,12 +126,12 @@ impl Client {
             .capabilities(cancel, Instant::now())?
             .git_comparison_changes)
     }
-    pub(super) fn class_comparison_source_supported(&self, cancel: &AtomicBool) -> Result<bool> {
+    pub(super) fn class_comparison_source_depth(&self, cancel: &AtomicBool) -> Result<Option<u32>> {
         Ok(self
             .capabilities(cancel, Instant::now())?
             .class_comparison_source)
     }
-    pub(super) fn class_flow_comparison_supported(&self, cancel: &AtomicBool) -> Result<bool> {
+    pub(super) fn class_flow_comparison_depth(&self, cancel: &AtomicBool) -> Result<Option<u32>> {
         Ok(self
             .capabilities(cancel, Instant::now())?
             .class_flow_comparison)

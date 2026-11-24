@@ -73,7 +73,12 @@ impl Workspace {
         let (endpoint, freshness) = match self.controls.panel {
             Panel::Flows => {
                 let binding = self.binding.as_ref()?;
-                (&binding.header().head, binding.freshness)
+                (
+                    &binding.header().head,
+                    self.class_pair()
+                        .and_then(|pair| pair.freshness)
+                        .or(binding.freshness),
+                )
             }
             Panel::Graph => {
                 let page = self.snapshots.graph.as_ref()?;

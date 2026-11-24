@@ -59,7 +59,7 @@ impl Backend {
         self.capabilities.git_comparison_changes
     }
     pub fn supports_class_flow_comparison(&self) -> bool {
-        self.capabilities.class_flow_comparison
+        self.capabilities.class_flow_maximum_depth.is_some()
     }
     pub async fn query(
         &self,
@@ -121,6 +121,13 @@ impl Backend {
                     ..
                 },
             ) => Some("Upgrade the configured CLI to compare function flows"),
+            ("class_flow_comparison", _)
+                if caps.class_flow_maximum_depth.is_none_or(|maximum| {
+                    query["depth"].as_u64().unwrap_or(1) > u64::from(maximum)
+                }) =>
+            {
+                Some("Upgrade the configured CLI to compare class flows at this depth")
+            }
             (
                 "impact_preview",
                 wire::Capabilities {

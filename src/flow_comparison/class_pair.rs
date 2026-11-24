@@ -2,10 +2,14 @@
 use super::{SideId, Workspace};
 use crate::{
     camera::Camera,
-    projection::{self, GraphView, NodeOrder, ViewEdge, ViewNode},
+    engine_client::flow_comparison::ClassDetail,
+    projection::{self, GraphView, ViewEdge, ViewNode},
 };
 use anyhow::{Context, Result, ensure};
-use codecallnavigator::artifact::comparison_changes::{ClassGraph, ClassNode, GraphChange};
+use codecallnavigator::artifact::{
+    comparison_changes::{ClassGraph, ClassNode, GraphChange},
+    verification::InputStatus,
+};
 use std::{
     collections::{BTreeMap, BTreeSet},
     path::Path,
@@ -16,12 +20,25 @@ pub(crate) struct ClassPair {
     pub graph: ClassGraph,
     pub layout: GraphView,
     pub root: usize,
+    pub depth: u32,
+    pub(super) maximum_depth: u32,
+    pub(super) freshness: Option<InputStatus>,
     pub cameras: [Camera; 2],
     fit_pending: [bool; 2],
 }
 
 impl ClassPair {
-    pub(super) fn load(graph: ClassGraph, dot: &Path, cancel: &AtomicBool) -> Result<Self> {
+    pub(super) fn load(
+        detail: ClassDetail,
+        depth: u32,
+        dot: &Path,
+        cancel: &AtomicBool,
+    ) -> Result<Self> {
+        let ClassDetail {
+            graph,
+            freshness,
+            maximum_depth,
+        } = detail;
         ensure!(!cancel.load(Ordering::Acquire), "Comparison cancelled");
         let indices: BTreeMap<_, _> = graph
             .nodes
@@ -34,11 +51,16 @@ impl ClassPair {
             "Duplicate class in graph"
         );
         let root = index_of(&indices, &graph.root)?;
-        let edges = edges(&graph, &indices, root)?;
+        let edges = edges(&graph, &indices)?;
+        let ordering =
+            projection::focus::centered_orders(graph.nodes.len(), &edges, &[root], depth)
+                .into_iter()
+                .collect::<Option<Vec<_>>>()
+                .context("Class graph contains a class outside the requested neighborhood")?;
         let layout = projection::geometry::layout_cancellable(
             GraphView {
                 nodes: graph.nodes.iter().map(|_| ViewNode::default()).collect(),
-                ordering: ordering(graph.nodes.len(), root, &edges),
+                ordering,
                 edges,
                 ..GraphView::default()
             },
@@ -50,6 +72,9 @@ impl ClassPair {
             graph,
             layout,
             root,
+            depth,
+            maximum_depth,
+            freshness,
             cameras: [Camera::default(), Camera::default()],
             fit_pending: [true, true],
         })
@@ -110,11 +135,7 @@ fn index_of(indices: &BTreeMap<&str, usize>, id: &str) -> Result<usize> {
         .context("Class graph references an unknown class")
 }
 
-fn edges(
-    graph: &ClassGraph,
-    indices: &BTreeMap<&str, usize>,
-    root: usize,
-) -> Result<Vec<ViewEdge>> {
+fn edges(graph: &ClassGraph, indices: &BTreeMap<&str, usize>) -> Result<Vec<ViewEdge>> {
     let mut seen = BTreeSet::new();
     graph
         .links
@@ -122,7 +143,7 @@ fn edges(
         .map(|link| {
             let (from, to) = (index_of(indices, &link.from)?, index_of(indices, &link.to)?);
             ensure!(
-                from != to && (from == root || to == root) && seen.insert((from, to)),
+                from != to && seen.insert((from, to)),
                 "Invalid class relationship"
             );
             Ok(ViewEdge {
@@ -132,19 +153,4 @@ fn edges(
             })
         })
         .collect()
-}
-
-fn ordering(count: usize, root: usize, edges: &[ViewEdge]) -> Vec<NodeOrder> {
-    let mut order = vec![
-        NodeOrder {
-            rank: 1,
-            parent: Some(root)
-        };
-        count
-    ];
-    order[root] = NodeOrder::default();
-    for edge in edges.iter().filter(|edge| edge.to == root) {
-        order[edge.from].rank = -1;
-    }
-    order
 }

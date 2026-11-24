@@ -8,7 +8,7 @@ use crate::{
 };
 use rune::{El, col, el, row, text};
 use rune_kit::{Button, ButtonVariant, Kit};
-pub(super) fn view(state: &State, k: &Kit) -> El {
+pub(super) fn view(state: &State, k: &Kit, layer: &mut Vec<El>) -> El {
     let workspace = &state.flow_comparison;
     let show_methods_source = workspace.class_selection().is_none()
         && (!workspace.changes.loaded || workspace.changes.expert);
@@ -16,6 +16,11 @@ pub(super) fn view(state: &State, k: &Kit) -> El {
         .w_full()
         .grow(1.0)
         .min_h(0.0)
+        .child(if workspace.class_selection().is_some() {
+            class_depth(state, k, layer)
+        } else {
+            el()
+        })
         .child(
             row()
                 .key("comparison-charts")
@@ -32,6 +37,34 @@ pub(super) fn view(state: &State, k: &Kit) -> El {
             el()
         })
 }
+fn class_depth(state: &State, k: &Kit, layer: &mut Vec<El>) -> El {
+    let workspace = &state.flow_comparison;
+    let select = crate::view::depth_select(
+        "comparison-depth",
+        workspace.class_depth(),
+        workspace.maximum_class_depth(),
+    )
+    .open(workspace.controls.class_depth_open)
+    .on_toggle(|s: &mut State| {
+        s.flow_comparison.previews.dismiss();
+        s.flow_comparison.controls.class_depth_open = !s.flow_comparison.controls.class_depth_open;
+    })
+    .on_close(|s: &mut State| s.flow_comparison.controls.class_depth_open = false)
+    .on_choose(|s: &mut State, value, _| {
+        if let Ok(depth) = value.parse() {
+            s.flow_comparison.set_class_depth(depth);
+        }
+    })
+    .build(k, layer);
+    row()
+        .w_full()
+        .px(8.0)
+        .gap(8.0)
+        .center_y()
+        .child(text("Depth").font(k.ty.small).color(k.c.text_muted))
+        .child(select)
+}
+
 fn address(side: SideId) -> Address {
     match side {
         SideId::Before => Address::Before,

@@ -2,7 +2,7 @@
 use crate::{
     app::State,
     engine_client::flow_comparison::{Change, ChangeKind, ChangeStatus},
-    flow_comparison::PreviewTarget,
+    flow_comparison::{ChangeAction, PreviewTarget},
 };
 use rune::{El, Key, col, row, text};
 use rune_kit::{Button, ButtonVariant, Kit};
@@ -184,11 +184,7 @@ impl Outline<'_> {
             }
             _ => state.flow_comparison.selected_change_id() == Some(change.id.as_str()),
         };
-        let action = ChangeAction::new(
-            change,
-            &key,
-            state.flow_comparison.change_flow_ready(change),
-        );
+        let action = ChangeAction::new(change, &key);
         let path = item.path.map(|(before, after)| match (before, after) {
             (Some("possible"), _) | (_, Some("possible")) => " · Possible path",
             (None, Some(_)) => " · After only",
@@ -207,49 +203,21 @@ impl Outline<'_> {
             } else {
                 k.c.bg_base
             })
-            .hover(k.c.layer_01);
-        let Some(action) = action else {
-            return row;
-        };
+            .hover(k.c.layer_01)
+            .on_hover_change(|s: &mut State, inside, _| {
+                if inside {
+                    s.flow_comparison.previews.enter_outline();
+                }
+            });
         let keyboard = action.clone();
-        row.on_press(move |s: &mut State| action.select(s)).on_key(
-            move |s: &mut State, event, _| {
+        row.on_press(move |s: &mut State| s.flow_comparison.activate_change(&action))
+            .on_key(move |s: &mut State, event, _| {
                 if event.key != Key::Enter {
                     return false;
                 }
-                keyboard.select(s);
+                s.flow_comparison.activate_change(&keyboard);
                 true
-            },
-        )
-    }
-}
-
-#[derive(Clone)]
-enum ChangeAction {
-    Class(String),
-    Method(String),
-    File { id: String, anchor: String },
-}
-
-impl ChangeAction {
-    fn new(change: &Change, anchor: &str, graph_ready: bool) -> Option<Self> {
-        Some(match change.kind {
-            ChangeKind::Class if graph_ready => Self::Class(change.id.clone()),
-            ChangeKind::Method if graph_ready => Self::Method(change.symbol.clone()?),
-            _ => Self::File {
-                id: change.id.clone(),
-                anchor: anchor.into(),
-            },
-        })
-    }
-
-    fn select(&self, state: &mut State) {
-        let workspace = &mut state.flow_comparison;
-        match self {
-            Self::Class(id) => workspace.choose_change_class(id.clone()),
-            Self::Method(symbol) => workspace.choose_change_method(symbol.clone()),
-            Self::File { id, anchor } => workspace.choose_change_source(id.clone(), anchor.clone()),
-        }
+            })
     }
 }
 

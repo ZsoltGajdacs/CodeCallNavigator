@@ -18,6 +18,7 @@ struct Key {
     root: String,
     node: String,
     side: SideId,
+    depth: u32,
 }
 
 type Output = (Key, Result<ClassSource, Error>);
@@ -69,16 +70,17 @@ impl Workspace {
         if self.worktree_refresh.pending() {
             return;
         }
-        let Some(root) = self.class_selection() else {
+        let Some(pair) = self.class_pair() else {
             return;
         };
         let Some(bound) = self.binding.clone() else {
             return;
         };
         let key = Key {
-            root: root.to_owned(),
+            root: pair.graph.root.clone(),
             node: id.clone(),
             side,
+            depth: pair.depth,
         };
         self.previews.active = Some(Preview {
             anchor,
@@ -110,6 +112,7 @@ impl Workspace {
                         root: &key.root,
                         node: &key.node,
                         side,
+                        depth: key.depth,
                     },
                     &cancel,
                 );
@@ -121,8 +124,11 @@ impl Workspace {
     pub fn class_preview(&self, side: SideId, node: &str) -> Option<Result<&ClassSource, &str>> {
         let root = self.class_selection()?;
         let (key, result) = self.previews.class.result.as_ref()?;
-        (key.root == root && key.node == node && key.side == side)
-            .then(|| result.as_ref().map_err(String::as_str))
+        (key.root == root
+            && key.node == node
+            && key.side == side
+            && key.depth == self.class_depth())
+        .then(|| result.as_ref().map_err(String::as_str))
     }
 
     pub(super) fn publish_class_preview(&mut self) -> bool {

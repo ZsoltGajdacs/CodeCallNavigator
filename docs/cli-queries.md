@@ -197,11 +197,18 @@ row returned by `comparison_changes`. The engine advertises version 1 in
 ```
 
 Use the same refs and snapshot selectors as the list. `expected_comparison`
-is required. The response includes the bound endpoints and a `graph` with
+is required. With a Git source comparison list, use its
+`graph_comparison_id`. Set the optional `depth` to the number of caller and
+callee hops from the selected class, between 1 and 64. Each revision is
+traversed independently. The default is 1. Engines that advertise
+`capabilities.class_flow_comparison.maximum_depth` accept depths up to that
+value. Older engines accept the request with `depth` omitted.
+
+The response includes the bound endpoints and a `graph` with
 the `root` class ID, `nodes`, and directed `links`. Nodes include the
 class ID, a display name, and `before` and `after` presence flags. For the
 root these flags describe existence in the saved revisions. For other
-nodes they describe participation in the root's one-hop call neighborhood.
+nodes they describe participation in the root's selected call neighborhood.
 Nodes may include a `short_name` and recorded `before_visibility` or
 `after_visibility` for the corresponding revision.
 
@@ -227,7 +234,10 @@ The `source` field has kind `diff` with unified hunks and a file, `excerpt`
 with saved text, a file and a one-based starting line, or `unavailable`
 with a reason. Excerpts use the requested side. In shared files, diffs use
 matching methods with verified saved spans. The class node must be present on
-the requested side of the graph. Reuse the class graph's snapshot selectors.
+the requested side of the graph. Reuse the class graph's snapshot selectors
+and depth. Engines that advertise
+`capabilities.class_comparison_source.maximum_depth` support the optional
+`depth` field. Omitting it uses the default neighborhood of one hop.
 
 ## Changed-symbol impact preview
 

@@ -1,8 +1,9 @@
-//! A selected class and its immediate incoming and outgoing saved calls.
-use super::{Class, NameDetails, Snapshot, missing_source};
+//! Compare incoming and outgoing saved calls for a selected class neighborhood.
+use super::{Class, Snapshot, class_neighborhood::Neighborhood, missing_source};
 use crate::{
     artifact::Artifact,
-    model::{RelationshipKind, TargetResolution, Visibility},
+    model::{TargetResolution, Visibility},
+    query::{DEFAULT_CLASS_COMPARISON_DEPTH, validate_class_comparison_depth},
 };
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
@@ -60,7 +61,19 @@ impl GraphChange {
 
 impl ClassGraph {
     pub fn between(before: &Artifact, after: &Artifact, id: &str) -> Result<Option<Self>> {
-        with_snapshots(before, after, |before, after| graph(before, after, id))
+        Self::between_at_depth(before, after, id, DEFAULT_CLASS_COMPARISON_DEPTH)
+    }
+
+    pub fn between_at_depth(
+        before: &Artifact,
+        after: &Artifact,
+        id: &str,
+        depth: u32,
+    ) -> Result<Option<Self>> {
+        validate_class_comparison_depth(depth)?;
+        with_snapshots(before, after, |before, after| {
+            graph_at_depth(before, after, id, depth)
+        })
     }
 }
 
@@ -80,10 +93,20 @@ pub(super) fn with_snapshots<T>(
     Ok(project(&old, &new))
 }
 
+#[cfg(test)]
 pub(super) fn graph(before: &Snapshot<'_>, after: &Snapshot<'_>, id: &str) -> Option<ClassGraph> {
+    graph_at_depth(before, after, id, DEFAULT_CLASS_COMPARISON_DEPTH)
+}
+
+pub(super) fn graph_at_depth(
+    before: &Snapshot<'_>,
+    after: &Snapshot<'_>,
+    id: &str,
+    depth: u32,
+) -> Option<ClassGraph> {
     let class = class_for_id(before, id).or_else(|| class_for_id(after, id))?;
-    let old = Neighborhood::new(before, &class, id);
-    let new = Neighborhood::new(after, &class, id);
+    let old = Neighborhood::new(before, &class, depth);
+    let new = Neighborhood::new(after, &class, depth);
     Some(ClassGraph {
         root: id.to_owned(),
         nodes: nodes(&old, &new),
@@ -104,64 +127,6 @@ pub(super) fn class_for_id(snapshot: &Snapshot<'_>, id: &str) -> Option<Class> {
                 .filter_map(|file| snapshot.single_class(*file))
                 .find(|class| class.id() == id)
         })
-}
-
-type LinkKey = (String, String);
-type Calls = BTreeMap<TargetResolution, u64>;
-
-#[derive(Default)]
-struct Neighborhood {
-    names: BTreeMap<String, NameDetails>,
-    links: BTreeMap<LinkKey, Calls>,
-}
-
-impl Neighborhood {
-    fn new(snapshot: &Snapshot<'_>, root: &Class, id: &str) -> Self {
-        let mut neighborhood = Self::default();
-        if snapshot.has_class(root) {
-            neighborhood.names.insert(
-                id.to_owned(),
-                root.name_details(snapshot.class_visibility(root)),
-            );
-        }
-        let Some(members) = snapshot.classes.get(root) else {
-            return neighborhood;
-        };
-        let members: BTreeSet<_> = members.iter().copied().collect();
-        for edge in &snapshot.graph.edges {
-            let from = edge.from as usize;
-            let to = edge.to as usize;
-            let (neighbor, incoming) = match (members.contains(&from), members.contains(&to)) {
-                (true, false) => (to, false),
-                (false, true) => (from, true),
-                _ => continue,
-            };
-            let classification = edge.classification();
-            if classification.kind != RelationshipKind::Call {
-                continue;
-            }
-            let Some(class) = Class::from_node(&snapshot.graph.nodes[neighbor]) else {
-                continue;
-            };
-            let class_id = class.id();
-            neighborhood
-                .names
-                .entry(class_id.clone())
-                .or_insert_with(|| class.name_details(snapshot.class_visibility(&class)));
-            let link = if incoming {
-                (class_id, id.to_owned())
-            } else {
-                (id.to_owned(), class_id)
-            };
-            *neighborhood
-                .links
-                .entry(link)
-                .or_default()
-                .entry(classification.resolution)
-                .or_default() += u64::from(edge.count);
-        }
-        neighborhood
-    }
 }
 
 fn nodes(old: &Neighborhood, new: &Neighborhood) -> Vec<ClassNode> {

@@ -5,6 +5,9 @@ use rune::TextEdit;
 pub struct Controls {
     pub visible: bool,
     pub catalog_open: bool,
+    pub class_depth_open: bool,
+    pub(super) class_depth: u32,
+    pub(super) maximum_class_depth: u32,
     pub panel: Panel,
     pub search: TextEdit,
     pub choosing_after: bool,
@@ -16,6 +19,9 @@ impl Default for Controls {
         Self {
             visible: false,
             catalog_open: false,
+            class_depth_open: false,
+            class_depth: 1,
+            maximum_class_depth: 1,
             panel: Panel::Flows,
             search: TextEdit::new(""),
             choosing_after: false,

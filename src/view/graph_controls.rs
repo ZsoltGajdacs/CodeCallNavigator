@@ -40,15 +40,21 @@ pub fn toolbar(state: &State, k: &Kit) -> El {
     }
 }
 
+pub(crate) fn depth_select(key: &str, depth: u32, maximum: u32) -> Select {
+    let values = (1..=maximum)
+        .map(|value| value.to_string())
+        .collect::<Vec<_>>();
+    Select::new(key, &values)
+        .label("Neighborhood depth")
+        .current(Some(&depth.to_string()))
+        .width(52.0)
+        .disabled(maximum == 1)
+}
+
 pub fn footer(state: &State, k: &Kit, layer: &mut Vec<El>) -> El {
     let grouping = grouping_control(state, k, layer);
     let direction = direction_control(state, k);
-    let depth = state.nav.depth.to_string();
-    let values = (1..=64).map(|v| v.to_string()).collect::<Vec<_>>();
-    let depth_select = Select::new("depth", &values)
-        .label("Neighborhood depth")
-        .current(Some(&depth))
-        .width(52.0)
+    let depth_select = depth_select("depth", state.nav.depth, 64)
         .open(state.ui.overlay == Some(Overlay::Depth))
         .on_toggle(State::toggle_depth)
         .on_close(State::close_overlay)

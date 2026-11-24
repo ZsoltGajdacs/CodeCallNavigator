@@ -56,6 +56,7 @@ pub struct Changes {
     pub loaded: bool,
     pub reload_required: bool,
     automatic_selection: bool,
+    pending_class: Option<String>,
     outline: Outline,
     context: Option<QueryContext>,
     list: Latest<Tracked<Result<ListAnswer, Error>>>,
@@ -74,6 +75,7 @@ impl Default for Changes {
             loaded: false,
             reload_required: false,
             automatic_selection: false,
+            pending_class: None,
             outline: Outline::default(),
             context: None,
             list: Latest::default(),
@@ -108,6 +110,7 @@ impl Changes {
             std::thread::spawn(move || drop(retired));
         }
         self.automatic_selection = false;
+        self.pending_class = None;
         self.message.clear();
         self.next_offset = None;
         self.expert = false;
@@ -135,7 +138,65 @@ impl Changes {
     }
 }
 
+#[derive(Clone)]
+pub(crate) enum ChangeAction {
+    Class(String),
+    Method {
+        id: String,
+        symbol: Option<String>,
+        flow_available: bool,
+        anchor: String,
+    },
+    File {
+        id: String,
+        anchor: String,
+    },
+}
+
+impl ChangeAction {
+    pub(crate) fn new(change: &Change, anchor: &str) -> Self {
+        let id = change.id.clone();
+        match change.kind {
+            ChangeKind::Class => Self::Class(id),
+            ChangeKind::Method => Self::Method {
+                id,
+                symbol: change.symbol.clone(),
+                flow_available: change.flow_available,
+                anchor: anchor.into(),
+            },
+            ChangeKind::File => Self::File {
+                id,
+                anchor: anchor.into(),
+            },
+        }
+    }
+}
+
 impl Workspace {
+    pub(crate) fn activate_change(&mut self, action: &ChangeAction) {
+        if self.changes.pending_class.take().is_some() {
+            self.changes.message.clear();
+        }
+        match action {
+            ChangeAction::Class(id) => self.choose_change_class(id.clone()),
+            ChangeAction::Method {
+                symbol: Some(symbol),
+                flow_available,
+                ..
+            } if self.method_flow_ready(*flow_available) => {
+                self.choose_change_method(symbol.clone());
+            }
+            ChangeAction::Method { id, anchor, .. } | ChangeAction::File { id, anchor } => {
+                self.choose_change_source(id.clone(), anchor.clone());
+            }
+        }
+    }
+
+    fn method_flow_ready(&self, flow_available: bool) -> bool {
+        let has_source = flow_available || !self.git_outline();
+        has_source && self.outline_graph_ready()
+    }
+
     pub(super) fn open_change_list(&mut self) {
         let Some(project) = &self.project else {
             return;
@@ -162,9 +223,22 @@ impl Workspace {
     pub(super) fn graph_catalog_ready(&mut self) {
         if self.changes.uses_legacy_graph() {
             self.load_change_list(0);
-        } else {
+        } else if !self.resolve_pending_class() {
             self.select_first_change();
         }
+    }
+
+    pub(super) fn resolve_pending_class(&mut self) -> bool {
+        let Some(id) = self
+            .changes
+            .pending_class
+            .take()
+            .filter(|_| !self.changes.expert)
+        else {
+            return false;
+        };
+        self.choose_change_class(id);
+        true
     }
 
     pub(super) fn outline_binding(&self) -> Option<OutlineBinding> {
@@ -192,10 +266,6 @@ impl Workspace {
                 .rows
                 .iter()
                 .any(|row| row.kind == ChangeKind::Class && row.id == id)
-    }
-
-    pub(crate) fn change_flow_ready(&self, change: &Change) -> bool {
-        self.outline_graph_ready() && (!self.git_outline() || change.flow_available)
     }
 
     pub(super) fn outline_graph_ready(&self) -> bool {
@@ -317,7 +387,7 @@ impl Workspace {
             .changes
             .rows
             .iter()
-            .find(|row| row.kind == ChangeKind::Class && self.change_flow_ready(row))
+            .find(|row| row.kind == ChangeKind::Class)
             .map(|row| row.id.clone())
         {
             self.choose_change_class(id);
@@ -336,8 +406,18 @@ impl Workspace {
     pub fn choose_change_class(&mut self, id: String) {
         self.changes.automatic_selection = true;
         self.changes.expert = false;
-        if let Err(error) = self.select_class(id) {
-            self.changes.message = error;
+        if matches!(self.phase, super::Phase::Loading) {
+            self.previews.close();
+            self.changes.pending_class = Some(id);
+            self.changes.message = "Waiting for the saved class diagram…".into();
+            return;
+        }
+        if self.outline_graph_ready() {
+            self.changes.message = self.select_class(id).err().unwrap_or_default();
+        } else {
+            self.previews.close();
+            self.changes.message =
+                "No matching saved graph pair is available for this class diagram.".into();
         }
     }
 

@@ -43,10 +43,14 @@ pub(crate) fn git(root: &Path, args: &[&str]) {
         String::from_utf8_lossy(&out.stderr)
     );
 }
-pub(crate) fn project(root: &Path) {
+fn init_git(root: &Path) {
     git(root, &["init", "-q"]);
     git(root, &["config", "user.name", "Workspace tests"]);
     git(root, &["config", "user.email", "test@example.invalid"]);
+}
+
+pub(crate) fn project(root: &Path) {
+    init_git(root);
     git(root, &["commit", "--allow-empty", "-qm", "base"]);
     git(root, &["tag", "base"]);
     git(root, &["tag", "head"]);
@@ -129,9 +133,7 @@ pub(crate) fn selected(state: &State) -> String {
 fn git_outline_remains_usable_without_graph_and_reloads_after_worktree_edit() {
     let temporary = tempfile::tempdir().unwrap();
     let root = temporary.path();
-    git(root, &["init", "-q"]);
-    git(root, &["config", "user.name", "Workspace tests"]);
-    git(root, &["config", "user.email", "test@example.invalid"]);
+    init_git(root);
     let source = root.join("code.ts");
     fs::write(&source, "const value = 1;\n").unwrap();
     git(root, &["add", "code.ts"]);
@@ -175,6 +177,112 @@ fn git_outline_remains_usable_without_graph_and_reloads_after_worktree_edit() {
     settle(&mut state);
     assert_preview(&state.flow_comparison, &id, "const value = 3;\n");
     assert!(state.graph.is_none());
+}
+
+#[test]
+fn stale_worktree_class_rows_open_the_bound_saved_diagram() {
+    use crate::engine_client::flow_comparison::ChangeKind;
+    let temporary = tempfile::tempdir().unwrap();
+    let root = temporary.path().canonicalize().unwrap();
+    init_git(&root);
+    save_class_fixture_and_edit_worktree(&root);
+
+    let mut state = state(&root);
+    state
+        .open_flow_comparison("HEAD".into(), "WORKTREE".into())
+        .unwrap();
+    let comparison = &mut state.flow_comparison;
+    let start = Instant::now();
+    while !comparison.changes.loaded {
+        comparison.publish_changes();
+        assert!(
+            start.elapsed() < Duration::from_secs(15),
+            "Git outline job timed out"
+        );
+        std::thread::sleep(Duration::from_millis(10));
+    }
+    assert!(comparison.class_pair().is_none());
+    let class = comparison
+        .changes
+        .rows
+        .iter()
+        .find(|row| row.kind == ChangeKind::Class)
+        .unwrap();
+    assert!(
+        !class.flow_available,
+        "The Worktree source must differ from the saved graph"
+    );
+    let class_id = class.id.clone();
+    comparison.activate_change(&ChangeAction::new(class, "changed class"));
+    settle(&mut state);
+
+    let comparison = &state.flow_comparison;
+    let pair = comparison.class_pair().unwrap_or_else(|| {
+        panic!(
+            "Class activation must show the saved diagram. Outline: {}. Diagram: {}",
+            comparison.changes.message, comparison.detail_message,
+        )
+    });
+    assert_eq!(pair.graph.root, class_id);
+    assert!(pair.has_root(SideId::Before));
+    assert!(pair.has_root(SideId::After));
+    assert!(comparison.previews.active.is_none());
+    assert!(comparison.changes.message.is_empty());
+    assert!(
+        comparison
+            .worktree_freshness_message()
+            .unwrap()
+            .contains("stale")
+    );
+}
+
+// Reuse the retained flow fixture with class owner keys so this tests the
+// desktop and real query boundary independently of compiler setup.
+fn save_class_fixture_and_edit_worktree(root: &Path) {
+    use codecallnavigator::{artifact::provenance, fingerprint};
+    use std::sync::atomic::AtomicBool;
+
+    let source = root.join("flow.ts");
+    let graph = crate::flow_scenes::data();
+    let facts = &graph.architecture.as_ref().unwrap().files[0];
+    fs::write(&source, &facts.content).unwrap();
+    git(root, &["add", "flow.ts"]);
+    git(root, &["commit", "-qm", "base"]);
+
+    let owner = serde_json::json!([
+        serde_json::json!(["", "ClassDeclaration", "SavedFixture", ""]).to_string(),
+        0
+    ])
+    .to_string();
+    let keys = graph
+        .nodes
+        .iter()
+        .map(|node| {
+            let key = serde_json::json!([
+                serde_json::json!([owner, "MethodDeclaration", node.label, node.signature])
+                    .to_string(),
+                0
+            ]);
+            (node.id.clone(), key.to_string())
+        })
+        .collect();
+    let mappings = [("repo".into(), Path::new("/snapshot").to_owned())];
+    let mut saved = artifact::canonical_with_identities(&graph, &mappings, &keys).unwrap();
+    let inputs = fingerprint::capture([source.clone()]).unwrap();
+    let live_roots = [("repo".into(), root.to_owned())];
+    saved.graph["analysis"] =
+        serde_json::to_value(provenance::build(&inputs, &[], "{}", &live_roots).unwrap()).unwrap();
+    retain_fixture(root, &saved, "HEAD");
+    artifact::AnalysisLock::acquire_in(root, fixture_store(root))
+        .unwrap()
+        .publish(&saved, &AtomicBool::new(false))
+        .unwrap();
+    fs::write(
+        root.join(".git/info/exclude"),
+        "/.fixture-library/\n/use-isolated-cache\n",
+    )
+    .unwrap();
+    fs::write(&source, facts.content.replace("return 0;", "return 42;")).unwrap();
 }
 
 fn assert_preview(comparison: &Workspace, id: &str, expected: &str) {

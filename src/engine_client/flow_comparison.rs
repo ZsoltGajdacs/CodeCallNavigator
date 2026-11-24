@@ -11,6 +11,7 @@ mod validation;
 pub use changes::{
     Change, ChangeKind, ChangeList, ChangeStatus, Hunk, LineKind, SourceDiff, SourceStatus,
 };
+pub(crate) use class_graph::ClassDetail;
 pub use client::{BoundComparison, CatalogPage, Error};
 pub use impact::{ImpactPreview, ImpactRefs, ImpactRow, installed_impact_preview};
 pub use model::*;

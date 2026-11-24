@@ -25,24 +25,25 @@ pub fn view(state: &State, cx: &mut Cx<State>) -> El {
         .child(toolbar(state, cx.titlebar_inset(), &k))
         .child(revisions(state, &k))
         .child(snapshots::controls(state, &k));
+    let mut overlays = Vec::new();
     let body = match state.flow_comparison.controls.panel {
         Panel::Graph => body.child(snapshots::graph(state, &k)),
         Panel::Impact => body.child(impact::view(state, &k)),
-        Panel::Flows => body
-            .child(provenance::view(state, &k))
-            .child(status(state, &k))
-            .child(if state.flow_comparison.changes.show_outline() {
-                changes::view(state, &k)
-            } else {
-                counterpart(state, &k)
-            })
-            .child(changes::divider(state, &k))
-            .child(panes::view(state, &k)),
+        Panel::Flows => {
+            let body = body
+                .child(provenance::view(state, &k))
+                .child(status(state, &k))
+                .child(if state.flow_comparison.changes.show_outline() {
+                    changes::view(state, &k)
+                } else {
+                    counterpart(state, &k)
+                })
+                .child(changes::divider(state, &k))
+                .child(panes::view(state, &k, &mut overlays));
+            overlays.extend(source_diff::layer(state, cx, &k));
+            body
+        }
     };
-    let mut overlays = Vec::new();
-    if state.flow_comparison.controls.panel == Panel::Flows {
-        overlays.extend(source_diff::layer(state, cx, &k));
-    }
     overlays.extend(catalog::layers(state, &k));
     overlays.extend(revisions::layers(state, &k));
     crate::view::with_overlays(state, &k, body, overlays)
@@ -283,6 +284,9 @@ fn status(state: &State, k: &Kit) -> El {
 }
 pub fn key(state: &mut State, event: &rune::KeyEvent) -> bool {
     if event.key == rune::Key::Escape {
+        if std::mem::take(&mut state.flow_comparison.controls.class_depth_open) {
+            return true;
+        }
         if state.flow_comparison.revisions.picker.is_some() {
             state.flow_comparison.revisions.close_picker();
             return true;

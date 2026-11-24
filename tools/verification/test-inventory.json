@@ -44,6 +44,20 @@
       "purpose": "saved class previews distinguish owned diffs, same-revision excerpts and ambiguous sources"
     },
     {
+      "id": "codecallnavigator-core/lib:codecallnavigator_core::artifact::comparison_changes::class_source::tests::expanded_class_source_requires_reachability_in_the_hovered_revision",
+      "runner": "rust",
+      "file": "crates/codecallnavigator-core/src/artifact/comparison_changes/class_source_tests.rs",
+      "test_name": "artifact::comparison_changes::class_source::tests::expanded_class_source_requires_reachability_in_the_hovered_revision",
+      "ignored": false,
+      "package": "codecallnavigator-core",
+      "target_kind": "lib",
+      "target": "codecallnavigator_core",
+      "component": "core",
+      "category": "unit",
+      "requirements": [],
+      "purpose": "saved class previews require reachability at the requested depth in the selected revision"
+    },
+    {
       "id": "codecallnavigator-core/lib:codecallnavigator_core::artifact::comparison_changes::class_source::tests::shared_file_diff_contains_only_the_selected_members_saved_source",
       "runner": "rust",
       "file": "crates/codecallnavigator-core/src/artifact/comparison_changes/class_source_tests.rs",
@@ -98,6 +112,20 @@
       "category": "unit",
       "requirements": [],
       "purpose": "class flow preserves direction, filters same-class and non-call links, and compares counts and resolution"
+    },
+    {
+      "id": "codecallnavigator-core/lib:codecallnavigator_core::artifact::comparison_changes::tests::class_graph_expands_per_revision_without_switching_directions",
+      "runner": "rust",
+      "file": "crates/codecallnavigator-core/src/artifact/comparison_changes/tests.rs",
+      "test_name": "artifact::comparison_changes::tests::class_graph_expands_per_revision_without_switching_directions",
+      "ignored": false,
+      "package": "codecallnavigator-core",
+      "target_kind": "lib",
+      "target": "codecallnavigator_core",
+      "component": "core",
+      "category": "unit",
+      "requirements": [],
+      "purpose": "expanded class diagrams respect revision boundaries and caller or callee direction across cycles"
     },
     {
       "id": "codecallnavigator-core/lib:codecallnavigator_core::artifact::comparison_changes::tests::class_graph_retains_declaration_only_class_and_distinguishes_absence",
@@ -8233,6 +8261,20 @@
       "purpose": "cli handles legacy malformed and missing artifacts"
     },
     {
+      "id": "codecallnavigator-mcp/bin:codecallnavigator-mcp::arguments::tests::class_comparison_omits_default_depth_and_validates_requested_depth",
+      "runner": "rust",
+      "file": "crates/codecallnavigator-mcp/src/arguments.rs",
+      "test_name": "arguments::tests::class_comparison_omits_default_depth_and_validates_requested_depth",
+      "ignored": false,
+      "package": "codecallnavigator-mcp",
+      "target_kind": "bin",
+      "target": "codecallnavigator-mcp",
+      "component": "mcp",
+      "category": "unit",
+      "requirements": [],
+      "purpose": "Check that explicit depth is validated and omitted depth stays compatible with depth-one engines."
+    },
+    {
       "id": "codecallnavigator-mcp/bin:codecallnavigator-mcp::arguments::tests::independent_relationship_arrays_and_generation_are_forwarded",
       "runner": "rust",
       "file": "crates/codecallnavigator-mcp/src/arguments.rs",
@@ -10613,6 +10655,20 @@
         "git"
       ],
       "purpose": "a completed catalog reply reconciles identity before publication"
+    },
+    {
+      "id": "codecallnavigator/bin:codecallnavigator::flow_comparison::preview::hover::tests::moving_keyboard_focus_into_outline_dismisses_only_unpinned_canvas_previews",
+      "runner": "rust",
+      "file": "src/flow_comparison/preview/hover.rs",
+      "test_name": "flow_comparison::preview::hover::tests::moving_keyboard_focus_into_outline_dismisses_only_unpinned_canvas_previews",
+      "ignored": false,
+      "package": "codecallnavigator",
+      "target_kind": "bin",
+      "target": "codecallnavigator",
+      "component": "ui",
+      "category": "unit",
+      "requirements": [],
+      "purpose": "Dismiss a transient Compare canvas preview on outline focus while preserving explicit file previews and pinned previews."
     },
     {
       "id": "codecallnavigator/bin:codecallnavigator::flow_comparison::publication_tests::detail_outputs_need_both_the_current_serial_and_comparison_binding",
@@ -15106,6 +15162,23 @@
       "requirements": [
         "git"
       ]
+    },
+    {
+      "id": "codecallnavigator/bin:codecallnavigator::flow_comparison::tests::stale_worktree_class_rows_open_the_bound_saved_diagram",
+      "runner": "rust",
+      "file": "src/flow_comparison/tests.rs",
+      "test_name": "flow_comparison::tests::stale_worktree_class_rows_open_the_bound_saved_diagram",
+      "ignored": false,
+      "package": "codecallnavigator",
+      "target_kind": "bin",
+      "target": "codecallnavigator",
+      "component": "ui",
+      "category": "integration",
+      "requirements": [
+        "git",
+        "graphviz"
+      ],
+      "purpose": "Exercise real Git source attribution, the bound CLI class query, and Graphviz to show a stale saved Worktree diagram from an outline row."
     },
     {
       "id": "codecallnavigator/test:aspnet_routes::custom_endpoint_http_method_metadata_blocks_unproved_request_methods",

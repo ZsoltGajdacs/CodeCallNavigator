@@ -96,18 +96,24 @@ impl Workspace {
         if focused.is_some_and(|key| Owner::Compare.owns_focus(key)) {
             return false;
         }
-        let focused =
+        let key =
             focused.filter(|_| self.changes.show_outline() || self.class_selection().is_some());
-        let focus = focused.and_then(canvas_target);
-        let key = focus.as_ref().and(focused);
         if self.previews.focus_key.as_deref() == key {
             return false;
         }
         self.previews.focus_key = key.map(str::to_owned);
-        if let Some((key, target)) = key.zip(focus) {
-            self.open_canvas_preview(target, key.into(), false);
+        if let Some(key) = key {
+            self.sync_preview_focus(key);
         }
         true
+    }
+
+    fn sync_preview_focus(&mut self, key: &str) {
+        if key.starts_with("comparison-change-") {
+            self.previews.enter_outline();
+        } else {
+            self.focus_canvas_source(key);
+        }
     }
 
     pub fn focus_canvas_source(&mut self, anchor: &str) {
@@ -156,4 +162,30 @@ fn canvas_target(key: &str) -> Option<CanvasTarget> {
         side,
         key.strip_prefix("class-")?.into(),
     ))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn moving_keyboard_focus_into_outline_dismisses_only_unpinned_canvas_previews() {
+        for (target, pinned, stays_open) in [
+            (PreviewTarget::Step(SideId::After, 0), false, false),
+            (PreviewTarget::Step(SideId::After, 0), true, true),
+            (PreviewTarget::Row("file".into()), false, true),
+        ] {
+            let mut workspace = Workspace::default();
+            workspace.controls.visible = true;
+            workspace.changes.loaded = true;
+            workspace.previews.active = Some(super::super::Preview {
+                anchor: "comparison-after-step-0".into(),
+                target,
+            });
+            workspace.previews.interaction.pinned = pinned;
+
+            assert!(workspace.sync_change_focus(Some("comparison-change-scoped-class")));
+            assert_eq!(workspace.previews.active.is_some(), stays_open);
+        }
+    }
 }

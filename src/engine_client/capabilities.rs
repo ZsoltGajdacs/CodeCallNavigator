@@ -18,8 +18,8 @@ pub(super) struct Capabilities {
     pub flow_comparison: bool,
     pub comparison_changes: bool,
     pub git_comparison_changes: bool,
-    pub class_flow_comparison: bool,
-    pub class_comparison_source: bool,
+    pub class_flow_comparison: Option<u32>,
+    pub class_comparison_source: Option<u32>,
     pub graph_comparison: bool,
     pub impact_preview: bool,
     pub local_snapshots: Option<LocalSnapshots>,
@@ -124,12 +124,12 @@ fn validate(bytes: &[u8]) -> Result<Capabilities> {
             && operations
                 .iter()
                 .any(|name| name == "git_comparison_changes"),
-        class_flow_comparison: supports_bound_detail(
+        class_flow_comparison: bound_detail_depth(
             &capabilities,
             operations,
             "class_flow_comparison",
         ),
-        class_comparison_source: supports_bound_detail(
+        class_comparison_source: bound_detail_depth(
             &capabilities,
             operations,
             "class_comparison_source",
@@ -144,24 +144,36 @@ fn validate(bytes: &[u8]) -> Result<Capabilities> {
     })
 }
 
-fn supports_bound_detail(
+fn bound_detail_depth(
     capabilities: &serde_json::Value,
     operations: &[serde_json::Value],
     name: &str,
-) -> bool {
-    operations.iter().any(|operation| operation == name)
-        && capabilities[name]["version"] == 1
-        && capabilities[name]["snapshot_binding"] == true
+) -> Option<u32> {
+    let detail = &capabilities[name];
+    supports_snapshot_bound(detail, operations, name).then(|| {
+        let maximum = u64::from(codecallnavigator::query::MAX_CLASS_COMPARISON_DEPTH);
+        detail["maximum_depth"]
+            .as_u64()
+            .unwrap_or(1)
+            .clamp(1, maximum) as u32
+    })
 }
 
 fn supports_graph_comparison(
     capabilities: &serde_json::Value,
     operations: &[serde_json::Value],
 ) -> bool {
-    let comparison = &capabilities["comparison"];
-    operations.iter().any(|name| name == "compare")
-        && comparison["version"] == 1
-        && comparison["snapshot_binding"] == true
+    supports_snapshot_bound(&capabilities["comparison"], operations, "compare")
+}
+
+fn supports_snapshot_bound(
+    detail: &serde_json::Value,
+    operations: &[serde_json::Value],
+    name: &str,
+) -> bool {
+    operations.iter().any(|operation| operation == name)
+        && detail["version"] == 1
+        && detail["snapshot_binding"] == true
 }
 
 fn local_snapshots(

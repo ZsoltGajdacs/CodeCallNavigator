@@ -2,7 +2,7 @@ use super::*;
 use crate::{
     architecture::{ArchitectureFacts, FACTS_VERSION, FileFacts},
     flow::{FlowInventory, FunctionFlowIR, SourceSpan},
-    model::{GraphData, Node},
+    model::{Edge, GraphData, Node},
 };
 
 fn graph(content: &str, classes: &[&str]) -> GraphData {
@@ -42,6 +42,7 @@ fn changed_class_preview_respects_saved_file_ownership() {
         root: &id,
         node: &id,
         side: ComparisonSide::After,
+        depth: 1,
     };
     let before = Snapshot::new(&old, &empty).unwrap();
     let after = Snapshot::new(&new, &empty).unwrap();
@@ -80,6 +81,7 @@ fn shared_file_diff_contains_only_the_selected_members_saved_source() {
             root: &id,
             node: &id,
             side: ComparisonSide::After,
+            depth: 1,
         },
     ) else {
         panic!("An exact member span should support a saved diff");
@@ -90,6 +92,59 @@ fn shared_file_diff_contains_only_the_selected_members_saved_source() {
         .map(|line| line.text.as_str())
         .collect();
     assert_eq!(lines, ["return 1;", "return 2;"]);
+}
+
+#[test]
+fn expanded_class_source_requires_reachability_in_the_hovered_revision() {
+    let mut before = graph("class A {}\nclass B {}\nclass C {}\n", &["A", "B", "C"]);
+    before.nodes[2].file = "@repo/third.cs".into();
+    before.architecture.as_mut().unwrap().files.push(FileFacts {
+        file: "@repo/third.cs".into(),
+        language: "csharp".into(),
+        names: vec!["C".into()],
+        kinds: vec!["class".into()],
+        content: "class C {}\n".into(),
+        ..FileFacts::default()
+    });
+    let call = |from, to| Edge {
+        from,
+        to,
+        kind: "call".into(),
+        certainty: "direct".into(),
+        count: 1,
+        provenance: String::new(),
+        evidence: Vec::new(),
+    };
+    before.edges = vec![call(0, 1), call(1, 2)];
+    let mut after = before.clone();
+    after.edges.pop();
+    let empty = BTreeSet::new();
+    let [root, node] = [0, 2].map(|index| Class::from_node(&before.nodes[index]).unwrap().id());
+    let before = Snapshot::new(&before, &empty).unwrap();
+    let after = Snapshot::new(&after, &empty).unwrap();
+    let target = ClassSourceTarget {
+        root: &root,
+        node: &node,
+        side: ComparisonSide::Before,
+        depth: 1,
+    };
+    assert!(preview(&before, &after, target).is_none());
+    let target = ClassSourceTarget { depth: 2, ..target };
+    assert!(matches!(
+        preview(&before, &after, target),
+        Some(ClassSource::Excerpt { file, text, .. }) if file == "third.cs" && text == "class C {}"
+    ));
+    assert!(
+        preview(
+            &before,
+            &after,
+            ClassSourceTarget {
+                side: ComparisonSide::After,
+                ..target
+            }
+        )
+        .is_none()
+    );
 }
 
 fn shared_graph(content: &str, owned: &str) -> GraphData {

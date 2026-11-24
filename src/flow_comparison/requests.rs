@@ -48,7 +48,7 @@ pub(super) struct DetailOutput {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub(super) enum DetailSelection {
     Function(Selection),
-    Class(String),
+    Class { id: String, depth: u32 },
 }
 pub(super) enum PreparedDetail {
     Function(Box<pair::Prepared>),
@@ -167,7 +167,7 @@ impl DetailWork {
         let binding = self.bound.header().comparison_id.clone();
         let result = match &self.selection {
             DetailSelection::Function(selection) => self.prepare_function(selection),
-            DetailSelection::Class(id) => self.prepare_class(id),
+            DetailSelection::Class { id, depth } => self.prepare_class(id, *depth),
         };
         DetailOutput {
             serial: self.serial,
@@ -191,12 +191,12 @@ impl DetailWork {
             .map_err(StringError::Preparation)
     }
 
-    fn prepare_class(&self, id: &str) -> Result<PreparedDetail, StringError> {
-        let graph = self
+    fn prepare_class(&self, id: &str, depth: u32) -> Result<PreparedDetail, StringError> {
+        let detail = self
             .bound
-            .class_graph(id, &self.cancel)
+            .class_graph(id, depth, &self.cancel)
             .map_err(StringError::Query)?;
-        ClassPair::load(graph, &self.dot, &self.cancel)
+        ClassPair::load(detail, depth, &self.dot, &self.cancel)
             .map(|prepared| PreparedDetail::Class(Box::new(prepared)))
             .map_err(|error| StringError::Preparation(format!("{error:#}")))
     }

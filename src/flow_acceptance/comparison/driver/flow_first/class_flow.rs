@@ -1,7 +1,7 @@
 //! Exercise class selection, saved previews, and call changes on actual drawn frames.
 use super::{
-    Driver, Phase, PopupKind, PopupStep, Step, change_key, focused, preview_drawn,
-    require_pane_labels,
+    Driver, Phase, PopupKind, PopupStep, Step, change_key, class_depth::DepthStep, focused,
+    outline::require_closed_preview, preview_drawn, require_pane_labels,
 };
 use crate::{
     app::State,
@@ -10,7 +10,6 @@ use crate::{
 use anyhow::{Context, Result, ensure};
 use codecallnavigator::artifact::comparison_changes::GraphChange;
 use rune::{Runtime, runtime::ElementInfo};
-use std::time::{Duration, Instant};
 
 impl Driver {
     pub(super) fn class_flow_action(
@@ -19,23 +18,6 @@ impl Driver {
         step: Step,
     ) -> Result<()> {
         match step {
-            Step::HoverOutlineClass => {
-                if let Some(key) = self.outline_class_key(runtime)?
-                    && self.input.hover(runtime, &key)
-                {
-                    self.requested = Some(Instant::now());
-                    self.phase = Phase::FlowFirst(Step::OutlineClassHovered);
-                }
-            }
-            Step::FocusOutlineClass => {
-                self.input.hover(runtime, "comparison-base");
-                if self
-                    .outline_class_key(runtime)?
-                    .is_some_and(|key| !focused(runtime, &key))
-                {
-                    tab(runtime);
-                }
-            }
             Step::Class => {
                 if let Some(key) = self.outline_class_key(runtime)? {
                     self.click(runtime, &key, Phase::FlowFirst(Step::ClassDrawn));
@@ -71,22 +53,9 @@ impl Driver {
         step: Step,
     ) -> Result<()> {
         match step {
-            Step::OutlineClassHovered
-                if self
-                    .requested
-                    .is_some_and(|start| start.elapsed() >= Duration::from_millis(240)) =>
-            {
+            Step::ClassByKeyboardDrawn if class_graph_drawn(runtime)? => {
                 require_closed_preview(runtime)?;
-                self.report.check("outline_hover_has_no_source_preview");
-                self.phase = Phase::FlowFirst(Step::FocusOutlineClass);
-            }
-            Step::FocusOutlineClass
-                if self
-                    .outline_class_key(runtime)?
-                    .is_some_and(|key| focused(runtime, &key)) =>
-            {
-                require_closed_preview(runtime)?;
-                self.report.check("outline_focus_has_no_source_preview");
+                self.report.check("class_opened_from_outline_with_enter");
                 self.phase = Phase::FlowFirst(Step::SelectMethod);
             }
             Step::ClassDrawn if class_graph_drawn(runtime)? => {
@@ -103,7 +72,7 @@ impl Driver {
                 if focused(runtime, &neighbor_key(runtime)?) && excerpt_drawn(runtime, "=> 23") =>
             {
                 self.report.check("class_saved_excerpt_drawn_on_focus");
-                self.phase = Phase::FlowFirst(Step::ReturnToMethod);
+                self.phase = Phase::FlowFirst(Step::Depth(DepthStep::Open(2)));
             }
             _ => {}
         }
@@ -167,17 +136,7 @@ fn require_card_label(elements: &[ElementInfo], side: SideId, id: &str, name: &s
     Ok(())
 }
 
-fn require_closed_preview(runtime: &Runtime<State>) -> Result<()> {
-    ensure!(
-        !runtime.elements().iter().any(|element| {
-            element.key.as_deref() == Some("comparison-unified-source") && visible(element)
-        }),
-        "The outline opened a source preview"
-    );
-    Ok(())
-}
-
-fn class_graph_drawn(runtime: &Runtime<State>) -> Result<bool> {
+pub(super) fn class_graph_drawn(runtime: &Runtime<State>) -> Result<bool> {
     let Some(pair) = runtime.state.flow_comparison.class_pair() else {
         return Ok(false);
     };
@@ -250,7 +209,7 @@ fn neighbor_key(runtime: &Runtime<State>) -> Result<String> {
     Ok(node_key(SideId::After, named_node(pair, "NewNeighbor")?))
 }
 
-fn named_node<'a>(pair: &'a ClassPair, name: &str) -> Result<&'a str> {
+pub(super) fn named_node<'a>(pair: &'a ClassPair, name: &str) -> Result<&'a str> {
     pair.graph
         .nodes
         .iter()
@@ -259,11 +218,11 @@ fn named_node<'a>(pair: &'a ClassPair, name: &str) -> Result<&'a str> {
         .with_context(|| format!("Fixture class graph omitted {name}"))
 }
 
-fn node_key(side: SideId, id: &str) -> String {
+pub(super) fn node_key(side: SideId, id: &str) -> String {
     super::observation::address(side).key(&format!("class-{id}"))
 }
 
-fn visible_key(nodes: &[ElementInfo], key: &str) -> bool {
+pub(super) fn visible_key(nodes: &[ElementInfo], key: &str) -> bool {
     nodes
         .iter()
         .any(|element| element.key.as_deref() == Some(key) && visible(element))
@@ -273,7 +232,7 @@ fn visible(element: &ElementInfo) -> bool {
     !element.exiting && element.visible[2].min(element.visible[3]) > 0.0
 }
 
-fn excerpt_drawn(runtime: &Runtime<State>, excerpt: &str) -> bool {
+pub(super) fn excerpt_drawn(runtime: &Runtime<State>, excerpt: &str) -> bool {
     runtime.elements().iter().any(|element| {
         visible(element)
             && element.path.contains("/comparison-unified-source")

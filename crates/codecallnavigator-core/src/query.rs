@@ -14,9 +14,19 @@ pub const COMPARISON_CHANGES_VERSION: u32 = 1;
 pub const GIT_COMPARISON_CHANGES_VERSION: u32 = 1;
 pub const CLASS_FLOW_COMPARISON_VERSION: u32 = 1;
 pub const CLASS_COMPARISON_SOURCE_VERSION: u32 = 1;
+pub const DEFAULT_CLASS_COMPARISON_DEPTH: u32 = 1;
+pub const MAX_CLASS_COMPARISON_DEPTH: u32 = 64;
 pub const MAX_SOURCE_BYTES: u64 = crate::flow::MAX_SOURCE_BYTES;
 pub const MAX_FRESHNESS_REASONS: usize = 50;
 pub const MAX_FRESHNESS_REASON_BYTES: usize = 8192;
+
+pub fn validate_class_comparison_depth(depth: u32) -> anyhow::Result<()> {
+    anyhow::ensure!(
+        (1..=MAX_CLASS_COMPARISON_DEPTH).contains(&depth),
+        "Class diagram depth must be between 1 and {MAX_CLASS_COMPARISON_DEPTH}"
+    );
+    Ok(())
+}
 
 pub fn capabilities() -> serde_json::Value {
     serde_json::json!({
@@ -30,8 +40,8 @@ pub fn capabilities() -> serde_json::Value {
         "comparison": {"version":1,"default_limit":100,"maximum_limit":500,"maximum_response_bytes":24*1024*1024,"snapshot_binding":true},
         "comparison_changes": {"version":COMPARISON_CHANGES_VERSION,"selections":["list","source_diff"],"default_limit":100,"maximum_limit":500,"maximum_response_bytes":crate::artifact::difference::MAX_RESPONSE_BYTES,"snapshot_binding":true},
         "git_comparison_changes": {"version":GIT_COMPARISON_CHANGES_VERSION,"selections":["list","source_diff"],"default_limit":100,"maximum_limit":500,"maximum_response_bytes":crate::artifact::difference::MAX_RESPONSE_BYTES},
-        "class_flow_comparison": {"version":CLASS_FLOW_COMPARISON_VERSION,"maximum_response_bytes":crate::artifact::difference::MAX_RESPONSE_BYTES,"snapshot_binding":true},
-        "class_comparison_source": {"version":CLASS_COMPARISON_SOURCE_VERSION,"maximum_response_bytes":crate::artifact::difference::MAX_RESPONSE_BYTES,"snapshot_binding":true},
+        "class_flow_comparison": {"version":CLASS_FLOW_COMPARISON_VERSION,"maximum_response_bytes":crate::artifact::difference::MAX_RESPONSE_BYTES,"snapshot_binding":true,"maximum_depth":MAX_CLASS_COMPARISON_DEPTH},
+        "class_comparison_source": {"version":CLASS_COMPARISON_SOURCE_VERSION,"maximum_response_bytes":crate::artifact::difference::MAX_RESPONSE_BYTES,"snapshot_binding":true,"maximum_depth":MAX_CLASS_COMPARISON_DEPTH},
         "freshness": {"version":crate::freshness::VERSION,"streaming":true,"mode":"verified_polling","limited":true,"reconcile_milliseconds":crate::freshness::RECONCILE_MILLISECONDS,"heartbeat_milliseconds":crate::freshness::HEARTBEAT_MILLISECONDS},
         "flow_expansion": {"version":1,"expected_generation":true,"maximum_selections":128,"maximum_occurrence_depth":32,"maximum_identity_bytes":1024*1024,"maximum_response_bytes":crate::artifact::difference::MAX_RESPONSE_BYTES,"default_limits":crate::flow::ExpansionLimits::default(),"maximum_limits":{"depth":32,"requests":128,"steps":crate::flow::MAX_STEPS,"links":crate::flow::MAX_LINKS,"source_bytes":MAX_SOURCE_BYTES}},
         "flow_languages": ["java", "typescript", "csharp"],

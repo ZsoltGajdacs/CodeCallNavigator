@@ -100,7 +100,10 @@ fn detail_outputs_need_both_the_current_serial_and_comparison_binding() {
             head_symbol: None,
         });
         workspace.detail_selection = Some(if matches!(obsolete, SupersededBy::ClassSelection) {
-            DetailSelection::Class("newly selected class".into())
+            DetailSelection::Class {
+                id: "newly selected class".into(),
+                depth: 1,
+            }
         } else {
             selection.clone()
         });
@@ -115,12 +118,7 @@ fn detail_outputs_need_both_the_current_serial_and_comparison_binding() {
             selection,
             result,
         };
-        let input = workspace.workers.track(output);
-        let (release, wait) = mpsc::channel();
-        workspace.detail_job.request(input, move |input| {
-            wait.recv().unwrap();
-            input
-        });
+        let release = queue_detail(workspace, output);
         if matches!(obsolete, SupersededBy::Serial) {
             workspace.detail_clock.cancel();
         }
@@ -133,6 +131,16 @@ fn detail_outputs_need_both_the_current_serial_and_comparison_binding() {
         }
         assert!(matches!(workspace.phase, Phase::Bound));
     }
+}
+
+fn queue_detail(workspace: &Workspace, output: DetailOutput) -> mpsc::Sender<()> {
+    let input = workspace.workers.track(output);
+    let (release, wait) = mpsc::channel();
+    workspace.detail_job.request(input, move |input| {
+        wait.recv().unwrap();
+        input
+    });
+    release
 }
 
 fn prepare_function(workspace: &Workspace, symbol: &str, dot: &Path) -> PreparedDetail {

@@ -33,6 +33,8 @@ def required_checks(worktree):
               "changes_outline_drawn_and_auto_selected", "git_file_diff_drawn_from_outline", "unified_diff_drawn_on_hover",
               "unified_diff_drawn_on_keyboard_focus", "class_call_changes_drawn",
               "outline_hover_has_no_source_preview", "outline_focus_has_no_source_preview",
+              "class_opened_from_outline_with_enter", "class_depth_expanded_in_both_panes",
+              "class_second_hop_saved_source_drawn", "class_depth_reduced_in_both_panes",
               "class_source_diff_drawn_on_hover", "class_saved_excerpt_drawn_on_focus",
               "function_source_popup_scrolled_and_resized", "class_source_popup_scrolled_and_resized",
               "source_popup_pinned_and_dismissed",

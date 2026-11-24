@@ -1,5 +1,5 @@
 //! Argument types validate wire shape and bounds, never graph meaning.
-use crate::wire::validate_generation;
+use crate::wire::{MAX_TRAVERSAL_DEPTH, validate_generation};
 use anyhow::{Result, bail, ensure};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -71,6 +71,9 @@ pub struct ClassFlowComparisonArgs {
     pub expected_comparison: String,
     pub expected_generation: Option<String>,
     pub id: String,
+    /// Caller and callee hops from the class. Defaults to one.
+    #[schemars(range(min = 1, max = 64))]
+    pub depth: Option<u32>,
 }
 #[derive(Deserialize, Serialize, JsonSchema)]
 #[serde(tag = "kind", rename_all = "snake_case", deny_unknown_fields)]
@@ -505,6 +508,15 @@ fn class_flow_comparison(args: ClassFlowComparisonArgs) -> Result<Query> {
         "kind": "class_flow_comparison", "base": args.base, "head": args.head,
         "expected_comparison": args.expected_comparison, "id": args.id
     });
+    if let Some(depth) = args.depth {
+        ensure!(
+            (1..=MAX_TRAVERSAL_DEPTH).contains(&depth),
+            "Class depth must be between 1 and {MAX_TRAVERSAL_DEPTH}"
+        );
+        if depth > 1 {
+            query["depth"] = json!(depth);
+        }
+    }
     snapshot_selectors(&mut query, args.base_snapshot, args.head_snapshot)?;
     Query::new(query, args.expected_generation)
 }
@@ -608,13 +620,47 @@ fn validate_selection(selection: &Selection) -> Result<()> {
     }
 }
 fn depth_limit(depth: u32) -> Result<()> {
-    ensure!(depth <= 64, "Traversal depth exceeds 64");
+    ensure!(
+        depth <= MAX_TRAVERSAL_DEPTH,
+        "Traversal depth exceeds {MAX_TRAVERSAL_DEPTH}"
+    );
     Ok(())
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn class_comparison_omits_default_depth_and_validates_requested_depth() {
+        let mut request =
+            json!({"base":"HEAD","id":"class-A","expected_comparison":"a".repeat(64)});
+        assert!(
+            parse("compare_class_flows", request.clone())
+                .unwrap()
+                .query
+                .get("depth")
+                .is_none()
+        );
+        request["depth"] = json!(1);
+        assert!(
+            parse("compare_class_flows", request.clone())
+                .unwrap()
+                .query
+                .get("depth")
+                .is_none()
+        );
+        for depth in [2, 64] {
+            request["depth"] = json!(depth);
+            assert_eq!(
+                parse("compare_class_flows", request.clone()).unwrap().query["depth"],
+                depth
+            );
+        }
+        for depth in [0, 65] {
+            request["depth"] = json!(depth);
+            assert!(parse("compare_class_flows", request.clone()).is_err());
+        }
+    }
     #[test]
     fn rejects_unknown_fields_bad_generations_limits_and_legacy_filters() {
         for (tool, value) in [
