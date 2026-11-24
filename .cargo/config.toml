@@ -1,0 +1,3 @@
+[registry]
+# Cargo 1.100 or newer enforces this when resolving registry dependencies.
+global-min-publish-age = "7 days"
