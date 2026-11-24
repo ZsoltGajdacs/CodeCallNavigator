@@ -14,6 +14,11 @@ pub struct Repository {
     pub project: String,
 }
 
+pub(super) enum BlobBatch {
+    Content,
+    Size,
+}
+
 impl Repository {
     pub fn detect(project: &Path) -> Result<Option<Self>> {
         if !has_worktree_marker(project)? {
@@ -107,25 +112,31 @@ impl Repository {
             return Ok(());
         }
         let input: String = expected.keys().map(|id| format!("{id}\n")).collect();
-        let output = self.blob_batch(&input, Some(cancel), None)?;
+        let output = self.blob_batch(
+            BlobBatch::Content,
+            GitInput {
+                bytes: input.as_bytes(),
+                cancel: Some(cancel),
+                ..GitInput::default()
+            },
+        )?;
         verify_batch(output, expected, cancel)
     }
 
     pub(super) fn blob_batch(
         &self,
-        input: &str,
-        cancel: Option<&AtomicBool>,
-        output_limit: Option<u64>,
+        mode: BlobBatch,
+        input: GitInput<'_>,
     ) -> Result<BufReader<std::fs::File>> {
+        let argument = match mode {
+            BlobBatch::Content => "--batch",
+            BlobBatch::Size => "--batch-check",
+        };
         git_output(
             &self.root,
-            &["cat-file", "--batch"],
+            &["cat-file", argument],
             "revision_unavailable",
-            GitInput {
-                bytes: input.as_bytes(),
-                cancel,
-                output_limit,
-            },
+            input,
         )
         .map(BufReader::new)
     }
@@ -213,14 +224,7 @@ pub(super) fn read_blob<T>(
     id: &str,
     read: impl FnOnce(&mut dyn Read, u64) -> Result<T>,
 ) -> Result<T> {
-    let mut header = String::new();
-    output.read_line(&mut header)?;
-    let size: u64 = header
-        .trim_end_matches('\n')
-        .strip_prefix(id)
-        .and_then(|rest| rest.strip_prefix(" blob "))
-        .context("Git blob is unavailable")?
-        .parse()?;
+    let size = read_blob_size(output, id)?;
     let mut blob = (&mut *output).take(size);
     let value = read(&mut blob, size)?;
     ensure!(blob.limit() == 0, "Truncated Git blob");
@@ -228,4 +232,16 @@ pub(super) fn read_blob<T>(
     output.read_exact(&mut newline)?;
     ensure!(newline == *b"\n", "Invalid Git blob separator");
     Ok(value)
+}
+
+pub(super) fn read_blob_size(output: &mut impl BufRead, id: &str) -> Result<u64> {
+    let mut header = String::new();
+    output.read_line(&mut header)?;
+    header
+        .trim_end_matches('\n')
+        .strip_prefix(id)
+        .and_then(|rest| rest.strip_prefix(" blob "))
+        .context("Git blob is unavailable")?
+        .parse()
+        .map_err(Into::into)
 }

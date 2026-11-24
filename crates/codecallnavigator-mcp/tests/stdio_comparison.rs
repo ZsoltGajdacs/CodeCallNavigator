@@ -47,6 +47,7 @@ fn real_stdio_comparison_preserves_cli_pages_metadata_and_errors() {
     let mut client = Client::launch(command(&engine, &root));
     check_comparison_tools(&mut client);
     check_source_changes_without_graphs(&mut client, &engine, &root);
+    check_oversized_source_preview(&mut client, &engine, &root);
     check_retained_baseline(&mut client);
 
     replace_entry(&root, 7);
@@ -146,6 +147,43 @@ fn check_source_changes_without_graphs(client: &mut Client, engine: &Path, root:
     );
     fs::write(&entry, original).unwrap();
     fs::remove_file(&notes).unwrap();
+}
+
+fn check_oversized_source_preview(client: &mut Client, engine: &Path, root: &Path) {
+    let oversized = root.join("large-capture.jar");
+    let file = fs::File::create(&oversized).unwrap();
+    let size = 257 * 1024 * 1024;
+    file.set_len(size).unwrap();
+    let listing = compare_changes(
+        client,
+        (engine, root),
+        SOURCE_CHANGES,
+        json!({"base":"HEAD","selection":{"kind":"list"}}),
+    );
+    let result = &listing["result"];
+    let row = result["changes"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|row| row["file"] == "large-capture.jar")
+        .expect("oversized file remains in the outline");
+    let preview = json!({
+        "base": result["base"]["commit"],
+        "expected_comparison": result["comparison_id"],
+        "selection": {"kind":"source_diff","id":row["id"]}
+    });
+    let diff = compare_changes(client, (engine, root), SOURCE_CHANGES, preview.clone());
+    assert_eq!(diff["result"]["status"], "unavailable");
+    assert_eq!(diff["result"]["reason"], "source_too_large");
+    assert_eq!(diff["result"]["hunks"], json!([]));
+    file.set_len(size + 1).unwrap();
+    drop(file);
+    let stale = client.call(SOURCE_CHANGES.0, preview);
+    assert_eq!(
+        stale["structuredContent"]["error"]["code"],
+        "comparison_mismatch"
+    );
+    fs::remove_file(oversized).unwrap();
 }
 
 fn check_retained_baseline(client: &mut Client) {

@@ -2274,6 +2274,36 @@
       "purpose": "Stale saved files cannot attribute source edits or hide the captured file diff"
     },
     {
+      "id": "codecallnavigator-core/lib:codecallnavigator_core::artifact::revision::source_changes::content::tests::retention_limits_only_charge_text_and_keep_read_budget_bounded",
+      "runner": "rust",
+      "file": "crates/codecallnavigator-core/src/artifact/revision/source_changes/content.rs",
+      "test_name": "artifact::revision::source_changes::content::tests::retention_limits_only_charge_text_and_keep_read_budget_bounded",
+      "ignored": false,
+      "package": "codecallnavigator-core",
+      "target_kind": "lib",
+      "target": "codecallnavigator_core",
+      "component": "core",
+      "category": "unit",
+      "requirements": [],
+      "purpose": "Bound optional content reads, retain only decoded text and report budget exhaustion per side."
+    },
+    {
+      "id": "codecallnavigator-core/lib:codecallnavigator_core::artifact::revision::source_changes_tests::source_capture_keeps_oversized_commit_blobs_in_the_outline",
+      "runner": "rust",
+      "file": "crates/codecallnavigator-core/src/artifact/revision/source_changes_tests.rs",
+      "test_name": "artifact::revision::source_changes_tests::source_capture_keeps_oversized_commit_blobs_in_the_outline",
+      "ignored": false,
+      "package": "codecallnavigator-core",
+      "target_kind": "lib",
+      "target": "codecallnavigator_core",
+      "component": "core",
+      "category": "integration",
+      "requirements": [
+        "git"
+      ],
+      "purpose": "Keep oversized Git objects as file rows without pulling their contents through the Git batch pipe."
+    },
+    {
       "id": "codecallnavigator-core/lib:codecallnavigator_core::artifact::revision::source_changes_tests::source_capture_keeps_link_and_mode_changes_as_metadata",
       "runner": "rust",
       "file": "crates/codecallnavigator-core/src/artifact/revision/source_changes_tests.rs",
@@ -2287,7 +2317,23 @@
       "requirements": [
         "git"
       ],
-      "purpose": "Real Git mode-only and symlink edits keep metadata without following escaped paths or reporting unchanged recreated links"
+      "purpose": "Real Git mode-only text and binary edits and symlink edits keep metadata without following escaped paths or reporting unchanged recreated links"
+    },
+    {
+      "id": "codecallnavigator-core/lib:codecallnavigator_core::artifact::revision::source_changes_tests::source_capture_preserves_worktree_changes_with_large_binary_files",
+      "runner": "rust",
+      "file": "crates/codecallnavigator-core/src/artifact/revision/source_changes_tests.rs",
+      "test_name": "artifact::revision::source_changes_tests::source_capture_preserves_worktree_changes_with_large_binary_files",
+      "ignored": false,
+      "package": "codecallnavigator-core",
+      "target_kind": "lib",
+      "target": "codecallnavigator_core",
+      "component": "core",
+      "category": "integration",
+      "requirements": [
+        "git"
+      ],
+      "purpose": "Prove real Git ignores, binary capture, tracked edits and Worktree binding across read limits."
     },
     {
       "id": "codecallnavigator-core/lib:codecallnavigator_core::artifact::revision::source_changes_tests::source_capture_uses_net_worktree_paths_and_exact_commit_blobs",
@@ -2303,7 +2349,7 @@
       "requirements": [
         "git"
       ],
-      "purpose": "Real Git staged and unstaged checkout state, untracked and ignored paths, nested repositories, binary data, exact commit blobs and content binding"
+      "purpose": "Real Git staged and unstaged checkout state, unchanged recreated binaries, untracked and ignored paths, nested repositories, exact commit blobs and content binding"
     },
     {
       "id": "codecallnavigator-core/test:architecture::build_relative_rules_keep_dotted_java_directory_names",
@@ -8577,7 +8623,7 @@
         "node",
         "typescript"
       ],
-      "purpose": "real stdio comparison preserves cli pages metadata and errors"
+      "purpose": "Real MCP and CLI agree on source pages, oversized previews, snapshot metadata, and binding errors."
     },
     {
       "id": "codecallnavigator-mcp/test:stdio_comparison::real_stdio_snapshot_preparation_and_comparison_preserve_cli_results",
@@ -10726,6 +10772,20 @@
       "category": "unit",
       "requirements": [],
       "purpose": "a queued request releases its shutdown lease when dropped before start"
+    },
+    {
+      "id": "codecallnavigator/bin:codecallnavigator::flow_comparison_view::source_diff::tests::unavailable_diff_explains_capture_limit_in_preview",
+      "runner": "rust",
+      "file": "src/flow_comparison_view/source_diff.rs",
+      "test_name": "flow_comparison_view::source_diff::tests::unavailable_diff_explains_capture_limit_in_preview",
+      "ignored": false,
+      "package": "codecallnavigator",
+      "target_kind": "bin",
+      "target": "codecallnavigator",
+      "component": "ui",
+      "category": "integration",
+      "requirements": [],
+      "purpose": "Render a readable per-file capture-budget explanation from a typed unavailable preview."
     },
     {
       "id": "codecallnavigator/bin:codecallnavigator::flow_comparison_view::source_diff::tests::unified_diff_mounts_virtual_rows_and_draws_changed_source",

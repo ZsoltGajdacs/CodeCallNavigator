@@ -106,14 +106,7 @@ fn file_diff_panel(anchor: &str, title: &str, body: El, k: &Kit) -> El {
 
 fn edit_content(workspace: &Workspace, diff: &SourceDiff, target: &PreviewTarget, k: &Kit) -> El {
     if diff.status == SourceStatus::Unavailable {
-        return notice(
-            &diff
-                .reason
-                .as_deref()
-                .unwrap_or("Source is unavailable")
-                .replace('_', " "),
-            k,
-        );
+        return notice(&unavailable_message(diff.reason.as_deref()), k);
     }
     let (hunks, empty_message) = match target {
         PreviewTarget::Step(side, index) => (
@@ -132,6 +125,18 @@ fn edit_content(workspace: &Workspace, diff: &SourceDiff, target: &PreviewTarget
         notice(empty_message, k)
     } else {
         diff_lines(hunks, matches!(target, PreviewTarget::Row(_)), k)
+    }
+}
+
+fn unavailable_message(reason: Option<&str>) -> std::borrow::Cow<'_, str> {
+    match reason {
+        Some("binary_content") => "This file contains binary data.".into(),
+        Some("source_too_large") => "This file exceeds the source preview size limit.".into(),
+        Some("source_capture_budget_exceeded") => {
+            "This file could not be previewed within the comparison’s source capture limit.".into()
+        }
+        Some(reason) => reason.replace('_', " ").into(),
+        None => "Source is unavailable.".into(),
     }
 }
 
@@ -280,6 +285,41 @@ fn render_line(line: &DisplayLine, k: &Kit) -> El {
 mod tests {
     use super::*;
     use rune::{Env, Runtime};
+
+    #[test]
+    fn unavailable_diff_explains_capture_limit_in_preview() {
+        let mut runtime = Runtime::new(
+            State::new(),
+            |state, _| {
+                let diff: SourceDiff = serde_json::from_value(serde_json::json!({
+                    "kind": "source_diff",
+                    "id": "file",
+                    "status": "unavailable",
+                    "file": "App.java",
+                    "hunks": [],
+                    "reason": "source_capture_budget_exceeded"
+                }))
+                .unwrap();
+                edit_content(
+                    &state.flow_comparison,
+                    &diff,
+                    &PreviewTarget::Row(diff.id.clone()),
+                    &theme::kit(true),
+                )
+            },
+            (520.0, 280.0),
+            Env::new(true, 1.0),
+        );
+        runtime.frame(0.0);
+        runtime.settle_all();
+        runtime.frame(0.0);
+        assert!(runtime.elements().iter().any(|element| {
+            element
+                .text
+                .as_deref()
+                .is_some_and(|text| text.contains("comparison’s source capture limit"))
+        }));
+    }
 
     #[test]
     fn unified_diff_mounts_virtual_rows_and_draws_changed_source() {

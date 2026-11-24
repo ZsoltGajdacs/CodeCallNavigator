@@ -178,3 +178,53 @@ mod platform {
         })
     }
 }
+
+/// Identify the observed regular file when a complete content hash is unavailable.
+#[cfg(unix)]
+pub(super) fn metadata_stamp(metadata: &std::fs::Metadata) -> blake3::Hash {
+    use std::os::unix::fs::MetadataExt;
+
+    let mut digest = blake3::Hasher::new();
+    for value in [
+        metadata.dev(),
+        metadata.ino(),
+        metadata.len(),
+        u64::from(metadata.mode()),
+    ] {
+        digest.update(&value.to_le_bytes());
+    }
+    for value in [
+        metadata.mtime(),
+        metadata.mtime_nsec(),
+        metadata.ctime(),
+        metadata.ctime_nsec(),
+    ] {
+        digest.update(&value.to_le_bytes());
+    }
+    digest.finalize()
+}
+
+#[cfg(not(unix))]
+pub(super) fn metadata_stamp(metadata: &std::fs::Metadata) -> blake3::Hash {
+    use std::time::UNIX_EPOCH;
+
+    let mut digest = blake3::Hasher::new();
+    digest.update(&metadata.len().to_le_bytes());
+    digest.update(&[u8::from(metadata.permissions().readonly())]);
+    for result in [metadata.modified(), metadata.created()] {
+        match result.map(|time| time.duration_since(UNIX_EPOCH)) {
+            Ok(Ok(duration)) => {
+                digest.update(&[1]);
+                digest.update(&duration.as_nanos().to_le_bytes());
+            }
+            Ok(Err(error)) => {
+                digest.update(&[2]);
+                digest.update(&error.duration().as_nanos().to_le_bytes());
+            }
+            Err(_) => {
+                digest.update(&[0]);
+            }
+        }
+    }
+    digest.finalize()
+}

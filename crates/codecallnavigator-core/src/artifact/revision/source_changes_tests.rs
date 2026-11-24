@@ -29,6 +29,8 @@ fn source_capture_uses_net_worktree_paths_and_exact_commit_blobs() {
         write(path, b"base\n");
     }
     write(".gitignore", b"ignored\n");
+    let binary = vec![0; 128 * 1024];
+    write("binary-recreated", &binary);
     git(&project, &["add", "."]);
     git(&project, &["commit", "-qm", "base"]);
     let repository = Repository::open(&project).unwrap();
@@ -41,6 +43,8 @@ fn source_capture_uses_net_worktree_paths_and_exact_commit_blobs() {
     write("reverted", b"base\n");
     git(&project, &["rm", "-q", "recreated"]);
     write("recreated", b"new checkout content\n");
+    git(&project, &["rm", "-q", "binary-recreated"]);
+    write("binary-recreated", &binary);
     fs::remove_file(project.join("deleted")).unwrap();
     write("new file\nname", b"text\n");
     write("binary", b"some\0bytes");
@@ -94,6 +98,7 @@ fn source_capture_keeps_link_and_mode_changes_as_metadata() {
     fs::write(root.join("parent/text"), "tracked\n").unwrap();
     fs::write(external.path().join("text"), "outside checkout\n").unwrap();
     fs::write(root.join("mode"), "same\n").unwrap();
+    fs::write(root.join("mode.bin"), vec![0; 128 * 1024]).unwrap();
     symlink("mode", root.join("link")).unwrap();
     git(root, &["add", "."]);
     git(root, &["commit", "-qm", "base"]);
@@ -105,6 +110,7 @@ fn source_capture_keeps_link_and_mode_changes_as_metadata() {
     fs::remove_dir(root.join("parent")).unwrap();
     symlink(external.path(), root.join("parent")).unwrap();
     fs::set_permissions(root.join("mode"), fs::Permissions::from_mode(0o755)).unwrap();
+    fs::set_permissions(root.join("mode.bin"), fs::Permissions::from_mode(0o755)).unwrap();
     git(root, &["rm", "-q", "link"]);
     symlink("mode", root.join("link")).unwrap();
     #[cfg(not(target_os = "macos"))]
@@ -120,17 +126,25 @@ fn source_capture_keeps_link_and_mode_changes_as_metadata() {
         .map(|file| file.path.as_str())
         .collect::<Vec<_>>();
     #[cfg(target_os = "macos")]
-    assert_eq!(paths, ["mode", "parent", "parent/text"]);
+    assert_eq!(paths, ["mode", "mode.bin", "parent", "parent/text"]);
     #[cfg(not(target_os = "macos"))]
-    assert_eq!(paths, ["mode", "parent", "parent/text", "raw\\xff"]);
-    assert_eq!(capture.files[0].reason, Some("mode_only_change"));
+    assert_eq!(
+        paths,
+        ["mode", "mode.bin", "parent", "parent/text", "raw\\xff"]
+    );
+    for path in ["mode", "mode.bin"] {
+        assert_eq!(by_path(&capture, path).reason, Some("mode_only_change"));
+    }
     assert!(matches!(
-        capture.files[1].after,
+        by_path(&capture, "parent").after,
         SourceSide::Unavailable("symlink")
     ));
-    assert!(matches!(capture.files[2].after, SourceSide::Absent));
+    assert!(matches!(
+        by_path(&capture, "parent/text").after,
+        SourceSide::Absent
+    ));
     #[cfg(not(target_os = "macos"))]
-    assert_eq!(capture.files[3].reason, Some("non_utf8_path"));
+    assert_eq!(by_path(&capture, "raw\\xff").reason, Some("non_utf8_path"));
 }
 
 fn assert_effective_checkout(captured: &SourceChanges) {
@@ -175,4 +189,96 @@ fn assert_recreated_file(captured: &SourceChanges) {
     assert!(
         matches!(&recreated.after, SourceSide::Text(text) if text.as_ref() == "new checkout content\n")
     );
+}
+
+#[test]
+fn source_capture_preserves_worktree_changes_with_large_binary_files() {
+    let checkout = tempfile::tempdir().unwrap();
+    let root = checkout.path();
+    init(root);
+    fs::create_dir(root.join(".mvn")).unwrap();
+    fs::write(root.join(".mvn/config"), "old config\n").unwrap();
+    fs::write(root.join("Source.java"), "class Source {}\n").unwrap();
+    fs::write(root.join(".gitignore"), ".cqc/ignored.jar\n").unwrap();
+    git(root, &["add", "."]);
+    git(root, &["commit", "-qm", "base"]);
+    let repository = Repository::open(root).unwrap();
+    let base = repository.resolve("HEAD").unwrap();
+    let cancel = AtomicBool::new(false);
+
+    fs::write(root.join(".mvn/config"), "new config\n").unwrap();
+    fs::write(root.join("Source.java"), "class Source { int item; }\n").unwrap();
+    fs::create_dir(root.join(".cqc")).unwrap();
+    for index in 0..5 {
+        sparse(
+            root,
+            &format!(".cqc/reference-{index}.jar"),
+            15 * 1024 * 1024,
+        );
+    }
+    sparse(root, ".cqc/oversized.jar", 257 * 1024 * 1024);
+    fs::write(root.join(".cqc/ignored.jar"), b"\0").unwrap();
+
+    let first = repository.source_changes(&base, None, &cancel).unwrap();
+    assert_eq!(first.files.len(), 8);
+    assert!(matches!(
+        &by_path(&first, "Source.java").after,
+        SourceSide::Text(text) if text.as_ref() == "class Source { int item; }\n"
+    ));
+    assert!(matches!(
+        &by_path(&first, ".mvn/config").after,
+        SourceSide::Text(text) if text.as_ref() == "new config\n"
+    ));
+    assert!(matches!(
+        by_path(&first, ".cqc/reference-4.jar").after,
+        SourceSide::Unavailable("binary_content")
+    ));
+    assert!(matches!(
+        by_path(&first, ".cqc/oversized.jar").after,
+        SourceSide::Unavailable("source_too_large")
+    ));
+    let repeated = repository.source_changes(&base, None, &cancel).unwrap();
+    assert_eq!(first.digest, repeated.digest);
+
+    sparse(root, ".cqc/oversized.jar", 258 * 1024 * 1024);
+    let modified = repository.source_changes(&base, None, &cancel).unwrap();
+    assert_ne!(first.digest, modified.digest);
+}
+
+#[test]
+fn source_capture_keeps_oversized_commit_blobs_in_the_outline() {
+    let checkout = tempfile::tempdir().unwrap();
+    let root = checkout.path();
+    init(root);
+    fs::write(root.join("source"), "before\n").unwrap();
+    git(root, &["add", "."]);
+    git(root, &["commit", "-qm", "base"]);
+    let repository = Repository::open(root).unwrap();
+    let base = repository.resolve("HEAD").unwrap();
+    let cancel = AtomicBool::new(false);
+
+    sparse(root, "packed.bin", crate::flow::MAX_SOURCE_BYTES + 1);
+    fs::write(root.join("source"), "after\n").unwrap();
+    git(root, &["add", "."]);
+    git(root, &["commit", "-qm", "head"]);
+    let head = repository.resolve("HEAD").unwrap();
+    let captured = repository
+        .source_changes(&base, Some(&head), &cancel)
+        .unwrap();
+
+    assert!(matches!(
+        by_path(&captured, "packed.bin").after,
+        SourceSide::Unavailable("source_too_large")
+    ));
+    assert!(matches!(
+        &by_path(&captured, "source").after,
+        SourceSide::Text(text) if text.as_ref() == "after\n"
+    ));
+}
+
+fn sparse(root: &Path, path: &str, size: u64) {
+    fs::File::create(root.join(path))
+        .unwrap()
+        .set_len(size)
+        .unwrap();
 }

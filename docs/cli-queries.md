@@ -109,13 +109,22 @@ Each changed path has a file row, including nonignored untracked files for
 class, method, and entry-point attribution where they contain matching source.
 Source rows and supported file diffs are available without saved graphs.
 
+Binary and oversized files remain in the outline. Their `source_diff` result
+has `status: "unavailable"` and a reason such as `binary_content` or
+`source_too_large`. The engine reads tracked changes first. If a file's content
+cannot be captured within the comparison's read or text limit, the reason is
+`source_capture_budget_exceeded`. If the Git path metadata itself exceeds its
+limit, the query returns `diff_too_large`.
+
 Pass the returned commit SHAs as the next request's revision selectors and keep
 `WORKTREE` as the Worktree selector. Use the same optional snapshot selectors
 and pass `comparison_id` as `expected_comparison` for subsequent pages or a
 `{"kind":"source_diff","id":"<change id>"}` selection. If the source or graph
 binding changes, the engine returns `comparison_mismatch`. Restart from the
-first page to reload. The result's optional `graph_comparison_id` binds saved
-flow queries using the same graph reference selectors.
+first page to reload. The binding uses file metadata for Worktree content that
+was skipped and Git object IDs for skipped commit blobs. The result's optional
+`graph_comparison_id` binds saved flow queries using the same graph reference
+selectors.
 Attributed class and method rows can include the `name_details` described below.
 
 ## Changed classes, methods and files
