@@ -75,10 +75,10 @@ pane headers. Compare opens the selected revisions automatically. **Worktree**
 is the default After selection and includes staged and unstaged edits and
 nonignored new files.
 
-The **Changes** sidebar groups Git edits by file. Select a file to open its
-source diff. When saved source matches the edited file, select a changed class
-or method to open the paired diagrams and use **View source diff** to inspect
-the code. Correspondence uses exact saved identities. A rename or signature
+The **Changes** sidebar groups Git edits by file. Select a changed class or
+method to open its paired diagrams. Selecting a file with one attributed
+changed class opens that class diagram. Use **View source diff** to inspect
+the selected edit. Correspondence uses exact saved identities. A rename or signature
 change can appear as separate removed and added entries, each with its own
 available source diff.
 

@@ -4,6 +4,7 @@ use crate::{
     engine_client::flow_comparison::{Change, ChangeKind, ChangeStatus},
     flow_comparison::ChangeAction,
     icons,
+    projection::labels::Label,
 };
 use rune::{Color, El, Key, ScrollSpec, col, el, row, text};
 use rune_kit::{Button, ButtonVariant, ControlSize, IconButton, IconButtonVariant, Kit, ScrollBar};
@@ -205,7 +206,19 @@ impl Outline<'_> {
         let expanded = self.state.flow_comparison.changes.sidebar.expanded(&key);
         let node = file.file.map_or_else(
             || name_and_status(name, None, k).help(path),
-            |change| self.change_row(change, name, path),
+            |change| {
+                let mut classes = file.classes.values().filter_map(|entry| entry.class);
+                let only_class = classes.next().filter(|_| classes.next().is_none());
+                let action = only_class.map_or(ChangeAction::File, ChangeAction::new);
+                self.change_row(
+                    change,
+                    &Label {
+                        text: name.into(),
+                        description: path.into(),
+                    },
+                    action,
+                )
+            },
         );
         let mut tree = col().w_full().child(branch_row(
             node,
@@ -239,7 +252,7 @@ impl Outline<'_> {
             let toggle = (!class.methods.is_empty())
                 .then(|| branch_button(key, &name.text, expanded, self.k));
             tree = tree.child(branch_row(
-                self.change_row(change, &name.text, &name.description),
+                self.change_row(change, &name, ChangeAction::new(change)),
                 toggle,
                 20.0,
             ));
@@ -259,23 +272,23 @@ impl Outline<'_> {
     fn symbol_row(&self, change: &Change, indent: f32) -> El {
         let name = symbol_label(change);
         branch_row(
-            self.change_row(change, &name.text, &name.description),
+            self.change_row(change, &name, ChangeAction::new(change)),
             None,
             indent,
         )
     }
 
-    fn change_row(&self, change: &Change, name: &str, help: &str) -> El {
+    fn change_row(&self, change: &Change, label: &Label, action: ChangeAction) -> El {
         let k = self.k;
+        let name = &label.text;
         let key = format!("comparison-change-row-{}", change.id);
         let id = change.id.clone();
         let keyboard_id = id.clone();
-        let action = ChangeAction::new(change, &key);
         let keyboard = action.clone();
         name_and_status(name, Some(change.status), k)
             .key(key)
             .label(format!("{name} · {}", status(change.status)))
-            .help(help)
+            .help(&label.description)
             .role("button")
             .focusable(true)
             .fill(if selection(self.state) == Some(id.as_str()) {
@@ -305,7 +318,7 @@ fn activate(state: &mut State, id: &str, action: &ChangeAction) {
     state.flow_comparison.activate_change(action);
 }
 
-fn symbol_label(change: &Change) -> crate::projection::labels::Label {
+fn symbol_label(change: &Change) -> Label {
     use crate::projection::labels::named;
     change.name_details.as_ref().map_or_else(
         || named(&change.name, &change.name, None),

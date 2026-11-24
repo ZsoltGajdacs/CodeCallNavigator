@@ -23,6 +23,7 @@ pub(in crate::flow_acceptance::comparison::driver) enum OutlineStep {
     Hover(Row),
     Hovered(Row),
     OpenFile,
+    OpenDiff,
     FileDiff,
     Restore,
     FocusClass,
@@ -45,7 +46,17 @@ impl Driver {
             OutlineStep::Hover(row) => self.hover_outline_row(runtime, row)?,
             OutlineStep::OpenFile => {
                 if let Some(key) = self.changed_file_key(runtime)? {
-                    self.click(runtime, &key, OutlineStep::FileDiff.phase());
+                    self.click(runtime, &key, OutlineStep::OpenDiff.phase());
+                }
+            }
+            OutlineStep::OpenDiff => {
+                require_closed_preview(runtime)?;
+                if runtime.state.flow_comparison.class_pair().is_some() {
+                    self.click(
+                        runtime,
+                        "comparison-view-source-diff",
+                        OutlineStep::FileDiff.phase(),
+                    );
                 }
             }
             OutlineStep::Restore => self.restore_outline(runtime),

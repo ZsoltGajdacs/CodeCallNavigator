@@ -143,38 +143,28 @@ impl Changes {
 pub(crate) enum ChangeAction {
     Class(String),
     Method {
-        id: String,
         symbol: Option<String>,
         flow_available: bool,
-        anchor: String,
     },
-    File {
-        id: String,
-        anchor: String,
-    },
+    File,
 }
 
 impl ChangeAction {
-    pub(crate) fn new(change: &Change, anchor: &str) -> Self {
-        let id = change.id.clone();
+    pub(crate) fn new(change: &Change) -> Self {
         match change.kind {
-            ChangeKind::Class => Self::Class(id),
+            ChangeKind::Class => Self::Class(change.id.clone()),
             ChangeKind::Method => Self::Method {
-                id,
                 symbol: change.symbol.clone(),
                 flow_available: change.flow_available,
-                anchor: anchor.into(),
             },
-            ChangeKind::File => Self::File {
-                id,
-                anchor: anchor.into(),
-            },
+            ChangeKind::File => Self::File,
         }
     }
 }
 
 impl Workspace {
     pub(crate) fn activate_change(&mut self, action: &ChangeAction) {
+        self.previews.close();
         self.changes.automatic_selection = true;
         if self.changes.pending_class.take().is_some() {
             self.changes.message.clear();
@@ -184,13 +174,17 @@ impl Workspace {
             ChangeAction::Method {
                 symbol: Some(symbol),
                 flow_available,
-                ..
             } if self.method_flow_ready(*flow_available) => {
                 self.choose_change_method(symbol.clone());
             }
-            ChangeAction::Method { id, anchor, .. } | ChangeAction::File { id, anchor } => {
-                self.choose_change_source(id.clone(), anchor.clone());
+            ChangeAction::Method { .. } => {
+                if !self.changes.reload_required {
+                    self.changes.message =
+                        "No saved flow for this method. Use View source diff to review the edit."
+                            .into();
+                }
             }
+            ChangeAction::File => {}
         }
     }
 

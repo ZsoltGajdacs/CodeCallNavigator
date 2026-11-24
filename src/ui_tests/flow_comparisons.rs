@@ -200,16 +200,7 @@ fn find_worktree_without_a_snapshot_rereads_git_changes() {
         .unwrap();
     click(&mut runtime, &key);
     settle(&mut runtime);
-    assert!(runtime.elements().iter().any(|el| {
-        el.text
-            .as_deref()
-            .is_some_and(|text| text.contains("let second = 2;"))
-    }));
-    runtime.key(rune::KeyEvent {
-        key: rune::Key::Escape,
-        mods: Default::default(),
-    });
-    runtime.frame(1.0 / 60.0);
+    assert!(runtime.state.flow_comparison.previews.active.is_none());
     click(&mut runtime, "comparison-changes-toggle");
     assert!(runtime.find("comparison-change-rows").is_none());
     click(&mut runtime, "comparison-changes-toggle");

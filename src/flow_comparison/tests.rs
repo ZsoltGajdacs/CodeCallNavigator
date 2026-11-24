@@ -213,10 +213,19 @@ fn stale_worktree_class_rows_open_the_bound_saved_diagram() {
         "The Worktree source must differ from the saved graph"
     );
     let class_id = class.id.clone();
-    comparison.activate_change(&ChangeAction::new(class, "changed class"));
-    settle(&mut state);
+    let file_id = comparison
+        .changes
+        .rows
+        .iter()
+        .find(|row| row.kind == ChangeKind::File && row.file == class.file)
+        .unwrap()
+        .id
+        .clone();
+    let mut ui = click_sidebar_row(state, &file_id);
+    assert!(ui.state.flow_comparison.previews.active.is_none());
+    settle(&mut ui.state);
 
-    let comparison = &state.flow_comparison;
+    let comparison = &ui.state.flow_comparison;
     let pair = comparison.class_pair().unwrap_or_else(|| {
         panic!(
             "Class activation must show the saved diagram. Outline: {}. Diagram: {}",
@@ -234,6 +243,21 @@ fn stale_worktree_class_rows_open_the_bound_saved_diagram() {
             codecallnavigator::artifact::verification::InputStatus::Stale
         )))
     ));
+}
+
+fn click_sidebar_row(state: State, id: &str) -> rune::Runtime<State> {
+    let mut ui = rune::Runtime::new(
+        state,
+        crate::view::view,
+        (1050.0, 680.0),
+        rune::Env::new(true, 1.0),
+    );
+    ui.frame(1.0 / 60.0);
+    let (x, y) = ui.find(&format!("comparison-change-row-{id}")).unwrap();
+    ui.pointer_down(x, y);
+    ui.pointer_up(x, y);
+    ui.frame(1.0 / 60.0);
+    ui
 }
 
 // Reuse the retained flow fixture with class owner keys so this tests the
