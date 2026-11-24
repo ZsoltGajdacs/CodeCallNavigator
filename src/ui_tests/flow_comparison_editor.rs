@@ -139,7 +139,6 @@ fn entry_cleanup_submitting_different_refs_keeps_the_captured_project_and_roots(
         replace_global_context(&mut runtime, changed.path(), loaded);
         choose_revision(&mut runtime, SnapshotSide::Base, &other);
         choose_revision(&mut runtime, SnapshotSide::Head, &other);
-        click(&mut runtime, "comparison-load");
         settle(&mut runtime);
         let actual = runtime.state.flow_comparison.descriptor().unwrap();
         assert_eq!(

@@ -317,7 +317,7 @@ impl Driver {
                     .context("Missing external continuation")?;
                 if matches!(
                     checkpoint,
-                    Checkpoint::UnavailableFlow | Checkpoint::ManualPair | Checkpoint::RestoredPair
+                    Checkpoint::UnavailableFlow | Checkpoint::RestoredPair
                 ) {
                     self.report.captures.push(checkpoint);
                 }

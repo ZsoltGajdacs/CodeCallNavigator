@@ -16,10 +16,37 @@ impl Workspace {
             | catalog
             | detail
             | self.revisions.poll()
-            | self.snapshots.poll()
-            | self.poll_impact()
+            | self.publish_snapshot()
             | self.publish_changes()
             | self.publish_previews()
+    }
+    fn publish_snapshot(&mut self) -> bool {
+        use super::snapshots::Poll;
+        let result = self.snapshots.poll();
+        if result == Poll::Rebind {
+            self.rebind_after_snapshot();
+        }
+        result != Poll::Idle
+    }
+    fn rebind_after_snapshot(&mut self) {
+        let Some(project) = &self.project else {
+            return;
+        };
+        let Some(side) = self.snapshots.side else {
+            return;
+        };
+        let mut refs = project.refs.clone();
+        let selected = self.control_refs();
+        if side.reference(&refs) != side.reference(&selected) {
+            return;
+        }
+        match side {
+            super::SnapshotSide::Base => refs.base_snapshot = selected.base_snapshot,
+            super::SnapshotSide::Head => refs.head_snapshot = selected.head_snapshot,
+        }
+        if let Err(error) = self.load_refs(refs) {
+            self.controls.message = error;
+        }
     }
     fn publish_catalog(&mut self) -> bool {
         let Some(output) = self.catalog_job.take() else {
@@ -50,15 +77,6 @@ impl Workspace {
                 self.phase = Phase::Bound;
                 self.graph_catalog_ready();
             }
-            Ok(CatalogAnswer::Page(page)) => {
-                if self
-                    .header()
-                    .is_none_or(|header| header.comparison_id != page.header.comparison_id)
-                {
-                    return false;
-                }
-                self.catalog = Some(std::sync::Arc::from(page));
-            }
             Ok(CatalogAnswer::Refreshed { .. }) => unreachable!("refresh requires ticket"),
             Err(error) => {
                 self.failed(StringError::Query(error));
@@ -78,10 +96,7 @@ impl Workspace {
         let message = match output.result {
             Ok(CatalogAnswer::Refreshed { project, opened }) => {
                 if project.refs != self.control_refs() {
-                    self.finish_worktree_refresh(
-                        ticket,
-                        "Worktree refreshed. Load the current selection to compare.".into(),
-                    );
+                    self.finish_worktree_refresh(ticket, "Worktree snapshot prepared.".into());
                     return true;
                 }
                 if self.identity.completed(output.physical_project.as_deref())
@@ -91,6 +106,7 @@ impl Workspace {
                     return true;
                 }
                 self.finish_worktree_refresh(ticket, String::new());
+                self.snapshots.worktree = None;
                 self.adopt_refreshed_comparison(*project, opened.bound, opened.page);
                 return true;
             }
@@ -144,8 +160,6 @@ impl Workspace {
         true
     }
     pub(super) fn failed(&mut self, error: StringError) {
-        self.controls.catalog_open = false;
-        self.controls.choosing_after = false;
         if self.changes.uses_legacy_graph() {
             self.cancel_requests();
         } else {

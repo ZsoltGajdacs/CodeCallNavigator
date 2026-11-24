@@ -12,8 +12,9 @@ use crate::engine_client::{
         BoundComparison, BoundSourceComparison, Change, ChangeKind, ChangeList, Error, SourceDiff,
     },
 };
-use rune::{Latest, Waker};
+use rune::{Latest, Live, Waker};
 use std::{
+    collections::HashSet,
     path::PathBuf,
     sync::{Arc, atomic::AtomicBool},
 };
@@ -46,11 +47,10 @@ impl OutlineBinding {
     }
 }
 
+#[derive(Default)]
 pub struct Changes {
-    pub outline_height: f32,
-    pub expert: bool,
+    pub(crate) sidebar: Sidebar,
     pub rows: Vec<Change>,
-    pub complete: bool,
     pub message: String,
     pub next_offset: Option<usize>,
     pub loaded: bool,
@@ -63,23 +63,32 @@ pub struct Changes {
     list_clock: Clock,
 }
 
-impl Default for Changes {
+pub(crate) struct Sidebar {
+    pub(crate) collapsed: bool,
+    pub(crate) selection: Option<String>,
+    pub(crate) scroll: Live<f32>,
+    closed_branches: HashSet<String>,
+}
+
+impl Default for Sidebar {
     fn default() -> Self {
         Self {
-            outline_height: 220.0,
-            expert: false,
-            rows: Vec::new(),
-            complete: false,
-            message: String::new(),
-            next_offset: None,
-            loaded: false,
-            reload_required: false,
-            automatic_selection: false,
-            pending_class: None,
-            outline: Outline::default(),
-            context: None,
-            list: Latest::default(),
-            list_clock: Clock::default(),
+            collapsed: false,
+            selection: None,
+            scroll: Live::new(0.0),
+            closed_branches: HashSet::new(),
+        }
+    }
+}
+
+impl Sidebar {
+    pub(crate) fn expanded(&self, branch: &str) -> bool {
+        !self.closed_branches.contains(branch)
+    }
+
+    pub(crate) fn toggle(&mut self, branch: &str) {
+        if !self.closed_branches.remove(branch) {
+            self.closed_branches.insert(branch.to_owned());
         }
     }
 }
@@ -101,7 +110,9 @@ impl Changes {
     pub(super) fn clear(&mut self, workers: &Arc<Workers>) {
         self.cancel();
         self.rows.clear();
-        self.complete = false;
+        self.sidebar.selection = None;
+        self.sidebar.closed_branches.clear();
+        self.sidebar.scroll.set(0.0);
         self.loaded = false;
         self.reload_required = false;
         self.outline = Outline::Discovering;
@@ -113,24 +124,14 @@ impl Changes {
         self.pending_class = None;
         self.message.clear();
         self.next_offset = None;
-        self.expert = false;
     }
 
     pub fn show_outline(&self) -> bool {
-        let has_content = self.loaded || self.listing() || !self.message.is_empty();
-        has_content && !self.expert
+        self.loaded || self.listing() || !self.message.is_empty()
     }
 
     pub fn listing(&self) -> bool {
         self.list.is_pending()
-    }
-
-    pub fn reload_label(&self) -> &'static str {
-        if self.reload_required {
-            "Reload comparison"
-        } else {
-            "Reload"
-        }
     }
 
     pub(super) fn uses_legacy_graph(&self) -> bool {
@@ -174,6 +175,7 @@ impl ChangeAction {
 
 impl Workspace {
     pub(crate) fn activate_change(&mut self, action: &ChangeAction) {
+        self.changes.automatic_selection = true;
         if self.changes.pending_class.take().is_some() {
             self.changes.message.clear();
         }
@@ -229,12 +231,7 @@ impl Workspace {
     }
 
     pub(super) fn resolve_pending_class(&mut self) -> bool {
-        let Some(id) = self
-            .changes
-            .pending_class
-            .take()
-            .filter(|_| !self.changes.expert)
-        else {
+        let Some(id) = self.changes.pending_class.take() else {
             return false;
         };
         self.choose_change_class(id);
@@ -315,7 +312,10 @@ impl Workspace {
                         self.accept_source_outline(physical, result)
                     }
                     Ok(ListAnswer::Page(Some(page))) => self.accept_changes(page),
-                    Ok(ListAnswer::Page(None)) => self.controls.catalog_open = true,
+                    Ok(ListAnswer::Page(None)) => {
+                        self.changes.message =
+                            "This engine does not support the Changes list.".into();
+                    }
                     Err(error) if mismatch(&error) => self.change_binding_mismatch(error),
                     Err(error) => self.changes.message = error.to_string(),
                 }
@@ -356,13 +356,13 @@ impl Workspace {
             self.changes.clear(&self.workers);
             self.changes.reload_required = true;
             self.changes.message =
-                "The source comparison changed. Reload comparison to see current changes.".into();
+                "The source comparison changed. Use Find snapshot on After to see current changes."
+                    .into();
         }
     }
 
     fn accept_changes(&mut self, page: ChangeList) {
         self.changes.loaded = true;
-        self.changes.complete = page.coverage.entry_point_search_complete;
         self.changes.next_offset = page.next_offset;
         self.changes.message.clear();
         self.changes.rows.extend(page.changes);
@@ -396,7 +396,6 @@ impl Workspace {
 
     fn can_choose_first_method(&self) -> bool {
         self.outline_graph_ready()
-            && !self.changes.expert
             && !self.changes.automatic_selection
             && self.current.is_none()
             && self.class_selection().is_none()
@@ -405,7 +404,6 @@ impl Workspace {
 
     pub fn choose_change_class(&mut self, id: String) {
         self.changes.automatic_selection = true;
-        self.changes.expert = false;
         if matches!(self.phase, super::Phase::Loading) {
             self.previews.close();
             self.changes.pending_class = Some(id);
@@ -423,7 +421,6 @@ impl Workspace {
 
     pub fn choose_change_method(&mut self, symbol: String) {
         self.changes.automatic_selection = true;
-        self.changes.expert = false;
         if let Err(error) = self.select(Selection {
             symbol,
             head_symbol: None,

@@ -20,8 +20,6 @@ pub(super) struct Capabilities {
     pub git_comparison_changes: bool,
     pub class_flow_comparison: Option<u32>,
     pub class_comparison_source: Option<u32>,
-    pub graph_comparison: bool,
-    pub impact_preview: bool,
     pub local_snapshots: Option<LocalSnapshots>,
     pub flow_expansion: bool,
     pub observation: bool,
@@ -134,9 +132,6 @@ fn validate(bytes: &[u8]) -> Result<Capabilities> {
             operations,
             "class_comparison_source",
         ),
-        graph_comparison: supports_graph_comparison(&capabilities, operations),
-        impact_preview: operations.iter().any(|name| name == "impact_preview")
-            && capabilities["impact_preview"]["version"] == 1,
         local_snapshots: local_snapshots(&capabilities, operations),
         flow_expansion: flow_expansion::supported(&capabilities, operations),
         observation,
@@ -157,13 +152,6 @@ fn bound_detail_depth(
             .unwrap_or(1)
             .clamp(1, maximum) as u32
     })
-}
-
-fn supports_graph_comparison(
-    capabilities: &serde_json::Value,
-    operations: &[serde_json::Value],
-) -> bool {
-    supports_snapshot_bound(&capabilities["comparison"], operations, "compare")
 }
 
 fn supports_snapshot_bound(

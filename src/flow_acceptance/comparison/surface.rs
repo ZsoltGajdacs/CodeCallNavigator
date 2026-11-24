@@ -8,15 +8,12 @@ pub(super) fn controls(runtime: &Runtime<State>) -> Result<()> {
         "comparison-close",
         "comparison-base",
         "comparison-head",
-        "comparison-load",
-        "comparison-reload",
-        "comparison-cancel",
-        "comparison-back",
+        "comparison-snapshot-base-find",
+        "comparison-snapshot-after-find",
+        "comparison-snapshot-base-prepare",
+        "comparison-snapshot-after-prepare",
         "comparison-fit-before",
         "comparison-fit-after",
-        "comparison-catalog-open",
-        "comparison-choose-after",
-        "comparison-reset-counterpart",
         "comparison-before-canvas",
         "comparison-after-canvas",
         "comparison-source-before",
@@ -63,30 +60,41 @@ fn visible_text(elements: &[ElementInfo], needle: &str) -> bool {
         .filter(|el| !el.exiting && el.visible[2].min(el.visible[3]) > 1.0)
         .any(|el| el.text.as_deref().is_some_and(|text| text.contains(needle)))
 }
-fn endpoint_provenance(elements: &[ElementInfo], name: &str, endpoint: &Endpoint) -> Result<()> {
+fn endpoint_provenance(
+    elements: &[ElementInfo],
+    picker: &str,
+    status: &str,
+    endpoint: &Endpoint,
+) -> Result<()> {
     let commit = endpoint
         .commit
         .as_deref()
-        .context("Expected committed endpoint provenance")?;
-    let summary = format!(
-        "{name}: {} · commit {}",
-        endpoint.requested_ref,
-        &commit[..commit.len().min(12)]
-    );
+        .context("Expected a committed endpoint")?;
+    let abbreviation = &commit[..commit.len().min(10)];
     ensure!(
-        visible_text(elements, &summary),
-        "Requested ref/resolved commit is not drawn"
+        elements.iter().any(|el| {
+            el.key.as_deref() == Some(picker)
+                && !el.exiting
+                && el.visible[2] > 1.0
+                && el
+                    .label
+                    .as_deref()
+                    .is_some_and(|label| label.contains(abbreviation))
+        }),
+        "Revision picker does not identify the bound commit"
     );
+    let details = elements
+        .iter()
+        .find(|el| el.key.as_deref() == Some(status) && !el.exiting && el.visible[2] > 1.0)
+        .and_then(|el| el.help.as_deref())
+        .context("Snapshot status omits provenance details")?;
     ensure!(
-        visible_text(elements, &format!("Artifact {}", endpoint.digest)),
-        "Artifact digest is not drawn"
-    );
-    ensure!(
-        visible_text(elements, &endpoint.path),
-        "Artifact origin is not drawn"
+        details.contains(&endpoint.digest) && details.contains(&endpoint.path),
+        "Snapshot provenance details do not identify the bound artifact"
     );
     Ok(())
 }
+
 pub(super) fn provenance(runtime: &Runtime<State>) -> Result<()> {
     let header = runtime
         .state
@@ -94,8 +102,18 @@ pub(super) fn provenance(runtime: &Runtime<State>) -> Result<()> {
         .header()
         .context("No drawn comparison provenance")?;
     let elements = runtime.elements();
-    endpoint_provenance(&elements, "Before", &header.base)?;
-    endpoint_provenance(&elements, "After", &header.head)?;
+    endpoint_provenance(
+        &elements,
+        "comparison-base",
+        "comparison-snapshot-base",
+        &header.base,
+    )?;
+    endpoint_provenance(
+        &elements,
+        "comparison-head",
+        "comparison-snapshot-after",
+        &header.head,
+    )?;
     let close = elements
         .iter()
         .find(|el| el.key.as_deref() == Some("comparison-close"))

@@ -53,9 +53,9 @@ fn incompatible_endpoint_membership_and_missing_cached_source_are_not_guessed() 
             .is_some_and(|text| text.contains("Membership unknown"))
     }));
     assert!(ui.elements().iter().any(|el| {
-        el.text
-            .as_deref()
-            .is_some_and(|text| text.contains("Partial comparison"))
+        el.key.as_deref() == Some("comparison-snapshot-base")
+            && el.text.as_deref() == Some("Snapshot unavailable")
+            && el.help.as_ref().is_some_and(|help| !help.is_empty())
     }));
     let mut missing = data.clone();
     missing.architecture = None;
@@ -96,7 +96,7 @@ for line in sys.stdin:
     path
 }
 #[test]
-fn cancel_control_reaps_the_owned_pending_query_and_does_not_publish_its_pair() {
+fn closing_compare_reaps_the_owned_pending_query_and_does_not_publish_its_pair() {
     let data = crate::flow_scenes::data();
     let (mut ui, project) = runtime(data.clone(), data, true);
     let mut engine = ui.state.runtime.as_ref().unwrap().as_ref().clone();
@@ -106,13 +106,21 @@ fn cancel_control_reaps_the_owned_pending_query_and_does_not_publish_its_pair() 
     let symbol = ui.state.flow_comparison.catalog.as_ref().unwrap().records[0]
         .symbol
         .clone();
-    click(&mut ui, &format!("comparison-record-{symbol}"));
+    ui.update(move |state, _| {
+        state
+            .flow_comparison
+            .select(crate::flow_comparison::Selection {
+                symbol,
+                head_symbol: None,
+            })
+            .unwrap();
+    });
     wait(&mut ui, |_| project.path().join("detail.started").exists());
     assert!(ui.state.flow_comparison.detail_pending());
-    click(&mut ui, "comparison-cancel");
+    click(&mut ui, "comparison-close");
     assert!(ui.state.flow_comparison.current.is_none());
     assert!(matches!(ui.state.flow_comparison.phase, Phase::Closed));
     wait(&mut ui, |state| state.flow_comparison.stopped());
     assert!(ui.state.flow_comparison.current.is_none());
-    assert!(ui.find("comparison-load").is_some());
+    assert!(ui.find("compare-flows").is_some());
 }

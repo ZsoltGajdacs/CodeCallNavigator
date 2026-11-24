@@ -6,14 +6,26 @@ use rune_kit::{Button, ButtonVariant, Kit};
 pub(super) fn picker_button(state: &State, side: SnapshotSide, k: &Kit) -> El {
     let id = selected(state, side);
     let label = match id {
-        Some("WORKTREE") => "After · Worktree".to_owned(),
-        Some(id) => format!("{} · {}", side.label(), short_id(id)),
-        None => format!("{} · Choose commit", side.label()),
+        Some("WORKTREE") => "Worktree".to_owned(),
+        Some(id) => state
+            .flow_comparison
+            .revisions
+            .rows
+            .iter()
+            .find(|commit| commit.id == id && !commit.subject.is_empty())
+            .map_or_else(
+                || short_id(id).to_owned(),
+                |commit| format!("{} — {}", short_id(id), commit.subject),
+            ),
+        None => "Choose commit".to_owned(),
     };
     Button::new(label)
+        .icon(&rune_kit::glyphs::CHEVRON_DOWN)
         .variant(ButtonVariant::Outline)
         .on_press(move |state: &mut State| state.flow_comparison.show_revision_picker(side))
         .build(k)
+        .w_full()
+        .min_w(0.0)
         .on_key(move |state: &mut State, event, _| {
             if event.key != rune::Key::Down {
                 return false;
@@ -181,13 +193,13 @@ fn choice(side: SnapshotSide, selected: bool, row: (&str, String), k: &Kit) -> E
         } else {
             ButtonVariant::Ghost
         })
-        .on_press(move |state: &mut State| state.flow_comparison.choose_revision(side, &id))
+        .on_press(move |state: &mut State| state.choose_comparison_revision(side, &id))
         .build(k)
         .on_key(move |state: &mut State, event, _| {
             if event.key != rune::Key::Enter {
                 return false;
             }
-            state.flow_comparison.choose_revision(side, &key_id);
+            state.choose_comparison_revision(side, &key_id);
             true
         })
         .key(key)

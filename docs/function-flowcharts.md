@@ -70,41 +70,36 @@ nor changes its saved graph. See the [versioned CLI contract](cli-queries.md#bou
 
 ## Compare saved function flows
 
-Choose **Compare flows**, select local Git revisions in **Base** and **After**,
-then choose **Load**. The change outline lists Git file edits and opens their
-diffs even while saved graphs are unavailable. Choose **Worktree** as After to
-include staged and unstaged edits and nonignored new files. When saved source
-matches an edited file, the outline can also identify its changed methods and
-classes. Select an attributed row to open its paired graph when available.
+Choose **Compare flows** and select revisions in the **Before** and **After**
+pane headers. Compare opens the selected revisions automatically. **Worktree**
+is the default After selection and includes staged and unstaged edits and
+nonignored new files.
 
-**Functions** opens a searchable, paged catalog of exact saved identities, including
-added, removed and unavailable functions. Select an identity to display both charts.
-The headers show requested refs, resolved commits and artifact provenance; partial
-or unavailable results retain their explanations.
+The **Changes** sidebar groups Git edits by file. Select a file to open its
+source diff. When saved source matches the edited file, select a changed class
+or method to open the paired diagrams and use **View source diff** to inspect
+the code. Correspondence uses exact saved identities. A rename or signature
+change can appear as separate removed and added entries, each with its own
+available source diff.
 
-Each chart has its own selection and camera. The **Before source** and **After
-source** tabs show that endpoint's analyzed snapshot and call details. Following a
-target compares that exact target identity across the same revisions. **Previous
-function** restores the prior pair, including source positions and cameras. Returning
-to the call graph or ordinary function flow preserves its existing navigation state.
+Use **Find snapshot** in either pane to check saved data and choose among
+available commit snapshots. With Worktree selected, it also rereads the Git
+changes and reports the saved snapshot’s availability and freshness.
+Use **Prepare snapshot** to analyze the selected revision. Preparing Worktree
+uses the normal build selection and updates the same saved graph that opens
+when you return to the call graph. Git source diffs are available while graph
+snapshots are missing.
 
-Correspondence uses exact saved identities. For a rename or signature change, select
-the original identity, choose **Choose after counterpart**, then select its after
-identity. The pair stays visibly **Manual**. **Reset counterpart** restores exact
-identity correspondence. Choosing a target starts another exact-identity comparison.
-Missing flow/source facts remain unavailable; an incompatible artifact makes
-membership unknown, so it cannot establish an addition or removal.
+Each canvas has its own **Fit** and zoom controls. The **Depth** selectors in
+class diagrams move together and expand around the selected class, including
+unchanged callers and callees. The **Before source** and **After source** tabs
+show analyzed method source and call details. Following a call compares the
+target in the same revisions. **Back to calling function** restores the prior
+pair, including source positions and cameras.
 
-Changing the revision controls leaves the displayed pair bound to its original
-selection until **Load**. If the Worktree changes between pages or previews,
-**Reload comparison** rereads the source diff. **Refresh Worktree** rebuilds the
-saved graph so the paired flows can include the new edits. **Cancel** stops
-pending work and leaves the revision controls available.
-
-PR reviews use base/head refs available in the local repository. Hosted PR discovery,
-authentication and fetching are outside this workflow. Paired charts use saved
-artifacts containing the desired flow and source metadata. Prepare a snapshot for
-an old commit to add its historical chart to the source comparison.
+PR reviews use Git refs already available in the local repository. Prepare a
+snapshot for an older commit to add its historical diagram to the source
+comparison. Use the same build selection when comparable graphs are needed.
 
 From the repository, prepare any missing verified revision. Replace `BASE_REF`,
 `HEAD_REF`, and the project target with your own values. Preparation requires the

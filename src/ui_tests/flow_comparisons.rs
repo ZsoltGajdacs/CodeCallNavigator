@@ -18,35 +18,25 @@ fn global_comparison_entry_opens_revision_controls_without_a_loaded_graph() {
     for key in [
         "comparison-base",
         "comparison-head",
-        "comparison-load",
         "comparison-close",
+        "comparison-snapshot-base-find",
+        "comparison-snapshot-base-prepare",
+        "comparison-snapshot-after-find",
+        "comparison-snapshot-after-prepare",
+    ] {
+        assert!(runtime.find(key).is_some(), "Missing control {key}");
+    }
+    for key in [
+        "comparison-load",
+        "comparison-reload",
         "comparison-snapshots",
         "comparison-graph-differences",
         "comparison-impact-preview",
+        "comparison-catalog-open",
     ] {
-        assert!(
-            runtime.find(key).is_some(),
-            "Missing comparison control {key}"
-        );
+        assert!(runtime.find(key).is_none(), "Retired control {key}");
     }
     assert_keyboard_picker(&mut runtime);
-    click(&mut runtime, "comparison-snapshots");
-    for key in [
-        "comparison-snapshot-base-lookup",
-        "comparison-snapshot-base-prepare",
-        "comparison-snapshot-after-lookup",
-        "comparison-snapshot-after-prepare",
-        "comparison-snapshot-select-builds",
-    ] {
-        assert!(
-            runtime.find(key).is_some(),
-            "Missing snapshot control {key}"
-        );
-    }
-    assert!(runtime.find("comparison-snapshot-target").is_none());
-    let message = runtime.state.flow_comparison.snapshots.message.clone();
-    click(&mut runtime, "comparison-snapshot-base-prepare");
-    assert_eq!(runtime.state.flow_comparison.snapshots.message, message);
     click(&mut runtime, "comparison-close");
     click(&mut runtime, "project-picker-trigger");
     assert_eq!(
@@ -62,11 +52,20 @@ fn global_comparison_entry_opens_revision_controls_without_a_loaded_graph() {
 
 fn assert_keyboard_picker(runtime: &mut Runtime<State>) {
     runtime.set_full_keyboard_access(false);
-    runtime.key(rune::KeyEvent {
-        key: rune::Key::Tab,
-        mods: Default::default(),
-    });
-    runtime.frame(1.0 / 60.0);
+    for _ in 0..8 {
+        runtime.key(rune::KeyEvent {
+            key: rune::Key::Tab,
+            mods: Default::default(),
+        });
+        runtime.frame(1.0 / 60.0);
+        if runtime
+            .elements()
+            .iter()
+            .any(|element| element.key.as_deref() == Some("comparison-base") && element.focused)
+        {
+            break;
+        }
+    }
     assert!(
         runtime.elements().iter().any(|element| {
             element.key.as_deref() == Some("comparison-base") && element.focused
@@ -100,30 +99,6 @@ pub(super) fn project_runtime(dark: bool) -> (Runtime<State>, tempfile::TempDir)
     runtime.frame(0.0);
     (runtime, project)
 }
-pub(super) fn edit(runtime: &mut Runtime<State>, key: &str, value: &str) {
-    if runtime.state.flow_comparison.controls.catalog_open && key != "comparison-search" {
-        click(runtime, "comparison-catalog-close");
-    }
-    click(runtime, key);
-    runtime.key(rune::KeyEvent {
-        key: rune::Key::Command('a'),
-        mods: rune::Mods {
-            cmd: true,
-            logo: true,
-            ..Default::default()
-        },
-    });
-    runtime.key(rune::KeyEvent {
-        key: rune::Key::Text(value.into()),
-        mods: Default::default(),
-    });
-    runtime.frame(1.0 / 60.0);
-    let actual = match key {
-        "comparison-search" => &runtime.state.flow_comparison.controls.search.text,
-        _ => return,
-    };
-    assert_eq!(actual, value, "Text input {key} did not accept editing");
-}
 pub(super) fn settle(runtime: &mut Runtime<State>) {
     let deadline = std::time::Instant::now() + std::time::Duration::from_secs(15);
     loop {
@@ -144,11 +119,6 @@ pub(super) fn load(runtime: &mut Runtime<State>) {
     let head = fixture_commit(runtime, SnapshotSide::Head);
     choose_revision(runtime, SnapshotSide::Base, &base);
     choose_revision(runtime, SnapshotSide::Head, &head);
-    click(runtime, "comparison-load");
-    settle(runtime);
-    if runtime.state.flow_comparison.catalog.is_some() {
-        open_catalog(runtime);
-    }
 }
 fn fixture_commit(runtime: &Runtime<State>, side: SnapshotSide) -> String {
     let reference = match side {
@@ -164,9 +134,6 @@ fn fixture_commit(runtime: &Runtime<State>, side: SnapshotSide) -> String {
 }
 
 pub(super) fn choose_revision(runtime: &mut Runtime<State>, side: SnapshotSide, commit: &str) {
-    if runtime.state.flow_comparison.controls.catalog_open {
-        click(runtime, "comparison-catalog-close");
-    }
     let key = match side {
         SnapshotSide::Base => "comparison-base",
         SnapshotSide::Head => "comparison-head",
@@ -188,41 +155,76 @@ pub(super) fn choose_revision(runtime: &mut Runtime<State>, side: SnapshotSide, 
     click(runtime, "comparison-revisions-done");
 }
 
-pub(super) fn open_catalog(runtime: &mut Runtime<State>) {
-    if !runtime.state.flow_comparison.controls.catalog_open {
-        click(runtime, "comparison-catalog-open");
-    }
-}
-fn symbol(runtime: &Runtime<State>, label: &str) -> String {
-    runtime.state.flow_comparison.catalog.as_ref().unwrap().records.iter().find(|record| {
-        matches!(&record.before,crate::engine_client::flow_comparison::CatalogSide::Present(present) if present.node.as_ref().is_some_and(|node|node.label.starts_with(label)))
-    }).unwrap().symbol.clone()
-}
 #[test]
-fn real_revision_controls_load_catalog_select_a_function_and_show_both_charts() {
-    let (mut runtime, _project) = project_runtime(true);
-    load(&mut runtime);
-    let commit = fixture_commit(&runtime, SnapshotSide::Base);
-    assert_eq!(
-        runtime.state.flow_comparison.references(),
-        Some((commit.as_str(), commit.as_str()))
-    );
-    let symbol = symbol(&runtime, "load(");
-    click(&mut runtime, &format!("comparison-record-{symbol}"));
+fn find_worktree_without_a_snapshot_rereads_git_changes() {
+    use crate::engine_client::flow_comparison::ChangeKind;
+
+    let (mut runtime, project) = project_runtime(true);
+    std::fs::write(
+        project.path().join(".git/info/exclude"),
+        ".fixture-library/\nuse-isolated-cache\n",
+    )
+    .unwrap();
+    std::fs::write(project.path().join("first.ts"), "let first = 1;\n").unwrap();
+    click(&mut runtime, "compare-flows");
     settle(&mut runtime);
-    for key in [
-        "comparison-before-canvas",
-        "comparison-after-canvas",
-        "comparison-source-before",
-        "comparison-source-after",
-    ] {
-        assert!(runtime.find(key).is_some(), "Missing comparison pane {key}");
+    assert_eq!(
+        runtime.state.flow_comparison.references().unwrap().1,
+        "WORKTREE"
+    );
+    assert!(runtime.state.flow_comparison.git_outline());
+
+    std::fs::write(project.path().join("second.ts"), "let second = 2;\n").unwrap();
+    click(&mut runtime, "comparison-snapshot-after-find");
+    settle(&mut runtime);
+    let changes = &runtime.state.flow_comparison.changes.rows;
+    for file in ["first.ts", "second.ts"] {
+        assert!(
+            changes
+                .iter()
+                .any(|change| change.kind == ChangeKind::File && change.file == file)
+        );
     }
+    let change = changes
+        .iter()
+        .find(|change| change.file == "second.ts")
+        .unwrap();
+    let key = runtime
+        .elements()
+        .into_iter()
+        .find_map(|element| {
+            element
+                .key
+                .filter(|key| key.starts_with("comparison-change-") && key.ends_with(&change.id))
+        })
+        .unwrap();
+    click(&mut runtime, &key);
+    settle(&mut runtime);
+    assert!(runtime.elements().iter().any(|el| {
+        el.text
+            .as_deref()
+            .is_some_and(|text| text.contains("let second = 2;"))
+    }));
+    runtime.key(rune::KeyEvent {
+        key: rune::Key::Escape,
+        mods: Default::default(),
+    });
+    runtime.frame(1.0 / 60.0);
+    click(&mut runtime, "comparison-changes-toggle");
+    assert!(runtime.find("comparison-change-rows").is_none());
+    click(&mut runtime, "comparison-changes-toggle");
+    click(&mut runtime, "comparison-view-source-diff");
+    settle(&mut runtime);
+    assert!(runtime.elements().iter().any(|el| {
+        el.text
+            .as_deref()
+            .is_some_and(|text| text.contains("let second = 2;"))
+    }));
     assert!(runtime.state.graph.is_none());
 }
 
 #[test]
-fn revision_controls_submit_refs_and_editing_does_not_retarget_the_loaded_pair() {
+fn selecting_revisions_rebinds_and_opening_a_picker_does_not_retarget() {
     let (mut runtime, project) = project_runtime(true);
     load(&mut runtime);
     let commit = fixture_commit(&runtime, SnapshotSide::Base);
@@ -235,18 +237,29 @@ fn revision_controls_submit_refs_and_editing_does_not_retarget_the_loaded_pair()
         project.path()
     );
     assert!(runtime.state.flow_comparison.catalog.is_some());
+    let pinned = runtime
+        .state
+        .flow_comparison
+        .header()
+        .unwrap()
+        .comparison_id
+        .clone();
+    click(&mut runtime, "comparison-head");
+    click(&mut runtime, "comparison-revisions-done");
+    assert_eq!(
+        runtime
+            .state
+            .flow_comparison
+            .header()
+            .unwrap()
+            .comparison_id,
+        pinned
+    );
     choose_revision(&mut runtime, SnapshotSide::Head, "worktree");
     assert_eq!(
         runtime.state.flow_comparison.references(),
-        Some((commit.as_str(), commit.as_str()))
+        Some((commit.as_str(), "WORKTREE"))
     );
-    click(&mut runtime, "comparison-reload");
-    settle(&mut runtime);
-    assert_eq!(
-        runtime.state.flow_comparison.references(),
-        Some((commit.as_str(), commit.as_str()))
-    );
-    assert!(runtime.state.flow_comparison.catalog.is_some());
     assert!(runtime.state.graph.is_none());
     click(&mut runtime, "comparison-close");
     runtime.update(|state, _| {

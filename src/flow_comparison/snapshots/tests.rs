@@ -11,6 +11,7 @@ fn preparation_failure_is_visible_copyable_and_cleared_on_project_change() {
     let mut state = State::new();
     state.flow_comparison.controls.visible = true;
     let snapshots = &mut state.flow_comparison.snapshots;
+    snapshots.side = Some(Side::Base);
     snapshots.project = Some("/fixture-project".into());
     let diagnostic = "maven-compile failed\n[ERROR] Cannot find symbol getValues()";
     let logs = "/temporary/failed-analysis/0-1";

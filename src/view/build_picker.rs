@@ -44,7 +44,9 @@ pub(super) fn layer(state: &State, k: &Kit, layers: &mut Vec<El>) {
         Some(Overlay::ConfirmAnalysis(draft, purpose)) => {
             let anchor = match purpose {
                 crate::jobs::AnalysisPurpose::MainGraph => "project-picker-trigger",
-                crate::jobs::AnalysisPurpose::CompareWorktree(_) => "comparison-refresh-worktree",
+                crate::jobs::AnalysisPurpose::CompareWorktree(_) => {
+                    "comparison-snapshot-after-prepare"
+                }
             };
             ("Build Targets", Some(draft), anchor)
         }

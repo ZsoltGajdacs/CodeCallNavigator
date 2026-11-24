@@ -1,5 +1,5 @@
 //! Render the same class layout with the before or after relationship facts.
-use super::panes::{empty, heading};
+use super::panes::{canvas_surface, empty, heading};
 use crate::{
     app::State,
     flow_comparison::{ClassPair, SideId, class_present},
@@ -28,25 +28,28 @@ fn class_label(node: &ClassNode, side: SideId) -> Label {
     labels::named(name, &node.name, visibility)
 }
 
-pub(super) fn pane(content: El, state: &State, side: SideId, k: &Kit) -> El {
+pub(super) fn pane(state: &State, side: SideId, k: &Kit, overlay: El) -> El {
     let (title, address) = match side {
         SideId::Before => ("Before", Address::Before),
         SideId::After => ("After", Address::After),
     };
     let workspace = &state.flow_comparison;
     let Some(pair) = workspace.class_pair() else {
-        return content.child(heading(title, None, k)).child(empty(
-            address,
-            &workspace.detail_message,
-            k,
-        ));
+        return canvas_surface(empty(address, &workspace.detail_message, k), overlay);
     };
     let name = class_label(&pair.graph.nodes[pair.root], side);
-    let content = content.child(heading(title, Some(&name), k));
+    let content = col()
+        .w_full()
+        .grow(1.0)
+        .min_h(0.0)
+        .child(heading(title, Some(&name), k));
     if !pair.has_root(side) {
-        return content.child(empty(address, "Class missing in this revision", k));
+        return content.child(canvas_surface(
+            empty(address, "Class missing in this revision", k),
+            overlay,
+        ));
     }
-    content.child(
+    content.child(canvas_surface(
         ClassCanvas {
             pair,
             side,
@@ -55,7 +58,8 @@ pub(super) fn pane(content: El, state: &State, side: SideId, k: &Kit) -> El {
             kit: k,
         }
         .view(),
-    )
+        overlay,
+    ))
 }
 
 struct ClassCanvas<'a> {

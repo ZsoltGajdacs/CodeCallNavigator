@@ -25,13 +25,7 @@ pub struct ChangeList {
     pub(super) total: usize,
     pub(super) more: bool,
     pub next_offset: Option<usize>,
-    pub coverage: Coverage,
     pub changes: Vec<Change>,
-}
-
-#[derive(Debug, Deserialize)]
-pub struct Coverage {
-    pub entry_point_search_complete: bool,
 }
 
 #[derive(Clone, Debug, Deserialize)]
@@ -46,7 +40,6 @@ pub struct Change {
     pub symbol: Option<String>,
     #[serde(default)]
     pub flow_available: bool,
-    pub entry_points: Vec<EntryPoint>,
 }
 
 #[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq)]
@@ -63,14 +56,6 @@ pub enum ChangeStatus {
     Added,
     Removed,
     Modified,
-}
-
-#[derive(Clone, Debug, Deserialize)]
-pub struct EntryPoint {
-    pub id: String,
-    pub name: String,
-    pub before: Option<String>,
-    pub after: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]

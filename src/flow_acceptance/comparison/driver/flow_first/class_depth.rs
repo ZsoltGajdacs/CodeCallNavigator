@@ -7,8 +7,16 @@ use crate::flow_comparison::{SideId, Workspace};
 use anyhow::{Context, Result, ensure};
 use rune::{Key, KeyEvent, Mods};
 
-const DEPTH_TRIGGER: &str = "comparison-depth-trigger";
-const DEPTH_MENU: &str = "comparison-depth-content";
+fn depth_keys(depth: u32) -> (&'static str, &'static str) {
+    if depth > 1 {
+        (
+            "comparison-after-depth-trigger",
+            "comparison-after-depth-content",
+        )
+    } else {
+        ("comparison-depth-trigger", "comparison-depth-content")
+    }
+}
 const SECOND_HOP: &str = "DepthRates";
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -59,19 +67,24 @@ impl Driver {
                 mods: Mods::default(),
             });
         } else {
-            self.click(runtime, DEPTH_TRIGGER, DepthStep::Choose(depth).phase());
+            self.click(
+                runtime,
+                depth_keys(depth).0,
+                DepthStep::Choose(depth).phase(),
+            );
         }
     }
 
     fn choose_depth(&mut self, runtime: &mut Runtime<State>, depth: u32) {
         let options = runtime.elements();
-        if !visible_key(&options, DEPTH_MENU) {
+        let menu = depth_keys(depth).1;
+        if !visible_key(&options, menu) {
             return;
         }
         let label = depth.to_string();
         let key = format!("option{}", depth - 1);
         if options.iter().any(|option| {
-            option.path.contains(DEPTH_MENU)
+            option.path.contains(menu)
                 && option.key.as_deref() == Some(&key)
                 && option.label.as_deref() == Some(&label)
         }) {

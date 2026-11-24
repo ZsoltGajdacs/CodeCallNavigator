@@ -10123,22 +10123,6 @@
       "purpose": "misleading case roles unbounded sources and unknown configuration fields are rejected"
     },
     {
-      "id": "codecallnavigator/bin:codecallnavigator::flow_acceptance::comparison::driver::tests::a_published_matching_query_without_its_expected_id_still_fails",
-      "runner": "rust",
-      "file": "src/flow_acceptance/comparison/driver/tests.rs",
-      "test_name": "flow_acceptance::comparison::driver::tests::a_published_matching_query_without_its_expected_id_still_fails",
-      "ignored": false,
-      "package": "codecallnavigator",
-      "target_kind": "bin",
-      "target": "codecallnavigator",
-      "component": "ui",
-      "category": "integration",
-      "requirements": [
-        "git"
-      ],
-      "purpose": "a published matching query without its expected id still fails"
-    },
-    {
       "id": "codecallnavigator/bin:codecallnavigator::flow_acceptance::comparison::driver::tests::cancelled_external_reply_cannot_queue_another_terminal_report",
       "runner": "rust",
       "file": "src/flow_acceptance/comparison/driver/tests.rs",
@@ -10153,22 +10137,6 @@
         "git"
       ],
       "purpose": "cancelled external reply cannot queue another terminal report"
-    },
-    {
-      "id": "codecallnavigator/bin:codecallnavigator::flow_acceptance::comparison::driver::tests::catalog_selection_waits_for_the_published_query_before_asserting_exact_identity",
-      "runner": "rust",
-      "file": "src/flow_acceptance/comparison/driver/tests.rs",
-      "test_name": "flow_acceptance::comparison::driver::tests::catalog_selection_waits_for_the_published_query_before_asserting_exact_identity",
-      "ignored": false,
-      "package": "codecallnavigator",
-      "target_kind": "bin",
-      "target": "codecallnavigator",
-      "component": "ui",
-      "category": "integration",
-      "requirements": [
-        "git"
-      ],
-      "purpose": "catalog selection waits for the published query before asserting exact identity"
     },
     {
       "id": "codecallnavigator/bin:codecallnavigator::flow_acceptance::comparison::driver::tests::no_graph_toolbar_entry_opens_comparison_controls",
@@ -10401,20 +10369,6 @@
       "purpose": "clicks are dispatched through runtime controls across frames"
     },
     {
-      "id": "codecallnavigator/bin:codecallnavigator::flow_acceptance::input::tests::editing_uses_real_focus_select_all_and_runtime_paste",
-      "runner": "rust",
-      "file": "src/flow_acceptance/input.rs",
-      "test_name": "flow_acceptance::input::tests::editing_uses_real_focus_select_all_and_runtime_paste",
-      "ignored": false,
-      "package": "codecallnavigator",
-      "target_kind": "bin",
-      "target": "codecallnavigator",
-      "component": "ui",
-      "category": "integration",
-      "requirements": [],
-      "purpose": "editing uses real focus select all and runtime paste"
-    },
-    {
       "id": "codecallnavigator/bin:codecallnavigator::flow_acceptance::io::tests::absent_acknowledgments_timeout_and_cancel_without_success",
       "runner": "rust",
       "file": "src/flow_acceptance/io.rs",
@@ -10593,22 +10547,6 @@
         "git"
       ],
       "purpose": "symlink capture survives adoption of the same canonical project"
-    },
-    {
-      "id": "codecallnavigator/bin:codecallnavigator::flow_comparison::controls::tests::paging_keeps_prior_offsets_and_resets_for_search_reload_and_new_comparison",
-      "runner": "rust",
-      "file": "src/flow_comparison/controls_tests.rs",
-      "test_name": "flow_comparison::controls::tests::paging_keeps_prior_offsets_and_resets_for_search_reload_and_new_comparison",
-      "ignored": false,
-      "package": "codecallnavigator",
-      "target_kind": "bin",
-      "target": "codecallnavigator",
-      "component": "ui",
-      "category": "integration",
-      "requirements": [
-        "git"
-      ],
-      "purpose": "paging keeps prior offsets and resets for search reload and new comparison"
     },
     {
       "id": "codecallnavigator/bin:codecallnavigator::flow_comparison::identity::tests::an_unresolved_completion_cannot_wait_for_identity_after_a_later_installation",
@@ -13080,40 +13018,6 @@
       "purpose": "failed freshness check preserves matching state instead of claiming stale"
     },
     {
-      "id": "codecallnavigator/bin:codecallnavigator::ui_tests::flow_comparison_catalog::catalog_paging_and_search_reset_use_returned_cursors",
-      "runner": "rust",
-      "file": "src/ui_tests/flow_comparison_catalog.rs",
-      "test_name": "ui_tests::flow_comparison_catalog::catalog_paging_and_search_reset_use_returned_cursors",
-      "ignored": false,
-      "package": "codecallnavigator",
-      "target_kind": "bin",
-      "target": "codecallnavigator",
-      "component": "ui",
-      "category": "integration",
-      "requirements": [
-        "git",
-        "graphviz"
-      ],
-      "purpose": "catalog paging and search reset use returned cursors"
-    },
-    {
-      "id": "codecallnavigator/bin:codecallnavigator::ui_tests::flow_comparison_catalog::explicit_counterpart_reset_and_search_keep_exact_identity_actions",
-      "runner": "rust",
-      "file": "src/ui_tests/flow_comparison_catalog.rs",
-      "test_name": "ui_tests::flow_comparison_catalog::explicit_counterpart_reset_and_search_keep_exact_identity_actions",
-      "ignored": false,
-      "package": "codecallnavigator",
-      "target_kind": "bin",
-      "target": "codecallnavigator",
-      "component": "ui",
-      "category": "integration",
-      "requirements": [
-        "git",
-        "graphviz"
-      ],
-      "purpose": "explicit counterpart reset and search keep exact identity actions"
-    },
-    {
       "id": "codecallnavigator/bin:codecallnavigator::ui_tests::flow_comparison_catalog::missing_and_unavailable_sides_stay_explicit",
       "runner": "rust",
       "file": "src/ui_tests/flow_comparison_catalog.rs",
@@ -13216,10 +13120,10 @@
       "purpose": "qualified target label stays visible inside minimum comparison inspector"
     },
     {
-      "id": "codecallnavigator/bin:codecallnavigator::ui_tests::flow_comparison_outcomes::cancel_control_reaps_the_owned_pending_query_and_does_not_publish_its_pair",
+      "id": "codecallnavigator/bin:codecallnavigator::ui_tests::flow_comparison_outcomes::closing_compare_reaps_the_owned_pending_query_and_does_not_publish_its_pair",
       "runner": "rust",
       "file": "src/ui_tests/flow_comparison_outcomes.rs",
-      "test_name": "ui_tests::flow_comparison_outcomes::cancel_control_reaps_the_owned_pending_query_and_does_not_publish_its_pair",
+      "test_name": "ui_tests::flow_comparison_outcomes::closing_compare_reaps_the_owned_pending_query_and_does_not_publish_its_pair",
       "ignored": false,
       "package": "codecallnavigator",
       "target_kind": "bin",
@@ -13230,7 +13134,7 @@
         "git",
         "graphviz"
       ],
-      "purpose": "cancel control reaps the owned pending query and does not publish its pair"
+      "purpose": "Closing Compare reaps the blocked detail query without publishing a late pair."
     },
     {
       "id": "codecallnavigator/bin:codecallnavigator::ui_tests::flow_comparison_outcomes::incompatible_endpoint_membership_and_missing_cached_source_are_not_guessed",
@@ -13335,10 +13239,10 @@
       "purpose": "global comparison entry opens revision controls without a loaded graph"
     },
     {
-      "id": "codecallnavigator/bin:codecallnavigator::ui_tests::flow_comparisons::real_revision_controls_load_catalog_select_a_function_and_show_both_charts",
+      "id": "codecallnavigator/bin:codecallnavigator::ui_tests::flow_comparisons::find_worktree_without_a_snapshot_rereads_git_changes",
       "runner": "rust",
       "file": "src/ui_tests/flow_comparisons.rs",
-      "test_name": "ui_tests::flow_comparisons::real_revision_controls_load_catalog_select_a_function_and_show_both_charts",
+      "test_name": "ui_tests::flow_comparisons::find_worktree_without_a_snapshot_rereads_git_changes",
       "ignored": false,
       "package": "codecallnavigator",
       "target_kind": "bin",
@@ -13346,16 +13250,15 @@
       "component": "ui",
       "category": "integration",
       "requirements": [
-        "git",
-        "graphviz"
+        "git"
       ],
-      "purpose": "real revision controls load catalog select a function and show both charts"
+      "purpose": "Find snapshot refreshes real Git changes without analysis, and the sidebar restores access to the selected source diff."
     },
     {
-      "id": "codecallnavigator/bin:codecallnavigator::ui_tests::flow_comparisons::revision_controls_submit_refs_and_editing_does_not_retarget_the_loaded_pair",
+      "id": "codecallnavigator/bin:codecallnavigator::ui_tests::flow_comparisons::selecting_revisions_rebinds_and_opening_a_picker_does_not_retarget",
       "runner": "rust",
       "file": "src/ui_tests/flow_comparisons.rs",
-      "test_name": "ui_tests::flow_comparisons::revision_controls_submit_refs_and_editing_does_not_retarget_the_loaded_pair",
+      "test_name": "ui_tests::flow_comparisons::selecting_revisions_rebinds_and_opening_a_picker_does_not_retarget",
       "ignored": false,
       "package": "codecallnavigator",
       "target_kind": "bin",
@@ -13366,7 +13269,7 @@
         "git",
         "graphviz"
       ],
-      "purpose": "revision controls submit refs and editing does not retarget the loaded pair"
+      "purpose": "Picker selection rebinds automatically while opening and closing a picker keeps the exact current binding."
     },
     {
       "id": "codecallnavigator/bin:codecallnavigator::ui_tests::flow_expansion::expansion_mode_is_explicit_and_collapse_all_restores_the_ordinary_session",

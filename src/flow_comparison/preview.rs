@@ -2,9 +2,7 @@
 mod class;
 mod hover;
 
-use super::{
-    Panel, Side, SideId, Workspace, changes::OutlineBinding, requests::Clock, work::Tracked,
-};
+use super::{Side, SideId, Workspace, changes::OutlineBinding, requests::Clock, work::Tracked};
 use crate::{
     engine_client::flow_comparison::{Error, Hunk, SourceDiff, SourceStatus},
     source_popup::{Hover, Interaction},

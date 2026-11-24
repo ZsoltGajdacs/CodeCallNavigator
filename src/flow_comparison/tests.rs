@@ -228,12 +228,12 @@ fn stale_worktree_class_rows_open_the_bound_saved_diagram() {
     assert!(pair.has_root(SideId::After));
     assert!(comparison.previews.active.is_none());
     assert!(comparison.changes.message.is_empty());
-    assert!(
-        comparison
-            .worktree_freshness_message()
-            .unwrap()
-            .contains("stale")
-    );
+    assert!(matches!(
+        comparison.worktree_snapshot(),
+        Some(super::WorktreeSnapshot::Saved(Some(
+            codecallnavigator::artifact::verification::InputStatus::Stale
+        )))
+    ));
 }
 
 // Reuse the retained flow fixture with class owner keys so this tests the
@@ -374,7 +374,14 @@ fn moved_reference_requires_reload_and_clears_every_actionable_result() {
     git(root.path(), &["commit", "--allow-empty", "-qm", "moved"]);
     git(root.path(), &["tag", "-f", "head"]);
     retain_scene(root.path(), &crate::flow_scenes::data(), "HEAD");
-    state.flow_comparison.page(Default::default()).unwrap();
+    let selection = state
+        .flow_comparison
+        .current
+        .as_ref()
+        .unwrap()
+        .selection
+        .clone();
+    state.flow_comparison.select(selection).unwrap();
     settle(&mut state);
     assert!(matches!(
         state.flow_comparison.phase,

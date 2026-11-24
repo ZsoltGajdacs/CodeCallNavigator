@@ -150,6 +150,15 @@ fn pane_steps_tabs_scroll_and_zoom_are_independent_and_use_local_coordinates() {
     let actual = world(&session(&runtime, SideId::After).camera, point);
     assert!((actual[0] - anchor[0]).abs() < 0.01 && (actual[1] - anchor[1]).abs() < 0.01);
     assert!(session(&runtime, SideId::After).camera.zoom > old_after.zoom);
+    let zoomed = session(&runtime, SideId::After).camera.zoom;
+    click(&mut runtime, "comparison-zoom-in-after");
+    assert!(session(&runtime, SideId::After).camera.zoom > zoomed);
+    click(&mut runtime, "comparison-fit-after");
+    assert!((session(&runtime, SideId::After).camera.zoom - old_after.zoom).abs() < 0.01);
+    assert_eq!(
+        serde_json::to_value(&session(&runtime, SideId::Before).camera).unwrap(),
+        old_before
+    );
 }
 #[test]
 fn target_and_back_restore_active_source_tab_scroll_selection_and_cameras() {

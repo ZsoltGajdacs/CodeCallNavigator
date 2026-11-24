@@ -136,6 +136,47 @@ fn direction_control(state: &State, k: &Kit) -> El {
 }
 
 fn zoom(state: &State, k: &Kit) -> El {
+    camera_controls(
+        k,
+        CameraControls {
+            fit_key: "fit",
+            zoom_in_key: "zoom-in",
+            zoom_out_key: "zoom-out",
+            zoom: Some(state.nav.camera.zoom),
+            size: ControlSize::Large,
+        },
+        |state, action| match action {
+            CameraAction::Fit => state.fit_graph(),
+            CameraAction::Zoom(factor) => state.zoom(factor),
+        },
+    )
+}
+
+pub(crate) enum CameraAction {
+    Fit,
+    Zoom(f32),
+}
+
+pub(crate) struct CameraControls<'a> {
+    pub fit_key: &'a str,
+    pub zoom_in_key: &'a str,
+    pub zoom_out_key: &'a str,
+    pub zoom: Option<f32>,
+    pub size: ControlSize,
+}
+
+pub(crate) fn camera_controls(
+    k: &Kit,
+    controls: CameraControls<'_>,
+    on_action: impl Fn(&mut State, CameraAction) + Copy + 'static,
+) -> El {
+    let CameraControls {
+        fit_key,
+        zoom_in_key,
+        zoom_out_key,
+        zoom,
+        size,
+    } = controls;
     row()
         .gap(6.0)
         .center_y()
@@ -143,23 +184,25 @@ fn zoom(state: &State, k: &Kit) -> El {
             Button::new("Fit")
                 .icon(&icons::OUTLINE_EXPAND)
                 .variant(ButtonVariant::Ghost)
-                .control_size(ControlSize::Large)
-                .on_press(State::fit_graph)
+                .control_size(size)
+                .disabled(zoom.is_none())
+                .on_press(move |s: &mut State| on_action(s, CameraAction::Fit))
                 .build(k)
-                .key("fit"),
+                .key(fit_key),
         )
         .child(
             IconButton::new(&icons::MINUS)
                 .label("Zoom out")
                 .help("Zoom out")
                 .variant(IconButtonVariant::GhostMuted)
-                .control_size(ControlSize::Large)
-                .on_press(|s: &mut State| s.zoom(0.8))
+                .control_size(size)
+                .disabled(zoom.is_none())
+                .on_press(move |s: &mut State| on_action(s, CameraAction::Zoom(0.8)))
                 .build(k)
-                .key("zoom-out"),
+                .key(zoom_out_key),
         )
         .child(
-            text(format!("{:.0}%", state.nav.camera.zoom * 100.0))
+            text(zoom.map_or_else(|| "—".into(), |value| format!("{:.0}%", value * 100.0)))
                 .font(k.ty.ui)
                 .color(k.c.text_muted)
                 .min_w(40.0),
@@ -169,10 +212,11 @@ fn zoom(state: &State, k: &Kit) -> El {
                 .label("Zoom in")
                 .help("Zoom in")
                 .variant(IconButtonVariant::GhostMuted)
-                .control_size(ControlSize::Large)
-                .on_press(|s: &mut State| s.zoom(1.25))
+                .control_size(size)
+                .disabled(zoom.is_none())
+                .on_press(move |s: &mut State| on_action(s, CameraAction::Zoom(1.25)))
                 .build(k)
-                .key("zoom-in"),
+                .key(zoom_in_key),
         )
 }
 

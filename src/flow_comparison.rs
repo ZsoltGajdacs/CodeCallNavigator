@@ -4,7 +4,6 @@ mod changes;
 mod class_pair;
 mod controls;
 mod identity;
-mod impact;
 mod lifecycle;
 mod navigation;
 mod pair;
@@ -21,14 +20,16 @@ use crate::engine_client::{
     QueryContext,
     flow_comparison::{BoundComparison, Catalog, ComparisonRefs},
 };
-pub(crate) use changes::{ChangeAction, Changes};
+pub(crate) use changes::ChangeAction;
 pub(crate) use class_pair::{ClassPair, present as class_present};
 pub use pair::{Pair, ReadySide, Side, SideId};
 pub(crate) use preview::{PreviewTarget, StepChange};
 use requests::{CatalogOutput, Clock, DetailOutput, DetailSelection};
 use rune::{Latest, Waker};
+#[cfg(test)]
 pub(crate) use snapshots::SELECT_BUILDS;
-pub use snapshots::{Navigation as GraphNavigation, Side as SnapshotSide};
+pub use snapshots::Side as SnapshotSide;
+pub(crate) use snapshots::WorktreeSnapshot;
 use std::sync::Arc;
 pub(crate) use worktree_refresh::RefreshTicket;
 
@@ -46,13 +47,6 @@ pub enum Phase {
     ReloadRequired(String),
     Failed(String),
 }
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
-pub enum Panel {
-    #[default]
-    Flows,
-    Graph,
-    Impact,
-}
 #[derive(Clone)]
 struct Project {
     context: QueryContext,
@@ -65,7 +59,6 @@ pub struct Workspace {
     pub(crate) revisions: revisions::Revisions,
     pub(crate) worktree_refresh: worktree_refresh::Refresh,
     pub snapshots: snapshots::Snapshots,
-    pub impact: impact::Impact,
     pub changes: changes::Changes,
     pub previews: preview::Previews,
     project: Option<Project>,
@@ -94,7 +87,6 @@ impl Workspace {
         self.cancel_requests();
         self.revisions.reset();
         self.invalidate_worktree_refresh();
-        self.impact.close();
         self.snapshots.reset();
         self.current = None;
         self.history.clear();
@@ -140,7 +132,6 @@ impl Workspace {
         self.detail_job.set_waker(waker.clone());
         self.snapshots.set_waker(waker.clone());
         self.revisions.set_waker(waker.clone());
-        self.impact.set_waker(waker.clone());
         self.changes.set_waker(waker.clone());
         self.previews.set_waker(waker.clone());
         self.workers.set_waker(waker);
@@ -152,7 +143,6 @@ impl Workspace {
         self.catalog_job.is_pending()
             || self.detail_job.is_pending()
             || self.snapshots.pending()
-            || self.impact.pending()
             || self.changes.pending()
             || self.previews.pending()
     }
@@ -162,8 +152,6 @@ impl Workspace {
     pub fn close(&mut self) {
         self.revisions.reset();
         self.invalidate_worktree_refresh();
-        self.impact.close();
-        self.controls.panel = Panel::Flows;
         self.snapshots.reset();
         self.close_flow_binding();
     }
@@ -171,7 +159,6 @@ impl Workspace {
         self.controls.visible = false;
         self.controls.class_depth = 1;
         self.controls.maximum_class_depth = 1;
-        self.controls.catalog_open = false;
         self.cancel_requests();
         self.binding = None;
         if let Some(project) = self.project.take() {
@@ -199,7 +186,7 @@ impl Workspace {
         self.detail_job.cancel();
         self.detail_selection = None;
         self.class_pair = None;
-        self.controls.class_depth_open = false;
+        self.controls.class_depth_open = None;
     }
     fn open(&mut self, project: Project) {
         self.close_flow_binding();
@@ -228,6 +215,7 @@ impl Workspace {
         self.catalog_job
             .request(work, |work| work.map(requests::CatalogWork::run));
     }
+    #[cfg(test)]
     pub fn reload(&mut self) -> Result<(), String> {
         let refs = self
             .project
@@ -245,35 +233,6 @@ impl Workspace {
         project.context = project.context_for(self.identity.captured());
         project.refs = refs;
         self.open(project);
-        Ok(())
-    }
-    pub fn page(
-        &mut self,
-        page: crate::engine_client::flow_comparison::CatalogPage,
-    ) -> Result<(), String> {
-        self.require_idle_worktree_refresh()?;
-        let bound = self
-            .binding
-            .clone()
-            .ok_or("Reload the comparison before browsing")?;
-        let physical_project = self
-            .identity
-            .captured()
-            .ok_or("Reload the comparison before browsing")?
-            .to_owned();
-        let cancel = self.catalog_clock.restart();
-        let serial = self.catalog_clock.serial;
-        let work = self.workers.track(requests::CatalogWork {
-            serial,
-            cancel,
-            operation: requests::CatalogOperation::Page {
-                bound: Box::new(bound),
-                page,
-                physical_project,
-            },
-        });
-        self.catalog_job
-            .request(work, |work| work.map(requests::CatalogWork::run));
         Ok(())
     }
 }

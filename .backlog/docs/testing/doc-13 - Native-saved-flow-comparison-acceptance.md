@@ -3,7 +3,7 @@ id: doc-13
 title: Native saved-flow comparison acceptance
 type: guide
 created_date: '2026-11-16T07:06:00Z'
-updated_date: '2026-11-16T07:06:00Z'
+updated_date: '2026-11-24T13:20:00Z'
 ---
 # Native saved-flow comparison acceptance
 
@@ -22,9 +22,9 @@ The helper requires Python 3.10 or newer, Git, the .NET 11 SDK for fixture prepa
 
 The compiler produces two saved artifacts from [the C# fixture](<../../../fixtures/flow/csharp-comparison/Comparison.csproj>). Expectations and portable IDs come from the bundled public CLI. Every Ready source is checked byte-for-byte against the original compiler inputs. `Unchanged.cs` stays byte-identical; the historical Legacy artifact deliberately loses exactly one cached source row while nodes and flow IR stay unchanged. A later empty commit has identical artifact bytes and a different endpoint binding. The working artifact and live C# sources are removed before launch.
 
-The version 2 probe edits refs through actual focus/key/paste handlers and exercises catalog selection, all seven fixture roles, explicit manual/reset, independent source highlights, source scroll and chart cameras, target/Back, moved-ref mismatch/Reload, and cancellation of an acknowledged owned Git read followed by a fresh request. It observes actual Drawn callbacks and visible provenance, source rows, highlights and control bounds. Timings exclude OS input delivery. The ordinary version 1 native probe/config/report remain supported by [the existing C# helper](<../../../tools/csharp_desktop_acceptance.py>).
+The version 2 probe uses the Before and After revision pickers, the file-first Changes sidebar and endpoint snapshot controls. It covers source-only browsing, attributed class and method rows, source highlights, independent cameras, shared class depth, call drill-down and return, exact commit selection, and cancellation of an acknowledged owned Git read. A later Worktree journey checks missing snapshot discovery, preparation cancellation, and successful binding to the generation published for the normal graph. The probe observes actual Drawn callbacks, visible source rows, highlights and control bounds. The ordinary version 1 native probe/config/report remain supported by [the existing C# helper](<../../../tools/csharp_desktop_acceptance.py>).
 
-Three captures per theme show missing historical source, manual correspondence and the restored caller pair. Each uses the same PID/window lease as the existing helper; the harness does not focus other applications or change global window preferences. Fixed sequenced requests and acknowledgments bind every external operation to its version, checkpoint and owned fixture.
+Two captures per theme show an unavailable historical flow and the restored caller pair. Each uses the same PID/window lease as the existing helper. Fixed sequenced requests and acknowledgments bind external operations to their version, checkpoint and owned fixture.
 
 Failure cleanup first disarms only the gate's token and terminates verified child
 query-session groups. PID, parent, group, start time and command must still match

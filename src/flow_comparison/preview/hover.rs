@@ -1,5 +1,5 @@
 //! Connect Compare canvas triggers to the shared source-popup interaction.
-use super::{Panel, PreviewTarget, Previews, SideId, Workspace};
+use super::{PreviewTarget, Previews, SideId, Workspace};
 use crate::source_popup::Owner;
 use rune::Tx;
 
@@ -75,7 +75,7 @@ impl Workspace {
     pub fn poll_hover_preview(&mut self, time: f64, tx: &mut Tx) -> bool {
         let previews = &mut self.previews;
         previews.interaction.now = time;
-        if !self.controls.visible || self.controls.panel != Panel::Flows {
+        if !self.controls.visible {
             return false;
         }
         if previews.hover.is_none() {
@@ -90,7 +90,7 @@ impl Workspace {
     }
 
     pub fn sync_change_focus(&mut self, focused: Option<&str>) -> bool {
-        if !self.controls.visible || self.controls.panel != Panel::Flows {
+        if !self.controls.visible {
             return false;
         }
         if focused.is_some_and(|key| Owner::Compare.owns_focus(key)) {

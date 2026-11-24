@@ -6,7 +6,7 @@ use super::{
     },
     *,
 };
-use crate::engine_client::flow_comparison::{CatalogPage, Error};
+use crate::engine_client::flow_comparison::Error;
 use std::{
     path::Path,
     sync::{atomic::AtomicBool, mpsc},
@@ -31,19 +31,18 @@ fn superseded_success_and_error_catalog_outputs_cannot_change_the_current_worksp
     for failure in [false, true] {
         let workspace = &mut state.flow_comparison;
         let before = workspace.catalog.clone().unwrap();
-        let page = workspace
-            .binding
-            .as_ref()
-            .unwrap()
-            .catalog(
-                CatalogPage::default(),
-                &std::sync::atomic::AtomicBool::new(false),
-            )
-            .unwrap();
         let result = if failure {
             Err(Error::Invalid(anyhow::anyhow!("obsolete failure")))
         } else {
-            Ok(CatalogAnswer::Page(Box::new(page)))
+            Ok(CatalogAnswer::Opened(Box::new(super::requests::Opened {
+                bound: workspace.binding.clone().unwrap(),
+                page: workspace
+                    .binding
+                    .as_ref()
+                    .unwrap()
+                    .catalog(Default::default(), &AtomicBool::new(false))
+                    .unwrap(),
+            })))
         };
         let serial = workspace.catalog_clock.serial;
         let input = workspace.workers.track(CatalogOutput {

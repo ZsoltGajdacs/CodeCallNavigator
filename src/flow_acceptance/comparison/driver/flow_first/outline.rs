@@ -222,10 +222,6 @@ fn verify_outline(runtime: &Runtime<State>) -> Result<()> {
         }),
         "The comparison outline did not draw"
     );
-    ensure!(
-        !comparison.controls.catalog_open,
-        "Comparison opened the signature picker"
-    );
     let first = comparison
         .changes
         .rows

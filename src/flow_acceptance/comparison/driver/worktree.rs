@@ -1,4 +1,4 @@
-//! Compare the compiler's newly published worktree graph through the actual refresh controls.
+//! Find and prepare the live checkout through its pane-local snapshot actions.
 use super::*;
 use crate::engine_client::flow_comparison::EndpointKind;
 
@@ -7,6 +7,8 @@ pub(super) enum Step {
     OpenAfter,
     Pick,
     Done,
+    Find,
+    Found,
     ReviewCancel,
     Cancel,
     Cancelled,
@@ -29,13 +31,14 @@ impl Driver {
         let (key, next) = match step {
             Step::OpenAfter => ("comparison-head", Step::Pick),
             Step::Pick => ("comparison-revision-worktree", Step::Done),
-            Step::Done => ("comparison-revisions-done", Step::ReviewCancel),
+            Step::Done => ("comparison-revisions-done", Step::Find),
+            Step::Find => ("comparison-snapshot-after-find", Step::Found),
             Step::ReviewCancel if runtime.state.can_refresh_comparison_worktree() => {
-                ("comparison-refresh-worktree", Step::Cancel)
+                ("comparison-snapshot-after-prepare", Step::Cancel)
             }
             Step::Cancel => ("cancel-analysis-confirmation", Step::Cancelled),
             Step::Review if runtime.state.can_refresh_comparison_worktree() => {
-                ("comparison-refresh-worktree", Step::Confirm)
+                ("comparison-snapshot-after-prepare", Step::Confirm)
             }
             Step::Confirm if runtime.state.can_confirm_analysis() => {
                 ("confirm-analysis", Step::Published)
@@ -85,17 +88,10 @@ impl Driver {
     pub(super) fn worktree_observed(&mut self, runtime: &Runtime<State>, step: Step) -> Result<()> {
         let comparison = &runtime.state.flow_comparison;
         match step {
-            Step::Cancelled => {
-                ensure!(
-                    observation::bound(&runtime.state, &self.config.reloaded)?
-                        && observation::pair(runtime, &self.config.cases[0])?.is_some()
-                        && runtime.state.graph.is_none(),
-                    "Cancelling worktree build confirmation did not preserve the committed comparison"
-                );
-                self.report
-                    .check("worktree_confirmation_cancel_preserved_pair");
-                self.phase = Phase::Worktree(Step::Review);
+            Step::Found if !comparison.pending() && comparison.changes.loaded => {
+                self.worktree_found(runtime)?;
             }
+            Step::Cancelled => self.worktree_cancelled(runtime)?,
             Step::Published => return self.worktree_published(runtime),
             Step::Preview
                 if self
@@ -120,23 +116,67 @@ impl Driver {
         }
         Ok(())
     }
+    fn worktree_found(&mut self, runtime: &Runtime<State>) -> Result<()> {
+        let comparison = &runtime.state.flow_comparison;
+        ensure!(
+            comparison.revisions.after() == "WORKTREE"
+                && comparison.git_outline()
+                && runtime.state.graph.is_none(),
+            "Finding a missing Worktree snapshot lost Git changes or started analysis"
+        );
+        ensure!(
+            runtime.elements().iter().any(|element| {
+                element.key.as_deref() == Some("comparison-worktree-freshness")
+                    && element.text.as_deref() == Some("No snapshot for Worktree")
+                    && !element.exiting
+                    && element.visible[2].min(element.visible[3]) > 0.0
+            }),
+            "Worktree lookup did not draw the missing-snapshot status"
+        );
+        self.report
+            .check("worktree_find_preserved_source_only_comparison");
+        self.phase = Phase::Worktree(Step::ReviewCancel);
+        Ok(())
+    }
+
+    fn worktree_cancelled(&mut self, runtime: &Runtime<State>) -> Result<()> {
+        let comparison = &runtime.state.flow_comparison;
+        ensure!(
+            comparison.git_outline()
+                && comparison.changes.loaded
+                && !runtime.state.analyzing
+                && runtime.state.graph.is_none(),
+            "Cancelling Worktree preparation did not preserve the source-only comparison"
+        );
+        self.report
+            .check("worktree_confirmation_cancel_preserved_source_only_comparison");
+        self.phase = Phase::Worktree(Step::Review);
+        Ok(())
+    }
+
     fn worktree_published(&mut self, runtime: &Runtime<State>) -> Result<()> {
         let comparison = &runtime.state.flow_comparison;
-        let Some(header) = comparison
+        if comparison.worktree_refresh.pending() {
+            return Ok(());
+        }
+        let header = comparison
             .header()
             .filter(|header| header.head.kind == EndpointKind::Worktree)
-        else {
-            ensure!(
-                comparison.worktree_refresh.pending()
-                    || comparison.worktree_refresh.message.is_empty(),
-                "Worktree refresh failed: {}",
+            .with_context(|| {
+                format!(
+                    "No prepared Worktree binding: {}",
+                    comparison.worktree_refresh.message
+                )
+            })?;
+        let generation = runtime.state.generation.as_deref().with_context(|| {
+            format!(
+                "Worktree preparation failed: {}",
                 comparison.worktree_refresh.message
-            );
-            return Ok(());
-        };
+            )
+        })?;
         ensure!(
             header.base.commit.as_deref() == Some(self.config.initial.base_commit.as_str())
-                && runtime.state.generation.as_deref() == Some(header.head.digest.as_str()),
+                && generation == header.head.digest,
             "Worktree comparison did not bind to the selected base and published graph"
         );
         self.phase = Phase::Worktree(Step::SelectChanged);

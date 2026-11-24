@@ -1,64 +1,101 @@
-//! Outline rows are grouped by recognized route while retaining unmatched changes.
+//! Sidebar navigation over the revision-bound changed files and symbols.
 use crate::{
     app::State,
     engine_client::flow_comparison::{Change, ChangeKind, ChangeStatus},
-    flow_comparison::{ChangeAction, PreviewTarget},
+    flow_comparison::ChangeAction,
+    icons,
 };
-use rune::{El, Key, col, row, text};
-use rune_kit::{Button, ButtonVariant, Kit};
-use std::collections::{BTreeMap, HashSet};
+use rune::{Color, El, Key, ScrollSpec, col, el, row, text};
+use rune_kit::{Button, ButtonVariant, ControlSize, IconButton, IconButtonVariant, Kit, ScrollBar};
+use std::{collections::BTreeMap, path::Path};
+
+const SCROLL_KEY: &str = "comparison-change-rows";
+const DIFF_KEY: &str = "comparison-view-source-diff";
 
 pub fn view(state: &State, k: &Kit) -> El {
-    let workspace = &state.flow_comparison;
-    let changes = &workspace.changes;
-    let outline = col()
+    let collapsed = state.flow_comparison.changes.sidebar.collapsed;
+    let width = if collapsed { 38.0 } else { 280.0 };
+    let sidebar = col()
         .key("comparison-changes")
-        .w_full()
-        .h(changes.outline_height)
-        .min_h(96.0)
-        .border(1.0, k.c.std_border)
-        .child(columns(["Change", "Status", "File"], 0.0, k).fill(k.c.layer_01));
-    if changes.rows.is_empty() {
-        return outline.child(group(empty_notice(changes), k));
+        .w(width)
+        .min_w(width)
+        .h_full()
+        .min_h(0.0)
+        .fill(k.c.layer_01)
+        .child(header(collapsed, k));
+    if collapsed {
+        return sidebar;
     }
-    outline.child(entries_view(state, k))
+    sidebar
+        .child(entries_view(state, k))
+        .child(diff_action(state, k))
 }
 
-fn empty_notice(changes: &crate::flow_comparison::Changes) -> &str {
-    if !changes.message.is_empty() {
-        &changes.message
-    } else if changes.listing() {
-        "Loading changes…"
+fn header(collapsed: bool, k: &Kit) -> El {
+    let label = if collapsed {
+        "Show changes"
     } else {
-        "No changes found"
+        "Hide changes"
+    };
+    let toggle = IconButton::new(&icons::LAYOUT_LEFT)
+        .label(label)
+        .help(label)
+        .variant(IconButtonVariant::GhostMuted)
+        .expanded(!collapsed)
+        .on_press_tx(|state: &mut State, tx| {
+            let sidebar = &mut state.flow_comparison.changes.sidebar;
+            sidebar.collapsed = !sidebar.collapsed;
+            if !sidebar.collapsed {
+                tx.scroll_to_y(SCROLL_KEY, sidebar.scroll.get());
+            }
+        })
+        .build(k)
+        .key("comparison-changes-toggle");
+    let header = row().w_full().h(38.0).px(4.0).center_y();
+    if collapsed {
+        return header.child(toggle);
     }
+    header
+        .child(
+            text("Changes")
+                .font(k.ty.ui_medium)
+                .color(k.c.text_base)
+                .pl(6.0)
+                .grow(1.0),
+        )
+        .child(toggle)
 }
 
 fn entries_view(state: &State, k: &Kit) -> El {
     let changes = &state.flow_comparison.changes;
-    let grouped = Grouped::from_rows(&changes.rows);
+    let scroll = changes.sidebar.scroll.clone();
+    let files = changed_files(&changes.rows);
     let outline = Outline { state, k };
     let mut list = col()
-        .key("comparison-change-rows")
+        .key(SCROLL_KEY)
         .w_full()
         .min_h(0.0)
         .grow(1.0)
-        .scroll(rune::ScrollSpec {
+        .scroll(ScrollSpec {
             stick_bottom: false,
+        })
+        .on_scroll_offset(move |at| {
+            scroll.set(at.offset[1]);
         });
-    if !grouped.entries.is_empty() {
-        list = list.child(group("Affected entry points", k));
-    }
-    for ((name, id), items) in &grouped.entries {
-        list = list
-            .child(group(name, k).key(format!("comparison-entry-{id}")))
-            .child(outline.items(items, id, 20.0));
-    }
-    if let Some(ungrouped) = ungrouped_view(&grouped, changes.complete, &outline) {
-        list = list.child(ungrouped);
-    }
-    if !changes.message.is_empty() {
-        list = list.child(group(&changes.message, k));
+    list = list.children(
+        files
+            .into_iter()
+            .map(|(path, file)| outline.file(path, file)),
+    );
+    let message = message(state);
+    if !message.is_empty() {
+        list = list.child(
+            text(message)
+                .font(k.ty.small)
+                .color(k.c.text_muted)
+                .padding(10.0)
+                .wrap(),
+        );
     }
     if changes.next_offset.is_some() {
         list = list.child(
@@ -69,59 +106,85 @@ fn entries_view(state: &State, k: &Kit) -> El {
                 .build(k),
         );
     }
-    list
+    list.scroll_bar(k)
 }
 
-fn ungrouped_view(grouped: &Grouped<'_>, complete: bool, outline: &Outline<'_>) -> Option<El> {
-    let k = outline.k;
-    if grouped.ungrouped.is_empty() {
-        return (!complete).then(|| group("Entry point search incomplete", k));
+fn message(state: &State) -> &str {
+    let changes = &state.flow_comparison.changes;
+    if !changes.message.is_empty() {
+        &changes.message
+    } else if !changes.rows.is_empty() {
+        ""
+    } else if state.flow_comparison.revisions.base().is_none() {
+        "Choose a Before revision"
+    } else if changes.listing() {
+        "Loading changes…"
+    } else if changes.loaded {
+        "No changes found"
+    } else {
+        ""
     }
-    let name = match (complete, grouped.entries.is_empty()) {
-        (false, _) => "Entry point unknown · search incomplete",
-        (true, true) => "Changed classes and files",
-        (true, false) => "No known entry point",
-    };
-    Some(
-        col()
-            .w_full()
-            .min_h(0.0)
-            .child(group(name, k))
-            .child(outline.items(&grouped.ungrouped, "ungrouped", 10.0)),
+}
+
+fn selection(state: &State) -> Option<&str> {
+    let workspace = &state.flow_comparison;
+    workspace
+        .changes
+        .sidebar
+        .selection
+        .as_deref()
+        .or_else(|| workspace.selected_change_id())
+}
+
+fn diff_action(state: &State, k: &Kit) -> El {
+    let selected = selection(state).map(str::to_owned);
+    let enabled = selected.is_some() && !state.flow_comparison.changes.reload_required;
+    row().w_full().padding(8.0).child(
+        Button::new("View source diff")
+            .icon(&icons::CODE_SLASH)
+            .variant(ButtonVariant::Ghost)
+            .disabled(!enabled)
+            .on_press(move |state: &mut State| {
+                if let Some(id) = selected.as_ref() {
+                    state
+                        .flow_comparison
+                        .choose_change_source(id.clone(), DIFF_KEY.into());
+                }
+            })
+            .build(k)
+            .key(DIFF_KEY),
     )
 }
 
-type EntryGroups<'a> = BTreeMap<(&'a str, &'a str), Vec<Item<'a>>>;
+#[derive(Default)]
+struct FileChanges<'a> {
+    file: Option<&'a Change>,
+    classes: BTreeMap<&'a str, ClassChanges<'a>>,
+    other: Vec<&'a Change>,
+}
 
 #[derive(Default)]
-struct Grouped<'a> {
-    entries: EntryGroups<'a>,
-    ungrouped: Vec<Item<'a>>,
+struct ClassChanges<'a> {
+    class: Option<&'a Change>,
+    methods: Vec<&'a Change>,
 }
 
-impl<'a> Grouped<'a> {
-    fn from_rows(rows: &'a [Change]) -> Self {
-        let mut grouped = Self::default();
-        for change in rows {
-            if change.entry_points.is_empty() {
-                grouped.ungrouped.push(Item { change, path: None });
-                continue;
+fn changed_files(rows: &[Change]) -> BTreeMap<&str, FileChanges<'_>> {
+    let mut files = BTreeMap::<&str, FileChanges<'_>>::new();
+    for change in rows {
+        let file = files.entry(&change.file).or_default();
+        match (change.kind, change.class_id.as_deref()) {
+            (ChangeKind::File, _) => file.file = Some(change),
+            (ChangeKind::Class, _) => {
+                file.classes.entry(&change.id).or_default().class = Some(change)
             }
-            for entry in &change.entry_points {
-                let id = (entry.name.as_str(), entry.id.as_str());
-                grouped.entries.entry(id).or_default().push(Item {
-                    change,
-                    path: Some((entry.before.as_deref(), entry.after.as_deref())),
-                });
+            (ChangeKind::Method, Some(class)) => {
+                file.classes.entry(class).or_default().methods.push(change);
             }
+            (ChangeKind::Method, None) => file.other.push(change),
         }
-        grouped
     }
-}
-
-struct Item<'a> {
-    change: &'a Change,
-    path: Option<(Option<&'a str>, Option<&'a str>)>,
+    files
 }
 
 struct Outline<'a> {
@@ -130,144 +193,180 @@ struct Outline<'a> {
 }
 
 impl Outline<'_> {
-    fn items(&self, items: &[Item<'_>], scope: &str, indent: f32) -> El {
-        let classes: HashSet<_> = items
-            .iter()
-            .filter(|item| item.change.kind == ChangeKind::Class)
-            .map(|item| item.change.id.as_str())
-            .collect();
-        let mut parents = Vec::new();
-        let mut methods = BTreeMap::<&str, Vec<&Item<'_>>>::new();
-        for item in items {
-            match item
-                .change
-                .class_id
-                .as_deref()
-                .filter(|id| classes.contains(id))
-            {
-                Some(class) => methods.entry(class).or_default().push(item),
-                None => parents.push(item),
-            }
+    fn file(&self, path: &str, file: FileChanges<'_>) -> El {
+        let k = self.k;
+        let name = Path::new(path)
+            .file_name()
+            .and_then(|name| name.to_str())
+            .filter(|name| !name.is_empty())
+            .unwrap_or("Changed symbols");
+        let key = format!("comparison-tree-file-{path}");
+        let has_children = !file.classes.is_empty() || !file.other.is_empty();
+        let expanded = self.state.flow_comparison.changes.sidebar.expanded(&key);
+        let node = file.file.map_or_else(
+            || name_and_status(name, None, k).help(path),
+            |change| self.change_row(change, name, path),
+        );
+        let mut tree = col().w_full().child(branch_row(
+            node,
+            has_children.then(|| branch_button(key, name, expanded, k)),
+            4.0,
+        ));
+        if expanded {
+            tree = tree
+                .children(
+                    file.classes
+                        .into_iter()
+                        .map(|(id, class)| self.class(id, class)),
+                )
+                .children(
+                    file.other
+                        .into_iter()
+                        .map(|change| self.symbol_row(change, 36.0)),
+                );
         }
-        col()
-            .w_full()
-            .min_h(0.0)
-            .children(parents.into_iter().flat_map(|item| {
-                let parent = self.change_row(item, scope, indent);
-                let children = methods
-                    .get(item.change.id.as_str())
-                    .into_iter()
-                    .flatten()
-                    .map(move |method| self.change_row(method, scope, indent + 20.0));
-                std::iter::once(parent).chain(children)
-            }))
+        tree
     }
 
-    fn change_row(&self, item: &Item<'_>, scope: &str, indent: f32) -> El {
-        let Self { state, k } = self;
-        let change = item.change;
-        let name = change.name_details.as_ref().map_or_else(
-            || crate::projection::labels::named(&change.name, &change.name, None),
-            |details| {
-                crate::projection::labels::named(
-                    &details.label,
-                    &details.description,
-                    details.visibility,
-                )
-            },
-        );
-        let label = format!("{} · {}", name.text, status(change.status));
-        let key = format!("comparison-change-{scope}-{}", change.id);
-        let active = match &state.flow_comparison.previews.active {
-            Some(preview) if matches!(&preview.target, PreviewTarget::Row(_)) => {
-                preview.anchor == key
-            }
-            _ => state.flow_comparison.selected_change_id() == Some(change.id.as_str()),
-        };
+    fn class(&self, id: &str, class: ClassChanges<'_>) -> El {
+        let mut tree = col().w_full();
+        let mut indent = 36.0;
+        let mut expanded = true;
+        if let Some(change) = class.class {
+            let name = symbol_label(change);
+            let key = format!("comparison-tree-class-{id}");
+            expanded = self.state.flow_comparison.changes.sidebar.expanded(&key);
+            let toggle = (!class.methods.is_empty())
+                .then(|| branch_button(key, &name.text, expanded, self.k));
+            tree = tree.child(branch_row(
+                self.change_row(change, &name.text, &name.description),
+                toggle,
+                20.0,
+            ));
+            indent = 52.0;
+        }
+        if expanded {
+            tree = tree.children(
+                class
+                    .methods
+                    .into_iter()
+                    .map(|change| self.symbol_row(change, indent)),
+            );
+        }
+        tree
+    }
+
+    fn symbol_row(&self, change: &Change, indent: f32) -> El {
+        let name = symbol_label(change);
+        branch_row(
+            self.change_row(change, &name.text, &name.description),
+            None,
+            indent,
+        )
+    }
+
+    fn change_row(&self, change: &Change, name: &str, help: &str) -> El {
+        let k = self.k;
+        let key = format!("comparison-change-row-{}", change.id);
+        let id = change.id.clone();
+        let keyboard_id = id.clone();
         let action = ChangeAction::new(change, &key);
-        let path = item.path.map(|(before, after)| match (before, after) {
-            (Some("possible"), _) | (_, Some("possible")) => " · Possible path",
-            (None, Some(_)) => " · After only",
-            (Some(_), None) => " · Before only",
-            _ => "",
-        });
-        let status = format!("{}{}", status(change.status), path.unwrap_or_default());
-        let row = columns([&name.text, &status, &change.file], indent, k)
+        let keyboard = action.clone();
+        name_and_status(name, Some(change.status), k)
             .key(key)
-            .label(label)
-            .help(&name.description)
+            .label(format!("{name} · {}", status(change.status)))
+            .help(help)
             .role("button")
             .focusable(true)
-            .fill(if active {
+            .fill(if selection(self.state) == Some(id.as_str()) {
                 k.c.text_accent.alpha(0.18)
             } else {
-                k.c.bg_base
+                k.c.layer_01
             })
-            .hover(k.c.layer_01)
+            .hover(k.c.text_accent.alpha(0.1))
             .on_hover_change(|s: &mut State, inside, _| {
                 if inside {
                     s.flow_comparison.previews.enter_outline();
                 }
-            });
-        let keyboard = action.clone();
-        row.on_press(move |s: &mut State| s.flow_comparison.activate_change(&action))
+            })
+            .on_press(move |s: &mut State| activate(s, &id, &action))
             .on_key(move |s: &mut State, event, _| {
                 if event.key != Key::Enter {
                     return false;
                 }
-                s.flow_comparison.activate_change(&keyboard);
+                activate(s, &keyboard_id, &keyboard);
                 true
             })
     }
 }
 
-fn columns([first, second, third]: [&str; 3], indent: f32, k: &Kit) -> El {
+fn activate(state: &mut State, id: &str, action: &ChangeAction) {
+    state.flow_comparison.changes.sidebar.selection = Some(id.to_owned());
+    state.flow_comparison.activate_change(action);
+}
+
+fn symbol_label(change: &Change) -> crate::projection::labels::Label {
+    use crate::projection::labels::named;
+    change.name_details.as_ref().map_or_else(
+        || named(&change.name, &change.name, None),
+        |details| named(&details.label, &details.description, details.visibility),
+    )
+}
+
+fn branch_row(content: El, toggle: Option<El>, indent: f32) -> El {
     row()
         .w_full()
-        .h(24.0)
+        .h(26.0)
         .center_y()
-        .px(12.0)
-        .gap(8.0)
+        .pl(indent)
+        .pr(6.0)
+        .child(toggle.unwrap_or_else(|| el().w(20.0)))
+        .child(content)
+}
+
+fn branch_button(key: String, name: &str, expanded: bool, k: &Kit) -> El {
+    let label = if expanded { "Collapse" } else { "Expand" };
+    let icon = if expanded {
+        &icons::MINUS
+    } else {
+        &icons::OUTLINE_CHEVRON_RIGHT
+    };
+    let branch = key.clone();
+    IconButton::new(icon)
+        .label(format!("{label} {name}"))
+        .variant(IconButtonVariant::GhostMuted)
+        .control_size(ControlSize::Small)
+        .expanded(expanded)
+        .on_press(move |s: &mut State| s.flow_comparison.changes.sidebar.toggle(&branch))
+        .build(k)
+        .key(key)
+        .w(20.0)
+}
+
+fn name_and_status(name: &str, status_value: Option<ChangeStatus>, k: &Kit) -> El {
+    let mut row = row()
+        .grow(1.0)
+        .min_w(0.0)
+        .h_full()
+        .px(5.0)
+        .center_y()
+        .gap(6.0)
         .child(
-            text(first)
-                .pl(indent)
-                .grow(1.6)
-                .min_w(0.0)
-                .font(k.ty.small)
-                .color(k.c.text_base)
-                .truncate(),
-        )
-        .child(
-            text(second)
+            text(name)
                 .grow(1.0)
                 .min_w(0.0)
                 .font(k.ty.small)
-                .color(k.c.text_muted)
-                .truncate(),
-        )
-        .child(
-            text(third)
-                .grow(1.1)
-                .min_w(0.0)
-                .font(k.ty.small)
-                .color(k.c.text_muted)
-                .truncate(),
-        )
-}
-
-fn group(label: &str, k: &Kit) -> El {
-    row()
-        .w_full()
-        .h(25.0)
-        .px(12.0)
-        .center_y()
-        .fill(k.c.layer_01)
-        .child(
-            text(label)
-                .font(k.ty.small_medium)
                 .color(k.c.text_base)
                 .truncate(),
-        )
+        );
+    if let Some(value) = status_value {
+        row = row.child(
+            text(status(value))
+                .font(k.ty.small)
+                .color(status_color(value, k)),
+        );
+    }
+    row
 }
 
 fn status(value: ChangeStatus) -> &'static str {
@@ -278,26 +377,10 @@ fn status(value: ChangeStatus) -> &'static str {
     }
 }
 
-pub fn divider(state: &State, k: &Kit) -> El {
-    if !state.flow_comparison.changes.loaded || state.flow_comparison.changes.expert {
-        return rune::el();
+fn status_color(value: ChangeStatus, k: &Kit) -> Color {
+    match value {
+        ChangeStatus::Added => k.c.success.fg,
+        ChangeStatus::Removed => k.c.text_muted,
+        ChangeStatus::Modified => k.c.text_accent,
     }
-    rune::el()
-        .key("comparison-change-splitter")
-        .w_full()
-        .h(5.0)
-        .fill(k.c.layer_01)
-        .hover(k.c.text_accent.alpha(0.35))
-        .cursor(rune::Cursor::ResizeRow)
-        .on_drag(|state: &mut State, drag, _| {
-            let height = &mut state.flow_comparison.changes.outline_height;
-            if drag.phase == rune::Phase::Down {
-                drag.data = *height;
-            }
-            *height = if drag.cancelled() {
-                drag.data
-            } else {
-                (drag.data + drag.dy).clamp(96.0, 340.0)
-            };
-        })
 }

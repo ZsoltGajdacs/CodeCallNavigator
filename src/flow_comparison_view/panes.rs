@@ -2,54 +2,60 @@
 use crate::{
     app::State,
     engine_client::flow_comparison::Symbol,
-    flow_comparison::{Side, SideId},
+    flow_comparison::{Pair, Side, SideId},
     flow_view::{self, address::Address},
     projection::labels::{self, Label},
+    theme,
+    view::{CameraAction, CameraControls, camera_controls},
 };
 use rune::{El, col, el, row, text};
-use rune_kit::{Button, ButtonVariant, Kit};
+use rune_kit::{Button, ButtonVariant, ControlSize, Kit};
 pub(super) fn view(state: &State, k: &Kit, layer: &mut Vec<El>) -> El {
-    let workspace = &state.flow_comparison;
-    let show_methods_source = workspace.class_selection().is_none()
-        && (!workspace.changes.loaded || workspace.changes.expert);
     col()
         .w_full()
         .grow(1.0)
+        .min_w(0.0)
         .min_h(0.0)
-        .child(if workspace.class_selection().is_some() {
-            class_depth(state, k, layer)
-        } else {
-            el()
-        })
         .child(
             row()
                 .key("comparison-charts")
                 .w_full()
                 .grow(1.0)
                 .min_h(0.0)
-                .child(chart(state, SideId::Before, k))
+                .child(chart(state, SideId::Before, k, layer))
                 .child(el().w(1.0).h_full().fill(k.c.std_border))
-                .child(chart(state, SideId::After, k)),
+                .child(chart(state, SideId::After, k, layer)),
         )
-        .child(if show_methods_source {
-            bottom(state, k)
-        } else {
-            el()
-        })
+        .child(
+            state
+                .flow_comparison
+                .current
+                .as_ref()
+                .map_or_else(el, |pair| bottom(state, pair, k)),
+        )
 }
-fn class_depth(state: &State, k: &Kit, layer: &mut Vec<El>) -> El {
+fn class_depth(state: &State, side: SideId, k: &Kit, layer: &mut Vec<El>) -> El {
     let workspace = &state.flow_comparison;
+    let key = match side {
+        SideId::Before => "comparison-depth",
+        SideId::After => "comparison-after-depth",
+    };
     let select = crate::view::depth_select(
-        "comparison-depth",
+        key,
         workspace.class_depth(),
         workspace.maximum_class_depth(),
     )
-    .open(workspace.controls.class_depth_open)
-    .on_toggle(|s: &mut State| {
+    .open(workspace.controls.class_depth_open == Some(side))
+    .on_toggle(move |s: &mut State| {
         s.flow_comparison.previews.dismiss();
-        s.flow_comparison.controls.class_depth_open = !s.flow_comparison.controls.class_depth_open;
+        let open = &mut s.flow_comparison.controls.class_depth_open;
+        *open = (*open != Some(side)).then_some(side);
     })
-    .on_close(|s: &mut State| s.flow_comparison.controls.class_depth_open = false)
+    .on_close(move |s: &mut State| {
+        if s.flow_comparison.controls.class_depth_open == Some(side) {
+            s.flow_comparison.controls.class_depth_open = None;
+        }
+    })
     .on_choose(|s: &mut State, value, _| {
         if let Ok(depth) = value.parse() {
             s.flow_comparison.set_class_depth(depth);
@@ -57,9 +63,7 @@ fn class_depth(state: &State, k: &Kit, layer: &mut Vec<El>) -> El {
     })
     .build(k, layer);
     row()
-        .w_full()
-        .px(8.0)
-        .gap(8.0)
+        .gap(4.0)
         .center_y()
         .child(text("Depth").font(k.ty.small).color(k.c.text_muted))
         .child(select)
@@ -77,28 +81,33 @@ fn title(side: SideId) -> &'static str {
         SideId::After => "After",
     }
 }
-fn chart(state: &State, side: SideId, k: &Kit) -> El {
+fn chart(state: &State, side: SideId, k: &Kit, layer: &mut Vec<El>) -> El {
     let address = address(side);
     let content = col()
         .key(address.key("pane"))
         .grow(1.0)
         .min_w(0.0)
         .h_full()
-        .min_h(0.0);
+        .min_h(0.0)
+        .child(super::endpoint_header(state, side, k));
+    let overlay = canvas_controls(state, side, k, layer);
     if state.flow_comparison.class_selection().is_some() {
-        return super::class_canvas::pane(content, state, side, k);
+        return content.child(super::class_canvas::pane(state, side, k, overlay));
     }
     let Some(pair) = &state.flow_comparison.current else {
-        return content.child(heading(title(side), None, k)).child(empty(
-            address,
-            if state.flow_comparison.detail_pending() {
-                "Building before and after charts…"
-            } else if state.flow_comparison.changes.loaded {
-                "Select a changed class or method"
-            } else {
-                "Choose a saved function identity"
-            },
-            k,
+        return content.child(canvas_surface(
+            empty(
+                address,
+                if state.flow_comparison.detail_pending() {
+                    "Building before and after charts…"
+                } else if state.flow_comparison.changes.loaded {
+                    "Select a changed class or method"
+                } else {
+                    "Choose revisions to compare"
+                },
+                k,
+            ),
+            overlay,
         ));
     };
     let side_data = pair.side(side);
@@ -122,9 +131,55 @@ fn chart(state: &State, side: SideId, k: &Kit) -> El {
                     el()
                 },
             )
-            .child(flow_view::chart::view(state, &ready.session, address, k)),
-        other => content.child(empty(address, &explanation(other), k)),
+            .child(canvas_surface(
+                flow_view::chart::view(state, &ready.session, address, k),
+                overlay,
+            )),
+        other => content.child(canvas_surface(
+            empty(address, &explanation(other), k),
+            overlay,
+        )),
     }
+}
+
+pub(super) fn canvas_surface(canvas: El, overlay: El) -> El {
+    el().w_full()
+        .grow(1.0)
+        .min_h(0.0)
+        .min_w(0.0)
+        .clip_soft(0.0)
+        .child(canvas)
+        .child(overlay.pin(None, Some(8.0), Some(8.0), None))
+}
+
+fn canvas_controls(state: &State, side: SideId, k: &Kit, layer: &mut Vec<El>) -> El {
+    let workspace = &state.flow_comparison;
+    let zoom = workspace.camera(side).map(|camera| camera.zoom);
+    let suffix = match side {
+        SideId::Before => "before",
+        SideId::After => "after",
+    };
+    let camera = camera_controls(
+        k,
+        CameraControls {
+            fit_key: &format!("comparison-fit-{suffix}"),
+            zoom_in_key: &format!("comparison-zoom-in-{suffix}"),
+            zoom_out_key: &format!("comparison-zoom-out-{suffix}"),
+            zoom,
+            size: ControlSize::Regular,
+        },
+        move |s, action| match action {
+            CameraAction::Fit => s.flow_comparison.fit(side),
+            CameraAction::Zoom(factor) => s.flow_comparison.zoom(side, factor),
+        },
+    );
+    let mut controls = row().padding(4.0).gap(6.0).center_y();
+    if workspace.class_selection().is_some() {
+        controls = controls.child(class_depth(state, side, k, layer));
+    }
+    theme::floating_surface(k)
+        .key(address(side).key("canvas-controls"))
+        .child(controls.child(camera))
 }
 
 fn method_label(side: &Side) -> Option<Label> {
@@ -137,22 +192,16 @@ fn method_label(side: &Side) -> Option<Label> {
 }
 
 pub(super) fn heading(title: &str, label: Option<&Label>, k: &Kit) -> El {
-    row()
-        .w_full()
-        .padding(6.0)
-        .gap(8.0)
-        .center_y()
-        .child(text(title).font(k.ty.small_medium).color(k.c.text_base))
-        .child(
-            text(label.map_or("", |label| &label.text))
-                .key(format!("comparison-pane-name-{title}"))
-                .font(k.ty.small)
-                .color(k.c.text_muted)
-                .grow(1.0)
-                .min_w(0.0)
-                .truncate()
-                .help(label.map_or("", |label| &label.description)),
-        )
+    row().w_full().padding(6.0).center_y().child(
+        text(label.map_or("", |label| &label.text))
+            .key(format!("comparison-pane-name-{title}"))
+            .font(k.ty.small)
+            .color(k.c.text_muted)
+            .grow(1.0)
+            .min_w(0.0)
+            .truncate()
+            .help(label.map_or("", |label| &label.description)),
+    )
 }
 pub(super) fn empty(address: Address, message: &str, k: &Kit) -> El {
     col()
@@ -161,6 +210,7 @@ pub(super) fn empty(address: Address, message: &str, k: &Kit) -> El {
         .grow(1.0)
         .min_h(0.0)
         .clip_soft(0.0)
+        .fill(theme::canvas(k))
         .padding(20.0)
         .center()
         .on_layout(move |s: &mut State, r| address.layout(s, [r[2], r[3]]))
@@ -172,28 +222,15 @@ pub(super) fn empty(address: Address, message: &str, k: &Kit) -> El {
                 .wrap(),
         )
 }
-fn bottom(state: &State, k: &Kit) -> El {
-    let active = state
-        .flow_comparison
-        .current
-        .as_ref()
-        .map(|pair| pair.active_source)
-        .unwrap_or(SideId::Before);
+fn bottom(state: &State, pair: &Pair, k: &Kit) -> El {
+    let active = pair.active_source;
     let area = col()
         .key("comparison-source-area")
         .w_full()
         .h(230.0)
         .min_h(0.0)
         .border(1.0, k.c.std_border)
-        .child(tabs(active, k));
-    let Some(pair) = &state.flow_comparison.current else {
-        return area.child(
-            text(&state.flow_comparison.detail_message)
-                .font(k.ty.small)
-                .color(k.c.text_muted)
-                .padding(12.0),
-        );
-    };
+        .child(tabs(active, !state.flow_comparison.history.is_empty(), k));
     let address = address(active);
     match pair.side(active) {
         Side::Ready(ready) => area.child(source_details(state, ready, address, k)),
@@ -248,8 +285,19 @@ fn source_details(
                 .h_full(),
         )
 }
-fn tabs(active: SideId, k: &Kit) -> El {
+fn tabs(active: SideId, can_go_back: bool, k: &Kit) -> El {
     let mut tabs = row().w_full().gap(8.0).px(8.0).py(4.0).center_y();
+    if can_go_back {
+        tabs = tabs.child(
+            Button::new("Back to calling function")
+                .variant(ButtonVariant::Ghost)
+                .on_press(|s: &mut State| {
+                    s.flow_comparison.back();
+                })
+                .build(k)
+                .key("comparison-back"),
+        );
+    }
     for side in [SideId::Before, SideId::After] {
         tabs = tabs.child(
             Button::new(format!("{} source", title(side)))

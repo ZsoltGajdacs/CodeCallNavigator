@@ -121,17 +121,10 @@ fn manual_pairing_can_reset_and_target_navigation_is_endpoint_bound() {
         pair.correspondence.kind,
         crate::engine_client::flow_comparison::CorrespondenceKind::Exact
     ));
-    assert!(state.flow_comparison.back());
-    assert!(matches!(
-        state
-            .flow_comparison
-            .current
-            .as_ref()
-            .unwrap()
-            .correspondence
-            .kind,
-        crate::engine_client::flow_comparison::CorrespondenceKind::Manual
-    ));
+    assert!(
+        !state.flow_comparison.back(),
+        "An explicit change selection must not create call navigation history"
+    );
 }
 
 #[test]
@@ -178,6 +171,17 @@ fn following_a_target_from_a_manual_pair_restores_exact_correspondence() {
     assert!(matches!(
         pair.correspondence.kind,
         crate::engine_client::flow_comparison::CorrespondenceKind::Exact
+    ));
+    assert!(state.flow_comparison.back());
+    assert!(matches!(
+        state
+            .flow_comparison
+            .current
+            .as_ref()
+            .unwrap()
+            .correspondence
+            .kind,
+        crate::engine_client::flow_comparison::CorrespondenceKind::Manual
     ));
 }
 

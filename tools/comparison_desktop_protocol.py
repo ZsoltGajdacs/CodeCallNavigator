@@ -7,7 +7,7 @@ from csharp_flow_acceptance import require
 from csharp_desktop_acceptance import capture_image, require_viewport, write_json
 from comparison_desktop_fixture import edit_worktree, git, HEAD_REF
 
-ORDER = (("capture", "unavailable-flow"), ("capture", "manual-pair"), ("capture", "restored-pair"),
+ORDER = (("capture", "unavailable-flow"), ("capture", "restored-pair"),
          ("move_after_ref", "after-ref-moved"), ("arm_git_gate", "gate-armed"),
          ("wait_git_gate", "gate-held"), ("release_git_gate", "gate-released"))
 WORKTREE_EDIT = ("edit_worktree", "worktree-edited")

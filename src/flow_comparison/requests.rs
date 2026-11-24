@@ -27,7 +27,6 @@ pub(super) struct Opened {
 }
 pub(super) enum CatalogAnswer {
     Opened(Box<Opened>),
-    Page(Box<Catalog>),
     Refreshed {
         project: Box<super::Project>,
         opened: Box<Opened>,
@@ -80,11 +79,6 @@ pub(super) enum CatalogOperation {
         ticket: super::RefreshTicket,
         generation: String,
     },
-    Page {
-        bound: Box<BoundComparison>,
-        page: crate::engine_client::flow_comparison::CatalogPage,
-        physical_project: std::path::PathBuf,
-    },
 }
 pub(super) struct CatalogWork {
     pub serial: u64,
@@ -123,7 +117,7 @@ impl CatalogWork {
                     .and_then(|(bound, page)| {
                         if bound.header().head.digest != generation {
                             return Err(Error::Invalid(anyhow::anyhow!(
-                                "The saved worktree changed again. Load to compare the latest graph."
+                                "The saved Worktree changed again. Use Find snapshot to compare the latest graph."
                             )));
                         }
                         if let EndpointStatus::Unavailable(failure) = &page.endpoints.after {
@@ -134,16 +128,6 @@ impl CatalogWork {
                             opened: Box::new(Opened { bound, page }),
                         })
                     })
-            }
-            CatalogOperation::Page {
-                bound,
-                page,
-                physical_project: project,
-            } => {
-                physical_project = Some(project);
-                bound
-                    .catalog(page, &self.cancel)
-                    .map(|page| CatalogAnswer::Page(Box::new(page)))
             }
         };
         CatalogOutput {

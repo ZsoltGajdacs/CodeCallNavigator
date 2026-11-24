@@ -191,6 +191,41 @@ impl State {
         }
         workspace.more_comparison_commits();
     }
+
+    pub(crate) fn choose_comparison_revision(&mut self, side: SnapshotSide, id: &str) {
+        let previous = self.flow_comparison.control_refs();
+        self.flow_comparison.choose_revision(side, id);
+        self.rebind_comparison_if_changed(previous);
+    }
+
+    pub(crate) fn select_comparison_snapshot(&mut self, side: SnapshotSide, id: Option<String>) {
+        let previous = self.flow_comparison.control_refs();
+        self.flow_comparison.choose_snapshot_variant(side, id);
+        self.rebind_comparison_if_changed(previous);
+    }
+
+    pub(crate) fn poll_comparison(&mut self) -> bool {
+        let needs_default = self.flow_comparison.revisions.base().is_none();
+        let changed = self.flow_comparison.poll();
+        if needs_default && self.flow_comparison.revisions.base().is_some() {
+            self.load_flow_comparison();
+            return true;
+        }
+        changed
+    }
+
+    fn rebind_comparison_if_changed(&mut self, previous: ComparisonRefs) {
+        if self.flow_comparison.control_refs() == previous {
+            return;
+        }
+        if self.flow_comparison.worktree_refresh.showing_progress() {
+            self.cancel_analysis();
+        }
+        self.flow_comparison.snapshots.discard_pending();
+        if self.flow_comparison.revisions.base().is_some() {
+            self.load_flow_comparison();
+        }
+    }
 }
 
 impl Workspace {
@@ -206,8 +241,8 @@ impl Workspace {
     }
 
     pub(crate) fn show_revision_picker(&mut self, side: SnapshotSide) {
-        self.controls.catalog_open = false;
         self.previews.close();
+        self.snapshots.variant_picker = None;
         self.revisions.picker = Some(side);
         let id = match side {
             SnapshotSide::Base => self.revisions.base(),
@@ -220,22 +255,14 @@ impl Workspace {
     }
 
     pub(crate) fn choose_snapshot_variant(&mut self, side: SnapshotSide, id: Option<String>) {
-        let previous = self.control_refs();
         self.snapshots.choose(side, id);
-        if self.control_refs() != previous {
-            self.invalidate_worktree_refresh();
-        }
     }
 
     pub(crate) fn choose_revision(&mut self, side: SnapshotSide, id: &str) {
         if self.revisions.picker != Some(side) {
             return;
         }
-        let before = self.control_refs();
         self.revisions.select(side, id);
-        if self.control_refs() != before {
-            self.invalidate_worktree_refresh();
-        }
         self.revisions.request_message(id, &self.workers);
     }
 }

@@ -5,7 +5,7 @@ use crate::{
         comparison::{observation, source_observation},
         input::Input,
     },
-    flow_comparison::SideId,
+    flow_comparison::{SideId, SnapshotSide},
 };
 #[test]
 fn provenance_and_source_checks_require_actual_endpoint_widgets() {
@@ -16,6 +16,17 @@ fn provenance_and_source_checks_require_actual_endpoint_widgets() {
         .open_flow_comparison("refs/tags/base".into(), "refs/tags/head".into())
         .unwrap();
     crate::flow_comparison::tests::settle(&mut state);
+    let header = state.flow_comparison.header().unwrap();
+    let base = header.base.commit.clone().unwrap();
+    let after = header.head.commit.clone().unwrap();
+    state
+        .flow_comparison
+        .revisions
+        .set_for_test(SnapshotSide::Base, &base);
+    state
+        .flow_comparison
+        .revisions
+        .set_for_test(SnapshotSide::Head, &after);
     let symbol = crate::flow_comparison::tests::selected(&state);
     state
         .flow_comparison
@@ -25,7 +36,6 @@ fn provenance_and_source_checks_require_actual_endpoint_widgets() {
         })
         .unwrap();
     crate::flow_comparison::tests::settle(&mut state);
-    state.flow_comparison.controls.catalog_open = false;
     let mut runtime = Runtime::new(
         state,
         |state, cx| {
@@ -42,9 +52,6 @@ fn provenance_and_source_checks_require_actual_endpoint_widgets() {
     runtime.set_titlebar_inset(rune::tooling::Chrome::DEFAULT.titlebar_inset());
     runtime.frame(0.0);
     runtime.frame(1.0 / 60.0);
-    click_control(&mut runtime, "comparison-catalog-open");
-    click_control(&mut runtime, "comparison-catalog-close");
-    assert!(runtime.state.flow_comparison.changes.expert);
     runtime.settle_all();
     runtime.frame(0.0);
     provenance(&runtime).unwrap();

@@ -1,26 +1,25 @@
-//! A moved tag and an acknowledged owned Git gate exercise real reload and cancellation.
+//! Snapshot lookup and a held Git child exercise revision pinning and cancellation.
 use super::*;
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(super) enum RefMove {
     Move,
     Reload,
     Pinned,
+    DismissSnapshots,
     OpenAfter,
     PickAfter,
     CloseAfter,
-    Load,
     Loaded,
 }
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(super) enum Cancellation {
     Arm,
-    OpenCatalog,
-    Search,
+    Find,
     WaitGate,
-    CloseCatalog,
     Cancel,
     Cancelled,
     LoadFresh,
+    DismissSnapshots,
     Loaded,
     Close,
     Closed,
@@ -39,8 +38,13 @@ impl Driver {
             )?,
             RefMove::Reload => self.click(
                 runtime,
-                "comparison-reload",
+                "comparison-snapshot-after-find",
                 Phase::RefMove(RefMove::Pinned),
+            ),
+            RefMove::DismissSnapshots => self.click(
+                runtime,
+                "comparison-snapshot-variants-done",
+                Phase::RefMove(RefMove::OpenAfter),
             ),
             RefMove::OpenAfter => self.click(
                 runtime,
@@ -55,11 +59,8 @@ impl Driver {
             RefMove::CloseAfter => self.click(
                 runtime,
                 "comparison-revisions-done",
-                Phase::RefMove(RefMove::Load),
+                Phase::RefMove(RefMove::Loaded),
             ),
-            RefMove::Load => {
-                self.click(runtime, "comparison-load", Phase::RefMove(RefMove::Loaded))
-            }
             _ => (),
         }
         Ok(())
@@ -70,9 +71,12 @@ impl Driver {
         step: RefMove,
     ) -> Result<()> {
         match step {
-            RefMove::Pinned if observation::bound(&runtime.state, &self.config.initial)? => {
+            RefMove::Pinned
+                if runtime.find("comparison-snapshot-variants").is_some()
+                    && observation::bound(&runtime.state, &self.config.initial)? =>
+            {
                 self.report.check("moved_tag_left_selected_commit_pinned");
-                self.phase = Phase::RefMove(RefMove::OpenAfter);
+                self.phase = Phase::RefMove(RefMove::DismissSnapshots);
             }
             RefMove::Loaded if observation::bound(&runtime.state, &self.config.reloaded)? => {
                 self.report.check("selected_later_commit_rebound");
@@ -91,22 +95,12 @@ impl Driver {
             Cancellation::Arm => self.external(
                 Operation::ArmGitGate,
                 Checkpoint::GateArmed,
-                Phase::Cancellation(Cancellation::OpenCatalog),
+                Phase::Cancellation(Cancellation::Find),
             )?,
-            Cancellation::OpenCatalog => self.click(
+            Cancellation::Find => self.click(
                 runtime,
-                "comparison-catalog-open",
-                Phase::Cancellation(Cancellation::Search),
-            ),
-            Cancellation::Search => self.click(
-                runtime,
-                "comparison-search-submit",
+                "comparison-snapshot-base-find",
                 Phase::Cancellation(Cancellation::WaitGate),
-            ),
-            Cancellation::CloseCatalog => self.click(
-                runtime,
-                "comparison-catalog-close",
-                Phase::Cancellation(Cancellation::Cancel),
             ),
             Cancellation::Cancel => self.click(
                 runtime,
@@ -115,7 +109,12 @@ impl Driver {
             ),
             Cancellation::LoadFresh => self.click(
                 runtime,
-                "comparison-load",
+                "comparison-snapshot-base-find",
+                Phase::Cancellation(Cancellation::DismissSnapshots),
+            ),
+            Cancellation::DismissSnapshots => self.click(
+                runtime,
+                "comparison-snapshot-variants-done",
                 Phase::Cancellation(Cancellation::Loaded),
             ),
             Cancellation::Close => self.click(
@@ -138,18 +137,18 @@ impl Driver {
                     self.external(
                         Operation::WaitGitGate,
                         Checkpoint::GateHeld,
-                        Phase::Cancellation(Cancellation::CloseCatalog),
+                        Phase::Cancellation(Cancellation::Cancel),
                     )?;
                 }
             }
             Cancellation::Cancelled => {
-                ensure!(
-                    runtime.state.flow_comparison.current.is_none(),
-                    "Cancel retained an actionable Pair"
-                );
                 if !runtime.state.flow_comparison.stopped() {
                     return Ok(());
                 }
+                ensure!(
+                    observation::bound(&runtime.state, &self.config.reloaded)?,
+                    "Cancelling snapshot lookup discarded the current committed binding"
+                );
                 self.report.check("cancel_waited_for_owned_query_cleanup");
                 self.external(
                     Operation::ReleaseGitGate,
@@ -158,7 +157,7 @@ impl Driver {
                 )?;
             }
             Cancellation::Loaded => {
-                if runtime.state.flow_comparison.catalog.is_some() {
+                if !runtime.state.flow_comparison.pending() {
                     observation::bound(&runtime.state, &self.config.reloaded)?;
                     self.select_case(0, Purpose::Fresh);
                 }

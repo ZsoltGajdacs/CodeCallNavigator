@@ -61,22 +61,15 @@ pub struct Symbol {
     pub owner: Owner,
 }
 #[derive(Clone, Debug, Deserialize)]
-#[serde(tag = "status", rename_all = "snake_case")]
-pub enum Recorded {
-    Recorded,
-    Unavailable(Failure),
-}
-#[derive(Clone, Debug, Deserialize)]
 pub struct Present {
     pub node: Option<Symbol>,
-    pub flow: Recorded,
 }
 #[derive(Clone, Debug, Deserialize)]
 #[serde(tag = "status", rename_all = "snake_case")]
 pub enum CatalogSide {
     Present(Box<Present>),
     Missing,
-    Unknown(Failure),
+    Unknown,
 }
 #[derive(Clone, Debug, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -236,7 +229,7 @@ pub(super) fn endpoint(endpoint: &Endpoint) -> anyhow::Result<()> {
     Ok(())
 }
 
-pub(super) fn worktree_freshness(
+pub(crate) fn worktree_freshness(
     value: Option<serde_json::Value>,
 ) -> Option<codecallnavigator::artifact::verification::InputStatus> {
     let value = value?;

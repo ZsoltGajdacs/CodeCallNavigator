@@ -3,7 +3,7 @@ use super::*;
 use crate::{camera::Camera, flow_comparison::SideId, flow_workspace::Session};
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(super) enum Interaction {
-    StartManual,
+    Start,
     BeforeSelect,
     BeforeSelected,
     BeforePan,
@@ -74,7 +74,7 @@ impl Driver {
         step: Interaction,
     ) -> Result<()> {
         match step {
-            Interaction::StartManual => self.select_case(0, Purpose::ManualBase),
+            Interaction::Start => self.select_case(0, Purpose::Inspect),
             Interaction::BeforeSelect => {
                 self.select_call(runtime, SideId::Before, Interaction::BeforeSelected)?
             }

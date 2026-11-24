@@ -1,4 +1,4 @@
-//! Exact-ID catalog selection and deliberate counterpart controls.
+//! Revision pickers and changed-method rows drive the saved comparison.
 use super::*;
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(super) enum Editor {
@@ -9,26 +9,17 @@ pub(super) enum Editor {
     After,
     PickAfter,
     CloseAfter,
-    Load,
-    Catalog,
+    Bound,
 }
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(super) enum Selecting {
-    Open,
-    Edit,
-    Submit,
-    Wait,
-    Record,
+    Row,
     Pair,
-    ChooseManual,
-    Reset,
 }
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(super) enum Purpose {
     Cases,
-    ManualBase,
-    Manual,
-    Reset,
+    Inspect,
     Reloaded,
     Fresh,
 }
@@ -73,10 +64,9 @@ impl Driver {
             Editor::CloseAfter if commit_message_drawn(runtime, "fixture-after") => self.click(
                 runtime,
                 "comparison-revisions-done",
-                Phase::Editing(Editor::Load),
+                Phase::Editing(Editor::Bound),
             ),
-            Editor::Load => self.click(runtime, "comparison-load", Phase::Editing(Editor::Catalog)),
-            Editor::Catalog if runtime.state.flow_comparison.catalog.is_some() => {
+            Editor::Bound if runtime.state.flow_comparison.catalog.is_some() => {
                 observation::bound(&runtime.state, &self.config.initial)?;
                 self.report.check("commits_selected_by_controls");
                 self.report.check("commit_messages_drawn_for_both_sides");
@@ -86,107 +76,50 @@ impl Driver {
         }
         Ok(())
     }
-    fn query_symbol(&self) -> &str {
-        let case = &self.config.cases[self.selected_case];
-        case.head_symbol.as_deref().unwrap_or(&case.symbol)
-    }
     pub(super) fn select_case(&mut self, index: usize, purpose: Purpose) {
         self.selected_case = index;
         self.purpose = purpose;
-        self.phase = Phase::Selection(Selecting::Open);
+        self.phase = Phase::Selection(Selecting::Row);
     }
+
     pub(super) fn selection_action(
         &mut self,
         runtime: &mut Runtime<State>,
         step: Selecting,
     ) -> Result<()> {
-        match step {
-            Selecting::Open => {
-                if runtime.state.flow_comparison.controls.catalog_open {
-                    self.phase = Phase::Selection(Selecting::Edit);
-                } else {
-                    self.click(
-                        runtime,
-                        "comparison-catalog-open",
-                        Phase::Selection(Selecting::Edit),
-                    );
-                }
-            }
-            Selecting::Edit => {
-                let symbol = self.query_symbol().to_owned();
-                if self.input.edit(runtime, "comparison-search", &symbol) {
-                    self.phase = Phase::Selection(Selecting::Submit);
-                }
-            }
-            Selecting::Submit => {
-                ensure!(
-                    runtime.state.flow_comparison.controls.search.text == self.query_symbol(),
-                    "Actual catalog editor did not accept the exact ID"
-                );
-                self.click(
-                    runtime,
-                    "comparison-search-submit",
-                    Phase::Selection(Selecting::Wait),
-                );
-            }
-            Selecting::Record => {
-                let key = format!("comparison-record-{}", self.query_symbol());
-                self.click(runtime, &key, Phase::Selection(Selecting::Pair));
-            }
-            Selecting::ChooseManual => {
-                self.selected_case = 5;
-                self.purpose = Purpose::Manual;
-                self.click(
-                    runtime,
-                    "comparison-choose-after",
-                    Phase::Selection(Selecting::Edit),
-                );
-            }
-            Selecting::Reset => {
-                self.selected_case = 0;
-                self.purpose = Purpose::Reset;
-                self.click(
-                    runtime,
-                    "comparison-reset-counterpart",
-                    Phase::Selection(Selecting::Pair),
-                );
-            }
-            _ => (),
+        if step != Selecting::Row {
+            return Ok(());
+        }
+        let symbol = &self.config.cases[self.selected_case].symbol;
+        let changes = &runtime.state.flow_comparison.changes;
+        if !changes.loaded {
+            return Ok(());
+        }
+        let change = changes
+            .rows
+            .iter()
+            .find(|row| row.symbol.as_ref() == Some(symbol))
+            .context("Git change list omitted the expected changed method")?;
+        if let Some(key) = flow_first::change_key(runtime, &change.id) {
+            self.click(runtime, &key, Phase::Selection(Selecting::Pair));
+        } else {
+            self.input
+                .scroll_pane(runtime, "comparison-change-rows", 160.0);
         }
         Ok(())
     }
+
     pub(super) fn selection_observed(
         &mut self,
         runtime: &Runtime<State>,
         step: Selecting,
     ) -> Result<()> {
-        if step == Selecting::Wait {
-            if runtime.state.flow_comparison.catalog_pending() {
-                return Ok(());
-            }
-            let page = runtime
-                .state
-                .flow_comparison
-                .catalog
-                .as_ref()
-                .context("Native catalog is unavailable")?;
-            // Latest can settle between UI polling and Drawn observation. Wait
-            // for the requested page to be published before checking its IDs.
-            if page.text != self.query_symbol() || page.offset != 0 {
-                return Ok(());
-            }
-            ensure!(
-                page.records
-                    .iter()
-                    .any(|record| record.symbol == self.query_symbol()),
-                "Exact catalog search did not return its expected ID"
-            );
-            self.phase = Phase::Selection(Selecting::Record);
-        } else if step == Selecting::Pair {
+        if step == Selecting::Pair {
             self.pair_observed(runtime)?;
         }
         Ok(())
     }
+
     fn pair_observed(&mut self, runtime: &Runtime<State>) -> Result<()> {
         let case = &self.config.cases[self.selected_case];
         if observation::pair(runtime, case)?.is_none() {
@@ -203,25 +136,17 @@ impl Driver {
             Purpose::Cases if case.kind == CaseKind::Legacy => self.external(
                 Operation::Capture,
                 Checkpoint::UnavailableFlow,
-                Phase::Interaction(Interaction::StartManual),
+                Phase::Interaction(Interaction::Start),
             )?,
-            Purpose::Cases => self.select_case(self.selected_case + 1, Purpose::Cases),
-            Purpose::ManualBase => self.phase = Phase::Selection(Selecting::ChooseManual),
-            Purpose::Manual => {
-                ensure!(
-                    runtime.elements().iter().any(|el| el
-                        .text
-                        .as_deref()
-                        .is_some_and(|s| s.contains("Manual counterpart"))),
-                    "Manual status is not drawn"
-                );
-                self.external(
-                    Operation::Capture,
-                    Checkpoint::ManualPair,
-                    Phase::Selection(Selecting::Reset),
-                )?;
-            }
-            Purpose::Reset => self.phase = Phase::Interaction(Interaction::BeforeSelect),
+            Purpose::Cases => self.select_case(
+                if self.selected_case == 0 {
+                    2 // Unchanged methods are intentionally absent from the sidebar.
+                } else {
+                    self.selected_case + 1
+                },
+                Purpose::Cases,
+            ),
+            Purpose::Inspect => self.phase = Phase::Interaction(Interaction::BeforeSelect),
             Purpose::Reloaded => self.phase = Phase::Cancellation(Cancellation::Arm),
             Purpose::Fresh => {
                 self.report.check("fresh_request_after_cancel");

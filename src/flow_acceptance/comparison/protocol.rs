@@ -28,7 +28,6 @@ pub(crate) enum Checkpoint {
     GateReleased,
     WorktreeEdited,
     UnavailableFlow,
-    ManualPair,
     RestoredPair,
 }
 #[derive(Clone, Debug, Serialize)]
@@ -71,7 +70,7 @@ impl Request {
             Operation::EditWorktree => self.checkpoint == Checkpoint::WorktreeEdited,
             Operation::Capture => matches!(
                 self.checkpoint,
-                Checkpoint::UnavailableFlow | Checkpoint::ManualPair | Checkpoint::RestoredPair
+                Checkpoint::UnavailableFlow | Checkpoint::RestoredPair
             ),
         };
         ensure!(

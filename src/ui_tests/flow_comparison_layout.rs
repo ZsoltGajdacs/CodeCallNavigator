@@ -34,30 +34,18 @@ fn minimum_light_and_dark_layouts_keep_full_controls_and_local_panes() {
         let inset = rune::tooling::Chrome::DEFAULT.titlebar_inset();
         ui.set_titlebar_inset(inset);
         load(&mut ui);
-        for key in [
-            "comparison-catalog",
-            "comparison-search",
-            "comparison-search-submit",
-            "comparison-catalog-close",
-            "comparison-page-next",
-            "comparison-page-previous",
-        ] {
-            contained(&ui, key);
-        }
         choose(&mut ui, "load(");
         for key in [
             "comparison-close",
             "comparison-base",
             "comparison-head",
-            "comparison-load",
-            "comparison-reload",
-            "comparison-cancel",
-            "comparison-back",
+            "comparison-snapshot-base-find",
+            "comparison-snapshot-after-find",
+            "comparison-snapshot-base-prepare",
+            "comparison-snapshot-after-prepare",
+            "comparison-changes",
             "comparison-fit-before",
             "comparison-fit-after",
-            "comparison-catalog-open",
-            "comparison-choose-after",
-            "comparison-reset-counterpart",
             "comparison-before-canvas",
             "comparison-after-canvas",
             "comparison-source-before",

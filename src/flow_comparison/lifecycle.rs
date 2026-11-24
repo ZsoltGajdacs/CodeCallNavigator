@@ -72,7 +72,6 @@ impl Project {
 }
 impl Workspace {
     pub fn project_installed(&mut self, project: Option<&Path>) {
-        self.impact.project_installed(project);
         self.snapshots.project_installed(project);
         let Some(project) = project else {
             self.close();

@@ -10,7 +10,7 @@ mod explorer;
 mod freshness_diagnostics;
 mod graph_canvas;
 mod graph_controls;
-pub(crate) use graph_controls::depth_select;
+pub(crate) use graph_controls::{CameraAction, CameraControls, camera_controls, depth_select};
 pub(crate) mod pane_controls;
 mod project_picker;
 mod search_modal;

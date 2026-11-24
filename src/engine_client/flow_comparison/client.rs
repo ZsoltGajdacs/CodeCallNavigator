@@ -47,12 +47,14 @@ struct Binding<'a> {
     head_snapshot: Option<&'a str>,
     expected: Option<&'a str>,
 }
+#[cfg(test)]
 #[derive(Clone, Debug)]
 pub struct CatalogPage {
     pub text: String,
     pub offset: usize,
     pub limit: usize,
 }
+#[cfg(test)]
 impl Default for CatalogPage {
     fn default() -> Self {
         Self {
@@ -250,6 +252,7 @@ impl BoundComparison {
         }
         Ok(())
     }
+    #[cfg(test)]
     pub fn catalog(&self, request: CatalogPage, cancel: &AtomicBool) -> Result<Catalog> {
         let reply: Reply<Catalog> = self.request(
             FlowComparisonSelection::Catalog {

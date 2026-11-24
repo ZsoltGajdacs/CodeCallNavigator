@@ -136,12 +136,6 @@ impl Client {
             .capabilities(cancel, Instant::now())?
             .class_flow_comparison)
     }
-    pub(super) fn graph_comparison_supported(&self, cancel: &AtomicBool) -> Result<bool> {
-        Ok(self.capabilities(cancel, Instant::now())?.graph_comparison)
-    }
-    pub(super) fn impact_preview_supported(&self, cancel: &AtomicBool) -> Result<bool> {
-        Ok(self.capabilities(cancel, Instant::now())?.impact_preview)
-    }
     pub(super) fn local_snapshots_supported(&self, cancel: &AtomicBool) -> Result<bool> {
         Ok(self
             .capabilities(cancel, Instant::now())?

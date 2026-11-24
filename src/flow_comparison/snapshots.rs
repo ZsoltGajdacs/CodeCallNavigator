@@ -1,15 +1,17 @@
 //! Snapshot jobs share comparison lifetime, but can run before a flow pair exists.
-use super::{Panel, work};
+use super::work;
 use crate::{
     app::State,
     engine_client::{
         self, QueryContext,
-        flow_comparison::{
-            ComparisonRefs, GraphCursor, GraphPage, SnapshotPreparation, SnapshotStatus,
-        },
+        flow_comparison::{ComparisonRefs, SnapshotPreparation, SnapshotStatus},
     },
 };
-use codecallnavigator::{artifact::local_snapshots::SnapshotRecord, protocol::AnalysisFailureCode};
+use codecallnavigator::{
+    artifact::{local_snapshots::SnapshotRecord, verification::InputStatus},
+    protocol::AnalysisFailureCode,
+    query::Query,
+};
 use rune::{Latest, Waker};
 use std::{
     path::{Path, PathBuf},
@@ -35,7 +37,7 @@ pub enum Side {
 impl Side {
     pub fn label(self) -> &'static str {
         match self {
-            Self::Base => "Base",
+            Self::Base => "Before",
             Self::Head => "After",
         }
     }
@@ -63,14 +65,12 @@ pub struct Lookup {
 
 #[derive(Default)]
 pub struct Snapshots {
-    pub panel_open: bool,
     pub message: String,
+    pub side: Option<Side>,
+    pub worktree: Option<WorktreeSnapshot>,
+    pub variant_picker: Option<Side>,
     pub(crate) preparation_failure: Option<engine_client::AnalysisFailure>,
-    pub graph: Option<GraphPage>,
-    pub selected_change: Option<usize>,
     lookups: [Option<Lookup>; 2],
-    graph_refs: Option<ComparisonRefs>,
-    previous: Vec<usize>,
     project: Option<PathBuf>,
     cancel: Arc<AtomicBool>,
     updates: Option<mpsc::Receiver<String>>,
@@ -78,19 +78,27 @@ pub struct Snapshots {
 }
 
 enum Operation {
-    Lookup {
-        side: Side,
-        revision: String,
-    },
-    Prepare {
-        side: Side,
-        selection: SnapshotPreparation,
-    },
-    Graph {
-        refs: ComparisonRefs,
-        cursor: GraphCursor,
-        navigation: Navigation,
-    },
+    Lookup(String),
+    Prepare(SnapshotPreparation),
+    Worktree,
+}
+
+struct SnapshotRequest {
+    side: Side,
+    operation: Operation,
+}
+
+#[derive(Clone, Copy)]
+pub(crate) enum WorktreeSnapshot {
+    Missing,
+    Saved(Option<InputStatus>),
+}
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub(super) enum Poll {
+    Idle,
+    Updated,
+    Rebind,
 }
 
 enum Answer {
@@ -102,19 +110,7 @@ enum Answer {
     },
     PreparedWithoutLookup(String),
     PreparationFailed(engine_client::AnalysisFailure),
-    Graph {
-        refs: ComparisonRefs,
-        page: Box<GraphPage>,
-        navigation: Navigation,
-    },
-}
-
-#[derive(Clone, Copy)]
-pub enum Navigation {
-    First,
-    Reload,
-    Previous,
-    Next,
+    Worktree(anyhow::Result<WorktreeSnapshot>),
 }
 
 impl State {
@@ -123,76 +119,52 @@ impl State {
         let revision = side
             .reference(&self.flow_comparison.control_refs())
             .to_owned();
-        self.start_snapshot_operation(Operation::Lookup { side, revision });
+        if revision == "WORKTREE" {
+            self.flow_comparison.worktree_refresh.message.clear();
+            self.start_snapshot_operation(side, Operation::Worktree);
+        } else {
+            self.start_snapshot_operation(side, Operation::Lookup(revision));
+        }
     }
 
     pub fn prepare_comparison_snapshot(&mut self, side: Side) {
         self.flow_residency.activity();
+        let revision = side
+            .reference(&self.flow_comparison.control_refs())
+            .to_owned();
+        if revision == "WORKTREE" {
+            self.refresh_comparison_worktree();
+            return;
+        }
         let Some(analysis) = self.selected_analysis() else {
+            self.flow_comparison.snapshots.side = Some(side);
             self.flow_comparison
                 .snapshots
                 .set_status(SELECT_BUILDS.into());
             return;
         };
-        let revision = side
-            .reference(&self.flow_comparison.control_refs())
-            .to_owned();
-        self.start_snapshot_operation(Operation::Prepare {
+        self.start_snapshot_operation(
             side,
-            selection: SnapshotPreparation { revision, analysis },
-        });
+            Operation::Prepare(SnapshotPreparation { revision, analysis }),
+        );
     }
 
-    pub fn compare_snapshot_graphs(&mut self, navigation: Navigation) {
-        self.flow_residency.activity();
-        let snapshot = &self.flow_comparison.snapshots;
-        let (refs, cursor) = match navigation {
-            Navigation::First => (self.flow_comparison.control_refs(), GraphCursor::default()),
-            Navigation::Reload => {
-                let Some(refs) = snapshot.graph_refs.clone() else {
-                    return;
-                };
-                (refs, GraphCursor::default())
-            }
-            Navigation::Previous | Navigation::Next => {
-                let Some(refs) = snapshot.graph_refs.clone() else {
-                    return;
-                };
-                let Some(page) = &snapshot.graph else { return };
-                let offset = match navigation {
-                    Navigation::Previous => snapshot.previous.last().copied(),
-                    Navigation::Next => page.next_offset,
-                    Navigation::First | Navigation::Reload => unreachable!(),
-                };
-                let Some(offset) = offset else { return };
-                (
-                    refs,
-                    GraphCursor {
-                        offset,
-                        binding: Some(page.header.comparison_id.clone()),
-                    },
-                )
-            }
-        };
-        self.flow_comparison.controls.catalog_open = false;
-        self.flow_comparison.previews.close();
-        self.flow_comparison.controls.panel = Panel::Graph;
-        self.flow_comparison.impact.clear();
-        self.start_snapshot_operation(Operation::Graph {
-            refs,
-            cursor,
-            navigation,
-        });
-    }
-
-    fn start_snapshot_operation(&mut self, operation: Operation) {
+    fn start_snapshot_operation(&mut self, side: Side, operation: Operation) {
+        if self.flow_comparison.snapshots.pending()
+            || self.flow_comparison.worktree_refresh.pending()
+        {
+            return;
+        }
         match self.library_comparison_context() {
             Ok(context) => self.flow_comparison.snapshots.start(
                 context,
-                operation,
+                SnapshotRequest { side, operation },
                 self.flow_comparison.workers.clone(),
             ),
-            Err(error) => self.flow_comparison.snapshots.set_status(error),
+            Err(error) => {
+                self.flow_comparison.snapshots.side = Some(side);
+                self.flow_comparison.snapshots.set_status(error);
+            }
         }
     }
 }
@@ -207,24 +179,6 @@ impl Snapshots {
     pub fn choose(&mut self, side: Side, id: Option<String>) {
         if let Some(lookup) = &mut self.lookups[side.index()] {
             lookup.selected = id;
-        }
-    }
-
-    pub fn previous_available(&self) -> bool {
-        !self.previous.is_empty()
-    }
-
-    pub fn can_reload_graph(&self) -> bool {
-        self.graph_refs.is_some()
-    }
-
-    pub fn select_graph_change(&mut self, binding: &str, offset: usize, index: usize) {
-        if self.graph.as_ref().is_some_and(|page| {
-            page.header.comparison_id == binding
-                && page.offset == offset
-                && index < page.changes.len()
-        }) {
-            self.selected_change = Some(index);
         }
     }
 
@@ -248,13 +202,11 @@ impl Snapshots {
         self.job.cancel();
         self.updates = None;
         self.lookups = [None, None];
-        self.graph = None;
-        self.selected_change = None;
-        self.graph_refs = None;
-        self.previous.clear();
+        self.worktree = None;
+        self.side = None;
+        self.variant_picker = None;
         self.project = None;
         self.set_status(String::new());
-        self.panel_open = false;
     }
 
     pub(super) fn project_installed(&mut self, project: Option<&Path>) {
@@ -282,38 +234,31 @@ impl Snapshots {
         }
     }
 
-    fn start(&mut self, context: QueryContext, operation: Operation, workers: Arc<work::Workers>) {
-        if self.pending() {
-            return;
-        }
+    fn start(
+        &mut self,
+        context: QueryContext,
+        request: SnapshotRequest,
+        workers: Arc<work::Workers>,
+    ) {
         self.project_installed(Some(&context.descriptor.project));
         self.project = Some(context.descriptor.project.clone());
+        self.side = Some(request.side);
+        self.variant_picker = None;
         self.cancel = Arc::new(AtomicBool::new(false));
         self.set_status(
-            match &operation {
-                Operation::Lookup { .. } => "Looking up local snapshots…",
-                Operation::Prepare { .. } => "Preparing local snapshot…",
-                Operation::Graph { .. } => "Comparing saved graphs…",
+            match &request.operation {
+                Operation::Lookup(_) => "Looking up local snapshots…",
+                Operation::Prepare(_) => "Preparing local snapshot…",
+                Operation::Worktree => "Finding Worktree snapshot…",
             }
             .into(),
         );
-        if let Operation::Graph {
-            navigation: Navigation::First | Navigation::Reload,
-            refs,
-            ..
-        } = &operation
-        {
-            self.graph = None;
-            self.selected_change = None;
-            self.graph_refs = Some(refs.clone());
-            self.previous.clear();
-        }
         let (send, receive) = mpsc::channel();
         self.updates = Some(receive);
         let cancel = self.cancel.clone();
         let progress_workers = workers.clone();
         let task = workers.track(move || {
-            execute(context, operation, &cancel, &|message| {
+            execute(context, request, &cancel, &|message| {
                 if send.send(message).is_ok() {
                     progress_workers.wake();
                 }
@@ -322,7 +267,17 @@ impl Snapshots {
         self.job.request(task, |task| task.map(|run| run()));
     }
 
-    pub(super) fn poll(&mut self) -> bool {
+    pub(super) fn discard_pending(&mut self) {
+        self.cancel();
+        self.job.cancel();
+        self.updates = None;
+        self.side = None;
+        self.variant_picker = None;
+        self.set_status(String::new());
+        self.worktree = None;
+    }
+
+    pub(super) fn poll(&mut self) -> Poll {
         let progress = self
             .updates
             .as_ref()
@@ -334,11 +289,25 @@ impl Snapshots {
             self.message.clone_from(message);
         }
         let Some(output) = self.job.take() else {
-            return progress.is_some();
+            return if progress.is_some() {
+                Poll::Updated
+            } else {
+                Poll::Idle
+            };
         };
         self.updates = None;
-        output.map(|result| self.accept(result));
-        true
+        if self.cancel.load(Ordering::Acquire) {
+            self.set_status("Snapshot request cancelled".into());
+            return Poll::Updated;
+        }
+        let reopen = output
+            .map(|result| {
+                let reopen = matches!(&result, Ok(Answer::Worktree(_) | Answer::Lookup { .. }));
+                self.accept(result);
+                reopen
+            })
+            .value;
+        if reopen { Poll::Rebind } else { Poll::Updated }
     }
 
     fn accept(&mut self, answer: anyhow::Result<Answer>) {
@@ -361,6 +330,9 @@ impl Snapshots {
                     })
                     .or(old)
                     .filter(|id| status.snapshots.iter().any(|record| &record.id == id));
+                if prepared.is_none() && !status.snapshots.is_empty() {
+                    self.variant_picker = Some(side);
+                }
                 self.lookups[side.index()] = Some(Lookup {
                     reference,
                     status,
@@ -372,37 +344,12 @@ impl Snapshots {
                 self.message = PREPARATION_FAILED.into();
                 self.preparation_failure = Some(failure);
             }
-            Ok(Answer::Graph {
-                refs,
-                page,
-                navigation,
-            }) => {
-                match navigation {
-                    Navigation::First | Navigation::Reload => self.previous.clear(),
-                    Navigation::Previous => {
-                        self.previous.pop();
-                    }
-                    Navigation::Next => {
-                        if let Some(old) = &self.graph {
-                            self.previous.push(old.offset);
-                        }
-                    }
-                }
-                self.graph = Some(*page);
-                self.selected_change = None;
-                self.graph_refs = Some(refs);
-            }
-            Err(error) => {
-                if error
-                    .downcast_ref::<engine_client::QueryFailure>()
-                    .is_some_and(|error| error.0.code == "comparison_mismatch")
-                {
-                    self.graph = None;
-                    self.selected_change = None;
-                    self.previous.clear();
-                }
+            Ok(Answer::Worktree(Ok(status))) => self.worktree = Some(status),
+            Ok(Answer::Worktree(Err(error))) => {
+                self.worktree = None;
                 self.message = format!("{error:#}");
             }
+            Err(error) => self.message = format!("{error:#}"),
         }
     }
 
@@ -414,48 +361,90 @@ impl Snapshots {
 
 fn execute(
     context: QueryContext,
-    operation: Operation,
+    request: SnapshotRequest,
     cancel: &AtomicBool,
     progress: &dyn Fn(String),
 ) -> anyhow::Result<Answer> {
+    let SnapshotRequest { side, operation } = request;
     match operation {
-        Operation::Lookup { side, revision } => Ok(Answer::Lookup {
+        Operation::Lookup(revision) => Ok(Answer::Lookup {
             status: context.snapshot_status(revision.clone(), cancel)?,
             side,
             reference: revision,
             prepared: None,
         }),
-        Operation::Prepare { side, selection } => {
-            let revision = selection.revision.clone();
-            let record = match context.prepare_local_snapshot(selection, cancel, progress) {
-                Ok(record) => record,
-                Err(error) => return preparation_error(error),
-            };
-            let message = preparation_message(&record);
-            match context.snapshot_status(revision.clone(), cancel) {
-                Ok(status) if status.snapshots.contains(&record) => Ok(Answer::Lookup {
-                    side,
-                    reference: revision,
-                    status,
-                    prepared: Some(record),
-                }),
-                Ok(_) => Ok(Answer::PreparedWithoutLookup(format!(
-                    "{message} Refresh the snapshot list to select a current variant."
-                ))),
-                Err(error) => Ok(Answer::PreparedWithoutLookup(format!(
-                    "{message} Could not refresh the snapshot list: {error:#}"
-                ))),
-            }
+        Operation::Prepare(selection) => {
+            let prepared = prepare(&context, selection, cancel, progress);
+            finish_preparation(side, prepared)
         }
-        Operation::Graph {
-            refs,
-            cursor,
-            navigation,
-        } => Ok(Answer::Graph {
-            page: Box::new(context.comparison_graph_page(&refs, cursor, cancel)?),
-            refs,
-            navigation,
+        Operation::Worktree => Ok(Answer::Worktree(find_worktree(&context, cancel))),
+    }
+}
+
+fn prepare(
+    context: &QueryContext,
+    selection: SnapshotPreparation,
+    cancel: &AtomicBool,
+    progress: &dyn Fn(String),
+) -> anyhow::Result<PreparedCommit> {
+    let revision = selection.revision.clone();
+    let record = context.prepare_local_snapshot(selection, cancel, progress)?;
+    let status = context.snapshot_status(revision.clone(), cancel);
+    Ok(PreparedCommit {
+        revision,
+        record,
+        status,
+    })
+}
+
+struct PreparedCommit {
+    revision: String,
+    record: SnapshotRecord,
+    status: anyhow::Result<SnapshotStatus>,
+}
+
+fn finish_preparation(
+    side: Side,
+    prepared: anyhow::Result<PreparedCommit>,
+) -> anyhow::Result<Answer> {
+    let PreparedCommit {
+        revision,
+        record,
+        status,
+    } = match prepared {
+        Ok(prepared) => prepared,
+        Err(error) => return preparation_error(error),
+    };
+    let message = preparation_message(&record);
+    match status {
+        Ok(status) if status.snapshots.contains(&record) => Ok(Answer::Lookup {
+            side,
+            reference: revision,
+            status,
+            prepared: Some(record),
         }),
+        Ok(_) => Ok(Answer::PreparedWithoutLookup(format!(
+            "{message} Use Find snapshot to select a current variant."
+        ))),
+        Err(error) => Ok(Answer::PreparedWithoutLookup(format!(
+            "{message} Could not refresh the snapshot list: {error:#}"
+        ))),
+    }
+}
+
+fn find_worktree(context: &QueryContext, cancel: &AtomicBool) -> anyhow::Result<WorktreeSnapshot> {
+    match context.response(Query::Status, cancel) {
+        Ok(response) => Ok(WorktreeSnapshot::Saved(
+            crate::engine_client::flow_comparison::worktree_freshness(response.freshness),
+        )),
+        Err(error)
+            if error
+                .downcast_ref::<engine_client::QueryFailure>()
+                .is_some_and(|failure| failure.0.code == "graph_missing") =>
+        {
+            Ok(WorktreeSnapshot::Missing)
+        }
+        Err(error) => Err(error),
     }
 }
 

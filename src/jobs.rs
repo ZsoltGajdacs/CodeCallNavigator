@@ -157,7 +157,7 @@ pub fn poll(state: &mut State, time: f64, tx: &mut Tx) -> bool {
         | crate::view::poll_stage_clock(state, tx)
         | crate::architecture_workspace::poll(state, time, tx)
         | crate::flow_workspace::poll(state, tx)
-        | state.flow_comparison.poll()
+        | state.poll_comparison()
         | state.flow_comparison.restore_scroll(tx);
     let preview_focus = tx.focused().filter(|_| tx.focus_visible());
     changed |= state.flow_comparison.sync_change_focus(preview_focus);
@@ -238,9 +238,6 @@ fn restore_workspace(state: &mut State, mut boot: Boot) {
     state.runtime = Some(boot.runtime);
     if state.closing {
         return;
-    }
-    if state.flow_comparison.controls.visible {
-        state.check_impact_preview_support();
     }
     if let Some(session) = &mut boot.session {
         restore_project_history(state, session, boot.active_folder.as_deref());

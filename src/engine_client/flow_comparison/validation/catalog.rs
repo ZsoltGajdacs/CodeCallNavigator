@@ -65,7 +65,7 @@ fn records(page: &Catalog) -> Result<()> {
 }
 fn side(side: &CatalogSide, endpoint: &EndpointStatus, symbol: &str) -> Result<()> {
     let available = matches!(endpoint, EndpointStatus::Available);
-    let unknown = matches!(side, CatalogSide::Unknown(_));
+    let unknown = matches!(side, CatalogSide::Unknown);
     ensure!(
         available != unknown,
         "CLI catalog side contradicts endpoint availability"
@@ -91,7 +91,7 @@ fn membership(record: &Record) -> Result<()> {
         Membership::Both => matches!(sides, (Present(_), Present(_))),
         Membership::Added => matches!(sides, (Missing, Present(_))),
         Membership::Removed => matches!(sides, (Present(_), Missing)),
-        Membership::Unknown => matches!(sides, (Unknown(_), _) | (_, Unknown(_))),
+        Membership::Unknown => matches!(sides, (Unknown, _) | (_, Unknown)),
     };
     ensure!(consistent, "CLI catalog membership contradicts its sides");
     Ok(())

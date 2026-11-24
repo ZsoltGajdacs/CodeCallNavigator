@@ -42,11 +42,12 @@ def required_checks(worktree):
               "owned_window_setup_acknowledged", "provenance_drawn", "moved_tag_left_selected_commit_pinned",
               "selected_later_commit_rebound", "cancel_waited_for_owned_query_cleanup",
               "fresh_request_after_cancel", "endpoint_target_followed", "back_pair_restored"}
-    checks |= {f"{role}_pair_exact" for role in ("Changed", "Unchanged", "Added", "Removed", "Legacy", "Manual")}
+    checks |= {f"{role}_pair_exact" for role in ("Changed", "Added", "Removed", "Legacy")}
     checks |= {f"{side}_{check}" for side in ("Before", "After") for check in
                ("highlight_drawn", "camera_independent", "scroll_independent", "hidden_scroll_restored")}
     if worktree:
-        checks |= {"worktree_confirmation_cancel_preserved_pair",
+        checks |= {"worktree_find_preserved_source_only_comparison",
+                   "worktree_confirmation_cancel_preserved_source_only_comparison",
                    "worktree_refresh_rendered_uncommitted_diff", "worktree_graph_returned"}
     else:
         checks.add("no_graph_returned")
@@ -61,7 +62,7 @@ def validate_report(report, app, worktree):
     checks = required_checks(worktree)
     require(all(report["checks"].get(check) is True for check in checks), "Native comparison omitted a required drawn check")
     require(report["frames"]["drawn"] > 0 and report["ready_drawn_ms"], "Native comparison has no actual Drawn observations")
-    require(report["captures"] == ["unavailable-flow", "manual-pair", "restored-pair"], "Native comparison capture checkpoints are incomplete")
+    require(report["captures"] == ["unavailable-flow", "restored-pair"], "Native comparison capture checkpoints are incomplete")
 
 
 @dataclass(frozen=True)

@@ -1,6 +1,6 @@
-//! Tracks the manual analysis and replacement comparison started by Refresh worktree.
+//! Tracks a Worktree snapshot preparation through shared analysis and comparison binding.
 use super::{
-    Panel, Project, Workspace,
+    Project, Workspace,
     requests::{CatalogOperation, CatalogWork},
 };
 use crate::{app::State, engine_client::flow_comparison::ComparisonRefs, jobs::AnalysisPurpose};
@@ -67,34 +67,22 @@ impl Refresh {
 }
 
 impl Workspace {
-    pub(crate) fn worktree_freshness_message(&self) -> Option<&'static str> {
-        use crate::engine_client::flow_comparison::EndpointKind;
-        use codecallnavigator::artifact::verification::InputStatus;
-        let (endpoint, freshness) = match self.controls.panel {
-            Panel::Flows => {
-                let binding = self.binding.as_ref()?;
-                (
-                    &binding.header().head,
-                    self.class_pair()
-                        .and_then(|pair| pair.freshness)
-                        .or(binding.freshness),
-                )
-            }
-            Panel::Graph => {
-                let page = self.snapshots.graph.as_ref()?;
-                (&page.header.head, page.freshness)
-            }
-            Panel::Impact => return None,
-        };
-        if endpoint.kind != EndpointKind::Worktree {
+    pub(crate) fn worktree_snapshot(&self) -> Option<super::WorktreeSnapshot> {
+        use crate::engine_client::flow_comparison::{EndpointKind, EndpointStatus};
+        let binding = self.binding.as_ref()?;
+        if binding.header().head.kind != EndpointKind::Worktree {
             return None;
         }
-        match freshness {
-            Some(InputStatus::Match) => None,
-            Some(InputStatus::Stale) => {
-                Some("Saved worktree graph is stale. Refresh worktree to include current changes.")
+        match &self.catalog.as_ref()?.endpoints.after {
+            EndpointStatus::Available => Some(super::WorktreeSnapshot::Saved(
+                self.class_pair()
+                    .and_then(|pair| pair.freshness)
+                    .or(binding.freshness),
+            )),
+            EndpointStatus::Unavailable(failure) if failure.reason == "graph_missing" => {
+                Some(super::WorktreeSnapshot::Missing)
             }
-            _ => Some("Saved worktree graph freshness could not be verified."),
+            EndpointStatus::Unavailable(_) => None,
         }
     }
 
@@ -151,7 +139,6 @@ impl State {
         if !workspace.worktree_refresh.matches(ticket) {
             return false;
         }
-        workspace.controls.catalog_open = false;
         workspace.previews.close();
         workspace
             .worktree_refresh
@@ -176,7 +163,7 @@ impl State {
             self.cancel_analysis();
         }
         self.flow_comparison.invalidate_worktree_refresh();
-        self.flow_comparison.worktree_refresh.message = "Worktree refresh cancelled".into();
+        self.flow_comparison.worktree_refresh.message = "Snapshot preparation cancelled".into();
     }
 
     pub(crate) fn comparison_worktree_published(
@@ -195,10 +182,8 @@ impl State {
             return;
         };
         if Some(intent.project.as_path()) != project || intent.refs != workspace.control_refs() {
-            self.flow_comparison.finish_worktree_refresh(
-                ticket,
-                "Worktree refreshed. Load the current selection to compare.".into(),
-            );
+            self.flow_comparison
+                .finish_worktree_refresh(ticket, "Worktree snapshot prepared.".into());
             return;
         }
         let refs = intent.refs.clone();
@@ -216,7 +201,7 @@ impl State {
             .as_mut()
             .expect("matched refresh")
             .stage = Stage::Opening;
-        workspace.worktree_refresh.message = "Loading the refreshed worktree comparison…".into();
+        workspace.worktree_refresh.message = "Opening the prepared Worktree snapshot…".into();
         let cancel = workspace.catalog_clock.restart();
         let serial = workspace.catalog_clock.serial;
         let request = workspace.workers.track(CatalogWork {
@@ -245,7 +230,6 @@ impl Workspace {
         bound: super::BoundComparison,
         page: super::Catalog,
     ) {
-        self.impact.clear();
         self.cancel_requests();
         self.project = Some(project);
         self.current = None;
@@ -253,7 +237,6 @@ impl Workspace {
         self.pending_scroll = None;
         self.mounted_source = None;
         self.detail_message.clear();
-        self.controls.panel = Panel::Flows;
         self.controls.reset_binding();
         self.binding = Some(bound);
         self.catalog = Some(std::sync::Arc::new(page));

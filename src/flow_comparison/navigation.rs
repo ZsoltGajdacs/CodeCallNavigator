@@ -3,16 +3,27 @@ use super::{
     Selection, Side, SideId, Workspace,
     requests::{DetailSelection, DetailWork},
 };
+use crate::camera::Camera;
+
+#[derive(Clone, Copy)]
+enum Navigation {
+    Change,
+    Call,
+}
+
 impl Workspace {
     pub fn select(&mut self, selection: Selection) -> Result<(), String> {
-        self.select_detail(DetailSelection::Function(selection))
+        self.select_detail(DetailSelection::Function(selection), Navigation::Change)
     }
 
     pub(crate) fn select_class(&mut self, id: String) -> Result<(), String> {
-        self.select_detail(DetailSelection::Class {
-            id,
-            depth: self.controls.class_depth,
-        })
+        self.select_detail(
+            DetailSelection::Class {
+                id,
+                depth: self.controls.class_depth,
+            },
+            Navigation::Change,
+        )
     }
 
     pub(crate) fn class_depth(&self) -> u32 {
@@ -24,7 +35,7 @@ impl Workspace {
     }
 
     pub(crate) fn set_class_depth(&mut self, depth: u32) {
-        self.controls.class_depth_open = false;
+        self.controls.class_depth_open = None;
         let Some(id) = self.class_selection().map(str::to_owned) else {
             return;
         };
@@ -32,13 +43,17 @@ impl Workspace {
         {
             return;
         }
-        match self.select_detail(DetailSelection::Class { id, depth }) {
+        match self.select_detail(DetailSelection::Class { id, depth }, Navigation::Change) {
             Ok(()) => self.controls.class_depth = depth,
             Err(error) => self.changes.message = error,
         }
     }
 
-    fn select_detail(&mut self, selection: DetailSelection) -> Result<(), String> {
+    fn select_detail(
+        &mut self,
+        selection: DetailSelection,
+        navigation: Navigation,
+    ) -> Result<(), String> {
         self.require_idle_worktree_refresh()?;
         let bound = self
             .binding
@@ -49,14 +64,18 @@ impl Workspace {
             .as_ref()
             .ok_or("No comparison project is open")?;
         let dot = project.runtime.dot.clone();
-        if let Some(previous) = self.current.take() {
-            self.history.push(previous);
-            if self.history.len() > 100 {
-                self.history.remove(0);
+        let previous = self.current.take();
+        match navigation {
+            Navigation::Change => self.history.clear(),
+            Navigation::Call => {
+                self.history.extend(previous);
+                if self.history.len() > 100 {
+                    self.history.remove(0);
+                }
             }
         }
         self.previews.close();
-        self.controls.class_depth_open = false;
+        self.controls.class_depth_open = None;
         self.detail_message = match &selection {
             DetailSelection::Function(_) => "Preparing before and after flowcharts…",
             DetailSelection::Class { .. } => "Preparing before and after class flows…",
@@ -86,7 +105,7 @@ impl Workspace {
         self.detail_clock.cancel();
         self.detail_job.cancel();
         self.class_pair = None;
-        self.controls.class_depth_open = false;
+        self.controls.class_depth_open = None;
         self.detail_selection = Some(DetailSelection::Function(previous.selection.clone()));
         self.current = Some(previous);
         self.presentation_revision += 1;
@@ -96,6 +115,7 @@ impl Workspace {
         self.prefetch_selected_source();
         true
     }
+    #[cfg(test)]
     pub fn reset_counterpart(&mut self) -> Result<(), String> {
         let symbol = self
             .current
@@ -122,18 +142,39 @@ impl Workspace {
         if target.body_unavailable {
             return Err("No body was recorded for this target".into());
         }
-        self.select(Selection {
-            symbol: target.symbol.clone(),
-            head_symbol: None,
-        })
+        self.select_detail(
+            DetailSelection::Function(Selection {
+                symbol: target.symbol.clone(),
+                head_symbol: None,
+            }),
+            Navigation::Call,
+        )
     }
-    pub fn can_fit(&self, side: SideId) -> bool {
+    pub(crate) fn camera(&self, side: SideId) -> Option<&Camera> {
         if let Some(pair) = self.class_pair() {
-            return pair.has_root(side);
+            return pair.has_root(side).then(|| &pair.cameras[side.index()]);
         }
-        self.current
-            .as_ref()
-            .is_some_and(|pair| matches!(pair.side(side), Side::Ready(_)))
+        let Side::Ready(ready) = self.current.as_ref()?.side(side) else {
+            return None;
+        };
+        ready.session.ready.as_ref().map(|_| &ready.session.camera)
+    }
+
+    pub(crate) fn zoom(&mut self, side: SideId, factor: f32) {
+        if self.camera(side).is_none() {
+            return;
+        }
+        let center = self.viewports[side.index()].map(|length| length * 0.5);
+        if let Some(camera) = self.class_camera_mut(side) {
+            camera.zoom_at(center, factor);
+            return;
+        }
+        let Some(pair) = &mut self.current else {
+            return;
+        };
+        if let Side::Ready(ready) = pair.side_mut(side) {
+            ready.session.camera.zoom_at(center, factor);
+        }
     }
 
     pub fn fit(&mut self, side: SideId) {

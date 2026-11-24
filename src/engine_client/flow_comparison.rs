@@ -3,7 +3,6 @@ mod changes;
 mod class_graph;
 mod class_source;
 mod client;
-mod impact;
 mod model;
 mod snapshots;
 mod source_comparison;
@@ -12,10 +11,7 @@ pub use changes::{
     Change, ChangeKind, ChangeList, ChangeStatus, Hunk, LineKind, SourceDiff, SourceStatus,
 };
 pub(crate) use class_graph::ClassDetail;
-pub use client::{BoundComparison, CatalogPage, Error};
-pub use impact::{ImpactPreview, ImpactRefs, ImpactRow, installed_impact_preview};
+pub use client::{BoundComparison, Error};
 pub use model::*;
-pub use snapshots::{
-    ComparisonRefs, GraphChange, GraphCursor, GraphPage, SnapshotPreparation, SnapshotStatus,
-};
+pub use snapshots::{ComparisonRefs, SnapshotPreparation, SnapshotStatus};
 pub use source_comparison::BoundSourceComparison;

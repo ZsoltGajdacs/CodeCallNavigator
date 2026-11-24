@@ -1,183 +1,328 @@
-//! Render local snapshot controls and one page of the engine's graph differences.
+//! One endpoint's snapshot status, actions, and retained commit variants.
 mod failure;
 
-use super::provenance;
 use crate::{
     app::State,
-    engine_client::flow_comparison::{GraphChange, GraphPage, SnapshotStatus},
-    flow_comparison::{GraphNavigation, SELECT_BUILDS, SnapshotSide},
+    engine_client::flow_comparison::{EndpointStatus, SnapshotStatus},
+    flow_comparison::{SnapshotSide, WorktreeSnapshot},
 };
 use codecallnavigator::artifact::{local_snapshots::SnapshotRecord, selection::Selection};
-use rune::{El, GrowthSpec, ScrollSpec, col, row, text};
+use rune::{El, ScrollSpec, col, el, row, text};
 use rune_kit::{Button, ButtonVariant, Kit};
 use serde::Deserialize;
 
-pub(super) fn controls(state: &State, k: &Kit) -> El {
-    let snapshots = &state.flow_comparison.snapshots;
-    let mut body = col()
-        .key("comparison-snapshots-controls")
+pub(super) fn view(state: &State, side: SnapshotSide, k: &Kit) -> El {
+    let workspace = &state.flow_comparison;
+    let snapshots = &workspace.snapshots;
+    let refs = workspace.control_refs();
+    let revision = side.reference(&refs);
+    let worktree = revision == "WORKTREE";
+    let scope = match side {
+        SnapshotSide::Base => "comparison-snapshot-base",
+        SnapshotSide::Head => "comparison-snapshot-after",
+    };
+    let status = status(state, side, revision);
+    let buttons = SnapshotButtons {
+        state,
+        side,
+        revision,
+        scope,
+    };
+    let actions = buttons.actions(status.warning, k);
+    let status = status.element(
+        if worktree {
+            "comparison-worktree-freshness"
+        } else {
+            scope
+        },
+        k,
+    );
+    let mut view = col()
+        .gap(6.0)
         .w_full()
-        .gap(5.0)
-        .px(10.0)
-        .pb(5.0)
-        .child(snapshot_actions(state, k));
-    let refresh = &state.flow_comparison.worktree_refresh;
-    let refresh_message = if refresh.showing_progress() {
+        .min_w(0.0)
+        .child(buttons.bar(status, actions, k));
+    if let Some(error) = snapshots
+        .preparation_failure
+        .as_ref()
+        .filter(|_| snapshots.side == Some(side))
+    {
+        view = view.child(failure::details(error, k));
+    }
+    view
+}
+
+struct SnapshotButtons<'a> {
+    state: &'a State,
+    side: SnapshotSide,
+    revision: &'a str,
+    scope: &'static str,
+}
+
+impl SnapshotButtons<'_> {
+    fn actions(&self, warning: bool, k: &Kit) -> El {
+        let Self {
+            state,
+            side,
+            revision,
+            scope,
+        } = *self;
+        let workspace = &state.flow_comparison;
+        let disabled = state.runtime.is_none()
+            || workspace.snapshots.pending()
+            || workspace.worktree_refresh.pending()
+            || revision.is_empty();
+        let can_prepare = revision != "WORKTREE" || state.can_refresh_comparison_worktree();
+        row()
+            .gap(6.0)
+            .center_y()
+            .child(
+                Button::new("Find snapshot")
+                    .disabled(disabled)
+                    .on_press(move |state: &mut State| state.lookup_comparison_snapshot(side))
+                    .build(k)
+                    .key(format!("{scope}-find")),
+            )
+            .child(
+                Button::new("Prepare snapshot")
+                    .variant(if warning {
+                        ButtonVariant::Contrast
+                    } else {
+                        ButtonVariant::Outline
+                    })
+                    .disabled(disabled || !can_prepare)
+                    .on_press(move |state: &mut State| state.prepare_comparison_snapshot(side))
+                    .build(k)
+                    .key(format!("{scope}-prepare")),
+            )
+    }
+
+    fn bar(&self, status: El, actions: El, k: &Kit) -> El {
+        let workspace = &self.state.flow_comparison;
+        let sidebar_width = if workspace.changes.sidebar.collapsed {
+            38.0
+        } else {
+            280.0
+        };
+        let compact = workspace.previews.interaction.window[0] - sidebar_width < 800.0;
+        let mut line = row().w_full().gap(6.0).center_y().child(status);
+        let Some(cancel_side) = cancel_side(workspace) else {
+            return if compact {
+                col().gap(6.0).child(line).child(actions)
+            } else {
+                line.child(actions)
+            };
+        };
+        if cancel_side == self.side {
+            line = line.child(
+                Button::new("Cancel")
+                    .on_press(State::cancel_comparison_action)
+                    .build(k)
+                    .key("comparison-cancel"),
+            );
+        }
+        col().gap(6.0).child(line.min_h(28.0)).child(actions)
+    }
+}
+
+fn cancel_side(workspace: &crate::flow_comparison::Workspace) -> Option<SnapshotSide> {
+    if workspace.snapshots.pending() {
+        return workspace.snapshots.side;
+    }
+    let loading = matches!(workspace.phase, crate::flow_comparison::Phase::Loading);
+    (workspace.worktree_refresh.pending() || loading).then_some(SnapshotSide::Head)
+}
+
+struct Status {
+    label: String,
+    detail: String,
+    warning: bool,
+}
+
+impl Status {
+    fn new(label: impl Into<String>, detail: impl Into<String>, warning: bool) -> Self {
+        Self {
+            label: label.into(),
+            detail: detail.into(),
+            warning,
+        }
+    }
+
+    fn message(label: &str, warning: bool) -> Self {
+        Self::new(label, label, warning)
+    }
+
+    fn element(self, key: &str, k: &Kit) -> El {
+        text(self.label)
+            .font(k.ty.small)
+            .color(if self.warning {
+                k.c.warning.fg
+            } else {
+                k.c.text_muted
+            })
+            .grow(1.0)
+            .min_w(0.0)
+            .truncate()
+            .help(self.detail)
+            .key(key)
+    }
+}
+
+fn status(state: &State, side: SnapshotSide, revision: &str) -> Status {
+    let workspace = &state.flow_comparison;
+    let snapshots = &workspace.snapshots;
+    if let Some(progress) = action_message(state, side, revision) {
+        return Status::message(progress, false);
+    }
+    if revision == "WORKTREE" {
+        return workspace
+            .worktree_snapshot()
+            .or(snapshots.worktree)
+            .map_or_else(|| bound_status(workspace, side), worktree_status);
+    }
+    let empty = snapshots
+        .lookup(side, revision)
+        .is_some_and(|lookup| lookup.status.snapshots.is_empty());
+    if empty {
+        Status::new("No local snapshots", revision, true)
+    } else {
+        bound_status(workspace, side)
+    }
+}
+
+fn action_message<'a>(state: &'a State, side: SnapshotSide, revision: &str) -> Option<&'a str> {
+    let workspace = &state.flow_comparison;
+    let refresh = &workspace.worktree_refresh;
+    let message = if refresh.showing_progress() {
         &state.status
     } else {
         &refresh.message
     };
-    if !refresh_message.is_empty() {
-        body = body.child(
-            text(refresh_message)
-                .font(k.ty.small)
-                .color(k.c.text_muted)
-                .truncate()
-                .help(refresh_message)
-                .key("comparison-worktree-status"),
-        );
+    if revision == "WORKTREE" && !message.is_empty() {
+        return Some(message);
     }
-    if let Some(message) = state.flow_comparison.worktree_freshness_message() {
-        body = body.child(
-            text(message)
-                .font(k.ty.small)
-                .color(k.c.text_muted)
-                .key("comparison-worktree-freshness"),
-        );
-    }
-    if !snapshots.message.is_empty() {
-        body = body.child(
-            text(&snapshots.message)
-                .font(k.ty.small)
-                .color(k.c.text_muted)
-                .truncate()
-                .help(&snapshots.message)
-                .key("comparison-snapshot-status"),
-        );
-    }
-    if let Some(failure) = &snapshots.preparation_failure {
-        body = body.child(failure::details(failure, k));
-    }
-    if !snapshots.panel_open {
-        return body;
-    }
-    let refs = state.flow_comparison.control_refs();
-    if !has_selected_builds(state) {
-        body = body.child(
-            text(SELECT_BUILDS)
-                .font(k.ty.small)
-                .color(k.c.text_muted)
-                .key("comparison-snapshot-select-builds"),
-        );
-    }
-    body.child(
-        row()
-            .w_full()
-            .gap(10.0)
-            .child(side(state, SnapshotSide::Base, &refs.base, k))
-            .child(side(state, SnapshotSide::Head, &refs.head, k)),
-    )
+    let snapshots = &workspace.snapshots;
+    (snapshots.side == Some(side) && !snapshots.message.is_empty())
+        .then_some(snapshots.message.as_str())
 }
 
-fn snapshot_actions(state: &State, k: &Kit) -> El {
-    let snapshots = &state.flow_comparison.snapshots;
-    let actions = row()
+fn worktree_status(snapshot: WorktreeSnapshot) -> Status {
+    use codecallnavigator::artifact::verification::InputStatus;
+    let (label, warning) = match snapshot {
+        WorktreeSnapshot::Missing => ("No snapshot for Worktree", true),
+        WorktreeSnapshot::Saved(Some(InputStatus::Match)) => ("Snapshot ready", false),
+        WorktreeSnapshot::Saved(Some(InputStatus::Stale)) => ("Worktree snapshot stale", true),
+        WorktreeSnapshot::Saved(_) => ("Worktree snapshot freshness unknown", true),
+    };
+    Status::message(label, warning)
+}
+
+fn bound_status(workspace: &crate::flow_comparison::Workspace, side: SnapshotSide) -> Status {
+    let Some(catalog) = &workspace.catalog else {
+        return unbound_status(workspace, side);
+    };
+    let (endpoint, status) = match side {
+        SnapshotSide::Base => (&catalog.header.base, &catalog.endpoints.before),
+        SnapshotSide::Head => (&catalog.header.head, &catalog.endpoints.after),
+    };
+    match status {
+        EndpointStatus::Available => Status::new(
+            "Snapshot ready",
+            format!("Artifact {}\n{}", endpoint.digest, endpoint.path),
+            false,
+        ),
+        EndpointStatus::Unavailable(error) => {
+            Status::new("Snapshot unavailable", &error.message, true)
+        }
+    }
+}
+
+fn unbound_status(workspace: &crate::flow_comparison::Workspace, side: SnapshotSide) -> Status {
+    use crate::flow_comparison::Phase;
+    if side == SnapshotSide::Base && !workspace.controls.message.is_empty() {
+        return Status::message(&workspace.controls.message, true);
+    }
+    match &workspace.phase {
+        Phase::Loading => Status::message("Checking snapshots…", false),
+        Phase::ReloadRequired(message) => Status::new("Use Find snapshot to update", message, true),
+        Phase::Failed(error) => Status::new("Snapshot unavailable", error, true),
+        _ => Status::message("", false),
+    }
+}
+
+pub(super) fn layers(state: &State, k: &Kit) -> Vec<El> {
+    let workspace = &state.flow_comparison;
+    let refs = workspace.control_refs();
+    let Some(side) = workspace.snapshots.variant_picker else {
+        return Vec::new();
+    };
+    let Some(lookup) = workspace.snapshots.lookup(side, side.reference(&refs)) else {
+        return Vec::new();
+    };
+    let close = |s: &mut State| s.flow_comparison.snapshots.variant_picker = None;
+    let title = match side {
+        SnapshotSide::Base => "Before snapshots",
+        SnapshotSide::Head => "After snapshots",
+    };
+    let panel = col()
+        .key("comparison-snapshot-variants")
+        .label(title)
+        .role("dialog")
+        .w(620.0_f32.min((workspace.previews.interaction.window[0] - 24.0).max(320.0)))
+        .padding(12.0)
         .gap(8.0)
+        .radius(8.0)
+        .fill(k.c.layer_01)
+        .border(1.0, k.c.std_border)
         .child(
-            Button::new(if snapshots.panel_open {
-                "Hide local snapshots"
-            } else {
-                "Local snapshots"
-            })
-            .variant(ButtonVariant::Outline)
-            .on_press(|state: &mut State| {
-                let controls = &mut state.flow_comparison.controls;
-                controls.catalog_open = false;
-                let snapshots = &mut state.flow_comparison.snapshots;
-                snapshots.panel_open = !snapshots.panel_open;
-            })
-            .build(k)
-            .key("comparison-snapshots"),
-        )
-        .child(
-            Button::new("Compare graph differences")
-                .variant(ButtonVariant::Outline)
-                .disabled(
-                    state.runtime.is_none()
-                        || snapshots.pending()
-                        || state.flow_comparison.revisions.base().is_none()
-                        || state.flow_comparison.worktree_refresh.pending(),
+            row()
+                .center_y()
+                .gap(8.0)
+                .child(
+                    text(title)
+                        .font(k.ty.ui_medium)
+                        .color(k.c.text_base)
+                        .grow(1.0),
                 )
-                .on_press(|state: &mut State| state.compare_snapshot_graphs(GraphNavigation::First))
-                .build(k)
-                .key("comparison-graph-differences"),
+                .child(
+                    Button::new("Done")
+                        .on_press(close)
+                        .build(k)
+                        .key("comparison-snapshot-variants-done"),
+                ),
         )
-        .child(super::impact::button(state, k));
-    if !state.flow_comparison.revisions.worktree() {
-        return actions;
-    }
-    actions.child(
-        Button::new("Refresh worktree")
-            .disabled(!state.can_refresh_comparison_worktree())
-            .variant(ButtonVariant::Outline)
-            .on_press(State::refresh_comparison_worktree)
-            .build(k)
-            .key("comparison-refresh-worktree"),
-    )
-}
-
-fn has_selected_builds(state: &State) -> bool {
-    state.project_open.folder.is_some() && state.selected_builds().next().is_some()
-}
-
-fn side(state: &State, side: SnapshotSide, revision: &str, k: &Kit) -> El {
-    let snapshots = &state.flow_comparison.snapshots;
-    let disabled = state.runtime.is_none()
-        || snapshots.pending()
-        || state.flow_comparison.worktree_refresh.pending()
-        || revision.trim().is_empty()
-        || revision == "WORKTREE";
-    let scope = format!("comparison-snapshot-{}", side.label().to_lowercase());
-    let mut panel = col().key(&scope).grow(1.0).min_w(0.0).gap(4.0).child(
-        row()
-            .gap(5.0)
-            .center_y()
-            .child(
-                text(side.label())
-                    .font(k.ty.small_medium)
-                    .color(k.c.text_base),
-            )
-            .child(
-                Button::new("Find snapshots")
-                    .disabled(disabled)
-                    .on_press(move |state: &mut State| state.lookup_comparison_snapshot(side))
-                    .build(k)
-                    .key(format!("{scope}-lookup")),
-            )
-            .child(
-                Button::new("Prepare snapshot")
-                    .disabled(disabled || !has_selected_builds(state))
-                    .on_press(move |state: &mut State| state.prepare_comparison_snapshot(side))
-                    .build(k)
-                    .key(format!("{scope}-prepare")),
-            ),
-    );
-    if let Some(lookup) = snapshots.lookup(side, revision) {
-        panel = panel.child(variants(
+        .child(variants(
             side,
             &lookup.status,
             lookup.selected.as_deref(),
             k,
-        ));
-    }
-    panel
+        ))
+        .focus_return(match side {
+            SnapshotSide::Base => "comparison-snapshot-base-find",
+            SnapshotSide::Head => "comparison-snapshot-after-find",
+        })
+        .modal(true, close)
+        .modal_click_outside(true);
+    vec![
+        el().absolute(0.0, 0.0)
+            .w_full()
+            .h_full()
+            .fill(k.c.scrim)
+            .a11y_hidden(),
+        col()
+            .absolute(0.0, 0.0)
+            .w_full()
+            .h_full()
+            .pt(105.0)
+            .items_center()
+            .child(panel),
+    ]
 }
 
 fn variants(side: SnapshotSide, status: &SnapshotStatus, selected: Option<&str>, k: &Kit) -> El {
-    let path = status.cache_path.display().to_string();
     let list = col()
         .gap(3.0)
-        .max_h(105.0)
+        .max_h(220.0)
         .scroll(ScrollSpec {
             stick_bottom: false,
         })
@@ -186,46 +331,27 @@ fn variants(side: SnapshotSide, status: &SnapshotStatus, selected: Option<&str>,
             let is_selected = selected == Some(id.as_str());
             let (summary, details) = variant_settings(record);
             let prefix = if is_selected { "Selected · " } else { "" };
-            let label = format!("{prefix}{summary} · {}", short(&id));
-            Button::new(label)
+            Button::new(format!("{prefix}{summary} · {}", short(&id)))
                 .disabled(is_selected)
                 .on_press(move |state: &mut State| {
-                    state
-                        .flow_comparison
-                        .choose_snapshot_variant(side, Some(id.clone()));
+                    state.select_comparison_snapshot(side, Some(id.clone()))
                 })
                 .build(k)
+                .w_full()
+                .min_w(0.0)
                 .help(format!(
-                    "Snapshot {}\n{details}\nDigest {}",
-                    record.id, record.digest
+                    "Snapshot {}\n{details}\nDigest {}\n{}",
+                    record.id,
+                    record.digest,
+                    status.cache_path.display()
                 ))
         }));
-    let label = if status.snapshots.is_empty() {
-        format!("No local snapshots for {}", short(&status.commit))
-    } else {
-        format!("Local snapshots for {}", short(&status.commit))
-    };
     col()
         .gap(3.0)
         .child(
-            text(label)
-                .font(k.ty.small_medium)
-                .color(k.c.text_base)
-                .help(&status.commit),
-        )
-        .child(
-            text(&path)
-                .font(k.ty.small)
-                .color(k.c.text_muted)
-                .truncate()
-                .help(&path),
-        )
-        .child(
             Button::new("Use automatic selection")
                 .disabled(selected.is_none())
-                .on_press(move |state: &mut State| {
-                    state.flow_comparison.choose_snapshot_variant(side, None)
-                })
+                .on_press(move |state: &mut State| state.select_comparison_snapshot(side, None))
                 .build(k),
         )
         .child(list)
@@ -298,229 +424,6 @@ fn variant_settings(record: &SnapshotRecord) -> (String, String) {
         .collect::<Vec<_>>()
         .join("\n");
     (summary, details)
-}
-
-pub(super) fn graph(state: &State, k: &Kit) -> El {
-    let snapshots = &state.flow_comparison.snapshots;
-    let body = col()
-        .key("comparison-graph-panel")
-        .grow(1.0)
-        .min_h(0.0)
-        .w_full()
-        .gap(6.0)
-        .px(10.0)
-        .pb(8.0);
-    let Some(page) = &snapshots.graph else {
-        return body;
-    };
-    body.child(provenance::pair(&page.header, k))
-        .child(graph_summary(page, k))
-        .child(
-            match snapshots
-                .selected_change
-                .and_then(|index| page.changes.get(index).map(|change| (index, change)))
-            {
-                Some((index, change)) => graph_detail(page, index, change, k),
-                None => graph_records(page, k),
-            },
-        )
-        .child(
-            row()
-                .gap(6.0)
-                .center_y()
-                .child(
-                    Button::new("Previous")
-                        .disabled(snapshots.pending() || !snapshots.previous_available())
-                        .on_press(|state: &mut State| {
-                            state.compare_snapshot_graphs(GraphNavigation::Previous)
-                        })
-                        .build(k)
-                        .key("comparison-graph-previous"),
-                )
-                .child(
-                    text(format!("{} of {}", page.offset + page.returned, page.total))
-                        .font(k.ty.small)
-                        .color(k.c.text_muted),
-                )
-                .child(
-                    Button::new("Next")
-                        .disabled(snapshots.pending() || page.next_offset.is_none())
-                        .on_press(|state: &mut State| {
-                            state.compare_snapshot_graphs(GraphNavigation::Next)
-                        })
-                        .build(k)
-                        .key("comparison-graph-next"),
-                ),
-        )
-}
-
-fn graph_summary(page: &GraphPage, k: &Kit) -> El {
-    let summary = page
-        .summary
-        .iter()
-        .map(|(section, summary)| {
-            format!(
-                "{section} · {} entities, {} records · +{} −{} ~{}",
-                summary.changed_entities,
-                summary.records,
-                summary.added,
-                summary.removed,
-                summary.replaced
-            )
-        })
-        .collect::<Vec<_>>()
-        .join("\n");
-    text(format!(
-        "{} · {}",
-        if page.graph_equal {
-            "Graphs match"
-        } else {
-            "Graphs differ"
-        },
-        if page.metadata_equal {
-            "Metadata matches"
-        } else {
-            "Metadata differs"
-        },
-    ))
-    .font(k.ty.small_medium)
-    .color(k.c.text_base)
-    .help(summary)
-}
-
-fn graph_records(page: &GraphPage, k: &Kit) -> El {
-    let kit = k.clone();
-    let rows = col()
-        .gap(4.0)
-        .growth(GrowthSpec::default())
-        .virtual_rows_version((&page.header.comparison_id, page.offset))
-        .virtual_rows(
-            page.changes.len(),
-            35.0,
-            |_: &State, index| index.to_string().into(),
-            move |state: &State, index| {
-                let Some(page) = &state.flow_comparison.snapshots.graph else {
-                    return rune::el();
-                };
-                graph_record(page, index, &kit)
-            },
-        );
-    col()
-        .min_h(0.0)
-        .grow(1.0)
-        .scroll(ScrollSpec {
-            stick_bottom: false,
-        })
-        .child(rows)
-}
-
-fn graph_record(page: &GraphPage, index: usize, k: &Kit) -> El {
-    let Some(change) = page.changes.get(index) else {
-        return rune::el();
-    };
-    let binding = page.header.comparison_id.clone();
-    let offset = page.offset;
-    row()
-        .w_full()
-        .gap(8.0)
-        .center_y()
-        .child(
-            text(&change.summary)
-                .font(k.ty.small)
-                .color(k.c.text_base)
-                .grow(1.0)
-                .min_w(0.0)
-                .truncate()
-                .help(&change.summary),
-        )
-        .child(
-            Button::new("View change")
-                .variant(ButtonVariant::Outline)
-                .on_press(move |state: &mut State| {
-                    state
-                        .flow_comparison
-                        .snapshots
-                        .select_graph_change(&binding, offset, index);
-                })
-                .build(k)
-                .key(format!("comparison-graph-change-{}", offset + index)),
-        )
-}
-
-fn graph_detail(page: &GraphPage, index: usize, change: &GraphChange, k: &Kit) -> El {
-    let color = k.c.text_base;
-    let binding = (&page.header.comparison_id, page.offset, index);
-    let rows = col()
-        .w(1250.0)
-        .growth(GrowthSpec::default())
-        .virtual_rows_version(binding)
-        .virtual_rows(
-            change.line_count(),
-            20.0,
-            |_: &State, line| line.to_string().into(),
-            move |state: &State, line| {
-                state
-                    .flow_comparison
-                    .snapshots
-                    .graph
-                    .as_ref()
-                    .and_then(|page| page.changes.get(index))
-                    .and_then(|change| change.line(line))
-                    .map_or_else(rune::el, |line| {
-                        text(line)
-                            .font(crate::theme::mono(12.0, 400.0).lh(20.0))
-                            .color(color)
-                            .h(20.0)
-                    })
-            },
-        );
-    col()
-        .grow(1.0)
-        .min_h(0.0)
-        .gap(4.0)
-        .key("comparison-graph-change-detail")
-        .child(graph_detail_actions(k))
-        .child(
-            col()
-                .key(format!(
-                    "comparison-graph-detail-scroll-{}-{}",
-                    binding.0,
-                    binding.1 + index
-                ))
-                .w_full()
-                .grow(1.0)
-                .min_h(0.0)
-                .scroll_xy()
-                .child(rows),
-        )
-}
-
-fn graph_detail_actions(k: &Kit) -> El {
-    row()
-        .gap(6.0)
-        .child(
-            Button::new("Back to changes")
-                .variant(ButtonVariant::Outline)
-                .on_press(|state: &mut State| {
-                    state.flow_comparison.snapshots.selected_change = None
-                })
-                .build(k)
-                .key("comparison-graph-change-back"),
-        )
-        .child(
-            Button::new("Copy JSON")
-                .on_press_tx(|state: &mut State, tx| {
-                    let snapshots = &state.flow_comparison.snapshots;
-                    if let Some(change) = snapshots
-                        .selected_change
-                        .and_then(|index| snapshots.graph.as_ref()?.changes.get(index))
-                    {
-                        tx.copy(change.document.clone());
-                    }
-                })
-                .build(k)
-                .key("comparison-graph-change-copy"),
-        )
 }
 
 fn short(digest: &str) -> &str {
