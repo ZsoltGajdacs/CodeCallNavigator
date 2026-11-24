@@ -3,10 +3,13 @@ mod failure;
 
 use crate::{
     app::State,
-    engine_client::flow_comparison::{EndpointStatus, SnapshotStatus},
+    engine_client::flow_comparison::{EndpointStatus, SnapshotStatus, WorktreeFreshness},
     flow_comparison::{SnapshotSide, WorktreeSnapshot},
+    freshness_workspace::{Status as FreshnessStatus, diagnostics::only_unmapped_inputs},
 };
-use codecallnavigator::artifact::{local_snapshots::SnapshotRecord, selection::Selection};
+use codecallnavigator::artifact::{
+    local_snapshots::SnapshotRecord, selection::Selection, verification::InputStatus,
+};
 use rune::{El, ScrollSpec, col, el, row, text};
 use rune_kit::{Button, ButtonVariant, Kit};
 use serde::Deserialize;
@@ -177,8 +180,11 @@ fn status(state: &State, side: SnapshotSide, revision: &str) -> Status {
     if revision == "WORKTREE" {
         return workspace
             .worktree_snapshot()
-            .or(snapshots.worktree)
-            .map_or_else(|| bound_status(workspace, side), worktree_status);
+            .or_else(|| snapshots.worktree.clone())
+            .map_or_else(
+                || bound_status(workspace, side),
+                |snapshot| worktree_status(state, snapshot),
+            );
     }
     let empty = snapshots
         .lookup(side, revision)
@@ -206,13 +212,47 @@ fn action_message<'a>(state: &'a State, side: SnapshotSide, revision: &str) -> O
         .then_some(snapshots.message.as_str())
 }
 
-fn worktree_status(snapshot: WorktreeSnapshot) -> Status {
-    use codecallnavigator::artifact::verification::InputStatus;
-    let (label, warning) = match snapshot {
-        WorktreeSnapshot::Missing => ("No snapshot for Worktree", true),
-        WorktreeSnapshot::Saved(Some(InputStatus::Match)) => ("Snapshot ready", false),
-        WorktreeSnapshot::Saved(Some(InputStatus::Stale)) => ("Worktree snapshot stale", true),
-        WorktreeSnapshot::Saved(_) => ("Worktree snapshot freshness unknown", true),
+fn worktree_status(state: &State, snapshot: WorktreeSnapshot) -> Status {
+    let report = match snapshot {
+        WorktreeSnapshot::Missing => return Status::message("No snapshot for Worktree", true),
+        WorktreeSnapshot::Saved(None) => {
+            return Status::message("Worktree snapshot freshness unknown", true);
+        }
+        WorktreeSnapshot::Saved(Some(report)) => report,
+    };
+    let observed = report
+        .evidence
+        .as_ref()
+        .zip(state.flow_comparison.worktree_scope())
+        .and_then(|(evidence, (project, roots))| {
+            state
+                .freshness
+                .observed_display_status(project, roots, &evidence.digest)
+        });
+    reported_worktree_status(&report, observed)
+}
+
+fn reported_worktree_status(
+    report: &WorktreeFreshness,
+    observed: Option<&FreshnessStatus>,
+) -> Status {
+    let (label, warning) = match (report.input_status, observed) {
+        (InputStatus::Stale, _) | (_, Some(FreshnessStatus::Observed(InputStatus::Stale))) => {
+            ("Worktree snapshot stale", true)
+        }
+        (InputStatus::Match, Some(FreshnessStatus::Observed(InputStatus::Unverifiable))) => {
+            ("Worktree snapshot freshness unknown", true)
+        }
+        (InputStatus::Match, _) => ("Snapshot ready", false),
+        (InputStatus::Unverifiable, Some(FreshnessStatus::Idle))
+            if report.evidence.as_ref().is_some_and(|evidence| {
+                evidence.contract_valid
+                    && only_unmapped_inputs(&evidence.reasons, evidence.omitted_reasons)
+            }) =>
+        {
+            ("Snapshot ready", false)
+        }
+        _ => ("Worktree snapshot freshness unknown", true),
     };
     Status::message(label, warning)
 }
@@ -428,4 +468,44 @@ fn variant_settings(record: &SnapshotRecord) -> (String, String) {
 
 fn short(digest: &str) -> &str {
     digest.get(..12).unwrap_or(digest)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::engine_client::flow_comparison::WorktreeFreshnessEvidence;
+    use codecallnavigator::artifact::verification::Reason;
+
+    #[test]
+    fn worktree_status_shares_freshness_warnings_with_the_call_graph() {
+        let mut report = WorktreeFreshness {
+            input_status: InputStatus::Unverifiable,
+            evidence: Some(WorktreeFreshnessEvidence {
+                digest: "generation".into(),
+                contract_valid: true,
+                omitted_reasons: 0,
+                reasons: vec![Reason::new("unmapped_input", None)],
+            }),
+        };
+        let ready = reported_worktree_status(&report, Some(&FreshnessStatus::Idle));
+        assert_eq!(ready.label, "Snapshot ready");
+        assert!(!ready.warning);
+        assert!(reported_worktree_status(&report, None).warning);
+
+        report
+            .evidence
+            .as_mut()
+            .unwrap()
+            .reasons
+            .push(Reason::new("unavailable_root", None));
+        assert!(reported_worktree_status(&report, Some(&FreshnessStatus::Idle)).warning);
+        report.input_status = InputStatus::Stale;
+        assert!(reported_worktree_status(&report, Some(&FreshnessStatus::Idle)).warning);
+
+        report.input_status = InputStatus::Match;
+        let stale = FreshnessStatus::Observed(InputStatus::Stale);
+        let status = reported_worktree_status(&report, Some(&stale));
+        assert_eq!(status.label, "Worktree snapshot stale");
+        assert!(status.warning);
+    }
 }

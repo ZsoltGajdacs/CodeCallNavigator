@@ -2,7 +2,10 @@ use super::{model::*, validation};
 use crate::engine_client::QueryContext;
 use codecallnavigator::query::{self, FlowComparisonSelection, Query};
 use serde::de::DeserializeOwned;
-use std::{fmt, sync::atomic::AtomicBool};
+use std::{
+    fmt,
+    sync::{Arc, atomic::AtomicBool},
+};
 
 #[derive(Debug)]
 pub enum Error {
@@ -28,7 +31,7 @@ pub type Result<T> = std::result::Result<T, Error>;
 pub(super) struct Reply<T> {
     pub(super) value: T,
     generation: Option<String>,
-    pub(super) freshness: Option<codecallnavigator::artifact::verification::InputStatus>,
+    pub(super) freshness: Option<Arc<WorktreeFreshness>>,
 }
 impl<T> Reply<T> {
     fn check_generation(&self, header: &Header) -> Result<()> {
@@ -73,7 +76,7 @@ pub struct BoundComparison {
     client: ComparisonClient,
     header: Header,
     references: super::ComparisonRefs,
-    pub(crate) freshness: Option<codecallnavigator::artifact::verification::InputStatus>,
+    pub(crate) freshness: Option<Arc<WorktreeFreshness>>,
 }
 impl QueryContext {
     pub fn flow_comparison(&self) -> ComparisonClient {
@@ -171,8 +174,8 @@ impl ComparisonClient {
         })?;
         Ok(Reply {
             value,
+            freshness: worktree_freshness(response.freshness, response.generation.as_deref()),
             generation: response.generation,
-            freshness: worktree_freshness(response.freshness),
         })
     }
 }

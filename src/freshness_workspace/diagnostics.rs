@@ -2,7 +2,13 @@
 use super::{Status, Workspace};
 use crate::engine_client::Descriptor;
 use codecallnavigator::artifact::verification::{InputStatus, Reason};
-use std::path::Path;
+use std::path::{Path, PathBuf};
+
+pub(crate) fn only_unmapped_inputs(reasons: &[Reason], omitted_reasons: usize) -> bool {
+    omitted_reasons == 0
+        && !reasons.is_empty()
+        && reasons.iter().all(|reason| reason.code == "unmapped_input")
+}
 
 impl Workspace {
     fn visible_reasons(&self) -> impl Iterator<Item = &Reason> {
@@ -13,19 +19,35 @@ impl Workspace {
     }
 
     pub(crate) fn display_status(&self) -> &Status {
-        let unmapped_only = matches!(self.status, Status::Observed(InputStatus::Unverifiable))
-            && self.last.as_ref().is_some_and(|last| {
-                last.contract_valid
-                    && last.coverage.complete
-                    && last.omitted_reasons == 0
-                    && !last.reasons.is_empty()
-                    && self.visible_reasons().next().is_none()
-            });
-        if unmapped_only {
+        if self.suppresses_unmapped_inputs() {
             &Status::Idle
         } else {
             &self.status
         }
+    }
+
+    fn suppresses_unmapped_inputs(&self) -> bool {
+        matches!(self.status, Status::Observed(InputStatus::Unverifiable))
+            && self.last.as_ref().is_some_and(|last| {
+                last.contract_valid
+                    && last.coverage.complete
+                    && only_unmapped_inputs(&last.reasons, last.omitted_reasons)
+            })
+    }
+
+    pub(crate) fn observed_display_status(
+        &self,
+        project: &Path,
+        roots: &[(String, PathBuf)],
+        generation: &str,
+    ) -> Option<&Status> {
+        let bound = self.binding.as_ref()?;
+        let observation = self.last.as_ref()?;
+        (bound.project == project
+            && bound.roots == roots
+            && observation.generation == generation
+            && matches!(self.status, Status::Observed(_)))
+        .then(|| self.display_status())
     }
 
     pub(crate) fn message(&self, loaded: Option<&str>) -> Option<String> {
@@ -234,6 +256,7 @@ mod tests {
 
     fn assert_unmapped_input_presentation(descriptor: &Descriptor) {
         let mut workspace = Workspace::default();
+        workspace.binding = Some(descriptor.clone());
         let mut observation =
             crate::freshness_workspace::fixture(InputStatus::Unverifiable, "generation");
         observation
@@ -253,6 +276,7 @@ mod tests {
             Status::Observed(InputStatus::Unverifiable)
         ));
         assert!(Details::from_workspace(&workspace, descriptor, None).is_none());
+        assert_observation_scope(&workspace, descriptor);
         assert_eq!(
             workspace.last.as_ref().unwrap().reasons,
             observation.reasons
@@ -261,6 +285,10 @@ mod tests {
         observation.omitted_reasons = 1;
         observation.reasons_total = 2;
         workspace.accept(observation);
+        assert!(matches!(
+            workspace.observed_display_status(&descriptor.project, &descriptor.roots, "generation"),
+            Some(Status::Observed(InputStatus::Unverifiable))
+        ));
         let message = workspace.message(Some("generation")).unwrap();
         assert!(!message.contains("unmapped_input"));
         let details = Details::from_workspace(&workspace, descriptor, None).unwrap();
@@ -276,5 +304,39 @@ mod tests {
         let message = workspace.message(Some("generation")).unwrap();
         assert!(message.contains("unavailable_root: @shared/"));
         assert!(!message.contains("unmapped_input"));
+
+        workspace.accept(crate::freshness_workspace::fixture(
+            InputStatus::Stale,
+            "generation",
+        ));
+        assert!(matches!(
+            workspace.observed_display_status(&descriptor.project, &descriptor.roots, "generation"),
+            Some(Status::Observed(InputStatus::Stale))
+        ));
+    }
+
+    fn assert_observation_scope(workspace: &Workspace, descriptor: &Descriptor) {
+        let project = &descriptor.project;
+        let roots = &descriptor.roots;
+        assert!(matches!(
+            workspace.observed_display_status(project, roots, "generation"),
+            Some(Status::Idle)
+        ));
+        assert!(
+            workspace
+                .observed_display_status(project, roots, "older-generation")
+                .is_none()
+        );
+        assert!(
+            workspace
+                .observed_display_status(Path::new("/other-project"), roots, "generation")
+                .is_none()
+        );
+        let different_roots = [("shared".into(), PathBuf::from("/other-dependencies"))];
+        assert!(
+            workspace
+                .observed_display_status(project, &different_roots, "generation")
+                .is_none()
+        );
     }
 }

@@ -1,11 +1,8 @@
 //! Read the class graph from the captured comparison before preparing its layout.
-use super::{BoundComparison, Header, client::Result};
-use codecallnavigator::{
-    artifact::{comparison_changes::ClassGraph, verification::InputStatus},
-    query::Query,
-};
+use super::{BoundComparison, Header, WorktreeFreshness, client::Result};
+use codecallnavigator::{artifact::comparison_changes::ClassGraph, query::Query};
 use serde::Deserialize;
-use std::sync::atomic::AtomicBool;
+use std::sync::{Arc, atomic::AtomicBool};
 
 #[derive(Deserialize)]
 struct Reply {
@@ -16,7 +13,7 @@ struct Reply {
 
 pub(crate) struct ClassDetail {
     pub graph: ClassGraph,
-    pub freshness: Option<InputStatus>,
+    pub freshness: Option<Arc<WorktreeFreshness>>,
     pub maximum_depth: u32,
 }
 

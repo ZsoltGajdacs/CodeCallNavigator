@@ -67,6 +67,10 @@ impl Refresh {
 }
 
 impl Workspace {
+    pub(crate) fn worktree_scope(&self) -> Option<(&Path, &[(String, PathBuf)])> {
+        Some((self.identity.captured()?, &self.descriptor()?.roots))
+    }
+
     pub(crate) fn worktree_snapshot(&self) -> Option<super::WorktreeSnapshot> {
         use crate::engine_client::flow_comparison::{EndpointKind, EndpointStatus};
         let binding = self.binding.as_ref()?;
@@ -76,8 +80,9 @@ impl Workspace {
         match &self.catalog.as_ref()?.endpoints.after {
             EndpointStatus::Available => Some(super::WorktreeSnapshot::Saved(
                 self.class_pair()
-                    .and_then(|pair| pair.freshness)
-                    .or(binding.freshness),
+                    .and_then(|pair| pair.freshness.as_ref())
+                    .or(binding.freshness.as_ref())
+                    .cloned(),
             )),
             EndpointStatus::Unavailable(failure) if failure.reason == "graph_missing" => {
                 Some(super::WorktreeSnapshot::Missing)

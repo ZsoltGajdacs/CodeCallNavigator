@@ -2,18 +2,18 @@
 use super::{SideId, Workspace};
 use crate::{
     camera::Camera,
-    engine_client::flow_comparison::ClassDetail,
+    engine_client::flow_comparison::{ClassDetail, WorktreeFreshness},
     projection::{self, GraphView, ViewEdge, ViewNode},
 };
 use anyhow::{Context, Result, ensure};
-use codecallnavigator::artifact::{
-    comparison_changes::{ClassGraph, ClassNode, GraphChange},
-    verification::InputStatus,
-};
+use codecallnavigator::artifact::comparison_changes::{ClassGraph, ClassNode, GraphChange};
 use std::{
     collections::{BTreeMap, BTreeSet},
     path::Path,
-    sync::atomic::{AtomicBool, Ordering},
+    sync::{
+        Arc,
+        atomic::{AtomicBool, Ordering},
+    },
 };
 
 pub(crate) struct ClassPair {
@@ -22,7 +22,7 @@ pub(crate) struct ClassPair {
     pub root: usize,
     pub depth: u32,
     pub(super) maximum_depth: u32,
-    pub(super) freshness: Option<InputStatus>,
+    pub(super) freshness: Option<Arc<WorktreeFreshness>>,
     pub cameras: [Camera; 2],
     fit_pending: [bool; 2],
 }

@@ -239,9 +239,8 @@ fn stale_worktree_class_rows_open_the_bound_saved_diagram() {
     assert!(comparison.changes.message.is_empty());
     assert!(matches!(
         comparison.worktree_snapshot(),
-        Some(super::WorktreeSnapshot::Saved(Some(
-            codecallnavigator::artifact::verification::InputStatus::Stale
-        )))
+        Some(super::WorktreeSnapshot::Saved(Some(freshness)))
+            if freshness.input_status == codecallnavigator::artifact::verification::InputStatus::Stale
     ));
 }
 

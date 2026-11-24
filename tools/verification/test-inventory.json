@@ -10828,6 +10828,20 @@
       "purpose": "a queued request releases its shutdown lease when dropped before start"
     },
     {
+      "id": "codecallnavigator/bin:codecallnavigator::flow_comparison_view::snapshots::tests::worktree_status_shares_freshness_warnings_with_the_call_graph",
+      "runner": "rust",
+      "file": "src/flow_comparison_view/snapshots.rs",
+      "test_name": "flow_comparison_view::snapshots::tests::worktree_status_shares_freshness_warnings_with_the_call_graph",
+      "ignored": false,
+      "package": "codecallnavigator",
+      "target_kind": "bin",
+      "target": "codecallnavigator",
+      "component": "ui",
+      "category": "unit",
+      "requirements": [],
+      "purpose": "Share worktree warning presentation for benign, mixed, missing, and stale freshness evidence."
+    },
+    {
       "id": "codecallnavigator/bin:codecallnavigator::flow_comparison_view::source_diff::tests::unavailable_diff_explains_capture_limit_in_preview",
       "runner": "rust",
       "file": "src/flow_comparison_view/source_diff.rs",

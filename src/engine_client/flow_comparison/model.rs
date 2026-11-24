@@ -1,8 +1,10 @@
 //! Owned public-wire DTOs; compiler target certainty remains in the function/chart calls.
 use codecallnavigator::artifact::local_snapshots::SnapshotRecord;
+use codecallnavigator::artifact::verification::{InputStatus, Reason};
 use codecallnavigator::flow::{FlowChart, FunctionFlowIR};
 use codecallnavigator::model::Visibility;
 use serde::Deserialize;
+use std::sync::Arc;
 
 #[derive(Clone, Debug, PartialEq, Eq, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -229,9 +231,30 @@ pub(super) fn endpoint(endpoint: &Endpoint) -> anyhow::Result<()> {
     Ok(())
 }
 
+pub(crate) struct WorktreeFreshness {
+    pub input_status: InputStatus,
+    pub evidence: Option<WorktreeFreshnessEvidence>,
+}
+
+#[derive(Deserialize)]
+pub(crate) struct WorktreeFreshnessEvidence {
+    pub digest: String,
+    pub contract_valid: bool,
+    pub omitted_reasons: usize,
+    pub reasons: Vec<Reason>,
+}
+
 pub(crate) fn worktree_freshness(
     value: Option<serde_json::Value>,
-) -> Option<codecallnavigator::artifact::verification::InputStatus> {
+    generation: Option<&str>,
+) -> Option<Arc<WorktreeFreshness>> {
     let value = value?;
-    serde_json::from_value(value.get("input_status")?.clone()).ok()
+    let input_status = InputStatus::deserialize(value.get("input_status")?).ok()?;
+    let evidence = serde_json::from_value::<WorktreeFreshnessEvidence>(value)
+        .ok()
+        .filter(|report| Some(report.digest.as_str()) == generation);
+    Some(Arc::new(WorktreeFreshness {
+        input_status,
+        evidence,
+    }))
 }

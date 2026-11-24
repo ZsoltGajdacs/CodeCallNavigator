@@ -4,13 +4,11 @@ use crate::{
     app::State,
     engine_client::{
         self, QueryContext,
-        flow_comparison::{ComparisonRefs, SnapshotPreparation, SnapshotStatus},
+        flow_comparison::{ComparisonRefs, SnapshotPreparation, SnapshotStatus, WorktreeFreshness},
     },
 };
 use codecallnavigator::{
-    artifact::{local_snapshots::SnapshotRecord, verification::InputStatus},
-    protocol::AnalysisFailureCode,
-    query::Query,
+    artifact::local_snapshots::SnapshotRecord, protocol::AnalysisFailureCode, query::Query,
 };
 use rune::{Latest, Waker};
 use std::{
@@ -88,10 +86,10 @@ struct SnapshotRequest {
     operation: Operation,
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub(crate) enum WorktreeSnapshot {
     Missing,
-    Saved(Option<InputStatus>),
+    Saved(Option<Arc<WorktreeFreshness>>),
 }
 
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -435,7 +433,10 @@ fn finish_preparation(
 fn find_worktree(context: &QueryContext, cancel: &AtomicBool) -> anyhow::Result<WorktreeSnapshot> {
     match context.response(Query::Status, cancel) {
         Ok(response) => Ok(WorktreeSnapshot::Saved(
-            crate::engine_client::flow_comparison::worktree_freshness(response.freshness),
+            crate::engine_client::flow_comparison::worktree_freshness(
+                response.freshness,
+                response.generation.as_deref(),
+            ),
         )),
         Err(error)
             if error
